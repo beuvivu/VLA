@@ -323,7 +323,7 @@ def _render_page(
 
 
 def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
-    path_ui_dir = repo_root / "data" / "path_ui"
+    path_ui_dir = repo_root / "data" / "soi_cau" / "path_ui"
     docs_dir = repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
 

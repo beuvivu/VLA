@@ -46,7 +46,7 @@ def _loto_set(row: pd.Series) -> set[int]:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Fill y labels for recorded prediction history.")
     ap.add_argument("--data-dir", default="data")
-    ap.add_argument("--history-dir", default="data/history")
+    ap.add_argument("--history-dir", default="data/evaluation/history")
     args = ap.parse_args()
 
     data_dir = Path(args.data_dir)

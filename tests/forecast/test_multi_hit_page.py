@@ -25,7 +25,7 @@ from forecast import multi_hit_report as report
 from forecast import multi_hit_vip as m
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "multi_hit"
+DATA = ROOT / "data" / "forecast" / "multi_hit"
 PLANTED = (7, 38, 68)
 
 
@@ -385,7 +385,7 @@ def _data_dir(tmp_path, history) -> Path:
     _write_history(tmp_path, history)
     draws, labels = m.draws_from_frame(history[1])
     out = tmp_path / report.OUT_DIR
-    out.mkdir()
+    out.mkdir(parents=True)
     (out / report.VIP_FILE).write_text(json.dumps(report.vip_section(*history, cfg=SMALL)), encoding="utf-8")
     bench = {"version": report.BENCHMARK_VERSION, "draws": len(draws),
              "history_sha256": report.history_fingerprint(draws, labels)}

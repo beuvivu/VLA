@@ -13,7 +13,7 @@
   var RETRY_MISSING_MS = 300000;
   var RETRY_ERROR_MS = 60000;
   // Tên miền và đường dẫn dữ liệu không được viết thẳng ra trang (luật riêng tư của kho).
-  var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9wcmVkaWN0aW9uX2JvYXJkLw==' };
+  var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9ldmFsdWF0aW9uL3ByZWRpY3Rpb25fYm9hcmQv' };
   function d(k) { return atob(E[k]); }
 
   var title = document.getElementById('live-scorecard-date');

@@ -175,7 +175,7 @@ def global_diagnostics(two: pd.DataFrame, sparse: pd.DataFrame, *, window_days: 
 def main() -> None:
     ap = argparse.ArgumentParser(description="FDR/Bayesian statistical diagnostics for XSMB.")
     ap.add_argument("--windows", default="30,90,365", help="Comma-separated rolling windows.")
-    ap.add_argument("--out-dir", default="data/significance")
+    ap.add_argument("--out-dir", default="data/stats/significance")
     args = ap.parse_args()
 
     lot = Lottery()

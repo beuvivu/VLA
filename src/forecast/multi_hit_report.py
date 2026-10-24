@@ -18,7 +18,7 @@ Hai phần, hai nhịp:
 Không con số nào ở đây được đặt tay: kết luận "hơn / không hơn chọn bừa" trên trang suy từ ``z``,
 ``p`` và mức tin mà chính các phép đo trả về.
 
-    python3 src/forecast/multi_hit_report.py                    # đo và ghi data/multi_hit/
+    python3 src/forecast/multi_hit_report.py                    # đo và ghi data/forecast/multi_hit/
     python3 src/forecast/multi_hit_report.py --force-benchmark  # đo lại cả giao thức lượt hai
 """
 
@@ -42,7 +42,7 @@ from core.atomic_io import atomic_write_text
 from forecast.multi_hit_vip import (base_rate, counts_matrix, draws_from_frame, model_confidence, number_confidence,
                            random_pick_null)
 
-OUT_DIR = "multi_hit"
+OUT_DIR = "forecast/multi_hit"
 VIP_FILE = "vip.json"
 BENCHMARK_FILE = "benchmark.json"
 #: Đổi định nghĩa một số đo thì tăng phiên bản của TỆP chứa nó: bản cũ bị bỏ và đo lại.

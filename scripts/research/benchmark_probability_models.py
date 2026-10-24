@@ -12,7 +12,7 @@ TRƯỚC khối):
 * ``bayes_lgb``      — tầng 1 + LightGBM phần dư + Platt (mô hình mới).
 * ``bayes_lgb_focal_iso`` — như trên nhưng focal loss + isotonic.
 
-Thêm: tổ hợp production ĐÃ GHI SỔ (``data/prob_eval/ensemble_history.csv``)
+Thêm: tổ hợp production ĐÃ GHI SỔ (``data/evaluation/prob_eval/ensemble_history.csv``)
 được so với các mô hình trên đúng những kỳ có trong sổ.
 
 Kiểm độ nhạy (``--power-check``): chạy mô hình mới trên lịch sử tổng hợp có
@@ -144,7 +144,7 @@ def against_recorded_production(frame: pd.DataFrame, book: pd.DataFrame | None =
     nên không bao giờ gộp chung với nhóm trên.
     """
     if book is None:
-        path = ROOT / "data" / "prob_eval" / "ensemble_history.csv"
+        path = ROOT / "data" / "evaluation" / "prob_eval" / "ensemble_history.csv"
         if not path.exists():
             return {}
         book = pd.read_csv(path, dtype={"target_date": str})

@@ -233,9 +233,9 @@ def test_the_page_detects_a_report_older_than_the_data(tmp_path: Path) -> None:
     ai thấy.
     """
     data_dir = tmp_path / "data"
-    (data_dir / "prob_eval").mkdir(parents=True)
+    (data_dir / "evaluation" / "prob_eval").mkdir(parents=True)
     pd.DataFrame({"target_date": ["2026-09-10", "2026-09-15"]}).to_csv(
-        data_dir / "prob_eval" / "ensemble_history.csv", index=False
+        data_dir / "evaluation" / "prob_eval" / "ensemble_history.csv", index=False
     )
     assert page._staleness(data_dir, {"covers_through": "2026-09-15"}) == ""
     stale = page._staleness(data_dir, {"covers_through": "2026-09-01"})

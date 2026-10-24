@@ -134,7 +134,7 @@ def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out-dir", type=str, default="data/hazard")
+    ap.add_argument("--out-dir", type=str, default="data/stats/hazard")
     ap.add_argument("--max-gap-loto", type=int, default=60)
     ap.add_argument("--max-gap-de", type=int, default=200)
     args = ap.parse_args()

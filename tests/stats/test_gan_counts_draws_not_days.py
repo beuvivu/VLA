@@ -86,7 +86,7 @@ def test_interval_columns_are_in_draws_too() -> None:
 
 def test_published_rhythm_table_matches_a_draw_count_recomputation() -> None:
     """Bảng đã sinh phải khớp phép đếm theo kỳ tính lại từ dữ liệu gốc."""
-    rhythm = ROOT / "data" / "advanced" / "loto_rhythm.csv"
+    rhythm = ROOT / "data" / "stats" / "advanced" / "loto_rhythm.csv"
     raw = ROOT / "data" / "xsmb.csv"
     if not (rhythm.exists() and raw.exists()):
         return

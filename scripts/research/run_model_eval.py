@@ -2,7 +2,7 @@
 
 Dùng ĐÚNG các hàm đo mà sản xuất dùng (``ensemble_utils``) và đúng định nghĩa
 điểm kỹ năng mà cổng ``check_baseline_skill`` đọc, nên con số ở đây so sánh trực
-tiếp được với lịch sử đánh giá trong ``data/prob_eval/ensemble_history.csv``.
+tiếp được với lịch sử đánh giá trong ``data/evaluation/prob_eval/ensemble_history.csv``.
 
 Giao thức cuốn chiếu: huấn luyện trên lịch sử tính tới ngày T, dự đoán ngày T+1,
 rồi tiến lên. Huấn luyện lại theo chu kỳ ``refit_every`` ngày thay vì mỗi ngày —

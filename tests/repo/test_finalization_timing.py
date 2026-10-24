@@ -90,7 +90,7 @@ class Runner:
 
     def __init__(self, tmp: Path) -> None:
         self.tmp = tmp
-        (tmp / "data" / "predict").mkdir(parents=True)
+        (tmp / "data" / "forecast" / "predict").mkdir(parents=True)
         (tmp / "src" / "ingest").mkdir(parents=True)
         (tmp / "src" / "ingest" / "sync.py").write_text(FAKE_SYNC, encoding="utf-8")
         (tmp / "site").mkdir()
@@ -108,7 +108,7 @@ class Runner:
 
     def predicted(self, day, modes=("loto", "de")) -> None:
         for mode in modes:
-            (self.tmp / "data" / "predict" / f"predict_next_{mode}_all_{day.isoformat()}.csv").write_text(
+            (self.tmp / "data" / "forecast" / "predict" / f"predict_next_{mode}_all_{day.isoformat()}.csv").write_text(
                 "number,prob\n00,0.01\n", encoding="utf-8"
             )
 

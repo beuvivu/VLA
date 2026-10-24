@@ -162,8 +162,8 @@ def normalize_artifacts(
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Normalize pair artifacts and semantics.")
-    ap.add_argument("--descriptive-dir", default="data/descriptive_ext")
-    ap.add_argument("--pairs-dir", default="data/pairs")
+    ap.add_argument("--descriptive-dir", default="data/stats/descriptive_ext")
+    ap.add_argument("--pairs-dir", default="data/stats/pairs")
     args = ap.parse_args()
     counts = normalize_artifacts(
         descriptive_dir=Path(args.descriptive_dir),

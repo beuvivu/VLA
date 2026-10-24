@@ -321,7 +321,7 @@ def write_canonical_tables(*, top: int = 500) -> list[Path]:
         raw, sparse, top=top
     )
 
-    out = paths.data_dir / "advanced"
+    out = paths.data_dir / "stats" / "advanced"
     out.mkdir(parents=True, exist_ok=True)
     tables = {
         "conditional_loto_after_special_top500": de_loto,

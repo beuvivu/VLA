@@ -138,7 +138,7 @@ skip = sorted(json.loads(Path("data/non_draw_days.json").read_text(encoding="utf
 have = set(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"].astype(str))
 boundaries = sum(1 for d in skip if d not in have and _starts_a_gap(d, have))
 
-cond = json.loads(Path("data/advanced/conditional_matrices_diagnostics.json").read_text(encoding="utf-8"))
+cond = json.loads(Path("data/stats/advanced/conditional_matrices_diagnostics.json").read_text(encoding="utf-8"))
 assert cond["calendar_rows"] == rows, cond
 assert cond["exact_next_day_pairs"] + cond["skipped_nonconsecutive_boundaries"] == max(0, rows - 1), cond
 assert cond["skipped_nonconsecutive_boundaries"] == boundaries, (cond, boundaries)
@@ -147,14 +147,14 @@ for name in (
     "conditional_special_after_special_top500.csv",
     "conditional_loto_after_loto_top500.csv",
 ):
-    path = Path("data/advanced") / name
+    path = Path("data/stats/advanced") / name
     assert path.is_file() and path.stat().st_size > 0, path
 
-ai = json.loads(Path("data/advanced/ai_ml_signal_diagnostics.json").read_text(encoding="utf-8"))
+ai = json.loads(Path("data/stats/advanced/ai_ml_signal_diagnostics.json").read_text(encoding="utf-8"))
 assert ai["anchor_date"] == latest.isoformat(), ai
 assert ai["target_date"] == expected_target, ai
 for mode in ("loto", "de"):
-    table = pd.read_csv(f"data/advanced/ai_ml_signal_{mode}.csv")
+    table = pd.read_csv(f"data/stats/advanced/ai_ml_signal_{mode}.csv")
     assert len(table) == 100, (mode, len(table))
     assert set(table["number"].astype(int)) == set(range(100)), mode
     assert set(table["target_date"].astype(str)) == {expected_target}, mode
@@ -175,12 +175,12 @@ import numpy as np
 import pandas as pd
 
 for mode in ("loto", "de"):
-    cur = pd.read_csv(f"data/number_dynamics/current_dynamics_{mode}.csv")
-    trans = pd.read_csv(f"data/number_dynamics/transition_prob_lag1_{mode}.csv")
-    lift = pd.read_csv(f"data/number_dynamics/transition_lift_lag1_{mode}.csv")
-    phi = pd.read_csv(f"data/number_dynamics/cooccurrence_phi_{mode}.csv")
-    lag = pd.read_csv(f"data/number_dynamics/lag_dependency_{mode}.csv")
-    diag = json.load(open(f"data/number_dynamics/diagnostics_{mode}.json", encoding="utf-8"))
+    cur = pd.read_csv(f"data/stats/number_dynamics/current_dynamics_{mode}.csv")
+    trans = pd.read_csv(f"data/stats/number_dynamics/transition_prob_lag1_{mode}.csv")
+    lift = pd.read_csv(f"data/stats/number_dynamics/transition_lift_lag1_{mode}.csv")
+    phi = pd.read_csv(f"data/stats/number_dynamics/cooccurrence_phi_{mode}.csv")
+    lag = pd.read_csv(f"data/stats/number_dynamics/lag_dependency_{mode}.csv")
+    diag = json.load(open(f"data/stats/number_dynamics/diagnostics_{mode}.json", encoding="utf-8"))
 
     assert len(cur) == 100, (mode, len(cur))
     assert trans.shape == (100, 101), (mode, trans.shape)
@@ -380,7 +380,7 @@ python - <<'PYFUN'
 import json
 from pathlib import Path
 
-payload = json.loads(Path("data/predict/fun_draw_next.json").read_text(encoding="utf-8"))
+payload = json.loads(Path("data/forecast/predict/fun_draw_next.json").read_text(encoding="utf-8"))
 assert payload["kind"] == "entertainment_simulation"
 assert len(payload["groups"]) == 8
 assert len(payload["rows"]) == 27
@@ -416,31 +416,31 @@ required=(
   data/xsmb.csv
   data/xsmb.json
   data/source_audit.json
-  data/history/pred_loto.csv
-  data/history/pred_de.csv
+  data/evaluation/history/pred_loto.csv
+  data/evaluation/history/pred_de.csv
   data/ai_ml/cau_keo_loto_top20.csv
   data/ai_ml/cau_keo_de_top20.csv
-  data/significance/global_diagnostics.json
-  data/statistical_signal/predict_next_loto_stat_all.csv
-  data/statistical_signal/predict_next_de_stat_all.csv
-  data/number_dynamics/current_dynamics_loto.csv
-  data/number_dynamics/current_dynamics_de.csv
-  data/number_dynamics/transition_prob_lag1_loto.csv
-  data/number_dynamics/transition_prob_lag1_de.csv
-  data/number_dynamics/transition_lift_lag1_loto.csv
-  data/number_dynamics/transition_lift_lag1_de.csv
-  data/number_dynamics/cooccurrence_phi_loto.csv
-  data/number_dynamics/cooccurrence_phi_de.csv
-  data/number_dynamics/lag_dependency_loto.csv
-  data/number_dynamics/lag_dependency_de.csv
-  data/number_dynamics/diagnostics_loto.json
-  data/number_dynamics/diagnostics_de.json
-  data/advanced/conditional_matrices_diagnostics.json
-  data/advanced/ai_ml_signal_diagnostics.json
-  data/advanced/ai_ml_signal_loto.csv
-  data/advanced/ai_ml_signal_de.csv
-  data/predict/fun_draw_next.json
-  data/predict/fun_draw_next.csv
+  data/stats/significance/global_diagnostics.json
+  data/stats/statistical_signal/predict_next_loto_stat_all.csv
+  data/stats/statistical_signal/predict_next_de_stat_all.csv
+  data/stats/number_dynamics/current_dynamics_loto.csv
+  data/stats/number_dynamics/current_dynamics_de.csv
+  data/stats/number_dynamics/transition_prob_lag1_loto.csv
+  data/stats/number_dynamics/transition_prob_lag1_de.csv
+  data/stats/number_dynamics/transition_lift_lag1_loto.csv
+  data/stats/number_dynamics/transition_lift_lag1_de.csv
+  data/stats/number_dynamics/cooccurrence_phi_loto.csv
+  data/stats/number_dynamics/cooccurrence_phi_de.csv
+  data/stats/number_dynamics/lag_dependency_loto.csv
+  data/stats/number_dynamics/lag_dependency_de.csv
+  data/stats/number_dynamics/diagnostics_loto.json
+  data/stats/number_dynamics/diagnostics_de.json
+  data/stats/advanced/conditional_matrices_diagnostics.json
+  data/stats/advanced/ai_ml_signal_diagnostics.json
+  data/stats/advanced/ai_ml_signal_loto.csv
+  data/stats/advanced/ai_ml_signal_de.csv
+  data/forecast/predict/fun_draw_next.json
+  data/forecast/predict/fun_draw_next.csv
   docs/live.html
   models/ml_loto.joblib
   models/ml_de.joblib
@@ -453,8 +453,8 @@ required=(
   docs/model-quality.html
   docs/do-tin-cay.html
   docs/lo-vip-nhieu-nhay.html
-  data/multi_hit/vip.json
-  data/multi_hit/benchmark.json
+  data/forecast/multi_hit/vip.json
+  data/forecast/multi_hit/benchmark.json
   docs/soi-cau-vi-tri.html
   docs/soi-cau-loto.html
   docs/tao-phoi-tuan.html

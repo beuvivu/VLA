@@ -84,8 +84,8 @@ def test_engine_is_idempotent_preserves_public_vector_and_explains_mixture(tmp_p
     from forecast.xsmb_agents import PredictiveEngine
     frame = history(40)
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
-    pred = tmp_path / 'predict'
-    pred.mkdir()
+    pred = tmp_path / 'forecast' / 'predict'
+    pred.mkdir(parents=True)
     target = clock(frame).date().isoformat()
     snapshots = {}
     for mode in ('de', 'loto'):
@@ -109,7 +109,7 @@ def test_engine_is_idempotent_preserves_public_vector_and_explains_mixture(tmp_p
             assert row['hit_probability_percent'] == pytest.approx(100 * row['published_probability'])
             assert row['calibration_band'] is None
             assert row['reasoning_path'] and row['risk_factors']
-    path = tmp_path / 'online' / 'agents_de.json'
+    path = tmp_path / 'forecast' / 'online' / 'agents_de.json'
     path.write_text('{}')
     with pytest.raises(ValueError, match='Checksum|corrupt|đọc'):
         engine.run(tmp_path, now=clock(frame))
@@ -227,8 +227,8 @@ def test_engine_checks_real_clock_after_lock_and_training_before_freezing(tmp_pa
     from forecast.xsmb_agents import PredictiveEngine
     frame = history(40)
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
-    pred = tmp_path / 'predict'
-    pred.mkdir()
+    pred = tmp_path / 'forecast' / 'predict'
+    pred.mkdir(parents=True)
     target = clock(frame).date().isoformat()
     for mode in ('de', 'loto'):
         pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
@@ -238,7 +238,7 @@ def test_engine_checks_real_clock_after_lock_and_training_before_freezing(tmp_pa
     monkeypatch.setattr(engine_module, 'now_vietnam', lambda: next(moments))
     with pytest.raises(ValueError, match='cutoff|18:00|quá giờ'):
         PredictiveEngine().run(tmp_path)
-    assert not (tmp_path / 'online' / 'agents_de.json').exists()
+    assert not (tmp_path / 'forecast' / 'online' / 'agents_de.json').exists()
 
 
 @pytest.mark.parametrize('slow_phase', ['serialization', 'fsync'])
@@ -248,8 +248,8 @@ def test_engine_rechecks_cutoff_after_serializing_a_new_journal(tmp_path, monkey
     from forecast.xsmb_agents import PredictiveEngine
     frame = history(40)
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
-    pred = tmp_path / 'predict'
-    pred.mkdir()
+    pred = tmp_path / 'forecast' / 'predict'
+    pred.mkdir(parents=True)
     target = clock(frame).date().isoformat()
     for mode in ('de', 'loto'):
         pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
@@ -275,8 +275,8 @@ def test_engine_rechecks_cutoff_after_serializing_a_new_journal(tmp_path, monkey
     monkeypatch.setattr(atomic_io.os, 'fsync', delayed_fsync)
     with pytest.raises(ValueError, match='cutoff|18:00|quá giờ'):
         PredictiveEngine().run(tmp_path)
-    assert not (tmp_path / 'online' / 'agents_de.json').exists()
-    assert list((tmp_path / 'online').glob('.agents_de.json.*')) == []
+    assert not (tmp_path / 'forecast' / 'online' / 'agents_de.json').exists()
+    assert list((tmp_path / 'forecast' / 'online').glob('.agents_de.json.*')) == []
 
 
 @pytest.mark.parametrize('mode', ['de', 'loto'])
@@ -411,8 +411,8 @@ def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkey
 
 def _engine_inputs(tmp_path, frame):
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
-    pred = tmp_path / 'predict'
-    pred.mkdir(exist_ok=True)
+    pred = tmp_path / 'forecast' / 'predict'
+    pred.mkdir(parents=True, exist_ok=True)
     target = clock(frame).date().isoformat()
     for mode in ('de', 'loto'):
         pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
@@ -445,7 +445,7 @@ def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty
     from forecast.xsmb_agents import PredictiveEngine
     from forecast.xsmb_agents.algorithms import AGENT_POLICY
     previous, frame = history(40), history(41)
-    online_dir = tmp_path / 'online'
+    online_dir = tmp_path / 'forecast' / 'online'
     for mode in ('de', 'loto'):
         _write_ledger_of_family(online_dir / f'agents_{mode}.json', mode, 'xsmb_three_agents_v1', previous)
     before = {mode: (online_dir / f'agents_{mode}.json').read_bytes() for mode in ('de', 'loto')}
@@ -467,7 +467,7 @@ def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
     """Họ lạ (bản triển khai mới hơn) hay bản cất đã có: dừng TRƯỚC khi đổi tên, chốt hay ghi sổ nào."""
     from forecast.xsmb_agents import PredictiveEngine
     previous, frame = history(40), history(41)
-    online_dir = tmp_path / 'online'
+    online_dir = tmp_path / 'forecast' / 'online'
     _write_ledger_of_family(online_dir / 'agents_de.json', 'de', 'xsmb_three_agents_v1', previous)
     family = 'xsmb_three_agents_v99' if case == 'unregistered_family' else 'xsmb_three_agents_v1'
     _write_ledger_of_family(online_dir / 'agents_loto.json', 'loto', family, previous)
@@ -478,7 +478,7 @@ def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
     with pytest.raises(ValueError, match='không được đăng ký|bản cất'):
         PredictiveEngine().run(tmp_path, now=clock(frame))
     assert {path.name: path.read_bytes() for path in online_dir.iterdir()} == before
-    assert not (tmp_path / 'agents' / 'report.json').exists()
+    assert not (tmp_path / 'forecast' / 'agents' / 'report.json').exists()
 
 
 def test_a_ledger_of_the_running_family_must_hold_only_running_definition_records(tmp_path):

@@ -15,8 +15,8 @@ TARGET = "2026-10-17"
 
 
 def _fixture(root: Path, *, target: str = TARGET) -> dict[str, np.ndarray]:
-    pred = root / "predict"
-    pred.mkdir()
+    pred = root / "forecast" / "predict"
+    pred.mkdir(parents=True)
     de = np.full(100, 0.008)
     de[[7, 3, 24, 8, 92]] = [0.08, 0.06, 0.04, 0.03, 0.03]
     # Sai số nhỏ hợp lệ vẫn phải được giữ, không chuẩn hoá lại khi hiển thị.
@@ -55,7 +55,7 @@ def test_loto_keeps_at_most_three_numbers_per_tail_without_changing_probabilitie
     probs = np.full(100, 0.2)
     probs[[4, 14, 24, 34, 44, 0, 1]] = [0.4, 0.39, 0.38, 0.37, 0.36, 0.35, 0.34]
     pd.DataFrame({"number": range(100), "prob": probs}).to_csv(
-        tmp_path / "predict" / f"predict_next_loto_all_{TARGET}.csv", index=False
+        tmp_path / "forecast" / "predict" / f"predict_next_loto_all_{TARGET}.csv", index=False
     )
     result = _load(tmp_path)
     assert result is not None
@@ -84,7 +84,7 @@ def test_next_draw_skips_non_draw_dates_from_the_supplied_data_directory(tmp_pat
 def test_rejects_stale_or_mismatched_metadata(tmp_path: Path, modes, key, value) -> None:
     _fixture(tmp_path)
     for mode in modes:
-        path = tmp_path / "predict" / f"picks_{mode}.json"
+        path = tmp_path / "forecast" / "predict" / f"picks_{mode}.json"
         metadata = json.loads(path.read_text(encoding="utf-8"))
         metadata[key] = value
         path.write_text(json.dumps(metadata), encoding="utf-8")
@@ -99,7 +99,7 @@ def test_rejects_stale_or_mismatched_metadata(tmp_path: Path, modes, key, value)
 def test_rejects_invalid_probability_artifacts(tmp_path: Path, defect: str) -> None:
     _fixture(tmp_path)
     mode = "loto" if defect == "loto_sum" else "de"
-    path = tmp_path / "predict" / f"predict_next_{mode}_all_{TARGET}.csv"
+    path = tmp_path / "forecast" / "predict" / f"predict_next_{mode}_all_{TARGET}.csv"
     frame = pd.read_csv(path)
     if defect == "missing_row":
         frame = frame.iloc[:-1]
@@ -131,7 +131,7 @@ def test_rejects_invalid_probability_artifacts(tmp_path: Path, defect: str) -> N
 ])
 def test_missing_or_malformed_files_leave_the_card_pending(tmp_path: Path, file: str, contents) -> None:
     _fixture(tmp_path)
-    path = tmp_path / "predict" / file
+    path = tmp_path / "forecast" / "predict" / file
     if contents is None:
         path.unlink()
     else:

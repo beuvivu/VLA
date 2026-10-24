@@ -62,10 +62,10 @@ def _store(root: Path, days: int, *, seed: int, rig: bool = False,
         # Đúng lúc pipeline dựng trang: tệp top-10 cho kỳ tới đã có, còn dự
         # đoán trang chủ vẫn trỏ vào kỳ VỪA quay (workflow dự đoán chạy sau).
         nxt = (start + timedelta(days=days)).isoformat()
-        (root / "predict").mkdir(exist_ok=True)
+        (root / "forecast" / "predict").mkdir(exist_ok=True, parents=True)
         for mode, nums in (("loto", TOP10_LOTO), ("de", TOP10_DE)):
             pd.DataFrame({"number": nums, "prob": 0.1}).to_csv(
-                root / "predict" / f"predict_next_{mode}_top10_{nxt}.csv", index=False)
+                root / "forecast" / "predict" / f"predict_next_{mode}_top10_{nxt}.csv", index=False)
         (root / "predictions_today.json").write_text(json.dumps({
             "date": dates[-1], "top_lo_to": [{"number": "01"}],
             "top_dac_biet": {"top_numbers": ["02"]},
@@ -327,11 +327,11 @@ def test_special_feedback_is_scored_as_one_outcome_in_a_hundred(tmp_path: Path) 
     thay vì một kết quả trong 100 lớp như trang Chất lượng mô hình (log 100)."""
     _store(tmp_path, 60, seed=2)
     frame = pd.read_csv(tmp_path / "xsmb-2-digits.csv", dtype={"date": str})
-    (tmp_path / "predict").mkdir(exist_ok=True)
+    (tmp_path / "forecast" / "predict").mkdir(exist_ok=True, parents=True)
     for day in frame["date"].iloc[-25:]:
         for mode, prob in (("de", 0.01), ("loto", cm.BASE)):
             pd.DataFrame({"number": range(100), "prob": prob}).to_csv(
-                tmp_path / "predict" / f"predict_next_{mode}_all_{day}.csv", index=False)
+                tmp_path / "forecast" / "predict" / f"predict_next_{mode}_all_{day}.csv", index=False)
     de = cm.published_feedback(tmp_path)["modes"]["de"]
     assert de["logloss_base"] == pytest.approx(np.log(100), rel=1e-6)
     assert de["brier_base"] == pytest.approx(0.99)

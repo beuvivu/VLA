@@ -104,7 +104,7 @@ def _write_cap_loto_50_stats(*, data_dir: Path, out_dir: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out-dir", type=str, default="data/pairs")
+    ap.add_argument("--out-dir", type=str, default="data/stats/pairs")
     ap.add_argument("--data-dir", type=str, default="data")
     ap.add_argument("--top", type=int, default=300)
     args = ap.parse_args()

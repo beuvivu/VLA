@@ -121,7 +121,7 @@ dùng được để dự báo. Ghi lại để theo dõi, không đưa vào ma 
 
 **B6. Vòng phản hồi (so dự báo đã công bố với kết quả thật).** Đã có trong production
 từ PR #93: `src/evaluation/skill_monitor.py` chấm đúng vector xác suất công bố TRƯỚC kỳ quay, ghi
-sổ cái `data/model_quality/published_skill.csv`, và làm đỏ pipeline khi kỹ năng rời
+sổ cái `data/evaluation/model_quality/published_skill.csv`, và làm đỏ pipeline khi kỹ năng rời
 vùng 0 theo hướng nào cũng vậy. Số đo 31-08 → 27-09-2026 (28 kỳ đã công bố):
 
 | | LOTO mô hình | LOTO nền | Đặc Biệt mô hình | Đặc Biệt nền |

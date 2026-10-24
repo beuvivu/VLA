@@ -94,7 +94,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Báo động khi mô hình sản xuất tệ hơn đường cơ sở quá ngưỡng."
     )
-    parser.add_argument("--history", default="data/prob_eval/ensemble_history.csv")
+    parser.add_argument("--history", default="data/evaluation/prob_eval/ensemble_history.csv")
     parser.add_argument("--window", type=int, default=DEFAULT_WINDOW)
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument(

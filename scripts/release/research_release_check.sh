@@ -87,12 +87,12 @@ for mode in ("loto", "de"):
     assert len(diversity) == 20 * 19 // 2
 
 for path in [
-    "data/descriptive_ext/head_table_30d.csv",
-    "data/descriptive_ext/gap_touch_loto.csv",
-    "data/descriptive_ext/gap_digit_sum_de.csv",
-    "data/descriptive_ext/number_recency_loto.csv",
-    "data/descriptive_ext/number_recency_de.csv",
-    "data/descriptive_ext/pair_recency_loto.csv",
+    "data/stats/descriptive_ext/head_table_30d.csv",
+    "data/stats/descriptive_ext/gap_touch_loto.csv",
+    "data/stats/descriptive_ext/gap_digit_sum_de.csv",
+    "data/stats/descriptive_ext/number_recency_loto.csv",
+    "data/stats/descriptive_ext/number_recency_de.csv",
+    "data/stats/descriptive_ext/pair_recency_loto.csv",
 ]:
     p = Path(path)
     assert p.is_file() and p.stat().st_size > 0, path
@@ -139,7 +139,7 @@ coverage = pd.read_csv(advanced / "rolling_coverage.csv")
 assert coverage["window_days"].astype(int).tolist() == [3, 7, 14, 30]
 assert coverage["observed_mean_distinct"].between(0, 100).all()
 
-conditional_dir = Path("data/conditional")
+conditional_dir = Path("data/stats/conditional")
 conditional_manifest = json.loads((conditional_dir / "manifest.json").read_text(encoding="utf-8"))
 assert conditional_manifest["schema_version"] == 2
 assert conditional_manifest["research_only"] is True

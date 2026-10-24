@@ -55,7 +55,7 @@ def test_missing_exact_artifact_never_reconstructs_from_components(tmp_path: Pat
     result = evaluate_latest_emitted(
         mode="loto",
         history_path=history_path,
-        predict_dir=tmp_path / "predict",
+        predict_dir=tmp_path / "forecast" / "predict",
     )
     assert result is None
 
@@ -63,8 +63,8 @@ def test_missing_exact_artifact_never_reconstructs_from_components(tmp_path: Pat
 def test_exact_emitted_artifact_is_evaluated(tmp_path: Path) -> None:
     day = "2026-08-31"
     history_path = tmp_path / "pred_de.csv"
-    predict_dir = tmp_path / "predict"
-    predict_dir.mkdir()
+    predict_dir = tmp_path / "forecast" / "predict"
+    predict_dir.mkdir(parents=True)
     _history(day, mode="de").to_csv(history_path, index=False)
     _prediction(day, mode="de").to_csv(
         predict_dir / f"predict_next_de_all_{day}.csv", index=False
@@ -85,8 +85,8 @@ def test_exact_emitted_artifact_is_evaluated(tmp_path: Path) -> None:
 def test_stale_internal_target_date_invalidates_artifact(tmp_path: Path) -> None:
     day = "2026-08-31"
     history_path = tmp_path / "pred_loto.csv"
-    predict_dir = tmp_path / "predict"
-    predict_dir.mkdir()
+    predict_dir = tmp_path / "forecast" / "predict"
+    predict_dir.mkdir(parents=True)
     _history(day, mode="loto").to_csv(history_path, index=False)
     pred = _prediction("2026-08-30", mode="loto")
     pred.to_csv(predict_dir / f"predict_next_loto_all_{day}.csv", index=False)
@@ -100,10 +100,10 @@ def test_stale_internal_target_date_invalidates_artifact(tmp_path: Path) -> None
 
 
 def _emit(tmp_path: Path, day: str, mode: str) -> None:
-    history_dir = tmp_path / "history"
-    predict_dir = tmp_path / "predict"
-    history_dir.mkdir(exist_ok=True)
-    predict_dir.mkdir(exist_ok=True)
+    history_dir = tmp_path / "evaluation" / "history"
+    predict_dir = tmp_path / "forecast" / "predict"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    predict_dir.mkdir(parents=True, exist_ok=True)
     _history(day, mode=mode).to_csv(history_dir / f"pred_{mode}.csv", index=False)
     _prediction(day, mode=mode).to_csv(predict_dir / f"predict_next_{mode}_all_{day}.csv", index=False)
 
@@ -131,8 +131,8 @@ def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> 
         _emit(tmp_path, "2026-09-10", mode)
         monkeypatch.setattr(
             sys, "argv",
-            ["prob_eval_history.py", "--mode", mode, "--history-dir", str(tmp_path / "history"),
-             "--predict-dir", str(tmp_path / "predict"), "--out", str(out)],
+            ["prob_eval_history.py", "--mode", mode, "--history-dir", str(tmp_path / "evaluation" / "history"),
+             "--predict-dir", str(tmp_path / "forecast" / "predict"), "--out", str(out)],
         )
         prob_eval_history.main()
 
@@ -162,7 +162,7 @@ def test_the_repository_ledger_labels_every_brier_with_a_consistent_unit() -> No
     """
     from evaluation.backfill_baseline_skill import brier_is_comparable
 
-    path = Path(__file__).resolve().parents[2] / "data" / "prob_eval" / "ensemble_history.csv"
+    path = Path(__file__).resolve().parents[2] / "data" / "evaluation" / "prob_eval" / "ensemble_history.csv"
     frame = pd.read_csv(path, dtype={"target_date": str})
     assert len(frame) > 0
     allowed = {("loto", "mean_100_bernoulli"), ("de", "mean_100_classes"), ("de", "sum_100_classes")}

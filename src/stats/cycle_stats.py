@@ -43,7 +43,7 @@ def _gap_series_calendar(
     return int(current_gap), int(max(observed)), mean_gap, median_gap
 
 
-def build_cycle_tables(out_dir: str = "data/cycle") -> None:
+def build_cycle_tables(out_dir: str = "data/stats/cycle") -> None:
     lot = Lottery()
     lot.load()
     df2 = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)

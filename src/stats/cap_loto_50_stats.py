@@ -253,7 +253,7 @@ def main() -> None:
     )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
     ap.add_argument("--data-dir", default="data")
-    ap.add_argument("--out-dir", default="data/pairs")
+    ap.add_argument("--out-dir", default="data/stats/pairs")
     args = ap.parse_args()
 
     data_dir = Path(args.data_dir)

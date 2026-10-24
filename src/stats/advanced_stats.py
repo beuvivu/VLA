@@ -11,7 +11,7 @@ Important: The outputs are *statistics only* derived from historical results.
 No betting/prediction logic is included.
 
 Outputs are written under:
-  - data/advanced/*.csv + *.json
+  - data/stats/advanced/*.csv + *.json
   - images/advanced_*.jpg
 """
 
@@ -40,7 +40,7 @@ class AdvancedOutputs:
 
     @classmethod
     def from_paths(cls, paths: RepoPaths) -> "AdvancedOutputs":
-        return cls(data_dir=paths.data_dir / "advanced", images_dir=paths.images_dir)
+        return cls(data_dir=paths.data_dir / "stats" / "advanced", images_dir=paths.images_dir)
 
 
 def _ensure_dir(p: Path) -> None:

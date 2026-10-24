@@ -283,7 +283,7 @@ def _current_period_matrix(
     repo_root: Path, mode: str, period: str, value_col: str = "freq"
 ) -> dict[str, float]:
     df = _read_csv(
-        repo_root / "data" / "advanced" / f"period_snapshot_{mode}_current.csv", dtype=str
+        repo_root / "data" / "stats" / "advanced" / f"period_snapshot_{mode}_current.csv", dtype=str
     )
     if not df.empty and "period_kind" in df.columns:
         df = df[df["period_kind"] == period]
@@ -291,7 +291,7 @@ def _current_period_matrix(
 
 
 def _rhythm_matrix(repo_root: Path, mode: str) -> dict[str, float]:
-    df = _read_csv(repo_root / "data" / "advanced" / f"{mode}_rhythm.csv", dtype=str)
+    df = _read_csv(repo_root / "data" / "stats" / "advanced" / f"{mode}_rhythm.csv", dtype=str)
     return _matrix_from_df(df, "current_gap")
 
 
@@ -302,7 +302,7 @@ def _ai_matrix(repo_root: Path, mode: str) -> dict[str, float]:
     top = _read_csv(repo_root / "data" / "ai_ml" / f"cau_keo_{mode}_top20.csv", dtype=str)
     if not top.empty and "cau_score" in top.columns:
         return _matrix_from_df(top, "cau_score")
-    fallback = _read_csv(repo_root / "data" / "advanced" / f"ai_ml_signal_{mode}.csv", dtype=str)
+    fallback = _read_csv(repo_root / "data" / "stats" / "advanced" / f"ai_ml_signal_{mode}.csv", dtype=str)
     return _matrix_from_df(fallback, "prob")
 
 
@@ -577,7 +577,7 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
     """Bảng tần suất cặp LOTO đồng xuất hiện, kèm mốc so sánh ngẫu nhiên.
 
     ``src/stats/pair_stats.py`` đã tính bảng này hàng ngày vào
-    ``data/pairs/top_unordered_pairs_top300.csv`` nhưng chưa trang nào hiển
+    ``data/stats/pairs/top_unordered_pairs_top300.csv`` nhưng chưa trang nào hiển
     thị nó.
 
     Bảng bắt buộc kèm hai con số, nếu không nó gây hiểu sai: **kỳ vọng** của
@@ -596,7 +596,7 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
     Returns:
         Chuỗi HTML của thẻ; chuỗi rỗng nếu chưa có dữ liệu.
     """
-    df = _read_csv(repo_root / "data" / "pairs" / "top_unordered_pairs_top300.csv")
+    df = _read_csv(repo_root / "data" / "stats" / "pairs" / "top_unordered_pairs_top300.csv")
     if df.empty or "count" not in df.columns:
         return ""
 
@@ -750,7 +750,7 @@ def _render_table(
 
 def _render_group_bars(repo_root: Path, period: str) -> str:
     """Hiện đủ 0–9 từ tần suất đã chốt, kèm mẫu số và phạm vi quan sát."""
-    df = _read_csv(repo_root / "data" / "advanced" / "head_tail_total_loto_current.csv", dtype=str)
+    df = _read_csv(repo_root / "data" / "stats" / "advanced" / "head_tail_total_loto_current.csv", dtype=str)
     if df.empty or not {"period_kind", "period_key", "group_type", "group_value", "freq"} <= set(df.columns):
         return "<div class='empty'>Chưa có dữ liệu đầu/đuôi/tổng.</div>"
     df = df[df["period_kind"] == period]
@@ -2183,7 +2183,7 @@ def _render_html(
         generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     loto_snapshot = _read_csv(
-        repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
+        repo_root / "data" / "stats" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
     )
 
     # Cùng phép xếp với bản chụp theo ngày mà trang trực tiếp đọc
@@ -2195,26 +2195,26 @@ def _render_html(
         _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str)
     )
     loto_rhythm = _sort_top(
-        _read_csv(repo_root / "data" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12
+        _read_csv(repo_root / "data" / "stats" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12
     )
     de_rhythm = _sort_top(
-        _read_csv(repo_root / "data" / "advanced" / "de_rhythm.csv", dtype=str), "current_gap", 12
+        _read_csv(repo_root / "data" / "stats" / "advanced" / "de_rhythm.csv", dtype=str), "current_gap", 12
     )
     reverse_pairs = _read_csv(
-        repo_root / "data" / "advanced" / "reverse_pair_frequency_current.csv", dtype=str
+        repo_root / "data" / "stats" / "advanced" / "reverse_pair_frequency_current.csv", dtype=str
     )
     if not reverse_pairs.empty and "period_kind" in reverse_pairs.columns:
         reverse_pairs = reverse_pairs[reverse_pairs["period_kind"] == "month"]
     reverse_pairs = _sort_top(reverse_pairs, "freq", 12)
 
     conditional_special = _read_csv(
-        repo_root / "data" / "advanced" / "conditional_loto_after_special_top500.csv", dtype=str
+        repo_root / "data" / "stats" / "advanced" / "conditional_loto_after_special_top500.csv", dtype=str
     )
     conditional_loto = _read_csv(
-        repo_root / "data" / "advanced" / "conditional_loto_after_loto_top500.csv", dtype=str
+        repo_root / "data" / "stats" / "advanced" / "conditional_loto_after_loto_top500.csv", dtype=str
     )
     first_prize = _sort_top(
-        _read_csv(repo_root / "data" / "advanced" / "first_prize_overdue.csv", dtype=str),
+        _read_csv(repo_root / "data" / "stats" / "advanced" / "first_prize_overdue.csv", dtype=str),
         "current_gap",
         10,
     )

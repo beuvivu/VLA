@@ -70,12 +70,12 @@ def _write_history(tmp: Path, mode: str, probability: float) -> tuple[Path, Path
         for n in range(20):
             y[n] = 1
 
-    history_dir = tmp / "history"
+    history_dir = tmp / "evaluation" / "history"
     history_dir.mkdir(parents=True, exist_ok=True)
     history = history_dir / f"pred_{mode}.csv"
     pd.DataFrame({"target_date": day, "number": numbers, "y": y}).to_csv(history, index=False)
 
-    predict_dir = tmp / "predict"
+    predict_dir = tmp / "forecast" / "predict"
     predict_dir.mkdir(parents=True, exist_ok=True)
     probabilities = np.full(100, probability, dtype=float)
     if mode == "de":
@@ -247,11 +247,11 @@ def _build_quality_page(docs_dir: Path) -> str:
     """
     # Trang đã tách khỏi build_dashboard: chẩn đoán chạy trước, dựng trang sau.
     # Chẩn đoán phải ghi vào thư mục dữ liệu TẠM, nếu không nó đè
-    # data/model_quality/report.json của kho bằng số liệu giả của phép kiểm.
+    # data/evaluation/model_quality/report.json của kho bằng số liệu giả của phép kiểm.
     data_dir = docs_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
-    for relative in ("prob_eval/ensemble_history.csv", "history/pred_loto.csv",
-                     "history/pred_de.csv", "ensemble/weights_loto.json",
+    for relative in ("evaluation/prob_eval/ensemble_history.csv", "evaluation/history/pred_loto.csv",
+                     "evaluation/history/pred_de.csv", "ensemble/weights_loto.json",
                      "ensemble/weights_de.json"):
         source = ROOT / "data" / relative
         target = data_dir / relative
@@ -275,7 +275,7 @@ def test_quality_page_shows_skill_only_when_the_data_supports_it(tmp_path: Path)
     Kiểm cả hai chiều trên cùng một tệp lịch sử thật, nên kết quả không phụ
     thuộc việc kho đã sinh lại đối chứng cho lịch sử cũ hay chưa.
     """
-    history = ROOT / "data/prob_eval/ensemble_history.csv"
+    history = ROOT / "data/evaluation/prob_eval/ensemble_history.csv"
     if not history.exists():
         pytest.skip("kho chưa có lịch sử đánh giá")
 
@@ -477,7 +477,7 @@ def test_repository_history_carries_no_fabricated_skill() -> None:
     Một mô hình xổ số hơn đường cơ sở vài chục phần trăm là dấu hiệu lỗi đo, không
     phải thành tích. Ngưỡng +50% rộng hơn mọi dao động thật nhiều lần.
     """
-    history = ROOT / "data/prob_eval/ensemble_history.csv"
+    history = ROOT / "data/evaluation/prob_eval/ensemble_history.csv"
     if not history.exists():
         pytest.skip("kho chưa có lịch sử đánh giá")
     frame = pd.read_csv(history)
@@ -491,7 +491,7 @@ def test_repository_history_carries_no_fabricated_skill() -> None:
 
 def test_backfilled_history_activates_the_production_gate() -> None:
     """Sau khi sinh lại, cổng phải chấm được thật chứ không còn bỏ qua."""
-    history = ROOT / "data/prob_eval/ensemble_history.csv"
+    history = ROOT / "data/evaluation/prob_eval/ensemble_history.csv"
     if not history.exists():
         pytest.skip("kho chưa có lịch sử đánh giá")
     frame = pd.read_csv(history)

@@ -339,7 +339,7 @@ Regression guard: `test_reverse_pair_frequency_uses_kep_bong_instead_of_self_pai
 50 cặp/kỳ không có self-pair.
 
 Affected modules: `statistical_matrices.py`, các builder dashboard và artifact
-`data/advanced/reverse_pair_frequency_*`.
+`data/stats/advanced/reverse_pair_frequency_*`.
 
 Confidence: high
 

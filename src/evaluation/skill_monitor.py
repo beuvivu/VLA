@@ -3,12 +3,12 @@
 Vì sao chấm artifact chứ không dựng lại
 =======================================
 
-``model_quality`` từng dựng lại tổ hợp từ ``data/history/pred_<mode>.csv``.
+``model_quality`` từng dựng lại tổ hợp từ ``data/evaluation/history/pred_<mode>.csv``.
 Bản dựng ấy bỏ qua bước hiệu chỉnh và tầng xếp chồng, tức là chấm một mô hình
 KHÁC mô hình người xem nhận: nó cho Đặc Biệt tới 25,9% và kỹ năng −2,0%, trong
 khi xác suất thật sự công bố cao nhất 1,28% và kỹ năng −0,03%. Mỗi ngày
 pipeline ghi đúng vector đã công bố vào
-``data/predict/predict_next_<mode>_all_<ngày>.csv`` TRƯỚC kỳ quay, nên chấm
+``data/forecast/predict/predict_next_<mode>_all_<ngày>.csv`` TRƯỚC kỳ quay, nên chấm
 chính tệp ấy là phép đo không thể rò rỉ và không thể lệch khỏi production.
 
 Vì sao báo động cả khi "tốt hơn"
@@ -73,14 +73,14 @@ def published_evaluation(
     # Thiếu kết quả quay hoặc thư mục artifact thì "chưa có gì để chấm", không
     # phải lỗi: trang Chất lượng lùi về bản dựng lại, bộ theo dõi báo chưa đủ.
     # Ném ngoại lệ ở đây từng làm sập cả bước chẩn đoán.
-    if not (data_dir / "xsmb-2-digits.csv").exists() or not (data_dir / "predict").is_dir():
+    if not (data_dir / "xsmb-2-digits.csv").exists() or not (data_dir / "forecast" / "predict").is_dir():
         return empty
     outcomes = _outcomes(data_dir)
     prizes = [column for column in outcomes.columns if column != "date"]
     days: list[str] = []
     probs: list[np.ndarray] = []
     labels: list[np.ndarray] = []
-    for path in sorted((data_dir / "predict").glob(f"predict_next_{mode}_all_*.csv")):
+    for path in sorted((data_dir / "forecast" / "predict").glob(f"predict_next_{mode}_all_*.csv")):
         found = _ARTIFACT.search(path.name)
         if not found or found.group(1) != mode:
             continue
@@ -122,9 +122,9 @@ def daily_skill(mode: str, probs: np.ndarray, labels: np.ndarray) -> np.ndarray:
 
 
 #: Sổ cái kỹ năng đã chấm, nằm NGOÀI thư mục bị dọn. ``cleanup_artifacts`` xoá
-#: tệp trong ``data/predict`` quá 45 ngày, nên chỉ đọc artifact thì cửa sổ 60 kỳ
+#: tệp trong ``data/forecast/predict`` quá 45 ngày, nên chỉ đọc artifact thì cửa sổ 60 kỳ
 #: không bao giờ đầy — review của PR #93 bắt được điều đó. Mỗi dòng ~40 byte.
-LEDGER = Path("model_quality") / "published_skill.csv"
+LEDGER = Path("evaluation") / "model_quality" / "published_skill.csv"
 
 
 def _read_ledger(data_dir: Path) -> pd.DataFrame:

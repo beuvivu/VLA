@@ -31,7 +31,7 @@ Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.
 
 ## 1. Chẩn đoán nguyên nhân
 
-### 1.1 Lịch sử kỹ năng thật (sổ `data/prob_eval/ensemble_history.csv`)
+### 1.1 Lịch sử kỹ năng thật (sổ `data/evaluation/prob_eval/ensemble_history.csv`)
 
 Kỹ năng = 1 − logloss mô hình / logloss dự báo hằng số; 0 là ngang hằng số.
 
@@ -58,11 +58,11 @@ Khi so với trước đây, mô hình hiện tại TỐT hơn hẳn, không t�
 
 `src/ensemble/ensemble_utils.py:308` (`categorical_brier`, commit 1f4f537c, 05-09-2026) đổi Brier đa lớp từ
 TRUNG BÌNH sang TỔNG trên 100 lớp. Đây là định nghĩa chuẩn và bản sửa ấy đúng. Nhưng sổ ghi
-`data/prob_eval/ensemble_history.csv` giữ nguyên các dòng cũ, nên cột `brier` của Đặc Biệt lẫn hai
+`data/evaluation/prob_eval/ensemble_history.csv` giữ nguyên các dòng cũ, nên cột `brier` của Đặc Biệt lẫn hai
 thang: 0,0099 đến 03-09 và 0,99 từ 04-09. Ai đọc thẳng tệp ấy sẽ thấy sai số "tăng gấp 100".
 
 Trang Chất lượng mô hình đã quy đổi khi hiển thị (`brier_rows_rescaled` = 217 trong
-`data/model_quality/report.json`). Còn logloss của cùng các kỳ ấy không đổi: 4,601–4,656, quanh mức
+`data/evaluation/model_quality/report.json`). Còn logloss của cùng các kỳ ấy không đổi: 4,601–4,656, quanh mức
 hằng số 4,605. Kiểm toán này không sửa sổ: nó là bằng chứng ghi theo thời gian, và luật của kho là
 không viết lại lịch sử.
 
@@ -71,7 +71,7 @@ không viết lại lịch sử.
 | Giả thuyết | Kết luận | Bằng chứng |
 |---|---|---|
 | Quá khớp trên nhiễu | Có, nhưng nhỏ và đã bị chặn | ML production (`src/ml/ml_train.py`) dùng cây nông (độ sâu 2–3), dừng sớm, chọn cấu hình trên khối riêng, rồi co về tỉ lệ nền. Mức co từng có SÀN: `model_trust` không xuống dưới 0,35, nên ngay cả khi không có kỹ năng, 35% xác suất vẫn đến từ mô hình thô (đã bỏ ngày 03-10-2026, mục 5.2). Đo walk-forward: ML production LOTO kém hằng số z = −1,30 (không có ý nghĩa thống kê). Đặc Biệt: z = +0,37. Tầng xếp chồng từng làm nhọn xác suất (a = 4,89 ngày 25-09) và đã bị chặn bởi cổng phải thắng cả dự báo hằng số (`meta_predictor.quality_gate`). |
-| Xác suất chưa hiệu chỉnh | Không | Tổ hợp production: độ lệch hiệu chỉnh 0,00030 ≈ độ phân giải 0,00028. Mười nhóm dự báo 23,2–24,5% đều nằm trong khoảng tin cậy của tần suất thật (`data/model_quality/report.json`). Mô hình mới: dự báo 23,64–23,96%, thực tế 23,0–24,4% (bảng hiệu chỉnh trong `benchmark.json`). |
+| Xác suất chưa hiệu chỉnh | Không | Tổ hợp production: độ lệch hiệu chỉnh 0,00030 ≈ độ phân giải 0,00028. Mười nhóm dự báo 23,2–24,5% đều nằm trong khoảng tin cậy của tần suất thật (`data/evaluation/model_quality/report.json`). Mô hình mới: dự báo 23,64–23,96%, thực tế 23,0–24,4% (bảng hiệu chỉnh trong `benchmark.json`). |
 | Cửa sổ tĩnh, không suy giảm | Không phải nguyên nhân | ML production đã đánh trọng số giảm dần (bán rã 365 ngày khi học, 120 ngày khi hiệu chỉnh; `ml_train.py:191-192`) và có EWM 14/45 ngày. Tiên nghiệm Bayes mới tự CHỌN chu kỳ bán rã bằng Bayes thực nghiệm. Ở mọi lần học lại, nó chọn tiên nghiệm cực mạnh (α = 3 000, tức gần hằng số), đúng như dự đoán khi không có trôi (mục 2). |
 | Rò rỉ dữ liệu | Không tìm thấy | Hàng neo t chỉ đọc kỳ ≤ t (`ml_features.py:235`). Bỏ các bước qua kỳ nghỉ (`ml_features.py:357`). Bốn khối thời gian liên tiếp (`ml_train.py:43`). Rò rỉ thật duy nhất từng có (so trọng số học với chính vector đương nhiệm) đã sửa trong `learn_ensemble_weights.py`. |
 

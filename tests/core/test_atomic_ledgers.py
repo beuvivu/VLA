@@ -105,7 +105,7 @@ def test_atomic_write_checks_guard_after_fsync_and_before_replacing(tmp_path, mo
 
 
 def test_fun_draw_ledger_survives_a_crash_mid_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    (tmp_path / "fun_draw").mkdir()
+    (tmp_path / "evaluation" / "fun_draw").mkdir(parents=True)
     shutil.copy(DATA / fun_draw_ledger.LEDGER, tmp_path / fun_draw_ledger.LEDGER)
     before = (tmp_path / fun_draw_ledger.LEDGER).read_bytes()
     frame = fun_draw_ledger.read_ledger(tmp_path)

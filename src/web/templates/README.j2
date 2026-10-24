@@ -150,16 +150,16 @@ Bộ gác kiểm tra ngày dữ liệu chuẩn trước khi chạy; nếu kỳ h
 Dữ liệu dẫn xuất:
 
 - `data/source_audit.json` — nguồn gốc/đồng thuận gần đây.
-- `data/advanced/` — thống kê nâng cao.
-- `data/significance/` — kiểm định/FDR/chẩn đoán.
-- `data/statistical_signal/` — thành phần Bayes thực nghiệm.
-- `data/path_ui/` — đầu ra đường cầu đang chạy/ổn định.
+- `data/stats/advanced/` — thống kê nâng cao.
+- `data/stats/significance/` — kiểm định/FDR/chẩn đoán.
+- `data/stats/statistical_signal/` — thành phần Bayes thực nghiệm.
+- `data/soi_cau/path_ui/` — đầu ra đường cầu đang chạy/ổn định.
 - `data/ai_ml/` — cầu-kèo ML/evidence.
 - `data/ml/` — xác suất ML nền đã hiệu chỉnh.
 - `data/ensemble/` — trọng số/hiệu chỉnh mô hình tổ hợp đã học.
-- `data/predict/` — xác suất và danh sách chọn cuối của mô hình tổ hợp.
-- `data/history/` — lịch sử thành phần cuốn chiếu gọn.
-- `data/prob_eval/` — chỉ số chất lượng mô hình cuốn chiếu.
+- `data/forecast/predict/` — xác suất và danh sách chọn cuối của mô hình tổ hợp.
+- `data/evaluation/history/` — lịch sử thành phần cuốn chiếu gọn.
+- `data/evaluation/prob_eval/` — chỉ số chất lượng mô hình cuốn chiếu.
 - `models/` — artifact mô hình đã huấn luyện + báo cáo huấn luyện.
 
 ## Thống kê 1 năm hiện tại
@@ -194,7 +194,12 @@ src/                 mã nguồn: nguồn dữ liệu, thống kê, AI/ML, trìn
 src/web/templates/       mẫu HTML/CSS/JS và mẫu README
 src/web/assets/          tài nguyên trang (JS, phông, biểu tượng)
 tests/               kiểm thử Python; tests/frontend/ kiểm thử Node
-data/                dữ liệu chuẩn và đầu ra phân tích
+data/                sổ chuẩn (xsmb*, regions/, excel/) ở gốc; đầu ra phân tích theo gói sinh ra chúng
+data/stats/          thống kê mô tả, kiểm định, Markov, chu kỳ, cặp
+data/soi_cau/        cầu vị trí, bảy kiểu cầu, cầu theo đường
+data/forecast/       dự báo đã công bố, học trực tuyến, kho tri thức, Lô VIP, ba tác tử
+data/evaluation/     sổ dự báo, chất lượng mô hình, độ tin cậy, sổ mô phỏng, sổ phỏng đoán
+data/research/       phép đo nghiên cứu và giả thuyết tiến cứu đã đăng ký
 models/              mô hình đã huấn luyện
 images/              biểu đồ đã tạo
 docs/                CHỈ trang web tĩnh GitHub Pages

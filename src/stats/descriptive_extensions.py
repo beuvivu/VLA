@@ -271,7 +271,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description="Extended descriptive/recency statistics."
     )
-    ap.add_argument("--out-dir", default="data/descriptive_ext")
+    ap.add_argument("--out-dir", default="data/stats/descriptive_ext")
     ap.add_argument("--head-windows", default="30,90,365")
     ap.add_argument("--pair-top", type=int, default=300)
     args = ap.parse_args()

@@ -985,7 +985,7 @@ def main() -> None:
         )
     )
     ap.add_argument("--mode", choices=["loto", "de"], required=True)
-    ap.add_argument("--history-dir", default="data/history")
+    ap.add_argument("--history-dir", default="data/evaluation/history")
     ap.add_argument("--models-dir", default="models")
     ap.add_argument("--report-dir", default="data/ensemble")
     ap.add_argument("--window-days", type=int, default=240)

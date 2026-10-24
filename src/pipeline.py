@@ -377,7 +377,7 @@ def main() -> None:
     # Log tầm quan trọng đặc trưng chạy SAU khi trọng số và dự đoán đã cập nhật,
     # vì nó đo đóng góp của từng thành phần bằng phép bỏ-một-thành-phần trên
     # chính vector đang có hiệu lực. Module này từng không được gọi ở đâu cả:
-    # `data/feature_attribution/report.json` là ảnh chụp chạy tay một lần, nên
+    # `data/forecast/feature_attribution/report.json` là ảnh chụp chạy tay một lần, nên
     # nó mô tả một bộ trọng số đã bị thay từ lâu mà không dấu hiệu gì.
     _run(_py("src/forecast/feature_attribution.py"), allow_fail=soft_fail)
 
@@ -408,7 +408,7 @@ def main() -> None:
         _run(_py("src/pages/build_docs_ml.py"), allow_fail=soft_fail)
         _run(_py("src/pages/build_dashboard.py"), allow_fail=soft_fail)
         # Chẩn đoán trước, dựng trang sau: trang Chất lượng mô hình đọc thẳng
-        # `data/model_quality/report.json` nên đảo thứ tự sẽ xuất bản báo cáo
+        # `data/evaluation/model_quality/report.json` nên đảo thứ tự sẽ xuất bản báo cáo
         # của ngày hôm trước mà không có dấu hiệu gì.
         _run(_py("src/pages/build_model_quality.py"), allow_fail=soft_fail)
         # Confidence Score đọc dự báo vừa công bố cho kỳ tới và trạng thái của

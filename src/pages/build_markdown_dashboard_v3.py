@@ -18,7 +18,7 @@ from core.paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 DATA = ROOT / "data"
-ADV = DATA / "advanced"
+ADV = DATA / "stats" / "advanced"
 OUT = ROOT / "DASHBOARD.md"
 logger = logging.getLogger(__name__)
 
@@ -279,10 +279,10 @@ def _recent_results(df: pd.DataFrame, n: int = 10) -> str:
 
 
 def _prediction(mode: str, target: str) -> pd.DataFrame:
-    preferred = DATA / "predict" / f"predict_next_{mode}_all_{target}.csv"
+    preferred = DATA / "forecast" / "predict" / f"predict_next_{mode}_all_{target}.csv"
     if preferred.exists():
         return _read_csv(preferred)
-    files = sorted((DATA / "predict").glob(f"predict_next_{mode}_all_*.csv"))
+    files = sorted((DATA / "forecast" / "predict").glob(f"predict_next_{mode}_all_*.csv"))
     return _read_csv(files[-1]) if files else pd.DataFrame()
 
 
@@ -560,8 +560,8 @@ def _markov(df: pd.DataFrame, top_n: int=15) -> str:
 
 def _diagnostics() -> str:
     health=_read_json(DATA/"health.json")
-    dl=_read_json(DATA/"number_dynamics"/"diagnostics_loto.json")
-    dd=_read_json(DATA/"number_dynamics"/"diagnostics_de.json")
+    dl=_read_json(DATA/"stats" / "number_dynamics"/"diagnostics_loto.json")
+    dd=_read_json(DATA/"stats" / "number_dynamics"/"diagnostics_de.json")
     return _md_table(["Lớp","Giá trị","So sánh","Ý nghĩa"],[
         ["Sức khỏe dữ liệu","✅ ĐẠT" if health.get("ok") else "⚠️ CẦN KIỂM TRA",f"số dòng {health.get('row_count','—')} · thiếu {health.get('missing_count','—')}","Tính toàn vẹn dữ liệu chuẩn"],
         ["Động lực LOTO",_fmt_num(dl.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dl.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
@@ -584,9 +584,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     out_path = Path(args.output)
     health=_read_json(DATA/"health.json")
     xsmb=_read_csv(DATA/"xsmb.csv")
-    fun=_read_json(DATA/"predict"/"fun_draw_next.json")
-    picks_l=_read_json(DATA/"predict"/"picks_loto.json")
-    picks_d=_read_json(DATA/"predict"/"picks_de.json")
+    fun=_read_json(DATA/"forecast" / "predict"/"fun_draw_next.json")
+    picks_l=_read_json(DATA/"forecast" / "predict"/"picks_loto.json")
+    picks_d=_read_json(DATA/"forecast" / "predict"/"picks_de.json")
     latest,daily=_daily_board(xsmb)
     target=str(picks_l.get("target_date") or picks_d.get("target_date") or fun.get("target_date") or "—")
     pred_l=_prediction("loto",target); pred_d=_prediction("de",target)
@@ -596,9 +596,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     hht=_read_csv(ADV/"head_tail_total_loto_current.csv"); sg=_read_csv(ADV/"special_group_frequency_current.csv"); pairs=_read_csv(ADV/"reverse_pair_frequency_current.csv")
     cau_l=_read_csv(DATA/"ai_ml"/"cau_keo_loto_all.csv"); cau_d=_read_csv(DATA/"ai_ml"/"cau_keo_de_all.csv")
     sig_l=_read_csv(ADV/"ai_ml_signal_loto.csv"); sig_d=_read_csv(ADV/"ai_ml_signal_de.csv")
-    dyn_l=_read_csv(DATA/"number_dynamics"/"current_dynamics_loto.csv"); dyn_d=_read_csv(DATA/"number_dynamics"/"current_dynamics_de.csv")
-    markov=_read_csv(DATA/"markov"/"markov_loto.csv")
-    hazard_l=_read_csv(DATA/"hazard"/"hazard_loto.csv"); hazard_d=_read_csv(DATA/"hazard"/"hazard_de.csv")
+    dyn_l=_read_csv(DATA/"stats" / "number_dynamics"/"current_dynamics_loto.csv"); dyn_d=_read_csv(DATA/"stats" / "number_dynamics"/"current_dynamics_de.csv")
+    markov=_read_csv(DATA/"stats" / "markov"/"markov_loto.csv")
+    hazard_l=_read_csv(DATA/"stats" / "hazard"/"hazard_loto.csv"); hazard_d=_read_csv(DATA/"stats" / "hazard"/"hazard_de.csv")
     meta_l=picks_l.get("meta",{}) if isinstance(picks_l.get("meta"),dict) else {}; meta_d=picks_d.get("meta",{}) if isinstance(picks_d.get("meta"),dict) else {}
     generated=datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00","Z")
 
@@ -770,22 +770,22 @@ def main(argv: Sequence[str] | None = None) -> None:
 {_markov(markov)}
 
 ### Độ nâng chuyển tiếp LOTO · bỏ cặp tự thân
-{_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_loto.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
+{_wide_top_pairs(DATA/'stats' / 'number_dynamics'/'transition_lift_lag1_loto.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
 
 ### Độ nâng chuyển tiếp Đặc Biệt · bỏ cặp tự thân
-{_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_de.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
+{_wide_top_pairs(DATA/'stats' / 'number_dynamics'/'transition_lift_lag1_de.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
 
 ### Đồng xuất hiện Phi LOTO · bỏ đường chéo tự thân
-{_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_loto.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
+{_wide_top_pairs(DATA/'stats' / 'number_dynamics'/'cooccurrence_phi_loto.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
 
 ### Đồng xuất hiện Phi Đặc Biệt · bỏ đường chéo tự thân
-{_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_de.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
+{_wide_top_pairs(DATA/'stats' / 'number_dynamics'/'cooccurrence_phi_de.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
 
 ### Phụ thuộc đa độ trễ LOTO
-{_lag_dependency(DATA/'number_dynamics'/'lag_dependency_loto.csv')}
+{_lag_dependency(DATA/'stats' / 'number_dynamics'/'lag_dependency_loto.csv')}
 
 ### Phụ thuộc đa độ trễ Đặc Biệt
-{_lag_dependency(DATA/'number_dynamics'/'lag_dependency_de.csv')}
+{_lag_dependency(DATA/'stats' / 'number_dynamics'/'lag_dependency_de.csv')}
 
 ---
 
@@ -836,16 +836,16 @@ def main(argv: Sequence[str] | None = None) -> None:
 ## 🧪 Mức ý nghĩa và nghiên cứu
 
 ### LOTO · mức ý nghĩa 30 ngày
-{_significance(DATA/'significance'/'number_significance_loto_30d.csv')}
+{_significance(DATA/'stats' / 'significance'/'number_significance_loto_30d.csv')}
 
 ### LOTO · mức ý nghĩa 90 ngày
-{_significance(DATA/'significance'/'number_significance_loto_90d.csv')}
+{_significance(DATA/'stats' / 'significance'/'number_significance_loto_90d.csv')}
 
 ### Đặc Biệt · mức ý nghĩa 30 ngày
-{_significance(DATA/'significance'/'number_significance_de_30d.csv')}
+{_significance(DATA/'stats' / 'significance'/'number_significance_de_30d.csv')}
 
 ### Đặc Biệt · mức ý nghĩa 90 ngày
-{_significance(DATA/'significance'/'number_significance_de_90d.csv')}
+{_significance(DATA/'stats' / 'significance'/'number_significance_de_90d.csv')}
 
 ### Phòng chiến lược · LOTO ngoài mẫu
 {_strategy(DATA/'research'/'strategy_lab_loto.csv')}

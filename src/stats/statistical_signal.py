@@ -658,8 +658,8 @@ def main() -> None:
     # Mặc định là HỌC (không truyền cờ). Truyền một số để ép, phục vụ tái lập
     # kết quả của các bản chạy cũ.
     ap.add_argument("--prior-strength", type=float, default=None)
-    ap.add_argument("--out-dir", default="data/statistical_signal")
-    ap.add_argument("--dynamics-out-dir", default="data/number_dynamics")
+    ap.add_argument("--out-dir", default="data/stats/statistical_signal")
+    ap.add_argument("--dynamics-out-dir", default="data/stats/number_dynamics")
     args = ap.parse_args()
 
     out = Path(args.out_dir)

@@ -222,7 +222,7 @@ def test_the_bridge_experience_counts_every_labelled_anchor(planted_table) -> No
 def test_the_published_forecast_is_for_the_draw_after_the_latest() -> None:
     """Năm con trên trang là dự báo cho kỳ SAU kỳ mới nhất, mỗi con có lý do, và 10 kỳ gần nhất chấm
     đúng số nháy thật của sổ kết quả."""
-    vip = json.loads((ROOT / "data" / "multi_hit" / "vip.json").read_text(encoding="utf-8"))
+    vip = json.loads((ROOT / "data" / "forecast" / "multi_hit" / "vip.json").read_text(encoding="utf-8"))
     frame = pd.read_csv(ROOT / "data" / "xsmb-2-digits.csv", dtype=str)
     draws, labels = m.draws_from_frame(frame)
     counts = m.counts_matrix(draws)

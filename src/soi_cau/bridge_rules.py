@@ -65,7 +65,7 @@ RULES = {
 #: phải còn đủ 60 kỳ trước nó để đếm độ dài cầu — với trang theo thứ là 2 × 60 kỳ cùng
 #: thứ, tức 14 × 60 kỳ quay. Cũng đủ cho phôi 80 tuần (≤ 560 kỳ).
 EMBED = 14 * WINDOW
-OUT = Path("bridge_pages")
+OUT = Path("soi_cau") / "bridge_pages"
 
 
 def _bo_tables() -> tuple[np.ndarray, np.ndarray]:

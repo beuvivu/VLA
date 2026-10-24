@@ -43,8 +43,8 @@ PYTHONPATH=src python src/pipeline.py --strict
 Pipeline gọi bộ online cho cả `loto` và `de` ngay sau `predict_nextday_2d`, trước đánh giá và dựng giao diện. Nếu chỉ muốn chạy bước online trên artifact đã có:
 
 ```bash
-PYTHONPATH=src python src/forecast/online_learning.py --mode loto --data-dir data --out-dir data/predict
-PYTHONPATH=src python src/forecast/online_learning.py --mode de --data-dir data --out-dir data/predict
+PYTHONPATH=src python src/forecast/online_learning.py --mode loto --data-dir data --out-dir data/forecast/predict
+PYTHONPATH=src python src/forecast/online_learning.py --mode de --data-dir data --out-dir data/forecast/predict
 ```
 
 Lịch sử phải được xác thực và chứa đủ 27 giải mỗi kỳ. Bước online không tải kết quả từ nguồn bên ngoài. Không chạy lệnh này để biến dự báo hồi cứu thành bằng chứng thật.
@@ -69,9 +69,9 @@ Khi không đạt, đầu ra giữ incumbent; journal vẫn lưu và chấm các
 
 ## Tệp trạng thái và xử lý lỗi
 
-- `data/online/loto.json`, `data/online/de.json`: sổ bằng chứng và hai bộ nhớ. Giữ lâu dài, không đưa vào cleanup 45 ngày của dự báo.
+- `data/forecast/online/loto.json`, `data/forecast/online/de.json`: sổ bằng chứng và hai bộ nhớ. Giữ lâu dài, không đưa vào cleanup 45 ngày của dự báo.
 - `data/research/online_<mode>_report.json`: trạng thái shadow/active, số kỳ, weights, các so sánh và provenance.
-- `data/predict/predict_next_<mode>_all_<date>.csv`: xác suất cuối cùng; top và picks được đồng bộ.
+- `data/forecast/predict/predict_next_<mode>_all_<date>.csv`: xác suất cuối cùng; top và picks được đồng bộ.
 - Sau 365 record đầy đủ, các khối 64 kỳ đã chốt được nén không mất dữ liệu. Bộ nhớ và mọi bằng chứng vẫn được giữ.
 
 Sổ hỏng, schema lạ, lịch sử bị sửa hoặc đồng hồ lùi đều làm bước online dừng; không tự xóa sổ để khởi tạo lại vì điều đó xóa các lần thua. Khôi phục bản journal đã xác minh từ Git và chạy lại. Checksum phát hiện lỗi tệp, không phải chữ ký chống giả mạo.

@@ -169,7 +169,7 @@ def export_reference(out_dir: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Export canonical number-reference data.")
-    ap.add_argument("--out-dir", default="data/reference")
+    ap.add_argument("--out-dir", default="data/stats/reference")
     args = ap.parse_args()
     export_reference(Path(args.out_dir))
     print(f"[OK] canonical number ontology -> {args.out_dir}")

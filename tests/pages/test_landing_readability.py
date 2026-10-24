@@ -19,7 +19,7 @@ def test_calendar_immediately_follows_daily_matrix_then_predictions() -> None:
 
 
 def test_pair_frequency_headers_share_numeric_columns_with_data(tmp_path: Path) -> None:
-    pairs = tmp_path / "data/pairs"
+    pairs = tmp_path / "data/stats/pairs"
     pairs.mkdir(parents=True)
     pd.DataFrame([{"pair": "12-68", "count": 293}]).to_csv(
         pairs / "top_unordered_pairs_top300.csv", index=False
@@ -49,7 +49,7 @@ def test_table_rounds_display_precision_without_mutating_statistics() -> None:
 
 
 def test_group_charts_show_every_digit_exact_counts_shares_and_coverage(tmp_path: Path) -> None:
-    advanced = tmp_path / "data/advanced"
+    advanced = tmp_path / "data/stats/advanced"
     advanced.mkdir(parents=True)
     rows = []
     for group, values in {"head": {0: 1, 1: 3}, "tail": {7: 4}, "total": {7: 1, 8: 3}}.items():

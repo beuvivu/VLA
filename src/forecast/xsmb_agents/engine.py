@@ -136,7 +136,7 @@ class PredictiveEngine:
         # chỉ là đồng hồ cố định được tiêm cho kiểm thử/tái hiện có chủ đích.
         clock = (lambda: online._clock(now)) if now is not None else (
             lambda: online._clock(now_vietnam()))
-        with online._locked(data_dir / "agents" / "engine.lock"):
+        with online._locked(data_dir / "forecast" / "agents" / "engine.lock"):
             return self._run_locked(data_dir, clock)
 
     def _run_locked(self, data_dir: Path, clock: Callable[[], datetime]) -> dict:
@@ -146,7 +146,7 @@ class PredictiveEngine:
         frame = knowledge.frame
         anchor = str(frame.iloc[-1]["date"])
         target = (online._date(anchor) + timedelta(days=1)).isoformat()
-        kb_path = data_dir / "knowledge" / "kb.json"
+        kb_path = data_dir / "forecast" / "knowledge" / "kb.json"
         document = json.loads(kb_path.read_text(encoding="utf-8")) if kb_path.exists() else {}
         # Luật được update bởi knowledge_base.py trong cùng lượt pipeline;
         # snapshot cũ chỉ được nêu là cũ, không nâng trạng thái hay cộng xác suất.
@@ -154,11 +154,11 @@ class PredictiveEngine:
         modes = {}
         # Cất sổ của định nghĩa đã nghỉ, rồi nạp (và kiểm) CẢ HAI sổ trước khi chốt kỳ nào: sổ Đặc
         # Biệt không được ghi xong rồi mới phát hiện sổ LOTO mang định nghĩa không hiểu được.
-        retire_superseded_ledgers(data_dir / "online")
-        learners = {mode: MetaLearner(mode, data_dir / "online" / f"agents_{mode}.json")
+        retire_superseded_ledgers(data_dir / "forecast" / "online")
+        learners = {mode: MetaLearner(mode, data_dir / "forecast" / "online" / f"agents_{mode}.json")
                     for mode in ("de", "loto")}
         for mode in ("de", "loto"):
-            path = data_dir / "predict" / f"predict_next_{mode}_all_{target}.csv"
+            path = data_dir / "forecast" / "predict" / f"predict_next_{mode}_all_{target}.csv"
             prediction_frame, incumbent = online._prediction_frame(path, mode)
             for column, expected in (("target_date", target), ("anchor_date", anchor)):
                 if column in prediction_frame and set(prediction_frame[column].astype(str)) != {expected}:
@@ -194,7 +194,7 @@ class PredictiveEngine:
         report = {"schema_version": 1, "anchor_date": anchor, "target_date": target,
                   "generated_at": min(item["generated_at"] for item in modes.values()),
                   "status": "shadow", "modes": modes}
-        atomic_write_text(data_dir / "agents" / "report.json",
+        atomic_write_text(data_dir / "forecast" / "agents" / "report.json",
                           json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
         return report
 

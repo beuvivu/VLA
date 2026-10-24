@@ -33,7 +33,7 @@ z = +1,77; so với hằng số còn LOTO z = +0,69, Đặc Biệt z = −0,31 �
 
 ### 1.1 Trên các kỳ đã ghi (01-09 → 04-10-2026, 34 kỳ)
 
-`data/history/pred_<mode>.csv` ghi vector của từng thành phần trước kỳ quay. Kỹ năng logloss so với
+`data/evaluation/history/pred_<mode>.csv` ghi vector của từng thành phần trước kỳ quay. Kỹ năng logloss so với
 hằng số (âm = tệ hơn không dự đoán):
 
 | Thành phần | LOTO | z | Đặc Biệt | z |
@@ -110,7 +110,7 @@ bị học lại chứ không bị đọc thành trust = 1. `ml_prob_raw` giữ 
 «Bằng chứng», nên thứ hạng trên trang Thống kê không đổi. `validate_cau_keo_domain` canh `prob` đúng
 bằng bản đã co, với đúng trust trong gói.
 
-Đổi định nghĩa `prob` cũng đổi nghĩa cột `p_cau` trong sổ `data/history/pred_<mode>.csv`. Sổ không bị
+Đổi định nghĩa `prob` cũng đổi nghĩa cột `p_cau` trong sổ `data/evaluation/history/pred_<mode>.csv`. Sổ không bị
 viết lại; thay vào đó tệp cầu-kèo khai `trust_policy_version`, sổ ghi số ấy vào cột `policy_cau` của
 từng dòng mới, và bộ học trọng số/hiệu chỉnh cùng tầng xếp chồng chỉ coi `p_cau` là có mặt khi dòng ghi
 đúng phiên bản hiện hành (`ensemble_components.COMPONENT_POLICY`); bảng đóng góp thành phần cũng vậy,

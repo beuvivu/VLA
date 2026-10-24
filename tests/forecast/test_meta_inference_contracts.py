@@ -99,9 +99,9 @@ def test_production_uses_three_component_model_when_unused_components_are_missin
     data.mkdir()
     models.mkdir()
     pd.DataFrame({"date": ["2026-01-01"]}).to_csv(data / "xsmb.csv", index=False)
-    for relative in ("ml/predict_next_loto_ml_all.csv", "path_ui/predict_next_loto_active_2026-01-01_all.csv", "path_ui/predict_next_loto_stable_2026-01-01_all.csv"):
+    for relative in ("ml/predict_next_loto_ml_all.csv", "soi_cau/path_ui/predict_next_loto_active_2026-01-01_all.csv", "soi_cau/path_ui/predict_next_loto_stable_2026-01-01_all.csv"):
         path = data / relative
-        path.parent.mkdir(exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame({"number": range(100), "prob": 0.1, "target_date": "2026-01-02"}).to_csv(path, index=False)
     joblib.dump(_pack(), models / "meta_loto.joblib")
     monkeypatch.setattr(sys, "argv", ["predict_nextday_2d.py", "--mode", "loto", "--data-dir", str(data), "--models-dir", str(models), "--out-dir", str(output)])

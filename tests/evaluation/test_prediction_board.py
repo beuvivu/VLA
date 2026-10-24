@@ -10,6 +10,7 @@ import pytest
 
 from evaluation import prediction_board as pb
 from evaluation.fun_draw_ledger import cutoff_utc
+from core.paths import DATA_MOVES
 from core.xsmb_domain import LOTO_BASELINE_RATE
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,26 +34,26 @@ def _data(tmp_path: Path, target: str = TARGET) -> Path:
     loto = [("05", 0.24), ("75", 0.238)]
     de = [("07", 0.0104), ("54", 0.0103)]
     for mode, rows in (("loto", loto), ("de", de)):
-        _write(data / "predict" / f"predict_next_{mode}_top10_{target}.csv", _ranked_csv(rows))
+        _write(data / "forecast" / "predict" / f"predict_next_{mode}_top10_{target}.csv", _ranked_csv(rows))
         _write(data / "ai_ml" / "daily" / f"cau_keo_{mode}_top10_{target}.csv", _ranked_csv(rows, target))
         _write(data / "ml" / f"predict_next_{mode}_ml_top10.csv", _ranked_csv(rows, target))
         # Soi đường mang ngày DỮ LIỆU (kỳ trước), không phải ngày quay.
         anchor = (date.fromisoformat(target) - timedelta(days=1)).isoformat()
-        _write(data / "path_ui" / f"path_manifest_{mode}.json", json.dumps({"anchor_date": anchor}))
+        _write(data / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json", json.dumps({"anchor_date": anchor}))
         for kind in ("active", "stable"):
-            _write(data / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv", _ranked_csv(rows))
+            _write(data / "soi_cau" / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv", _ranked_csv(rows))
         base = LOTO_BASELINE_RATE if mode == "loto" else 0.01
         vector = "number,prob\n" + "".join(f"{n:02d},{base}\n" for n in range(100))
-        _write(data / "predict" / f"predict_next_{mode}_all_{target}.csv", vector)
-    _write(data / "multi_hit" / "vip.json", json.dumps({
+        _write(data / "forecast" / "predict" / f"predict_next_{mode}_all_{target}.csv", vector)
+    _write(data / "forecast" / "multi_hit" / "vip.json", json.dumps({
         "target_date": target,
         "picks": [{"number": "18", "probability": 0.033}],
         "pairs": {"picks": [{"pair": ["34", "35"]}]},
     }))
-    _write(data / "agents" / "report.json", json.dumps({"target_date": target, "modes": {
+    _write(data / "forecast" / "agents" / "report.json", json.dumps({"target_date": target, "modes": {
         m: {"candidate_top5": [{"number": "75", "candidate_probability": 0.24 if m == "loto" else 0.0123}]}
         for m in ("de", "loto")}}))
-    _write(data / "position_bridges" / "latest.json", json.dumps({"target_date": target, "modes": {
+    _write(data / "soi_cau" / "position_bridges" / "latest.json", json.dumps({"target_date": target, "modes": {
         "lo": {"nhay": 1, "db": False, "best": [{"numbers": ["29", "92"], "streak": 10}]},
         "nhay2": {"nhay": 2, "db": False, "best": [{"numbers": ["66"], "shadow": "11", "streak": 3}]},
         "db": {"nhay": 1, "db": True, "best": [{"numbers": ["49", "94"], "streak": 1}]},
@@ -64,8 +65,8 @@ def _data(tmp_path: Path, target: str = TARGET) -> Path:
                  ("bach-thu", "bach-thu", False, "07,70"), ("loto-theo-thu", "loto", True, "67,76"),
                  ("dac-biet", "dac-biet", False, "46,64"), ("dac-biet-theo-thu", "dac-biet", True, "78,87"),
                  ("bo-so", "bo-so", False, "03,08,30,35,53,58,80,85"))}
-    _write(data / "bridge_pages" / "latest.json", json.dumps({"target_date": target, "rules": rules}))
-    _write(data / "predict" / "fun_draw_next.json", json.dumps({"target_date": target, "rows": [
+    _write(data / "soi_cau" / "bridge_pages" / "latest.json", json.dumps({"target_date": target, "rules": rules}))
+    _write(data / "forecast" / "predict" / "fun_draw_next.json", json.dumps({"target_date": target, "rows": [
         {"suffix": "34", "mode": "de", "model_prob": 0.0099},
         {"suffix": "6", "mode": "loto", "model_prob": 0.237},
     ]}))
@@ -102,7 +103,7 @@ def test_every_published_source_of_the_day_is_on_the_board(tmp_path: Path) -> No
 
 def test_fair_draw_baselines_match_the_repository_constants() -> None:
     """Mốc chọn bừa là xác suất CHÍNH XÁC của đúng sự kiện; đối chiếu với số đã có của kho."""
-    vip = json.loads((ROOT / "data" / "multi_hit" / "vip.json").read_text(encoding="utf-8"))
+    vip = json.loads((ROOT / "data" / "forecast" / "multi_hit" / "vip.json").read_text(encoding="utf-8"))
     assert pb.base_probability({"on": "loto", "numbers": ["18"], "need": 1}) == pytest.approx(LOTO_BASELINE_RATE)
     assert pb.base_probability({"on": "loto", "numbers": ["18"], "need": 2}) == pytest.approx(vip["base_theory"])
     assert pb.base_probability({"on": "loto", "numbers": ["34", "35"], "all": True}) == pytest.approx(
@@ -115,13 +116,13 @@ def test_fair_draw_baselines_match_the_repository_constants() -> None:
 @pytest.mark.parametrize("ids,break_source", [
     (("ml-de", "ml-loto"), lambda d: (d / "ml" / "predict_next_de_ml_top10.csv").write_text(
         _ranked_csv([("07", 0.01)], "2026-10-21"), encoding="utf-8")),
-    (("vip", "xien"), lambda d: (d / "multi_hit" / "vip.json").write_text(
+    (("vip", "xien"), lambda d: (d / "forecast" / "multi_hit" / "vip.json").write_text(
         json.dumps({"target_date": "2026-10-21", "picks": [{"number": "18"}]}), encoding="utf-8")),
-    (("path-loto-active",), lambda d: (d / "path_ui" / "predict_next_loto_active_2026-10-21.csv").unlink()),
+    (("path-loto-active",), lambda d: (d / "soi_cau" / "path_ui" / "predict_next_loto_active_2026-10-21.csv").unlink()),
     # Tệp soi đường mang ngày trùng kỳ đích là dự báo cho kỳ SAU kỳ đích, dù tệp có đủ.
     (("path-de-active", "path-de-stable"), lambda d: (
-        (d / "path_ui" / "path_manifest_de.json").write_text(json.dumps({"anchor_date": TARGET}), encoding="utf-8"),
-        (d / "path_ui" / f"predict_next_de_active_{TARGET}.csv").write_text(
+        (d / "soi_cau" / "path_ui" / "path_manifest_de.json").write_text(json.dumps({"anchor_date": TARGET}), encoding="utf-8"),
+        (d / "soi_cau" / "path_ui" / f"predict_next_de_active_{TARGET}.csv").write_text(
             _ranked_csv([("99", 0.0101)]), encoding="utf-8"),
     )),
 ])
@@ -217,3 +218,29 @@ def test_backfill_takes_the_last_commit_before_the_lock_and_never_overwrites(tmp
     assert [item["label"] for item in _lists(board)["ml-loto"]["items"]] == ["05", "75"]
     assert not board["missing"], "mọi nguồn, kể cả soi đường theo ngày dữ liệu, phải lấy lại được"
     assert pb.backfill_from_git(repo, out, TARGET) is None, "không đè sổ đã có"
+
+
+def test_backfill_reads_a_commit_from_before_the_data_regrouping(tmp_path: Path) -> None:
+    """Commit trước 24-10-2026 giữ nguồn ở ``data/<tên>/``; sổ dựng lại phải y như bố cục mới."""
+    import subprocess
+
+    repo = tmp_path / "repo"
+    data = _data(repo)
+    expected = pb.build_board(data, TARGET, now=BEFORE)
+    moved = 0
+    for name, rel in DATA_MOVES.items():
+        if (data / rel).exists():
+            (data / rel).rename(data / name)
+            moved += 1
+    assert moved >= 5, "mẫu phải có nguồn ở nhiều nhóm thì mới kiểm được chỗ cũ"
+    when = cutoff_utc(TARGET) - timedelta(hours=2)
+    env = {"GIT_AUTHOR_DATE": when.isoformat(), "GIT_COMMITTER_DATE": when.isoformat(),
+           "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@t", "PATH": "/usr/bin:/bin:/usr/local/bin"}
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, env=env)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "bố cục cũ"], check=True, env=env)
+
+    board = json.loads(pb.backfill_from_git(repo, tmp_path / "out", TARGET).read_text(encoding="utf-8"))
+    assert board["missing"] == []
+    assert board["lists"] == expected["lists"]

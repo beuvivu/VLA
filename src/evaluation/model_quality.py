@@ -340,9 +340,9 @@ def coverage(history: pd.DataFrame) -> dict:
 
 
 def build(data_dir: Path) -> Path:
-    """Tính toàn bộ chẩn đoán và ghi ``data/model_quality/report.json``."""
+    """Tính toàn bộ chẩn đoán và ghi ``data/evaluation/model_quality/report.json``."""
     update_ledger(data_dir)
-    history_path = data_dir / "prob_eval" / "ensemble_history.csv"
+    history_path = data_dir / "evaluation" / "prob_eval" / "ensemble_history.csv"
     raw_history = pd.read_csv(history_path)
     history, converted = normalize_brier_scale(raw_history)
 
@@ -361,7 +361,7 @@ def build(data_dir: Path) -> Path:
             skill = summarize_skill(*graded_series(data_dir, mode))
         else:
             source = "reconstructed"
-            predictions = pd.read_csv(data_dir / "history" / f"pred_{mode}.csv")
+            predictions = pd.read_csv(data_dir / "evaluation" / "history" / f"pred_{mode}.csv")
             weights = load_ensemble_weights(data_dir, mode)
             days, probabilities, labels = ensemble_probabilities(predictions, weights, mode)
             skill = skill_series(history, mode)
@@ -390,7 +390,7 @@ def build(data_dir: Path) -> Path:
         "monitor": [check.as_dict() for check in evaluate_skill(data_dir)],
         "modes": modes,
     }
-    out_dir = data_dir / "model_quality"
+    out_dir = data_dir / "evaluation" / "model_quality"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "report.json"
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

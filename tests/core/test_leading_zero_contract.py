@@ -70,8 +70,8 @@ def test_csv_prize_widths_and_conditional_tail_are_distinct(tmp_path):
     two.write_text("special,prize6_1,prize7_1\n0,3,9\n")
     normalize_csv(two)
     assert two.read_text().splitlines()[1] == "00,03,09"
-    conditional = tmp_path / "conditional" / "current_special_next_loto.csv"
-    conditional.parent.mkdir()
+    conditional = tmp_path / "stats" / "conditional" / "current_special_next_loto.csv"
+    conditional.parent.mkdir(parents=True)
     conditional.write_text("special,number,trials\n3,0,9\n")
     normalize_csv(conditional)
     assert conditional.read_text().splitlines()[1] == "03,00,9"
@@ -104,7 +104,7 @@ def test_csv_writer_preserves_internal_types_and_metrics(tmp_path):
 def test_dashboard_formats_csv_codes_without_padding_rank(tmp_path, monkeypatch):
     from pages import build_dashboard
     monkeypatch.chdir(tmp_path)
-    pred = tmp_path / "data" / "predict"
+    pred = tmp_path / "data" / "forecast" / "predict"
     pred.mkdir(parents=True)
     for mode in ("loto", "de"):
         (pred / f"predict_next_{mode}_all_2026-10-08.csv").write_text("number,prob\n0,0.3\n3,0.2\n")

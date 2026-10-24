@@ -185,9 +185,9 @@ def main() -> None:
         description="Append honest metrics for the latest retained emitted ensemble prediction."
     )
     ap.add_argument("--mode", choices=["loto", "de"], required=True)
-    ap.add_argument("--history-dir", default="data/history")
-    ap.add_argument("--predict-dir", default="data/predict")
-    ap.add_argument("--out", default="data/prob_eval/ensemble_history.csv")
+    ap.add_argument("--history-dir", default="data/evaluation/history")
+    ap.add_argument("--predict-dir", default="data/forecast/predict")
+    ap.add_argument("--out", default="data/evaluation/prob_eval/ensemble_history.csv")
     args = ap.parse_args()
 
     hist_path = Path(args.history_dir) / f"pred_{args.mode}.csv"

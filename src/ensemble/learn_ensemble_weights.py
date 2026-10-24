@@ -533,7 +533,7 @@ def learn_chronological_stack(
 def main() -> None:
     ap = argparse.ArgumentParser(description="Learn five-component ensemble weights from labeled walk-forward history.")
     ap.add_argument("--mode", choices=["loto", "de"], required=True)
-    ap.add_argument("--history-dir", default="data/history")
+    ap.add_argument("--history-dir", default="data/evaluation/history")
     ap.add_argument("--out-dir", default="data/ensemble")
     ap.add_argument("--window-days", type=int, default=180)
     ap.add_argument("--min-days", type=int, default=20)

@@ -1,6 +1,6 @@
 """Trang Soi cầu vị trí và ô "cầu đẹp nhất" cạnh bảng LOTO ở trang chủ.
 
-Đọc ``data/position_bridges/latest.json`` (do ``position_bridges.py`` sinh ngay
+Đọc ``data/soi_cau/position_bridges/latest.json`` (do ``position_bridges.py`` sinh ngay
 sau mỗi kỳ quay) và dựng ``docs/soi-cau-vi-tri.html``. Trang nhúng 60 kỳ gần
 nhất; bộ máy trong trình duyệt (``templates/position_bridges.js``) tính lại cầu
 cho mọi tham số người xem chọn và vẽ đường cầu trên bảng kiểu Sổ kết quả.
@@ -303,7 +303,7 @@ def render(report: dict) -> str:
 def build(data_dir: Path, docs_dir: Path) -> Path | None:
     report = load(data_dir)
     if report is None:
-        print("Chưa có data/position_bridges/latest.json — bỏ qua.")
+        print("Chưa có data/soi_cau/position_bridges/latest.json — bỏ qua.")
         return None
     write_stylesheet(docs_dir)
     out = docs_dir / PAGE

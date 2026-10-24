@@ -10,7 +10,7 @@ từng khối walk-forward.
 Đây là thành phần ``ml`` — một trong năm thành phần của tổ hợp production. Tổ
 hợp đầy đủ (cầu, thống kê, hai nhánh đường đi, xếp chồng) không tái dựng được
 cho 1 000 kỳ trong thời gian hợp lý; nó được so trên các kỳ có sổ ghi
-``data/prob_eval/ensemble_history.csv``.
+``data/evaluation/prob_eval/ensemble_history.csv``.
 """
 
 from __future__ import annotations

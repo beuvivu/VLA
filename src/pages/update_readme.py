@@ -11,7 +11,7 @@ import pandas as pd
 
 DATA_DIR = Path("data")
 README = Path("README.md")
-FUN_PREDICTION = DATA_DIR / "predict" / "fun_draw_next.json"
+FUN_PREDICTION = DATA_DIR / "forecast" / "predict" / "fun_draw_next.json"
 logger = logging.getLogger(__name__)
 
 WIDTHS = {

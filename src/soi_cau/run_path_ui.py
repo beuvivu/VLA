@@ -205,7 +205,7 @@ def main() -> None:
     ap.add_argument("--bias-special-both", type=float, default=1.0)
     ap.add_argument("--top-paths", type=int, default=80)
     ap.add_argument("--top-numbers", type=int, default=30)
-    ap.add_argument("--out-dir", type=str, default="data/path_ui")
+    ap.add_argument("--out-dir", type=str, default="data/soi_cau/path_ui")
     args = ap.parse_args()
 
     display_days = max(1, args.so_ngay)

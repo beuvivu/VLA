@@ -79,13 +79,13 @@ def test_the_published_top_files_respect_the_cap_on_the_real_28_09_vector() -> N
     """Chính vector xác suất đã công bố cho 28-09-2026 (10/10 con đuôi 4)."""
     commit = subprocess.run(
         ["git", "log", "--format=%H", "--diff-filter=A", "-1", "--",
-         "data/predict/predict_next_loto_all_2026-09-28.csv"],
+         "data/forecast/predict/predict_next_loto_all_2026-09-28.csv"],
         cwd=ROOT, capture_output=True, text=True, check=True,
     ).stdout.strip()
     if not commit:
         pytest.skip("không có lịch sử git của artifact 28-09-2026")
     text = subprocess.run(
-        ["git", "show", f"{commit}:data/predict/predict_next_loto_all_2026-09-28.csv"],
+        ["git", "show", f"{commit}:data/forecast/predict/predict_next_loto_all_2026-09-28.csv"],
         cwd=ROOT, capture_output=True, text=True, check=True,
     ).stdout
     df_all = pd.read_csv(StringIO(text)).sort_values("prob", ascending=False).reset_index(drop=True)

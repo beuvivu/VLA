@@ -18,20 +18,20 @@ REQUIRED_PATHS = [
     "data/xsmb.json",
     "data/source_audit.json",
     "data/health.json",
-    "data/predict/fun_draw_next.json",
-    "data/predict/fun_draw_next.csv",
-    "data/history/pred_loto.csv",
-    "data/history/pred_de.csv",
-    "data/statistical_signal/predict_next_loto_stat_all.csv",
-    "data/statistical_signal/predict_next_de_stat_all.csv",
-    "data/number_dynamics/current_dynamics_loto.csv",
-    "data/number_dynamics/current_dynamics_de.csv",
-    "data/number_dynamics/diagnostics_loto.json",
-    "data/number_dynamics/diagnostics_de.json",
-    "data/advanced/conditional_matrices_diagnostics.json",
-    "data/advanced/ai_ml_signal_diagnostics.json",
-    "data/advanced/ai_ml_signal_loto.csv",
-    "data/advanced/ai_ml_signal_de.csv",
+    "data/forecast/predict/fun_draw_next.json",
+    "data/forecast/predict/fun_draw_next.csv",
+    "data/evaluation/history/pred_loto.csv",
+    "data/evaluation/history/pred_de.csv",
+    "data/stats/statistical_signal/predict_next_loto_stat_all.csv",
+    "data/stats/statistical_signal/predict_next_de_stat_all.csv",
+    "data/stats/number_dynamics/current_dynamics_loto.csv",
+    "data/stats/number_dynamics/current_dynamics_de.csv",
+    "data/stats/number_dynamics/diagnostics_loto.json",
+    "data/stats/number_dynamics/diagnostics_de.json",
+    "data/stats/advanced/conditional_matrices_diagnostics.json",
+    "data/stats/advanced/ai_ml_signal_diagnostics.json",
+    "data/stats/advanced/ai_ml_signal_loto.csv",
+    "data/stats/advanced/ai_ml_signal_de.csv",
     "data/ai_ml/cau_keo_manifest_loto.json",
     "data/ai_ml/cau_keo_manifest_de.json",
     "models/ml_loto.joblib",
@@ -171,7 +171,7 @@ def audit(
         target_str = target.isoformat()
 
         try:
-            fun = _json("data/predict/fun_draw_next.json")
+            fun = _json("data/forecast/predict/fun_draw_next.json")
             if fun.get("anchor_date") != latest.isoformat():
                 critical.append(
                     f"fun_anchor_mismatch={fun.get('anchor_date')} expected={latest}"
@@ -189,7 +189,7 @@ def audit(
 
         for mode in ("loto", "de"):
             candidates = sorted(
-                (ROOT / "data/predict").glob(f"predict_next_{mode}_all_*.csv")
+                (ROOT / "data/forecast/predict").glob(f"predict_next_{mode}_all_*.csv")
             )
             if not candidates:
                 critical.append(f"predict_{mode}_missing")
@@ -202,7 +202,7 @@ def audit(
                 )
 
             stat_target = _prediction_target(
-                ROOT / f"data/statistical_signal/predict_next_{mode}_stat_all.csv"
+                ROOT / f"data/stats/statistical_signal/predict_next_{mode}_stat_all.csv"
             )
             if stat_target != target_str:
                 critical.append(
@@ -222,7 +222,7 @@ def audit(
                 critical.append(f"cau_keo_{mode}_manifest_invalid={exc}")
 
             overlay_target = _single_csv_value(
-                f"data/advanced/ai_ml_signal_{mode}.csv", "target_date"
+                f"data/stats/advanced/ai_ml_signal_{mode}.csv", "target_date"
             )
             if overlay_target != target_str:
                 critical.append(
@@ -230,7 +230,7 @@ def audit(
                 )
 
         try:
-            cond = _json("data/advanced/conditional_matrices_diagnostics.json")
+            cond = _json("data/stats/advanced/conditional_matrices_diagnostics.json")
             if int(cond.get("calendar_rows", -1)) != len(dates):
                 critical.append(
                     f"conditional_calendar_rows={cond.get('calendar_rows')} expected={len(dates)}"
@@ -256,7 +256,7 @@ def audit(
             critical.append(f"conditional_diagnostics_invalid={exc}")
 
         try:
-            overlay = _json("data/advanced/ai_ml_signal_diagnostics.json")
+            overlay = _json("data/stats/advanced/ai_ml_signal_diagnostics.json")
             if str(overlay.get("anchor_date", ""))[:10] != latest.isoformat():
                 critical.append(
                     f"ai_overlay_anchor={overlay.get('anchor_date')} expected={latest}"
@@ -285,7 +285,7 @@ def audit(
 
         for mode in ("loto", "de"):
             try:
-                dyn = _json(f"data/number_dynamics/diagnostics_{mode}.json")
+                dyn = _json(f"data/stats/number_dynamics/diagnostics_{mode}.json")
                 if dyn.get("calendar_contiguous") is not True:
                     critical.append(f"dynamics_{mode}_calendar_not_verified")
                 if str(dyn.get("anchor_date", ""))[:10] != latest.isoformat():

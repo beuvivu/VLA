@@ -457,7 +457,7 @@ def _staleness(data_dir: Path, report: dict) -> str:
     Returns:
         Chuỗi mô tả độ lệch, hoặc chuỗi rỗng khi báo cáo còn đúng thời.
     """
-    history = data_dir / "prob_eval" / "ensemble_history.csv"
+    history = data_dir / "evaluation" / "prob_eval" / "ensemble_history.csv"
     if not history.exists():
         return ""
     try:
@@ -482,7 +482,7 @@ def _staleness(data_dir: Path, report: dict) -> str:
 
 def build(data_dir: Path, docs_dir: Path) -> Path:
     """Dựng ``docs/model-quality.html`` từ báo cáo chẩn đoán."""
-    report_path = data_dir / "model_quality" / "report.json"
+    report_path = data_dir / "evaluation" / "model_quality" / "report.json"
     report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
     modes = report.get("modes", {})
 
