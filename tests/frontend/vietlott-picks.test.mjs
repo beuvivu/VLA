@@ -19,7 +19,7 @@ function setup(product = 'mega-645') {
   w.URL.createObjectURL = blob => { downloads.push(blob); return 'blob:local-draft'; };
   w.URL.revokeObjectURL = () => {};
   w.HTMLAnchorElement.prototype.click = function () { downloads.push(this.download); };
-  w.eval(readFileSync(process.env.VIETLOTT_PICKS_SCRIPT || new URL('src/assets/vietlott-picks.js', root), 'utf8'));
+  w.eval(readFileSync(process.env.VIETLOTT_PICKS_SCRIPT || new URL('src/web/assets/vietlott-picks.js', root), 'utf8'));
   return { dom, w, d, board, downloads,
     number: n => board.querySelector(`[data-vl-number="${n}"]`),
     selected: () => [...board.querySelectorAll('[data-vl-number][aria-pressed="true"]')].map(b => Number(b.dataset.vlNumber)),

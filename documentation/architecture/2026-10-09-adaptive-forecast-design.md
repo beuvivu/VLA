@@ -4,7 +4,7 @@
 
 Yêu cầu: rà soát VLA, sửa lỗi, dọn phụ thuộc có bằng chứng, tách logic phục hồi/học thích nghi, kiểm thử và đánh giá dự báo Vietlott. Người dùng đã yêu cầu commit/push phần đạt kiểm chứng lên main. Nền thực hiện: `46aa9b53312c457bae21e5a6ee065facc712d4f2`.
 
-VLA là hệ thống xổ số XSMB và engine Vietlott độc lập, không phải Vision–Language Model. Sản xuất dùng thống kê, mô hình tabular, online mixture và GRU NumPy; `src/ml_engine` là nhánh nghiên cứu, GRU torch tùy chọn chạy CPU. Không thêm encoder ảnh, LLM, FSDP, CUDA hoặc dependency GPU không có caller. Không thể chứng minh phần mềm tuyệt đối không lỗi hay tăng tỷ lệ trúng xổ số chỉ bằng refactor.
+VLA là hệ thống xổ số XSMB và engine Vietlott độc lập, không phải Vision–Language Model. Sản xuất dùng thống kê, mô hình tabular, online mixture và GRU NumPy; `src/research/ml_engine` là nhánh nghiên cứu, GRU torch tùy chọn chạy CPU. Không thêm encoder ảnh, LLM, FSDP, CUDA hoặc dependency GPU không có caller. Không thể chứng minh phần mềm tuyệt đối không lỗi hay tăng tỷ lệ trúng xổ số chỉ bằng refactor.
 
 ## Các hợp đồng bắt buộc
 

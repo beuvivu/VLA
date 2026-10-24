@@ -106,7 +106,7 @@ def unexpected_gap_dates(
     """Ngày vắng mà KHÔNG giải thích được bằng lịch nghỉ quay.
 
     Ba nơi trong kho từng tự kiểm chuỗi ngày liền mạch bằng mã riêng
-    (``calendar_alignment``, ``production_audit``, ``ml_engine.schema``). Cả ba
+    (``calendar_alignment``, ``production_audit``, ``research.ml_engine.schema``). Cả ba
     đều coi mọi ngày vắng là hỏng, nên chúng chỉ xanh chừng nào 50 bản ghi bịa
     còn lấp vào chỗ trống — tức là bất biến được bảo đảm bởi chính dữ liệu sai.
 

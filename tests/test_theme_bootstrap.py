@@ -24,7 +24,7 @@ def test_theme_script_is_local_synchronous_and_precedes_styles(tmp_path: Path) -
     assert once.index('Content-Security-Policy') < once.index('src="' + script["src"] + '"')
     assert once.index('src="' + script["src"] + '"') < once.index('<style')
     assert (tmp_path / "assets/app-theme.js").read_text() == (
-        Path(__file__).resolve().parents[1] / "src/assets/app-theme.js"
+        Path(__file__).resolve().parents[1] / "src/web/assets/app-theme.js"
     ).read_text()
     write_page(page, once)
     assert page.read_text() == once

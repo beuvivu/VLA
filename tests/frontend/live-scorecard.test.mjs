@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
-// Bảng đối chiếu của trang Live (src/assets/live-scorecard.js): mỗi danh sách đã đóng băng
+// Bảng đối chiếu của trang Live (src/web/assets/live-scorecard.js): mỗi danh sách đã đóng băng
 // là hai hàng song song, và một mục chỉ "trượt" khi phần kết quả liên quan đã đủ.
-const script = readFileSync(new URL('../../src/assets/live-scorecard.js', import.meta.url), 'utf8');
+const script = readFileSync(new URL('../../src/web/assets/live-scorecard.js', import.meta.url), 'utf8');
 const markup = '<section id="live-scorecard" data-board-root="https://example.test/board/">' +
   '<time id="live-scorecard-date"></time><div id="live-scorecard-summary"></div>' +
   '<table id="live-scorecard-table"><thead><tr><th>Danh sách</th></tr></thead></table></section>';

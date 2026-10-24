@@ -398,7 +398,7 @@ def main() -> None:
         _run(_py("src/forecast/knowledge_base.py"), allow_fail=soft_fail)
     if not args.skip_ml:
         # Sổ hỏng phải dừng lượt xuất bản; không đánh mất bằng chứng tiến cứu.
-        _run(_py("src/xsmb_agents/run_xsmb_agents.py"), allow_fail=False)
+        _run(_py("src/forecast/xsmb_agents/run_xsmb_agents.py"), allow_fail=False)
 
     if not args.skip_docs:
         _run(

@@ -5,9 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from core.paths import SRC
+from core.paths import ASSETS, TEMPLATES
 
-_ROOT = SRC
 _EFFECTS = re.compile(r'<aside\b[^>]*\bdata-app-effects\b[^>]*>.*?</aside>\s*', re.S | re.I)
 _STYLE = re.compile(r'<link\b[^>]*\bdata-app-design-style\b[^>]*>\s*', re.I)
 _SCRIPT = re.compile(r'<script\b[^>]*\bdata-app-motion-script\b[^>]*>\s*</script>\s*', re.I)
@@ -23,8 +22,8 @@ def attach_crafto_design(path: Path, html: str) -> str:
 
     assets = path.parent / "assets"
     assets.mkdir(parents=True, exist_ok=True)
-    write_stylesheet_text(assets / "app-design.css", (_ROOT / "templates/app_design.css").read_text(encoding="utf-8"))
-    (assets / "app-motion.js").write_text((_ROOT / "assets/app-motion.js").read_text(encoding="utf-8"), encoding="utf-8")
+    write_stylesheet_text(assets / "app-design.css", (TEMPLATES / "app_design.css").read_text(encoding="utf-8"))
+    (assets / "app-motion.js").write_text((ASSETS / "app-motion.js").read_text(encoding="utf-8"), encoding="utf-8")
 
     head, body = html.split("</head>", 1)
     head = _SCRIPT.sub("", _STYLE.sub("", head))

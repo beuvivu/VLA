@@ -40,7 +40,7 @@ from typing import Final
 
 import numpy as np
 
-from ml_engine.schema import BASELINE_RATE
+from research.ml_engine.schema import BASELINE_RATE
 from ml.ml_train import model_trust
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)

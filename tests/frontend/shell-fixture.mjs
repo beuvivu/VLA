@@ -29,7 +29,7 @@ export function setup({ narrow = false, hash = '', mediaThrows = false, beforeSh
     this.dispatchEvent(new dom.window.Event('close'));
   };
   beforeShell(dom.window.document);
-  dom.window.eval(readFileSync(process.env.APP_SHELL_SCRIPT || new URL('src/assets/app-shell.js', root), 'utf8'));
+  dom.window.eval(readFileSync(process.env.APP_SHELL_SCRIPT || new URL('src/web/assets/app-shell.js', root), 'utf8'));
   return dom;
 }
 

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _render_quick_select(picks: list[SimpleNamespace]) -> str:
-    env = Environment(loader=FileSystemLoader(str(ROOT / "src" / "templates")))
+    env = Environment(loader=FileSystemLoader(str(ROOT / "src" / "web" / "templates")))
     template = env.get_template("path_ui_page.html.j2")
     return template.render(
         title="Kiểm thử",

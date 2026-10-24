@@ -58,7 +58,7 @@ def test_every_published_page_carries_sources_and_steps(page: Path) -> None:
 
 
 def test_the_published_script_is_the_source_script() -> None:
-    assert (ROOT / "docs/assets/app-evidence.js").read_bytes() == (ROOT / "src/assets/app-evidence.js").read_bytes()
+    assert (ROOT / "docs/assets/app-evidence.js").read_bytes() == (ROOT / "src/web/assets/app-evidence.js").read_bytes()
 
 
 @pytest.mark.parametrize("name", sorted(covered_pages()))

@@ -568,7 +568,7 @@ def _asset(name: str) -> str:
     """Đọc tệp tài nguyên đi kèm mô-đun.
 
     Args:
-        name: Tên tệp trong ``src/templates``.
+        name: Tên tệp trong ``src/web/templates``.
 
     Returns:
         Nội dung tệp.

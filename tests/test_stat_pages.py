@@ -121,14 +121,14 @@ def test_render_function_is_declared_not_a_const(page) -> None:
     sẽ làm trang im lặng không vẽ gì — đã gặp đúng lỗi này với
     renderSpecialByMonth và renderSpecialByYear.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert re.search(rf"^function {re.escape(page.render)}\s*\(", js, re.M), (
         f"{page.render} phải khai bằng `function`, không phải `const`"
     )
 
 
 def test_no_render_function_is_declared_with_const() -> None:
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert not re.search(r"^const render\w+\s*=", js, re.M)
 
 
@@ -226,7 +226,7 @@ def test_pair_page_recomputes_the_chance_note_for_the_filtered_range() -> None:
     assert note is not None, "ghi chú thiếu chỗ để JavaScript viết lại"
 
     js = (
-        Path(__file__).resolve().parents[1] / "src" / "templates" / "stat_pages.js"
+        Path(__file__).resolve().parents[1] / "src" / "web" / "templates" / "stat_pages.js"
     ).read_text(encoding="utf-8")
     body = js[js.index("function renderPairFrequency()") :]
     body = body[: body.index("\nfunction ", 1)]
@@ -300,7 +300,7 @@ def test_special_tables_render_all_five_digits(slug) -> None:
     Dữ liệu nhúng vốn giữ đủ 5 chữ số; bản trước cắt ngay lúc dựng bảng nên
     người đọc mất ba chữ số đầu và không đối chiếu được với kết quả gốc.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function specialFull(" in js
 
     body = js[js.index("function specialFull(") :]
@@ -347,7 +347,7 @@ def test_special_tables_render_all_five_digits(slug) -> None:
 def test_counting_uses_last_two_digits_but_display_does_not() -> None:
     """Đếm theo hai số cuối là ĐÚNG (LOTO là hai chữ số); cắt khi HIỂN THỊ mới
     là sai. Hai việc khác nhau nên phải có hai hàm khác nhau."""
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function lastTwo(" in js
     assert "r.s.slice(-2)" not in js, (
         "còn chỗ cắt thẳng chuỗi giải; dùng lastTwo() để đếm hoặc "
@@ -377,7 +377,7 @@ def test_reverse_pairs_are_true_reversals_not_kep_bong() -> None:
         "số kép không được xuất hiện trong cặp lộn"
     )
 
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function reversePairs(" in js
     assert "function doubleNumbers(" in js
     assert "sp-kep" in js, "số kép phải liệt kê riêng, không trộn vào cặp lộn"
@@ -398,7 +398,7 @@ def test_reverse_pair_page_exists_separately() -> None:
 def test_cells_can_be_marked_for_comparison() -> None:
     """Bảng dài hàng chục hàng; không có cách đánh dấu thì chỉ cần cuộn một cái
     là mất dấu những ô đang muốn so."""
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function bindMarking(" in js
     # Ô dựng bằng `mk()`, nên khoá đi vào như một khoá của `attrs`.
     assert '"data-key": key' in js, "ô phải có khoá ổn định để nhớ được"
@@ -408,7 +408,7 @@ def test_cells_can_be_marked_for_comparison() -> None:
         "cửa sổ ẩn danh ném lỗi ngay ở lệnh đọc localStorage; không bọc thì "
         "trang trắng"
     )
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     assert "td.marked" in css
 
 
@@ -453,7 +453,7 @@ def test_bo_lookup_comes_from_the_domain_helper() -> None:
 def test_special_cell_carries_all_six_reference_fields() -> None:
     """Ô của trang tham chiếu là sáu trường, không phải một con số:
     ``570 68 4 6 8 C 13`` = giải, Tổng, Đầu, Đuôi, Chẵn/Lẻ, Bộ."""
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function specialCell(" in js
 
     body = js[js.index("function specialCell(") :]
@@ -477,7 +477,7 @@ def test_special_pages_can_toggle_each_field(slug) -> None:
     page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
     assert 'id="sp-fields-toggle"' in page, f"{slug} thiếu hộp bật/tắt trường"
 
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function bindFieldToggles(" in js
     assert "__D_BO__" in page, f"{slug} chưa nhúng bảng tra bộ số"
 
@@ -520,7 +520,7 @@ def test_parity_field_covers_both_digits() -> None:
     Đuôi, thongkemienbac ghi cả hai. Kiểm trên 15 ô thật của thongkemienbac:
     49 cho "CL" (Đầu 4 chẵn, Đuôi 9 lẻ). Bản một ký tự mất một nửa thông tin.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     body = js[js.index("function specialCell(") :]
     body = body[: body.index("\n}") + 2]
     assert 'dau % 2 === 0 ? "C" : "L"' in body, "thiếu chẵn/lẻ của Đầu"
@@ -534,7 +534,7 @@ def test_transition_table_ranks_by_standardised_deviation() -> None:
     chẳng nói lên điều gì, nhưng nếu xếp theo tỉ lệ thì nó đứng trên mọi ô có
     mẫu lớn. Chia cho sai số chuẩn thì mẫu nhỏ tự lùi xuống.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     body = js[js.index("function renderSpecialByTong(") :]
 
     assert "Math.sqrt(P0 * (1 - P0) / n)" in body, "thiếu sai số chuẩn"
@@ -547,7 +547,7 @@ def test_transition_table_ranks_by_standardised_deviation() -> None:
 def test_transition_table_skips_non_consecutive_draws() -> None:
     """Nối hai kỳ cách nhau nhiều ngày thành "hôm sau" là bịa ra một chuyển
     tiếp không tồn tại. XSMB có ngày nghỉ quay, nên ranh giới đó phải bỏ."""
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     body = js[js.index("function renderSpecialByTong(") :]
     assert "gap !== 1" in body, "phải bỏ qua ranh giới ngày nghỉ quay"
 
@@ -571,10 +571,10 @@ def test_empty_cells_are_marked_so_they_read_as_gaps() -> None:
     quay, hoặc ngày ngoài tháng — trông như lỗi hiển thị. Người đọc không phân
     biệt được "không về" với "chưa tải xong".
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "is-empty" in js, "ô rỗng phải được gắn lớp riêng"
 
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     assert "td.is-empty" in css
     # Empty cells use a flat tone; hits retain a ring as a non-color cue.
     empty = re.search(r"\.sp-table td\.is-empty\s*\{([^}]+)\}", css).group(1)
@@ -585,7 +585,7 @@ def test_empty_cells_are_marked_so_they_read_as_gaps() -> None:
 
 def test_grid_lines_run_both_ways() -> None:
     """Chỉ kẻ ngang thì các ô trong một hàng dính vào nhau thành một dải."""
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     block = css[css.index(".sp-table.sp-grid-lines th,") :]
     block = block[: block.index("}") + 1]
     assert "border-right" in block, "thiếu đường dọc"
@@ -598,11 +598,11 @@ def test_row_head_styling_is_opt_out_for_calendar_tables() -> None:
     Bảng lịch tuần có cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa
     ra một cột tiêu đề không tồn tại, và mắt đọc lệch ngay.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "has-rowhead" in js
     assert "rowHead: false" in js, "lịch tuần phải tắt cột nhãn"
 
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     assert ".sp-table.sp-grid-lines.has-rowhead td:first-child" in css, (
         "kiểu cột nhãn phải gắn với has-rowhead, không áp cho mọi bảng"
     )
@@ -622,7 +622,7 @@ def test_week_grid_marks_all_weekdays_as_data_cells() -> None:
 
 def test_weekly_detail_layout_does_not_single_out_first_weekday() -> None:
     """Bảy ngày trong bảng tuần phải cùng căn giữa."""
-    css = (ROOT / "src" / "templates" / "stat_detail_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_detail_pages.css").read_text(encoding="utf-8")
     assert ".sp-page-bang-dac-biet #sp-grid th,.sp-page-bang-dac-biet #sp-grid td{text-align:center" in css
     assert ".sp-page-bang-dac-biet #sp-grid td:first-child{text-align:left}" not in css
 
@@ -638,7 +638,7 @@ def test_tables_use_the_grid_style(slug) -> None:
 def test_column_hint_uses_one_delegated_handler() -> None:
     """Ma trận rộng tới 120 cột và 100 hàng. Gắn trình xử lý lên từng ô là
     12 000 trình xử lý; uỷ quyền một cái trên document là đủ."""
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     body = js[js.index("function bindColumnHint(") :]
     body = body[: body.index("\nfunction ", 1)]
     assert 'document.addEventListener("mouseover"' in body
@@ -667,7 +667,7 @@ def test_every_field_in_a_cell_is_named_and_explained() -> None:
     Sáu ô bật/tắt có sẵn chỉ nêu tên trường, không nói trường nào đứng ở đâu
     trong ô, cũng không nói cách tính.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     block = js[js.index("const DE_FIELDS = [") :]
     block = block[: block.index("\n];")]
     for key in ("ngay", "tong", "dau", "duoi", "chanle", "bo"):
@@ -742,7 +742,7 @@ def test_hints_are_not_hidden_behind_hover_only() -> None:
     body = _legend_body()
     assert "sp-lg-hint" in body, "lời giải thích phải được in ra thành thẻ"
 
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     block = css[css.index(".sp-lg-hint {") :]
     block = block[: block.index("}") + 1]
     assert "display: block" in block, "chú giải phải luôn hiện"
@@ -760,7 +760,7 @@ def _js_function(name: str) -> str:
     Returns:
         Phần mã từ dòng khai báo tới hàm kế tiếp.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     body = js[js.index(f"function {name}(") :]
     # Hàm cuối tệp không có "\nfunction " nào phía sau; cắt tới hết tệp.
     end = body.find("\nfunction ", 1)
@@ -781,7 +781,7 @@ def test_pair_gan_counts_either_number_not_both() -> None:
         "phải là 'không con nào về' mới bỏ qua; dùng || là hoá thành 'cả hai'"
     )
     # Chú thích nằm TRÊN dòng khai báo nên không thuộc thân hàm.
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "MỘT TRONG HAI" in js, "phải ghi lại định nghĩa đã kiểm chứng"
 
 
@@ -857,7 +857,7 @@ def test_notes_only_name_columns_the_tables_actually_render() -> None:
     tính tỉ số đó.
     """
     builder = (ROOT / "src" / "pages" / "build_stat_pages.py").read_text(encoding="utf-8")
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
 
     assert "So mức ngẫu nhiên" not in builder, (
         "không cột nào mang tên này; ghi chú phải nói theo cột thật"
@@ -901,7 +901,7 @@ def test_range_handler_only_binds_buttons_inside_the_filter_group() -> None:
     ``.sp-chip`` lên một nút nằm ngoài nhóm lọc, nút ấy cũng không đổi được
     dải ngày.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert 'querySelectorAll(".sp-chip")' not in js
     assert 'querySelectorAll(".sp-chips .sp-chip")' in js
 
@@ -915,7 +915,7 @@ def test_default_range_chip_matches_the_javascript_default() -> None:
     """
     from pages.build_stat_pages import DEFAULT_RANGE_DRAWS
 
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert f"DRAWS.length - {DEFAULT_RANGE_DRAWS}" in js
 
 
@@ -941,7 +941,7 @@ def test_preset_pages_highlight_all_history_not_ninety_draws() -> None:
 #: một nội dung mà không ai thấy.
 SPECIAL_SLUGS = ("bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam")
 
-JS_SOURCE = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+JS_SOURCE = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
 
 
 def _render_body(function_name: str) -> str:

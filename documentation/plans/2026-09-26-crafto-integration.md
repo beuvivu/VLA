@@ -34,7 +34,7 @@ Files: `src/web/page_output.py`, `src/web/crafto_design.py`, `src/pages/build_la
 
 ### Task 2: Hệ thống CSS
 
-Files: `src/templates/app_design.css`.
+Files: `src/web/templates/app_design.css`.
 
 - [ ] Áp dụng hợp đồng selector trong spec; lớp cuối sau app-shell.
 - [ ] Hero gradient/marquee/visual cards, bề mặt trắng, nút viên thuốc, icon nhất quán.
@@ -43,7 +43,7 @@ Files: `src/templates/app_design.css`.
 
 ### Task 3: Runtime chuyển động
 
-Files: `src/assets/app-motion.js`, `tests/frontend/motion.test.mjs`, `tests/frontend/package.json`.
+Files: `src/web/assets/app-motion.js`, `tests/frontend/motion.test.mjs`, `tests/frontend/package.json`.
 
 - [ ] Test trước cho toggle/persistence/reduced motion/touch/visibility/idempotent startup.
 - [ ] Dùng requestAnimationFrame gộp pointer input, không vòng lặp chạy vô hạn.

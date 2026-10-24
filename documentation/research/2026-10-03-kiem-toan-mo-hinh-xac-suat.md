@@ -75,12 +75,12 @@ không viết lại lịch sử.
 | Cửa sổ tĩnh, không suy giảm | Không phải nguyên nhân | ML production đã đánh trọng số giảm dần (bán rã 365 ngày khi học, 120 ngày khi hiệu chỉnh; `ml_train.py:191-192`) và có EWM 14/45 ngày. Tiên nghiệm Bayes mới tự CHỌN chu kỳ bán rã bằng Bayes thực nghiệm. Ở mọi lần học lại, nó chọn tiên nghiệm cực mạnh (α = 3 000, tức gần hằng số), đúng như dự đoán khi không có trôi (mục 2). |
 | Rò rỉ dữ liệu | Không tìm thấy | Hàng neo t chỉ đọc kỳ ≤ t (`ml_features.py:235`). Bỏ các bước qua kỳ nghỉ (`ml_features.py:357`). Bốn khối thời gian liên tiếp (`ml_train.py:43`). Rò rỉ thật duy nhất từng có (so trọng số học với chính vector đương nhiệm) đã sửa trong `learn_ensemble_weights.py`. |
 
-## 2. Thiết kế lại — mô hình thách đấu `src/vla/`
+## 2. Thiết kế lại — mô hình thách đấu `src/research/vla/`
 
-Đường dẫn `vla/…` trong yêu cầu được đặt dưới `src/vla/`, theo cấu trúc của kho (mọi mô-đun chạy với
+Đường dẫn `vla/…` trong yêu cầu được đặt dưới `src/research/vla/`, theo cấu trúc của kho (mọi mô-đun chạy với
 `PYTHONPATH=src`).
 
-- `src/vla/features/engineer.py`: 19 đặc trưng cho LOTO, 30 cho Đặc Biệt. Quy ước duy nhất: hàng t chỉ đọc kỳ ≤ t.
+- `src/research/vla/features/engineer.py`: 19 đặc trưng cho LOTO, 30 cho Đặc Biệt. Quy ước duy nhất: hàng t chỉ đọc kỳ ≤ t.
   Thứ của kỳ đích lấy theo ngày của kỳ quay kế tiếp thật (qua Tết/quãng nghỉ không phải "ngày hôm sau").
   PMI làm trơn bằng `log[(c+k)/(e+k)]` với `e` là số kỳ vọng nếu độc lập: cặp chưa có dữ liệu ra 0. Bản đầu dùng
   `log[(c+1)·N/((c_i+1)(c_j+1))]`, cho hai con chưa từng về PMI = log N, tức vắng bằng chứng bị đọc thành gắn kết.
@@ -90,13 +90,13 @@ không viết lại lịch sử.
   - PMI cùng kỳ; PMI trễ 1 kỳ, cả trung bình lẫn lớn nhất.
   - Nhiệt của cộng đồng Louvain trên đồ thị PMI dương, chỉ tính lại từ dữ liệu đến mốc.
   - Riêng Đặc Biệt: tần suất suy giảm của đầu/đuôi/tổng/bộ/lớn-nhỏ/chẵn-lẻ, và Markov bậc 1 của tổng/đầu/đuôi.
-- `src/vla/models/bayesian_lgb.py`, ba tầng:
+- `src/research/vla/models/bayesian_lgb.py`, ba tầng:
   1. Tiên nghiệm Dirichlet (Đặc Biệt) hoặc Beta (LOTO) với số đếm suy giảm; (h, α) chọn bằng Bayes thực nghiệm.
   2. LightGBM nhị phân khởi đầu từ logit của tiên nghiệm (`init_score`), dừng sớm trên khối thời gian sau. Cây chỉ học PHẦN DƯ, nên khi không có tín hiệu thì mô hình đứng yên ở tiên nghiệm. Có tuỳ chọn focal loss.
   3. Hiệu chỉnh Platt hoặc isotonic trên khối thời gian riêng; Đặc Biệt được chuẩn hoá về tổng 1.
-- `src/vla/backtest/walk_forward.py`: cửa sổ mở rộng, học lại mỗi 50 kỳ. Hàm tự ném lỗi nếu khối huấn luyện chạm kỳ đang chấm.
-- `src/vla/backtest/evaluator.py`: logloss, Brier (Đặc Biệt dùng TỔNG), Top-5/10/20, ROI theo luật trả thưởng, chiến lược chỉ đánh khi kỳ vọng dương, bảng hiệu chỉnh, so cặp từng kỳ.
-- `src/vla/backtest/production_ml.py`: tái dựng đúng `ml_train.train_one` + `ml_predict` của thành phần ML production để làm đối chứng "cũ".
+- `src/research/vla/backtest/walk_forward.py`: cửa sổ mở rộng, học lại mỗi 50 kỳ. Hàm tự ném lỗi nếu khối huấn luyện chạm kỳ đang chấm.
+- `src/research/vla/backtest/evaluator.py`: logloss, Brier (Đặc Biệt dùng TỔNG), Top-5/10/20, ROI theo luật trả thưởng, chiến lược chỉ đánh khi kỳ vọng dương, bảng hiệu chỉnh, so cặp từng kỳ.
+- `src/research/vla/backtest/production_ml.py`: tái dựng đúng `ml_train.train_one` + `ml_predict` của thành phần ML production để làm đối chứng "cũ".
 
 Siêu tham số chốt TRƯỚC khi chạm dữ liệu thật. `min_data_in_leaf` = 500 chọn bằng kiểm độ nhạy trên dữ
 liệu tổng hợp seed 11 (`TUNING_SEED`, chỉ cài tín hiệu LOTO): giá trị 2 000 thấy tín hiệu ở z = 1,6, còn
@@ -198,7 +198,7 @@ Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ l
 
 - **Không thay mô hình production.** Mô hình mới không thắng hằng số lẫn ML production, nên không qua
   cổng của kho: phải thắng CẢ hai trên lát ngoài mẫu.
-- Gói `src/vla/` giữ lại làm khung thách đấu. Mọi ý tưởng đặc trưng mới nên đi qua
+- Gói `src/research/vla/` giữ lại làm khung thách đấu. Mọi ý tưởng đặc trưng mới nên đi qua
   `benchmark_probability_models.py` trước khi chạm production.
 - Việc làm tiếp (chủ dự án duyệt ngày 03-10-2026):
   1. ~~Đăng ký tiến cứu giả thuyết "Top-5 Đặc Biệt trúng > 5%"~~ — không còn cần: sau khi sửa PMI, Top-5

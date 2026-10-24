@@ -299,7 +299,7 @@ def test_manual_comparison_widget_is_limited_to_matrix_products_and_loads_asset(
                 assert widget.select_one('[data-vl-actual-bonus]') is not None
         else:
             assert widget is None, path.name
-    assert (tmp_path / 'docs/assets/vietlott-comparison.js').read_bytes() == (b.ROOT / 'src/assets/vietlott-comparison.js').read_bytes()
+    assert (tmp_path / 'docs/assets/vietlott-comparison.js').read_bytes() == (b.ROOT / 'src/web/assets/vietlott-comparison.js').read_bytes()
 
 
 def test_a_cache_path_from_the_repo_root_is_resolved_before_entering_the_engine(tmp_path, monkeypatch) -> None:
@@ -429,7 +429,7 @@ def test_pick_boards_exist_only_for_six_number_products_and_have_a_local_asset(t
             assert board.select_one('noscript') is not None
         else:
             assert board is None, path.name
-    assert (tmp_path / 'docs/assets/vietlott-picks.js').read_bytes() == (b.ROOT / 'src/assets/vietlott-picks.js').read_bytes()
+    assert (tmp_path / 'docs/assets/vietlott-picks.js').read_bytes() == (b.ROOT / 'src/web/assets/vietlott-picks.js').read_bytes()
 
 
 def test_draft_numbers_have_evidence_for_user_input_instead_of_draw_results() -> None:

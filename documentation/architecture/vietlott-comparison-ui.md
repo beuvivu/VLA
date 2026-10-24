@@ -2,8 +2,8 @@
 
 Trang kết quả dùng HTML/CSS/JavaScript native, cùng font và theme của site.
 Nguồn dựng là `src/pages/build_vietlott_results.py`; CSS ở
-`src/templates/vietlott_main.css`; logic nhập số ở
-`src/assets/vietlott-comparison.js`. Tám trang được sinh vào `docs/`.
+`src/web/templates/vietlott_main.css`; logic nhập số ở
+`src/web/assets/vietlott-comparison.js`. Tám trang được sinh vào `docs/`.
 
 ## Tùy chỉnh màu và chuyển động
 

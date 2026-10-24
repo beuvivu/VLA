@@ -299,7 +299,7 @@ def test_theme_does_not_force_heading_colour_globally() -> None:
 
 def test_path_ui_template_does_not_apply_light_classes_to_dark_page() -> None:
     """Trang soi cầu dùng nền tối; class chủ đề sáng làm chữ chìm vào nền."""
-    template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(
+    template = (ROOT / "src/web/templates/path_ui_page.html.j2").read_text(
         encoding="utf-8"
     )
     assert '<body class="ui-app path-page">' in template
@@ -463,7 +463,7 @@ def test_stat_page_surfaces_are_elevated_like_the_rest_of_the_system() -> None:
     ``.sp-*`` cho 14 trang thống kê. Lần đổi giao diện trước bỏ sót nó, nên
     nhóm trang nhận được mặt đất mới mà thành phần bên trên vẫn phẳng lì.
     """
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     for block in (".sp-controls{", ".sp-scroll{", ".sp-kpi-card{", ".sp-cell{"):
         start = css.index(block)
         rule = css[start : css.index("}", start)]
@@ -477,7 +477,7 @@ def test_stat_page_css_takes_every_colour_from_a_token() -> None:
     thẳng không đi qua token nên chúng không theo nền mới. Khối chế độ tối
     được miễn — ở đó hex là lựa chọn có chủ đích.
     """
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     light, depth = [], 0
     for line in css.splitlines():
         if "prefers-color-scheme: dark" in line:
@@ -501,7 +501,7 @@ def test_scroll_box_hugs_its_table_instead_of_stretching() -> None:
     nhưng hộp chứa là ``display:block`` nên nó vẫn nở hết khung: trang Lô gan
     có bảng 5 cột rộng ~500px nằm giữa một mảng trắng rộng 1330px.
     """
-    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    css = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     start = css.index(".sp-scroll{")
     rule = css[start : css.index("}", start)]
     assert "width:fit-content" in rule
@@ -516,7 +516,7 @@ def test_scroll_box_hugs_its_table_instead_of_stretching() -> None:
 
 from theme_palette_helpers import theme_tokens, resolve_theme_colors
 
-STAT_CSS = "src/templates/stat_pages.css"
+STAT_CSS = "src/web/templates/stat_pages.css"
 
 
 def _stat_css() -> str:
@@ -582,7 +582,7 @@ def test_nhay_legend_exists_because_the_ramp_has_no_perceptual_order() -> None:
     Xanh dương -> xanh lá -> cam không có trật tự tri giác: người đọc không
     tự suy ra 3 nháy nhiều hơn 2. Thiếu chú giải thì bảng màu chỉ là màu.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "renderNhayLegend" in js
     assert "sp-nhay-legend" in _stat_css()
 
@@ -624,7 +624,7 @@ def test_crosshair_covers_the_row_as_well_as_the_column() -> None:
     css = _stat_css()
     assert "tbody tr.row-hint" in css
     assert "td.cell-hint" in css
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert 'classList.add("row-hint")' in js
 
 

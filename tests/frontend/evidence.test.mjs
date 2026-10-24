@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 import { setup as setupShell } from './shell-fixture.mjs';
 
 const root = new URL('../../', import.meta.url);
-const SCRIPT = readFileSync(process.env.APP_EVIDENCE_SCRIPT || new URL('src/assets/app-evidence.js', root), 'utf8');
+const SCRIPT = readFileSync(process.env.APP_EVIDENCE_SCRIPT || new URL('src/web/assets/app-evidence.js', root), 'utf8');
 
 test('Bằng chứng giữ ngữ cảnh cầu sau khi khung chuyển title sang mô tả trợ năng', t => {
   const description = '01x02 · 67,76 · 5 ngày';

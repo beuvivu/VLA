@@ -18,7 +18,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
-ASSETS = ROOT / "src" / "assets" / "icons"
+ASSETS = ROOT / "src" / "web" / "assets" / "icons"
 sys.path.insert(0, str(ROOT / "src"))
 
 from web.app_icons import icon_svg  # noqa: E402

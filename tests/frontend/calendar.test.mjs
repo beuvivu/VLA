@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 
-const source = readFileSync(process.env.APP_CALENDAR_ENGINE || new URL('../../src/templates/vietnamese_calendar.js', import.meta.url), 'utf8');
+const source = readFileSync(process.env.APP_CALENDAR_ENGINE || new URL('../../src/web/templates/vietnamese_calendar.js', import.meta.url), 'utf8');
 const context = vm.createContext({ Intl, Date });
 vm.runInContext(source, context);
 const engine = context.AppVietnameseCalendar;
@@ -58,7 +58,7 @@ test('điểm sóc gần đầu ngày không sinh ngày âm bằng 0 hoặc thá
 const fixture = execFileSync('python3', ['-c', 'from pathlib import Path\nfrom web.calendar_widget import render_calendar\nprint(render_calendar(Path(".")))'], {
   cwd: fileURLToPath(new URL('../../', import.meta.url)), env: { ...process.env, PYTHONPATH: 'src' }, encoding: 'utf8',
 });
-const widgetSource = readFileSync(new URL('../../src/templates/calendar_widget.js', import.meta.url), 'utf8');
+const widgetSource = readFileSync(new URL('../../src/web/templates/calendar_widget.js', import.meta.url), 'utf8');
 function setup(t, payload = { latest: '2026-09-25', results: { '2026-09-25': '34465', '2026-09-01': '00001', '2026-09-02': '00000' } }) {
   const dom = new JSDOM(fixture, { url: 'https://example.test/index.html', runScripts: 'outside-only', pretendToBeVisual: true });
   t.after(() => dom.window.close());

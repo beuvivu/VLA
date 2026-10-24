@@ -72,7 +72,7 @@ bộ. `hit_probability_percent` = 100p; không diễn giải như xác suất m�
 
 ## 4. Vận hành và mở rộng
 
-Mã chạy thật nằm trong `src/xsmb_agents/`, xuất bốn lớp yêu cầu:
+Mã chạy thật nằm trong `src/forecast/xsmb_agents/`, xuất bốn lớp yêu cầu:
 `KnowledgeBaseManager`, `AlgorithmEnsemble`, `MetaLearner`, `PredictiveEngine`.
 
 ```python
@@ -84,7 +84,7 @@ for mode, result in report["modes"].items():
     print(mode, result["weights"], result["candidate_top5"])
 ```
 
-Chạy độc lập: `PYTHONPATH=src python src/xsmb_agents/run_xsmb_agents.py`. Pipeline chính
+Chạy độc lập: `PYTHONPATH=src python src/forecast/xsmb_agents/run_xsmb_agents.py`. Pipeline chính
 tự gọi sau khi đủ dự báo sản xuất hai mục tiêu. Tác tử lấy snapshot sau chấm xác suất, chẩn đoán và cập nhật
 kho tri thức của cùng lượt; chỉ bước dựng HTML chạy sau snapshot. Đọc kết quả
 trong `data/agents/report.json`; sổ có checksum ở
@@ -93,7 +93,7 @@ trong `data/agents/report.json`; sổ có checksum ở
 tác vụ tính trên CPU chạy tuần tự, không dùng async để giả tăng tốc.
 
 Kiểm hồi cứu tái lập: `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python
-src/xsmb_agents/run_xsmb_agents.py --benchmark-last 60`. Kết quả nằm trong
+src/forecast/xsmb_agents/run_xsmb_agents.py --benchmark-last 60`. Kết quả nằm trong
 `data/agents/benchmark.json`, có fingerprint đầu vào, cỡ mẫu, Brier/logloss
 từng tầng và đối chứng. Tệp ghi rõ `prospective_draws=0`, không ghi bất kỳ
 sổ dự báo nào và không được dùng để tự đề bạt.

@@ -28,7 +28,7 @@ const pages = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON |
   cwd: fileURLToPath(root), env: {...process.env, PYTHONPATH: 'src'},
   input: JSON.stringify(fixtures), encoding: 'utf8', maxBuffer: 8 * 1024 * 1024,
 }));
-const source = readFileSync(new URL('src/templates/stat_pages.js', root), 'utf8');
+const source = readFileSync(new URL('src/web/templates/stat_pages.js', root), 'utf8');
 
 function setup(t, slug, fixture = 'full') {
   const errors = [];

@@ -43,7 +43,7 @@ from typing import Any, Final, Literal
 import numpy as np
 from scipy import stats
 
-from ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.capabilities import CAPABILITIES
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 

@@ -51,7 +51,7 @@ from ensemble.ensemble_utils import (  # noqa: E402
 from ingest.lottery import Lottery  # noqa: E402
 from core.path_models import PathParams, build_daily_targets  # noqa: E402
 from soi_cau.path_prob import fit_paths, predict_from_fitted_paths_full, prepare_path_history  # noqa: E402
-from vla.backtest import evaluator  # noqa: E402
+from research.vla.backtest import evaluator  # noqa: E402
 from core.xsmb_domain import baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "component_trust.json"

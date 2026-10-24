@@ -29,9 +29,9 @@ on:
     branches: [main]
     paths:
       - "src/pages/build_vietlott_results.py"
-      - "src/templates/vietlott_main.css"
-      - "src/assets/vietlott-picks.js"
-      - "src/assets/vietlott-comparison.js"
+      - "src/web/templates/vietlott_main.css"
+      - "src/web/assets/vietlott-picks.js"
+      - "src/web/assets/vietlott-comparison.js"
       - "src/pages/vietlott_navigation_content.py"
       - "src/web/evidence_catalog.py"
       - "scripts/ops/push_generated_site.py"

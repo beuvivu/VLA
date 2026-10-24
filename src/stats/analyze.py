@@ -4,9 +4,10 @@ import logging
 from pathlib import Path
 import pandas as pd
 
+from core.paths import TEMPLATES
 from ingest.lottery import RepoPaths, Lottery
 from stats.plot_utils import save_distribution, save_heatmap, save_ranked_bar
-from templates import Render
+from web.templates import Render
 
 
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ def main() -> None:
     std = float(counts.std().round(2))
 
     # Render README from template
-    render = Render(template_dir=paths.root / "src" / "templates")
+    render = Render(template_dir=TEMPLATES)
     content = render(
         "README.j2",
         loto_result=loto_result,

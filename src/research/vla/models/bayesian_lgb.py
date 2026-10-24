@@ -27,7 +27,7 @@ import numpy as np
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
-from vla.features.engineer import decayed_sum
+from research.vla.features.engineer import decayed_sum
 
 Mode = Literal["loto", "de"]
 EPS = 1e-6
@@ -308,6 +308,6 @@ class ConstantModel:
         return self
 
     def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray:
-        from vla.backtest.evaluator import cumulative_reference
+        from research.vla.backtest.evaluator import cumulative_reference
 
         return cumulative_reference(self.mode, hit, np.asarray(rows, dtype=np.int64) + 1)

@@ -1,6 +1,6 @@
 """Walk-forward cửa sổ mở rộng: không K-fold, không nhìn trước.
 
-Quy ước hàng/kỳ như ``vla.features.engineer``: hàng ``t`` dự báo kỳ ``t+1``.
+Quy ước hàng/kỳ như ``research.vla.features.engineer``: hàng ``t`` dự báo kỳ ``t+1``.
 Để dự báo một khối kỳ đích ``[s, s+R)``, mô hình được huấn luyện lại CHỈ trên
 các hàng có nhãn đã biết trước kỳ ``s``, tức hàng ``t ≤ s-2`` (nhãn là kỳ
 ``t+1 ≤ s-1``). ``run`` kiểm điều đó cho từng khối và ném lỗi nếu vi phạm —

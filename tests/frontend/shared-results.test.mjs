@@ -25,7 +25,7 @@ function setup(t, kind = 'landing', execute = true) {
 }
 
 function run(dom) {
-  const sharedSource = readFileSync(new URL('../../src/templates/shared_results.js', import.meta.url), 'utf8');
+  const sharedSource = readFileSync(new URL('../../src/web/templates/shared_results.js', import.meta.url), 'utf8');
   const override = process.env.APP_SHARED_RESULTS_SCRIPT
     ? readFileSync(process.env.APP_SHARED_RESULTS_SCRIPT, 'utf8') : sharedSource;
   for (const script of dom.window.document.querySelectorAll('script:not([src])')) {

@@ -50,7 +50,7 @@ def test_registered_agents_reuse_online_settlement_without_rewriting_legacy():
 
 @pytest.mark.parametrize('mode', ['de', 'loto'])
 def test_agents_preserve_probability_domains_and_do_not_read_target(mode):
-    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    from forecast.xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
     frame = history(85)
     target = frame.iloc[-1]['date']
     kb = KnowledgeBaseManager(frame, target_date=target)
@@ -71,7 +71,7 @@ def test_agents_preserve_probability_domains_and_do_not_read_target(mode):
 
 
 def test_memory_rejects_unexplained_gap_and_conflicting_dates():
-    from xsmb_agents import KnowledgeBaseManager
+    from forecast.xsmb_agents import KnowledgeBaseManager
     frame = history()
     with pytest.raises(ValueError, match='Thiếu|gap'):
         KnowledgeBaseManager(frame.drop(index=10))
@@ -81,7 +81,7 @@ def test_memory_rejects_unexplained_gap_and_conflicting_dates():
 
 
 def test_engine_is_idempotent_preserves_public_vector_and_explains_mixture(tmp_path):
-    from xsmb_agents import PredictiveEngine
+    from forecast.xsmb_agents import PredictiveEngine
     frame = history(40)
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
     pred = tmp_path / 'predict'
@@ -133,7 +133,7 @@ def test_profile_never_claims_shadow_vector_was_published(monkeypatch):
 
 
 def test_mlp_is_fitted_on_chronological_prefix_and_target_mutation_cannot_change_it():
-    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    from forecast.xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
     frame = history(100)
     target = frame.iloc[-1]['date']
     kb = KnowledgeBaseManager(frame, target_date=target)
@@ -190,7 +190,7 @@ def test_pipeline_runs_agents_after_both_online_forecasts_even_without_docs(monk
     monkeypatch.setattr(sys, 'argv', ['pipeline.py', '--skip-sync', '--skip-docs', '--strict'])
     pipeline.main()
     agents = [(i, options) for i, (cmd, options) in enumerate(calls)
-              if 'src/xsmb_agents/run_xsmb_agents.py' in cmd]
+              if 'src/forecast/xsmb_agents/run_xsmb_agents.py' in cmd]
     assert len(agents) == 1
     at, options = agents[0]
     assert options['allow_fail'] is False
@@ -223,8 +223,8 @@ def test_public_agents_card_distinguishes_candidates_and_rejects_old_date():
 
 
 def test_engine_checks_real_clock_after_lock_and_training_before_freezing(tmp_path, monkeypatch):
-    import xsmb_agents.engine as engine_module
-    from xsmb_agents import PredictiveEngine
+    from forecast.xsmb_agents import engine as engine_module
+    from forecast.xsmb_agents import PredictiveEngine
     frame = history(40)
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
     pred = tmp_path / 'predict'
@@ -244,8 +244,8 @@ def test_engine_checks_real_clock_after_lock_and_training_before_freezing(tmp_pa
 @pytest.mark.parametrize('slow_phase', ['serialization', 'fsync'])
 def test_engine_rechecks_cutoff_after_serializing_a_new_journal(tmp_path, monkeypatch, slow_phase):
     from core import atomic_io
-    import xsmb_agents.engine as engine_module
-    from xsmb_agents import PredictiveEngine
+    from forecast.xsmb_agents import engine as engine_module
+    from forecast.xsmb_agents import PredictiveEngine
     frame = history(40)
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
     pred = tmp_path / 'predict'
@@ -286,7 +286,7 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
     import copy
     import hashlib
     import zlib
-    from xsmb_agents.engine import MetaLearner, PredictiveEngine
+    from forecast.xsmb_agents.engine import MetaLearner, PredictiveEngine
     frame = history(40)
     p = np.linspace(1, 2, 100)
     p = p / p.sum() if mode == 'de' else p / 7
@@ -294,7 +294,7 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
     state, record = online.advance(online.new_state(mode, profile='agents'), frame, p,
                                    clock(frame).date().isoformat(), now=clock(frame),
                                    expert_predictions=predictions)
-    from xsmb_agents.algorithms import AGENT_POLICY
+    from forecast.xsmb_agents.algorithms import AGENT_POLICY
     record['agent_policy'] = AGENT_POLICY
     record['agent_diagnostics'] = {'pattern': {'status': 'insufficient_history'}}
     record['knowledge_snapshot'] = {}
@@ -351,7 +351,7 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
 
 
 def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observations():
-    from xsmb_agents.benchmark import walk_forward
+    from forecast.xsmb_agents.benchmark import walk_forward
     frame = history(40)
     original = frame.copy(deep=True)
     result = walk_forward(frame, last=4)
@@ -379,8 +379,8 @@ def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
     Định nghĩa 1 trộn cố định 20% mạng bất kể khối thẩm định; bản ghi đầu của sổ thật có logloss
     thẩm định Đặc Biệt kém nền mà vẫn được trộn.
     """
-    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
-    from xsmb_agents.algorithms import AGENT_POLICY, feasible
+    from forecast.xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    from forecast.xsmb_agents.algorithms import AGENT_POLICY, feasible
     p, info = AlgorithmEnsemble(KnowledgeBaseManager(history(100))).pattern(mode)
     assert info['status'] == 'fitted' and info['policy'] == AGENT_POLICY == 2
     assert min(info['validation_skill'].values()) <= 0
@@ -390,9 +390,9 @@ def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
 
 def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkeypatch):
     """Mạng có kỹ năng thật: trust = model_trust(s), vector = trust·mạng + (1 − trust)·nền."""
-    import xsmb_agents.algorithms as algorithms
+    from forecast.xsmb_agents import algorithms as algorithms
     from ml.ml_train import model_trust
-    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    from forecast.xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
     frame = _planted_loto_history()
     p, info = AlgorithmEnsemble(KnowledgeBaseManager(frame)).pattern('loto')
     skill = info['validation_skill']
@@ -432,7 +432,7 @@ def _write_ledger_of_family(path, mode, family, frame):
 
 
 def test_the_ledger_family_follows_the_agent_definition():
-    from xsmb_agents.algorithms import AGENT_POLICY
+    from forecast.xsmb_agents.algorithms import AGENT_POLICY
     assert online.AGENT_RECIPE['family'] == f'xsmb_three_agents_v{AGENT_POLICY}'
     assert f'xsmb_three_agents_v{AGENT_POLICY - 1}' in online.RETIRED_AGENT_FAMILIES
     assert online.new_state('de', profile='agents')['recipe'] == online.AGENT_RECIPE
@@ -442,8 +442,8 @@ def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty
     """Đổi định nghĩa là mở SỔ MỚI: Hedge, bước chọn η/độ quên và cổng đề bạt không thừa hưởng điểm
     do bộ dự báo cũ kiếm được; sổ cũ được cất nguyên, không chấm lại."""
     import json
-    from xsmb_agents import PredictiveEngine
-    from xsmb_agents.algorithms import AGENT_POLICY
+    from forecast.xsmb_agents import PredictiveEngine
+    from forecast.xsmb_agents.algorithms import AGENT_POLICY
     previous, frame = history(40), history(41)
     online_dir = tmp_path / 'online'
     for mode in ('de', 'loto'):
@@ -465,7 +465,7 @@ def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty
 @pytest.mark.parametrize('case', ['unregistered_family', 'archive_exists'])
 def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
     """Họ lạ (bản triển khai mới hơn) hay bản cất đã có: dừng TRƯỚC khi đổi tên, chốt hay ghi sổ nào."""
-    from xsmb_agents import PredictiveEngine
+    from forecast.xsmb_agents import PredictiveEngine
     previous, frame = history(40), history(41)
     online_dir = tmp_path / 'online'
     _write_ledger_of_family(online_dir / 'agents_de.json', 'de', 'xsmb_three_agents_v1', previous)
@@ -482,7 +482,7 @@ def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
 
 
 def test_a_ledger_of_the_running_family_must_hold_only_running_definition_records(tmp_path):
-    from xsmb_agents.engine import MetaLearner
+    from forecast.xsmb_agents.engine import MetaLearner
     frame = history(40)
     state, _ = online.advance(online.new_state('de', profile='agents'), frame, np.full(100, .01),
                               clock(frame).date().isoformat(), now=clock(frame),

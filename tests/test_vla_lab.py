@@ -8,16 +8,16 @@ import numpy as np
 import pytest
 
 from soi_cau import bridge_rules
-from vla.backtest import evaluator, walk_forward
-from vla.backtest.synthetic import synthetic_history
-from vla.features.engineer import (
+from research.vla.backtest import evaluator, walk_forward
+from research.vla.backtest.synthetic import synthetic_history
+from research.vla.features.engineer import (
     FeatureParams,
     History,
     build_features,
     gap_zscore,
     targets,
 )
-from vla.models.bayesian_lgb import (
+from research.vla.models.bayesian_lgb import (
     BayesianLGBModel,
     Calibrator,
     ConstantModel,
@@ -243,7 +243,7 @@ def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> Non
 
 def test_pmi_treats_missing_evidence_as_no_association() -> None:
     """Cặp chưa từng gặp (và con chưa từng về) phải ra PMI ≈ 0, không phải log N."""
-    from vla.features.engineer import _pmi
+    from research.vla.features.engineer import _pmi
 
     left = np.array([0.0, 500.0, 500.0])
     right = np.array([0.0, 500.0, 500.0])
@@ -257,7 +257,7 @@ def test_pmi_treats_missing_evidence_as_no_association() -> None:
 
 def test_target_weekday_follows_the_next_recorded_draw_across_a_break() -> None:
     """Qua quãng nghỉ, thứ của kỳ đích là thứ của kỳ quay kế tiếp thật."""
-    from vla.features.engineer import weekday_features
+    from research.vla.features.engineer import weekday_features
 
     dates = ("2026-02-15", "2026-02-21", "2026-02-22")  # CN → (nghỉ Tết) → T7 → CN
     sin, cos = weekday_features(dates)
@@ -289,7 +289,7 @@ def _planted_rates(history: History) -> tuple[float, float]:
 
 
 def test_each_power_check_history_plants_only_its_own_signal() -> None:
-    from vla.backtest.synthetic import power_history
+    from research.vla.backtest.synthetic import power_history
 
     loto_73, loto_plus = _planted_rates(power_history("loto", 3000, seed=21))
     de_73, de_plus = _planted_rates(power_history("de", 3000, seed=21))
@@ -345,7 +345,7 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
     assert sorted(made) == ["de", "loto"]
     assert used == [("loto", "loto"), ("de", "de")]
     # Độ nhạy công bố đo trên lịch sử CHƯA dùng để chọn siêu tham số.
-    from vla.backtest.synthetic import TUNING_SEED
+    from research.vla.backtest.synthetic import TUNING_SEED
 
     assert TUNING_SEED not in seeds
 

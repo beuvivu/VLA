@@ -30,7 +30,7 @@ function setup(t, slug, { evidence = false, query = '', mobile = false, savedOri
     [process.env.APP_FREQUENCY_PRESENTATION, 'frequency_bento.js'],
     [process.env.APP_STAT_ENGINE, 'stat_pages.js'],
   ]) {
-    if (override) html = html.replace(readFileSync(new URL(`src/templates/${name}`, root), 'utf8'), readFileSync(override, 'utf8'));
+    if (override) html = html.replace(readFileSync(new URL(`src/web/templates/${name}`, root), 'utf8'), readFileSync(override, 'utf8'));
   }
   const dom = new JSDOM(html, {
     url: `https://example.test/${slug}.html${query}`, runScripts: 'dangerously', pretendToBeVisual: true,
@@ -45,7 +45,7 @@ function setup(t, slug, { evidence = false, query = '', mobile = false, savedOri
     },
   });
   t.after(() => dom.window.close());
-  if (evidence) dom.window.eval(readFileSync(new URL('src/assets/app-evidence.js', root), 'utf8'));
+  if (evidence) dom.window.eval(readFileSync(new URL('src/web/assets/app-evidence.js', root), 'utf8'));
   return dom;
 }
 

@@ -173,7 +173,7 @@ def test_the_pipeline_builds_the_board_after_every_page_it_reads() -> None:
     board = text.index('_py("src/evaluation/prediction_board.py")')
     for builder in ("pages/build_fun_prediction.py", "pages/build_bridge_pages.py",
                     "pages/build_position_bridges.py", "pages/build_multi_hit_page.py",
-                    "xsmb_agents/run_xsmb_agents.py", "ml/cau_keo_daily_top.py"):
+                    "forecast/xsmb_agents/run_xsmb_agents.py", "ml/cau_keo_daily_top.py"):
         assert text.index(f'_py("src/{builder}"') < board, builder
 
 

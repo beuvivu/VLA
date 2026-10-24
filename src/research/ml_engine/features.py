@@ -35,7 +35,7 @@ from typing import Final
 
 import numpy as np
 
-from ml_engine.schema import NUMBER_SPACE
+from research.ml_engine.schema import NUMBER_SPACE
 
 #: Các cửa sổ tần suất, tính bằng ngày.
 FREQUENCY_WINDOWS: Final[tuple[int, ...]] = (7, 14, 30, 90, 180)

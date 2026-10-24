@@ -879,8 +879,8 @@ def build(root: Path = ROOT, *, dashboard: dict | None = None, cache_states: Pat
     docs.mkdir(exist_ok=True)
     assets = docs / "assets"
     assets.mkdir(exist_ok=True)
-    shutil.copyfile(ROOT / "src/assets/vietlott-picks.js", assets / "vietlott-picks.js")
-    shutil.copyfile(ROOT / "src/assets/vietlott-comparison.js", assets / "vietlott-comparison.js")
+    shutil.copyfile(ROOT / "src/web/assets/vietlott-picks.js", assets / "vietlott-picks.js")
+    shutil.copyfile(ROOT / "src/web/assets/vietlott-comparison.js", assets / "vietlott-comparison.js")
     by_code = _by_code(dashboard)
     analysis = dashboard.get("analysis") or {}
     out = [docs / "vietlott.html"]

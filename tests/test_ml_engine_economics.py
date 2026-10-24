@@ -6,13 +6,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import ml_engine.main_pipeline as orchestration
-import ml_engine.models as learners
-from ml_engine.capabilities import CAPABILITIES
-from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
-from ml_engine.metrics import EconomicModel, PerformanceTracker, score_day
-from ml_engine.schema import ObservationMatrix
-from ml_engine.validation import WalkForwardValidator
+from research.ml_engine import main_pipeline as orchestration
+from research.ml_engine import models as learners
+from research.ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
+from research.ml_engine.metrics import EconomicModel, PerformanceTracker, score_day
+from research.ml_engine.schema import ObservationMatrix
+from research.ml_engine.validation import WalkForwardValidator
 
 
 @pytest.fixture

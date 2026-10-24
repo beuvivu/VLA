@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from vla.features.engineer import History, history_from_frame
+from research.vla.features.engineer import History, history_from_frame
 from core.xsmb_domain import FIELD_WIDTHS, PRIZE_FIELDS
 
 

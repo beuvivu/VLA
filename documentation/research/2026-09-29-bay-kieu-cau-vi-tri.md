@@ -52,9 +52,9 @@ mình và rút kết luận từ số đo mỗi lần dựng.
 
 - `src/soi_cau/bridge_rules.py` (bộ máy + kiểm lịch sử) → `data/bridge_pages/latest.json`.
 - `src/pages/build_bridge_pages.py` → bảy trang `docs/soi-cau-*.html` và `docs/tao-phoi-tuan.html`.
-- `src/templates/bridge_pages.js`: bảng đầu 0–9; rê chuột tô mọi vị trí của các cầu báo
+- `src/web/templates/bridge_pages.js`: bảng đầu 0–9; rê chuột tô mọi vị trí của các cầu báo
   số ấy trên các bảng kiểu Sổ kết quả; bấm để chọn từng cầu — tô hai chữ số nguồn ở mỗi
   kỳ, tô ô đã về theo cầu kỳ trước; biên ngày, số ngày cầu chạy, thứ, "cả hai chữ số".
-- `src/templates/weekly_sheet.js`: phôi giải Đặc Biệt theo tuần (5–80 tuần), cỡ chữ và
+- `src/web/templates/weekly_sheet.js`: phôi giải Đặc Biệt theo tuần (5–80 tuần), cỡ chữ và
   màu 3 chữ số đầu / 2 chữ số cuối, in được.
 - Kỹ năng được ghi lại cho các phiên sau ở `.claude/skills/soi-cau/SKILL.md`.

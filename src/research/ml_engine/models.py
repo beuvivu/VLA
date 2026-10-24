@@ -39,8 +39,8 @@ import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.isotonic import IsotonicRegression
 
-from ml_engine.capabilities import CAPABILITIES
-from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
+from research.ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
