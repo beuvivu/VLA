@@ -576,10 +576,10 @@ jobs:
       - name: Một khung, không mã chết, không tham chiếu gãy, không lộ nguồn
         run: >-
           python -m pytest -q
-          tests/test_app_shell.py
-          tests/test_app_icons.py
-          tests/test_published_assets.py
-          tests/test_shipped_pages_are_clean.py
+          tests/web/test_app_shell.py
+          tests/web/test_app_icons.py
+          tests/site/test_published_assets.py
+          tests/site/test_shipped_pages_are_clean.py
 
       # Chấm xác suất ĐÃ CÔNG BỐ với kết quả quay thật trên 60 kỳ gần nhất. Kỳ
       # quay đã kiểm là ngẫu nhiên, nên kỹ năng ngoài mẫu phải nằm trong vùng 0;

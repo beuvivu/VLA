@@ -40,7 +40,7 @@ Mọi thứ bị bỏ đi đều suy lại được ở trình duyệt:
 
 Bảng `PRIZE_SPEC` bên Python và `const PRIZES` bên JS phải khớp từng mục.
 Lệch nhau thì trang vẫn dựng được nhưng **cắt sai chuỗi và hiện số rác** —
-`tests/test_traditional_results_page.py` khoá điều đó.
+`tests/web/test_traditional_results_page.py` khoá điều đó.
 
 ### Tính năng
 

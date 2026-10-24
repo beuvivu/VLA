@@ -1,7 +1,7 @@
 // Bản JS của `src/ingest/live_sync.py::fetch_snapshot`, tách làm hai nửa.
 //
 // `buildSnapshot` là phần THUẦN: vào là các bảng giải đã lấy được, ra là đúng
-// payload live.json. Tách ra như vậy để `tests/test_worker_snapshot_parity.py`
+// payload live.json. Tách ra như vậy để `tests/worker/test_worker_snapshot_parity.py`
 // so được nó với bản Python mà không cần mạng.
 //
 // `collectSnapshot` là phần có tác dụng phụ: gọi nguồn rồi giao cho phần

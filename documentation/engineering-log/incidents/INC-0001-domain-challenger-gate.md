@@ -10,7 +10,7 @@ Root cause: the initial ablation implementation treated random seed as candidate
 
 Repair: use one seed per fold, retain paired OOS predictions/dates, bootstrap complete dates, require positive lower confidence bounds for both losses, enforce minimum OOS dates, and persist explicit rejection reasons/feature manifest.
 
-Regression guards: `tests/test_ml_validation.py`, `tests/test_cau_keo_domain_challenger.py`, and artifact validation.
+Regression guards: `tests/ml/test_ml_validation.py`, `tests/ml/test_cau_keo_domain_challenger.py`, and artifact validation.
 
 Status: repaired. The 2026-09-02 real-data experiment rejected every domain
 challenger before the untouched final fold, so the established baseline remains

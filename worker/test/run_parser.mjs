@@ -1,5 +1,5 @@
 // Chạy bản phân tích JS trên bộ mẫu dùng chung rồi in JSON ra stdout.
-// `tests/test_worker_parser_parity.py` gọi tệp này và so với bản Python.
+// `tests/worker/test_worker_parser_parity.py` gọi tệp này và so với bản Python.
 import { readFileSync } from "node:fs";
 import { extractPartialPrizeMap } from "../src/prize_map.js";
 

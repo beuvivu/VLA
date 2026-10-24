@@ -62,7 +62,7 @@ const pad2 = (n) => String(n).padStart(2, "0");
 // ký tự nào lọt vào từ dữ liệu cũng có thể thành mã đánh dấu. Ba hàm dưới đây
 // thay hẳn lối ấy — chuỗi chỉ đi vào `textContent` hoặc `setAttribute`.
 //
-// `tests/test_security_hardening.py` canh: không tệp nào trong `src/` hay
+// `tests/repo/test_security_hardening.py` canh: không tệp nào trong `src/` hay
 // `docs/` được phép gọi lại một cống HTML, kể cả trong chú thích.
 //
 // Thứ tự khoá trong `attrs` LÀ thứ tự thuộc tính in ra. Giữ đúng thứ tự của

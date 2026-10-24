@@ -83,7 +83,7 @@ còn tốt), tức không mất nội dung. Ghi lại 29 trang: 25 trang chỉ k
 không đổi. Chromium ở 1440px: 3 nút đầu dải biểu tượng đều nhận được cú bấm
 (`elementFromPoint`), 0 lỗi JS.
 
-**Phép kiểm** (`tests/test_app_shell.py`): dựng ĐÚNG hình dạng pipeline đã
+**Phép kiểm** (`tests/web/test_app_shell.py`): dựng ĐÚNG hình dạng pipeline đã
 tạo ở 2, 8, 11, 12 lớp; `refresh_live_page` gọi 5 lần giữ 1 lớp và trùng từng
 byte; không trang xuất bản nào mang kịch bản dock. Đột biến — bỏ gỡ kịch bản,
 chỉ tìm `<main>`, trần 8, đuôi chỉ `</main>` — đều làm đỏ.
@@ -145,7 +145,7 @@ kiểm tổng hợp không thấy, chỉ thử trên cặp commit thật mới l
 commit liên tiếp của `data/predictions_today.json`: **54 là commit rác, 5 là
 thay đổi thật**, và phép so mới không nuốt nhầm thay đổi thật nào.
 
-**Phép kiểm cho F-02, F-03, F-04** (`tests/test_workflow_shell_behaviour.py`):
+**Phép kiểm cho F-02, F-03, F-04** (`tests/repo/test_workflow_shell_behaviour.py`):
 chạy NGUYÊN khối `run:` lấy từ YAML bằng đúng lệnh shell GitHub dùng; chỉ
 thay đồng hồ, lệnh ngủ, nguồn và lệnh đẩy. Bước ghi dự đoán chạy git THẬT
 trên một kho trần cục bộ. Workflow của `main` đỏ 9/20 và 3/3 phép kiểm tương

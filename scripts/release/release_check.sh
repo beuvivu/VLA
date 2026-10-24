@@ -32,7 +32,7 @@ printf '%s\n' "== Source policy =="
 # sau đó, bản chép lệch khỏi `src/ingest/sources.py` và CI đỏ suốt — đúng lớp lỗi mà
 # một bản sao danh sách luôn sinh ra. Danh sách đã có chỗ khai báo duy nhất
 # (`PRIMARY_SOURCE_NAMES`/`FALLBACK_SOURCE_NAMES`) và đã được ghim bởi
-# `tests/test_source_whitelist.py`. Nên ở đây chỉ kiểm các BẤT BIẾN mà một tệp
+# `tests/ingest/test_source_whitelist.py`. Nên ở đây chỉ kiểm các BẤT BIẾN mà một tệp
 # đơn lẻ không tự kiểm được: đăng ký, mã ẩn danh, nhóm độc lập và danh sách
 # đen chống lộ nguồn phải phủ khớp nhau.
 python - <<'PYSOURCE'

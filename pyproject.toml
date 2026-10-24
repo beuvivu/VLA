@@ -37,8 +37,8 @@ select = [
 # Các test chính sách thời gian CỐ Ý truyền datetime không múi giờ để kiểm
 # đúng đường TỪ CHỐI — vietnam_date và latest_complete_draw_date đều ném
 # ValueError khi thiếu tzinfo, và đó là hành vi đang được khẳng định.
-"tests/test_time_policy.py" = ["DTZ001"]
-"tests/test_security_hardening.py" = ["DTZ001"]
+"tests/core/test_time_policy.py" = ["DTZ001"]
+"tests/repo/test_security_hardening.py" = ["DTZ001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]

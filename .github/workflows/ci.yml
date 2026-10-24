@@ -91,7 +91,7 @@ jobs:
       - name: Kiểm menu dài bằng thao tác cuộn trên điện thoại
         env:
           UI_BROWSER_REQUIRED: "1"
-        run: python -m pytest tests/test_app_shell.py::test_touch_can_reach_every_navigation_link_on_a_phone -q
+        run: python -m pytest tests/web/test_app_shell.py::test_touch_can_reach_every_navigation_link_on_a_phone -q
       - run: python scripts/browser/check_ui_browser.py
       - run: python scripts/browser/check_dashboard_browser.py
       - run: python scripts/browser/check_vietlott_navigation_browser.py

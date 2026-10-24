@@ -24,14 +24,14 @@
 - Màu ô dữ liệu ở hàng chẵn/hover/dark: không bị màu điều hướng đè (Task3).
 
 ### Task1 — Theme runtime (root)
-Files: src/web/assets/app-theme.js, src/web/page_output.py, tests/frontend/theme.test.mjs, tests/test_theme_bootstrap.py.
+Files: src/web/assets/app-theme.js, src/web/page_output.py, tests/frontend/theme.test.mjs, tests/web/test_theme_bootstrap.py.
 - [ ] Viết test RED cho explicit/auto, .dark, OS change, storage sync/errors, click chuyển màu thực tế và init trước CSS.
 - [ ] Implement runtime + publish/inject script idempotent, chạy đồng bộ sau meta trước CSS.
 - [ ] Chạy test GREEN, xác minh đột biến và idempotence.
 
 ### Task2 — Shell/search (crafto_motion), icons (crafto_inventory)
 Files search: src/web/app_shell.py, src/web/assets/app-shell.js, src/web/templates/app_shell.css, tests/frontend/navigation.test.mjs, tests search.
-Files icon: src/web/app_icons.py, src/web/assets/icons/*, license, tests/test_app_icons.py.
+Files icon: src/web/app_icons.py, src/web/assets/icons/*, license, tests/web/test_app_icons.py.
 Interfaces: icon_svg(key, class) giữ nguyên; keys menu/close/sun/moon thêm. Theme runtime giữ #app-theme. Global dialog đặt trước app-main.
 - [ ] Search tests RED: global đủhref, filter chỉ nhóm hiện tại, độc lập query, keyboard/focus/close.
 - [ ] Implement generated dialog + safeDOM JS + theme-aware CSS; gỡ theme JS trùng; icon20/24 stroke2.

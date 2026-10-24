@@ -28,7 +28,7 @@
 
 ### Task 1: Khép các lỗi trong PR #149
 
-**Files:** `worker/src/traditional_results.js`, `worker/test/run_traditional_results.mjs`, `tests/test_traditional_results_api.py`, `vietlott/src/vietlott_engine/api/main.py`, `vietlott/tests/test_api_security.py`, tài liệu audit của PR.
+**Files:** `worker/src/traditional_results.js`, `worker/test/run_traditional_results.mjs`, `tests/worker/test_traditional_results_api.py`, `vietlott/src/vietlott_engine/api/main.py`, `vietlott/tests/test_api_security.py`, tài liệu audit của PR.
 
 **Interfaces:** Giữ `handleTraditionalResults`, `refreshFallbackOverlay`, `create_app`; đổi namespace cache phản hồi theo schema 2; không đổi payload kết quả quay.
 
@@ -50,7 +50,7 @@
 
 ### Task 3: Kiểm thử và vận hành còn thiếu
 
-**Files:** `tests/test_app_shell.py`, `.github/workflows/ci.yml`, `.github/workflows/vlm-results.yml`, `vietlott/docker-compose.yml`, `documentation/qa/2026-10-08-pending-work.md`.
+**Files:** `tests/web/test_app_shell.py`, `.github/workflows/ci.yml`, `.github/workflows/vlm-results.yml`, `vietlott/docker-compose.yml`, `documentation/qa/2026-10-08-pending-work.md`.
 
 **Interfaces:** Playwright mặc định hoặc `UI_CHROMIUM_EXECUTABLE`/`UI_CHROMIUM_ARGS_FILE`; browser job bắt buộc chạy riêng ca menu điện thoại (các cổng giao diện khác đã có); backend collector `httpx`.
 

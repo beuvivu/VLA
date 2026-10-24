@@ -26,7 +26,7 @@
 - [x] Viết test tái hiện ML/Research mất số 0; xem 20 test thất bại trước sửa.
 - [x] Thêm `lottery_code(value, width=2)`, `csv_code_widths(path, headers)`, `normalize_csv(path)` trong `src/core/lottery_codes.py`.
 - [x] Áp dụng tại ba trình dựng, Lottery.dump và pipeline.
-- [x] Chạy `PYTHONPATH=src python -m pytest tests/test_leading_zero_contract.py -q`: 24 passed.
+- [x] Chạy `PYTHONPATH=src python -m pytest tests/core/test_leading_zero_contract.py -q`: 24 passed.
 - [x] Chuẩn hóa file cũ, dựng lại bốn trang, kiểm giá trị CSV không đổi.
 
 ## Task 2: Xác minh và tích hợp

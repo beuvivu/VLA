@@ -34,7 +34,7 @@ Correct pattern: reject duplicate dates and require identical ordered date axes 
 
 Avoid: relying on equal row counts or sort order as proof of temporal alignment.
 
-Regression guard: mismatched and duplicated date-axis tests in `tests/test_ml_features.py`.
+Regression guard: mismatched and duplicated date-axis tests in `tests/ml/test_ml_features.py`.
 
 Affected modules: `ml_features.py`
 
@@ -80,7 +80,7 @@ Avoid: letting display limits or missing trailing dates make a pattern search
 look smaller or more current than it was.
 
 Regression guard: truncation and trailing-calendar-gap tests in
-`tests/test_dynamic_cau.py`.
+`tests/soi_cau/test_dynamic_cau.py`.
 
 Affected modules: `dynamic_cau.py`
 
@@ -105,7 +105,7 @@ canonical duplicates, and require optional component scores in `[0,1]`.
 Avoid: validating one representation and storing another.
 
 Regression guard: optional-score canonicalization and scale tests in
-`tests/test_candidate_scoring.py`.
+`test_candidate_scoring.py` (gỡ cùng `candidate_scoring.py` ngày 20-10-2026, commit `f9a26e86`).
 
 Affected modules: `candidate_scoring.py`
 
@@ -128,7 +128,7 @@ mới, rồi chạy validator và kiểm tra challenger bốn lát.
 Avoid: tăng hằng số schema nhưng giữ artifact cũ, hoặc hạ yêu cầu của validator.
 
 Regression guard: `validate_cau_keo_domain.py`, `domain_challenger_check.sh` và
-kiểm tra schema trong `tests/test_cau_keo_domain_challenger.py`.
+kiểm tra schema trong `tests/ml/test_cau_keo_domain_challenger.py`.
 
 Affected modules: `cau_keo_feature_groups.py`, `cau_keo_domain_challenger.py`,
 `data/ai_ml/cau_keo_domain_*`, `models/cau_keo_*.joblib`
@@ -151,7 +151,7 @@ cho module escape.
 
 Avoid: tái sử dụng tên module import cho biến cục bộ trong cùng phạm vi có closure.
 
-Regression guard: `tests/test_vietnamese_ui.py` thực thi builder và kiểm tra hai
+Regression guard: `tests/web/test_vietnamese_ui.py` thực thi builder và kiểm tra hai
 trang đầu ra.
 
 Affected modules: `build_dashboard.py`
@@ -178,8 +178,8 @@ tham số mặc định của closure.
 Avoid: `int(float(value))`, `str.isdigit()` hoặc đưa token chưa kiểm tra vào bỏ
 phiếu đồng thuận.
 
-Regression guard: `tests/test_sources.py`, `tests/test_validate_data_strict.py`,
-`tests/test_security_hardening.py`.
+Regression guard: `tests/ingest/test_sources.py`, `tests/ingest/test_validate_data_strict.py`,
+`tests/repo/test_security_hardening.py`.
 
 Affected modules: `sources.py`, `reconcile_live_canonical.py`, `validate_data.py`,
 `lottery.py`.
@@ -204,8 +204,8 @@ bằng `createElement`/`textContent`; thêm CSP và `no-referrer` cho mọi tran
 Avoid: ghép dữ liệu vào `innerHTML`, `document.write` hoặc thẻ script JSON chưa
 escape theo ngữ cảnh.
 
-Regression guard: `tests/test_landing_page.py`, `tests/test_security_hardening.py`,
-`tests/test_vietnamese_ui.py`.
+Regression guard: `tests/pages/test_landing_page.py`, `tests/repo/test_security_hardening.py`,
+`tests/web/test_vietnamese_ui.py`.
 
 Affected modules: `web_security.py`, `build_landing_page.py`,
 `build_statistics_dashboard.py`, các builder HTML và `docs/live.html`.
@@ -232,8 +232,8 @@ lệ đều quay về baseline hoặc báo lỗi rõ ràng tùy API.
 Avoid: suy luận feature từ toàn bộ cột, dùng `assert` cho điều kiện runtime hoặc
 chuẩn hóa vector/trọng số có NaN.
 
-Regression guard: `tests/test_ml_validation.py`, `tests/test_meta_predictor.py`,
-`tests/test_ensemble_utils_security.py`, `tests/test_configuration_validation.py`.
+Regression guard: `tests/ml/test_ml_validation.py`, `tests/forecast/test_meta_predictor.py`,
+`tests/ensemble/test_ensemble_utils_security.py`, `tests/ml/test_configuration_validation.py`.
 
 Affected modules: `ml_predict.py`, `ml_validation.py`, `meta_predictor.py`,
 `predict_nextday_2d.py`, `calibration.py`, `ensemble_utils.py` và các dataclass cấu
@@ -257,8 +257,8 @@ Correct pattern: dùng `time_policy.py` làm nguồn giờ `Asia/Ho_Chi_Minh` (U
 cutoff 18:35, cron UTC được ghi rõ và dispatch `reason=live_verified` ngay khi
 đủ đồng thuận.
 
-Regression guard: `tests/test_time_policy.py`, `tests/test_live_sync.py` và
-`tests/test_workflows.py`.
+Regression guard: `tests/core/test_time_policy.py`, `tests/ingest/test_live_sync.py` và
+`tests/repo/test_workflows.py`.
 
 Affected modules: `time_policy.py`, `live_sync.py`, `sync.py`, `production_audit.py`,
 `monitor_health.py`, các workflow live/daily/watchdog.
@@ -364,7 +364,7 @@ trạng thái rỗng có hướng dẫn, không để vùng trắng không giả
 Avoid: tạo nguồn dữ liệu thứ hai hoặc hiển thị điểm xếp hạng như xác suất đã
 hiệu chuẩn.
 
-Regression guard: `tests/test_path_ui_quick_select.py` và kiểm tra HTML tĩnh
+Regression guard: `tests/web/test_path_ui_quick_select.py` và kiểm tra HTML tĩnh
 đảm bảo có số dự đoán hoặc thông báo trạng thái rỗng.
 
 Affected modules: `src/web/templates/path_ui_page.html.j2`, `src/pages/build_docs.py`,

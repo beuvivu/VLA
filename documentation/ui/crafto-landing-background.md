@@ -37,7 +37,7 @@ Việc tách đôi là:
   ba trang trên;
 * chuyển nền của mọi trang còn lại sang `#fdfdff` (nền NexLink đã đo);
 * giữ bảng màu trạng thái và tương phản đã đo — bốn phép kiểm tương phản
-  trong `tests/test_contrast_and_scheduling.py` sẽ đỏ nếu làm hỏng.
+  trong `tests/web/test_contrast_and_scheduling.py` sẽ đỏ nếu làm hỏng.
 
 ### 2. Chuyển động chữ "Vietnam Lottery Analysis"
 

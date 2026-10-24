@@ -202,7 +202,7 @@ thống đứng im vĩnh viễn sau đúng một ngày thành công.
 
 Danh sách nằm ở **một chỗ duy nhất**: `PRIMARY_SOURCE_NAMES` và
 `FALLBACK_SOURCE_NAMES` trong `src/ingest/sources.py`. Bản JS
-(`worker/src/sources.js`) bị `tests/test_worker_sources_parity.py` buộc khớp
+(`worker/src/sources.js`) bị `tests/worker/test_worker_sources_parity.py` buộc khớp
 từng mục, và `src/ingest/reconcile_live_canonical.py` nhập lại thay vì chép.
 
 Năm nguồn đã nghỉ, đo trên runner Actions ngày 12/13-10-2026 bằng
@@ -240,7 +240,7 @@ khác nhau ở một ô là **thế hoà**: ô ấy là xung đột, không đư
 Lịch sử chuẩn (`Lottery.fetch`, `src/ingest/fetch_results.py`) theo cùng thứ tự:
 lấy kết quả trọn vẹn đầu tiên theo ưu tiên, nên ngày thường chỉ một lượt gọi
 nguồn chính thay vì hỏi tuần tự cả tám nguồn (~3,3 phút đo ngày 12-10).
-`tests/test_source_failover_parity.py` buộc hai bản Python/JS ra cùng kết luận
+`tests/worker/test_source_failover_parity.py` buộc hai bản Python/JS ra cùng kết luận
 trên từng ca, kể cả đúng mốc 18:40:00.
 
 ### Nguồn còn hiện kỳ trước không phải kết quả hôm nay
@@ -275,7 +275,7 @@ chọn tháng), bảng lô tô cho `06 16 24 24`. Nay một hàng là dòng nhã
 dòng NGAY SAU mà mọi mẩu đều là số ASCII đúng độ rộng của giải; gặp dòng khác
 là hết hàng (`_value_line_tokens`, `valueLineTokens`). Mẫu trang thật nằm trong
 `tests/fixtures/prize_pages.json` (`thuc_*`), canh bởi
-`tests/test_live_prize_rows.py` và `test_worker_parser_parity.py`.
+`tests/ingest/test_live_prize_rows.py` và `test_worker_parser_parity.py`.
 
 ### Ẩn nguồn
 
@@ -290,7 +290,7 @@ Phép ẩn danh chạy ở **ranh giới ghi**, không phải lúc hiển thị:
 * `live_sync.py` và `reconcile_live_canonical.py` ẩn danh trước khi ghi tệp.
 * `data/source_audit.json` lưu mã, không lưu tên miền.
 
-`tests/test_source_privacy.py` **quét toàn bộ tải trọng** tìm mọi chuỗi định
+`tests/ingest/test_source_privacy.py` **quét toàn bộ tải trọng** tìm mọi chuỗi định
 danh nguồn, thay vì kiểm từng khoá — tên nguồn nằm rải ở bốn chỗ khác nhau
 trong cùng một bản chụp, nên phép kiểm liệt kê sẽ xanh trong khi khoá thứ năm
 ai đó vừa thêm thì lộ.

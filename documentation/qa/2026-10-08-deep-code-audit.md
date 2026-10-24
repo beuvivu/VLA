@@ -103,7 +103,7 @@ dời việc gọi nguồn khỏi lượt yêu cầu: yêu cầu chỉ đọc l�
 Cron chạy tuần tự theo lịch, nên giới hạn lượt tải không còn phụ thuộc lưu lượng khách. Khoá
 KV và mốc trong bộ nhớ không còn cần thiết, nên đã được gỡ.
 
-**Kiểm chứng.** `tests/test_traditional_results_api.py`:
+**Kiểm chứng.** `tests/worker/test_traditional_results_api.py`:
 - 20 khoảng ngày → 0 lượt tải từ yêu cầu;
 - cron bù ngày thiếu, hai yêu cầu sau đó không gọi thêm nguồn;
 - cron ở phút 0/5/9/11/15/22 chỉ tải ở phút 0, 11 và 22;
@@ -282,7 +282,7 @@ writer = csv.DictWriter(buffer, fieldnames=FIELDS, lineterminator="\n")
 atomic_write_text(path, buffer.getvalue())
 ```
 
-`tests/test_atomic_ledgers.py` làm hỏng đúng lần ghi (ghi được một nửa rồi ném `OSError`)
+`tests/core/test_atomic_ledgers.py` làm hỏng đúng lần ghi (ghi được một nửa rồi ném `OSError`)
 và đòi sổ cũ còn nguyên từng byte. Trả từng hàm ghi về bản trên `main` thì phép kiểm của
 hàm ấy đỏ.
 

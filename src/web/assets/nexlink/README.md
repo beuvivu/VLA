@@ -20,5 +20,5 @@ left icon rail and header, replacing the previous Lucide approximation.
 respective authors (Nexlink/LayoutDrop, Flaticon, Instrument Sans contributors);
 no ownership or alternate license is asserted here.
 
-`tests/test_nexlink_shell.py` checks vector geometry and the complete rail order.
+`tests/web/test_nexlink_shell.py` checks vector geometry and the complete rail order.
 The shared browser check exercises the header menus at desktop and phone widths.

@@ -187,7 +187,7 @@ Tác động hiện nhỏ:
   - LOTO: kỹ năng +0,015%, độ tin 0,3% thay cho 20%.
 - Bản ghi kỳ 20-10 đã đóng băng theo định nghĩa 1; bản ghi mới đầu tiên theo định nghĩa 2 là kỳ
   21-10.
-- Phép kiểm `tests/test_xsmb_agents.py`:
+- Phép kiểm `tests/forecast/test_xsmb_agents.py`:
   - lịch sử công bằng cho độ tin 0 và vector đúng mức nền;
   - lịch sử cài tín hiệu (con 07 về mọi kỳ) cho độ tin bằng luật và vector đúng công thức trộn;
   - họ sổ đi theo định nghĩa; sổ họ cũ được cất nguyên từng byte và sổ mới bắt đầu rỗng;

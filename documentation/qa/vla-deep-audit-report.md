@@ -162,7 +162,7 @@ lần này: `security_script_tags` **không ai gọi**, và hai kịch bản kia
 mã phát ra nó là để lại một cái bẫy; gỡ cả đường mã là một thay đổi rộng hơn
 phạm vi lần soát này.
 
-Ghi vào `NGOAI_LE` của `tests/test_published_assets.py` kèm lý do, nên chúng
+Ghi vào `NGOAI_LE` của `tests/site/test_published_assets.py` kèm lý do, nên chúng
 không thể lặng lẽ trôi đi.
 
 **Trạng thái.** ĐÃ GHI NHẬN, CHƯA GỠ.

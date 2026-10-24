@@ -72,7 +72,7 @@
 
 ### 7. Khung nghiên cứu ML
 
-**Tệp:** `src/ml_engine/{main_pipeline,metrics,validation}.py`, `tests/test_ml_engine_economics.py`.
+**Tệp:** `src/ml_engine/{main_pipeline,metrics,validation}.py`, `tests/research/test_ml_engine_economics.py`.
 
 - [x] Tái hiện temporal bị bỏ khi thiếu Torch dù đã có đường lui tuyến tính; bật theo cấu hình và kiểm fit/predict thật.
 - [x] Truyền counts thật vào tracker, trả doanh thu theo số nháy; giữ chỉ số xác suất dùng nhãn nhị phân.

@@ -498,7 +498,7 @@ chỉ xê dịch được qua số con trùng trong cùng một kỳ. Nó bị c
 thiết kế trò chơi, không phải từ dữ liệu.
 
 **Kết luận: giữ trung bình toàn cục. Đã khoá bằng phép kiểm hồi quy**
-(`tests/test_global_rate_is_stationary.py`) để lần sau ai muốn thêm mô hình
+(`tests/stats/test_global_rate_is_stationary.py`) để lần sau ai muốn thêm mô hình
 động thì phải đo lại trước.
 
 ## 5. Checklist rủi ro kỹ thuật

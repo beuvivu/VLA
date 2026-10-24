@@ -15,7 +15,7 @@ Hình dạng khớp đúng giao diện ``CitationEvidence`` mà chủ dự án �
 lúc tương tác vì chúng là của từng con số chứ không của trang.
 
 Hai ràng buộc của kho áp lên MỌI chuỗi ở đây, vì chúng đi thẳng ra trình
-duyệt (``tests/test_shipped_pages_are_clean.py``):
+duyệt (``tests/site/test_shipped_pages_are_clean.py``):
 
 * không nêu nơi dữ liệu được lấy về hay lưu ở đâu — "nguồn" ở đây là bộ dữ
   liệu và phép tính, mô tả bằng lời, không phải tên miền hay đường dẫn tệp;

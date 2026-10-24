@@ -1115,8 +1115,8 @@ PYTHONPATH=src python scripts/research/run_randomness_report.py
 PYTHONPATH=src python scripts/research/run_model_benchmark.py
 
 # Kiểm thử: bất biến không-rò-rỉ, đối chứng dương/âm, hành vi kiến trúc
-PYTHONPATH=src python -m pytest tests/test_randomness_battery.py \
-                                tests/test_model_benchmark.py -q
+PYTHONPATH=src python -m pytest tests/stats/test_randomness_battery.py \
+                                tests/forecast/test_model_benchmark.py -q
 ```
 
 | Tệp | Vai trò |
@@ -1125,5 +1125,5 @@ PYTHONPATH=src python -m pytest tests/test_randomness_battery.py \
 | `src/forecast/modeling/benchmark.py` | 11 họ mô hình + kết hợp co rút, đánh giá cuốn chiếu |
 | `scripts/research/run_randomness_report.py` | → `data/research/randomness_report.json` |
 | `scripts/research/run_model_benchmark.py` | → `data/research/model_benchmark.json` |
-| `tests/test_randomness_battery.py` | 29 phép kiểm |
-| `tests/test_model_benchmark.py` | 61 phép kiểm, gồm bất biến không-rò-rỉ cho mọi mô hình |
+| `tests/stats/test_randomness_battery.py` | 29 phép kiểm |
+| `tests/forecast/test_model_benchmark.py` | 61 phép kiểm, gồm bất biến không-rò-rỉ cho mọi mô hình |

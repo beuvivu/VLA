@@ -2,7 +2,7 @@
 //
 // Thứ tự mảng CHÍNH LÀ thứ tự ưu tiên khi các nguồn bất đồng. Đổi thứ tự ở
 // đây mà không đổi bên Python là làm hai bên chọn khác nhau lúc chưa đủ đồng
-// thuận — `tests/test_worker_sources_parity.py` chặn chuyện đó.
+// thuận — `tests/worker/test_worker_sources_parity.py` chặn chuyện đó.
 
 function pad(value) {
   return String(value).padStart(2, "0");

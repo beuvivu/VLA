@@ -1,4 +1,4 @@
-// Chạy anonymiseSnapshot của bản JS để `tests/test_source_privacy.py` so với Python.
+// Chạy anonymiseSnapshot của bản JS để `tests/ingest/test_source_privacy.py` so với Python.
 import { readFileSync } from "node:fs";
 import { anonymiseSnapshot } from "../src/snapshot.js";
 

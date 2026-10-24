@@ -87,7 +87,7 @@ jobs:
       # (bảng giải, số người trúng mới), kho Keno/Bingo18, trạng thái bộ dự báo.
       # Chỉ KHÔI PHỤC, không lưu: trang chỉ đọc. Danh sách đường dẫn PHẢI trùng
       # từng dòng với bước lưu — `actions/cache` tính phiên bản theo nó, lệch một
-      # dòng là không bao giờ khôi phục được (`tests/test_vietlott_engine_layout.py`).
+      # dòng là không bao giờ khôi phục được (`tests/repo/test_vietlott_engine_layout.py`).
       # Mất cache thì trang dựng từ dữ liệu đã commit, phân tích học lại từ seed.
       - name: Khôi phục trạng thái của engine
         uses: actions/cache/restore@v6

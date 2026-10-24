@@ -56,7 +56,7 @@ Ba thay đổi:
    hoạt hoàn tất luôn.
 
 Mô phỏng trên chính 26 ngày đo: **26/26 ngày** thu được kỳ lúc 18:35 giờ VN.
-`tests/test_workflows.py` ghim phép tính ấy cùng bảng độ trễ — dải trễ trôi
+`tests/repo/test_workflows.py` ghim phép tính ấy cùng bảng độ trễ — dải trễ trôi
 thì đo lại, cập nhật `MEASURED_DELAYS`, và phép kiểm nói lịch còn đủ hay không.
 
 Phút lẻ vẫn giữ: hàng đợi của GitHub dồn nặng nhất ở phút `:00` và `:30`.
@@ -104,7 +104,7 @@ Ba thay đổi (13-10-2026):
    bỏ nguồn trả kết quả trùng khít kỳ đã lưu và hỏi nguồn kế tiếp; chỉ kết
    luận "không quay" khi mọi nguồn có kết quả đều trùng khít.
 
-`tests/test_finalization_timing.py` chạy nguyên các khối ấy lấy từ YAML.
+`tests/repo/test_finalization_timing.py` chạy nguyên các khối ấy lấy từ YAML.
 
 ## Cách chạy đúng giờ chắc chắn
 

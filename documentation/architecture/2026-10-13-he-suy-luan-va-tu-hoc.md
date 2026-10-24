@@ -331,7 +331,7 @@ Nguyên tắc chọn: kho không có `package.json` và chạy trên runner GitH
 
 ```bash
 python src/forecast/knowledge_base.py            # cập nhật data/knowledge/kb.json
-PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
+PYTHONPATH=src python3 -m pytest tests/forecast/test_knowledge_base.py -q
 ```
 
 - Pipeline gọi bước này sau `online_learning`, `confidence_matrix` và `multi_hit_report`, ở chế độ lỗi mềm. Đây là khung thách đấu, không đổi tổ hợp xác suất.
@@ -351,7 +351,7 @@ PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
 
 ## Phép kiểm
 
-`tests/test_knowledge_base.py` có 20 phép kiểm, thử bằng 21 đột biến, cả 21 đều đỏ. Các phép kiểm ghim:
+`tests/forecast/test_knowledge_base.py` có 20 phép kiểm, thử bằng 21 đột biến, cả 21 đều đỏ. Các phép kiểm ghim:
 
 - Ngữ cảnh không nhìn trước; láng giềng bỏ cửa sổ chồng và xếp theo độ tương tự; dự báo tương tự co đúng về nền.
 - Kỹ năng tính trên cùng các kỳ với hằng số.

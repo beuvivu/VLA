@@ -32,13 +32,13 @@ Hedge để không sửa sổ cũ. Tác tử mới được chấm shadow, báo 
 
 ### Task 1: Lõi học dùng chung
 
-**Files:** src/forecast/online_learning.py; tests/test_xsmb_agents.py.
+**Files:** src/forecast/online_learning.py; tests/forecast/test_xsmb_agents.py.
 **Interfaces:** new_state(mode, profile='legacy'); advance(..., expert_predictions=None).
 
 - [ ] Viết test profile cũ/mới, settlement một lần, trọng số thay đổi sau nhãn thật.
 - [ ] Chạy test để thấy profile chưa được hỗ trợ.
 - [ ] Thêm profile và tuner replay dùng chung core; giữ mặc định legacy.
-- [ ] Chạy tests/test_online_learning.py và test profile mới.
+- [ ] Chạy tests/forecast/test_online_learning.py và test profile mới.
 
 ### Task 2: Bộ nhớ, ba tác tử và điều phối
 
@@ -53,7 +53,7 @@ MetaLearner.advance(...); PredictiveEngine.run(data_dir, now).
 
 ### Task 3: Pipeline và public
 
-**Files:** src/pipeline.py; src/pages/build_confidence_page.py; tests/test_xsmb_agents.py.
+**Files:** src/pipeline.py; src/pages/build_confidence_page.py; tests/forecast/test_xsmb_agents.py.
 **Interfaces:** báo cáo data/agents/report.json; card ở do-tin-cay.html#app-agents.
 
 - [ ] Viết test thứ tự chạy thực, hiển thị xác suất/ứng viên và loại báo cáo cũ.

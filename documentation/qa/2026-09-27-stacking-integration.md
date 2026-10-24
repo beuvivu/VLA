@@ -23,7 +23,7 @@ Vòng kiểm đầu trước sửa: 7 thất bại, 1 đạt. Kiểm lỗi bộ 
 Lệnh kiểm nhóm liên quan:
 
 ```bash
-PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m pytest tests/test_meta_training_lifecycle.py tests/test_meta_predictor.py tests/test_meta_inference_contracts.py tests/test_meta_holdout_gate.py tests/test_ensemble_component_availability.py tests/test_production_automation.py -q
+PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m pytest tests/forecast/test_meta_training_lifecycle.py tests/forecast/test_meta_predictor.py tests/forecast/test_meta_inference_contracts.py tests/forecast/test_meta_holdout_gate.py tests/evaluation/test_ensemble_component_availability.py tests/evaluation/test_production_automation.py -q
 ```
 
 Kết quả đầy đủ của bốn script phát hành, Chromium và CodeQL được đối chiếu trên GitHub Actions của commit mới trong PR #100 trước khi hợp nhất. Lượt quét AI do GitHub quản lý là một kiểm tra riêng; lỗi dịch vụ “model không được hỗ trợ” không được ghi thành kết quả quét đạt.

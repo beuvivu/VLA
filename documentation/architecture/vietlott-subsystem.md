@@ -1267,7 +1267,7 @@ CREATE TABLE backtest_metric (
 | Cửa sổ quay trong `vlm.updates.schedule` (mã nguồn) | `game_schedule` | Lịch chép thành một phiên bản và xin biên nhận TRƯỚC kỳ đầu áp dụng. Kỳ đã quay trước giờ biên nhận ấy có mốc đầu ngày, tức dự báo trong ngày quay của chúng không vào bằng chứng; lịch không được áp ngược |
 
 Luật riêng tư của kho vẫn áp dụng: `source_code` là mã ẩn danh, và trang xuất bản không
-bao giờ in tên nguồn (`tests/test_vietlott_results.py` canh).
+bao giờ in tên nguồn (`tests/pages/test_vietlott_results.py` canh).
 
 ## 5. Thiết kế các module chính
 
