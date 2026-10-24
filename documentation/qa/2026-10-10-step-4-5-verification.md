@@ -77,7 +77,7 @@ Từ thư mục `vietlott`, sau cài dependency:
 
 ```sh
 PYTHONPATH=src python scripts/evaluate_adaptive.py --seed-dir data/seed --output /tmp/vietlott-default.json.gz --label repaired-default
-PYTHONPATH=src python scripts/evaluate_adaptive.py --seed-dir data/seed --output /tmp/vietlott-adaptive.json.gz --label adaptive-challenger --adaptive --compare-with ../documentation/evaluations/2026-10-09-vietlott-incumbent.json.gz
+PYTHONPATH=src python scripts/evaluate_adaptive.py --seed-dir data/seed --output /tmp/vietlott-adaptive.json.gz --label adaptive-challenger --adaptive --compare-with ../documentation/qa/evaluations/2026-10-09-vietlott-incumbent.json.gz
 PYTHONPATH=src python -m pytest tests -o addopts='' -q
 ```
 
