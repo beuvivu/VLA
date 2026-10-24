@@ -23,9 +23,11 @@ from vlm.forecast.models import GRU, OnlineLogistic, TreeExpert
 from vlm.forecast.adaptation import RunningFeatureStats
 from vlm.forecast.recovery import NumericalModelError, RecoveryLog, auto_patch_and_retry, require_finite
 from vlm.forecast.multi_agent import MultiAgentExpert
+from vlm.forecast.patterns import PatternExperts
 
 # 3 (13-10-2026): pair_link/triple_link không còn gộp đường chéo (tần suất của chính số ấy).
-VERSION = 4
+VERSION = 5
+PATTERN_POLICY = 'bayes-transition-hazard-v1'
 LIVE_THRESHOLD = float(np.log(140))  # seven active products, family alpha .05
 
 
@@ -40,6 +42,7 @@ class MLConfig(BaseModel):
     seed: int = 20261003
     adaptive: bool = Field(False, strict=True)
     multi_agent: bool = Field(False, strict=True)
+    patterns: bool = Field(False, strict=True)
 
 
 def _validate_series(series: Series, now: datetime) -> None:
@@ -99,6 +102,9 @@ class MLComponent:
         self.names = ['uniform', 'logistic_l2_.001', 'logistic_l2_.01',
                       *(['adaptive_logistic'] if config.adaptive else []), 'gru', *config.backends]
         self.base_expert_count = len(self.names)
+        self.patterns = PatternExperts(self.features.nodes, self.features.base) if config.patterns else None
+        if self.patterns is not None:
+            self.names.extend(self.patterns.names)
         self.multi_agent = (MultiAgentExpert(spec.n, spec.k, config.seed)
                             if config.multi_agent and isinstance(spec, SetSpec) else None)
         if self.multi_agent is not None:
@@ -145,6 +151,8 @@ class MLComponent:
                 self.recovery.record('prediction_fallback', name, next_id or (self.features.last_id or 0) + 1, error)
                 prediction = np.full(nodes, self.features.base)
             probabilities.append(prediction)
+        if self.patterns is not None:
+            probabilities.extend(self.patterns.predict(next_id=next_id))
         p = np.clip(np.stack(probabilities), .001, .999)
         if isinstance(self.spec, SetSpec):
             # Bounded log odds prevent a neural overfit from assigning near-zero support.
@@ -208,6 +216,8 @@ class MLComponent:
         self.buffer = (self.buffer + [(x.copy(), target.copy())])[-self.config.tree_buffer:]
         if self.multi_agent is not None:
             self.multi_agent.learn(row)
+        if self.patterns is not None:
+            self.patterns.observe(target, draw_id)
         self.features.observe(row, draw_id, draw_date)
         self.frames = frames
         if self.features.seen >= self.config.warmup and self.features.seen % self.config.tree_every == 0:
@@ -254,7 +264,9 @@ class MLComponent:
                 'evaluation':'retrospective_prequential_exploratory',
                 'recovery':self.recovery.to_dict(), 'feature_statistics':self.statistics.report(),
                 'learning_rate_scales':dict(zip(self.names[1:1+len(self.logistics)], [m.rate_scale for m in self.logistics])) | {'gru':self.gru.rate_scale},
-                'multi_agent':self.multi_agent.report() if self.multi_agent is not None else None}
+                'multi_agent':self.multi_agent.report() if self.multi_agent is not None else None,
+                'patterns':{'policy':PATTERN_POLICY, 'observations':self.patterns.seen,
+                            'experts':list(self.patterns.names)} if self.patterns is not None else None}
 
     def to_dict(self) -> dict:
         return {'features':self.features.to_dict(), 'logistics':[m.to_dict() for m in self.logistics],
@@ -263,7 +275,8 @@ class MLComponent:
                 'scored':self.scored, 'log_gain':self.log_gain, 'expert_nll':self.expert_nll.tolist(),
                 'brier':self.brier, 'brier_fair':self.brier_fair, 'reliability':self.reliability.tolist(),
                 'recent_gain':self.recent_gain, 'statistics':self.statistics.to_dict(), 'recovery':self.recovery.to_dict(),
-                'multi_agent':self.multi_agent.to_dict() if self.multi_agent is not None else None}
+                'multi_agent':self.multi_agent.to_dict() if self.multi_agent is not None else None,
+                'patterns':self.patterns.to_dict() if self.patterns is not None else None}
 
     @classmethod
     def from_dict(cls, spec: SetSpec | DigitSpec, config: MLConfig, data: dict) -> MLComponent:
@@ -271,6 +284,12 @@ class MLComponent:
         out.features = FeatureState.from_dict(data['features'], expected_spec=spec)
         if out.features.spec != spec:
             raise ValueError('Incompatible feature spec')
+        if out.patterns is not None:
+            out.patterns = PatternExperts.from_dict(data['patterns'], nodes=out.features.nodes, base=out.features.base)
+            if out.patterns.seen != out.features.seen or out.patterns.last_id != out.features.last_id:
+                raise ValueError('Lịch sử chuyên gia mẫu hình không khớp component.')
+        elif data.get('patterns') is not None:
+            raise ValueError('Checkpoint chứa chuyên gia mẫu hình ngoài cấu hình.')
         if out.multi_agent is not None:
             out.multi_agent = MultiAgentExpert.from_dict(data['multi_agent'], n=spec.n, k=spec.k, seed=config.seed)
             if out.multi_agent.knowledge.total_observations != out.features.seen:
@@ -391,7 +410,10 @@ class MLForecaster:
                         require_finite(gain, 'issued forecast score')
                         score = {'target_id':did, 'draw_date':day, 'gain_nats':gain,
                             'history_sha256':self.pending['history_sha256'], 'issued_at':self.pending['made_at'],
-                            'target_time':self.pending['target_time'], 'scored_at':datetime.now(timezone.utc).isoformat()}
+                            'target_time':self.pending['target_time'], 'scored_at':datetime.now(timezone.utc).isoformat(),
+                            'pattern_policy':self.pending.get('pattern_policy'),
+                            'model_policy':self.pending.get('model_policy'),
+                            'counts_toward_live':self.pending_policy_matches(self.pending)}
                     else:
                         warnings.append('issued_target_missing_or_date_mismatch')
                 candidates = {name:deepcopy(comp) for name, comp in self.components.items()}
@@ -403,10 +425,11 @@ class MLForecaster:
                 # Commit mọi component/cursor/evidence đúng một lần; lỗi trên giữ trạng thái cũ.
                 self.components.update(candidates)
                 if score is not None:
-                    self.live_log_e += score['gain_nats']
-                    self.max_live_log_e = max(self.max_live_log_e, self.live_log_e)
-                    self.live_scored += 1
-                    self.live_recent = (self.live_recent + [score['gain_nats']])[-100:]
+                    if score['counts_toward_live']:
+                        self.live_log_e += score['gain_nats']
+                        self.max_live_log_e = max(self.max_live_log_e, self.live_log_e)
+                        self.live_scored += 1
+                        self.live_recent = (self.live_recent + [score['gain_nats']])[-100:]
                     self.last_live_scores.append(score)
                 if consume_pending:
                     self.pending = None
@@ -483,11 +506,26 @@ class MLForecaster:
                         'based_on_id':self.last_id, 'based_on_date':self.last_date,
                         'draws_on_last_date':self.draws_on_last_date, 'history_sha256':self.prefix_hash,
                         'made_at':made.isoformat(), 'ticket_rule':COVERAGE_RULE,
+                        'pattern_policy':PATTERN_POLICY if self.config.patterns else None,
+                        'model_policy':self.policy_id(),
                         'confidence':self.confidence(),
                         'multi_agent':{name:comp.multi_agent.report() for name, comp in self.components.items()
                                        if comp.multi_agent is not None},
                         'laws':{name:comp.law(day, next_id=target_id).to_dict() for name, comp in self.components.items()}}
         return True
+
+    def policy_id(self) -> str:
+        """Dấu vân tay cấu hình khóa trước kỳ, tách bằng chứng giữa các chính sách."""
+        payload = {'recipe':'ml-v4-patterns-v1', 'config':self.config.model_dump(mode='json')}
+        return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+    def pending_policy_matches(self, pending: dict) -> bool:
+        """Luật cũ vẫn được chấm, nhưng chỉ luật đúng chính sách nhận điểm live."""
+        if 'model_policy' in pending:
+            return pending['model_policy'] == self.policy_id()
+        # Luật trước phiên bản 5 chưa có fingerprint; pattern chưa tồn tại khi ấy.
+        current_multi_agent = any(c.multi_agent is not None for c in self.components.values())
+        return not self.config.patterns and bool(pending.get('multi_agent')) == current_multi_agent
 
     def _target_context(self) -> dict:
         """Một ngữ cảnh cho law và features; ngày riêng lẻ không xác minh slot FAST."""
@@ -641,7 +679,7 @@ class MLForecaster:
         if len(raw) > 128 * 1024 * 1024:
             raise ValueError('Checkpoint too large')
         data = json.loads(raw)
-        if data['version'] not in (3, VERSION):
+        if data['version'] not in (3, 4, VERSION):
             raise ValueError('Incompatible ML checkpoint')
         json.dumps(data, allow_nan=False)
         out = cls(data['product'], MLConfig.model_validate(data['config']))
