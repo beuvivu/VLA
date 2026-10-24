@@ -102,7 +102,7 @@ def test_corrupt_compressed_pack_reaches_safe_recovery(tmp_path, monkeypatch, co
             module._ensure_baseline(mode='loto', models_dir=tmp_path, out_dir=tmp_path, config=module.CauKeoConfig())
     else:
         from ml import cau_keo_ml as module
-        from tests.test_cau_keo_ml import _synthetic_training
+        from test_cau_keo_ml import _synthetic_training
         x, y = _synthetic_training(120, signal=0., seed=7)
         monkeypatch.setattr(module, 'build_cau_keo_feature_frame', lambda *args, **kwargs: (x, y))
         monkeypatch.setattr(module, '_train_model', fail_train)

@@ -137,11 +137,39 @@ def layout_offenders_in_tests(tests: Path) -> list[str]:
         if path.name in seen:
             bad.append(f"{rel}: trùng tên với {seen[path.name]}")
         seen.setdefault(path.name, rel)
-        code = _code_only(path.read_text(encoding="utf-8"))
+        source = path.read_text(encoding="utf-8")
+        bad += [f"{rel}: {why}" for why in _cross_test_imports(source, path.parent, tests)]
+        code = _code_only(source)
         for level, tail in _FILE_PARENTS.findall(code):
             if level == "2" or (level == "1" and tail.lstrip("/ ").startswith('"fixtures"')):
                 continue
             bad.append(f"{rel}: gốc kho phải là Path(__file__).resolve().parents[2]")
+    return bad
+
+
+def _cross_test_imports(source: str, group: Path, tests: Path) -> list[str]:
+    """Import tới tệp kiểm khác hay helper không tìm thấy, kể cả import trễ trong hàm.
+
+    Phép kiểm chỉ được import tệp kiểm CÙNG nhóm (pytest đặt thư mục nhóm lên ``sys.path``) hoặc
+    helper ``*_helpers.py`` ở gốc ``tests/``. ``from tests.test_x import …`` gắn vào bố cục cũ: sau khi
+    chuyển nhóm nó hỏng ngay trong hàm, và ``pytest --collect-only`` không thấy.
+    """
+    bad = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            names = [node.module]
+        elif isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        else:
+            continue
+        for name in names:
+            top = name.split(".")[0]
+            if top == "tests":
+                bad.append(f"import {name}: import tệp cùng nhóm hoặc helper ở gốc tests/")
+            elif top.startswith("test_") and not (group / f"{top}.py").is_file():
+                bad.append(f"import {name}: không có tệp kiểm cùng nhóm tên ấy")
+            elif top.endswith("_helpers") and not (tests / f"{top}.py").is_file():
+                bad.append(f"import {name}: không có helper ấy ở gốc tests/")
     return bad
 
 
@@ -244,8 +272,13 @@ def test_the_test_layout_rule_catches_a_stray_test(tmp_path: Path) -> None:
                                              encoding="utf-8")
     (tests / "core" / "test_c.py").write_text('D = Path(__file__).parent / "data.json"\n', encoding="utf-8")
     (tests / "core" / "util.py").write_text("", encoding="utf-8")
+    (tests / "core" / "test_d.py").write_text(
+        "from test_b import X\nfrom theme_helpers import Y\n"
+        "def f():\n    from tests.test_a import Z\n    from test_a_web import W\n    import gone_helpers\n",
+        encoding="utf-8")
     found = [f.split(":")[0] for f in layout_offenders_in_tests(tests)]
-    assert found == ["misc/", "test_loose.py", "core/test_b.py", "core/test_c.py", "core/util.py", "web/test_a.py"]
+    assert found == ["misc/", "test_loose.py", "core/test_b.py", "core/test_c.py",
+                     "core/test_d.py", "core/test_d.py", "core/test_d.py", "core/util.py", "web/test_a.py"]
 
 
 def test_every_script_import_resolves() -> None:
