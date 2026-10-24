@@ -109,7 +109,7 @@ Bản khôi phục **xanh hơn chính bản gốc mà nó khôi phục**: 22 ph�
 
 ## Việc chưa làm
 
-- `documentation/ui/VLA_MASTER_UIUX_SPEC.md` giữ lại để tham chiếu. Chưa có hiệu
+- `documentation/architecture/VLA_MASTER_UIUX_SPEC.md` giữ lại để tham chiếu. Chưa có hiệu
   lực; chờ chủ dự án quyết định bắt đầu lại phần thiết kế.
 - `build_fun_prediction.py` làm hai việc: lấy mẫu (dữ liệu) và chèn bảng vào
   ba trang HTML (trình bày). Vì thế `--skip-docs` bỏ luôn phép lấy mẫu. Tách

@@ -9,18 +9,23 @@ forecasting guarantee.
 
 ## Bố cục thư mục
 
+Tài liệu chia theo CHỨC NĂNG của chính nó (24-10-2026): mỗi thư mục trả lời một câu hỏi. Bảng này
+là hợp đồng, `tests/repo/test_documentation_index.py` buộc nó khớp với thư mục thật.
+
 | Thư mục | Nội dung |
 | --- | --- |
-| `architecture/` | Thiết kế và hợp đồng: dữ liệu, ML, giao diện, Vietlott, đặc tả theme/search/icons |
-| `domain/` | Quan hệ số chuẩn (lộn, bóng, bộ, chạm, tổng, cặp 50) |
-| `engineering-log/` | Nhật ký kỹ thuật: luật sửa lỗi, lỗi đã biết, sự cố |
-| `evaluations/` | Kết quả đánh giá đã đóng băng (JSON) |
-| `history/` | Hồ sơ hợp nhất ba kho tiền nhiệm |
+| `architecture/` | Thiết kế và hợp đồng: hệ hoạt động thế nào, quy ước nào phải giữ (dữ liệu, quan hệ số chuẩn, ML, giao diện và hệ thiết kế, Vietlott, đặc tả theme/search/icons) |
 | `operations/` | Vận hành: Worker trực tiếp, lịch chạy, bộ hẹn giờ ngoài, tự học |
-| `plans/` | Kế hoạch thi hành từng đợt (trước đây ở `docs/superpowers/plans/`) |
-| `qa/` | Báo cáo kiểm toán và nghiệm thu (gồm các bản trước đây ở `docs/audit/`) |
 | `research/` | Nghiên cứu có số đo, tái lập bằng `scripts/research/` |
-| `ui/` | Hệ thiết kế, báo cáo giao diện, bản prompt UI/UX của chủ dự án (trước đây ở `docs/design/`, `docs/ui-ux/`) |
+| `plans/` | Kế hoạch thi hành từng đợt (trước đây ở `docs/superpowers/plans/`) |
+| `qa/` | Kiểm toán, nghiệm thu, số đo kiểm chứng; `qa/evaluations/` giữ kết quả đánh giá đã đóng băng (JSON) |
+| `engineering-log/` | Nhật ký kỹ thuật: luật sửa lỗi, lỗi đã biết, sự cố |
+| `history/` | Hồ sơ lịch sử: hợp nhất ba kho tiền nhiệm, tiến độ giao diện |
+
+Ngày 24-10-2026 ba thư mục lệch trục được trả về nhóm chức năng: `ui/` (đặc tả và hệ thiết kế về
+`architecture/`, báo cáo và số đo về `qa/`, nhật ký tiến độ về `history/`), `domain/` (quan hệ số
+chuẩn là hợp đồng, về `architecture/`) và `evaluations/` (về `qa/evaluations/`); hai kế hoạch nằm
+nhầm trong `architecture/` về `plans/`.
 
 `docs/` ở gốc kho CHỈ chứa trang web xuất bản; `tests/repo/test_repo_layout.py` canh việc ấy.
 
@@ -40,13 +45,13 @@ forecasting guarantee.
 | [`architecture/2026-10-08-vietlott-main-ui.md`](architecture/2026-10-08-vietlott-main-ui.md) | Đồng bộ font, màu ngày/đêm và bố cục với trang chính; Jackpot đúng kỳ và bộ số nháp Mega/Power trên thiết bị. |
 | [`architecture/2026-10-08-vietlott-navigation.md`](architecture/2026-10-08-vietlott-navigation.md) | Phân hệ Vietlott trong shell Nexlink dùng chung, đích submenu, giới hạn dữ liệu và kiểm chứng. |
 | [`architecture/2026-10-09-adaptive-forecast-design.md`](architecture/2026-10-09-adaptive-forecast-design.md) | Thiết kế phục hồi ML có giới hạn, running statistics nhân quả và challenger Vietlott; giữ score-before-learn và cổng kiểm định live. |
-| [`architecture/2026-10-09-adaptive-forecast-plan.md`](architecture/2026-10-09-adaptive-forecast-plan.md) | Kế hoạch sửa lỗi vòng đời model, đồ thị/target context, kiểm thử hồi quy, benchmark ngoài mẫu và tích hợp main. |
-| [`ui/nexlink-completion-2026-09-23.md`](ui/nexlink-completion-2026-09-23.md) | Hoàn thiện khung Nexlink, sửa điều hướng và ghi rõ kiểm chứng cùng giới hạn trực quan. |
+| [`plans/2026-10-09-adaptive-forecast-plan.md`](plans/2026-10-09-adaptive-forecast-plan.md) | Kế hoạch sửa lỗi vòng đời model, đồ thị/target context, kiểm thử hồi quy, benchmark ngoài mẫu và tích hợp main. |
+| [`qa/nexlink-completion-2026-09-23.md`](qa/nexlink-completion-2026-09-23.md) | Hoàn thiện khung Nexlink, sửa điều hướng và ghi rõ kiểm chứng cùng giới hạn trực quan. |
 | [`qa/2026-10-09-adaptive-forecast-audit.md`](qa/2026-10-09-adaptive-forecast-audit.md) | Lỗi model/ledger/runtime đã tái hiện, kiến trúc thực tế, recovery có giới hạn, benchmark7sản phẩm và quyết định không promote challenger. |
 | [`qa/2026-10-08-deep-code-audit.md`](qa/2026-10-08-deep-code-audit.md) | Whole-repository code audit (Worker, Vietlott engine API, workflows, live page, ledgers, statistics helpers). Two HIGH findings, both fixed: the results API let any visitor amplify requests to the fallback source by varying the date range, and the engine API shipped with no auth, open CORS and a port published on every interface. Medium fixes cover source-name leakage, Worker crashes on KV write failure, a live-page polling race with no fetch timeout, and non-atomic ledger writes. Every fix was reproduced first and mutation-tested. Written in Vietnamese. |
 | [`qa/2026-10-08-pending-work.md`](qa/2026-10-08-pending-work.md) | Khép sáu PR đang dở; sửa Worker/API/Swagger, marker Python 3.11/3.12 và kiểm menu điện thoại; bằng chứng kiểm thử, triển khai và giới hạn nguồn Vietlott. |
 | [`qa/2026-09-18-visual-system.md`](qa/2026-09-18-visual-system.md) | Rà soát và đồng bộ giao diện 29 trang, bảo toàn chức năng, kiểm thử và giới hạn kiểm chứng. |
-| [`domain/number-ontology.md`](domain/number-ontology.md) | Canonical two-digit number relations (lộn, bóng, bộ, chạm, tổng, cặp 50), their provenance, generated data contracts and Excel integrity rules. |
+| [`architecture/number-ontology.md`](architecture/number-ontology.md) | Canonical two-digit number relations (lộn, bóng, bộ, chạm, tổng, cặp 50), their provenance, generated data contracts and Excel integrity rules. |
 | [`research/algorithm-definitions.md`](research/algorithm-definitions.md) | Data/time semantics, canonical number relations and safety contracts for the analysis layer. |
 | [`research/method-catalog.md`](research/method-catalog.md) | Catalog of publicly observed Vietnamese lottery methods with mathematical definitions, parameters, leakage risk and VLA equivalents. |
 | [`research/source-comparison.md`](research/source-comparison.md) | Per-source public behaviour and the method comparison matrix. |
@@ -96,13 +101,13 @@ forecasting guarantee.
 | [`qa/crafto-integration-2026-09-26.md`](qa/crafto-integration-2026-09-26.md) | Kiểm chứng tích hợp Crafto Application. |
 | [`qa/theme-search-icons-2026-09-26.md`](qa/theme-search-icons-2026-09-26.md) | Nghiệm thu giao diện sáng/tối, tìm kiếm và SVG. |
 | [`qa/vla-deep-audit-report.md`](qa/vla-deep-audit-report.md) | Báo cáo soát sâu và gia cố sản xuất. |
-| [`ui/VLA_MASTER_UIUX_SPEC.md`](ui/VLA_MASTER_UIUX_SPEC.md) | Bản prompt UI/UX của chủ dự án, giữ để tham chiếu; CHƯA có hiệu lực (xem CLAUDE.md). |
-| [`ui/crafto-integration-2026-09-26.md`](ui/crafto-integration-2026-09-26.md) | Thiết kế: Crafto Application × giao diện thống kê. |
-| [`ui/crafto-landing-background.md`](ui/crafto-landing-background.md) | Nền Crafto cho trang chủ / landing: trạng thái thật. |
-| [`ui/implementation-progress.md`](ui/implementation-progress.md) | Tiến độ giao diện. |
-| [`ui/nexlink-design-system.md`](ui/nexlink-design-system.md) | Hệ thiết kế Nexlink áp cho kho: số đo, không phải ước. |
-| [`ui/theme-contrast-2026-09-26.md`](ui/theme-contrast-2026-09-26.md) | Số đo độ tương phản bảng màu sáng/tối. |
-| [`ui/vla-ui-transformation-report.md`](ui/vla-ui-transformation-report.md) | Báo cáo khung ứng dụng hai cấp. |
+| [`architecture/VLA_MASTER_UIUX_SPEC.md`](architecture/VLA_MASTER_UIUX_SPEC.md) | Bản prompt UI/UX của chủ dự án, giữ để tham chiếu; CHƯA có hiệu lực (xem CLAUDE.md). |
+| [`architecture/crafto-integration-2026-09-26.md`](architecture/crafto-integration-2026-09-26.md) | Thiết kế: Crafto Application × giao diện thống kê. |
+| [`architecture/crafto-landing-background.md`](architecture/crafto-landing-background.md) | Nền Crafto cho trang chủ / landing: trạng thái thật. |
+| [`history/implementation-progress.md`](history/implementation-progress.md) | Tiến độ giao diện. |
+| [`architecture/nexlink-design-system.md`](architecture/nexlink-design-system.md) | Hệ thiết kế Nexlink áp cho kho: số đo, không phải ước. |
+| [`qa/theme-contrast-2026-09-26.md`](qa/theme-contrast-2026-09-26.md) | Số đo độ tương phản bảng màu sáng/tối. |
+| [`qa/vla-ui-transformation-report.md`](qa/vla-ui-transformation-report.md) | Báo cáo khung ứng dụng hai cấp. |
 
 ## Related material outside this directory
 
@@ -126,7 +131,7 @@ forecasting guarantee.
 ## Nâng cấp xác suất và tự học ngày 27-09-2026
 
 - [Kiến trúc](architecture/2026-09-27-adaptive-inference.md)
-- [Kế hoạch và kiểm định](architecture/2026-09-27-adaptive-inference-plan.md)
+- [Kế hoạch và kiểm định](plans/2026-09-27-adaptive-inference-plan.md)
 - [Hướng dẫn vận hành tự học](operations/adaptive-inference.md)
 - [Kết quả kiểm chứng và giới hạn](qa/2026-09-27-adaptive-inference.md)
 - [Sửa tích hợp CI và vòng đời stacking](qa/2026-09-27-stacking-integration.md)

@@ -6,7 +6,7 @@
 
 Nền: `46aa9b53312c457bae21e5a6ee065facc712d4f2`. Kho này là hệ thống xổ số, không có Vision Encoder, LLM, CUDA/FSDP hay training đa phương thức. Giữ `src/` XSMB và `vietlott/` độc lập, schema/CLI đang dùng và sổ dự báo đã phát. Không tạo component không có caller để mô phỏng kiến trúc VLM.
 
-[Thiết kế](../architecture/2026-10-09-adaptive-forecast-design.md) và [kế hoạch](../architecture/2026-10-09-adaptive-forecast-plan.md) nêu các hợp đồng. [Bản đồ import Python](2026-10-09-python-dependencies.json) chứa đường dẫn, hash, imports/relative imports và các catch rộng của toàn bộ file Python được theo dõi hoặc mới tạo. Toàn bộ 578 file được parse AST; phạm vi đọc từng dòng tập trung vào pipeline, feature, model, inference, loader, writer, ledger và callers liên quan. Đây không phải tuyên bố đã đọc thủ công mọi dòng hoặc chứng minh zero bugs.
+[Thiết kế](../architecture/2026-10-09-adaptive-forecast-design.md) và [kế hoạch](../plans/2026-10-09-adaptive-forecast-plan.md) nêu các hợp đồng. [Bản đồ import Python](2026-10-09-python-dependencies.json) chứa đường dẫn, hash, imports/relative imports và các catch rộng của toàn bộ file Python được theo dõi hoặc mới tạo. Toàn bộ 578 file được parse AST; phạm vi đọc từng dòng tập trung vào pipeline, feature, model, inference, loader, writer, ledger và callers liên quan. Đây không phải tuyên bố đã đọc thủ công mọi dòng hoặc chứng minh zero bugs.
 
 ## Audit Summary
 
@@ -52,7 +52,7 @@ Giữ tên module thực tế và API hiện có; bảng dưới là cấu trúc
 | `vietlott/src/vietlott_engine/{forecast,ml_models,inference,api}/` | Legacy compatibility, graph/GCN, kiểm định, endpoint với bounds. |
 | `vietlott/scripts/evaluate_adaptive.py` | Benchmark tái lập không collector/model/ledger production. |
 | `tests/`, `vietlott/tests/` | Hồi quy bằng dữ liệu giả, tmp_path và fault injection; hai suite độc lập. |
-| `documentation/evaluations/` | Trace từng kỳ, hashes/config/runtime và so sánh ghép cặp. |
+| `documentation/qa/evaluations/` | Trace từng kỳ, hashes/config/runtime và so sánh ghép cặp. |
 
 ```mermaid
 flowchart TD
@@ -101,7 +101,7 @@ Log gain trung bình (nats/kỳ) so với fair; lớn hơn tốt hơn. Đây là
 | max3d | -0.00279841 | -0.00279267 | -0.00240647 |
 | max3dpro | -0.00168193 | -0.00168114 | -0.00167178 |
 
-Không có sản phẩm thắng có ý nghĩa ở ngưỡng .05 sau BH-FDR. Adaptive so incumbent có q tối thiểu .6282; so bản sửa mặc định tối thiểu .7572; so fair .9201. CI HAC/DM ghép cặp và trace/hashes nằm trong [comparison JSON](../evaluations/2026-10-09-vietlott-comparison.json), [incumbent](../evaluations/2026-10-09-vietlott-incumbent.json.gz), [default](../evaluations/2026-10-09-vietlott-default.json.gz), [adaptive](../evaluations/2026-10-09-vietlott-adaptive.json.gz).
+Không có sản phẩm thắng có ý nghĩa ở ngưỡng .05 sau BH-FDR. Adaptive so incumbent có q tối thiểu .6282; so bản sửa mặc định tối thiểu .7572; so fair .9201. CI HAC/DM ghép cặp và trace/hashes nằm trong [comparison JSON](evaluations/2026-10-09-vietlott-comparison.json), [incumbent](evaluations/2026-10-09-vietlott-incumbent.json.gz), [default](evaluations/2026-10-09-vietlott-default.json.gz), [adaptive](evaluations/2026-10-09-vietlott-adaptive.json.gz).
 
 Brier là tổng mean squared marginal error của từng component; digit counts chuẩn hóa theo per_draw. Hits là overlap main-set Top-k, không phải giải thưởng; metric này không áp dụng digit-only. Mỗi comparison hiệu chỉnh họ 7 sản phẩm riêng, không hiệu chỉnh mọi cấu hình có thể đã thử trong lịch sử dự án. 200 kỳ/holdout, seed đến cuối09/đầu10, không có live prospective evidence: không thể suy ra lợi thế cược. Incumbent chạy bằng source copy đúng base commit; scorer của hai bản mới khớp các module final, có hash cùng config/package versions. Các hardening GCN/calibration không nằm trong scorer benchmark VLM.
 

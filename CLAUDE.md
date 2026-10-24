@@ -84,6 +84,13 @@ không chạy lần nào mà vẫn xanh. Helper dùng chung giữa các nhóm đ
 `*_helpers.py` (`theme_palette_helpers`, `privacy_helpers`); `conftest.py` đưa `src/` và `tests/` lên
 `sys.path`. Quét tệp kiểm thì dùng `rglob`: hai phép kiểm từng `glob("test_*.py")` ở gốc `tests/`.
 
+`documentation/` chia theo chức năng của tài liệu (24-10-2026): `architecture` (thiết kế và hợp đồng,
+kể cả hệ thiết kế giao diện và quan hệ số chuẩn), `operations`, `research`, `plans`, `qa` (kể cả
+`qa/evaluations/`), `engineering-log`, `history`. Bảng "Bố cục thư mục" trong `documentation/README.md`
+là hợp đồng: `tests/repo/test_documentation_index.py` buộc nó khớp thư mục thật và buộc mọi liên kết
+tương đối trong MỌI tài liệu trỏ tệp có thật (chuyển tài liệu làm hỏng liên kết của chính nó lẫn của
+tệp trỏ tới nó). Đường dẫn `documentation/…` nhắc ở đâu trong kho cũng phải có tệp.
+
 ## Khung ứng dụng
 
 Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
@@ -176,7 +183,7 @@ TÔ, không phải màu CHỮ.
 - `PAGE_GROUND` / `BRAND_RAMP` trong `tests/web/test_ui_design_system.py` là HỢP
   ĐỒNG: mọi chủ sở hữu style phải khai cùng một nền và cùng một dốc nhấn.
 
-`documentation/ui/VLA_MASTER_UIUX_SPEC.md` là bản prompt thiết kế của chủ dự án,
+`documentation/architecture/VLA_MASTER_UIUX_SPEC.md` là bản prompt thiết kế của chủ dự án,
 giữ lại để tham chiếu. Nó **chưa có hiệu lực** — tầng trình bày nó mô tả đã
 bị gỡ. Đừng coi nó là luật của kho cho tới khi chủ dự án nói bắt đầu lại.
 

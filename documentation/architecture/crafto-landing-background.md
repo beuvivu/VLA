@@ -20,7 +20,7 @@ trang, 403 ở tầng CONNECT) và áp vào token dùng chung:
 
 Chi tiết số đo và các chỗ **không** lấy nguyên (màu chữ mờ `#717580` của họ
 chỉ đạt 3,96:1 trên nền `#eaedff` — trượt AA) ghi ở
-`documentation/ui/implementation-progress.md`.
+`documentation/history/implementation-progress.md`.
 
 ## CHƯA làm — hai việc
 

@@ -2,7 +2,7 @@
 
 ## Phạm vi và kết quả
 
-Đối chiếu từng yêu cầu Task 4 và Task 5 của [kế hoạch ML audit](../architecture/2026-10-09-adaptive-forecast-plan.md), từ main `cbcf275612182ea7b5407aa98afdf184c15a001f`. Main chứa merge [PR #150](https://github.com/beuvivu/VLA/pull/150), commit `318ec02088780290f8f88e5a4c1f5e99342a62ce`. Kiểm chứng trong checkout riêng để không trộn các thay đổi giao diện đang làm.
+Đối chiếu từng yêu cầu Task 4 và Task 5 của [kế hoạch ML audit](../plans/2026-10-09-adaptive-forecast-plan.md), từ main `cbcf275612182ea7b5407aa98afdf184c15a001f`. Main chứa merge [PR #150](https://github.com/beuvivu/VLA/pull/150), commit `318ec02088780290f8f88e5a4c1f5e99342a62ce`. Kiểm chứng trong checkout riêng để không trộn các thay đổi giao diện đang làm.
 
 Bước 4 đáp ứng yêu cầu. Bước 5 có một thiếu sót vận hành: CLI không tự ghi hash mã nguồn, dù các artifact ngày 09-10 đã được bổ sung provenance. Bản vá này tự tạo manifest, kiểm tra nguồn không đổi trước khi hoàn tất, và lưu lại hai benchmark mới có manifest tự sinh. Điểm số khớp báo cáo cũ; adaptive tiếp tục mặc định tắt.
 
@@ -42,8 +42,8 @@ Hồi quy: sáu trường hợp thất bại trước khi thêm manifest/check, 
 
 ### Hai lượt benchmark mới
 
-- [Default, manifest tự sinh](../evaluations/2026-10-10-vietlott-default.json.gz).
-- [Adaptive, manifest tự sinh và paired comparison với incumbent](../evaluations/2026-10-10-vietlott-adaptive.json.gz).
+- [Default, manifest tự sinh](evaluations/2026-10-10-vietlott-default.json.gz).
+- [Adaptive, manifest tự sinh và paired comparison với incumbent](evaluations/2026-10-10-vietlott-adaptive.json.gz).
 
 Hai lượt mới có 2.800 dòng holdout. Toàn bộ trace và numeric summaries khớp artifact ngày 09-10; timestamps, thời gian chạy và source provenance được ghi cho lượt mới. Default mới chạy không có `--compare-with`, nên không lưu paired comparison; so sánh incumbent của default vẫn nằm trong artifact ngày 09-10. Adaptive mới vẫn lưu paired comparison như cũ. Hash benchmark source của cả hai lượt:
 
@@ -77,7 +77,7 @@ Từ thư mục `vietlott`, sau cài dependency:
 
 ```sh
 PYTHONPATH=src python scripts/evaluate_adaptive.py --seed-dir data/seed --output /tmp/vietlott-default.json.gz --label repaired-default
-PYTHONPATH=src python scripts/evaluate_adaptive.py --seed-dir data/seed --output /tmp/vietlott-adaptive.json.gz --label adaptive-challenger --adaptive --compare-with ../documentation/evaluations/2026-10-09-vietlott-incumbent.json.gz
+PYTHONPATH=src python scripts/evaluate_adaptive.py --seed-dir data/seed --output /tmp/vietlott-adaptive.json.gz --label adaptive-challenger --adaptive --compare-with ../documentation/qa/evaluations/2026-10-09-vietlott-incumbent.json.gz
 PYTHONPATH=src python -m pytest tests -o addopts='' -q
 ```
 

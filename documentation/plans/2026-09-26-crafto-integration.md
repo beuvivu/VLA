@@ -5,7 +5,7 @@
 **Goal:** Hoàn thiện hệ thống thị giác Crafto trên ứng dụng thống kê hiện tại.
 **Architecture:** CSS và JS độc lập, gắn tại ranh giới `write_page`; hero được dựng từ dữ liệu thật.
 **Tech Stack:** Python, CSS thuần, JavaScript thuần; tài nguyên nội bộ.
-**Spec:** `documentation/ui/crafto-integration-2026-09-26.md`
+**Spec:** `documentation/architecture/crafto-integration-2026-09-26.md`
 
 ## Global Constraints
 
