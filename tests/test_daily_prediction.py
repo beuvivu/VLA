@@ -159,7 +159,7 @@ def test_runner_refuses_to_predict_a_draw_that_already_happened(
     result = subprocess.run(
         [
             sys.executable,
-            "src/modeling/run_daily_prediction.py",
+            "src/forecast/modeling/run_daily_prediction.py",
             "--raw",
             str(raw),
             "--out",
@@ -183,7 +183,7 @@ def test_runner_refuses_stale_data(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "src/modeling/run_daily_prediction.py",
+            "src/forecast/modeling/run_daily_prediction.py",
             "--raw",
             str(raw),
             "--out",

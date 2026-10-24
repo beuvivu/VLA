@@ -25,7 +25,7 @@ from typing import Final, Protocol, runtime_checkable
 
 import numpy as np
 
-from bridges.tensor import NUMBER_SPACE, DigitTensor
+from soi_cau.bridges.tensor import NUMBER_SPACE, DigitTensor
 
 _EPS: Final[float] = 1e-9
 

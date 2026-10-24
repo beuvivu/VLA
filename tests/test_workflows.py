@@ -507,6 +507,28 @@ def _resolve_local(module: str, *search: Path) -> Path | None:
     return None
 
 
+def _local_modules(dotted: str, *search: Path) -> list[Path] | None:
+    """Mọi tệp cùng kho mà ``import dotted`` chạy: ``__init__`` của từng gói rồi module cuối.
+
+    None khi gốc không thuộc kho (thư viện ngoài). Phần cuối không có tệp — tên hàm trong
+    ``from gói.module import hàm`` — thì dừng ở phần đã có.
+    """
+    parts = dotted.split(".")
+    for directory in search:
+        if _resolve_local(parts[0], directory) is None:
+            continue
+        files: list[Path] = []
+        base = directory
+        for part in parts:
+            candidate = _resolve_local(part, base)
+            if candidate is None:
+                break
+            files.append(candidate)
+            base = base / part
+        return files
+    return None
+
+
 def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
     """Mọi gói NGOÀI mà ``path`` cần, kể cả qua nhiều lớp import cùng kho.
 
@@ -514,6 +536,11 @@ def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
     GIÁN TIẾP (`production_audit` -> `calendar_alignment` -> pandas,
     `fetch_results` -> `sources` -> bs4). Một phép kiểm chỉ nhìn tệp gọi trực
     tiếp sẽ xanh qua cả ba.
+
+    Truy theo ĐƯỜNG DẪN ĐẦY ĐỦ của module, không chỉ tên gốc: từ khi `src/` chia gói con
+    (23-10-2026), `from ingest.sources import ...` chỉ có gốc `ingest`, và đọc mỗi
+    `ingest/__init__.py` (một docstring) thì bs4 của `sources` biến mất khỏi phép kiểm.
+    `from gói import module` cũng phải đi vào chính module ấy.
     """
     seen = set() if seen is None else seen
     if path in seen:
@@ -523,21 +550,23 @@ def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
     found: set[str] = set()
     for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
         if isinstance(node, ast.Import):
-            roots = [alias.name.split(".")[0] for alias in node.names]
+            targets = [alias.name for alias in node.names]
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-            roots = [node.module.split(".")[0]]
+            targets = [node.module, *(f"{node.module}.{alias.name}" for alias in node.names)]
         else:
             continue
-        for root in roots:
+        for dotted in targets:
+            root = dotted.split(".")[0]
             if root in sys.stdlib_module_names:
                 continue
             # Thư mục chứa kịch bản nằm trên sys.path khi chạy `python src/a/b.py`,
             # nên anh em cùng thư mục cũng là module cục bộ.
-            local = _resolve_local(root, path.parent, SRC)
-            if local is not None:
-                found |= _third_party_closure(local, seen)
-            else:
+            local = _local_modules(dotted, path.parent, SRC)
+            if local is None:
                 found.add(_IMPORT_TO_DISTRIBUTION.get(root, root).lower())
+                continue
+            for module in local:
+                found |= _third_party_closure(module, seen)
     return found
 
 
@@ -607,6 +636,22 @@ def _jobs_running_python() -> list[tuple[str, str, set[Path], set[str]]]:
             if scripts:
                 out.append((workflow.name, job_name, scripts, _installed_by(run_text)))
     return out
+
+
+def test_the_closure_follows_a_dotted_module_into_its_package(tmp_path: Path) -> None:
+    """``from gói.module import x`` và ``from gói import module`` phải đọc CHÍNH module ấy.
+
+    Truy theo tên gốc thì chỉ ``gói/__init__.py`` (một docstring) được đọc: ngày 24-10-2026
+    đo trên kho, bỏ beautifulsoup4 khỏi ``requirements.txt`` chỉ làm đỏ 2 job thay vì 6.
+    """
+    package = tmp_path / "goi"
+    package.mkdir()
+    (package / "__init__.py").write_text('"""Gói."""\n', encoding="utf-8")
+    (package / "nguon.py").write_text("import bs4\n", encoding="utf-8")
+    (package / "khung.py").write_text("import yaml\n", encoding="utf-8")
+    script = tmp_path / "chay.py"
+    script.write_text("from goi.nguon import X\nfrom goi import khung\nimport numpy.linalg\n", encoding="utf-8")
+    assert _third_party_closure(script) == {"beautifulsoup4", "pyyaml", "numpy"}
 
 
 def test_the_audit_actually_finds_the_jobs_that_run_python() -> None:

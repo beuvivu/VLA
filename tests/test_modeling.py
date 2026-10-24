@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bridges import DigitTensor
-from features import FeatureContext, default_registry
-from modeling import (
+from soi_cau.bridges import DigitTensor
+from soi_cau.features import FeatureContext, default_registry
+from forecast.modeling import (
     DEFAULT_GAN_THRESHOLD_DAYS,
     DeModel,
     Explainer,
@@ -22,7 +22,7 @@ from modeling import (
     build_picks,
     build_training_data,
 )
-from modeling.stacking import MIN_UNIFORM_SHARE
+from forecast.modeling.stacking import MIN_UNIFORM_SHARE
 from core.xsmb_domain import FIELD_WIDTHS
 
 

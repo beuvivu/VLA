@@ -124,7 +124,7 @@ class TestObservationMatrix:
 
     def test_from_frame_matches_the_repository_tensor(self) -> None:
         """Đối chiếu với DigitTensor đã được kho tin cậy từ trước."""
-        from bridges import DigitTensor
+        from soi_cau.bridges import DigitTensor
 
         raw = pd.read_csv("data/xsmb.csv")
         mine = ObservationMatrix.from_frame(raw)

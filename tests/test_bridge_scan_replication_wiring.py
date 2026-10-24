@@ -18,8 +18,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bridges import run_bridge_scan
-from modeling.run_daily_prediction import _research_evidence
+from soi_cau.bridges import run_bridge_scan
+from forecast.modeling.run_daily_prediction import _research_evidence
 from core.xsmb_domain import FIELD_WIDTHS
 
 

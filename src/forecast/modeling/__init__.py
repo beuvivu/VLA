@@ -1,6 +1,6 @@
 """Mô hình xếp chồng, giải thích Shapley chính xác và lọc rủi ro."""
 
-from modeling.bundle import (
+from forecast.modeling.bundle import (
     SCHEMA_VERSION,
     NumberPick,
     PredictionBundle,
@@ -8,9 +8,9 @@ from modeling.bundle import (
     local_stamp,
     utc_stamp,
 )
-from modeling.explain import Explainer
-from modeling.risk import DEFAULT_GAN_THRESHOLD_DAYS, GanFilter
-from modeling.stacking import (
+from forecast.modeling.explain import Explainer
+from forecast.modeling.risk import DEFAULT_GAN_THRESHOLD_DAYS, GanFilter
+from forecast.modeling.stacking import (
     DeModel,
     LotoModel,
     StackedEnsemble,

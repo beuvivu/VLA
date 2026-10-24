@@ -325,7 +325,7 @@ class PredictionRepo:
         self.bin.mkdir()
         _write_exe(
             self.bin / "python",
-            'if [[ "$1" == "src/modeling/run_daily_prediction.py" ]]; then\n'
+            'if [[ "$1" == "src/forecast/modeling/run_daily_prediction.py" ]]; then\n'
             '  n=$(( $(cat "$FAKE_DIR/stamp") + 1 )); echo "$n" > "$FAKE_DIR/stamp"\n'
             # Mỗi lần chạy lệch 1e-11 — đúng cỡ nhiễu đo được giữa hai runner
             # (commit b8afdc7f). `data/shift` là thay đổi CÓ NGHĨA của dữ liệu.
@@ -385,7 +385,7 @@ class PredictionRepo:
         path = self.tmp / name
         self.git(self.tmp, "clone", str(self.remote), str(path))
         subprocess.run(
-            ["python", "src/modeling/run_daily_prediction.py"], cwd=path, env=self.env, check=True
+            ["python", "src/forecast/modeling/run_daily_prediction.py"], cwd=path, env=self.env, check=True
         )
         return path
 

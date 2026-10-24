@@ -12,8 +12,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from bridges.tensor import NUMBER_SPACE
-from features.base import FeatureContext
+from soi_cau.bridges.tensor import NUMBER_SPACE
+from soi_cau.features.base import FeatureContext
 from core.xsmb_domain import FIELD_WIDTHS
 
 # Vị trí bắt đầu của mỗi trường giải trong luồng chữ số phẳng.

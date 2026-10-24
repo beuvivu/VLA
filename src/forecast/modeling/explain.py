@@ -19,8 +19,8 @@ from math import factorial
 
 import numpy as np
 
-from features import FeatureMatrix
-from modeling.stacking import StackedEnsemble
+from soi_cau.features import FeatureMatrix
+from forecast.modeling.stacking import StackedEnsemble
 
 _EPS = 1e-12
 
