@@ -1267,13 +1267,6 @@
     "conditional_rate":0.3829787234
   },
   {
-    "prev_special_2d":"32",
-    "next_loto":"70",
-    "count":18,
-    "base_count":47,
-    "conditional_rate":0.3829787234
-  },
-  {
     "prev_special_2d":"64",
     "next_loto":"85",
     "count":18,
@@ -1524,6 +1517,27 @@
     "count":20,
     "base_count":53,
     "conditional_rate":0.3773584906
+  },
+  {
+    "prev_special_2d":"32",
+    "next_loto":"01",
+    "count":18,
+    "base_count":48,
+    "conditional_rate":0.375
+  },
+  {
+    "prev_special_2d":"32",
+    "next_loto":"21",
+    "count":18,
+    "base_count":48,
+    "conditional_rate":0.375
+  },
+  {
+    "prev_special_2d":"32",
+    "next_loto":"70",
+    "count":18,
+    "base_count":48,
+    "conditional_rate":0.375
   },
   {
     "prev_special_2d":"57",
@@ -2562,27 +2576,6 @@
     "conditional_rate":0.3617021277
   },
   {
-    "prev_special_2d":"32",
-    "next_loto":"01",
-    "count":17,
-    "base_count":47,
-    "conditional_rate":0.3617021277
-  },
-  {
-    "prev_special_2d":"32",
-    "next_loto":"21",
-    "count":17,
-    "base_count":47,
-    "conditional_rate":0.3617021277
-  },
-  {
-    "prev_special_2d":"32",
-    "next_loto":"87",
-    "count":17,
-    "base_count":47,
-    "conditional_rate":0.3617021277
-  },
-  {
     "prev_special_2d":"64",
     "next_loto":"32",
     "count":17,
@@ -3367,6 +3360,20 @@
     "conditional_rate":0.3541666667
   },
   {
+    "prev_special_2d":"32",
+    "next_loto":"45",
+    "count":17,
+    "base_count":48,
+    "conditional_rate":0.3541666667
+  },
+  {
+    "prev_special_2d":"32",
+    "next_loto":"87",
+    "count":17,
+    "base_count":48,
+    "conditional_rate":0.3541666667
+  },
+  {
     "prev_special_2d":"57",
     "next_loto":"49",
     "count":17,
@@ -3488,13 +3495,6 @@
   {
     "prev_special_2d":"95",
     "next_loto":"71",
-    "count":13,
-    "base_count":37,
-    "conditional_rate":0.3513513514
-  },
-  {
-    "prev_special_2d":"95",
-    "next_loto":"99",
     "count":13,
     "base_count":37,
     "conditional_rate":0.3513513514

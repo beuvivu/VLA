@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-10-25T07:25:59Z",
-  "anchor_date": "2026-10-24",
+  "generated_at_utc": "2026-10-25T11:35:31Z",
+  "anchor_date": "2026-10-25",
   "research_only": true,
   "aggregate_transition": {
     "name": "aggregate_loto_transition_independence",
     "table": {
-      "prev_hit_next_hit": 24186,
-      "prev_hit_next_miss": 76942,
-      "prev_miss_next_hit": 76944,
-      "prev_miss_next_miss": 246328
+      "prev_hit_next_hit": 24191,
+      "prev_hit_next_miss": 76963,
+      "prev_miss_next_hit": 76964,
+      "prev_miss_next_miss": 246382
     },
-    "statistic": 0.551035254803129,
-    "p_value": 0.4578949978861895,
-    "expected_min": 24097.72535344015,
-    "p_next_given_hit": 0.23916224982200776,
-    "p_next_given_absent": 0.23801628350120022,
-    "effect": 0.0011459663208075455,
-    "lift": 1.0048146551317854,
+    "statistic": 0.5325388897312708,
+    "p_value": 0.4655414090752378,
+    "expected_min": 24104.19992932862,
+    "p_next_given_hit": 0.23915020661565534,
+    "p_next_given_absent": 0.2380236650522969,
+    "effect": 0.0011265415633584241,
+    "lift": 1.0047328973071266,
     "method": "2x2 chi-square with Yates continuity correction; all 00..99 transitions pooled"
   },
   "weekday_special_tail": {
     "name": "weekday_vs_full_special_tail",
-    "statistic": 43.3521516155342,
-    "p_value": 0.8498066004631287,
+    "statistic": 43.72752285686919,
+    "p_value": 0.8398634848834265,
     "dof": 54,
-    "min_expected_cell": 57.81625441696113,
+    "min_expected_cell": 57.80263777673104,
     "table": [
       [
         51,
@@ -108,7 +108,7 @@
         65,
         60,
         55,
-        76,
+        77,
         69
       ]
     ],
