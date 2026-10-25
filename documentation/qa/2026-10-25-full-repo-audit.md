@@ -33,7 +33,7 @@ Mọi lỗi có RED → GREEN và phép đảo hành vi bắt được hồi quy
 - Ops: 346 kiểm repo/pipeline/CLI đạt; bốn phép đột biến quyền, nuốt lỗi hai nhánh và mã skip đều bị bắt.
 - Web: 72 Node và 223 Python liên quan đạt; tám phép đột biến bị bắt. Chromium sau sửa 12/12 trạng thái cho ba trang, đối chiếu đủ 100 số/50 cặp ở toàn lịch sử và 30 kỳ; kiểm Live độc lập cũng đạt.
 - Vietlott: 41 kiểm coverage và 69 kiểm forecast/evaluation/ML liên quan đạt; sáu phép đột biến bị bắt. Review độc lập đối chiếu 15.680 vé/kỳ Power trên lồng nhỏ và 270 trường hợp biên trọng số với liệt kê tổ hợp, sai số biên lớn nhất 2,08×10⁻¹³.
-- Toàn bộ Python VLA, Node và Python Vietlott đang chạy lại trên bản sửa; kết quả cuối cập nhật trước chốt PR. Ruff đầy đủ hai dự án, compile và diff-check đã đạt.
+- Toàn bộ trên commit bản vá c45dddde: Python VLA **4.011 đạt, 8 bỏ qua** (4.019 thu thập, exit 0, 431 giây); Node **274/274 đạt**; Python Vietlott **824 đạt, 2 bỏ qua**, thêm 92 subtest đạt (826 thu thập, exit 0, 190 giây, JUnit). Tổng 5.109 ca đạt, không tính 10 ca bỏ qua hay subtest vào tổng ấy. Ruff đầy đủ hai dự án, compile và diff-check đã đạt. Sau đồng bộ main 2d19f10 (dữ liệu và báo cáo tự động), kiểm lại các trang xuất bản; CI của PR #192 kiểm toàn bộ trên HEAD cuối.
 
 Chỉ dựng lại trang/tài nguyên bị ảnh hưởng. Ba trang thống kê giữ nguyên 4.245 kỳ và timestamp nguồn. Trang Vietlott phải giữ dữ liệu/analysis đã công bố khi máy phát triển không có checkpoint cache; không thay bằng báo cáo seed cũ hơn.
 
@@ -44,3 +44,11 @@ Chỉ dựng lại trang/tài nguyên bị ảnh hưởng. Ba trang thống kê 
 Các điểm liên quan: `predict_nextday_2d`, `record_pred_history`, `ml_predict`, `cau_keo_ml`, `statistical_signal`, `run_path_ui`, `xsmb_agents.engine`. `online_learning` còn kiểm ngày neo+1 trong validator, advance và đường tìm artifact; sổ cũ có settlement `non_draw`. Đổi riêng ngày producer hoặc nới validator sẽ phá hợp đồng sổ. Giữ loader từ chối an toàn; cần chuyển chính sách có phiên bản, giữ sổ/artefact cũ nguyên vẹn và kiểm trước–trong–sau nghỉ, cutoff, khởi động lại, settlement, tái lập. Không ép thẻ hiển thị dự báo sai ngày.
 
 Giới hạn số học riêng: `Law.__init__` vẫn có thể underflow trước hàm biên khi người gọi truyền trọng số cực đoan kiểu 10³⁰⁸/10⁻³⁰⁸. Các producer hiện tại dùng trọng số có chặn và không sinh miền ấy; bản sửa Keno đã kiểm hàm biên trên trọng số hữu hạn cực đoan nhưng không thay toàn bộ phép chuẩn hoá/sampling của `Law`.
+
+## Đồng bộ và review cuối
+
+Giữ cập nhật tự động của main 2d19f10, gồm dữ liệu, mô hình và báo cáo; chỉ dựng lại ba trang thống kê từ sổ chuẩn 4.245 kỳ đến 24/10, giữ timestamp main 2026-10-25T04:29:06Z. Manifest tài nguyên được chốt lại sau trình dựng cuối. Hai khối Pro được tái dựng từ DOM đã xuất bản: bản render source cũ phải khớp nguyên byte fragment trước khi thay bằng source mới. 7.077 token số overview và 2.424 token số Pro, JSON nhúng và thời gian dựng 11:21 đều giữ nguyên. Sáu trang Vietlott khác nguyên byte. Chromium Pro sau đồng bộ 8/8 đạt.
+
+Review độc lập không có lỗi chặn: 270 trường hợp biên Keno khớp liệt kê tổ hợp; 15.680 tổ hợp Power khớp luật giải; 29 lần phát vé coverage-v1 trước đây cho cùng bộ vé khi tính bằng biên cũ/mới. Các phép kiểm hồi quy nhận diện đúng lỗi trước sửa, không chỉ khớp cách viết mã mới.
+
+Một lỗi trình bày P3 còn mở: stamp_label hiện định dạng trực tiếp datetime có offset mà chưa đổi về giờ Việt Nam. Giá trị made_at UTC có thể hiện lệch giờ địa phương; không làm thay đổi thời điểm đã ghi hay phép chấm trước/sau quay. Chưa đổi hợp đồng timestamp trong bản vá này.

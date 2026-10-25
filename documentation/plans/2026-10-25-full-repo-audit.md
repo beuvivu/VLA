@@ -8,10 +8,10 @@
 
 ## Phạm vi kiểm tra
 
-- [ ] Xác nhận PR, đúng HEAD, base `main`, CI Python/AI/ML, Chromium và CodeQL; merge bằng expected HEAD rồi kiểm lại kết quả hợp nhất.
-- [ ] Chạy toàn bộ Python của VLA, frontend Node và Python của engine Vietlott; phân biệt bỏ qua theo môi trường với kiểm đã chạy.
-- [ ] Rà độc lập core/ingest/forecast/evaluation/research, workflow/pipeline, UI và Vietlott. Quét 50 HTML ở desktop/mobile và hai chủ đề.
-- [ ] Kiểm dữ liệu thật: ngày và số giải của raw/two/sparse/JSON, nhãn sổ dự báo, số đã công bố.
+- [x] Xác nhận PR, đúng HEAD, base `main`, CI Python/AI/ML, Chromium và CodeQL; merge bằng expected HEAD rồi kiểm lại kết quả hợp nhất.
+- [x] Chạy toàn bộ Python của VLA, frontend Node và Python của engine Vietlott; phân biệt bỏ qua theo môi trường với kiểm đã chạy.
+- [x] Rà độc lập core/ingest/forecast/evaluation/research, workflow/pipeline, UI và Vietlott. Quét 50 HTML ở desktop/mobile và hai chủ đề.
+- [x] Kiểm dữ liệu thật: ngày và số giải của raw/two/sparse/JSON, nhãn sổ dự báo, số đã công bố.
 
 ## Các sửa chữa có thể kiểm riêng
 
@@ -36,9 +36,9 @@ Mỗi mục: viết ca tái hiện và xác nhận đỏ, sửa tối thiểu, c
 
 ## Chốt kiểm chứng
 
-- [ ] Review độc lập thay đổi và ca biên; sửa các phát hiện quan trọng trước phát hành.
-- [ ] Dựng lại đúng trang/tài nguyên bị ảnh hưởng từ source; soi browser thật và chạy kiểm trang đã xuất bản.
-- [ ] Chạy đầy đủ pytest/Node/Vietlott, Ruff, kiểm liên kết tài liệu, diff-check. Lưu kết quả và hạn chế trong báo cáo QA cùng ngày.
-- [ ] Công bố bản sửa qua PR; chỉ kết luận đã hợp nhất/triển khai sau khi đọc bằng chứng tương ứng.
+- [x] Review độc lập thay đổi và ca biên; sửa các phát hiện quan trọng trước phát hành.
+- [x] Dựng lại đúng trang/tài nguyên bị ảnh hưởng từ source; soi browser thật và chạy kiểm trang đã xuất bản.
+- [x] Chạy đầy đủ pytest/Node/Vietlott, Ruff, kiểm liên kết tài liệu, diff-check. Lưu kết quả và hạn chế trong báo cáo QA cùng ngày.
+- [x] Công bố bản sửa qua PR; chỉ kết luận đã hợp nhất/triển khai sau khi đọc bằng chứng tương ứng.
 
 Ngày nghỉ quay được ghi riêng trong báo cáo nếu sửa xuyên tuyến đòi thay hợp đồng sổ đã công bố; không sửa sổ cũ hoặc đổi chính sách học trực tuyến trong một bản vá nhãn ngày.
