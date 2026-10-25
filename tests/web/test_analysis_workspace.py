@@ -77,6 +77,9 @@ def test_actual_pages_keep_ids_controls_data_scripts_and_existing_links(name):
         'giai-dac-biet-theo-tong.html': ('div', 'app-specialstats-shell'),
         'cau-dac-biet-theo-bo-so.html': ('div', 'app-specialstats-shell'),
         'chu-ky-dac-biet.html': ('div', 'app-specialstats-shell'),
+        'dau-duoi-loto.html': ('div', 'app-lotostats-shell'),
+        'cap-lon-loto.html': ('div', 'app-lotostats-shell'),
+        'lo-gan.html': ('div', 'app-lotostats-shell'),
     }.get(name, ('aside', 'app-workspace-guide'))
     assert len(after.guides) == 1
     assert after.guides[0][0] == guide_tag

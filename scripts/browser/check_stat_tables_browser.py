@@ -324,8 +324,10 @@ def check_detail_tables(page, base, out: Path, width, dark):
             grid = page.locator("#sp-grid")
             expect(grid.locator("tbody tr")).to_have_count(10)
             expect(grid.locator("tbody td")).to_have_count(110)
-            state = grid.evaluate("e => ({view:e.parentElement.clientHeight, full:e.parentElement.scrollHeight})")
-            assert state["full"] <= state["view"] + 1, state
+            state = grid.evaluate("""e => ({view:e.parentElement.clientHeight, full:e.parentElement.scrollHeight,
+              last:e.tBodies[0].rows[9].getBoundingClientRect().bottom,
+              bottom:e.parentElement.getBoundingClientRect().bottom})""")
+            assert state["full"] <= state["view"] + 1 and state["last"] <= state["bottom"] + 1, state
             values = [grid.locator("tbody td:not(:first-child) b").first,
                       page.locator("#sp-lon tbody td:nth-child(2)").first]
             if grid.locator(".sp-none").count():
@@ -348,10 +350,16 @@ def check_detail_tables(page, base, out: Path, width, dark):
                 assert sizes[0] > sizes[1], sizes
                 select_without_resize(page.locator(primary).first)
         else:
-            if width >= 1024:
-                tops = page.locator(".app-total-overview table tbody tr:first-child").evaluate_all(
-                    "nodes => nodes.map(e => e.getBoundingClientRect().top)")
-                assert len(tops) == 2 and abs(tops[0] - tops[1]) <= 1, tops
+            cards = page.locator(".app-specialstats-pair > .app-specialstats-panel").evaluate_all(
+                "nodes => nodes.map(e => {const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})")
+            assert len(cards) == 2, cards
+            a, b = cards
+            # Hai panel mới có chú giải riêng nên hàng dữ liệu đầu không cùng
+            # cao độ. Đo đỉnh panel và đúng ngưỡng xếp chồng của lớp riêng.
+            if width > 1100:
+                assert abs(a["y"] - b["y"]) <= 1 and b["x"] > a["x"] + a["w"], cards
+            else:
+                assert b["y"] >= a["y"] + a["h"], cards
             for selector in ("#sp-grid tbody td:first-child", "#sp-parity tbody td:first-child",
                              "#sp-trans tbody td:first-child", "#sp-trans tbody td:nth-child(2)"):
                 select_without_resize(page.locator(selector).first)

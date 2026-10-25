@@ -319,6 +319,58 @@ SPECIAL_STAT_PAGES = (
 )
 
 
+LOTO_STAT_PAGES = (
+    ("dau-duoi-loto", "Đầu đuôi"),
+    ("cap-lon-loto", "Cặp lộn"),
+    ("lo-gan", "Lô gan"),
+)
+
+
+def _loto_table(ident: str, label: str) -> str:
+    """Tên vùng cuộn giữ ngữ cảnh của bảng khi dùng bàn phím."""
+    return (f'<div class="sp-scroll" tabindex="0" role="region" aria-label="{html.escape(label)}">'
+            f'<table class="sp-table sp-grid-lines sp-crosshair" id="{ident}" '
+            f'aria-label="{html.escape(label)}"></table></div>')
+
+
+def _loto_panel(ident: str, title: str, description: str, body: str, *, extra_class: str = "") -> str:
+    """Đặt định nghĩa và phạm vi ngay trước những con số cần đọc."""
+    return (f'<section class="app-lotostats-panel{(" " + extra_class) if extra_class else ""}" '
+            f'aria-labelledby="{ident}"><header><h2 id="{ident}">{title}</h2>'
+            f'<p>{description}</p></header>{body}</section>')
+
+
+def _loto_stat_layout(page: StatPage) -> str:
+    """Ba lối đọc LOTO dùng cùng đường đi từ bộ lọc đến bảng dữ liệu."""
+    nav = ''.join(
+        f'<a href="{slug}.html"' + (' aria-current="page"' if slug == page.slug else '')
+        + f'>{label}</a>' for slug, label in LOTO_STAT_PAGES
+    )
+    controls, _, range_note = page.controls.partition('<p class="sp-note">')
+    range_note = '<p class="sp-note">' + range_note if range_note else ''
+    method = {
+        "dau-duoi-loto": '<p>Mỗi kỳ có 27 số LOTO. Đầu là chữ số hàng chục, Đuôi là hàng đơn vị; '
+                         'Tổng là (Đầu + Đuôi) chia lấy dư 10. Tỉ lệ lấy số lượt chia cho tổng lượt trong dải. '
+                         'Ba bảng theo kỳ giữ tối đa 20 kỳ mới nhất thuộc bộ lọc.</p>',
+        "cap-lon-loto": '<p>Mỗi lượt xuất hiện đều được cộng, kể cả một số về nhiều lần trong cùng kỳ. '
+                        'Tổng lượt bằng Lượt thuận + Lượt lộn; Chênh lệch bằng Lượt thuận − Lượt lộn. '
+                        '45 cặp được xếp theo Tổng lượt giảm dần. Số kép được xếp theo số lần về.</p>',
+        "lo-gan": '<p>Gan đếm theo <b>kỳ quay</b>, không theo ngày lịch: các ngày nghỉ không được cộng thêm. '
+                  'Gan hiện tại là số kỳ kể từ lần xuất hiện gần nhất. Gan cực đại là khoảng cách giữa '
+                  'hai lần xuất hiện đã ghi nhận; dấu — nghĩa là chưa đủ hai lần. '
+                  'Một số về nhiều nháy vẫn chỉ được tính một lần có mặt trong kỳ.</p>',
+    }[page.slug]
+    return (f'<div class="app-lotostats-shell" data-app-workspace-guide data-stat-view="{page.slug}">'
+            '<header class="app-lotostats-header"><p>Thống kê LOTO</p>'
+            f'<h1>{page.title}</h1><p>{page.subtitle}</p></header>'
+            f'<nav class="app-lotostats-nav" aria-label="Thống kê LOTO">{nav}</nav>'
+            '<section class="app-lotostats-filters" aria-label="Chọn phạm vi thống kê">'
+            '<h2>Chọn phạm vi</h2>' + controls + '</section>' + page.body
+            + '<details class="app-lotostats-method"><summary>Cách đọc và phạm vi thống kê</summary>'
+            + method + range_note + '<p>Đây là thống kê lịch sử. Số lượt nhiều hoặc khoảng chưa về dài '
+            'không phải xác suất dự báo cho kỳ tới.</p></details></div>')
+
+
 def _special_table(ident: str, label: str, *, matrix: bool = False) -> str:
     """Bảng thật có vùng cuộn mang tên và nhận được tiêu điểm bàn phím."""
     return (f'<div class="sp-scroll{" app-special-matrix" if matrix else ""}" tabindex="0" '
@@ -505,15 +557,17 @@ PAGES: tuple[StatPage, ...] = (
         title="Cặp lộn LOTO",
         subtitle="45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng.",
         controls=_range_controls(),
-        body='<div class="app-reverse-layout">'
-             '<section class="app-reverse-card" aria-labelledby="app-reverse-title">'
-             '<header><h2 id="app-reverse-title">45 cặp lộn</h2>'
-             '<p>Lượt thuận / lộn ứng với số bên trái / bên phải của cặp.</p></header>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div></section>'
-             '<section class="app-reverse-card" aria-labelledby="app-double-title">'
-             '<header><h2 id="app-double-title">10 số kép</h2>'
-             '<p>Đảo hai chữ số vẫn giữ nguyên.</p></header>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-kep"></table></div></section></div>',
+        body='<div class="app-lotostats-legend" id="app-loto-reverse-frequency-legend" '
+             'aria-label="Thang màu số lượt của cặp lộn và số kép"></div>'
+             '<div class="app-lotostats-reverse app-reverse-layout">'
+             + _loto_panel("app-reverse-title", "45 cặp lộn",
+                           "Trong dải đã chọn · Lượt thuận / lộn ứng với số bên trái / bên phải. Xếp theo Tổng lượt.",
+                           _loto_table("sp-grid", "45 cặp lộn theo tổng lượt trong dải đã chọn"),
+                           extra_class="app-reverse-card")
+             + _loto_panel("app-double-title", "10 số kép",
+                           "Trong dải đã chọn · Đảo hai chữ số vẫn giữ nguyên. Xếp theo số lần về.",
+                           _loto_table("sp-kep", "10 số kép theo số lần về trong dải đã chọn"),
+                           extra_class="app-reverse-card") + '</div>',
         render="renderReversePairs",
     ),
     StatPage(
@@ -521,18 +575,26 @@ PAGES: tuple[StatPage, ...] = (
         title="Đầu đuôi LOTO",
         subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn.",
         controls=_range_controls(pairs=False),
-        body='<div id="app-head-tail-legend" class="app-head-tail-legend" aria-label="Thang màu tổng lượt Đầu và Đuôi"></div>'
-             '<div class="sp-duo">'
-             '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-head"></table></div>'
-             '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-tail"></table></div>'
-             '</div>'
+        body='<section class="app-lotostats-summary" aria-labelledby="app-loto-summary-title">'
+             '<header><h2 id="app-loto-summary-title">Phân bố trong dải đã chọn</h2>'
+             '<p>Tổng lượt của 27 số mỗi kỳ · Đầu và Đuôi cùng thang màu để đối chiếu.</p></header>'
+             '<div id="app-head-tail-legend" class="app-head-tail-legend" aria-label="Thang màu tổng lượt Đầu và Đuôi"></div>'
+             '<div class="app-lotostats-duo">'
+             + _loto_panel("app-loto-head-title", "Theo chữ số Đầu", "Chữ số hàng chục của từng số LOTO.",
+                           _loto_table("sp-head", "Phân bố chữ số đầu trong dải đã chọn"))
+             + _loto_panel("app-loto-tail-title", "Theo chữ số Đuôi", "Chữ số hàng đơn vị của từng số LOTO.",
+                           _loto_table("sp-tail", "Phân bố chữ số đuôi trong dải đã chọn"))
+             + '</div></section>'
+             '<section class="app-lotostats-daily" aria-labelledby="app-loto-daily-title">'
+             '<header><h2 id="app-loto-daily-title">20 kỳ gần nhất trong dải</h2>'
+             '<p>Mỗi hàng là một kỳ, mỗi ô là số lần chữ số xuất hiện. Kỳ mới nhất đứng trước.</p></header>'
              '<div id="app-head-tail-day-legend" class="app-head-tail-legend" aria-label="Thang màu số nháy từng kỳ"></div>'
-             '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐẦU</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-head"></table></div>'
-             '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐUÔI (đít)</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-tail"></table></div>'
-             '<h3 class="sp-subhead">20 kỳ gần nhất theo TỔNG</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-sum"></table></div>',
+             + _loto_panel("app-loto-day-head-title", "Theo chữ số Đầu", "Dùng chung thang màu với bảng Đuôi theo kỳ.",
+                           _loto_table("sp-day-head", "20 kỳ gần nhất theo chữ số đầu"))
+             + _loto_panel("app-loto-day-tail-title", "Theo chữ số Đuôi", "Dùng chung thang màu với bảng Đầu theo kỳ.",
+                           _loto_table("sp-day-tail", "20 kỳ gần nhất theo chữ số đuôi"))
+             + _loto_panel("app-loto-day-sum-title", "Theo Tổng", "Tổng = (Đầu + Đuôi) chia lấy dư 10. Đọc số lượt trực tiếp trong từng ô.",
+                           _loto_table("sp-day-sum", "20 kỳ gần nhất theo tổng chữ số")) + '</section>',
         render="renderHeadTail",
     ),
     StatPage(
@@ -540,19 +602,29 @@ PAGES: tuple[StatPage, ...] = (
         title="Lô gan miền Bắc",
         subtitle="Số kỳ chưa về của từng con LOTO, gan cực đại trong lịch sử, và cặp lô gan.",
         controls=_range_controls(mode="preset"),
-        body='<p class="sp-note">Gan đếm theo <b>kỳ quay</b>, không theo ngày lịch: '
-             'XSMB nghỉ Tết và nghỉ 01–22/04/2020, đếm theo ngày lịch sẽ thổi phồng '
-             'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> trong '
-             'bảng chính tính trong dải đã chọn; hai bảng <b>từ trước đến nay</b> '
-             'tính trên toàn bộ kho lịch sử.</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Gan cực đại từ trước đến nay, cả 00–99</h3>'
-             '<div class="sp-duo">'
-             '<div><table class="sp-table sp-grid-lines sp-crosshair" id="sp-max-lo"></table></div>'
-             '<div><table class="sp-table sp-grid-lines sp-crosshair" id="sp-max-hi"></table></div>'
-             '</div>'
-             '<h3 class="sp-subhead">Cặp lô gan — cặp về khi một trong hai con có mặt trong kỳ</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-pair-gan"></table></div>',
+        body=_loto_panel("app-loto-current-title", "Lô gan hiện tại",
+                         "Trong dải đã chọn · Xếp theo số kỳ chưa về. Gan cực đại cũng tính trong dải này. Đơn vị: kỳ quay.",
+                         '<div class="app-lotostats-legend" id="app-loto-current-gap-legend"></div>'
+                         '<div class="app-lotostats-legend" id="app-loto-current-cycle-legend"></div>'
+                         '<div class="app-lotostats-legend" id="app-loto-current-frequency-legend"></div>'
+                         + _loto_table("sp-grid", "Gan hiện tại của 100 số LOTO trong dải đã chọn"))
+             + '<section class="app-lotostats-history" aria-labelledby="app-loto-history-title">'
+             '<header><h2 id="app-loto-history-title">Gan cực đại từ trước đến nay</h2>'
+             '<p>Toàn bộ lịch sử · Hai nửa 00–49 và 50–99 dùng chung thang màu. '
+             'Giữ nguyên khi đổi phạm vi lọc. Dấu —: chưa đủ hai lần xuất hiện.</p></header>'
+             '<div class="app-lotostats-legend" id="app-loto-history-cycle-legend"></div>'
+             '<div class="app-lotostats-duo">'
+             + _loto_panel("app-loto-max-lo-title", "Bộ số 00–49", "Chu kỳ dài nhất đã ghi nhận · đơn vị kỳ quay.",
+                           _loto_table("sp-max-lo", "Gan cực đại toàn bộ lịch sử của bộ số 00 đến 49"))
+             + _loto_panel("app-loto-max-hi-title", "Bộ số 50–99", "Chu kỳ dài nhất đã ghi nhận · đơn vị kỳ quay.",
+                           _loto_table("sp-max-hi", "Gan cực đại toàn bộ lịch sử của bộ số 50 đến 99"))
+             + '</div></section>'
+             + _loto_panel("app-loto-pair-gan-title", "Cặp lô gan",
+                           "Trong dải đã chọn · Cặp về khi một trong hai con có mặt trong kỳ. Xếp theo số kỳ chưa về.",
+                           '<div class="app-lotostats-legend" id="app-loto-pair-gap-legend"></div>'
+                           '<div class="app-lotostats-legend" id="app-loto-pair-cycle-legend"></div>'
+                           '<div class="app-lotostats-legend" id="app-loto-pair-frequency-legend"></div>'
+                           + _loto_table("sp-pair-gan", "Gan hiện tại của 50 họ cặp trong dải đã chọn")),
         render="renderLoGan",
     ),
     StatPage(
@@ -909,9 +981,10 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     calendar = page.slug in {"bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"}
     tomorrow = page.slug == "giai-db-ngay-mai"
     special_stats = page.slug in {slug for slug, _ in SPECIAL_STAT_PAGES}
+    loto_stats = page.slug in {slug for slug, _ in LOTO_STAT_PAGES}
     responsive = statistical or calendar
     body = page.body.replace('class="sp-table ', 'class="sp-table sp-calendar-table ') if calendar else page.body
-    content = _special_stat_layout(page, note_html) if special_stats else (f'<div class="app-tomorrow-shell" data-app-workspace-guide><header class="app-tomorrow-header">'
+    content = _loto_stat_layout(page) if loto_stats else _special_stat_layout(page, note_html) if special_stats else (f'<div class="app-tomorrow-shell" data-app-workspace-guide><header class="app-tomorrow-header">'
                '<a href="statistics.html">← Thống kê Đặc Biệt</a>'
                f'<h1>{page.title}</h1><p>{page.subtitle}</p></header>'
                f'{page.controls}{body}{note_html}</div>') if tomorrow else frequency_bento_layout(page, note_html) if bento else overview_layout(page) if overview else f"""
@@ -923,11 +996,11 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 {note_html}"""
     footer = (
         f'Dữ liệu đến {str(draws[-1]["d"])} · Dựng lúc {generated}.'
-        if (statistical or tomorrow or special_stats) and draws else
+        if (statistical or tomorrow or special_stats or loto_stats) and draws else
         f'Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên '
         f'{len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.'
     )
-    if special_stats and not draws:
+    if (special_stats or loto_stats) and not draws:
         footer = f'Chưa có dữ liệu. Dựng lúc {generated}.'
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
@@ -942,10 +1015,11 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 {_asset("stat_table_layout.css") if responsive else ""}
 </style>
 {'<style id="app-specialstats-style">' + _asset("special_stat_pages.css") + '</style>' if special_stats else ''}
-</head><body class="{'app-specialstats-page' if special_stats else 'app-tomorrow-page' if tomorrow else 'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
+{'<style id="app-lotostats-style">' + _asset("loto_stat_pages.css") + '</style>' if loto_stats else ''}
+</head><body class="{'app-lotostats-page' if loto_stats else 'app-specialstats-page' if special_stats else 'app-tomorrow-page' if tomorrow else 'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
 {app_shell_open(f"{page.slug}.html", wide=True)}
 {content}
-<p class="ui-muted{' app-specialstats-footer' if special_stats else ''}" style="margin-top:1.5rem;font-size:.75rem">
+<p class="ui-muted{' app-lotostats-footer' if loto_stats else ' app-specialstats-footer' if special_stats else ''}" style="margin-top:1.5rem;font-size:.75rem">
 {footer}</p>
 {app_shell_close(f"{page.slug}.html")}
 <script>window.__D_DRAWS__={json_for_html_script(draws)};

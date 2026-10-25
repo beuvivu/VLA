@@ -1,0 +1,110 @@
+/* Ba trang LOTO dùng cùng nhịp đọc; màu luôn mô tả đại lượng ghi ở chú giải. */
+body.app-lotostats-page .app-lotostats-shell{max-width:1200px;min-width:0;margin:0 auto;color:var(--ui-ink);font-size:14px;line-height:1.6}
+body.app-lotostats-page .app-lotostats-shell *{box-sizing:border-box}
+body.app-lotostats-page .app-lotostats-header{margin:0 0 16px;padding:0;border:0;background:none;box-shadow:none}
+body.app-lotostats-page .app-lotostats-header h1{margin:4px 0 8px;color:var(--ui-ink);font-size:clamp(24px,2.5vw,32px);font-weight:700;line-height:1.25;letter-spacing:-.035em}
+body.app-lotostats-page .app-lotostats-header p{max-width:85ch;margin:0;color:var(--ui-ink-soft);font-size:13px}
+body.app-lotostats-page .app-lotostats-header p:first-child{font-size:12px;font-weight:600}
+body.app-lotostats-page .app-lotostats-nav{display:flex;flex-wrap:wrap;gap:4px;width:fit-content;max-width:100%;margin:0 0 24px;padding:4px;border:1px solid var(--ui-border-strong);border-radius:12px;background:var(--ui-surface)}
+body.app-lotostats-page .app-lotostats-nav a{display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px 24px;border:1px solid transparent;border-radius:8px;color:var(--ui-ink-soft);font-size:14px;font-weight:600;text-align:center;text-decoration:none}
+body.app-lotostats-page .app-lotostats-nav a[aria-current]{color:var(--ui-brand-ink);background:var(--ui-brand-soft);border-color:var(--ui-brand-border)}
+body.app-lotostats-page .app-lotostats-nav a:hover{color:var(--ui-ink);background:var(--ui-surface-2)}
+body.app-lotostats-page .app-lotostats-filters{margin:0 0 24px;padding:16px 24px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface)}
+body.app-lotostats-page .app-lotostats-filters h2{margin:0 0 8px;color:var(--ui-ink);font-size:14px;font-weight:650}
+body.app-lotostats-page .app-lotostats-shell .sp-controls{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none}
+body.app-lotostats-page .app-lotostats-shell .sp-controls label{color:var(--ui-ink-2);font-size:13px}
+body.app-lotostats-page .app-lotostats-shell .sp-controls input[type="date"]{min-height:40px;max-width:100%;padding:8px;border:1px solid var(--ui-border-strong);border-radius:8px;background:var(--ui-surface);color:var(--ui-ink);font:inherit}
+body.app-lotostats-page .app-lotostats-shell .sp-chips{gap:8px;flex-wrap:wrap}
+body.app-lotostats-page .app-lotostats-shell .sp-chip{min-height:36px;padding:8px 12px;border-radius:8px;font-size:12px}
+body.app-lotostats-page .app-lotostats-shell .sp-count{margin-left:0;color:var(--ui-ink-2);font-size:13px;font-weight:600}
+body.app-lotostats-page .app-lotostats-shell .sp-marktools{display:flex;flex:1 1 100%;flex-wrap:wrap;gap:8px 16px;margin:0;padding:8px 0 0;border-top:1px solid var(--ui-border);font-size:12px}
+body.app-lotostats-page .app-lotostats-shell .sp-hint{font-size:12px}
+body.app-lotostats-page .app-lotostats-shell .sp-chip-check{min-height:32px;padding:4px 8px;font-size:12px}
+body.app-lotostats-page .app-lotostats-shell .sp-btn{min-height:36px;padding:8px 12px;border-radius:8px;box-shadow:none}
+
+body.app-lotostats-page :is(.app-lotostats-summary,.app-lotostats-daily,.app-lotostats-history){min-width:0;margin:0 0 24px}
+body.app-lotostats-page :is(.app-lotostats-summary,.app-lotostats-daily,.app-lotostats-history)>header{margin:0 0 16px}
+body.app-lotostats-page :is(.app-lotostats-summary,.app-lotostats-daily,.app-lotostats-history)>header h2{margin:0 0 4px;color:var(--ui-ink);font-size:18px;font-weight:650;line-height:1.4}
+body.app-lotostats-page :is(.app-lotostats-summary,.app-lotostats-daily,.app-lotostats-history)>header p{max-width:100ch;margin:0;color:var(--ui-ink-soft);font-size:13px}
+body.app-lotostats-page .app-lotostats-panel{min-width:0;max-width:100%;margin:0 0 24px;padding:0;border:1px solid var(--ui-border-strong);border-radius:12px;background:var(--ui-surface);box-shadow:none;overflow:hidden}
+body.app-lotostats-page .app-lotostats-panel>header{min-height:0;padding:16px 24px}
+body.app-lotostats-page .app-lotostats-panel>header h2{margin:0 0 4px;color:var(--ui-ink);font-size:17px;font-weight:650;line-height:1.4}
+body.app-lotostats-page .app-lotostats-panel>header p{max-width:95ch;margin:0;color:var(--ui-ink-soft);font-size:13px}
+body.app-lotostats-page .app-lotostats-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+body.app-lotostats-page .app-lotostats-duo>.app-lotostats-panel{margin-bottom:0}
+body.app-lotostats-page .app-lotostats-shell .sp-scroll{width:100%;min-width:0;max-width:100%;max-height:min(68vh,640px);margin:0;padding:0;overflow:auto;overscroll-behavior:contain;border:0;border-top:1px solid var(--ui-border);border-radius:0;background:var(--ui-surface);box-shadow:none;backdrop-filter:none;scrollbar-width:thin}
+body.app-lotostats-page .app-lotostats-shell .sp-table{width:100%;min-width:600px;table-layout:fixed;margin:0;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums}
+body.app-lotostats-page .app-lotostats-shell .sp-table :is(th,td){padding:8px 16px;vertical-align:middle}
+body.app-lotostats-page .app-lotostats-shell .sp-table th{height:48px;color:var(--ui-ink-2);font-size:12px;font-weight:650;white-space:normal;line-height:1.5;text-transform:none;letter-spacing:0;background:var(--ui-surface-2);border-bottom:1px solid var(--ui-border-strong)}
+body.app-lotostats-page .app-lotostats-shell .sp-table td{height:44px;color:var(--ui-ink);border-bottom:1px solid var(--ui-border);background:var(--ui-surface);box-shadow:none}
+body.app-lotostats-page .app-lotostats-shell .sp-table td:not(.num){white-space:normal;overflow-wrap:normal}
+body.app-lotostats-page .app-lotostats-shell .sp-table tbody tr:hover{background:none;outline:1px solid var(--ui-brand-border);outline-offset:-1px}
+body.app-lotostats-page .app-lotostats-shell .sp-table td:not(.marked):first-child{background:var(--ui-surface-2)}
+body.app-lotostats-page .app-lotostats-shell .sp-table .sp-empty-row{height:auto;padding:24px!important;white-space:normal;color:var(--ui-ink-soft);font-size:13px;font-style:normal}
+
+/* Hai bảng tổng giữ nguyên tỉ lệ cột; ba ma trận ngày cuộn trong từng khung. */
+body.app-lotostats-page .app-lotostats-summary .sp-scroll,body.app-lotostats-page .app-lotostats-daily .sp-scroll{max-height:none}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail){min-width:0}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) :is(th,td){padding:8px;white-space:normal;overflow-wrap:normal}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) td:first-child{font-size:22px;font-weight:700}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) td:nth-child(2){font-size:16px;font-weight:650}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) td:nth-child(3){font-size:13px;white-space:nowrap}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) .sp-bar{height:8px;background:var(--ui-chart-1)}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-day-head,#sp-day-tail,#sp-day-sum){min-width:800px}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-day-head,#sp-day-tail,#sp-day-sum) :is(th,td){padding:8px;text-align:center}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-day-head,#sp-day-tail,#sp-day-sum) :is(th,td):first-child{width:120px;text-align:left;font-size:13px;white-space:nowrap}
+body.app-lotostats-page .app-head-tail-legend{gap:8px 16px;margin:0 0 16px;padding:0;color:var(--ui-ink-soft);font-size:12px}
+body.app-lotostats-page .app-head-tail-legend small{font-size:12px}
+body.app-lotostats-page .app-head-tail-swatch{min-width:32px;min-height:28px;border-radius:4px}
+
+/* Cặp và số kép là nhãn chính, hạng và tổng lượt là các lớp đọc sau. */
+body.app-lotostats-page .app-lotostats-reverse{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr);gap:24px;align-items:start;margin:0}
+body.app-lotostats-page .app-lotostats-reverse #sp-grid{min-width:560px}
+body.app-lotostats-page .app-lotostats-reverse #sp-kep{min-width:190px}
+body.app-lotostats-page .app-lotostats-reverse :is(th,td){padding:8px!important}
+body.app-lotostats-page .app-lotostats-reverse #sp-grid td:first-child{font-size:12px;font-weight:500;color:var(--ui-ink-soft)}
+body.app-lotostats-page .app-lotostats-reverse :is(#sp-grid td:nth-child(2),#sp-kep td:first-child){font-size:clamp(24px,2vw,26px);font-weight:750;line-height:1.35;white-space:nowrap}
+body.app-lotostats-page .app-lotostats-reverse :is(#sp-grid td:nth-child(2),#sp-kep td:first-child):not(.marked){color:var(--ui-brand-ink)}
+body.app-lotostats-page .app-lotostats-reverse #sp-kep td:nth-child(2){font-size:14px;font-weight:600}
+
+/* Gan hiện tại, chu kỳ dài nhất và số lượt dùng các thang có tên riêng. */
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan){min-width:700px}
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) th:first-child{width:16%}
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) th:nth-child(2){width:30%}
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) th:nth-child(n+3){width:18%}
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) td:first-child{color:var(--ui-brand-ink);font-size:22px;font-weight:700;white-space:nowrap}
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] #sp-pair-gan td:first-child{font-size:20px}
+body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) td:nth-child(2){color:var(--ui-ink-2);font-size:13px}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-max-lo,#sp-max-hi){min-width:0}
+body.app-lotostats-page .app-lotostats-shell :is(#sp-max-lo,#sp-max-hi) td:first-child{width:50%;color:var(--ui-brand-ink);font-size:22px;font-weight:700}
+body.app-lotostats-page .app-lotostats-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:0 24px 16px;color:var(--ui-ink-soft);font-size:12px}
+body.app-lotostats-page .app-lotostats-legend>strong{color:var(--ui-ink-2);font-weight:650}
+body.app-lotostats-page .app-lotostats-legend>span{display:inline-flex;align-items:center;gap:8px;line-height:1.5}
+body.app-lotostats-page .app-lotostats-legend i{display:inline-block;flex:none;width:16px;height:16px;border:1px solid var(--ui-border-strong);border-radius:4px}
+body.app-lotostats-page .app-lotostats-shell>.app-lotostats-legend,body.app-lotostats-page .app-lotostats-history>.app-lotostats-legend{padding:0 0 16px}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-level-0:not(.marked){background:var(--ui-surface-2);color:var(--ui-ink-soft)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-gap.app-stat-level-1:not(.marked){background:color-mix(in srgb,var(--ui-warn-soft) 35%,var(--ui-surface));color:var(--ui-warn)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-gap.app-stat-level-2:not(.marked){background:color-mix(in srgb,var(--ui-warn-soft) 65%,var(--ui-surface));color:var(--ui-warn)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-gap.app-stat-level-3:not(.marked){background:var(--ui-warn-soft);color:var(--ui-warn)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-cycle.app-stat-level-1:not(.marked){background:color-mix(in srgb,var(--ui-n2-bg) 35%,var(--ui-surface));color:var(--ui-n2-ink)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-cycle.app-stat-level-2:not(.marked){background:color-mix(in srgb,var(--ui-n2-bg) 65%,var(--ui-surface));color:var(--ui-n2-ink)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-cycle.app-stat-level-3:not(.marked){background:var(--ui-n2-bg);color:var(--ui-n2-ink)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-frequency.app-stat-level-1:not(.marked){background:color-mix(in srgb,var(--ui-ok-soft) 35%,var(--ui-surface));color:var(--ui-ok)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-frequency.app-stat-level-2:not(.marked){background:color-mix(in srgb,var(--ui-ok-soft) 65%,var(--ui-surface));color:var(--ui-ok)}
+body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-frequency.app-stat-level-3:not(.marked){background:var(--ui-ok-soft);color:var(--ui-ok)}
+
+/* Màu bám giá trị khi rê chuột; nền đánh dấu vẫn có mức ưu tiên cao nhất. */
+body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),body.app-lotostats-page .app-head-tail-legend .app-head-tail-heat{background:var(--app-hit-bg-light,var(--ui-empty-bg));color:var(--app-hit-ink-light,var(--ui-empty-ink))}
+html.dark body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),html[data-ui-theme="dark"] body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),html.dark body.app-lotostats-page .app-head-tail-legend .app-head-tail-heat,html[data-ui-theme="dark"] body.app-lotostats-page .app-head-tail-legend .app-head-tail-heat{background:var(--app-hit-bg-dark,var(--ui-empty-bg));color:var(--app-hit-ink-dark,var(--ui-empty-ink))}
+body.app-lotostats-page .app-lotostats-shell .sp-table td.marked,body.app-lotostats-page .app-lotostats-shell .sp-table td.marked *{color:var(--ui-mark-ink)}
+body.app-lotostats-page .app-lotostats-method{margin:16px 0 0;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface);overflow:hidden}
+body.app-lotostats-page .app-lotostats-method>summary{min-height:48px;padding:16px 24px;color:var(--ui-ink);font-size:14px;font-weight:600;cursor:pointer}
+body.app-lotostats-page .app-lotostats-method>p{margin:0;padding:0 24px 16px;color:var(--ui-ink-soft);font-size:13px;line-height:1.75}
+body.app-lotostats-page .app-lotostats-method .sp-note{margin:0;padding:0 24px 16px;border:0;border-radius:0;background:none;box-shadow:none;color:var(--ui-ink-soft);font-size:13px;line-height:1.75}
+body.app-lotostats-page .app-lotostats-footer{max-width:1200px;margin:24px auto 0!important;color:var(--ui-ink-soft);font-size:12px!important}
+body.app-lotostats-page .app-lotostats-shell :is(a,button,input,summary,[tabindex]):focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:3px}
+
+@media(max-width:1023px){body.app-lotostats-page .app-lotostats-reverse{grid-template-columns:minmax(0,1fr);gap:0}}
+@media(max-width:800px){body.app-lotostats-page .app-lotostats-duo{grid-template-columns:minmax(0,1fr);gap:16px}}
+@media(max-width:700px){body.app-lotostats-page .app-lotostats-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;margin-bottom:16px}body.app-lotostats-page .app-lotostats-nav a{padding:8px;font-size:13px}body.app-lotostats-page .app-lotostats-filters{padding:16px;margin-bottom:16px}body.app-lotostats-page .app-lotostats-shell .sp-controls{gap:12px}body.app-lotostats-page .app-lotostats-shell .sp-count{flex-basis:100%}body.app-lotostats-page .app-lotostats-panel{margin-bottom:16px}body.app-lotostats-page .app-lotostats-panel>header{padding:16px}body.app-lotostats-page .app-lotostats-legend{padding:0 16px 16px;gap:8px 12px}body.app-lotostats-page .app-lotostats-shell .sp-table :is(th,td){padding:8px 12px}body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) :is(th,td){padding:8px 4px}body.app-lotostats-page .app-lotostats-method>summary{padding:16px}body.app-lotostats-page .app-lotostats-method>p,body.app-lotostats-page .app-lotostats-method .sp-note{padding:0 16px 16px}body.app-lotostats-page .app-lotostats-shell :is(#sp-day-head,#sp-day-tail,#sp-day-sum) :is(th,td){padding:8px}}
+@media print{body.app-lotostats-page :is(.app-lotostats-nav,.app-lotostats-filters){display:none}body.app-lotostats-page :is(.app-lotostats-duo,.app-lotostats-reverse){display:block}body.app-lotostats-page .app-lotostats-panel{break-inside:avoid}body.app-lotostats-page .app-lotostats-shell .sp-scroll{max-height:none;overflow:visible}body.app-lotostats-page .app-lotostats-shell .sp-table{min-width:0}body.app-lotostats-page .app-lotostats-shell .sp-table :is(th,td){position:static;padding:4px;font-size:10px}}

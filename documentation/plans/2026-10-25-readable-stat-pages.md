@@ -6,6 +6,8 @@ Yêu cầu bổ sung trong cùng phiên: tô ba mức số đường cầu cao n
 
 Yêu cầu mở rộng tiếp theo: áp dụng cùng màu cho năm luật cầu còn lại; sửa và thiết kế lại bốn trang đường cầu active/stable và bốn trang thống kê Đặc Biệt. Tổng phạm vi cuối là 19 trang. Công việc tiếp tục trên cùng nhánh/PR; sáu trang đầu và các kiểm chứng đã có được giữ lại.
 
+Yêu cầu tiếp nối: thiết kế lại `dau-duoi-loto.html`, `cap-lon-loto.html`, `lo-gan.html` theo cùng hướng dễ đọc. Tổng phạm vi PR sau đợt này là 22 trang; chỉ dựng thêm ba HTML này. Tiếp nhận main mới với ba tệp Vietlott không liên quan để giữ các cập nhật đã xuất bản.
+
 ## Thiết kế
 
 - Giữ khung Nexlink và hệ màu chung; giao diện dữ liệu sáng rõ, tiêu đề gọn, không dải giới thiệu lớn hay thẻ trang trí chiếm chỗ. Màu Đặc Biệt đỏ, LOTO xanh theo token; sáng/tối đồng bộ.
@@ -75,3 +77,18 @@ Tệp: `src/pages/build_stat_pages.py`, `src/web/templates/stat_pages.js`, CSS r
 3. Chữ số 0 đầu, vị trí chữ số và ngày nguồn/đích giữ đúng; kết quả chưa biết không bị tính thành sai hay đúng.
 4. Màu sáng/tối, focus/hover/chọn không che màu số liệu; chú giải giúp hiểu ý nghĩa.
 5. Trình dựng lũy đẳng, đủ điều khiển/bằng chứng/liên kết cũ; bố cục riêng không bị khung chung chèn lại.
+
+## Bổ sung: ba bảng thống kê LOTO
+
+**Mục tiêu:** giúp so sánh số và đọc đúng ý nghĩa từng bảng, nhất quán với các trang thống kê vừa chỉnh. Giữ CSS/JavaScript viết tay, khung chung và token sáng/tối.
+
+**Tệp:** `src/pages/build_stat_pages.py`, `src/web/templates/stat_pages.js`, CSS riêng `src/web/templates/loto_stat_pages.css`, các kiểm Python/Node mới và hợp đồng hướng dẫn trong `tests/web/test_analysis_workspace.py`.
+
+**Thiết kế:** chọn bố cục tiêu đề gọn → ba tab trang → phạm vi → số liệu → phương pháp gập. Đầu/Đuôi tổng hợp song song trên máy tính, ma trận theo kỳ có nhãn/chú giải; Cặp lộn đặt 45 cặp và 10 kép song song, cặp số nổi bật; Lô gan phân biệt rõ gan hiện tại, cực đại trong dải, cực đại toàn lịch sử và gan cặp. Không thêm hero lớn hay framework. Root `div.app-lotostats-shell[data-app-workspace-guide]` giữ quyền sở hữu bố cục của ba trang.
+
+- [x] Chụp baseline độc lập cho các bảng, bộ lọc, ngày, số 0 đầu và đánh dấu trước sửa; bao gồm nháy lặp, ngày nghỉ, dữ liệu rỗng và chỉ một lần xuất hiện.
+- [x] Viết kiểm đỏ cho bố cục/luồng và màu đúng đại lượng; triển khai phạm vi đúng ba slug. Giữ nguyên phép tính, thứ tự, khóa dấu, độ chính xác và ID điều khiển.
+- [x] Kiểm xanh và đột biến có ý nghĩa. Đối chiếu DOM số liệu trước/sau; chu kỳ chưa quan sát đủ vẫn là chưa xác định, không biến thành số 0 đã đo.
+- [x] Dựng ba trang qua `write_page`, kiểm Chromium 390/768/1440 px, sáng/tối và thao tác lọc/đánh dấu/cuộn riêng. Review độc lập, cập nhật QA và PR.
+
+Điểm review: thang Đầu/Đuôi cùng đại lượng dùng cùng trần; màu các đại lượng khác nhau có chú giải riêng; các bảng max toàn lịch sử không thay theo preset; gan đếm một lần mỗi kỳ dù có nhiều nháy; 45 cặp lộn và 10 kép giữ đúng quan hệ số và thứ tự.

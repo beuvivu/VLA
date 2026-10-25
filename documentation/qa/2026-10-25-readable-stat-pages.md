@@ -1,6 +1,6 @@
-# Kiểm chứng 19 trang thống kê và đường cầu, 25-10-2026
+# Kiểm chứng 22 trang thống kê và đường cầu, 25-10-2026
 
-Phạm vi cuối theo [kế hoạch](../plans/2026-10-25-readable-stat-pages.md): một trang Đặc Biệt hôm sau, hai bảng ML, một trang cầu vị trí, bảy luật cầu có màu, bốn trang đường cầu và bốn bảng thống kê Đặc Biệt. Giữ tất cả yêu cầu bổ sung trong cùng phiên.
+Phạm vi cuối theo [kế hoạch](../plans/2026-10-25-readable-stat-pages.md): một trang Đặc Biệt hôm sau, hai bảng ML, một trang cầu vị trí, bảy luật cầu có màu, bốn trang đường cầu, bốn bảng thống kê Đặc Biệt và ba bảng LOTO. Giữ tất cả yêu cầu bổ sung trong cùng phiên.
 
 ## Hành vi đã đối chiếu
 
@@ -22,6 +22,9 @@ Chromium 153 chạy bản HTML dựng từ nguồn cuối, không sửa tay tệ
 | Kiểm tra | Kết quả |
 | --- | --- |
 | 19 trang × 390/768/1440 px × sáng/tối | 114 trạng thái đạt, không lỗi JavaScript/tràn toàn trang, một H1/khung nội dung |
+| Ba trang LOTO bổ sung × 390/768/1440 px × sáng/tối | 18 trạng thái đạt |
+| Tương tác ba trang LOTO × 390/1440 px × sáng/tối | 12 trạng thái đạt: lọc, ngày, đánh dấu, xóa dấu, cỡ số và màu hover |
+| Cặp lộn/ma trận ĐB/Tổng ở 390/768/1024/1100/1101/1440 px, sáng/tối | 36 trạng thái hồi quy đạt trên HTML đã dựng, không thay CSS khi chạy |
 | Kiểm lại chín trang sau sửa chú giải/nhãn | 54 trạng thái đạt |
 | Kiểm lại bốn path sau sửa focus và màu số | 24 trạng thái đạt; màu số đồng nhất ở chọn nhanh/danh sách/căn cứ |
 | Tương tác bốn trang thiết kế lại × 390/1440 px | 8 trường hợp đạt |
@@ -36,8 +39,8 @@ Chromium 153 chạy bản HTML dựng từ nguồn cuối, không sửa tay tệ
 
 ## Kiểm thử tự động
 
-- 788 kiểm thử Python liên quan đạt trên nguồn cuối, gồm trình dựng, lịch sử Đặc Biệt, ML, bảy luật cầu, đường cầu, hợp đồng bố cục và danh mục bằng chứng.
-- Toàn bộ 248 kiểm thử frontend Node đạt.
+- 796 kiểm thử Python liên quan đạt trên nguồn cuối, gồm trình dựng, lịch sử Đặc Biệt, ML, các luật/đường cầu, hợp đồng bố cục, ba bảng LOTO và danh mục bằng chứng.
+- Toàn bộ 257 kiểm thử frontend Node đạt.
 - Ruff toàn bộ `src tests` và `git diff --check` đạt.
 - Các kiểm thử mới đã thất bại trước khi sửa. Đột biến lấy kỳ có dữ liệu kế tiếp thay vì ngày lịch kế tiếp, đảo thứ tự lịch sử, sai ngưỡng 7/8, phá đồng hạng, bỏ cập nhật màu theo bộ lọc và mở màu sang trang khác đều bị kiểm thử bắt.
 - Các đột biến sai ngày nguồn/đích, đọc kết quả tương lai, đổi xác suất và bỏ thao tác mở căn cứ cũng bị bắt. Kiểm hợp đồng cũ chỉ đổi phần bố cục có chủ đích; vẫn giữ ID/control/script/liên kết, một hướng dẫn duy nhất và tính lũy đẳng.
@@ -45,3 +48,11 @@ Chromium 153 chạy bản HTML dựng từ nguồn cuối, không sửa tay tệ
 - Bộ Python toàn repo đã chạy bổ sung nhưng chưa hoàn tất trong phiên: lượt cuối không tiến thêm sau 734 ca ở nhóm mô hình dự báo. Ca được xác định chạy riêng đạt trong 0,35 giây; chưa xác định nguyên nhân chậm của lượt toàn bộ. Không công bố bộ toàn repo đã đạt và không sửa mô hình để né kiểm tra; CI của PR tiếp tục là kiểm tích hợp.
 
 Baseline: 168 kiểm thử liên quan đạt trước thay đổi. Tài nguyên khung trang dùng chung, trang chủ, dữ liệu quay và mô hình ML được giữ nguyên.
+
+## Bổ sung ba trang LOTO và khắc phục hồi quy CI
+
+- `dau-duoi-loto`, `cap-lon-loto`, `lo-gan`: tiêu đề/tab/phạm vi gọn, bảng ở trước và phương pháp gập sau. Đầu/Đuôi có cùng thang màu để đối chiếu; 45 cặp và 10 kép song song từ 1024 px, nhãn số luôn ≥24 px; gan hiện tại, chu kỳ và số lượt dùng thang có tên/đơn vị riêng. Chu kỳ chưa đủ hai lần xuất hiện vẫn là dấu `—`, không biến thành 0 kỳ đã đo.
+- Baseline độc lập gồm 178 kịch bản trên dữ liệu thật, hai bộ 420 kỳ có nháy lặp, bảy kỳ thưa ngày và dữ liệu rỗng. Sau dựng, toàn bộ văn bản ô/thứ tự/khóa/ngày chọn/dấu chọn khớp chính xác; chỉ chuẩn hóa khoảng trắng từ đầu. Oracle độc lập xác nhận đủ 27 nháy, tổng modulo 10, gan đếm theo Set mỗi kỳ và hai nửa max dùng toàn lịch sử.
+- Năm đột biến bị bắt: nhầm cycle/gap, dùng sai trần màu, sai modulo tổng, bỏ kép khi chọn trần chung và thêm điều khiển cặp không có tác dụng ở Đầu/Đuôi. Review độc lập không có blocker.
+- CI của `7e9c155` đã đạt job Python/AI-ML và CodeQL nhưng thất bại ở `check_detail_tables` do hồi quy CSS Đặc Biệt: khung cao 639 px, nội dung 690 px; chữ số 22/18 px. Đã trả ma trận về đủ mười hàng (view=full=714 px), chữ số/ô 0/cặp đảo 24 px trước và sau chọn. Checker kiểm thêm mép hàng cuối; kiểm bố cục Tổng dùng đúng wrapper và breakpoint mới, vẫn giữ chia cột/cỡ chữ/clipping. Đã tái hiện đỏ trước sửa và kiểm xanh 36 trạng thái sau dựng. CI của đầu nhánh mới tiếp tục là kiểm tích hợp cuối.
+- Tiếp nhận ba tệp cập nhật Vietlott từ main `fe053ec`; không đổi chúng ngoài nội dung main đã có, không đổi dữ liệu XSMB. Chỉ dựng thêm ba trang LOTO và dựng lại bốn trang Đặc Biệt dùng CSS vừa sửa.

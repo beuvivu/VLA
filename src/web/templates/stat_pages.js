@@ -1162,6 +1162,8 @@ function renderReversePairs() {
   const pairs = reversePairs()
     .map(([a, b]) => [a, b, c[a], c[b], c[a] + c[b]])
     .sort((x, y) => y[4] - x[4]);
+  // Hai chiều, tổng lượt và số kép đều là lượt xuất hiện: cùng một trần màu.
+  const maximum = Math.max(0, ...pairs.map(p => p[4]), ...doubleNumbers().map(n => c[n]));
 
   table($("sp-grid"),
     ["Hạng", "Cặp số", "Lượt thuận", "Lượt lộn", "Tổng lượt", "Chênh lệch"],
@@ -1182,13 +1184,20 @@ function renderReversePairs() {
       pairOf: (y, i) => (i === 1 ? `${pad2(pairs[y][0])}-${pad2(pairs[y][1])}` : null),
     });
   $("sp-grid").prepend(mk("colgroup", null, [9,25,16.5,16.5,16.5,16.5].map(width => mk("col", {style: `width:${width}%`}))));
+  pairs.forEach((pair, index) => [2, 3, 4].forEach(column =>
+    specialMetricCell($("sp-grid").tBodies[0].rows[index].cells[column], pair[column], maximum,
+      "frequency", `Cặp ${pad2(pair[0])} ↔ ${pad2(pair[1])} · ${["", "", "Lượt thuận", "Lượt lộn", "Tổng lượt"][column]}`, "lượt")));
 
   const kep = $("sp-kep");
   if (kep) {
     const ds = doubleNumbers().map((n) => [pad2(n), c[n]]).sort((a, b) => b[1] - a[1]);
     table(kep, ["Số kép", "Số lần về"], ds,
       { numeric: [1], pairOf: pairCols(ds, 0), key: (y, i) => `double|number${ds[y][0]}|field${i}` });
+    ds.forEach((row, index) => specialMetricCell(kep.tBodies[0].rows[index].cells[1],
+      row[1], maximum, "frequency", `Số kép ${row[0]}`, "lượt"));
   }
+  specialMetricLegend("app-loto-reverse-frequency-legend", "frequency", maximum, "lượt",
+    "Số lượt · chung cho hai chiều, tổng và số kép");
 }
 
 // --- Ma trận 50 họ cặp × ngày ----------------------------------------------
@@ -1499,9 +1508,27 @@ function renderLoGan() {
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     ganBody, { numeric: [2, 3, 4], pairOf: pairCols(ganBody, 0) });
+  // Chỉ tô màu giá trị đang hiển thị; dấu — không phải chu kỳ bằng không.
+  const paint = (id, body, stats, prefix) => {
+    const gapMax = Math.max(0, ...stats.current);
+    const cycleMax = Math.max(0, ...stats.maxGap);
+    const hitMax = Math.max(0, ...stats.hits);
+    body.forEach((row, index) => {
+      const cells = $(id).tBodies[0].rows[index].cells;
+      specialMetricCell(cells[2], row[2], gapMax, "gap", `${row[0]} · Chưa về`, "kỳ");
+      if (typeof row[3] === "number")
+        specialMetricCell(cells[3], row[3], cycleMax, "cycle", `${row[0]} · Chu kỳ dài nhất`, "kỳ");
+      specialMetricCell(cells[4], row[4], hitMax, "frequency", `${row[0]} · Số kỳ có mặt`, "kỳ");
+    });
+    specialMetricLegend(`${prefix}-gap-legend`, "gap", gapMax, "kỳ");
+    specialMetricLegend(`${prefix}-cycle-legend`, "cycle", cycleMax, "kỳ");
+    specialMetricLegend(`${prefix}-frequency-legend`, "frequency", hitMax, "kỳ", "Số kỳ có mặt");
+  };
+  paint("sp-grid", ganBody, g, "app-loto-current");
 
   // 2. Hai bảng ghi rõ "từ trước đến nay" vẫn dùng toàn bộ kho lịch sử.
   const all = rows.length === DRAWS.length ? g : lotoGaps();
+  const historyMax = Math.max(0, ...all.maxGap);
   const half = (el, from, to) => {
     const body = Array.from({ length: to - from }, (_, k) => {
       const i = from + k;
@@ -1509,9 +1536,15 @@ function renderLoGan() {
     });
     table(el, ["Bộ số", "Gan cực đại"], body,
       { numeric: [1], pairOf: pairCols(body, 0) });
+    body.forEach((row, index) => {
+      const value = all.maxGap[from + index];
+      if (value > 0) specialMetricCell(el.tBodies[0].rows[index].cells[1], value,
+        historyMax, "cycle", `Số ${row[0]} · Chu kỳ dài nhất toàn bộ lịch sử`, "kỳ");
+    });
   };
   half($("sp-max-lo"), 0, 50);
   half($("sp-max-hi"), 50, 100);
+  specialMetricLegend("app-loto-history-cycle-legend", "cycle", historyMax, "kỳ");
 
   // 3. Cặp lô gan.
   const pg = pairGaps(rows);
@@ -1523,6 +1556,7 @@ function renderLoGan() {
   table($("sp-pair-gan"),
     ["Cặp số", "Ngày ra gần đây", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     pairBody, { numeric: [2, 3, 4], pairOf: pairCols(pairBody, 0) });
+  paint("sp-pair-gan", pairBody, pg, "app-loto-pair");
 }
 
 /** Màu chỉ mô tả độ lớn của đúng giá trị đã tính, không tạo chỉ số dự báo. */
@@ -1536,11 +1570,14 @@ function specialMetricCell(cell, value, maximum, metric, label, unit) {
 }
 
 /** Chú giải công bố đúng khoảng giá trị của thang màu trong dải đang xem. */
-function specialMetricLegend(id, metric, maximum, unit) {
+function specialMetricLegend(id, metric, maximum, unit, label) {
   const legend = $(id);
   if (!legend) return;
-  const entries = [mk("strong", null, metric === "gap" ? "Chưa về" : "Số lượt"),
-    mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-0`, "aria-hidden": "true"}), `0 ${unit}`])];
+  const entries = [mk("strong", null, label || (metric === "gap" ? "Chưa về" : metric === "cycle" ? "Chu kỳ dài nhất" : "Số lượt"))];
+  if (metric !== "cycle") entries.push(
+    mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-0`, "aria-hidden": "true"}), `0 ${unit}`]));
+  if (metric === "cycle" && maximum === 0)
+    entries.push(mk("span", null, "Chưa đủ hai lần xuất hiện để ghi nhận chu kỳ."));
   for (let level = 1; level <= 3; level++) {
     const low = Math.floor((level - 1) * maximum / 3) + 1;
     const high = Math.floor(level * maximum / 3);

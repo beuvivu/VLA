@@ -27,6 +27,8 @@ body.app-specialstats-page .app-specialstats-panel h2{margin:0 0 4px;color:var(-
 body.app-specialstats-page .app-specialstats-panel>header p{margin:0;color:var(--ui-ink-soft);font-size:13px;max-width:90ch}
 body.app-specialstats-page .app-specialstats-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 body.app-specialstats-page .app-specialstats-shell .sp-scroll{width:100%;min-width:0;max-width:100%;max-height:min(68vh,640px);margin:0;padding:0;overflow:auto;overscroll-behavior:contain;border:0;border-top:1px solid var(--ui-border);border-radius:0;background:var(--ui-surface);box-shadow:none;backdrop-filter:none;scrollbar-width:thin}
+/* Ma trận 00–99 luôn hiện đủ mười hàng; chỉ cuộn ngang khi khung hẹp. */
+body.app-specialstats-page .app-specialstats-shell .app-special-matrix{max-height:none;height:auto;overscroll-behavior-y:auto}
 body.app-specialstats-page .app-specialstats-shell .sp-table{width:100%;min-width:600px;table-layout:fixed;margin:0;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums}
 body.app-specialstats-page .app-specialstats-shell .sp-table :is(th,td){padding:8px 16px;vertical-align:middle}
 body.app-specialstats-page .app-specialstats-shell .sp-table th{height:48px;color:var(--ui-ink-2);font-size:12px;font-weight:650;white-space:normal;line-height:1.5;text-transform:none;letter-spacing:0;background:var(--ui-surface-2);border-bottom:1px solid var(--ui-border-strong)}
@@ -38,11 +40,11 @@ body.app-specialstats-page .app-specialstats-shell .sp-table .sp-empty-row{heigh
 body.app-specialstats-page .app-special-matrix #sp-grid{min-width:760px;table-layout:fixed}
 body.app-specialstats-page .app-special-matrix #sp-grid :is(th,td){padding:8px 4px;text-align:center}
 body.app-specialstats-page .app-special-matrix #sp-grid td{height:64px}
-body.app-specialstats-page .app-special-matrix #sp-grid td b,body.app-specialstats-page .app-special-matrix #sp-grid .sp-none{display:block;font-size:22px;font-weight:700;line-height:1.2;color:inherit}
+body.app-specialstats-page .app-special-matrix #sp-grid td b,body.app-specialstats-page .app-special-matrix #sp-grid .sp-none{display:block;font-size:24px;font-weight:700;line-height:1.2;color:inherit}
 body.app-specialstats-page .app-special-matrix #sp-grid td:first-child b{font-size:13px;font-weight:650}
 body.app-specialstats-page .app-special-matrix #sp-grid .sp-times{display:block;margin-top:4px;color:inherit;font-size:12px;font-weight:500;font-style:normal;line-height:1.4}
 body.app-specialstats-page .app-specialstats-shell #sp-lon{min-width:400px}
-body.app-specialstats-page .app-specialstats-shell #sp-lon td:nth-child(2){font-size:18px;font-weight:650;color:var(--ui-special-ink)}
+body.app-specialstats-page .app-specialstats-shell #sp-lon td:nth-child(2){font-size:24px;font-weight:650;color:var(--ui-special-ink)}
 body.app-specialstats-page .app-specialstats-shell[data-stat-view="chu-ky-dac-biet"] #sp-grid th:first-child{width:12%}
 body.app-specialstats-page .app-specialstats-shell[data-stat-view="chu-ky-dac-biet"] #sp-grid td:nth-child(2),body.app-specialstats-page .app-specialstats-shell[data-stat-view="cau-dac-biet-theo-bo-so"] #sp-grid td:first-child{font-size:22px;font-weight:700;color:var(--ui-special-ink);font-family:var(--ui-mono)}
 body.app-specialstats-page .app-specialstats-shell[data-stat-view="giai-dac-biet-theo-tong"] :is(#sp-grid,#sp-parity){min-width:480px}
