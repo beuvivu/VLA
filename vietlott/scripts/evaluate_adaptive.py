@@ -85,6 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--label', required=True)
     parser.add_argument('--adaptive', action='store_true')
+    parser.add_argument('--patterns', action='store_true', help='thêm chuyên gia mẫu hình nhân quả')
+    parser.add_argument('--multi-agent', action='store_true', help='thêm nhóm đa thuật toán hiện hành')
     parser.add_argument('--products', nargs='+', default=['mega645','power655','lotto535','keno','bingo18','max3d','max3dpro'])
     parser.add_argument('--draws', type=int, default=600)
     parser.add_argument('--initial-draws', type=int, default=400)
@@ -97,7 +99,8 @@ def main(argv: list[str] | None = None) -> int:
     if len(args.products) != len(set(args.products)):
         parser.error('Products must be unique')
     config = MLConfig(bootstrap=args.draws, warmup=32, tree_every=64, tree_buffer=64,
-                      search_nodes=50, seed=20261003, adaptive=args.adaptive)
+                      search_nodes=50, seed=20261003, adaptive=args.adaptive,
+                      patterns=args.patterns, multi_agent=args.multi_agent)
     environment = {'python':platform.python_version()}
     for package in ('numpy','scipy','scikit-learn','pydantic','xgboost','lightgbm'):
         try:
