@@ -375,6 +375,12 @@ def _render_board(
         f'<tbody>{"".join(rows)}</tbody></table>'
     )
     if simulation_only:
+        # LOTO của chính 27 giải đang hiển thị, gồm Đặc Biệt và mọi nháy trùng.
+        loto = sorted(item["value"][-2:] for group in payload["groups"] for item in group["values"])
+        loto_rows = "".join(
+            "<tr>" + "".join(f"<td>{html.escape(number)}</td>" for number in loto[start:start + 9]) + "</tr>"
+            for start in range(0, len(loto), 9)
+        )
         return f"""
 <div id="{BLOCK_ID}" class="fun-prediction-block fun-simulation-card">
   <div class="fun-prediction-head">
@@ -386,6 +392,10 @@ def _render_board(
     <span class="fun-warning">Không phải kết quả thật</span>
   </div>
   <div class="fun-board-wrap">{table}</div>
+  <table class="app-simulation-loto">
+    <caption>LOTO mô phỏng</caption>
+    <tbody>{loto_rows}</tbody>
+  </table>
   <p class="fun-simulation-note">Chỉ <b>2 số cuối</b> dùng xác suất mô hình. Tiền tố là mô phỏng, không bảo đảm kết quả thực tế.</p>
   <details class="fun-simulation-details">
     <summary>Cách tạo bảng mô phỏng</summary>
@@ -530,6 +540,9 @@ FUN_CSS = r"""
 .fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(3) { border-right: 0; }
 .fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(n+4),
 .fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(n+4) { border-top: 1px solid var(--ui-border); }
+.app-simulation-loto { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+.app-simulation-loto caption { padding: 4px 0 8px; text-align: left; color: var(--ui-ink-soft); font-size: 12px; font-weight: 600; }
+.app-simulation-loto td { padding: 4px 2px; border: 1px solid var(--ui-border); background: var(--ui-surface-2); color: var(--ui-brand-ink); text-align: center; font-size: 16px; font-weight: 700; line-height: 1.5; }
 .fun-simulation-note { margin: 16px 0 8px; color: var(--ui-ink-soft); font-size: 12px; line-height: 1.5; }
 .fun-simulation-details { margin-top: auto; color: var(--ui-ink-soft); font-size: 12px; }
 .fun-simulation-details summary { cursor: pointer; color: var(--ui-brand-ink); font-weight: 700; }
