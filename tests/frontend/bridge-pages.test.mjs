@@ -95,14 +95,16 @@ test('màu xếp theo ba mức đường cầu phân biệt, đồng hạng cùn
   const dom = await open(t, fixture.pages.loto);
   const api = dom.window.BridgePages;
   const counts = { '00': 20, '01': 20, '02': 12, '03': 9, '04': 8, '05': 7 };
-  assert.deepEqual(plain(api.numberRanks(counts, 'loto')), { '00': 1, '01': 1, '02': 2, '03': 3 });
+  for (const key of Object.keys(fixture.pages)) {
+    assert.deepEqual(plain(api.numberRanks(counts, key)), { '00': 1, '01': 1, '02': 2, '03': 3 }, key);
+  }
   assert.deepEqual(plain(api.numberRanks({ '07': 7, '08': 8 }, 'hai-nhay')), { '08': 1 });
-  assert.deepEqual(plain(api.numberRanks(counts, 'loto-theo-thu')), {});
+  assert.deepEqual(plain(api.numberRanks(counts, 'tao-phoi-tuan')), {});
 });
 
 test('đổi số ngày và biên ngày tính lại màu từ số đường cầu từng số, không cộng cặp lộn', async t => {
   const snapshots = [];
-  for (const c of fixture.cases.filter((c) => ['loto', 'hai-nhay'].includes(c.key))) {
+  for (const c of fixture.cases) {
     const dom = await open(t, fixture.pages[c.key], search(c));
     const levels = [...new Set(Object.values(c.counts).filter((n) => n > 7))].sort((a, b) => b - a).slice(0, 3);
     const expected = Object.fromEntries(Object.entries(c.counts).filter(([, n]) => levels.includes(n))
@@ -122,11 +124,18 @@ test('đổi số ngày và biên ngày tính lại màu từ số đường c�
   assert.ok(new Set(snapshots).size > 2, 'dữ liệu kiểm phải thật sự đổi thứ hạng khi đổi điều kiện');
 });
 
-test('năm trang cầu còn lại không tô hạng số đường cầu hoặc thêm chú giải', async t => {
-  for (const key of Object.keys(fixture.pages).filter((key) => !['loto', 'hai-nhay'].includes(key))) {
+test('bảy trang cầu giữ màu ban đầu Python khi JS dựng lại và có đủ chú giải', async t => {
+  const ranksOf = (document) => Object.fromEntries([...document.querySelectorAll('#app-cau-grid [data-cau-rank]')]
+    .map((cell) => [cell.dataset.number, cell.dataset.cauRank]));
+  for (const key of Object.keys(fixture.pages)) {
+    const staticDom = new JSDOM(fixture.pages[key]);
+    t.after(() => staticDom.window.close());
     const dom = await open(t, fixture.pages[key]);
-    assert.equal(dom.window.document.querySelectorAll('[data-cau-rank], .app-cau-rank-legend').length, 0, key);
+    assert.equal(dom.window.document.querySelectorAll('.app-cau-rank-legend').length, 1, key);
+    assert.deepEqual(ranksOf(dom.window.document), ranksOf(staticDom.window.document), key);
   }
+  const tool = await open(t, fixture.tool, '', 'WeeklySheet');
+  assert.equal(tool.window.document.querySelectorAll('[data-cau-rank], .app-cau-rank-legend').length, 0);
 });
 
 test('bảng đầu 0–9 hiện đúng số cầu từng ô và tóm tắt đúng tổng', async t => {

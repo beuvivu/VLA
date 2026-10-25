@@ -203,9 +203,9 @@
 
   const percent = (x) => `${(x * 100).toFixed(1).replace(".", ",")}%`;
 
-  /** Xếp ba mức số đường cầu riêng từng số, đồng hạng cùng màu; chỉ hai trang được chọn. */
+  /** Xếp ba mức số đường cầu riêng từng số, đồng hạng cùng màu trên bảy kiểu cầu. */
   function numberRanks(counts, ruleKey) {
-    if (!["loto", "hai-nhay"].includes(ruleKey)) return {};
+    if (!["loto", "hai-nhay", "bach-thu", "dac-biet", "bo-so", "dac-biet-theo-thu", "loto-theo-thu"].includes(ruleKey)) return {};
     const levels = [...new Set(Object.values(counts).filter((n) => n > 7))].sort((a, b) => b - a).slice(0, 3);
     return Object.fromEntries(Object.entries(counts).filter(([, n]) => levels.includes(n))
       .map(([number, n]) => [number, levels.indexOf(n) + 1]));

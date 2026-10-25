@@ -1525,6 +1525,32 @@ function renderLoGan() {
     pairBody, { numeric: [2, 3, 4], pairOf: pairCols(pairBody, 0) });
 }
 
+/** Màu chỉ mô tả độ lớn của đúng giá trị đã tính, không tạo chỉ số dự báo. */
+function specialMetricCell(cell, value, maximum, metric, label, unit) {
+  const level = value > 0 && maximum > 0 ? Math.min(3, Math.ceil(3 * value / maximum)) : 0;
+  cell.classList.add("app-stat-metric", `app-stat-${metric}`, `app-stat-level-${level}`);
+  cell.dataset.statMetric = metric;
+  cell.dataset.statValue = String(value);
+  cell.dataset.statLevel = String(level);
+  cell.setAttribute("aria-label", `${label}: ${value} ${unit}`);
+}
+
+/** Chú giải công bố đúng khoảng giá trị của thang màu trong dải đang xem. */
+function specialMetricLegend(id, metric, maximum, unit) {
+  const legend = $(id);
+  if (!legend) return;
+  const entries = [mk("strong", null, metric === "gap" ? "Chưa về" : "Số lượt"),
+    mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-0`, "aria-hidden": "true"}), `0 ${unit}`])];
+  for (let level = 1; level <= 3; level++) {
+    const low = Math.floor((level - 1) * maximum / 3) + 1;
+    const high = Math.floor(level * maximum / 3);
+    if (low > high) continue;
+    const range = low === high ? String(low) : `${low}–${high}`;
+    entries.push(mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-${level}`, "aria-hidden": "true"}), `${range} ${unit}`]));
+  }
+  fill(legend, entries);
+}
+
 function renderSpecialCycle() {
   const rows = selected();
   const s = specialGaps(rows);
@@ -1534,6 +1560,10 @@ function renderSpecialCycle() {
   table($("sp-grid"),
     ["Hạng", "Số", "Chưa về (kỳ)", "Chu kỳ dài nhất", "Tổng lần về"],
     body, { numeric: [0, 2, 3, 4], pairOf: pairCols(body, 1) });
+  const maximum = Math.max(0, ...s.current);
+  body.forEach((row, index) => specialMetricCell($("sp-grid").tBodies[0].rows[index].cells[2],
+    row[2], maximum, "gap", `Số ${row[1]} · Chưa về`, "kỳ"));
+  specialMetricLegend("app-special-gap-legend", "gap", maximum, "kỳ");
 }
 
 function renderSpecialBySet() {
@@ -1549,6 +1579,10 @@ function renderSpecialBySet() {
   table($("sp-grid"),
     ["Bộ số", "Về gần nhất", "Chưa về (kỳ)", "Chu kỳ dài nhất", "Tổng lần về"],
     rows, { numeric: [2, 3, 4], pairOf: pairCols(rows, 0) });
+  const maximum = Math.max(0, ...s.current);
+  rows.forEach((row, index) => specialMetricCell($("sp-grid").tBodies[0].rows[index].cells[2],
+    row[2], maximum, "gap", `Số ${row[0]} · Chưa về`, "kỳ"));
+  specialMetricLegend("app-special-gap-legend", "gap", maximum, "kỳ");
 }
 
 function renderTomorrow() {
@@ -2025,19 +2059,27 @@ function renderSpecialBridge() {
   rows.forEach((r) => { count[parseInt(lastTwo(r.s), 10)] += 1; });
 
   // 1. Ma trận Đầu 0-9 x Đuôi 0-9.
-  const head = ["Đầu"].concat(Array.from({ length: 10 }, (_, d) => String(d)));
+  const head = ["Đầu / Đuôi"].concat(Array.from({ length: 10 }, (_, d) => `Đuôi ${d}`));
   const body = Array.from({ length: 10 }, (_, tens) =>
     [mk("b", null, `Đầu ${tens}`)].concat(Array.from({ length: 10 }, (_, ones) => {
       const n = tens * 10 + ones;
       return count[n]
         ? [mk("b", null, pad2(n)), mk("i", { class: "sp-times" }, `${count[n]} lần`)]
-        : mk("span", { class: "sp-none" }, pad2(n));
+        : [mk("span", { class: "sp-none" }, pad2(n)), mk("i", {class: "sp-times"}, "0 lần")];
     })));
   // Ô ma trận LÀ con số: hàng là Đầu, cột là Đuôi, nên cặp suy thẳng từ toạ độ
   // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
   table($("sp-grid"), head, body,
     { pairOf: (y, i) => (i === 0 ? null : pad2(y * 10 + (i - 1))) });
   $("sp-grid").prepend(mk("colgroup", null, [12,...Array(10).fill(8.8)].map(width => mk("col", {style: `width:${width}%`}))));
+  const maximum = Math.max(0, ...count);
+  Array.from($("sp-grid").tBodies[0].rows).forEach((row, tens) => {
+    for (let ones = 0; ones < 10; ones++) {
+      const number = tens * 10 + ones;
+      specialMetricCell(row.cells[ones + 1], count[number], maximum, "frequency", `Số ${pad2(number)}`, "lần");
+    }
+  });
+  specialMetricLegend("app-special-frequency-legend", "frequency", maximum, "lần");
 
   // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
   const lon = $("sp-lon");
@@ -2050,6 +2092,10 @@ function renderSpecialBridge() {
     table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"], lonBody,
       { numeric: [0, 2], pairOf: pairCols(lonBody, 1),
         key: (y, i) => `special-reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}` });
+    const pairMaximum = Math.max(0, ...pairs.map(pair => pair[2]));
+    pairs.forEach((pair, index) => specialMetricCell(lon.tBodies[0].rows[index].cells[2], pair[2], pairMaximum,
+      "frequency", `Cặp ${pad2(pair[0])} - ${pad2(pair[1])}`, "lần"));
+    specialMetricLegend("app-special-reverse-legend", "frequency", pairMaximum, "lần");
   }
 
   // 3. Ba kỳ gần nhất, đủ giải.
@@ -2103,6 +2149,9 @@ function renderSpecialByTong() {
     table($("sp-parity"), ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn",
       "Hôm sau tổng lẻ"], []);
     fitColumns();
+    specialMetricLegend("app-special-gap-legend", "gap", 0, "kỳ");
+    specialMetricLegend("app-special-total-frequency-legend", "frequency", 0, "lần");
+    specialMetricLegend("app-special-transition-legend", "frequency", 0, "lần");
     return;
   }
 
@@ -2118,6 +2167,15 @@ function renderSpecialByTong() {
   ]).sort((a, b) => b[2] - a[2]);
   table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"],
     gan.map((g) => [mk("b", null, g[0]), g[1], g[2], g[3]]), { numeric: [0, 2, 3] });
+  const gapMaximum = Math.max(0, ...gan.map(row => row[2]));
+  const countMaximum = Math.max(0, ...hits);
+  gan.forEach((row, index) => {
+    const cells = $("sp-grid").tBodies[0].rows[index].cells;
+    specialMetricCell(cells[2], row[2], gapMaximum, "gap", `Tổng ${row[0]} · Chưa về`, "kỳ");
+    specialMetricCell(cells[3], row[3], countMaximum, "frequency", `Tổng ${row[0]} · Xuất hiện`, "lần");
+  });
+  specialMetricLegend("app-special-gap-legend", "gap", gapMaximum, "kỳ");
+  specialMetricLegend("app-special-total-frequency-legend", "frequency", countMaximum, "lần");
 
   // 2. Chuyển tổng: đếm cặp (hôm qua, hôm nay) trên các kỳ LIỀN KỀ thật.
   //    Bỏ qua ranh giới ngày nghỉ quay — nối hai kỳ cách nhau nhiều ngày lại
@@ -2157,6 +2215,11 @@ function renderSpecialByTong() {
         f[4].toFixed(2).replace(".", ",") + " %",
         (f[5] > 0 ? "+" : "") + f[5].toFixed(2).replace(".", ","),
       ]), { numeric: [0, 1, 2, 3, 4, 5] });
+    const shown = flat.slice(0, 40);
+    const maximum = Math.max(0, ...shown.map(row => row[2]));
+    shown.forEach((row, index) => specialMetricCell(tr.tBodies[0].rows[index].cells[2],
+      row[2], maximum, "frequency", `Tổng ${row[0]} → ${row[1]}`, "lần"));
+    specialMetricLegend("app-special-transition-legend", "frequency", maximum, "lần");
   }
 
   // 3. Chẵn/lẻ của tổng hôm sau, theo tổng hôm trước.
@@ -2174,6 +2237,12 @@ function renderSpecialByTong() {
     }
     table(par, ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn", "Hôm sau tổng lẻ"],
       body, { numeric: [0, 1, 2, 3] });
+    Array.from(par.tBodies[0].rows).filter(row => row.cells.length === 4).forEach(row => {
+      for (const [column, parity] of [[2, "even"], [3, "odd"]]) {
+        row.cells[column].dataset.statParity = parity;
+        row.cells[column].classList.add(`app-stat-parity-${parity}`);
+      }
+    });
   }
   fitColumns();
 }

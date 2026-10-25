@@ -6,218 +6,98 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
   <title>{{ title }}</title>
-  <link rel="preload" href="assets/ui.css" as="style" />
-  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
-  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/ui.css" />
   <link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system />
   <style>
-    :root{
-      --bg:var(--ui-bg);--card:var(--ui-surface);--text:var(--ui-ink);--muted:var(--ui-ink-soft);--line:var(--ui-border);
-      --hit:var(--ui-mark-ink);--hitde:var(--ui-special-ink);--ok:var(--ui-ok);--chip:var(--ui-brand-soft);
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:var(--ui-font);background:linear-gradient(135deg,var(--bg) 0%,var(--ui-bg-2) 48%,var(--ui-bg-2) 100%);color:var(--text)}
-    a{color:var(--ui-brand-ink);text-decoration:none}a:hover{text-decoration:underline}
-    .path-shell{max-width:1280px;margin:0 auto;padding:clamp(16px,2.4vw,28px)}
-    .path-hero{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:18px 20px;border:1px solid var(--line);border-radius:22px;background:var(--card);box-shadow:var(--ui-sh-md);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-    .path-hero h1{letter-spacing:-.03em}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--ui-sh-sm);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-    .kpi{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--ui-ink-2);font-weight:700}
-    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--ui-ink-2)}
-    .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
-    .dot.hit{background:var(--hit)}.dot.hitde{background:var(--hitde)}.dot.none{background:var(--ui-empty-ink)}
-    table{width:100%;border-collapse:separate;border-spacing:0;background:transparent;font-variant-numeric:tabular-nums}
-    th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:center;font-size:12px}
-    th{position:sticky;top:0;background:var(--ui-surface-2);color:var(--ui-ink-2);z-index:3}
-    td{color:var(--text)}td.left,th.left{text-align:left}tr:hover td{background:var(--ui-surface-2)}
-    .cell{display:inline-flex;gap:6px;align-items:center;justify-content:center;min-width:42px;padding:5px 7px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text)}
-    .cell.hit{background:var(--ui-mark-bg);border-color:var(--ui-mark-border);color:var(--ui-mark-ink)}
-    .cell.hitde{background:var(--ui-special-bg);border-color:var(--ui-special-border);color:var(--ui-special-ink);font-weight:800}
-    .cell.none{background-color:var(--ui-empty-bg);background-image:none;color:var(--ui-empty-ink)}
-    .small{font-size:11px;color:var(--muted);line-height:1.5}
-    .btn{display:inline-block;background:var(--ui-brand);color:var(--ui-on-brand);padding:8px 11px;border-radius:10px;border:1px solid var(--ui-brand);font-weight:700}
-    .btn:hover{text-decoration:none;background:var(--ui-brand-ink)}.btn.secondary{background:var(--card);color:var(--ui-ink-2);border-color:var(--line)}.btn.secondary:hover{background:var(--ui-brand-soft)}
-    .path-overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(18rem,.85fr);gap:14px;align-items:stretch;margin-top:14px}
-    .path-overview>.card{display:flex;flex-direction:column;min-height:0}
-    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);text-decoration:none;transition:transform .16s ease,border-color .16s ease,background .16s ease}
-    .quick-pick:hover{background:var(--ui-brand-soft);border-color:var(--ui-brand-border);transform:translateY(-1px);text-decoration:none}
-    .quick-number{font-size:16px;font-weight:800;letter-spacing:.04em}.quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
-    .empty-state{margin-top:10px;padding:10px;border:1px dashed var(--ui-border-strong);border-radius:10px;color:var(--muted);font-size:12px;background:var(--ui-surface-2)}
-    .pick-scroll{flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto;border:1px solid var(--line);border-radius:12px}
-    .path-matrix-card{margin-top:14px;overflow:hidden}
-    .path-table-scroll{margin-top:10px;max-height:min(66vh,52rem);overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:14px;background:var(--card)}
-    .path-table-scroll table{margin:0;min-width:max-content}.path-table-scroll th{top:0;box-shadow:0 1px 0 var(--line)}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .path-footer{margin-top:14px;color:var(--muted);padding-bottom:8px}
-    .path-experience{margin-top:14px}
-    .path-experience-title{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
-    .path-experience-scope{margin:6px 0 0}
-    .path-experience-verdict{margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--ui-ink-2)}
-    .path-experience-scroll{margin-top:10px;max-width:40rem;overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-    .path-experience-table caption{caption-side:bottom;text-align:left;padding:8px}
-    @media(max-width:979px){.path-overview{grid-template-columns:1fr}.path-table-scroll{max-height:58vh}}
-    @media(max-width:640px){.path-shell{padding:12px}.path-hero{padding:14px;border-radius:16px}.card{border-radius:16px;padding:13px}.quick-grid{grid-template-columns:1fr}.kpi{width:100%}.chip{font-size:11px}}
+    :root{--bg:var(--ui-bg);--card:var(--ui-surface);--text:var(--ui-ink);--muted:var(--ui-ink-soft);--line:var(--ui-border)}
+    {% include 'path_explorer.css' %}
   </style>
 </head>
 <body class="ui-app path-page">
 <div class="wrap path-shell">
-  <div class="top path-hero">
-    <div>
-      <h1 style="margin:0;font-size:clamp(20px,3vw,30px)">{{ title }}</h1>
-      <div class="small">Ngày neo (biên ngày cầu chạy): <b>{{ anchor_date }}</b> · Số ngày cầu chạy: <b>{{ display_days }}</b> · Loại: <b>{{ mode_label }}</b> · Trạng thái: <b>{{ kind_label }}</b></div>
-    </div>
-    <div class="kpi">
-      <span class="chip">Màu đỏ: về Đặc Biệt</span>
-      <span class="chip">Màu cam: loto đã về</span>
-      <span class="chip">Gợi ý ô: độ trễ + vị trí dữ liệu gốc</span>
-    </div>
-  </div>
+  <header class="path-heading">
+    <div><a class="path-back" href="soi-cau-vi-tri.html">← Soi cầu vị trí</a><h1>{{ title }}</h1>
+      <p>Đọc hai chữ số của một kỳ trước, ghép thành một số và đối chiếu với kỳ sau.</p></div>
+    <div class="path-dates"><span>Dữ liệu đến <b>{{ anchor_date }}</b></span><span>{{ rows|length }} đường cầu đủ điều kiện đang hiển thị</span></div>
+  </header>
+  <nav class="path-nav" aria-label="Chọn loại đường cầu">
+    {% for mode_key, mode_name in [('loto', 'LOTO'), ('de', 'Đặc Biệt')] %}
+    {% for kind_key, kind_name in [('active', 'Đang chạy'), ('stable', 'Từng có chuỗi')] %}
+    <a href="soi-path-{{ mode_key }}-{{ kind_key }}.html"{% if mode == mode_key and kind == kind_key %} aria-current="page"{% endif %}>{{ mode_name }} <span>{{ kind_name }}</span></a>
+    {% endfor %}{% endfor %}
+  </nav>
+  <ol class="path-steps" data-app-workspace-guide aria-label="Ba bước đọc đường cầu">
+    <li><b>1</b> Chọn số hoặc đường cầu</li><li><b>2</b> Xem hai chữ số nguồn</li><li><b>3</b> Đối chiếu từng kỳ</li>
+  </ol>
 
-  <div class="grid path-overview" style="margin-top:12px">
-    <div class="card">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Xác suất trúng kỳ tới: trung bình dự báo của các đường cầu đủ điều kiện ({{ kind_label|lower }}) cùng báo con ấy, theo kinh nghiệm học từ mọi đường cầu.</div></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          {% if other_link %}<a class="btn secondary" href="{{ other_link }}">Xem {{ other_kind_label }} ({{ other_mode_label }})</a>{% endif %}
-          {% if index_link %}<a class="btn secondary" href="{{ index_link }}">Trang tổng hợp</a>{% endif %}
+  <section class="path-card path-picks" aria-labelledby="path-picks-title">
+    <div class="path-section-head"><div><h2 id="path-picks-title">Số được các đường cầu báo cho kỳ tới</h2>
+      <p>Xác suất trúng kỳ tới: trung bình dự báo của các đường cầu đủ điều kiện cùng báo con ấy. Bấm một số để xem những đường cầu có trong danh sách bên dưới.</p></div><span class="path-kind">{{ kind_label }}</span></div>
+    {% if picks %}
+    <div class="quick-grid" aria-label="Danh sách chọn nhanh">
+      {% for r in picks[:10] %}
+      <button type="button" class="quick-pick" data-path-number="{{ '%02d'|format(r.number) }}" aria-pressed="false">
+        <b class="quick-number">{{ '%02d'|format(r.number) }}</b><span class="quick-meta"><strong>{{ (r.prob*100)|round(2) }}%</strong><span>{{ r.support_paths_count }} đường cầu</span></span>
+      </button>
+      {% endfor %}
+    </div>
+    <p class="path-note">Số hỗ trợ tính trên toàn bộ đường cầu đủ điều kiện; danh sách đang hiển thị chỉ gồm {{ rows|length }} đường cầu được xuất ra. Vì vậy số đường tìm thấy bên dưới có thể ít hơn số hỗ trợ.</p>
+    <details class="path-pick-more"><summary>Xem đủ {{ picks|length }} số và xác suất</summary>
+      <div class="path-table-scroll" tabindex="0" role="region" aria-label="Bảng số được báo"><table><thead><tr><th>Hạng</th><th>Số</th><th>Xác suất %</th><th>Toàn bộ hỗ trợ</th></tr></thead><tbody>
+      {% for r in picks %}<tr><td>{{ loop.index }}</td><td class="path-number">{{ '%02d'|format(r.number) }}</td><td>{{ (r.prob*100)|round(2) }}</td><td>{{ r.support_paths_count }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </details>
+    {% else %}<p class="empty-state">Không có đường cầu nào đủ điều kiện ở ngày này, nên chưa có danh sách chọn nhanh.</p>{% endif %}
+  </section>
+
+  {% if not rows %}
+  <section class="ui-empty path-empty path-card" role="status">
+    <p class="path-empty-count">0 đường cầu đạt điều kiện</p><h2>Chưa có đường cầu {{ kind_label|lower }} để đối chiếu</h2>
+    {% if empty_reason %}
+    <p>Chưa có đường cầu nối đủ {{ empty_reason.threshold }} kỳ liên tiếp{% if kind == 'active' %} tính đến {{ anchor_date }}{% else %} trong lịch sử đang đối chiếu{% endif %}.</p>
+    <div class="ui-empty-why"><p>Với tỉ lệ nền {{ empty_reason.baseline_pct }}% cho một số {{ mode_label }}, một đường cầu trúng {{ empty_reason.threshold }} kỳ liên tiếp có xác suất khoảng {{ '%.6f'|format(empty_reason.chance_pct) }}%.</p>
+    {% if empty_reason.sibling_rows %}<p><a class="path-action" href="{{ empty_reason.sibling_link }}">Xem {{ empty_reason.sibling_rows }} đường cầu {{ empty_reason.sibling_label|lower }} →</a></p>{% endif %}</div>
+    {% else %}<p>Chưa có dữ liệu cho ngày này.</p>{% endif %}
+  </section>
+  {% else %}
+  <section class="path-card path-explorer" aria-labelledby="path-explorer-title">
+    <div class="path-section-head"><div><h2 id="path-explorer-title">Đọc từng đường cầu</h2><p>Ngày nguồn = ngày cần đối chiếu − độ trễ. Hai chữ số giữ đúng thứ tự trái → phải.</p></div><span class="path-kind">{{ display_days }} kỳ đối chiếu</span></div>
+    <div class="path-toolbar">
+      <label>Lọc số được báo cho kỳ tới<input id="path-number-filter" inputmode="numeric" maxlength="2" placeholder="00–99" aria-describedby="path-filter-help" /></label>
+      <label>Số kỳ gần nhất<select id="path-days-filter"><option value="5">5 kỳ</option><option value="10" selected>10 kỳ</option><option value="all">Tất cả đã nhúng</option></select></label>
+      <button id="path-reset" type="button">Bỏ lọc</button>
+      <p id="path-filter-help">Bộ lọc chỉ chọn trong danh sách đã xuất; không thay đổi điều kiện hay xác suất của mô hình.</p>
+    </div>
+    <p id="path-status" role="status" aria-live="polite">{{ rows|length }} đường cầu đang hiển thị. Chọn “Xem đường cầu” để đọc căn cứ.</p>
+    <div class="path-workspace">
+      <section id="path-detail" class="path-detail" aria-labelledby="path-detail-title"><h3 id="path-detail-title">Nguồn → số ghép → kết quả</h3><p>Chọn một đường cầu trong danh sách để xem hai chữ số nguồn và kết quả từng kỳ.</p></section>
+      <div class="path-list">
+        <div class="path-table-scroll" tabindex="0" role="region" aria-label="Danh sách đường cầu">
+          <table id="path-table"><thead><tr><th>Đường cầu</th><th>Báo kỳ tới</th><th>Dự báo kỳ tới (%)</th><th>Tỷ lệ lịch sử (%)</th></tr></thead><tbody>
+          {% for row in rows %}<tr data-path-row="{{ loop.index0 }}">
+            <td><button type="button" class="path-select" data-path-index="{{ loop.index0 }}" aria-pressed="false"><b>Xem đường cầu {{ loop.index }}</b><span>Trễ {{ row.lag }} ngày · {{ row.streak }}</span></button><small>{{ row.i_label }} + {{ row.j_label }}</small></td>
+            <td class="path-number">{{ row.next_num|default('—', true) }}</td><td>{% if row.p_next is defined and row.p_next is not none %}{{ (row.p_next*100)|round(2) }}{% else %}—{% endif %}</td><td>{{ (row.p_mean*100)|round(2) }}</td>
+          </tr>{% endfor %}
+          </tbody></table>
         </div>
-      </div>
-      <div class="pick-scroll" style="margin-top:10px">
-        <table>
-          <thead><tr><th>Hạng</th><th>Số</th><th>%</th><th>Số đường hỗ trợ</th></tr></thead>
-          <tbody>
-            {% for r in picks %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td class="mono">{{ "%02d"|format(r.number) }}</td>
-              <td>{{ (r.prob*100)|round(2) }}</td>
-              <td>{{ r.support_paths_count }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <p class="path-note">“Tỷ lệ lịch sử” là số lần trúng trong mẫu; “Dự báo kỳ tới” là xác suất đã co theo kinh nghiệm của mọi đường cầu. Hai cột có ý nghĩa khác nhau.</p>
       </div>
     </div>
-
-    <div class="card">
-      <b>Chọn nhanh</b>
-      <div class="small" style="margin-top:6px">Trang tĩnh, dữ liệu dựng sẵn.</div>
-      <div class="legend">
-        <span><span class="dot hitde"></span>Về Đặc Biệt</span>
-        <span><span class="dot hit"></span>Về loto</span>
-        <span><span class="dot none"></span>Không về</span>
-      </div>
-      {% if picks %}
-      <div class="quick-grid" aria-label="Danh sách chọn nhanh">
-        {% for r in picks[:10] %}
-        <div class="quick-pick" title="Số {{ '%02d'|format(r.number) }} · điểm {{ (r.prob*100)|round(2) }}% · hỗ trợ {{ r.support_paths_count }} đường cầu">
-          <span class="quick-number mono">{{ "%02d"|format(r.number) }}</span>
-          <span class="quick-meta"><b>{{ (r.prob*100)|round(2) }}%</b><br>{{ r.support_paths_count }} đường cầu</span>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo xác suất kỳ tới; khối «Kinh nghiệm học từ mọi đường cầu» bên dưới cho biết các con chênh nhau tới đâu.</i></div>
-      {% else %}
-      <div class="empty-state">Không có đường cầu nào đủ điều kiện ở ngày neo này, nên chưa có danh sách chọn nhanh.</div>
-      {% endif %}
-      <div style="margin-top:10px" class="small">
-        Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
-      </div>
-    </div>
-  </div>
-
-  {% if experience %}
-  <section class="card path-experience" aria-labelledby="path-experience-title">
-    <h2 id="path-experience-title" class="path-experience-title">Kinh nghiệm học từ mọi đường cầu</h2>
-    <p class="small path-experience-scope">Ngày neo {{ experience.anchor_date }} · {{ experience.rules }} đường cầu ({{ experience.scope_text }}), mỗi đường chấm trên {{ experience.trials }} kỳ gần nhất · tỉ lệ trúng chung {{ experience.base_pct }}%.</p>
-    <p class="path-experience-verdict">{{ experience.verdict }}</p>
-    {% if experience.streak_rows %}
-    <div class="path-experience-scroll">
-      <table class="path-experience-table">
-        <caption class="small">Cầu đang chạy s kỳ liên tiếp thì kỳ kế tiếp trúng bao nhiêu — đếm trên mọi đường cầu{% if experience.uses_streak %}; cột «Dự báo» là phần nhánh đang chạy dùng{% endif %}.</caption>
-        <thead><tr><th>Chuỗi trước kỳ</th><th>Số lần chấm</th><th>Trúng tiếp</th><th>Dự báo</th></tr></thead>
-        <tbody>
-          {% for row in experience.streak_rows %}
-          <tr><td>{{ row.label }}</td><td>{{ row.trials }}</td><td>{{ row.raw }}%</td><td>{{ row.post }}%</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
-    <p class="small">{{ experience.streak_verdict }} Các lần chấm của những cầu cùng kỳ tương quan với nhau qua chính kỳ quay ấy, nên số lần ở đây không phải số quan sát độc lập.</p>
   </section>
   {% endif %}
 
-  <div class="card path-matrix-card" style="margin-top:12px; overflow:hidden">
-    <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
-    <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
-    {% if not rows %}
-    <div class="ui-empty" role="status">
-      <span class="ui-empty-icon" aria-hidden="true">◌</span>
-      <h3>Hôm nay không có đường cầu {{ kind_label|lower }} nào</h3>
-      {% if empty_reason %}
-      <p>Đây là trạng thái bình thường, không phải lỗi dữ liệu. Bộ quét đã chạy đủ và kết luận không đường cầu nào đạt ngưỡng {{ empty_reason.threshold }} nhịp liên tiếp.</p>
-      <div class="ui-empty-why">
-        {% if empty_reason.is_de %}
-        <p style="margin:0 0 .5rem">Với Đặc Biệt, tỉ lệ trúng của một con là <b>{{ empty_reason.baseline_pct }}%</b>, nên xác suất một đường cầu trúng {{ empty_reason.threshold }} kỳ liên tiếp chỉ khoảng <b>{{ "%.6f"|format(empty_reason.chance_pct) }}%</b>. Rỗng là kết quả thường gặp, và hạ ngưỡng để “có dữ liệu” sẽ tạo ra tín hiệu giả.</p>
-        {% else %}
-        <p style="margin:0 0 .5rem">Tỉ lệ trúng nền của một con là <b>{{ empty_reason.baseline_pct }}%</b>; xác suất trúng {{ empty_reason.threshold }} kỳ liên tiếp là khoảng <b>{{ "%.4f"|format(empty_reason.chance_pct) }}%</b>.</p>
-        {% endif %}
-        {% if empty_reason.sibling_rows %}
-        <p style="margin:0">Trang <a href="{{ empty_reason.sibling_link }}">{{ empty_reason.sibling_label }}</a> hiện có <b>{{ empty_reason.sibling_rows }}</b> đường cầu đủ điều kiện.</p>
-        {% endif %}
-      </div>
-      {% else %}
-      <p>Chưa có dữ liệu cho ngày neo này.</p>
-      {% endif %}
-    </div>
-    {% else %}
-    <div class="path-table-scroll" style="margin-top:10px; overflow:auto">
-      <table id="path-table">
-        <thead>
-          <tr>
-            <th class="left">Đường cầu</th>
-            <th>Tỷ lệ lịch sử</th>
-            <th>Dự báo kỳ tới</th>
-            <th>Chuỗi liên tiếp</th>
-            {% for d in days %}
-              <th class="mono">{{ d[5:] }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td class="left">
-              <div class="mono">{{ row.path_id }}</div>
-              <div class="small">trễ={{ row.lag }} · A={{ row.i }} ({{ row.i_label }}) · B={{ row.j }} ({{ row.j_label }})</div>
-            </td>
-            <td>{{ (row.p_mean*100)|round(2) }}</td>
-            <td>{% if row.p_next is defined and row.p_next is not none %}{{ (row.p_next*100)|round(2) }}{% else %}—{% endif %}</td>
-            <td class="mono">{{ row.streak }}</td>
-            {% for cell in row.cells %}
-              {% if cell.hitde %}
-                <td title="{{ cell.tooltip }}"><span class="cell hitde mono">{{ "%02d"|format(cell.num) }}</span></td>
-              {% elif cell.hit %}
-                <td title="{{ cell.tooltip }}"><span class="cell hit mono">{{ "%02d"|format(cell.num) }}</span></td>
-              {% else %}
-                <td title="{{ cell.tooltip }}"><span class="cell none mono">{{ "%02d"|format(cell.num) }}</span></td>
-              {% endif %}
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="small path-footer" style="margin-top:14px;color:var(--muted)">
-    Được tạo bởi <span class="mono">src/pages/build_docs.py</span> · Nguồn dữ liệu: thu thập cục bộ, có dự phòng nhiều nguồn.
-  </div>
+  {% if experience %}
+  <details class="path-card path-experience"><summary>Kinh nghiệm học từ mọi đường cầu</summary>
+    <p class="path-note">Ngày neo {{ experience.anchor_date }} · {{ experience.rules }} đường cầu ({{ experience.scope_text }}), mỗi đường chấm trên {{ experience.trials }} kỳ gần nhất · tỉ lệ trúng chung {{ experience.base_pct }}%.</p>
+    <p class="path-experience-verdict">{{ experience.verdict }}</p>
+    {% if experience.streak_rows %}<div class="path-table-scroll" tabindex="0" role="region" aria-label="Kiểm chứng chuỗi đường cầu"><table class="path-experience-table">
+      <caption>Cầu đang chạy s kỳ liên tiếp thì kỳ kế tiếp trúng bao nhiêu — đếm trên mọi đường cầu{% if experience.uses_streak %}; cột «Dự báo» là phần nhánh đang chạy dùng{% endif %}.</caption>
+      <thead><tr><th>Chuỗi trước kỳ</th><th>Số lần chấm</th><th>Trúng tiếp</th><th>Dự báo</th></tr></thead><tbody>{% for row in experience.streak_rows %}<tr><td>{{ row.label }}</td><td>{{ row.trials }}</td><td>{{ row.raw }}%</td><td>{{ row.post }}%</td></tr>{% endfor %}</tbody>
+    </table></div>{% endif %}<p class="path-note">{{ experience.streak_verdict }} Các lần chấm của những cầu cùng kỳ tương quan với nhau, nên số lần ở đây không phải số quan sát độc lập.</p>
+  </details>{% endif %}
+  <p class="path-footer">Dữ liệu đến {{ anchor_date }} · Thống kê lịch sử và căn cứ theo từng đường cầu.</p>
 </div>
+<script id="path-data" type="application/json">{{ path_payload_json|default('{}')|safe }}</script>
+<script>{% include 'path_explorer.js' %}</script>
 </body>
 </html>

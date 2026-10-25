@@ -1,4 +1,4 @@
-"""Màu ba mức số đường cầu chỉ dành cho LOTO và hai nháy, từ tám đường trở lên."""
+"""Màu ba mức số đường cầu trên bảy trang, từ tám đường trở lên."""
 
 from copy import deepcopy
 from pathlib import Path
@@ -14,7 +14,7 @@ COUNTS = {"00": 20, "01": 20, "02": 12, "03": 9, "04": 8, "05": 7, "06": 1}
 EXPECTED = {"00": 1, "01": 1, "02": 2, "03": 3}
 
 
-@pytest.mark.parametrize("key", ["loto", "hai-nhay"])
+@pytest.mark.parametrize("key", list(RULES))
 def test_static_cells_rank_distinct_counts_and_keep_ties(key: str) -> None:
     before = deepcopy(COUNTS)
     grid = BeautifulSoup(page.static_grid(COUNTS, rule_key=key), "html.parser")
@@ -32,20 +32,23 @@ def test_eight_paths_qualify_but_seven_do_not() -> None:
 
 
 @pytest.mark.parametrize("key", list(RULES))
-def test_only_two_requested_pages_publish_colors_and_a_plain_legend(key: str) -> None:
+def test_all_seven_pages_publish_colors_and_a_plain_legend(key: str) -> None:
     report = page.load(ROOT / "data")
     report["rules"][key]["counts"] = COUNTS
     soup = BeautifulSoup(page.render(key, report), "html.parser")
     legend = soup.select_one(".app-cau-rank-legend")
-    if key in {"loto", "hai-nhay"}:
-        assert legend is not None
-        text = legend.get_text(" ", strip=True)
-        assert all(label in text for label in ("Nhất", "Nhì", "Ba", ">7 đường cầu"))
-        assert "không phải độ tin cậy" in text.lower()
-        assert len(soup.select("#app-cau-grid [data-cau-rank]")) == 4
-    else:
-        assert legend is None
-        assert not soup.select("[data-cau-rank]")
+    assert legend is not None
+    text = legend.get_text(" ", strip=True)
+    assert all(label in text for label in ("Nhất", "Nhì", "Ba", ">7 đường cầu"))
+    assert "không phải độ tin cậy" in text.lower()
+    assert len(soup.select("#app-cau-grid [data-cau-rank]")) == 4
+
+
+def test_unrelated_rule_and_weekly_tool_do_not_get_rank_colors() -> None:
+    assert page.number_ranks(COUNTS, "tao-phoi-tuan") == {}
+    assert page.rank_legend("tao-phoi-tuan") == ""
+    soup = BeautifulSoup(page.render_tool([["2026-09-28", "77115"]]), "html.parser")
+    assert not soup.select("[data-cau-rank], .app-cau-rank-legend")
 
 
 def test_rank_palette_uses_readable_theme_pairs_and_keeps_selected_data_colors() -> None:

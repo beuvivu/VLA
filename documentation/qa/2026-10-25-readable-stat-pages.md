@@ -1,14 +1,19 @@
-# Kiểm chứng sáu trang thống kê, 25-10-2026
+# Kiểm chứng 19 trang thống kê và đường cầu, 25-10-2026
 
-Phạm vi theo [kế hoạch](../plans/2026-10-25-readable-stat-pages.md): sửa lịch sử Đặc Biệt hôm sau, làm rõ hai bảng Top 10 ML và cầu vị trí, thêm màu xếp hạng số đường cầu trên hai trang LOTO.
+Phạm vi cuối theo [kế hoạch](../plans/2026-10-25-readable-stat-pages.md): một trang Đặc Biệt hôm sau, hai bảng ML, một trang cầu vị trí, bảy luật cầu có màu, bốn trang đường cầu và bốn bảng thống kê Đặc Biệt. Giữ tất cả yêu cầu bổ sung trong cùng phiên.
 
 ## Hành vi đã đối chiếu
 
 - Đặc Biệt hôm sau mặc định số cuối kỳ mới nhất, liệt kê các lần trùng hai số cuối từ mới đến cũ, giữ đủ năm chữ số. Kết quả bên cạnh thuộc đúng ngày lịch kế tiếp; ngày thiếu không được thay bằng kỳ có dữ liệu sau đó. Chỉ kết quả kế tiếp đã biết được đưa vào mẫu số tần suất. Dữ liệu thật: 26/09/2026 có 18132, ngày 27/09/2026 có 55473; 24/10/2026 có 45932 và kết quả hôm sau đang chờ.
 - Hai trang ML giữ nguyên mười số, thứ tự, số 0 đầu, toàn bộ xác suất và bằng chứng JSON so với `origin/main` tại 9daca67; chỉ bố cục thay đổi. Ngày dự báo, mức tin và chuyển loại luôn nhìn thấy. Mỗi bằng chứng vẫn mở bằng bàn phím và đóng bằng Escape.
 - Cầu vị trí giữ luật, 107 vị trí chữ số và tham số URL. Luồng ba bước cho phép lọc cặp số, chọn cầu rồi xem từng kỳ; nhãn vị trí ghi rõ giải/chữ số. Liên kết cầu đang chọn hiện rõ cả khi URL chưa có hash.
-- Màu LOTO dùng số đường cầu của từng số, độc lập với cặp đảo. Ví dụ đếm 20,20,12,9,8,7 cho các số khác nhau tạo hạng 1,1,2,3,không màu,không màu. Mức 7 không đủ điều kiện, mức 8 có thể vào hạng; chỉ ba mức đếm cao nhất được tô. Đổi bộ lọc tính lại màu. Các kiểu cầu khác không nhận màu hay chú giải mới.
+- Bảy luật cầu dùng số đường cầu của từng số, độc lập với cặp đảo. Ví dụ đếm 20,20,12,9,8,7 cho các số khác nhau tạo hạng 1,1,2,3,không màu,không màu. Mức 7 không đủ điều kiện, mức 8 có thể vào hạng; chỉ ba mức đếm cao nhất được tô. Đổi bộ lọc tính lại màu. Nhất vàng, nhì xanh dương, ba xanh lá; đồng hạng cùng màu.
 - Màu là số đường cầu, không phải xác suất dự báo. Bộ lọc hai nháy mặc định hiện chưa có số nào trên 7 cầu, nên bảng không ép tạo màu. Đổi độ dài tối thiểu còn một kỳ tạo đủ mẫu để kiểm ba màu thực tế.
+- Bốn bảng thống kê Đặc Biệt: 98 ca đối chiếu độc lập trước/sau trên dữ liệu thật, 420 kỳ dựng sẵn có ngày thiếu/số 0 đầu và dữ liệu rỗng. Giữ số lượt, gan, chuyển tiếp đúng ngày lịch, thứ tự, khóa ô, phạm vi, ba kỳ gần nhất và chu trình đánh dấu → lọc → xóa. Khác biệt duy nhất của văn bản ô là thêm rõ `0 lần` vào ô ma trận chưa xuất hiện; chỉ chuẩn hóa chính xác trường hợp đó khi so sánh.
+- Mỗi thang màu có chú giải theo trần riêng: lượt từng số, lượt cặp đảo, lượt tổng và lượt chuyển tổng. Số kỳ chưa về dùng cam; chẵn/lẻ có nhãn và màu riêng. Điều kiện ở trước bảng, phương pháp gập phía sau.
+- Bốn trang đường cầu trước đây không có JavaScript chọn/lọc, “Chọn nhanh” chỉ là ô hiển thị. Nay số và đường cầu là nút thật, có lọc 00–99, số kỳ đối chiếu và URL lưu lựa chọn. Hiện ngày nguồn = ngày đích − độ trễ, hai vị trí giải/chữ số, số ghép và kết quả thực tế. Nút chọn đưa focus/vùng nhìn tới căn cứ, chừa header cố định.
+- Đối chiếu độc lập 600 đường/6.600 ô (6.000 lịch sử + 600 kỳ tới) với CSV và dữ liệu gốc: số ghép, nháy, ngày và trạng thái đúng; xác suất giữ nguyên. Kỳ tới không đọc kết quả sau ngày neo. Thiếu nguồn/kết quả/số/cờ lịch sử ghi chưa đủ dữ liệu; NaN không làm hỏng trình dựng. Chế độ Đặc Biệt vẫn ghi đúng Đặc Biệt nếu thiếu cờ phân loại phụ.
+- Đặc Biệt đang chạy thực sự có 0 cầu đạt ba kỳ liên tiếp ở ngày hiện tại. Trang giải thích điều kiện chưa đạt, có liên kết sang nhóm từng có chuỗi; giữ nguyên ngưỡng. Số hỗ trợ trên toàn bộ cầu đủ điều kiện được phân biệt với danh sách 200 đường đang hiển thị.
 
 ## Kiểm tra trên trình duyệt
 
@@ -16,20 +21,27 @@ Chromium 153 chạy bản HTML dựng từ nguồn cuối, không sửa tay tệ
 
 | Kiểm tra | Kết quả |
 | --- | --- |
-| Sáu trang × 390/768/1440 px × sáng/tối | 36 trạng thái, không lỗi JavaScript, không tràn ngang toàn trang |
+| 19 trang × 390/768/1440 px × sáng/tối | 114 trạng thái đạt, không lỗi JavaScript/tràn toàn trang, một H1/khung nội dung |
+| Kiểm lại chín trang sau sửa chú giải/nhãn | 54 trạng thái đạt |
+| Kiểm lại bốn path sau sửa focus và màu số | 24 trạng thái đạt; màu số đồng nhất ở chọn nhanh/danh sách/căn cứ |
 | Tương tác bốn trang thiết kế lại × 390/1440 px | 8 trường hợp đạt |
-| Hai trang màu × 390/1440 px × sáng/tối | 8 trường hợp đạt |
+| Tương tác tám trang bổ sung × 390/1440 px | 16 trường hợp đạt |
+| Bảy trang màu × 390/1440 px × sáng/tối | 28 trạng thái đạt, cả mặc định và bộ lọc một kỳ |
 | Tương phản ba màu ở hai chế độ | Tất cả đạt ít nhất 4,5:1 |
 | Rê chuột, focus và chọn số có hạng | Giữ nền hạng, thêm viền chọn |
 
 Đã xem ảnh desktop/mobile, sáng/tối; ma trận rộng cuộn trong khung riêng. Kiểm tương tác chọn số Đặc Biệt, trở về số mới nhất, dải 30/toàn bộ; mở bằng chứng ML; lọc/chọn đường cầu, chế độ Đặc Biệt; đổi số kỳ để tạo/xóa màu cầu.
 
+Đã tái hiện trên điện thoại: chọn đường thứ hai cập nhật căn cứ nhưng tiêu đề ở y≈−2125 px. Sau sửa, focus ở tiêu đề căn cứ và y≈100 px, dưới header. Kiểm Enter, lọc có/không có kết quả, đổi số kỳ, tải lại URL, trở về toàn bộ và liên kết từ trang active rỗng sang lịch sử.
+
 ## Kiểm thử tự động
 
-- 405 kiểm thử Python liên quan đạt trên nguồn cuối, gồm trình dựng trang, lịch sử Đặc Biệt, trình bày ML, hai loại cầu và danh mục bằng chứng.
-- Toàn bộ 238 kiểm thử frontend Node đạt.
-- Ruff trên tất cả tệp Python thay đổi và `git diff --check` đạt.
+- 788 kiểm thử Python liên quan đạt trên nguồn cuối, gồm trình dựng, lịch sử Đặc Biệt, ML, bảy luật cầu, đường cầu, hợp đồng bố cục và danh mục bằng chứng.
+- Toàn bộ 248 kiểm thử frontend Node đạt.
+- Ruff toàn bộ `src tests` và `git diff --check` đạt.
 - Các kiểm thử mới đã thất bại trước khi sửa. Đột biến lấy kỳ có dữ liệu kế tiếp thay vì ngày lịch kế tiếp, đảo thứ tự lịch sử, sai ngưỡng 7/8, phá đồng hạng, bỏ cập nhật màu theo bộ lọc và mở màu sang trang khác đều bị kiểm thử bắt.
-- Review độc lập đối chiếu dữ liệu ML, thuật toán ngày kế tiếp, hợp đồng URL cầu và phạm vi màu.
+- Các đột biến sai ngày nguồn/đích, đọc kết quả tương lai, đổi xác suất và bỏ thao tác mở căn cứ cũng bị bắt. Kiểm hợp đồng cũ chỉ đổi phần bố cục có chủ đích; vẫn giữ ID/control/script/liên kết, một hướng dẫn duy nhất và tính lũy đẳng.
+- Review độc lập đối chiếu dữ liệu ML, 98 ca thống kê, toàn bộ ô đường cầu, hợp đồng URL và màu. Các thiếu sót chú giải/NaN/nhãn được sửa và kiểm lại.
+- Bộ Python toàn repo đã chạy bổ sung nhưng chưa hoàn tất trong phiên: lượt cuối không tiến thêm sau 734 ca ở nhóm mô hình dự báo. Ca được xác định chạy riêng đạt trong 0,35 giây; chưa xác định nguyên nhân chậm của lượt toàn bộ. Không công bố bộ toàn repo đã đạt và không sửa mô hình để né kiểm tra; CI của PR tiếp tục là kiểm tích hợp.
 
 Baseline: 168 kiểm thử liên quan đạt trước thay đổi. Tài nguyên khung trang dùng chung, trang chủ, dữ liệu quay và mô hình ML được giữ nguyên.

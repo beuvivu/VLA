@@ -31,7 +31,7 @@ from core.paths import TEMPLATES
 TOOL_PAGE = "tao-phoi-tuan.html"
 TOOL_DRAWS = 600
 WEEKDAYS = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật")
-NUMBER_RANK_RULES = frozenset({"loto", "hai-nhay"})
+NUMBER_RANK_RULES = frozenset(RULES)
 NUMBER_RANK_LABELS = {1: "Nhất", 2: "Nhì", 3: "Ba"}
 
 #: Luật của từng kiểu, viết cho người đọc.

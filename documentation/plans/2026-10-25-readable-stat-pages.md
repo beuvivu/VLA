@@ -4,6 +4,8 @@ Yêu cầu ngày 25-10-2026: sửa `giai-db-ngay-mai.html` theo lịch sử các
 
 Yêu cầu bổ sung trong cùng phiên: tô ba mức số đường cầu cao nhất ở `soi-cau-loto.html` và `soi-cau-hai-nhay.html`, chỉ xét từng số có hơn 7 đường cầu; đồng hạng cùng màu. Đổi bộ lọc phải tính lại màu.
 
+Yêu cầu mở rộng tiếp theo: áp dụng cùng màu cho năm luật cầu còn lại; sửa và thiết kế lại bốn trang đường cầu active/stable và bốn trang thống kê Đặc Biệt. Tổng phạm vi cuối là 19 trang. Công việc tiếp tục trên cùng nhánh/PR; sáu trang đầu và các kiểm chứng đã có được giữ lại.
+
 ## Thiết kế
 
 - Giữ khung Nexlink và hệ màu chung; giao diện dữ liệu sáng rõ, tiêu đề gọn, không dải giới thiệu lớn hay thẻ trang trí chiếm chỗ. Màu Đặc Biệt đỏ, LOTO xanh theo token; sáng/tối đồng bộ.
@@ -27,3 +29,49 @@ Chọn chỉnh có phạm vi ở trình dựng/tài nguyên riêng: sửa đúng
 - [x] Chạy pytest/Node/Ruff liên quan, kiểm trình duyệt và review độc lập với bằng chứng; bộ Python toàn repo chạy bổ sung.
 
 Baseline: 168 kiểm thử ML/trang thống kê/cầu vị trí đạt trước sửa trên nhánh từ `origin/main` 9daca67.
+
+## Phạm vi bổ sung và cách thực hiện
+
+Giữ cùng công nghệ Python/Jinja/JavaScript/CSS viết tay và hệ màu Nexlink. Chọn thay bố cục trong từng trình dựng, không thêm framework hay thay khung trang. Các số liệu vẫn phải được đối chiếu; màu phải có chú giải về đại lượng được tô.
+
+### 1. Màu của cả bảy luật cầu
+
+Tệp: `src/pages/build_bridge_pages.py`, `src/web/templates/bridge_pages.js`, `tests/pages/test_bridge_rank_colors.py`, `tests/frontend/bridge-pages.test.mjs`.
+
+- [x] Viết và chạy kiểm đỏ cho năm trang bạch thủ, LOTO theo thứ, Đặc Biệt, Đặc Biệt bộ số và Đặc Biệt theo thứ chưa có màu.
+- [x] Mở phạm vi `number_ranks(counts, rule_key)` và `numberRanks(counts, ruleKey)` sang cả bảy luật; giữ ba mức đếm phân biệt, ngưỡng >7, đồng hạng và từng số riêng.
+- [x] Kiểm xanh trên mặc định và query, đối chiếu Python/JS; đột biến thu phạm vi lại hai trang phải bị bắt. Dữ liệu, luật quét và số đếm không thay đổi. Chromium 28 trạng thái kiểm cả mặc định và bộ lọc một kỳ đạt.
+
+### 2. Bốn trang đường cầu theo ngày
+
+Tệp: `src/pages/build_docs.py`, `src/web/templates/path_ui_page.html.j2`, tài nguyên riêng cho đường cầu và các kiểm thử path tương ứng.
+
+- [x] Tái hiện việc thiếu tương tác và kiểm vì sao Đặc Biệt active đang trống, trước khi sửa. Phân biệt không có cầu đủ điều kiện với lỗi tính toán; không hạ điều kiện ngầm.
+- [x] Kiểm đỏ cho thao tác chọn cầu/số, nguồn chữ số và ngày kết quả, số 0 đầu, dữ liệu thiếu/rỗng, quan hệ ngày nguồn → ngày đích.
+- [x] Làm các nhóm active/stable và LOTO/Đặc Biệt rõ ràng. Danh sách đường cầu chọn được bằng bàn phím; bằng chứng đặt cạnh đường được chọn, có vị trí giải/chữ số, hai chữ số được ghép, kết quả đích và trạng thái khớp.
+- [x] Các bước trong lịch sử đi từ ngày nguồn tới đúng ngày đích theo độ trễ; không dùng kết quả tương lai làm nguồn. Hiển thị rõ kỳ tới chưa biết kết quả, giữ xác suất mô hình và ranh giới dữ liệu.
+- [x] Trang active rỗng giải thích điều kiện chưa đạt và có liên kết xem lịch sử, không để ô giả nút. Kiểm xanh, kiểm đột biến lỗi ngày/chữ số và review độc lập.
+
+### 3. Bốn trang thống kê Đặc Biệt
+
+Tệp: `src/pages/build_stat_pages.py`, `src/web/templates/stat_pages.js`, CSS riêng, kiểm thử frontend/Python các trang `cau-giai-dac-biet`, `giai-dac-biet-theo-tong`, `cau-dac-biet-theo-bo-so`, `chu-ky-dac-biet`.
+
+- [x] Kiểm đỏ cho bố cục mới và chú giải đại lượng màu; giữ kỳ lọc, số liệu, sắp xếp, đánh dấu ô/cặp và các trường hợp thiếu/rỗng.
+- [x] Tiêu đề/điều kiện gọn, bảng số là nội dung chính, nhãn giải thích số lượt/chu kỳ/chưa về/chuyển tổng ngay tại nơi đọc. Màu phân biệt mức số liệu và có chú giải, không đổi thành lời hứa về xác suất.
+- [x] Dùng `.app-specialstats-shell[data-app-workspace-guide]` để giữ hướng dẫn riêng, tránh thêm lại hero/guide lớn; kiểm hợp đồng vẫn giữ ID/control/script/liên kết, chỉ cập nhật đúng chủ sở hữu hướng dẫn.
+- [x] Kiểm xanh cùng các kiểm hồi quy cũ, đối chiếu dữ liệu trước/sau và Python/JS khi liên quan.
+
+### 4. Tích hợp và nghiệm thu
+
+- [x] Dựng từ nguồn đúng 19 HTML yêu cầu, không dựng lại trang chủ hoặc các trang khác ngoài phạm vi.
+- [x] Chromium ở 390/768/1440 px, sáng/tối; không tràn toàn trang. Kiểm riêng chọn/lọc/mở đường cầu và trạng thái active trống; kiểm màu >7 của cả bảy luật.
+- [x] Chạy các bộ kiểm Python/Node/Ruff liên quan: 788 pytest, 248 Node và Ruff đạt. Bộ toàn repo đã thử nhưng chưa hoàn tất, ghi giới hạn trong QA; các kiểm hợp đồng bố cục cũ chỉ đổi phần có chủ đích, giữ bảo vệ dữ liệu.
+- [x] Review độc lập, ghi bằng chứng cuối vào báo cáo QA, cập nhật PR theo toàn bộ phạm vi cuối.
+
+### Trọng tâm review
+
+1. Số có đúng 7 cầu không màu, đồng hạng có cùng màu và đổi query không giữ hạng cũ.
+2. Cầu active Đặc Biệt trống có giải thích thật; các điều khiển vẫn dùng được và không giả tạo cầu đủ điều kiện.
+3. Chữ số 0 đầu, vị trí chữ số và ngày nguồn/đích giữ đúng; kết quả chưa biết không bị tính thành sai hay đúng.
+4. Màu sáng/tối, focus/hover/chọn không che màu số liệu; chú giải giúp hiểu ý nghĩa.
+5. Trình dựng lũy đẳng, đủ điều khiển/bằng chứng/liên kết cũ; bố cục riêng không bị khung chung chèn lại.

@@ -24,6 +24,7 @@ kỳ, nên một con số đóng cứng sai ngay lần bấm đầu tiên — xe
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import logging
 import sys
@@ -310,6 +311,57 @@ def _tomorrow_controls() -> str:
             '<span>Tra theo hai số cuối · 00–99</span></div>' + ranges + '</section>')
 
 
+SPECIAL_STAT_PAGES = (
+    ("cau-giai-dac-biet", "Tần suất"),
+    ("giai-dac-biet-theo-tong", "Theo tổng"),
+    ("cau-dac-biet-theo-bo-so", "Theo từng số"),
+    ("chu-ky-dac-biet", "Chu kỳ"),
+)
+
+
+def _special_table(ident: str, label: str, *, matrix: bool = False) -> str:
+    """Bảng thật có vùng cuộn mang tên và nhận được tiêu điểm bàn phím."""
+    return (f'<div class="sp-scroll{" app-special-matrix" if matrix else ""}" tabindex="0" '
+            f'role="region" aria-label="{html.escape(label)}">'
+            f'<table class="sp-table sp-grid-lines sp-crosshair" id="{ident}" '
+            f'aria-label="{html.escape(label)}"></table></div>')
+
+
+def _special_panel(ident: str, title: str, description: str, body: str) -> str:
+    """Tiêu đề và đơn vị luôn đứng cùng bảng mà chúng giải thích."""
+    return (f'<section class="app-specialstats-panel" aria-labelledby="{ident}">'
+            f'<header><h2 id="{ident}">{title}</h2><p>{description}</p></header>{body}</section>')
+
+
+def _special_stat_layout(page: StatPage, note_html: str) -> str:
+    """Bốn lối xem cùng một miền dữ liệu; hướng dẫn chi tiết đứng sau bảng."""
+    nav = ''.join(
+        f'<a href="{slug}.html"' + (' aria-current="page"' if slug == page.slug else '')
+        + f'>{label}</a>' for slug, label in SPECIAL_STAT_PAGES
+    )
+    controls, _, range_note = page.controls.partition('<p class="sp-note">')
+    range_note = '<p class="sp-note">' + range_note if range_note else ''
+    cycle_note = (
+        '<p class="sp-note">Đếm theo <b>kỳ quay trong dải đã chọn</b>, không theo ngày lịch; '
+        'những ngày nghỉ quay không được tính thêm vào chu kỳ. '
+        'Chu kỳ dài nhất là khoảng cách giữa hai lần về đã ghi nhận; dấu — nghĩa là chưa đủ hai lần.</p>'
+        if page.slug in {"chu-ky-dac-biet", "cau-dac-biet-theo-bo-so"} else ''
+    )
+    method = '' if page.slug == "giai-dac-biet-theo-tong" else (
+        '<details class="app-specialstats-method"><summary>Cách đọc và phạm vi thống kê</summary>'
+        + cycle_note + range_note + note_html
+        + '<p>Đây là thống kê lịch sử trong phạm vi được ghi ở từng bảng. '
+        'Số lượt nhiều hoặc khoảng chưa về dài không phải xác suất dự báo cho kỳ tới.</p></details>'
+    )
+    return (f'<div class="app-specialstats-shell" data-app-workspace-guide data-stat-view="{page.slug}">'
+            '<header class="app-specialstats-header"><p>Thống kê Đặc Biệt</p>'
+            f'<h1>{page.title}</h1><p>{page.subtitle}</p></header>'
+            f'<nav class="app-specialstats-nav" aria-label="Thống kê Đặc Biệt">{nav}</nav>'
+            '<section class="app-specialstats-filters" aria-label="Chọn phạm vi thống kê">'
+            '<h2>Chọn phạm vi</h2>' + controls + '</section>'
+            + page.body + method + '</div>')
+
+
 PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="bang-dac-biet",
@@ -400,21 +452,25 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="giai-dac-biet-theo-tong",
         title="Giải Đặc Biệt theo tổng",
-        subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
+        subtitle="Tổng là chữ số cuối của đầu + đuôi. Ví dụ: 78 có tổng 5.",
         controls=_range_controls(pairs=False),
-        body='<div class="app-total-overview">'
-             '<section class="app-total-card" aria-labelledby="app-total-gap-title">'
-             '<header><h2 id="app-total-gap-title">Khoảng cách theo tổng</h2>'
-             '<p>Đối chiếu chữ số tổng, lần xuất hiện gần nhất và số kỳ chưa về.</p></header>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div></section>'
-             '<section class="app-total-card" aria-labelledby="app-total-parity-title">'
-             '<header><h2 id="app-total-parity-title">Chẵn lẻ của tổng hôm sau</h2>'
-             '<p>Tỷ lệ lịch sử sau mỗi tổng, kèm số kỳ được đối chiếu.</p></header>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-parity"></table></div></section></div>'
-             '<section class="app-total-card app-total-transition" aria-labelledby="app-total-transition-title">'
-             '<header><h2 id="app-total-transition-title">Hôm trước tổng X thì hôm sau tổng Y</h2>'
-             '<p>Hai chữ số tổng đứng trước; số lượt, cỡ mẫu và độ lệch ở phía sau.</p></header>'
-             '<details class="app-total-method"><summary>Cách đọc bảng chuyển tổng</summary>'
+        body='<div class="app-specialstats-pair">'
+             + _special_panel("app-total-gap-title", "Khoảng cách của 10 tổng",
+                              "Sắp theo số kỳ chưa về, từ dài đến ngắn. Màu cam đậm hơn = khoảng chưa về dài hơn.",
+                              '<div class="app-specialstats-legend" id="app-special-gap-legend"></div>'
+                              '<div class="app-specialstats-legend" id="app-special-total-frequency-legend"></div>'
+                              + _special_table("sp-grid", "Khoảng cách và số lần xuất hiện theo tổng"))
+             + _special_panel("app-total-parity-title", "Chẵn lẻ của tổng hôm sau",
+                              "Tỷ lệ lịch sử, chỉ đếm hai ngày liền nhau đã có kết quả.",
+                              '<div class="app-specialstats-legend"><span class="app-stat-parity-even">Chẵn: 0, 2, 4, 6, 8</span>'
+                              '<span class="app-stat-parity-odd">Lẻ: 1, 3, 5, 7, 9</span></div>'
+                              + _special_table("sp-parity", "Tỷ lệ tổng chẵn và lẻ của ngày hôm sau"))
+             + '</div>'
+             + _special_panel("app-total-transition-title", "Tổng hôm trước → tổng hôm sau",
+                              "40 chuyển tiếp lệch nhiều nhất so với mốc 10 %, xếp theo độ lệch chuẩn hoá. Đây là thống kê lịch sử.",
+                              '<div class="app-specialstats-legend" id="app-special-transition-legend"></div>'
+                              + _special_table("sp-trans", "Số lượt chuyển tổng giữa hai ngày liền nhau"))
+             + '<details class="app-specialstats-method"><summary>Cách đọc bảng tổng và chuyển tiếp</summary>'
              '<p class="sp-note">Mức ngẫu nhiên là <b>10 %</b> cho mỗi ô, vì tổng chỉ có '
              '10 giá trị. Cột <b>Tỉ lệ</b> quanh 10 % nghĩa là không phân biệt được với '
              'ngẫu nhiên. Bảng xếp theo <b>lệch chuẩn hoá</b> '
@@ -423,20 +479,25 @@ PAGES: tuple[StatPage, ...] = (
              'nên chỉ mẫu đủ lớn mới lên được. Quanh ±2 vẫn là mức thường gặp khi xét 100 ô. '
              'Đây là thống kê MÔ TẢ trên lịch sử, '
              'không phải xác suất đã hiệu chuẩn, và chỉ đếm các kỳ LIỀN KỀ thật — ranh giới '
-             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p></details>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-trans"></table></div></section>',
+             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p></details>',
         render="renderSpecialByTong",
     ),
     StatPage(
         slug="cau-giai-dac-biet",
-        title="Cầu giải Đặc Biệt",
-        subtitle="Tần suất hai số cuối giải Đặc Biệt theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
+        title="Tần suất hai số cuối Đặc Biệt",
+        subtitle="Xem mỗi số 00–99 đã xuất hiện bao nhiêu lần trong dải kỳ đã chọn.",
         controls=_range_controls(),
-        body='<div class="sp-scroll app-special-matrix"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Cặp lộn của giải Đặc Biệt</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-lon"></table></div>'
-             '<h3 class="sp-subhead">Ba kỳ gần nhất</h3>'
-             '<div id="sp-recent" class="sp-recent"></div>',
+        body=_special_panel("app-special-frequency-title", "100 số theo đầu và đuôi",
+                            "Hàng là chữ số đầu, cột là chữ số đuôi. Mỗi ô ghi số và lượt xuất hiện; màu đỏ đậm hơn = nhiều lượt hơn.",
+                            '<div class="app-specialstats-legend" id="app-special-frequency-legend"></div>'
+                            + _special_table("sp-grid", "Tần suất 100 số Đặc Biệt theo đầu và đuôi", matrix=True))
+             + _special_panel("app-special-reverse-title", "Cặp số đảo nhau",
+                              "Cộng lượt của hai số trong cặp, xếp từ nhiều đến ít. Số kép không thuộc danh sách này.",
+                              '<div class="app-specialstats-legend" id="app-special-reverse-legend"></div>'
+                              + _special_table("sp-lon", "Cặp lộn Đặc Biệt theo tổng lượt xuất hiện"))
+             + '<details class="app-specialstats-recent"><summary>Ba kỳ gần nhất · toàn bộ lịch sử</summary>'
+             '<p>Phần đối chiếu này giữ ba kỳ mới nhất, không thay đổi theo bộ lọc ở trên.</p>'
+             '<div id="sp-recent" class="sp-recent"></div></details>',
         render="renderSpecialBridge",
     ),
     StatPage(
@@ -497,20 +558,23 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="chu-ky-dac-biet",
         title="Chu kỳ giải Đặc Biệt",
-        subtitle="Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử.",
+        subtitle="So sánh số kỳ chưa về với chu kỳ dài nhất của từng số 00–99.",
         controls=_range_controls(mode="preset"),
-        body='<p class="sp-note">Đếm theo <b>kỳ quay trong dải đã chọn</b>, '
-             'không theo ngày lịch; những ngày nghỉ quay không được tính thêm '
-             'vào chu kỳ.</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
+        body=_special_panel("app-special-cycle-title", "Xếp hạng theo số kỳ chưa về",
+                            "Cả 100 số, sắp từ khoảng chưa về dài đến ngắn. Đơn vị: kỳ quay trong dải đang chọn.",
+                            '<div class="app-specialstats-legend" id="app-special-gap-legend"></div>'
+                            + _special_table("sp-grid", "Chu kỳ và số kỳ chưa về của 100 số Đặc Biệt")),
         render="renderSpecialCycle",
     ),
     StatPage(
         slug="cau-dac-biet-theo-bo-so",
-        title="Cầu giải Đặc Biệt theo bộ số",
-        subtitle="Điểm rơi của từng bộ số ở giải Đặc Biệt: lần về gần nhất, khoảng cách và số lần.",
+        title="Đặc Biệt theo từng số",
+        subtitle="Mỗi hàng là một số 00–99: lần về gần nhất, khoảng chưa về và tổng lượt xuất hiện.",
         controls=_range_controls(mode="preset"),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
+        body=_special_panel("app-special-number-title", "Lịch sử của từng số",
+                            "Sắp theo số kỳ chưa về, từ dài đến ngắn. “Chưa về trong dải” chỉ nói về phạm vi đang chọn.",
+                            '<div class="app-specialstats-legend" id="app-special-gap-legend"></div>'
+                            + _special_table("sp-grid", "Lần xuất hiện và khoảng chưa về của từng số Đặc Biệt")),
         render="renderSpecialBySet",
     ),
     StatPage(
@@ -844,9 +908,10 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     statistical = bento or overview
     calendar = page.slug in {"bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"}
     tomorrow = page.slug == "giai-db-ngay-mai"
+    special_stats = page.slug in {slug for slug, _ in SPECIAL_STAT_PAGES}
     responsive = statistical or calendar
     body = page.body.replace('class="sp-table ', 'class="sp-table sp-calendar-table ') if calendar else page.body
-    content = (f'<div class="app-tomorrow-shell" data-app-workspace-guide><header class="app-tomorrow-header">'
+    content = _special_stat_layout(page, note_html) if special_stats else (f'<div class="app-tomorrow-shell" data-app-workspace-guide><header class="app-tomorrow-header">'
                '<a href="statistics.html">← Thống kê Đặc Biệt</a>'
                f'<h1>{page.title}</h1><p>{page.subtitle}</p></header>'
                f'{page.controls}{body}{note_html}</div>') if tomorrow else frequency_bento_layout(page, note_html) if bento else overview_layout(page) if overview else f"""
@@ -858,10 +923,12 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 {note_html}"""
     footer = (
         f'Dữ liệu đến {str(draws[-1]["d"])} · Dựng lúc {generated}.'
-        if (statistical or tomorrow) and draws else
+        if (statistical or tomorrow or special_stats) and draws else
         f'Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên '
         f'{len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.'
     )
+    if special_stats and not draws:
+        footer = f'Chưa có dữ liệu. Dựng lúc {generated}.'
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -873,10 +940,12 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 {_asset("tomorrow_history.css") if tomorrow else ""}
 {_asset("frequency_bento.css") if statistical else ""}
 {_asset("stat_table_layout.css") if responsive else ""}
-</style></head><body class="{'app-tomorrow-page' if tomorrow else 'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
+</style>
+{'<style id="app-specialstats-style">' + _asset("special_stat_pages.css") + '</style>' if special_stats else ''}
+</head><body class="{'app-specialstats-page' if special_stats else 'app-tomorrow-page' if tomorrow else 'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
 {app_shell_open(f"{page.slug}.html", wide=True)}
 {content}
-<p class="ui-muted" style="margin-top:1.5rem;font-size:.75rem">
+<p class="ui-muted{' app-specialstats-footer' if special_stats else ''}" style="margin-top:1.5rem;font-size:.75rem">
 {footer}</p>
 {app_shell_close(f"{page.slug}.html")}
 <script>window.__D_DRAWS__={json_for_html_script(draws)};

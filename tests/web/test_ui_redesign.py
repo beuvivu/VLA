@@ -476,7 +476,7 @@ def test_empty_page_explains_itself_instead_of_blaming_the_data() -> None:
     empty = BeautifulSoup(html, "html.parser").find(class_="ui-empty")
     assert empty is not None, "thiếu trạng thái rỗng"
     text = empty.get_text(" ", strip=True).lower()
-    assert "không phải lỗi dữ liệu" in text
+    assert "chưa có đường cầu nối đủ 3 kỳ liên tiếp" in text
     assert "chạy lại" not in text
 
 
