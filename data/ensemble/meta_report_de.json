@@ -68,10 +68,10 @@
     "blend_logloss": 4.602633668167301,
     "blend_brier": 0.9899494387278587,
     "holdout_days": 30,
-    "linear_delta_ci95_low": -0.0002589927775969839,
+    "linear_delta_ci95_low": -0.00025899277759698245,
     "linear_delta_ci95_high": 0.0014976476773050753,
     "constant_delta_ci95_low": -0.006723011770284699,
-    "constant_delta_ci95_high": 0.0008625201092449025,
+    "constant_delta_ci95_high": 0.0008625201092449321,
     "bootstrap_block_days": 4,
     "uncertainty_pass": false
   },
@@ -164,5 +164,5 @@
     "2026-10-24"
   ],
   "trained_through_target_date": "2026-10-24",
-  "trained_at_utc": "2026-10-25T04:27:49Z"
+  "trained_at_utc": "2026-10-25T05:22:12Z"
 }
