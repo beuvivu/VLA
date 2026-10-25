@@ -52,3 +52,5 @@ Giữ cập nhật tự động của main 2d19f10, gồm dữ liệu, mô hình
 Review độc lập không có lỗi chặn: 270 trường hợp biên Keno khớp liệt kê tổ hợp; 15.680 tổ hợp Power khớp luật giải; 29 lần phát vé coverage-v1 trước đây cho cùng bộ vé khi tính bằng biên cũ/mới. Các phép kiểm hồi quy nhận diện đúng lỗi trước sửa, không chỉ khớp cách viết mã mới.
 
 Một lỗi trình bày P3 còn mở: stamp_label hiện định dạng trực tiếp datetime có offset mà chưa đổi về giờ Việt Nam. Giá trị made_at UTC có thể hiện lệch giờ địa phương; không làm thay đổi thời điểm đã ghi hay phép chấm trước/sau quay. Chưa đổi hợp đồng timestamp trong bản vá này.
+
+CI trình duyệt của 82022a4 phát hiện bộ kiểm còn yêu cầu nhãn «Đối chiếu vé» cho Pro. Đã cập nhật bộ kiểm theo định danh sản phẩm (body của trang riêng hoặc tiêu đề thẻ sản phẩm ở tổng quan), giữ toàn bộ kiểm số/mã kỳ/trạng thái/hình học, kiểm thêm nhãn dự báo và yêu cầu vé cặp của Pro. Chromium độc lập 16/16 cấu hình đạt, 1.504 hàng đã chấm gồm 400 hàng Pro; Max 3D thường và Mega giữ đơn vị vé. Bộ kiểm Python chính xác của CI cũng được chạy lại; không bỏ qua ca hay nới điều kiện để làm xanh.
