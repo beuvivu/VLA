@@ -431,6 +431,11 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
             "Giá trị của số ấy in ở cuối thanh và có cách tính của khối chứa biểu đồ.",
         ])),
         _sec("#mo-phong, #du-doan-vui", "Bảng mô phỏng", _ev([_MO_PHONG, _du_bao(f)], ["Rút hai chữ số cuối theo xác suất mô hình bằng hạt giống cố định của kỳ.", "Phần đầu là số ngẫu nhiên, không mang thông tin.", "Sổ nhật ký chấm bảng đã hiện với kết quả thật."])),
+        _sec(".app-simulation-loto", "LOTO từ bảng mô phỏng", _ev([_MO_PHONG], [
+            "Lấy hai số cuối của đủ 27 giải trong bảng mô phỏng ngay phía trên, gồm cả Đặc Biệt.",
+            "Sắp từ nhỏ đến lớn, giữ số 0 đầu và mỗi lần xuất hiện khi có số trùng.",
+            "Đây là các số của bảng mô phỏng, không phải kết quả quay thật hay một danh sách dự báo riêng.",
+        ])),
         _sec(".fun-ledger", "Sổ nhật ký mô phỏng", _ev([_MO_PHONG, _ket_qua(f)], [
             "Mỗi kỳ ghi bảng mô phỏng đang hiện lúc 18:10, trước giờ quay; sau giờ ấy dòng của kỳ đóng băng.",
             "Phần chấm tính lại từ sổ kết quả: Đặc Biệt trúng đúng / trúng lộn (2 số cuối đảo), và số vị trí LOTO có về.",

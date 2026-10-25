@@ -184,3 +184,34 @@ def test_landing_simulation_does_not_repeat_its_neighbouring_prediction_panels(t
     assert "Không phải kết quả thật" in simulation.get_text(" ", strip=True)
     assert payload["disclaimer"] in simulation.get_text(" ", strip=True)
     assert payload["method"] in simulation.get_text(" ", strip=True)
+
+
+def test_landing_loto_table_uses_all_simulated_prizes_and_refreshes_without_duplicates(tmp_path: Path) -> None:
+    """Bắt lỗi lấy top LOTO, bỏ Đặc Biệt, mất 00/nháy hoặc giữ bảng cũ khi chèn lại."""
+    data = tmp_path / "data"
+    _write_prediction_fixture(data)
+    payload = build_fun_draw(load_prediction_inputs(data))
+    suffixes = ["07", "12", "00", "32", "07", "21", "44", "32", "09", "10", "11", "12",
+                "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24",
+                "25", "26", "27"]
+    values = [item for group in payload["groups"] for item in group["values"]]
+    for item, suffix in zip(values, suffixes, strict=True):
+        item.update(value=item["value"][:-2] + suffix, suffix=suffix)
+    page = tmp_path / "index.html"
+    page.write_text("<html><head></head><body><section id='mo-phong'></section></body></html>")
+    assert inject_into_html(page, payload)
+    soup = BeautifulSoup(page.read_text(), "html.parser")
+    table = soup.select_one("#mo-phong .app-simulation-loto")
+    assert table is not None
+    assert soup.select_one(".fun-board-wrap").find_next_sibling() == table
+    expected = ["00", "07", "07", "09", "10", "11", "12", "12", "13", "14", "15", "16",
+                "17", "18", "19", "20", "21", "21", "22", "23", "24", "25", "26", "27",
+                "32", "32", "44"]
+    assert [cell.get_text(strip=True) for cell in table.select("td")] == expected
+    assert "%" not in table.get_text()
+    values[0].update(value="00108", suffix="08")
+    assert inject_into_html(page, payload)
+    soup = BeautifulSoup(page.read_text(), "html.parser")
+    assert len(soup.select("#mo-phong .app-simulation-loto")) == 1
+    actual = [cell.get_text(strip=True) for cell in soup.select(".app-simulation-loto td")]
+    assert actual == ["00", "07", "08", *expected[3:]]
