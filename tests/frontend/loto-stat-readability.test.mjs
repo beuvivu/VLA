@@ -163,15 +163,16 @@ test('Lô gan: trần màu khoảng hiện tại độc lập với trần chu k
   assert.equal(once.cells[3].getAttribute('aria-label'), null);
   assert.equal(rowFor(d, 'sp-max-lo', '03').cells[1].dataset.statValue, undefined);
   assert.match(d.getElementById('app-loto-current-gap-legend').textContent, /40 kỳ/);
-  assert.match(d.getElementById('app-loto-current-cycle-legend').textContent, /10 kỳ/);
+  assert.match(d.getElementById('app-loto-current-cycle-legend').textContent, /9 kỳ/);
 });
 
 test('Lô gan: màu tách số kỳ hiện tại, chu kỳ dài nhất và số kỳ có mặt', t => {
   const dom = setup(t, 'lo-gan'), d = dom.window.document;
   const row = rowFor(d, 'sp-grid', '07');
-  assert.deepEqual(values(row), ['07', viDate(draws[38].d), '1', '33', '3']);
+  // 07 về ở chỉ số 5 rồi 38: chỉ số 6..37 là đúng 32 kỳ trượt.
+  assert.deepEqual(values(row), ['07', viDate(draws[38].d), '1', '32', '3']);
   metric(row.cells[2], 'gap', 1, 'kỳ');
-  metric(row.cells[3], 'cycle', 33, 'kỳ');
+  metric(row.cells[3], 'cycle', 32, 'kỳ');
   metric(row.cells[4], 'frequency', 3, 'kỳ');
   assert.equal(row.cells[2].dataset.statLevel, '1');
   assert.equal(row.cells[3].dataset.statLevel, '3');
@@ -183,9 +184,10 @@ test('Lô gan: màu tách số kỳ hiện tại, chu kỳ dài nhất và số 
   metric(newest.cells[2], 'gap', 0, 'kỳ');
   assert.equal(newest.cells[2].dataset.statLevel, '0');
   const pair = rowFor(d, 'sp-pair-gan', '07 - 70');
-  assert.deepEqual(values(pair), ['07 - 70', viDate(draws[38].d), '1', '23', '6']);
+  // Cặp ngắt gan ở chỉ số 10 và 33, còn đúng 22 kỳ trượt giữa chúng.
+  assert.deepEqual(values(pair), ['07 - 70', viDate(draws[38].d), '1', '22', '6']);
   metric(pair.cells[2], 'gap', 1, 'kỳ');
-  metric(pair.cells[3], 'cycle', 23, 'kỳ');
+  metric(pair.cells[3], 'cycle', 22, 'kỳ');
   metric(pair.cells[4], 'frequency', 6, 'kỳ');
   for (const id of ['app-loto-current-gap-legend', 'app-loto-current-cycle-legend',
     'app-loto-pair-gap-legend', 'app-loto-pair-cycle-legend', 'app-loto-history-cycle-legend']) {
@@ -196,7 +198,7 @@ test('Lô gan: màu tách số kỳ hiện tại, chu kỳ dài nhất và số 
   assert.equal(d.querySelectorAll('#sp-grid tbody tr').length, 100);
   assert.equal(d.querySelectorAll('#sp-pair-gan tbody tr').length, 50);
   assert.match(d.getElementById('app-loto-current-gap-legend').textContent, /40 kỳ/);
-  assert.match(d.getElementById('app-loto-current-cycle-legend').textContent, /39 kỳ/);
+  assert.match(d.getElementById('app-loto-current-cycle-legend').textContent, /38 kỳ/);
   for (const id of ['sp-grid', 'sp-pair-gan']) {
     const gaps = [...d.querySelectorAll(`#${id} tbody tr`)].map(row => Number(row.cells[2].textContent));
     assert.deepEqual(gaps, gaps.toSorted((a, b) => b - a));
@@ -213,15 +215,15 @@ test('Lô gan: lọc 30 kỳ làm mới chu kỳ trong dải, giữ nguyên hai 
   assert.equal(row.cells[3].dataset.statValue, undefined);
   metric(row.cells[4], 'frequency', 1, 'kỳ');
   const pair = rowFor(d, 'sp-pair-gan', '07 - 70');
-  assert.deepEqual(values(pair), ['07 - 70', viDate(draws[38].d), '1', '23', '3']);
-  metric(pair.cells[3], 'cycle', 23, 'kỳ');
+  assert.deepEqual(values(pair), ['07 - 70', viDate(draws[38].d), '1', '22', '3']);
+  metric(pair.cells[3], 'cycle', 22, 'kỳ');
   const historical = rowFor(d, 'sp-max-lo', '07');
-  assert.deepEqual(values(historical), ['07', '33 kỳ']);
-  metric(historical.cells[1], 'cycle', 33, 'kỳ');
+  assert.deepEqual(values(historical), ['07', '32 kỳ']);
+  metric(historical.cells[1], 'cycle', 32, 'kỳ');
   assert.match(d.getElementById('app-loto-current-gap-legend').textContent, /30 kỳ/);
-  assert.match(d.getElementById('app-loto-current-cycle-legend').textContent, /23 kỳ/);
-  assert.doesNotMatch(d.getElementById('app-loto-current-cycle-legend').textContent, /39 kỳ/);
-  assert.match(d.getElementById('app-loto-history-cycle-legend').textContent, /39 kỳ/);
+  assert.match(d.getElementById('app-loto-current-cycle-legend').textContent, /22 kỳ/);
+  assert.doesNotMatch(d.getElementById('app-loto-current-cycle-legend').textContent, /38 kỳ/);
+  assert.match(d.getElementById('app-loto-history-cycle-legend').textContent, /38 kỳ/);
   assert.equal(d.querySelectorAll('#sp-max-lo tbody tr').length, 50);
   assert.equal(d.querySelectorAll('#sp-max-hi tbody tr').length, 50);
   assert.deepEqual([...d.querySelectorAll('#sp-max-lo tbody tr')].map(row => row.cells[0].textContent),

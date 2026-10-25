@@ -1157,8 +1157,11 @@ function todayInVietnam() {
 function pendingDay(rows) {
   const today = todayInVietnam();
   if (!today) return "";
-  const latest = rows.length ? rows[rows.length - 1].d : "";
-  if (today <= latest) return "";
+  const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
+  if (!latest || today <= latest) return "";
+  const from = $("sp-from"), to = $("sp-to");
+
+  if ((from && from.value > today) || (to && to.value && to.value < latest)) return "";
   const weekday = $("sp-weekday");
   if (weekday && weekday.value !== "all" && weekdayOf(today) !== Number(weekday.value)) {
     return "";
@@ -2158,7 +2161,7 @@ function lotoGaps(rows = DRAWS) {
     const seen = new Set(r.n.map((x) => parseInt(x, 10)));
     seen.forEach((k) => {
       hits[k] += 1;
-      if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k]);
+      if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k] - 1);
       last[k] = t;
     });
   });
@@ -2176,7 +2179,7 @@ function pairGaps(rows = DRAWS) {
     CAP50.forEach((pair, i) => {
       if (!seen.has(pair[0]) && !seen.has(pair[1])) return;
       hits[i] += 1;
-      if (last[i] >= 0) maxGap[i] = Math.max(maxGap[i], t - last[i]);
+      if (last[i] >= 0) maxGap[i] = Math.max(maxGap[i], t - last[i] - 1);
       last[i] = t;
     });
   });
@@ -2200,7 +2203,7 @@ function renderLoGan() {
 
   const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const ganBody = order.map((p) => [
-    pad2(p[0]), drawDate(g.last[p[0]], rows), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
+    pad2(p[0]), drawDate(g.last[p[0]], rows), p[1], g.hits[p[0]] >= 2 ? g.maxGap[p[0]] : "—", g.hits[p[0]],
   ]);
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
@@ -2218,7 +2221,7 @@ function renderLoGan() {
       specialMetricCell(cells[4], row[4], hitMax, "frequency", `${row[0]} · Số kỳ có mặt`, "kỳ");
     });
     specialMetricLegend(`${prefix}-gap-legend`, "gap", gapMax, "kỳ");
-    specialMetricLegend(`${prefix}-cycle-legend`, "cycle", cycleMax, "kỳ");
+    specialMetricLegend(`${prefix}-cycle-legend`, "cycle", cycleMax, "kỳ", undefined, stats.hits.some(hits => hits >= 2));
     specialMetricLegend(`${prefix}-frequency-legend`, "frequency", hitMax, "kỳ", "Số kỳ có mặt");
   };
   paint("sp-grid", ganBody, g, "app-loto-current");
@@ -2228,25 +2231,25 @@ function renderLoGan() {
   const half = (el, from, to) => {
     const body = Array.from({ length: to - from }, (_, k) => {
       const i = from + k;
-      return [pad2(i), all.maxGap[i] ? `${all.maxGap[i]} kỳ` : "—"];
+      return [pad2(i), all.hits[i] >= 2 ? `${all.maxGap[i]} kỳ` : "—"];
     });
     table(el, ["Bộ số", "Gan cực đại"], body,
       { numeric: [1], pairOf: pairCols(body, 0) });
     body.forEach((row, index) => {
       const value = all.maxGap[from + index];
-      if (value > 0) specialMetricCell(el.tBodies[0].rows[index].cells[1], value,
+      if (all.hits[from + index] >= 2) specialMetricCell(el.tBodies[0].rows[index].cells[1], value,
         historyMax, "cycle", `Số ${row[0]} · Chu kỳ dài nhất toàn bộ lịch sử`, "kỳ");
     });
   };
   half($("sp-max-lo"), 0, 50);
   half($("sp-max-hi"), 50, 100);
-  specialMetricLegend("app-loto-history-cycle-legend", "cycle", historyMax, "kỳ");
+  specialMetricLegend("app-loto-history-cycle-legend", "cycle", historyMax, "kỳ", undefined, all.hits.some(hits => hits >= 2));
 
   const pg = pairGaps(rows);
   const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const pairBody = pairOrder.map((p) => [
     `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]], rows), p[1],
-    pg.maxGap[p[0]] || "—", pg.hits[p[0]],
+    pg.hits[p[0]] >= 2 ? pg.maxGap[p[0]] : "—", pg.hits[p[0]],
   ]);
   table($("sp-pair-gan"),
     ["Cặp số", "Ngày ra gần đây", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
@@ -2263,13 +2266,13 @@ function specialMetricCell(cell, value, maximum, metric, label, unit) {
   cell.setAttribute("aria-label", `${label}: ${value} ${unit}`);
 }
 
-function specialMetricLegend(id, metric, maximum, unit, label) {
+function specialMetricLegend(id, metric, maximum, unit, label, hasCycle = maximum > 0) {
   const legend = $(id);
   if (!legend) return;
   const entries = [mk("strong", null, label || (metric === "gap" ? "Chưa về" : metric === "cycle" ? "Chu kỳ dài nhất" : "Số lượt"))];
-  if (metric !== "cycle") entries.push(
+  if (metric !== "cycle" || hasCycle) entries.push(
     mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-0`, "aria-hidden": "true"}), `0 ${unit}`]));
-  if (metric === "cycle" && maximum === 0)
+  if (metric === "cycle" && !hasCycle)
     entries.push(mk("span", null, "Chưa đủ hai lần xuất hiện để ghi nhận chu kỳ."));
   for (let level = 1; level <= 3; level++) {
     const low = Math.floor((level - 1) * maximum / 3) + 1;

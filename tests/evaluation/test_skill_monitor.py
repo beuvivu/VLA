@@ -208,3 +208,82 @@ def test_updating_the_ledger_twice_changes_nothing(tmp_path: Path) -> None:
     _write_store(tmp_path, sm.MIN_DAYS)
     first = sm.update_ledger(tmp_path).read_bytes()
     assert sm.update_ledger(tmp_path).read_bytes() == first
+
+
+@pytest.mark.parametrize(("mode", "value"), [("de", 0.0), ("de", np.nan), ("loto", np.inf)])
+def test_invalid_published_probabilities_stop_evaluation(
+    tmp_path: Path, mode: str, value: float,
+) -> None:
+    """Không bỏ ngày lỗi hoặc biến vector Đặc Biệt toàn 0 thành NaN rồi báo bình thường."""
+    days = _write_store(tmp_path, 1)
+    path = tmp_path / "forecast" / "predict" / f"predict_next_{mode}_all_{days[0]}.csv"
+    frame = pd.read_csv(path)
+    frame["prob"] = value
+    frame.to_csv(path, index=False)
+
+    with pytest.raises(ValueError, match=f"{mode}.*{days[0]}"):
+        sm.published_evaluation(tmp_path, mode)
+
+
+def test_a_zero_probability_artifact_turns_the_cli_red_without_poisoning_the_ledger(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Một ngày hỏng không được che báo động của hai mươi kỳ kém nền đã đủ mẫu."""
+    days = _write_store(tmp_path, sm.MIN_DAYS + 1, de_mass_on_winner=0.001)
+    ledger = sm.update_ledger(tmp_path)
+    before = ledger.read_bytes()
+    path = tmp_path / "forecast" / "predict" / f"predict_next_de_all_{days[-1]}.csv"
+    frame = pd.read_csv(path)
+    frame["prob"] = 0.0
+    frame.to_csv(path, index=False)
+
+    monkeypatch.setattr("sys.argv", ["skill_monitor", "--data-dir", str(tmp_path)])
+    assert sm.main() == 1
+    assert "::error::" in capsys.readouterr().out
+    with pytest.raises(ValueError):
+        sm.update_ledger(tmp_path)
+    assert ledger.read_bytes() == before, "sổ cũ phải nguyên vẹn khi lần chấm mới bị hỏng"
+
+
+@pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
+def test_nonfinite_saved_skill_stops_the_ledger_update(
+    tmp_path: Path, value: float,
+) -> None:
+    """Dòng NaN đã lưu cũng phải bị chặn, dù artifact của kỳ ấy đã được dọn."""
+    path = tmp_path / sm.LEDGER
+    path.parent.mkdir(parents=True)
+    pd.DataFrame({"mode": ["de"], "target_date": ["2026-06-01"], "skill": [value]}).to_csv(
+        path, index=False
+    )
+    before = path.read_bytes()
+
+    with pytest.raises(ValueError, match="hữu hạn"):
+        sm.update_ledger(tmp_path)
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
+def test_status_rejects_nonfinite_skill_from_direct_callers(value: float) -> None:
+    """Mọi đường gọi bộ kết luận đều phải từ chối kỹ năng không phải số hữu hạn."""
+    with pytest.raises(ValueError, match="hữu hạn"):
+        sm.status(["2026-06-01"], np.array([value]), "de")
+
+
+@pytest.mark.parametrize(
+    ("skills", "z"),
+    [
+        (np.full(20, -1e308), 3.0),
+        (np.full(20, 1e308), 3.0),
+        (np.tile([-1e200, 1e200], 10), 3.0),
+        (np.tile([-10.0, 10.0], 10), 1e308),
+    ],
+)
+def test_status_rejects_nonfinite_statistics_computed_from_finite_skills(
+    skills: np.ndarray, z: float,
+) -> None:
+    """Dữ liệu hữu hạn vẫn có thể làm tràn trung bình, độ lệch hoặc biên khoảng tin."""
+    days = pd.date_range("2026-06-01", periods=len(skills)).strftime("%Y-%m-%d").tolist()
+    assert np.isfinite(skills).all()
+
+    with np.errstate(over="raise", invalid="raise"), pytest.raises(ValueError, match="hữu hạn"):
+        sm.status(days, skills, "de", z=z)

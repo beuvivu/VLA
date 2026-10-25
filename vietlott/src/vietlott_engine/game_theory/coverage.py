@@ -51,8 +51,13 @@ def _masks(arr: np.ndarray) -> np.ndarray:
 
 def _sim_draws(spec: GameSpec, size: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
     n, k = spec.pool_size, spec.pick
-    w = np.argpartition(rng.random((size, n)), k, axis=1)[:, :k] + 1
-    sp = rng.integers(1, int(spec.bonus_pool_size or 1) + 1, size) if spec.separate_special else np.zeros(size, int)
+    order = np.argpartition(rng.random((size, n)), k, axis=1)
+    w = order[:, :k] + 1
+    if spec.bonus_mode == "same_drum":
+        # Bóng thứ k+1 rút đều từ n-k bóng còn lại, không thuộc bộ chính.
+        sp = order[:, k] + 1
+    else:
+        sp = rng.integers(1, int(spec.bonus_pool_size or 1) + 1, size) if spec.separate_special else np.zeros(size, int)
     return _masks(w), sp
 
 
@@ -61,6 +66,9 @@ def _win_matrix(spec: GameSpec, ticket_masks: np.ndarray, ticket_sp: np.ndarray,
     m = np.bitwise_count(ticket_masks[:, None] & draw_masks[None, :])
     if spec.separate_special:
         hit = ticket_sp[:, None] == draw_sp[None, :]
+        return np.where(hit, m >= min_main["hit"], m >= min_main["miss"])
+    if spec.bonus_mode == "same_drum":
+        hit = (ticket_masks[:, None] & _masks(draw_sp[:, None])[None, :]) != 0
         return np.where(hit, m >= min_main["hit"], m >= min_main["miss"])
     return m >= min_main["any"]
 
@@ -169,6 +177,9 @@ def optimise_coverage(
         if spec.separate_special:
             rsp = rng_eval.integers(1, b_sp + 1, (m, budget))
             win_r = np.where(rsp == esp[:, None], cnt >= thr["hit"], cnt >= thr["miss"])
+        elif spec.bonus_mode == "same_drum":
+            hit = (rmask & _masks(esp[:, None])[:, None]) != 0
+            win_r = np.where(hit, cnt >= thr["hit"], cnt >= thr["miss"])
         else:
             win_r = cnt >= thr["any"]
         hits_rand += int(win_r.any(axis=1).sum())

@@ -451,6 +451,8 @@ def _stored_tickets(product: str, comparison: dict) -> list[dict]:
 
 def _ticket_prize(product: str, ticket: dict) -> str:
     """Chỉ hiện phân hạng có sẵn trong kết quả engine, không suy từ phần trăm."""
+    if product == "max3dpro":
+        return "Chưa phân hạng: cần vé cặp"
     if product in MAX:
         return " · ".join(str(t) for t in ticket["tiers"]) if ticket.get("tiers") else "Không trùng hạng giải" if "tiers" in ticket else "Chưa có phân hạng"
     if product not in MATRIX:
@@ -474,7 +476,7 @@ def _comparison_summary(product: str, comparisons: list[dict]) -> str:
         detail += f" · chọn bừa {100 * FAIR_MATCH_RATE[product]:.1f}%".replace(".", ",")
     if product in MAX:
         percent, detail = "Không áp dụng", "Bộ ba được đối chiếu nguyên vẹn"
-    cards = [("Số vé đã chấm", str(len(scored)), "Trong các kỳ hiển thị bên dưới"),
+    cards = [("Bộ ba đã đối chiếu" if product == "max3dpro" else "Số vé đã chấm", str(len(scored)), "Trong các kỳ hiển thị bên dưới"),
              ("Kỳ chờ kết quả", str(sum(c.get("status") == "pending" for c in comparisons)), "Chưa được đưa vào tỷ lệ"),
              ("Kỳ lệch ngày", str(sum(c.get("status") == "date_mismatch" for c in comparisons)), "Cần kiểm tra lại kỳ đối chiếu"),
              ("Tỷ lệ trùng theo từng vé", percent, detail)]
@@ -497,6 +499,7 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
     if not comparisons:
         return '<p class="vl-muted">Chưa có dự báo đăng ký trước kỳ nào để đối chiếu.</p>'
     shown = comparisons[:COMPARISONS_SHOWN]
+    item_label = "Bộ ba" if product == "max3dpro" else "Vé"
     rows = []
     for c in shown:
         scored = c.get("status") == "matched"
@@ -538,7 +541,7 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
             special = ticket.get("special") if product == "lotto535" else None
             bonus_main = result.get("bonus") if scored and product == "power655" and bonus_hit else None
             prediction = ('<div class="vl-comparison-ticket"' + (f' data-vl-ticket="{index}"' if scored else "") + '>'
-                          f'<small>Vé {index}</small>' + _comparison_balls(product, pred_values, matched=pred_marks,
+                          f'<small>{item_label} {index}</small>' + _comparison_balls(product, pred_values, matched=pred_marks,
                           bonus=special, bonus_hit=bonus_hit, bonus_main=bonus_main, label="Bộ số đã đăng ký: ") + '</div>')
             actual = '<span class="vl-muted">Chưa đối chiếu kết quả</span>'
             score = '<span class="vl-muted">Chưa chấm · —</span>'
@@ -546,21 +549,25 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
                 sequence = (_max_result_markup(product, result, matched_symbol=symbol) if product in MAX else
                             _comparison_balls(product, drawn, matched=drawn_marks, bonus=result.get("bonus") if product in MATRIX else None,
                                               bonus_hit=bonus_hit, label="Kết quả: "))
-                actual = f'<div class="vl-comparison-actual"><small>Đối chiếu vé {index}</small>{sequence}</div>'
+                actual = f'<div class="vl-comparison-actual"><small>Đối chiếu {item_label.lower()} {index}</small>{sequence}</div>'
                 pair = _ticket_score(product, ticket)
                 score = f"{pair[0]} / {pair[1]} · {_hit_percent(*pair)}" if pair else f"Xuất hiện {int(ticket['hits'])} lần" if product in MAX and ticket.get("hits") is not None else "Chưa đủ dữ liệu chấm"
                 secondary = ""
                 if product == "bingo18" and ticket.get("multiset_hits") is not None:
                     secondary = f'<small class="vl-comparison-secondary">Bộ có lặp: {int(ticket["multiset_hits"])} / {len(numbers)}</small>'
+                elif product == "max3dpro" and ticket.get("matched_groups"):
+                    secondary = '<small class="vl-comparison-secondary">Nhóm có số trùng: ' + esc(" · ".join(ticket["matched_groups"])) + '</small>'
                 elif product in ("power655", "lotto535"):
                     secondary = f'<small class="vl-comparison-secondary">Số {"phụ" if product == "power655" else "đặc biệt"}: {"trùng" if bonus_hit else "không trùng"}</small>'
-                score = (f'<div class="vl-comparison-score"><small>Vé {index}{" · theo vị trí" if product == "bingo18" else ""}</small>'
+                score = (f'<div class="vl-comparison-score"><small>{item_label} {index}{" · theo vị trí" if product == "bingo18" else ""}</small>'
                          f'<strong>{esc(score)}</strong>{secondary}<span class="vl-comparison-tier">{esc(_ticket_prize(product, ticket))}</span></div>')
             rows.append(f'<tr data-vl-comparison-status="{esc(c.get("status") or "pending")}" '
                         f'data-vl-comparison-target="{esc(c.get("target_id"))}" data-vl-comparison-ticket="{index}">'
                         f'{metadata if index == 1 else ""}<td class="vl-comparison-prediction">{prediction}</td>'
                         f'<td class="vl-comparison-result">{actual}</td><td class="vl-comparison-score-cell">{score}</td></tr>')
     unit = "Tỷ lệ đếm vị trí trùng của từng vé Bingo18; bộ có lặp được đếm riêng." if product == "bingo18" else "Max 3D đối chiếu cả bộ ba; số lần xuất hiện và hạng giải do engine chấm." if product in MAX else "Tỷ lệ = tổng số chính trùng / tổng số chính đã chọn trên từng vé; số phụ được xét riêng."
+    if product == "max3dpro":
+        unit = "Max 3D Pro chỉ đối chiếu từng bộ ba và nhóm có số trùng; cần vé cặp hai số để phân hạng giải."
     note = (unit + " Đây là mức khớp của các vé đã chấm, không phải xác suất trúng giải.") if product not in MAX else unit
     legend = ('<div class="vl-comparison-legend"><span><span class="vl-ball vl-ball--match" aria-hidden="true">✓</span> Trùng</span>'
               '<span><span class="vl-ball" aria-hidden="true">•</span> Không trùng</span>'

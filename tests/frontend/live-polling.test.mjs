@@ -27,10 +27,81 @@ function setup(t, fetcher, extra = {}) {
   return dom.window;
 }
 
-const snapshot = (status, drawDate = '2026-10-08') => ({
-  ok: true, json: async () => ({ status, draw_date: drawDate, prizes: {}, progress_percent: 50 }),
+const snapshot = (status, drawDate = '2026-10-08', prizes = {}) => ({
+  ok: true, json: async () => ({ status, draw_date: drawDate, prizes, progress_percent: 50 }),
 });
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+// Điều khiển thời gian của trang, giữ nguyên mã dựng ô và vòng tải thật.
+function clock() {
+  let now = 0, nextId = 0;
+  const timers = new Map();
+  return {
+    setTimeout(callback, delay = 0) {
+      const id = ++nextId;
+      timers.set(id, { callback, at: now + delay });
+      return id;
+    },
+    clearTimeout(id) { timers.delete(id); },
+    advance(ms) {
+      const until = now + ms;
+      while (true) {
+        const next = [...timers].filter(([, timer]) => timer.at <= until)
+          .sort((a, b) => a[1].at - b[1].at)[0];
+        if (!next) break;
+        timers.delete(next[0]);
+        now = next[1].at;
+        next[1].callback();
+      }
+      now = until;
+    },
+  };
+}
+
+const values = (window) => [...window.document.querySelectorAll('.slot:not(.is-empty)')]
+  .map((node) => node.textContent);
+
+for (const [label, date, nextPrizes, expected] of [
+  ['đổi sang kỳ mới', '2026-10-09', {}, []],
+  ['thu hồi số trong cùng kỳ', '2026-10-08', { special: ['11111'] }, ['11111']],
+  ['sửa số đang chờ hiện trong cùng kỳ', '2026-10-08',
+    { special: ['11111'], prize1: ['99999'], prize2: ['88888'] }, ['11111', '99999', '88888']],
+]) {
+  test(`Snapshot ${label} không bị hàng đợi cũ ghi đè`, async (t) => {
+    const timers = clock();
+    let response = snapshot('partial', '2026-10-08', {
+      special: ['11111'], prize1: ['22222'], prize2: ['33333', '44444'],
+    });
+    const window = setup(t, async () => response, timers);
+    await tick();
+    assert.deepEqual(values(window), ['11111'], 'snapshot đầu vẫn hiện lần lượt');
+    response = snapshot('waiting', date, nextPrizes);
+    window.document.dispatchEvent(new window.Event('visibilitychange'));
+    await tick();
+    timers.advance(5000);
+    assert.deepEqual(values(window), expected, 'chỉ còn số thuộc snapshot mới nhất');
+    assert.match(window.document.getElementById('status').textContent, new RegExp(date));
+  });
+}
+
+test('Snapshot mới vẫn hiện từng số một khi lượt cũ đang có hẹn giờ', async (t) => {
+  const timers = clock();
+  let response = snapshot('partial', '2026-10-08', {
+    special: ['11111'], prize1: ['22222'], prize2: ['33333', '44444'],
+  });
+  const window = setup(t, async () => response, timers);
+  await tick();
+  response = snapshot('partial', '2026-10-08', {
+    special: ['11111'], prize1: ['99999'], prize2: ['88888', '77777'],
+  });
+  window.document.dispatchEvent(new window.Event('visibilitychange'));
+  await tick();
+  assert.deepEqual(values(window), ['11111', '99999']);
+  timers.advance(170);
+  assert.deepEqual(values(window), ['11111', '99999', '88888']);
+  timers.advance(170);
+  assert.deepEqual(values(window), ['11111', '99999', '88888', '77777']);
+});
 
 test('Đổi tab khi một lượt đang chờ không mở lượt thứ hai chạy song song', async (t) => {
   const pending = [];

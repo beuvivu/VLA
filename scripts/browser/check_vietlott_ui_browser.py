@@ -233,6 +233,8 @@ def check_registered_comparisons(page, label):
             assert box['width'] > 0 and box['x'] >= -1, (label, box)
             assert box['x'] + box['width'] <= page.viewport_size['width'] + 1, (label, box)
     for table in page.locator('.vl-comparison-table').all():
+        is_pro = table.evaluate('''el => document.body.dataset.uiPage === 'vietlott-max-3d-pro'
+            || el.closest('.app-vietlott-card')?.querySelector('h3')?.textContent.trim() === 'Max 3D Pro' ''')
         expect(table.locator('thead th')).to_have_count(6)
         rows = table.locator('tbody tr')
         cursor = 0
@@ -255,11 +257,11 @@ def check_registered_comparisons(page, label):
                 expect(row).to_have_attribute('data-vl-comparison-ticket', str(index + 1))
                 if index:
                     expect(row.locator(':scope > .vl-comparison-meta, :scope > th')).to_have_count(0)
-                check_registered_ticket_row(row, status, index + 1, label)
+                check_registered_ticket_row(row, status, index + 1, label, is_pro)
             cursor += span
 
 
-def check_registered_ticket_row(row, status, ticket_number, label):
+def check_registered_ticket_row(row, status, ticket_number, label, is_pro):
     """One visual row ties the ticket, its actual result and its score together."""
     prediction_cell = row.locator('.vl-comparison-prediction')
     actual_cell = row.locator('.vl-comparison-result')
@@ -272,6 +274,8 @@ def check_registered_ticket_row(row, status, ticket_number, label):
         expect(score_cell).to_contain_text('—')
         expect(row.locator('.vl-ball--match, .vl-ball--bonus-hit')).to_have_count(0)
         return
+    unit = 'Bộ ba' if is_pro else 'Vé'
+    expect(prediction_cell.locator('.vl-comparison-ticket > small').first).to_have_text(f'{unit} {ticket_number}')
     if status in ('pending', 'date_mismatch'):
         expect(actual_cell).to_contain_text('Chưa đối chiếu')
         expect(score_cell).to_contain_text('—')
@@ -283,9 +287,11 @@ def check_registered_ticket_row(row, status, ticket_number, label):
     for part in (ticket, actual, score):
         expect(part).to_have_count(1)
     expect(ticket).to_have_attribute('data-vl-ticket', str(ticket_number))
-    expect(actual.locator('small').first).to_have_text(f'Đối chiếu vé {ticket_number}')
-    expect(score.locator('small').first).to_contain_text(f'Vé {ticket_number}')
+    expect(actual.locator('small').first).to_have_text(f'Đối chiếu {unit.lower()} {ticket_number}')
+    expect(score.locator('small').first).to_contain_text(f'{unit} {ticket_number}')
     expect(score_cell.locator('.vl-comparison-tier')).to_have_count(1)
+    if is_pro:
+        expect(score_cell.locator('.vl-comparison-tier')).to_have_text('Chưa phân hạng: cần vé cặp')
     tops = [part.bounding_box()['y'] for part in (ticket, actual, score)]
     assert max(tops) - min(tops) <= 1, (label, ticket_number, 'ticket/result/score drifted vertically', tops)
     centers = [part.locator('.vl-ball').first.evaluate('''el => {

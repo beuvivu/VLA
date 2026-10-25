@@ -272,6 +272,33 @@ def test_max_comparison_highlights_whole_symbols_and_keeps_engine_tiers() -> Non
     assert "%" not in soup.get_text()
 
 
+@pytest.mark.parametrize(('hits', 'groups'), [(1, ['Đặc biệt']), (2, ['Đặc biệt', 'Nhất']), (0, [])])
+def test_pro_comparison_describes_single_number_matches_without_pair_prizes(hits, groups) -> None:
+    """Nhóm chứa bộ ba Pro chỉ là thống kê; một bộ ba chưa tạo thành vé cặp."""
+    draw = _max_draw()
+    if hits == 0:
+        draw['prizes'][0]['numbers'][0] = '111'
+    elif hits == 2:
+        draw['prizes'][1]['numbers'][0] = '038'
+    draw['numbers'] = [number for group in draw['prizes'] for number in group['numbers']]
+    comparison = {'status': 'matched', 'target_id': 788, 'result': draw,
+                  'tickets': [{'numbers': [0, 3, 8], 'symbol': '038', 'hits': hits, 'tiers': [],
+                               'matched_groups': groups, 'prize_status': 'requires_pair'}]}
+
+    soup = BeautifulSoup(b.comparisons_markup('max3dpro', [comparison]), 'html.parser')
+
+    score = soup.select_one('.vl-comparison-score')
+    assert f'Xuất hiện {hits} lần' in score.get_text()
+    assert score.select_one('.vl-comparison-tier').get_text() == 'Chưa phân hạng: cần vé cặp'
+    assert 'Bộ ba 1' in score.get_text() and 'Vé 1' not in soup.get_text()
+    assert 'Bộ ba đã đối chiếu' in soup.select_one('.vl-comparison-summary').get_text()
+    if groups:
+        assert 'Nhóm có số trùng: ' + ' · '.join(groups) in score.get_text()
+    else:
+        assert 'Nhóm có số trùng:' not in score.get_text()
+    assert 'Không trùng hạng giải' not in soup.get_text()
+
+
 def test_manual_comparison_widget_is_limited_to_matrix_products_and_loads_asset(tmp_path: Path) -> None:
     pages = b.build(tmp_path, dashboard=_dashboard())
     matrix_pages = {b.PRODUCTS[code][1]: code for code in b.MATRIX}

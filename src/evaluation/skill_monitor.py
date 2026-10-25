@@ -89,8 +89,15 @@ def published_evaluation(
             continue  # kỳ chưa quay, hoặc ngày không quay
         frame = pd.read_csv(path).set_index("number").reindex(range(100))
         p = pd.to_numeric(frame["prob"], errors="coerce").to_numpy(dtype=float)
-        if not np.isfinite(p).all():
-            continue  # artifact thiếu con: không chấm nửa vời
+        valid = (
+            np.isfinite(p).all()
+            and np.all((p >= 0.0) & (p <= 1.0))
+            and float(p.sum()) > 0.0
+        )
+        if not valid:
+            # Không được bỏ một kỳ hỏng rồi vẫn báo cửa sổ còn lại bình thường,
+            # hoặc chuẩn hoá vector 0 thành NaN và ghi nó vĩnh viễn vào sổ.
+            raise ValueError(f"{mode} {day}: artifact phải đủ 100 xác suất hữu hạn trong [0, 1], tổng dương")
         row = outcomes.loc[day]
         y = np.zeros(100)
         if mode == "de":
@@ -132,6 +139,9 @@ def _read_ledger(data_dir: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=["target_date", "mode", "skill"])
     frame = pd.read_csv(path, dtype={"target_date": str, "mode": str})
+    skill = pd.to_numeric(frame["skill"], errors="coerce").to_numpy(dtype=float)
+    if not np.isfinite(skill).all():
+        raise ValueError(f"{path}: kỹ năng trong sổ phải hữu hạn")
     return frame[["target_date", "mode", "skill"]]
 
 
@@ -242,11 +252,20 @@ def status(
     z: float = DEFAULT_Z,
 ) -> SkillStatus:
     """Kỹ năng trung bình và khoảng tin cậy trên ``window`` kỳ gần nhất."""
-    recent = np.asarray(skills, dtype=float)[-window:]
+    values = np.asarray(skills, dtype=float)
+    if not np.isfinite(values).all():
+        raise ValueError(f"{mode}: kỹ năng phải hữu hạn trước khi kết luận")
+    recent = values[-window:]
     recent_days = list(days)[-window:]
     n = len(recent)
-    mean = float(recent.mean()) if n else 0.0
-    stderr = float(recent.std(ddof=1) / np.sqrt(n)) if n > 1 else float("inf")
+    with np.errstate(over="ignore", invalid="ignore"):
+        mean = float(recent.mean()) if n else 0.0
+        stderr = float(recent.std(ddof=1) / np.sqrt(n)) if n > 1 else float("inf")
+        bounds = (mean - z * stderr, mean + z * stderr)
+    # Đầu vào hữu hạn vẫn có thể làm tràn phép cộng hoặc phương sai. Khi đủ
+    # mẫu để kết luận, cả thống kê lẫn khoảng tin phải còn hữu hạn.
+    if n >= MIN_DAYS and not np.isfinite((mean, stderr, *bounds)).all():
+        raise ValueError(f"{mode}: thống kê kỹ năng và khoảng tin phải hữu hạn trước khi kết luận")
     return SkillStatus(
         mode=mode,
         days=n,
@@ -273,7 +292,11 @@ def main() -> int:
     parser.add_argument("--z", type=float, default=DEFAULT_Z)
     args = parser.parse_args()
 
-    checks = evaluate(Path(args.data_dir), window=args.window, z=args.z)
+    try:
+        checks = evaluate(Path(args.data_dir), window=args.window, z=args.z)
+    except ValueError as exc:
+        print(f"::error::Không thể chấm kỹ năng ngoài mẫu: {exc}")
+        return 1
     for check in checks:
         print(check.describe())
     alarms = [check for check in checks if check.alarm]

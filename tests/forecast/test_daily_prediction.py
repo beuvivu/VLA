@@ -170,9 +170,9 @@ def test_runner_refuses_to_predict_a_draw_that_already_happened(
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
+        check=False,  # phép kiểm tự khẳng định mã bỏ qua riêng
     )
-    assert result.returncode == 1
+    assert result.returncode == 3
     assert "hậu đoán" in result.stderr
     assert not (tmp_path / "out.json").exists()
 
@@ -192,9 +192,9 @@ def test_runner_refuses_stale_data(tmp_path: Path) -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
+        check=False,  # phép kiểm tự khẳng định mã bỏ qua riêng
     )
-    assert result.returncode == 1
+    assert result.returncode == 3
     assert "cũ hơn" in result.stderr
 
 

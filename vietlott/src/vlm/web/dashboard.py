@@ -245,9 +245,13 @@ def compare_prediction(prediction: dict, draw: DrawRecord) -> dict:
         group_ranges = ((0, 2), (2, 6), (6, 12), (12, 20))
         for row in components['digits']['top']:
             symbol = ''.join(str(n) for n in row['numbers'])
-            tiers = [label for (lo, hi), label in zip(group_ranges, prod.group_labels.values()) if symbol in draw.winning_numbers[lo:hi]]
-            out['tickets'].append({'numbers': row['numbers'], 'symbol': symbol, 'tiers': tiers,
-                                   'hits': draw.winning_numbers.count(symbol)})
+            groups = [label for (lo, hi), label in zip(group_ranges, prod.group_labels.values()) if symbol in draw.winning_numbers[lo:hi]]
+            ticket = {'numbers': row['numbers'], 'symbol': symbol, 'tiers': groups,
+                      'hits': draw.winning_numbers.count(symbol)}
+            if prod.numbers_per_play == 2:
+                # Mỗi gợi ý chỉ có một bộ ba; chưa có vé cặp để phân hạng Pro.
+                ticket.update(tiers=[], matched_groups=groups, prize_status='requires_pair')
+            out['tickets'].append(ticket)
     else:
         for row in components['dice']['top']:
             nums = row['numbers']

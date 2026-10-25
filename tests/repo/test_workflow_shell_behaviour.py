@@ -311,6 +311,31 @@ def test_the_live_harness_itself_catches_the_octal_bug(live: LiveHarness, tmp_pa
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.parametrize(("predictor_code", "step_code"), [(0, 0), (3, 0), (1, 1), (2, 2), (124, 124)])
+def test_prediction_step_only_skips_the_explicit_unavailable_exit_code(
+    tmp_path: Path, predictor_code: int, step_code: int,
+) -> None:
+    """Lỗi nhập, mô hình hoặc timeout phải làm đỏ bước, khác dữ liệu chưa về."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _write_exe(bin_dir / "python", f"exit {predictor_code}\n")
+    step = _step("daily_prediction.yml", "predict", "predict")
+    script = tmp_path / "predict.sh"
+    script.write_text(step["run"], encoding="utf-8")
+    output = tmp_path / "output"
+    result = subprocess.run(
+        _shell_command(step, script), cwd=tmp_path,
+        env={**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+             "GITHUB_OUTPUT": str(output)},
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == step_code, result.stdout + result.stderr
+    if predictor_code in (0, 3):
+        assert output.read_text(encoding="utf-8") == (
+            "generated=true\n" if predictor_code == 0 else "generated=false\n"
+        )
+
+
 class PredictionRepo:
     """Kho trần cục bộ đóng vai GitHub, cộng hai bản sao đóng vai hai runner.
 
@@ -326,6 +351,7 @@ class PredictionRepo:
         _write_exe(
             self.bin / "python",
             'if [[ "$1" == "src/forecast/modeling/run_daily_prediction.py" ]]; then\n'
+            '  if [[ "${PREDICTION_EXIT_CODE:-0}" != 0 ]]; then exit "$PREDICTION_EXIT_CODE"; fi\n'
             '  n=$(( $(cat "$FAKE_DIR/stamp") + 1 )); echo "$n" > "$FAKE_DIR/stamp"\n'
             # Mỗi lần chạy lệch 1e-11 — đúng cỡ nhiễu đo được giữa hai runner
             # (commit b8afdc7f). `data/shift` là thay đổi CÓ NGHĨA của dữ liệu.
@@ -445,6 +471,26 @@ def test_a_prediction_is_rebuilt_on_the_data_it_is_pushed_on_top_of(tmp_path: Pa
 
     assert result.returncode == 0, (result.stdout + result.stderr)[-800:]
     assert json.loads(repo.remote_file("data/predictions_today.json"))["top"] == "m2"
+
+
+@pytest.mark.parametrize(("predictor_code", "step_code"), [(3, 0), (1, 1), (2, 2), (124, 124)])
+def test_prediction_retry_only_skips_the_explicit_unavailable_exit_code(
+    tmp_path: Path, predictor_code: int, step_code: int,
+) -> None:
+    """Remote tiến lên rồi mô hình hỏng khi dựng lại cũng phải làm đỏ lượt chạy."""
+    repo = PredictionRepo(tmp_path)
+    runner = repo.runner("runner")
+    other = tmp_path / "other"
+    repo.git(tmp_path, "clone", str(repo.remote), str(other))
+    (other / "data/marker").write_text("m2\n", encoding="utf-8")
+    repo.push_from(other, "data: kỳ mới")
+    before = repo.remote_file("data/predictions_today.json")
+    repo.env["PREDICTION_EXIT_CODE"] = str(predictor_code)
+
+    result = repo.run_write_step(runner)
+
+    assert result.returncode == step_code, result.stdout + result.stderr
+    assert repo.remote_file("data/predictions_today.json") == before
 
 
 def test_a_timestamp_or_float_noise_change_is_not_committed(tmp_path: Path) -> None:
