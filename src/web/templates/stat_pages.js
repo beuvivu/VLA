@@ -503,7 +503,7 @@ function table(el, headers, rows, opts) {
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
 const MARK_SCOPE = (window.__D_DEMO_DRAWS__ ? "demo." : "");
 // Ba bảng đổi từ tọa độ hàng sang danh tính: không nạp lại khóa vị trí cũ.
-const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet)\.html$/.test(location.pathname) ? ".identity-v3" : "";
+const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet|giai-db-ngay-mai)\.html$/.test(location.pathname) ? ".identity-v3" : "";
 const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index") + MARK_IDENTITY_SUFFIX;
 
 // Dấu Ô theo TỪNG TRANG, dấu CẶP theo TOÀN SITE — hai phạm vi khác nhau vì hai
@@ -1553,22 +1553,48 @@ function renderSpecialBySet() {
 
 function renderTomorrow() {
   const rows = selected();
-  const s = specialGaps(rows);
   setCount(rows);
-  // Điểm tham khảo: số kỳ chưa về chuẩn hoá theo chu kỳ dài nhất của chính
-  // con đó. Đây là mô tả lịch sử, KHÔNG phải xác suất đã hiệu chuẩn.
-  const scored = [];
-  for (let i = 0; i < 100; i++) {
-    const ceiling = Math.max(s.maxGap[i], 1);
-    scored.push([i, s.current[i] / ceiling, s.current[i], s.maxGap[i]]);
+  const number = $("sp-tomorrow-number").value;
+  const byDate = new Map(DRAWS.map(row => [row.d, row]));
+  const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
+  const matches = rows.filter(row => String(row.s).slice(-2) === number).slice().reverse();
+  const format = value => value.split("-").reverse().join("/");
+  // Tra đúng ngày lịch, không lấy hàng kế tiếp: lịch sử có ngày thiếu/nghỉ.
+  const entries = matches.map(row => {
+    const [y, m, d] = row.d.split("-").map(Number);
+    const nextDate = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+    return {row, nextDate, next: byDate.get(nextDate)};
+  });
+  const counts = new Map();
+  for (const entry of entries) if (entry.next) {
+    const suffix = String(entry.next.s).slice(-2);
+    counts.set(suffix, (counts.get(suffix) || 0) + 1);
   }
-  scored.sort((a, b) => b[1] - a[1]);
-  const body = scored.slice(0, 30).map((p, k) => [
-    k + 1, pad2(p[0]), p[1].toFixed(2), p[2], p[3] || "—",
+  const known = entries.filter(entry => entry.next).length;
+  $("sp-tomorrow-heading").textContent = `Những lần Đặc Biệt về ${number}`;
+  $("sp-tomorrow-summary").textContent = `Đặc Biệt ${number}: ${matches.length} lần xuất hiện · ${known} lần có kết quả hôm sau.`;
+  const body = entries.map(({row, nextDate, next}) => [
+    format(row.d),
+    mk("span", {"data-trigger-special": "true"}, specialFull(row.s)),
+    mk("span", {class: "app-tomorrow-result"}, [
+      next ? mk("span", {"data-next-special": "true"}, specialFull(next.s))
+        : mk("span", {class: "app-tomorrow-pending"}, nextDate > latest ? "Chờ kết quả" : "Chưa có dữ liệu"),
+      mk("small", {class: "app-tomorrow-next-mobile"}, format(nextDate)),
+    ]),
+    format(nextDate),
   ]);
-  table($("sp-grid"),
-    ["Hạng", "Số", "Chưa về / chu kỳ dài nhất", "Chưa về", "Chu kỳ dài nhất"],
-    body, { numeric: [0, 2, 3, 4], pairOf: pairCols(body, 1) });
+  const grid = $("sp-grid");
+  table(grid, ["Ngày về", `Đặc Biệt về ${number}`, "Đặc Biệt hôm sau", "Ngày hôm sau"], body, {
+    key: (y, x) => `tomorrow:${number}:${entries[y].row.d}:${x}`,
+    pairOf: (y, x) => x === 1 ? number : x === 2 && entries[y].next ? String(entries[y].next.s).slice(-2) : null,
+  });
+  Array.from(grid.tBodies[0].rows).forEach((row, index) => {
+    if (entries[index]) row.setAttribute("data-trigger-date", entries[index].row.d);
+  });
+  if (!matches.length) grid.tBodies[0].rows[0].cells[0].textContent = `Chưa có lần Đặc Biệt về ${number} trong dải đang chọn.`;
+  $("sp-tomorrow-frequency-note").textContent = `${known} kết quả hôm sau đã biết · Hai số cuối`;
+  fill($("sp-tomorrow-frequencies"), [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([suffix, count]) =>
+    mk("div", {"data-number": suffix, "data-count": count}, [mk("b", null, suffix), mk("span", null, `${count} lần`)])));
 }
 
 
@@ -1901,6 +1927,23 @@ function renderOverview() {
 function boot(renderName) {
   const render = window[renderName];
   if (typeof render !== "function") return;
+
+  const tomorrowPick = $("sp-tomorrow-number");
+  if (tomorrowPick) {
+    const number = new URLSearchParams(location.search).get("number");
+    const latest = DRAWS.length ? String(DRAWS[DRAWS.length - 1].s).slice(-2) : "00";
+    tomorrowPick.value = number !== null && /^\d{1,2}$/.test(number) ? pad2(Number(number)) : latest;
+    tomorrowPick.addEventListener("change", () => {
+      const url = new URL(location.href);
+      url.searchParams.set("number", tomorrowPick.value);
+      history.replaceState(null, "", url);
+      render();
+    });
+    $("sp-tomorrow-latest").addEventListener("click", () => {
+      tomorrowPick.value = latest;
+      tomorrowPick.dispatchEvent(new Event("change"));
+    });
+  }
 
   const from = $("sp-from"), to = $("sp-to");
   if (from && to && DRAWS.length) {

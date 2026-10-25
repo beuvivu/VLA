@@ -81,6 +81,8 @@ test('đường cầu 6x22 tô chữ số nguồn, tô số về theo cầu kỳ
   const dom = await open(t, '?vt=6x22&limit=3&exactlimit=0&lon=1&nhay=2&db=0');
   const d = dom.window.document;
   assert.equal(d.querySelector('.app-bridge-path').hidden, false);
+  assert.equal(d.querySelector('.app-bridge-active-path').getAttribute('href'), '#app-bridge-path');
+  assert.match(d.querySelector('.app-bridge-active-path').textContent, /6x22.*Xem từng kỳ/);
   assert.equal(d.querySelector('.app-bridge-path-head h2').textContent, 'Cầu LOTO 2 nháy tại vị trí 6x22');
   assert.equal(d.querySelector('.app-bridge-predict b').textContent, '68,86');
   assert.match(d.querySelector('.app-bridge-run').textContent, /Đã chạy 3 kỳ/);
@@ -106,6 +108,11 @@ test('không lộn thì chữ số thứ hai được đánh dấu riêng và th
   assert.equal(d.querySelector('.app-bridge-predict b').textContent, '22');
   const first = d.querySelector('.app-bridge-days .app-bridge-day');
   assert.equal(first.querySelectorAll('.app-bridge-src--b').length, 1);
+  d.querySelector('button.app-bridge-cell[data-position="95"]').click();
+  const chosen = [...d.querySelectorAll('.app-bridge-matrix-selection a')]
+    .find((a) => a.getAttribute('href').includes('vt=95x74&'));
+  assert.ok(chosen);
+  assert.match(chosen.textContent, /cầu 95x74.*báo 22/i, 'không lộn phải công khai chiều và số được ghép');
 });
 
 test('đường cầu Đặc Biệt chỉ tô hai số cuối của giải Đặc Biệt', async t => {
@@ -144,7 +151,7 @@ test('danh sách mặc định là cầu LOTO từ 5 ngày, in đậm cầu dài
   assert.deepEqual(texts(d.querySelectorAll('.app-bridge-repeats b')).slice(0, 3), ['38,83', '44', '27,72']);
   assert.equal(d.getElementById('app-bridge-form').elements.limit.value, '5');
   const href = d.querySelector('#app-bridge-list .app-bridge-links a').getAttribute('href');
-  assert.match(href, /^\?vt=\d+x\d+&limit=5&exactlimit=0&lon=1&nhay=1&db=0$/);
+  assert.match(href, /^\?vt=\d+x\d+&limit=5&exactlimit=0&lon=1&nhay=1&db=0#app-bridge-path$/);
 });
 
 test('bảng vị trí cầu: bấm vị trí in đậm thì các vị trí ghép cầu với nó hiện màu đỏ', async t => {
@@ -152,13 +159,60 @@ test('bảng vị trí cầu: bấm vị trí in đậm thì các vị trí ghé
   const d = dom.window.document;
   const cells = d.querySelectorAll('#app-bridge-matrix button.app-bridge-cell');
   assert.ok(cells.length > 0);
-  const six = [...cells].find((node) => node.title.startsWith('Vị trí 6:'));
+  const six = [...cells].find((node) => node.dataset.position === '6');
   six.click();
   assert.equal(six.getAttribute('aria-pressed'), 'true');
-  const partners = [...d.querySelectorAll('#app-bridge-matrix .is-partner')].map((node) => node.title.split(':')[0]);
+  const partners = [...d.querySelectorAll('#app-bridge-matrix .is-partner')].map((node) => `Vị trí ${node.dataset.position}`);
   assert.deepEqual(partners.sort(), ['Vị trí 22', 'Vị trí 76', 'Vị trí 84', 'Vị trí 89']);
   six.click();
   assert.equal(d.querySelectorAll('#app-bridge-matrix .is-partner').length, 0);
+});
+
+test('chọn cặp số thu hẹp danh sách cầu và giữ liên kết xem từng kỳ đầy đủ tham số', async t => {
+  const dom = await open(t);
+  const d = dom.window.document;
+  const filter = d.querySelector('.app-bridge-pair-button[data-pair="38,83"]');
+  assert.ok(filter, 'mỗi cặp có nút chọn rõ số và số cầu');
+  filter.click();
+  assert.equal(filter.getAttribute('aria-pressed'), 'true');
+  const shown = [...d.querySelectorAll('.app-bridge-links > li')].filter((row) => !row.hidden);
+  assert.ok(shown.length > 0 && shown.length < 43);
+  assert.ok(shown.every((row) => row.dataset.pair === '38,83'));
+  assert.match(d.querySelector('.app-bridge-selection-status').textContent, /38, 83/);
+  assert.ok(shown.every((row) => row.querySelector('a').textContent.includes('Xem từng kỳ')));
+  d.querySelector('.app-bridge-pair-button[data-pair=""]').click();
+  assert.equal([...d.querySelectorAll('.app-bridge-links > li')].filter((row) => !row.hidden).length, 43);
+});
+
+test('vị trí đánh số công khai và lần chọn đầu hiện các đường cầu có thể mở bằng bàn phím', async t => {
+  const dom = await open(t, '?limit=3&nhay=2&lon=1&db=0');
+  const d = dom.window.document;
+  const six = d.querySelector('button.app-bridge-cell[data-position="6"]');
+  assert.equal(d.querySelectorAll('.app-bridge-position-index').length, 107);
+  assert.match(six.getAttribute('aria-label'), /Vị trí 6: G1 · chữ số 2/);
+  six.click();
+  assert.equal(d.querySelector('.app-bridge-matrix-selection').hidden, false);
+  const choices = [...d.querySelectorAll('.app-bridge-matrix-selection a')];
+  assert.equal(choices.length, 4);
+  const path = choices.find((a) => a.dataset.position === '22');
+  assert.match(path.textContent, /Vị trí 22.*Xem từng kỳ/);
+  assert.equal(path.getAttribute('href'), '?vt=6x22&limit=3&exactlimit=0&lon=1&nhay=2&db=0#app-bridge-path');
+  assert.equal(d.querySelectorAll('#app-bridge-list [title], #app-bridge-matrix [title], #app-bridge-path [title]').length, 0);
+  six.click();
+  assert.equal(d.querySelector('.app-bridge-matrix-selection').hidden, true);
+});
+
+test('chọn Đặc Biệt giải thích và vô hiệu hoá số nháy LOTO', async t => {
+  const dom = await open(t);
+  const d = dom.window.document;
+  const form = d.getElementById('app-bridge-form');
+  form.elements.db.checked = true;
+  form.elements.db.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(form.elements.nhay.disabled, true);
+  assert.match(d.getElementById('app-bridge-mode-help').textContent, /hai số cuối giải Đặc Biệt/);
+  form.elements.db.checked = false;
+  form.elements.db.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(form.elements.nhay.disabled, false);
 });
 
 test('khi lộn, 22x6 và 6x22 là cùng một cầu', async t => {

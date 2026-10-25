@@ -36,7 +36,9 @@ def expect(kind, count, both=False, weekday=None, end=None):
     return {"counts": br.tally(found["bridges"], kind)["counts"], "longest": found["longest"],
             "vts": [b["vt"] for b in found["bridges"]]}
 for key, kind, count, both, wd, end in [("loto", "loto", 3, False, None, None), ("loto", "loto", 5, False, None, None),
-        ("hai-nhay", "hai-nhay", 2, False, None, None), ("bach-thu", "bach-thu", 3, False, None, None),
+        ("loto", "loto", 3, False, None, "2026-09-20"),
+        ("hai-nhay", "hai-nhay", 2, False, None, None), ("hai-nhay", "hai-nhay", 1, False, None, "2026-09-20"),
+        ("bach-thu", "bach-thu", 3, False, None, None),
         ("dac-biet", "dac-biet", 2, False, None, None), ("dac-biet", "dac-biet", 1, True, None, None),
         ("bo-so", "bo-so", 2, False, None, None), ("bo-so", "bo-so", 1, False, None, "2026-09-20"),
         ("dac-biet-theo-thu", "dac-biet", 3, False, 6, None), ("loto-theo-thu", "loto", 2, False, 4, None)]:
@@ -52,13 +54,17 @@ const SOURCE = {
   pages: readFileSync(new URL('../../src/web/templates/bridge_pages.js', import.meta.url), 'utf8'),
   tool: readFileSync(new URL('../../src/web/templates/weekly_sheet.js', import.meta.url), 'utf8'),
 };
+const pagesOverride = process.env.APP_BRIDGE_PAGES_SCRIPT
+  ? readFileSync(process.env.APP_BRIDGE_PAGES_SCRIPT, 'utf8') : SOURCE.pages;
 
 async function open(t, html, search = '', marker = 'BridgePages') {
   const virtualConsole = new VirtualConsole();
   const dom = new JSDOM(html, { url: `https://example.test/page.html${search}`, runScripts: 'outside-only', virtualConsole });
   t.after(() => dom.window.close());
   for (const script of dom.window.document.querySelectorAll('script:not([src])')) {
-    if (script.type !== 'application/json' && script.textContent.includes(marker)) dom.window.eval(script.textContent);
+    if (script.type !== 'application/json' && script.textContent.includes(marker)) {
+      dom.window.eval(marker === 'BridgePages' ? script.textContent.replace(SOURCE.pages, pagesOverride) : script.textContent);
+    }
   }
   if (dom.window.document.readyState === 'loading') {
     await new Promise((resolve) => dom.window.document.addEventListener('DOMContentLoaded', resolve));
@@ -82,6 +88,44 @@ test('bộ máy trình duyệt ra đúng từng ô, cầu dài nhất và cặp 
     assert.deepEqual(plain(result.counts), c.counts, JSON.stringify({ ...c, counts: undefined, vts: undefined }));
     assert.equal(result.longest, c.longest, c.key);
     assert.deepEqual(plain(result.bridges.map((b) => b.vt)), c.vts, c.key);
+  }
+});
+
+test('màu xếp theo ba mức đường cầu phân biệt, đồng hạng cùng màu và chỉ đếm >7', async t => {
+  const dom = await open(t, fixture.pages.loto);
+  const api = dom.window.BridgePages;
+  const counts = { '00': 20, '01': 20, '02': 12, '03': 9, '04': 8, '05': 7 };
+  assert.deepEqual(plain(api.numberRanks(counts, 'loto')), { '00': 1, '01': 1, '02': 2, '03': 3 });
+  assert.deepEqual(plain(api.numberRanks({ '07': 7, '08': 8 }, 'hai-nhay')), { '08': 1 });
+  assert.deepEqual(plain(api.numberRanks(counts, 'loto-theo-thu')), {});
+});
+
+test('đổi số ngày và biên ngày tính lại màu từ số đường cầu từng số, không cộng cặp lộn', async t => {
+  const snapshots = [];
+  for (const c of fixture.cases.filter((c) => ['loto', 'hai-nhay'].includes(c.key))) {
+    const dom = await open(t, fixture.pages[c.key], search(c));
+    const levels = [...new Set(Object.values(c.counts).filter((n) => n > 7))].sort((a, b) => b - a).slice(0, 3);
+    const expected = Object.fromEntries(Object.entries(c.counts).filter(([, n]) => levels.includes(n))
+      .map(([number, n]) => [number, String(levels.indexOf(n) + 1)]));
+    const d = dom.window.document;
+    const got = Object.fromEntries([...d.querySelectorAll('#app-cau-grid .app-cau-cell[data-cau-rank]')]
+      .map((cell) => [cell.dataset.number, cell.dataset.cauRank]));
+    assert.deepEqual(got, expected, search(c));
+    for (const cell of d.querySelectorAll('#app-cau-grid [data-cau-rank]')) {
+      const rank = cell.dataset.cauRank;
+      cell.dispatchEvent(new dom.window.Event('mouseenter'));
+      cell.click();
+      assert.equal(cell.dataset.cauRank, rank, 'hover/chọn giữ màu dữ liệu của ô');
+    }
+    snapshots.push(JSON.stringify(got));
+  }
+  assert.ok(new Set(snapshots).size > 2, 'dữ liệu kiểm phải thật sự đổi thứ hạng khi đổi điều kiện');
+});
+
+test('năm trang cầu còn lại không tô hạng số đường cầu hoặc thêm chú giải', async t => {
+  for (const key of Object.keys(fixture.pages).filter((key) => !['loto', 'hai-nhay'].includes(key))) {
+    const dom = await open(t, fixture.pages[key]);
+    assert.equal(dom.window.document.querySelectorAll('[data-cau-rank], .app-cau-rank-legend').length, 0, key);
   }
 });
 

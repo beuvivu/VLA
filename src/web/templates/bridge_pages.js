@@ -203,8 +203,17 @@
 
   const percent = (x) => `${(x * 100).toFixed(1).replace(".", ",")}%`;
 
+  /** Xếp ba mức số đường cầu riêng từng số, đồng hạng cùng màu; chỉ hai trang được chọn. */
+  function numberRanks(counts, ruleKey) {
+    if (!["loto", "hai-nhay"].includes(ruleKey)) return {};
+    const levels = [...new Set(Object.values(counts).filter((n) => n > 7))].sort((a, b) => b - a).slice(0, 3);
+    return Object.fromEntries(Object.entries(counts).filter(([, n]) => levels.includes(n))
+      .map(([number, n]) => [number, levels.indexOf(n) + 1]));
+  }
+
   function renderGrid(host, result, onPick, onHover) {
     host.replaceChildren();
+    const ranks = numberRanks(result.counts, REPORT.rule.key);
     const table = el("table", "app-cau-grid");
     table.append(el("caption", "ui-sr-only", "Số cầu theo các số 00 đến 99"));
     const thead = el("thead");
@@ -230,8 +239,10 @@
           const button = el("button", "app-cau-cell");
           button.type = "button";
           button.dataset.number = number;
+          if (ranks[number]) button.dataset.cauRank = String(ranks[number]);
           button.setAttribute("aria-pressed", "false");
-          button.setAttribute("aria-label", `Số ${number}, ${n} cầu. Xem vị trí cầu`);
+          const rankLabel = ranks[number] ? ` Mức ${["", "Nhất", "Nhì", "Ba"][ranks[number]]} theo số đường cầu.` : "";
+          button.setAttribute("aria-label", `Số ${number}, ${n} cầu.${rankLabel} Xem vị trí cầu`);
           button.append(el("b", "", number), el("span", "", `${n} cầu`));
           button.addEventListener("click", () => onPick(number));
           button.addEventListener("mouseenter", () => onHover(number));
@@ -492,7 +503,7 @@
   }
 
   window.BridgePages = {
-    POSITIONS, decode, scan, tally, step, fulfilled, readParams, query, formQuery, boKey, BO_ID, boundaries,
+    POSITIONS, decode, scan, tally, step, fulfilled, readParams, query, formQuery, boKey, BO_ID, boundaries, numberRanks,
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();

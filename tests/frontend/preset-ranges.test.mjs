@@ -114,9 +114,9 @@ for (const slug of slugs) {
         assert.deepEqual(rowFor(dom, 'sp-max-lo', '12'), ['12', '200 kỳ']);
         assert.deepEqual(rowFor(dom, 'sp-max-hi', '99'), ['99', '1 kỳ']);
       } else {
-        // An unseen number has no completed cycle; its descriptive score uses this window's length.
-        assert.deepEqual(rowFor(dom, 'sp-grid', '00', 1).slice(1),
-          ['00', selected.length.toFixed(2), String(selected.length), '—']);
+        const matches = selected.filter(row => row.s.endsWith('99')).slice().reverse();
+        assert.deepEqual([...dom.window.document.querySelectorAll('#sp-grid tr[data-trigger-date]')].map(row => row.dataset.triggerDate), matches.map(row => row.d));
+        assert.equal(dom.window.document.getElementById('sp-tomorrow-number').value, '99');
       }
     }
     choose(dom, 30);
@@ -141,7 +141,7 @@ for (const slug of slugs) {
       } else if (slug === 'lo-gan') {
         assert.deepEqual(rowFor(dom, 'sp-grid', '99'), ['99', viDate(draws[419].d), '0', '1', '7']);
       } else {
-        assert.deepEqual(rowFor(dom, 'sp-grid', '00', 1).slice(1), ['00', '7.00', '7', '—']);
+        assert.equal(dom.window.document.querySelectorAll('#sp-grid tr[data-trigger-date]').length, fixtures.short.filter(row => row.s.endsWith('99')).length);
       }
     }
   });

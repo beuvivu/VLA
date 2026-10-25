@@ -299,6 +299,17 @@ FIELD_TOGGLE = (
     '<div class="sp-fields-toggle" id="sp-fields-toggle"></div>'
 )
 
+def _tomorrow_controls() -> str:
+    """Chọn đúng hai số cuối và phạm vi các ngày từng xuất hiện."""
+    options = "".join(f'<option value="{n:02d}">{n:02d}</option>' for n in range(100))
+    ranges = _range_controls(mode="preset").split('<p class="sp-note">', 1)[0]
+    return ('<section class="app-tomorrow-controls" aria-label="Tra cứu Đặc Biệt hôm sau">'
+            '<div class="app-tomorrow-pick"><label for="sp-tomorrow-number">Đặc Biệt đã về số</label>'
+            f'<select id="sp-tomorrow-number">{options}</select>'
+            '<button type="button" id="sp-tomorrow-latest" class="sp-btn">Số kỳ mới nhất</button>'
+            '<span>Tra theo hai số cuối · 00–99</span></div>' + ranges + '</section>')
+
+
 PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="bang-dac-biet",
@@ -505,9 +516,18 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="giai-db-ngay-mai",
         title="Giải Đặc Biệt ngày mai",
-        subtitle="Xếp hạng tham khảo cho kỳ kế tiếp, dựng từ chu kỳ và tần suất lịch sử.",
-        controls=_range_controls(mode="preset"),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
+        subtitle="Những lần cùng hai số cuối xuất hiện, và giải Đặc Biệt của ngày hôm sau.",
+        controls=_tomorrow_controls(),
+        body='<p id="sp-tomorrow-summary" class="app-tomorrow-summary" role="status" aria-live="polite"></p>'
+             '<div class="app-tomorrow-workspace"><section class="app-tomorrow-card">'
+             '<header><h2 id="sp-tomorrow-heading">Lịch sử cùng số</h2><span>Mới nhất → cũ nhất</span></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid" '
+             'aria-label="Các lần cùng số xuất hiện và Đặc Biệt hôm sau"></table></div></section>'
+             '<aside class="app-tomorrow-card app-tomorrow-stat"><header><h2>Hôm sau thường gặp</h2></header>'
+             '<p id="sp-tomorrow-frequency-note"></p>'
+             '<div id="sp-tomorrow-frequencies" class="app-tomorrow-frequencies"></div>'
+             '<p class="app-tomorrow-caption">Đếm theo các ngày hôm sau đã có kết quả. '
+             'Ngày chưa có dữ liệu không được tính.</p></aside></div>',
         render="renderTomorrow",
     ),
     StatPage(
@@ -556,10 +576,9 @@ CHANCE_NOTES: dict[str, str] = {
         "hai lần về của cùng một bộ số phân bố hình học quanh trung bình 100 kỳ."
     ),
     "giai-db-ngay-mai": (
-        "⚠️ Đây là <b>xếp hạng mô tả</b> dựng từ chu kỳ lịch sử, "
-        "<b>không phải xác suất đã hiệu chuẩn</b> và không bảo đảm kết quả. "
-        "Đo trên chính kho này: không mô hình nào trong 12 họ đã thử vượt được "
-        "tỉ lệ nền."
+        "Bảng đối chiếu những lần cùng hai số cuối xuất hiện với kết quả của đúng "
+        "<b>ngày lịch kế tiếp</b>. Không lấy một ngày khác để lấp ngày thiếu dữ liệu. "
+        "Tần suất là thống kê lịch sử, <b>không phải xác suất đã hiệu chuẩn</b> cho kỳ tới."
     ),
 }
 
@@ -824,9 +843,13 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     overview = page.slug == "thong-ke-tong-hop"
     statistical = bento or overview
     calendar = page.slug in {"bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"}
+    tomorrow = page.slug == "giai-db-ngay-mai"
     responsive = statistical or calendar
     body = page.body.replace('class="sp-table ', 'class="sp-table sp-calendar-table ') if calendar else page.body
-    content = frequency_bento_layout(page, note_html) if bento else overview_layout(page) if overview else f"""
+    content = (f'<div class="app-tomorrow-shell" data-app-workspace-guide><header class="app-tomorrow-header">'
+               '<a href="statistics.html">← Thống kê Đặc Biệt</a>'
+               f'<h1>{page.title}</h1><p>{page.subtitle}</p></header>'
+               f'{page.controls}{body}{note_html}</div>') if tomorrow else frequency_bento_layout(page, note_html) if bento else overview_layout(page) if overview else f"""
 <div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
 <h1>{page.title}</h1>
 <p class="ui-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
@@ -835,7 +858,7 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 {note_html}"""
     footer = (
         f'Dữ liệu đến {str(draws[-1]["d"])} · Dựng lúc {generated}.'
-        if statistical and draws else
+        if (statistical or tomorrow) and draws else
         f'Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên '
         f'{len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.'
     )
@@ -847,9 +870,10 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 <title>{page.title}</title>
 <style>
 {_asset("stat_pages.css")}
+{_asset("tomorrow_history.css") if tomorrow else ""}
 {_asset("frequency_bento.css") if statistical else ""}
 {_asset("stat_table_layout.css") if responsive else ""}
-</style></head><body class="{'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
+</style></head><body class="{'app-tomorrow-page' if tomorrow else 'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
 {app_shell_open(f"{page.slug}.html", wide=True)}
 {content}
 <p class="ui-muted" style="margin-top:1.5rem;font-size:.75rem">

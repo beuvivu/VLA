@@ -261,7 +261,7 @@
     if (bridge.shadow) {
       const note = el("small", "app-bridge-shadow", "bóng ");
       note.append(el("span", "app-bridge-num", bridge.shadow));
-      note.title = "Số bóng của số kép — chỉ để tham khảo, không tính vào cầu";
+      note.setAttribute("aria-label", `Số bóng ${bridge.shadow}, chỉ tham khảo, không tính vào cầu`);
       box.append(note);
     }
     return box;
@@ -307,7 +307,7 @@
     const title = el("div", "tr-day-title");
     title.append(el("h2", "", `Mở thưởng ${formatDate(day.draw.date, true)}`));
     const facts = el("p", "app-bridge-facts");
-    facts.append(el("span", "app-bridge-fact-src", `Cầu báo: ${day.nums.map(pad).join(",")}`));
+    facts.append(el("span", "app-bridge-fact-src", `Ghép từ kỳ này → kỳ sau: ${day.nums.map(pad).join(", ")}`));
     if (day.prev) {
       const seen = new Map();
       for (const j of day.found) {
@@ -315,7 +315,8 @@
         seen.set(n, (seen.get(n) || 0) + 1);
       }
       const got = [...seen].map(([n, c]) => (c > 1 ? `${n}×${c}` : n)).join(", ");
-      const text = got ? `Về: ${got}` : `Không về ${day.prev.map(pad).join(",")}`;
+      const text = got ? `Kỳ trước báo ${day.prev.map(pad).join(", ")} · Về: ${got}`
+        : `Kỳ trước báo ${day.prev.map(pad).join(", ")} · Không về`;
       facts.append(el("span", day.hit ? "app-bridge-fact-hit" : "app-bridge-fact-miss", text));
     }
     title.append(facts);
@@ -367,7 +368,7 @@
         if (k.hit) classes.push("app-bridge-hit");
         if (k.src) classes.push(params.lon || k.src === "a" ? "app-bridge-src" : "app-bridge-src app-bridge-src--b");
         const span = el("span", classes.join(" "), text);
-        if (k.src) span.title = `Vị trí ${k.src === "a" ? a : b}: ${POSITIONS[k.src === "a" ? a : b].label}`;
+        if (k.src) span.setAttribute("aria-label", `Vị trí ${k.src === "a" ? a : b}: ${POSITIONS[k.src === "a" ? a : b].label}`);
         cell.append(span);
       }
       i = j;
@@ -381,10 +382,11 @@
     host.replaceChildren();
     const frame = host.closest(".ui-card");
     if (frame) frame.hidden = false;
+    host.append(el("p", "app-position-section-label", "3 · Xem từng kỳ của cầu đã chọn"));
     const head = el("div", "app-bridge-path-head");
     head.append(el("h2", "", `${modeTitle(params)} tại vị trí ${a}x${b}`));
-    const back = el("a", "app-bridge-back", "← Danh sách cầu");
-    back.href = query(params, null);
+    const back = el("a", "app-bridge-back", "← Chọn cầu khác");
+    back.href = query(params, null) + "#app-bridge-results";
     head.append(back);
     host.append(head);
     renderPrediction(host, params, path, a, b);
@@ -398,8 +400,8 @@
     chosen = Math.min(chosen, maxDays);
     const picker = el("div", "app-bridge-days-picker");
     picker.setAttribute("role", "group");
-    picker.setAttribute("aria-label", "Số ngày cầu chạy");
-    picker.append(el("span", "app-bridge-picker-label", "Số ngày cầu chạy:"));
+    picker.setAttribute("aria-label", "Khoảng đối chiếu theo kỳ quay");
+    picker.append(el("span", "app-bridge-picker-label", "Số kỳ đối chiếu:"));
     const tables = el("div", "tr-results app-bridge-days");
     tables.dataset.layout = "2";
     const legend = el("p", "app-bridge-legend");
@@ -422,13 +424,14 @@
       }
     };
     for (let n = 1; n <= maxDays; n += 1) {
-      const button = el("button", "app-bridge-day-button", String(n));
+      const button = el("button", "app-bridge-day-button", `${n} kỳ`);
       button.type = "button";
       button.value = String(n);
       button.addEventListener("click", () => draw(n));
       picker.append(button);
     }
     host.append(picker);
+    host.append(el("p", "app-bridge-help", "Mỗi bước đối chiếu dùng hai kỳ liên tiếp: 7 kỳ đối chiếu tương ứng 8 bảng kết quả. Mới nhất ở trên."));
     host.append(legend);
     host.append(tables);
     draw(chosen);
@@ -443,40 +446,76 @@
       p.append(...parts);
       return p;
     };
-    // Cặp "67,76" in liền đọc như số thập phân: mỗi số một nút chữ riêng.
-    const pairNodes = (pair) => pair.split(",").flatMap((n, i) => (i ? [",", n] : [n]));
     const intro = summaryLine();
-    intro.append(document.createTextNode(`Kết quả soi cầu cho kỳ ${formatDate(REPORT.target_date)}: tìm được `));
+    intro.append(document.createTextNode(`${modeTitle(params)} · `));
     intro.append(el("b", "", String(summary.count)));
-    intro.append(document.createTextNode(` cầu có độ dài ${params.exact ? "đúng" : "từ"} ${params.limit} ngày${params.exact ? "" : " trở lên"}.`));
+    intro.append(document.createTextNode(` cầu, ${summary.pairs} cặp số · đã chạy ${params.exact ? "đúng" : "từ"} ${params.limit} kỳ quay${params.exact ? "" : " trở lên"}.`));
     host.append(intro);
+    if (params.vt) {
+      const selected = el("a", "app-bridge-active-path", `Đang chọn cầu ${params.vt.a}x${params.vt.b} · Xem từng kỳ ↓`);
+      selected.href = "#app-bridge-path";
+      host.append(selected);
+    }
     if (!bridges.length) {
       host.append(el("p", "app-bridge-empty", "Không có cầu nào khớp tham số này. Thử giảm độ dài hoặc số nháy."));
       return;
     }
+    const filters = el("div", "app-bridge-pair-filters");
+    filters.setAttribute("role", "group");
+    filters.setAttribute("aria-label", "Chọn cặp số để lọc danh sách cầu");
+    const status = el("p", "app-bridge-selection-status");
+    status.setAttribute("aria-live", "polite");
     const list = el("ol", "app-bridge-links");
+    list.setAttribute("aria-label", "Các cầu phù hợp với điều kiện");
+    const selectPair = (pair) => {
+      let count = 0;
+      for (const row of list.children) {
+        row.hidden = Boolean(pair && row.dataset.pair !== pair);
+        if (!row.hidden) count += 1;
+      }
+      for (const button of filters.children) {
+        button.setAttribute("aria-pressed", String(button.dataset.pair === pair));
+      }
+      status.textContent = pair ? `Đang xem ${count} cầu báo ${pair.split(",").join(", ")}. Chọn một cầu để xem từng kỳ.`
+        : `Đang xem tất cả ${count} cầu. Mỗi hàng là một cặp vị trí riêng.`;
+    };
+    const filterButton = (pair, count) => {
+      const button = el("button", "app-bridge-pair-button");
+      button.type = "button";
+      button.dataset.pair = pair;
+      button.append(el("b", "", pair ? pair.split(",").join(", ") : "Tất cả"));
+      button.append(el("span", "", `${count} cầu`));
+      button.addEventListener("click", () => selectPair(pair));
+      filters.append(button);
+    };
+    filterButton("", bridges.length);
+    for (const row of summary.repeats) filterButton(row.pair, row.bridges);
+    host.append(filters);
+    host.append(status);
     for (const bridge of bridges) {
       const item = el("li", bridge.streak > params.limit ? "is-longer" : "");
-      const link = el("a", "", bridge.numbers[0]);
-      link.href = query(params, bridge);
-      link.title = `${bridge.vt} · ${bridge.numbers.join(",")} · ${bridge.streak} ngày`;
+      item.dataset.pair = pairKey(bridge.numbers);
+      const link = el("a");
+      link.href = query(params, bridge) + "#app-bridge-path";
+      if (params.vt && params.vt.a === bridge.a && params.vt.b === bridge.b) link.setAttribute("aria-current", "true");
+      link.append(numberChips(bridge));
+      const detail = el("span", "app-bridge-link-detail");
+      detail.append(el("b", "", `Vị trí ${bridge.vt}`));
+      detail.append(el("small", "", `${POSITIONS[bridge.a].label} + ${POSITIONS[bridge.b].label}`));
+      link.append(detail);
+      link.append(el("span", "app-bridge-link-run", `${bridge.streak} kỳ`));
+      link.append(el("span", "app-bridge-link-action", "Xem từng kỳ →"));
       item.append(link);
       list.append(item);
     }
-    host.append(list);
-    if (!params.exact) {
-      host.append(summaryLine(
-        `Trong đó có ${summary.longer} cầu dài hơn ${params.limit} ngày (in đậm). Cầu xuất hiện tại `
-        + `${summary.pairs} cặp số khác nhau, ${summary.pairsLonger} cặp có cầu chạy hơn ${params.limit} ngày.`));
-    }
-    const top = summary.repeats[0];
-    if (top) {
-      const nums = top.pair.split(",");
-      host.append(summaryLine("Cặp số có nhiều cầu nhất là ", ...pairNodes(top.pair),
-        `: ${top.bridges} cầu (${top.bridges} vị trí cầu khác nhau `
-        + `cùng báo ${params.db ? "Đặc Biệt" : "LOTO"} về ${nums.join(" hoặc ")}).`));
-    }
-    host.append(el("h3", "app-bridge-subhead", "Thống kê cầu lặp"));
+    const scroll = el("div", "app-bridge-list-scroll");
+    scroll.setAttribute("tabindex", "0");
+    scroll.setAttribute("aria-label", "Danh sách cầu, cuộn để xem thêm");
+    scroll.append(list);
+    host.append(scroll);
+    selectPair("");
+    const repeatsDisclosure = el("details", "app-bridge-repeats-details");
+    repeatsDisclosure.append(el("summary", "", "Số cầu cùng báo mỗi cặp"));
     const repeats = el("ul", "app-bridge-repeats");
     for (const row of summary.repeats) {
       const item = el("li");
@@ -484,7 +523,9 @@
       item.append(el("span", "", `${row.bridges} cầu`));
       repeats.append(item);
     }
-    host.append(repeats);
+    repeatsDisclosure.append(repeats);
+    host.append(repeatsDisclosure);
+    host.append(el("p", "app-bridge-help", "Độ dài và số cầu cùng báo là mô tả lịch sử; không phải điểm tin cậy. Số bóng chỉ để tham khảo."));
   }
 
   function renderMatrix(host, prepared, bridges, params) {
@@ -498,9 +539,12 @@
       partners.get(bridge.b).push(bridge);
     }
     const help = el("p", "app-bridge-help",
-      `Kết quả kỳ ${formatDate(last.date)}. Chữ số in đậm là vị trí có cầu; bấm vào để thấy (các) vị trí tạo cầu với nó `
-      + "(màu đỏ), bấm tiếp vào số đỏ để xem đường cầu.");
+      `Kết quả ${formatDate(last.date)}. Số lớn là chữ số của giải; số nhỏ bên dưới là vị trí 0–106. `
+      + "Chọn một ô có viền, rồi chọn ô có nhãn Ghép hoặc liên kết hiện bên dưới để xem từng kỳ.");
     host.append(help);
+    const selection = el("div", "app-bridge-matrix-selection");
+    selection.setAttribute("aria-live", "polite");
+    selection.hidden = true;
     const table = el("div", "app-bridge-matrix");
     const buttons = new Map();
     let selected = null;
@@ -513,29 +557,53 @@
         button.classList.toggle("is-selected", pos === selected);
         button.classList.toggle("is-partner", mates.has(pos));
         button.setAttribute("aria-pressed", String(pos === selected));
+        button.setAttribute("aria-label", `Vị trí ${pos}: ${POSITIONS[pos].label} · chữ số ${last.digits[pos]}`
+          + (mates.has(pos) ? ` · Ghép với vị trí ${selected}, xem từng kỳ` : ""));
+        button.querySelector(".app-bridge-cell-hint").textContent = pos === selected ? "Đã chọn" : mates.has(pos) ? "Ghép" : "";
+      }
+      selection.replaceChildren();
+      selection.hidden = selected === null;
+      if (selected !== null) {
+        selection.append(el("p", "", `Đã chọn vị trí ${selected}: ${POSITIONS[selected].label}. Chọn đường cầu để xem từng kỳ:`));
+        const choices = el("ul", "app-bridge-matrix-choices");
+        for (const bridge of partners.get(selected) || []) {
+          const mate = bridge.a === selected ? bridge.b : bridge.a;
+          const item = el("li");
+          const link = el("a", "", `Vị trí ${mate} · ${POSITIONS[mate].label} · Cầu ${bridge.vt} báo ${bridge.numbers.join(", ")} · ${bridge.streak} kỳ · Xem từng kỳ →`);
+          link.href = query(params, bridge) + "#app-bridge-path";
+          link.dataset.position = String(mate);
+          item.append(link);
+          choices.append(item);
+        }
+        selection.append(choices);
       }
     };
     let valueIndex = 0;
-    for (const [code, short, , count] of LAYOUT) {
+    for (const [code, , name, count] of LAYOUT) {
       const row = el("div", "app-bridge-matrix-row");
       row.dataset.prize = code;
-      row.append(el("span", "app-bridge-matrix-label", short));
+      row.append(el("span", "app-bridge-matrix-label", name));
       const cells = el("div", "app-bridge-matrix-values");
       for (let i = 0; i < count; i += 1) {
         const group = el("span", "app-bridge-matrix-value");
         const info = VALUES[valueIndex];
+        group.append(el("span", "app-bridge-value-label", info.label));
         for (let d = 0; d < info.width; d += 1) {
           const pos = info.first + d;
           const digit = String(last.digits[pos]);
           if (partners.has(pos)) {
-            const button = el("button", "app-bridge-cell", digit);
+            const button = el("button", "app-bridge-cell");
             button.type = "button";
-            button.title = `Vị trí ${pos}: ${POSITIONS[pos].label}`;
+            button.dataset.position = String(pos);
+            button.setAttribute("aria-label", `Vị trí ${pos}: ${POSITIONS[pos].label} · chữ số ${digit}`);
             button.setAttribute("aria-pressed", "false");
+            button.append(el("span", "app-bridge-cell-digit", digit));
+            button.append(el("small", "app-bridge-position-index", String(pos)));
+            button.append(el("small", "app-bridge-cell-hint"));
             button.addEventListener("click", () => {
               if (selected !== null && selected !== pos && button.classList.contains("is-partner")) {
                 const bridge = (partners.get(selected) || []).find((x) => x.a === pos || x.b === pos);
-                if (bridge) window.location.search = query(params, bridge);
+                if (bridge) window.location.assign(query(params, bridge) + "#app-bridge-path");
                 return;
               }
               selected = selected === pos ? null : pos;
@@ -544,7 +612,11 @@
             buttons.set(pos, button);
             group.append(button);
           } else {
-            group.append(el("span", "app-bridge-cell", digit));
+            const cell = el("span", "app-bridge-cell");
+            cell.setAttribute("aria-label", `Vị trí ${pos}: ${POSITIONS[pos].label} · chữ số ${digit} · Không có cầu phù hợp`);
+            cell.append(el("span", "app-bridge-cell-digit", digit));
+            cell.append(el("small", "app-bridge-position-index", String(pos)));
+            group.append(cell);
           }
         }
         cells.append(group);
@@ -554,6 +626,7 @@
       table.append(row);
     }
     host.append(table);
+    host.append(selection);
   }
 
   function syncForm(form, params) {
@@ -581,6 +654,15 @@
   // được để trình duyệt tự gửi: tự dựng truy vấn rồi chuyển trang bằng location.
   function bindForm(form) {
     if (!form) return;
+    const syncMode = () => {
+      form.elements.nhay.disabled = form.elements.db.checked;
+      const help = document.getElementById("app-bridge-mode-help");
+      if (help) help.textContent = form.elements.db.checked
+        ? "Đặc Biệt: chỉ dò hai số cuối giải Đặc Biệt; số nháy LOTO không áp dụng."
+        : "LOTO: dò hai số cuối của cả 27 giải; số nháy là tổng số lần cặp số về trong một kỳ.";
+    };
+    form.elements.db.addEventListener("change", syncMode);
+    syncMode();
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       window.location.assign(formQuery(form));
@@ -589,13 +671,14 @@
 
   function mount() {
     const params = readParams(window.location.search);
+    document.body.dataset.bridgeMode = params.db ? "db" : "lo";
     const prepared = prepare(REPORT.draws);
     const bridges = findBridges(prepared, params);
     const summary = summarize(bridges, params.limit);
     syncForm(document.getElementById("app-bridge-form"), params);
     bindForm(document.getElementById("app-bridge-form"));
     const title = document.getElementById("app-bridge-list-title");
-    if (title) title.textContent = `${modeTitle(params)} · kỳ ${formatDate(REPORT.target_date)}`;
+    if (title) title.textContent = "2 · Chọn số và cầu";
     const list = document.getElementById("app-bridge-list");
     if (list) renderList(list, bridges, summary, params);
     const matrix = document.getElementById("app-bridge-matrix");
