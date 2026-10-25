@@ -1625,6 +1625,25 @@ function renderSpecialBySet() {
   specialMetricLegend("app-special-gap-legend", "gap", maximum, "kỳ");
 }
 
+/** LOTO của đúng một ngày: gom nháy, không bỏ số lặp hoặc suy từ Đặc Biệt. */
+function tomorrowLoto(draw, kind, date, missing) {
+  const counts = new Map();
+  for (const value of draw && Array.isArray(draw.n) ? draw.n : []) {
+    const raw = String(value);
+    if (!/^\d{1,2}$/.test(raw)) continue;
+    const number = raw.padStart(2, "0");
+    counts.set(number, (counts.get(number) || 0) + 1);
+  }
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+  return mk("div", {class: "app-tomorrow-loto", [`data-${kind}-loto`]: "true", "data-loto-date": date}, total ? [
+    mk("small", {class: "app-tomorrow-loto-total"}, `${total} lượt`),
+    mk("div", {class: "app-tomorrow-loto-numbers"}, [...counts].sort((a, b) => a[0].localeCompare(b[0])).map(([number, count]) =>
+      mk("span", {"data-loto-number": number, "data-loto-count": count, "aria-label": `${number}, ${count} nháy`}, [
+        mk("b", null, number), count > 1 ? mk("small", null, `×${count}`) : null,
+      ]))),
+  ] : mk("span", {class: "app-tomorrow-pending"}, missing || "Chưa có dữ liệu LOTO"));
+}
+
 function renderTomorrow() {
   const rows = selected();
   setCount(rows);
@@ -1647,20 +1666,25 @@ function renderTomorrow() {
   const known = entries.filter(entry => entry.next).length;
   $("sp-tomorrow-heading").textContent = `Những lần Đặc Biệt về ${number}`;
   $("sp-tomorrow-summary").textContent = `Đặc Biệt ${number}: ${matches.length} lần xuất hiện · ${known} lần có kết quả hôm sau.`;
-  const body = entries.map(({row, nextDate, next}) => [
-    format(row.d),
-    mk("span", {"data-trigger-special": "true"}, specialFull(row.s)),
-    mk("span", {class: "app-tomorrow-result"}, [
-      next ? mk("span", {"data-next-special": "true"}, specialFull(next.s))
-        : mk("span", {class: "app-tomorrow-pending"}, nextDate > latest ? "Chờ kết quả" : "Chưa có dữ liệu"),
-      mk("small", {class: "app-tomorrow-next-mobile"}, format(nextDate)),
-    ]),
-    format(nextDate),
-  ]);
+  const body = entries.map(({row, nextDate, next}) => {
+    const missing = nextDate > latest ? "Chờ kết quả" : "Chưa có dữ liệu";
+    return [
+      format(row.d),
+      mk("span", {"data-trigger-special": "true"}, specialFull(row.s)),
+      tomorrowLoto(row, "trigger", row.d),
+      mk("span", {class: "app-tomorrow-result"}, [
+        next ? mk("span", {"data-next-special": "true"}, specialFull(next.s))
+          : mk("span", {class: "app-tomorrow-pending"}, missing),
+        mk("small", {class: "app-tomorrow-next-date", "data-next-date": nextDate}, format(nextDate)),
+      ]),
+      tomorrowLoto(next, "next", nextDate, next ? null : missing),
+    ];
+  });
   const grid = $("sp-grid");
-  table(grid, ["Ngày về", `Đặc Biệt về ${number}`, "Đặc Biệt hôm sau", "Ngày hôm sau"], body, {
-    key: (y, x) => `tomorrow:${number}:${entries[y].row.d}:${x}`,
-    pairOf: (y, x) => x === 1 ? number : x === 2 && entries[y].next ? String(entries[y].next.s).slice(-2) : null,
+  table(grid, ["Ngày về", `Đặc Biệt về ${number}`, "LOTO cùng ngày", "Đặc Biệt hôm sau", "LOTO hôm sau"], body, {
+    // Giữ khóa hai ô Đặc Biệt khi thêm cột LOTO cạnh chúng.
+    key: (y, x) => `tomorrow:${number}:${entries[y].row.d}:${[0, 1, "trigger-loto", 2, "next-loto"][x]}`,
+    pairOf: (y, x) => x === 1 ? number : x === 3 && entries[y].next ? String(entries[y].next.s).slice(-2) : null,
   });
   Array.from(grid.tBodies[0].rows).forEach((row, index) => {
     if (entries[index]) row.setAttribute("data-trigger-date", entries[index].row.d);

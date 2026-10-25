@@ -693,7 +693,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "bang-dac-biet-nam.html": tk("Một tháng soi qua mọi năm: hàng là năm, cột là ngày trong tháng."),
         "chu-ky-dac-biet.html": tk("Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử."),
         "cau-dac-biet-theo-bo-so.html": tk("Điểm rơi của từng bộ số ở giải Đặc Biệt: lần về gần nhất, khoảng cách và số lần."),
-        "giai-db-ngay-mai.html": tk("Chọn cùng hai số cuối giải Đặc Biệt, liệt kê các lần xuất hiện từ mới đến cũ và đối chiếu kết quả của đúng ngày lịch kế tiếp. Ngày thiếu hoặc đang chờ không được thay bằng ngày khác và không được tính vào tần suất kết quả hôm sau."),
+        "giai-db-ngay-mai.html": tk("Chọn cùng hai số cuối giải Đặc Biệt, liệt kê các lần xuất hiện từ mới đến cũ và đối chiếu kết quả của đúng ngày lịch kế tiếp. LOTO cạnh mỗi giải Đặc Biệt lấy hai số cuối của 27 giải trong chính ngày đó, giữ đủ số nháy khi trùng. Ngày thiếu hoặc đang chờ không được thay bằng ngày khác và không được tính vào tần suất kết quả hôm sau."),
         "lo-vip-nhieu-nhay.html": _lo_vip(f),
         "tan-suat-loto.html": tk("Ma trận con lô × từng kỳ: mỗi ô là số nháy của con lô ở kỳ ấy."),
         "tan-suat-cap-loto.html": tk("Ma trận 50 họ cặp × từng kỳ; kèm bảng đồng xuất hiện."),

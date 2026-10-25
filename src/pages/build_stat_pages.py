@@ -652,13 +652,14 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="giai-db-ngay-mai",
         title="Giải Đặc Biệt ngày mai",
-        subtitle="Những lần cùng hai số cuối xuất hiện, và giải Đặc Biệt của ngày hôm sau.",
+        subtitle="Đối chiếu Đặc Biệt đủ 5 chữ số và LOTO cùng ngày, kèm kết quả ngày lịch hôm sau.",
         controls=_tomorrow_controls(),
         body='<p id="sp-tomorrow-summary" class="app-tomorrow-summary" role="status" aria-live="polite"></p>'
-             '<div class="app-tomorrow-workspace"><section class="app-tomorrow-card">'
+             '<div class="app-tomorrow-workspace"><section class="app-tomorrow-card app-tomorrow-history">'
              '<header><h2 id="sp-tomorrow-heading">Lịch sử cùng số</h2><span>Mới nhất → cũ nhất</span></header>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid" '
-             'aria-label="Các lần cùng số xuất hiện và Đặc Biệt hôm sau"></table></div></section>'
+             '<div class="sp-scroll" tabindex="0" role="region" aria-label="Lịch sử Đặc Biệt và LOTO, cuộn để xem thêm">'
+             '<table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid" '
+             'aria-label="Đặc Biệt và LOTO cùng ngày, đối chiếu ngày lịch hôm sau"></table></div></section>'
              '<aside class="app-tomorrow-card app-tomorrow-stat"><header><h2>Hôm sau thường gặp</h2></header>'
              '<p id="sp-tomorrow-frequency-note"></p>'
              '<div id="sp-tomorrow-frequencies" class="app-tomorrow-frequencies"></div>'
