@@ -151,7 +151,7 @@ def _rows_table(head: str, rows: list[dict], label) -> str:
 
 
 def _streak_label(row: dict) -> str:
-    return f"≥ {row['k']} ngày" if row["plus"] else f"{row['k']} ngày"
+    return f"≥ {row['k']} kỳ" if row["plus"] else f"{row['k']} kỳ"
 
 
 def _consensus_label(row: dict) -> str:
@@ -186,11 +186,11 @@ def backtest_card(report: dict) -> str:
         per_day = f'{v["per_day"]:.1f}'.replace(".", ",")
         parts.append(
             f'<h3 class="app-bridge-subhead">{html.escape(cfg["title"])}</h3>'
-            f'<p class="app-bridge-summary" data-evidence-split>Trung bình mỗi ngày có {per_day} cầu đạt '
-            f'≥ {cfg["limit"]} ngày chỉ do ngẫu nhiên của 5 671 cặp vị trí; hôm nay có '
+            f'<p class="app-bridge-summary" data-evidence-split>Trung bình mỗi kỳ có {per_day} cầu đạt '
+            f'≥ {cfg["limit"]} kỳ chỉ do ngẫu nhiên của 5 671 cặp vị trí; kỳ đang xem có '
             f'{mode["summary"]["count"]}. {line}</p>'
             + _rows_table("Cầu đã chạy", streaks["rows"], _streak_label)
-            + _rows_table(f"Cùng báo một cặp (cầu ≥ {cfg['limit']} ngày)", mode["consensus"]["rows"],
+            + _rows_table(f"Cùng báo một cặp (cầu ≥ {cfg['limit']} kỳ)", mode["consensus"]["rows"],
                           _consensus_label)
         )
     draws = report["modes"]["lo"]["streaks"]["draws"]
@@ -210,11 +210,12 @@ def method_card() -> str:
         "Có lộn thì báo cả hai chiều (ví dụ 4 và 6 báo 46, 64); không lộn thì thứ tự có nghĩa.",
         "LOTO: kỳ sau trúng khi các số của cặp về đủ số nháy, cộng gộp cả hai chiều. "
         "Đặc Biệt: hai số cuối giải Đặc Biệt kỳ sau nằm trong cặp.",
-        "Cầu chạy N ngày khi N kỳ quay liên tiếp gần nhất đều trúng; kỳ nghỉ không tính.",
+        "Cầu chạy N kỳ khi N kỳ quay liên tiếp gần nhất đều trúng; đây là kỳ quay, không phải ngày lịch. "
+        "Ngày nghỉ không tính vào độ dài cầu.",
         "Số kép hiện kèm số bóng (0↔5, 1↔6, 2↔7, 3↔8, 4↔9: 44 kèm 99) để tham khảo; "
         "số bóng không dùng khi dò cầu.",
         "Ba ô ở trang chủ chọn mỗi cặp số một cầu, xếp theo độ dài rồi số cầu cùng báo. "
-        "Quy tắc này tự đặt và công khai; bảng kiểm chứng bên trên cho thấy nó không nâng tỉ lệ trúng.",
+        "Quy tắc này tự đặt và công khai; xem kết quả đo trong phần kiểm chứng thống kê.",
     ]
     return '<ol class="app-bridge-method">' + "".join(f"<li>{html.escape(i)}</li>" for i in items) + "</ol>"
 
@@ -223,17 +224,21 @@ def form_card() -> str:
     options = "".join(f'<option value="{n}">{n} nháy</option>' for n in range(1, 6))
     return (
         f'<form id="app-bridge-form" class="app-bridge-form" action="{PAGE}" method="get">'
-        '<label>Độ dài của cầu (ngày)<input type="number" name="limit" min="1" max="59" value="5" '
-        'inputmode="numeric" required></label>'
-        '<label>So độ dài<select name="exactlimit"><option value="0">Bằng hoặc hơn</option>'
-        '<option value="1">Chính xác bằng</option></select></label>'
-        f'<label>Số nháy LOTO<select name="nhay">{options}</select></label>'
-        '<fieldset><legend>Loại cầu</legend><label class="app-bridge-inline">'
-        '<input type="checkbox" name="db" value="1"> Giải Đặc Biệt</label></fieldset>'
-        '<fieldset><legend>Chiều ghép</legend><div class="app-bridge-radios">'
-        '<label><input type="radio" name="lon" value="1" checked> Lộn</label>'
-        '<label><input type="radio" name="lon" value="0"> Không lộn</label></div></fieldset>'
-        '<button type="submit">Soi cầu</button></form>'
+        '<label>Độ dài cầu (kỳ quay)<input type="number" name="limit" min="1" max="59" value="5" '
+        'inputmode="numeric" aria-describedby="app-bridge-period-help" required></label>'
+        '<label>Lọc độ dài<select name="exactlimit"><option value="0">Từ độ dài này trở lên</option>'
+        '<option value="1">Đúng độ dài này</option></select></label>'
+        f'<label>Số lần về trong một kỳ<select name="nhay">{options}</select></label>'
+        '<fieldset><legend>Phạm vi dò</legend><label class="app-bridge-inline">'
+        '<input type="checkbox" name="db" value="1"> Chỉ giải Đặc Biệt</label></fieldset>'
+        '<fieldset><legend>Cách ghép hai chữ số</legend><div class="app-bridge-radios">'
+        '<label><input type="radio" name="lon" value="1" checked> Hai chiều (46, 64)</label>'
+        '<label><input type="radio" name="lon" value="0"> Một chiều (46)</label></div></fieldset>'
+        '<button type="submit">Soi cầu</button>'
+        '<div class="app-bridge-form-help"><p id="app-bridge-period-help">'
+        'Độ dài tính bằng các kỳ quay liên tiếp đã trúng, không phải số ngày lịch.</p>'
+        '<p id="app-bridge-mode-help" aria-live="polite">LOTO: dò hai số cuối của cả 27 giải; '
+        'số nháy là tổng số lần cặp số về trong một kỳ.</p></div></form>'
     )
 
 
@@ -257,17 +262,24 @@ def page_payload(report: dict) -> dict:
 def render(report: dict) -> str:
     target = _date(report["target_date"])
     blocks = [
-        card(form_card(), title="Bộ lọc & lựa chọn", span=12, flush=True,
-             aside='<span class="app-analysis-caption">Chọn điều kiện rồi bấm Soi cầu</span>'),
+        card(form_card(), title="1 · Chọn điều kiện", span=12, flush=True)
+        .replace('<section class="', '<section id="app-bridge-conditions" class="', 1),
+        '<section id="app-bridge-results" class="ui-card ui-c12">'
+        '<div class="ui-card-head"><h2 id="app-bridge-list-title">2 · Chọn số và cầu</h2>'
+        f'<span class="app-position-date">Kỳ tiếp theo {target}</span></div>'
+        '<div class="ui-card-body"><p class="app-bridge-help">'
+        'Chọn cặp số để thu hẹp danh sách, rồi bấm <b>Xem từng kỳ</b> ở cầu muốn đối chiếu.</p>'
+        '<div id="app-bridge-list"><p class="app-bridge-empty">'
+        'Bật JavaScript để tính danh sách theo điều kiện đã chọn.</p></div></div></section>',
+        card('<div id="app-bridge-matrix"><p class="app-bridge-help">Bật JavaScript để xem bảng vị trí cầu.'
+             '</p></div>', title="Hoặc chọn trực tiếp trên bảng vị trí", span=12),
         '<section class="ui-card ui-c12 app-bridge-path" hidden>'
         '<div id="app-bridge-path" class="ui-card-body" aria-live="polite"></div></section>',
-        card(f'<div id="app-bridge-list">{best_panel(report, report["source_date"])}</div>',
-             title=f"Cầu cho kỳ {target}", span=12, lift=True),
-        card('<div id="app-bridge-matrix"><p class="app-bridge-help">Bật JavaScript để xem bảng vị trí cầu.'
-             '</p></div>', title="Bảng vị trí cầu", span=12, lift=True),
-        card(backtest_card(report), title="Cầu dài có đáng tin hơn?", span=12, lift=True)
-        .replace('<section class="', '<section id="kiem-chung" class="', 1),
-        card(method_card(), title="Cách soi cầu vị trí", span=12, lift=True),
+        '<details id="kiem-chung" class="app-position-disclosure"><summary>'
+        'Kiểm chứng thống kê · Cầu dài có đáng tin hơn?</summary>'
+        f'<div class="app-position-disclosure-body">{backtest_card(report)}</div></details>',
+        '<details class="app-position-disclosure"><summary>Cách ghép và quy tắc tính cầu</summary>'
+        f'<div class="app-position-disclosure-body">{method_card()}</div></details>',
     ]
     return f"""<!doctype html>
 <html lang="vi">
@@ -279,19 +291,21 @@ def render(report: dict) -> str:
   <title>Soi cầu vị trí — Phân tích XSMB</title>
   <style>
 {shared_results_css()}
-{bridge_css()}
 {analysis_css()}
+{bridge_css()}
   </style>
 </head>
 <body class="app-analysis-page app-position-page">
 {app_shell_open(PAGE)}
-{analysis_header(
-    "Soi cầu vị trí",
-    "Chọn vị trí, theo dõi đường cầu và đối chiếu với từng kỳ kết quả.",
-    (f"Dữ liệu đến {_date(report['source_date'])}", f"Kỳ tiếp theo {target}",
-     "Thống kê mô tả · Không phải khuyến nghị đặt cược"),
-)}
+<header class="app-position-header">
+  <div><h1>Soi cầu vị trí</h1><p>Ghép hai chữ số, rồi đối chiếu cầu qua từng kỳ quay.</p></div>
+  <p class="app-position-date">Dữ liệu đến <b>{_date(report['source_date'])}</b><br>Kỳ tiếp theo <b>{target}</b></p>
+</header>
+<ol class="app-position-steps" data-app-workspace-guide aria-label="Ba bước soi cầu">
+  <li><span>1</span> Chọn điều kiện</li><li><span>2</span> Chọn số và cầu</li><li><span>3</span> Xem từng kỳ</li>
+</ol>
 <div class="ui-grid">{"".join(blocks)}</div>
+<p class="app-position-note">Thống kê mô tả từ kết quả đã quay · Không phải khuyến nghị đặt cược.</p>
 <script id="app-bridge-data" type="application/json">{json_for_html_script(page_payload(report))}</script>
 <script>{bridge_script()}</script>
 {app_shell_close(PAGE)}

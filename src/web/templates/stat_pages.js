@@ -503,7 +503,7 @@ function table(el, headers, rows, opts) {
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
 const MARK_SCOPE = (window.__D_DEMO_DRAWS__ ? "demo." : "");
 // Ba bảng đổi từ tọa độ hàng sang danh tính: không nạp lại khóa vị trí cũ.
-const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet)\.html$/.test(location.pathname) ? ".identity-v3" : "";
+const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet|giai-db-ngay-mai)\.html$/.test(location.pathname) ? ".identity-v3" : "";
 const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index") + MARK_IDENTITY_SUFFIX;
 
 // Dấu Ô theo TỪNG TRANG, dấu CẶP theo TOÀN SITE — hai phạm vi khác nhau vì hai
@@ -1162,6 +1162,8 @@ function renderReversePairs() {
   const pairs = reversePairs()
     .map(([a, b]) => [a, b, c[a], c[b], c[a] + c[b]])
     .sort((x, y) => y[4] - x[4]);
+  // Hai chiều, tổng lượt và số kép đều là lượt xuất hiện: cùng một trần màu.
+  const maximum = Math.max(0, ...pairs.map(p => p[4]), ...doubleNumbers().map(n => c[n]));
 
   table($("sp-grid"),
     ["Hạng", "Cặp số", "Lượt thuận", "Lượt lộn", "Tổng lượt", "Chênh lệch"],
@@ -1182,13 +1184,20 @@ function renderReversePairs() {
       pairOf: (y, i) => (i === 1 ? `${pad2(pairs[y][0])}-${pad2(pairs[y][1])}` : null),
     });
   $("sp-grid").prepend(mk("colgroup", null, [9,25,16.5,16.5,16.5,16.5].map(width => mk("col", {style: `width:${width}%`}))));
+  pairs.forEach((pair, index) => [2, 3, 4].forEach(column =>
+    specialMetricCell($("sp-grid").tBodies[0].rows[index].cells[column], pair[column], maximum,
+      "frequency", `Cặp ${pad2(pair[0])} ↔ ${pad2(pair[1])} · ${["", "", "Lượt thuận", "Lượt lộn", "Tổng lượt"][column]}`, "lượt")));
 
   const kep = $("sp-kep");
   if (kep) {
     const ds = doubleNumbers().map((n) => [pad2(n), c[n]]).sort((a, b) => b[1] - a[1]);
     table(kep, ["Số kép", "Số lần về"], ds,
       { numeric: [1], pairOf: pairCols(ds, 0), key: (y, i) => `double|number${ds[y][0]}|field${i}` });
+    ds.forEach((row, index) => specialMetricCell(kep.tBodies[0].rows[index].cells[1],
+      row[1], maximum, "frequency", `Số kép ${row[0]}`, "lượt"));
   }
+  specialMetricLegend("app-loto-reverse-frequency-legend", "frequency", maximum, "lượt",
+    "Số lượt · chung cho hai chiều, tổng và số kép");
 }
 
 // --- Ma trận 50 họ cặp × ngày ----------------------------------------------
@@ -1499,9 +1508,27 @@ function renderLoGan() {
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     ganBody, { numeric: [2, 3, 4], pairOf: pairCols(ganBody, 0) });
+  // Chỉ tô màu giá trị đang hiển thị; dấu — không phải chu kỳ bằng không.
+  const paint = (id, body, stats, prefix) => {
+    const gapMax = Math.max(0, ...stats.current);
+    const cycleMax = Math.max(0, ...stats.maxGap);
+    const hitMax = Math.max(0, ...stats.hits);
+    body.forEach((row, index) => {
+      const cells = $(id).tBodies[0].rows[index].cells;
+      specialMetricCell(cells[2], row[2], gapMax, "gap", `${row[0]} · Chưa về`, "kỳ");
+      if (typeof row[3] === "number")
+        specialMetricCell(cells[3], row[3], cycleMax, "cycle", `${row[0]} · Chu kỳ dài nhất`, "kỳ");
+      specialMetricCell(cells[4], row[4], hitMax, "frequency", `${row[0]} · Số kỳ có mặt`, "kỳ");
+    });
+    specialMetricLegend(`${prefix}-gap-legend`, "gap", gapMax, "kỳ");
+    specialMetricLegend(`${prefix}-cycle-legend`, "cycle", cycleMax, "kỳ");
+    specialMetricLegend(`${prefix}-frequency-legend`, "frequency", hitMax, "kỳ", "Số kỳ có mặt");
+  };
+  paint("sp-grid", ganBody, g, "app-loto-current");
 
   // 2. Hai bảng ghi rõ "từ trước đến nay" vẫn dùng toàn bộ kho lịch sử.
   const all = rows.length === DRAWS.length ? g : lotoGaps();
+  const historyMax = Math.max(0, ...all.maxGap);
   const half = (el, from, to) => {
     const body = Array.from({ length: to - from }, (_, k) => {
       const i = from + k;
@@ -1509,9 +1536,15 @@ function renderLoGan() {
     });
     table(el, ["Bộ số", "Gan cực đại"], body,
       { numeric: [1], pairOf: pairCols(body, 0) });
+    body.forEach((row, index) => {
+      const value = all.maxGap[from + index];
+      if (value > 0) specialMetricCell(el.tBodies[0].rows[index].cells[1], value,
+        historyMax, "cycle", `Số ${row[0]} · Chu kỳ dài nhất toàn bộ lịch sử`, "kỳ");
+    });
   };
   half($("sp-max-lo"), 0, 50);
   half($("sp-max-hi"), 50, 100);
+  specialMetricLegend("app-loto-history-cycle-legend", "cycle", historyMax, "kỳ");
 
   // 3. Cặp lô gan.
   const pg = pairGaps(rows);
@@ -1523,6 +1556,36 @@ function renderLoGan() {
   table($("sp-pair-gan"),
     ["Cặp số", "Ngày ra gần đây", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     pairBody, { numeric: [2, 3, 4], pairOf: pairCols(pairBody, 0) });
+  paint("sp-pair-gan", pairBody, pg, "app-loto-pair");
+}
+
+/** Màu chỉ mô tả độ lớn của đúng giá trị đã tính, không tạo chỉ số dự báo. */
+function specialMetricCell(cell, value, maximum, metric, label, unit) {
+  const level = value > 0 && maximum > 0 ? Math.min(3, Math.ceil(3 * value / maximum)) : 0;
+  cell.classList.add("app-stat-metric", `app-stat-${metric}`, `app-stat-level-${level}`);
+  cell.dataset.statMetric = metric;
+  cell.dataset.statValue = String(value);
+  cell.dataset.statLevel = String(level);
+  cell.setAttribute("aria-label", `${label}: ${value} ${unit}`);
+}
+
+/** Chú giải công bố đúng khoảng giá trị của thang màu trong dải đang xem. */
+function specialMetricLegend(id, metric, maximum, unit, label) {
+  const legend = $(id);
+  if (!legend) return;
+  const entries = [mk("strong", null, label || (metric === "gap" ? "Chưa về" : metric === "cycle" ? "Chu kỳ dài nhất" : "Số lượt"))];
+  if (metric !== "cycle") entries.push(
+    mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-0`, "aria-hidden": "true"}), `0 ${unit}`]));
+  if (metric === "cycle" && maximum === 0)
+    entries.push(mk("span", null, "Chưa đủ hai lần xuất hiện để ghi nhận chu kỳ."));
+  for (let level = 1; level <= 3; level++) {
+    const low = Math.floor((level - 1) * maximum / 3) + 1;
+    const high = Math.floor(level * maximum / 3);
+    if (low > high) continue;
+    const range = low === high ? String(low) : `${low}–${high}`;
+    entries.push(mk("span", null, [mk("i", {class: `app-stat-${metric} app-stat-level-${level}`, "aria-hidden": "true"}), `${range} ${unit}`]));
+  }
+  fill(legend, entries);
 }
 
 function renderSpecialCycle() {
@@ -1534,6 +1597,10 @@ function renderSpecialCycle() {
   table($("sp-grid"),
     ["Hạng", "Số", "Chưa về (kỳ)", "Chu kỳ dài nhất", "Tổng lần về"],
     body, { numeric: [0, 2, 3, 4], pairOf: pairCols(body, 1) });
+  const maximum = Math.max(0, ...s.current);
+  body.forEach((row, index) => specialMetricCell($("sp-grid").tBodies[0].rows[index].cells[2],
+    row[2], maximum, "gap", `Số ${row[1]} · Chưa về`, "kỳ"));
+  specialMetricLegend("app-special-gap-legend", "gap", maximum, "kỳ");
 }
 
 function renderSpecialBySet() {
@@ -1549,26 +1616,56 @@ function renderSpecialBySet() {
   table($("sp-grid"),
     ["Bộ số", "Về gần nhất", "Chưa về (kỳ)", "Chu kỳ dài nhất", "Tổng lần về"],
     rows, { numeric: [2, 3, 4], pairOf: pairCols(rows, 0) });
+  const maximum = Math.max(0, ...s.current);
+  rows.forEach((row, index) => specialMetricCell($("sp-grid").tBodies[0].rows[index].cells[2],
+    row[2], maximum, "gap", `Số ${row[0]} · Chưa về`, "kỳ"));
+  specialMetricLegend("app-special-gap-legend", "gap", maximum, "kỳ");
 }
 
 function renderTomorrow() {
   const rows = selected();
-  const s = specialGaps(rows);
   setCount(rows);
-  // Điểm tham khảo: số kỳ chưa về chuẩn hoá theo chu kỳ dài nhất của chính
-  // con đó. Đây là mô tả lịch sử, KHÔNG phải xác suất đã hiệu chuẩn.
-  const scored = [];
-  for (let i = 0; i < 100; i++) {
-    const ceiling = Math.max(s.maxGap[i], 1);
-    scored.push([i, s.current[i] / ceiling, s.current[i], s.maxGap[i]]);
+  const number = $("sp-tomorrow-number").value;
+  const byDate = new Map(DRAWS.map(row => [row.d, row]));
+  const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
+  const matches = rows.filter(row => String(row.s).slice(-2) === number).slice().reverse();
+  const format = value => value.split("-").reverse().join("/");
+  // Tra đúng ngày lịch, không lấy hàng kế tiếp: lịch sử có ngày thiếu/nghỉ.
+  const entries = matches.map(row => {
+    const [y, m, d] = row.d.split("-").map(Number);
+    const nextDate = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+    return {row, nextDate, next: byDate.get(nextDate)};
+  });
+  const counts = new Map();
+  for (const entry of entries) if (entry.next) {
+    const suffix = String(entry.next.s).slice(-2);
+    counts.set(suffix, (counts.get(suffix) || 0) + 1);
   }
-  scored.sort((a, b) => b[1] - a[1]);
-  const body = scored.slice(0, 30).map((p, k) => [
-    k + 1, pad2(p[0]), p[1].toFixed(2), p[2], p[3] || "—",
+  const known = entries.filter(entry => entry.next).length;
+  $("sp-tomorrow-heading").textContent = `Những lần Đặc Biệt về ${number}`;
+  $("sp-tomorrow-summary").textContent = `Đặc Biệt ${number}: ${matches.length} lần xuất hiện · ${known} lần có kết quả hôm sau.`;
+  const body = entries.map(({row, nextDate, next}) => [
+    format(row.d),
+    mk("span", {"data-trigger-special": "true"}, specialFull(row.s)),
+    mk("span", {class: "app-tomorrow-result"}, [
+      next ? mk("span", {"data-next-special": "true"}, specialFull(next.s))
+        : mk("span", {class: "app-tomorrow-pending"}, nextDate > latest ? "Chờ kết quả" : "Chưa có dữ liệu"),
+      mk("small", {class: "app-tomorrow-next-mobile"}, format(nextDate)),
+    ]),
+    format(nextDate),
   ]);
-  table($("sp-grid"),
-    ["Hạng", "Số", "Chưa về / chu kỳ dài nhất", "Chưa về", "Chu kỳ dài nhất"],
-    body, { numeric: [0, 2, 3, 4], pairOf: pairCols(body, 1) });
+  const grid = $("sp-grid");
+  table(grid, ["Ngày về", `Đặc Biệt về ${number}`, "Đặc Biệt hôm sau", "Ngày hôm sau"], body, {
+    key: (y, x) => `tomorrow:${number}:${entries[y].row.d}:${x}`,
+    pairOf: (y, x) => x === 1 ? number : x === 2 && entries[y].next ? String(entries[y].next.s).slice(-2) : null,
+  });
+  Array.from(grid.tBodies[0].rows).forEach((row, index) => {
+    if (entries[index]) row.setAttribute("data-trigger-date", entries[index].row.d);
+  });
+  if (!matches.length) grid.tBodies[0].rows[0].cells[0].textContent = `Chưa có lần Đặc Biệt về ${number} trong dải đang chọn.`;
+  $("sp-tomorrow-frequency-note").textContent = `${known} kết quả hôm sau đã biết · Hai số cuối`;
+  fill($("sp-tomorrow-frequencies"), [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([suffix, count]) =>
+    mk("div", {"data-number": suffix, "data-count": count}, [mk("b", null, suffix), mk("span", null, `${count} lần`)])));
 }
 
 
@@ -1902,6 +1999,23 @@ function boot(renderName) {
   const render = window[renderName];
   if (typeof render !== "function") return;
 
+  const tomorrowPick = $("sp-tomorrow-number");
+  if (tomorrowPick) {
+    const number = new URLSearchParams(location.search).get("number");
+    const latest = DRAWS.length ? String(DRAWS[DRAWS.length - 1].s).slice(-2) : "00";
+    tomorrowPick.value = number !== null && /^\d{1,2}$/.test(number) ? pad2(Number(number)) : latest;
+    tomorrowPick.addEventListener("change", () => {
+      const url = new URL(location.href);
+      url.searchParams.set("number", tomorrowPick.value);
+      history.replaceState(null, "", url);
+      render();
+    });
+    $("sp-tomorrow-latest").addEventListener("click", () => {
+      tomorrowPick.value = latest;
+      tomorrowPick.dispatchEvent(new Event("change"));
+    });
+  }
+
   const from = $("sp-from"), to = $("sp-to");
   if (from && to && DRAWS.length) {
     from.min = to.min = DRAWS[0].d;
@@ -1982,19 +2096,27 @@ function renderSpecialBridge() {
   rows.forEach((r) => { count[parseInt(lastTwo(r.s), 10)] += 1; });
 
   // 1. Ma trận Đầu 0-9 x Đuôi 0-9.
-  const head = ["Đầu"].concat(Array.from({ length: 10 }, (_, d) => String(d)));
+  const head = ["Đầu / Đuôi"].concat(Array.from({ length: 10 }, (_, d) => `Đuôi ${d}`));
   const body = Array.from({ length: 10 }, (_, tens) =>
     [mk("b", null, `Đầu ${tens}`)].concat(Array.from({ length: 10 }, (_, ones) => {
       const n = tens * 10 + ones;
       return count[n]
         ? [mk("b", null, pad2(n)), mk("i", { class: "sp-times" }, `${count[n]} lần`)]
-        : mk("span", { class: "sp-none" }, pad2(n));
+        : [mk("span", { class: "sp-none" }, pad2(n)), mk("i", {class: "sp-times"}, "0 lần")];
     })));
   // Ô ma trận LÀ con số: hàng là Đầu, cột là Đuôi, nên cặp suy thẳng từ toạ độ
   // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
   table($("sp-grid"), head, body,
     { pairOf: (y, i) => (i === 0 ? null : pad2(y * 10 + (i - 1))) });
   $("sp-grid").prepend(mk("colgroup", null, [12,...Array(10).fill(8.8)].map(width => mk("col", {style: `width:${width}%`}))));
+  const maximum = Math.max(0, ...count);
+  Array.from($("sp-grid").tBodies[0].rows).forEach((row, tens) => {
+    for (let ones = 0; ones < 10; ones++) {
+      const number = tens * 10 + ones;
+      specialMetricCell(row.cells[ones + 1], count[number], maximum, "frequency", `Số ${pad2(number)}`, "lần");
+    }
+  });
+  specialMetricLegend("app-special-frequency-legend", "frequency", maximum, "lần");
 
   // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
   const lon = $("sp-lon");
@@ -2007,6 +2129,10 @@ function renderSpecialBridge() {
     table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"], lonBody,
       { numeric: [0, 2], pairOf: pairCols(lonBody, 1),
         key: (y, i) => `special-reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}` });
+    const pairMaximum = Math.max(0, ...pairs.map(pair => pair[2]));
+    pairs.forEach((pair, index) => specialMetricCell(lon.tBodies[0].rows[index].cells[2], pair[2], pairMaximum,
+      "frequency", `Cặp ${pad2(pair[0])} - ${pad2(pair[1])}`, "lần"));
+    specialMetricLegend("app-special-reverse-legend", "frequency", pairMaximum, "lần");
   }
 
   // 3. Ba kỳ gần nhất, đủ giải.
@@ -2060,6 +2186,9 @@ function renderSpecialByTong() {
     table($("sp-parity"), ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn",
       "Hôm sau tổng lẻ"], []);
     fitColumns();
+    specialMetricLegend("app-special-gap-legend", "gap", 0, "kỳ");
+    specialMetricLegend("app-special-total-frequency-legend", "frequency", 0, "lần");
+    specialMetricLegend("app-special-transition-legend", "frequency", 0, "lần");
     return;
   }
 
@@ -2075,6 +2204,15 @@ function renderSpecialByTong() {
   ]).sort((a, b) => b[2] - a[2]);
   table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"],
     gan.map((g) => [mk("b", null, g[0]), g[1], g[2], g[3]]), { numeric: [0, 2, 3] });
+  const gapMaximum = Math.max(0, ...gan.map(row => row[2]));
+  const countMaximum = Math.max(0, ...hits);
+  gan.forEach((row, index) => {
+    const cells = $("sp-grid").tBodies[0].rows[index].cells;
+    specialMetricCell(cells[2], row[2], gapMaximum, "gap", `Tổng ${row[0]} · Chưa về`, "kỳ");
+    specialMetricCell(cells[3], row[3], countMaximum, "frequency", `Tổng ${row[0]} · Xuất hiện`, "lần");
+  });
+  specialMetricLegend("app-special-gap-legend", "gap", gapMaximum, "kỳ");
+  specialMetricLegend("app-special-total-frequency-legend", "frequency", countMaximum, "lần");
 
   // 2. Chuyển tổng: đếm cặp (hôm qua, hôm nay) trên các kỳ LIỀN KỀ thật.
   //    Bỏ qua ranh giới ngày nghỉ quay — nối hai kỳ cách nhau nhiều ngày lại
@@ -2114,6 +2252,11 @@ function renderSpecialByTong() {
         f[4].toFixed(2).replace(".", ",") + " %",
         (f[5] > 0 ? "+" : "") + f[5].toFixed(2).replace(".", ","),
       ]), { numeric: [0, 1, 2, 3, 4, 5] });
+    const shown = flat.slice(0, 40);
+    const maximum = Math.max(0, ...shown.map(row => row[2]));
+    shown.forEach((row, index) => specialMetricCell(tr.tBodies[0].rows[index].cells[2],
+      row[2], maximum, "frequency", `Tổng ${row[0]} → ${row[1]}`, "lần"));
+    specialMetricLegend("app-special-transition-legend", "frequency", maximum, "lần");
   }
 
   // 3. Chẵn/lẻ của tổng hôm sau, theo tổng hôm trước.
@@ -2131,6 +2274,12 @@ function renderSpecialByTong() {
     }
     table(par, ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn", "Hôm sau tổng lẻ"],
       body, { numeric: [0, 1, 2, 3] });
+    Array.from(par.tBodies[0].rows).filter(row => row.cells.length === 4).forEach(row => {
+      for (const [column, parity] of [[2, "even"], [3, "odd"]]) {
+        row.cells[column].dataset.statParity = parity;
+        row.cells[column].classList.add(`app-stat-parity-${parity}`);
+      }
+    });
   }
   fitColumns();
 }

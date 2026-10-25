@@ -7,6 +7,7 @@ import pandas as pd
 
 from web.ui_locale import column_label
 from core.lottery_codes import lottery_code
+from core.paths import TEMPLATES
 from web.ui_theme import (
     ALIGN_LEFT,
     ALIGN_RIGHT,
@@ -21,7 +22,7 @@ from web.ui_theme import (
 )
 from web.web_security import security_meta_tags
 from web.page_output import write_page
-from web.lab_ui import lab_card, lab_footer, lab_guide, lab_hero, lab_styles
+from web.lab_ui import lab_guide
 from web.evidence_catalog import ml_row_evidence, ml_summary_evidence, tag_rows, values_block
 
 
@@ -84,17 +85,13 @@ def _date_badge(gen_date: str) -> str:
 
 
 def _base_page(body: str, page_title: str, current: str = "") -> str:
-    """Khung trang ML, dùng chung khung ứng dụng có dock như mọi trang khác.
-
-    Trước đây hai trang ML mở bằng :func:`shell_open` trần, nên chúng là đích
-    ĐẾN của dock mà bản thân lại không có dock: vào rồi thì lối ra duy nhất là
-    nút Back hoặc dải ``nav_links`` ba mục ở đầu trang.
-
-    Args:
-        body: Phần thân trang.
-        page_title: Tiêu đề cho thẻ ``<title>``.
-        current: Tên tệp trang hiện tại, để dock đánh dấu mục đang xem.
-    """
+    """Giữ khung chung; chỉ hai trang Top 10 nhận lớp trình bày ML riêng."""
+    forecast_style = (
+        '<style id="app-ml-forecast-style">'
+        + (TEMPLATES / "ml_forecast.css").read_text(encoding="utf-8")
+        + '</style>'
+        if current.startswith("ml_top10_") else ""
+    )
     return f"""<!doctype html>
 <html lang="vi">
 <head>
@@ -102,7 +99,7 @@ def _base_page(body: str, page_title: str, current: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   {security_meta_tags()}
   {stylesheet_link()}
-  {lab_styles() if current.startswith("ml_top10_") else ""}
+  {forecast_style}
   <title>{page_title}</title>
 </head>
 <body>
@@ -119,61 +116,75 @@ def _prediction_overview(frame: pd.DataFrame, date: str, mode: str) -> str:
     complete = len(frame) > 0 and len(trust) == len(frame) and trust.between(0, 1).all()
     if not complete:
         value = "—"
+        state = "missing"
         note = "Chưa có đủ mức tin thành phần ML trong báo cáo này. Không suy mức tin từ xác suất dự báo."
     else:
         low, high = float(trust.min()), float(trust.max())
         value = f"{low:.1%}" if low == high else f"{low:.1%}–{high:.1%}"
         value = value.replace(".", ",")
         if high == 0:
+            state = "zero"
             note = ("Mức tin thành phần ML bằng 0: xác suất được co hoàn toàn về xác suất nền. "
                     "Thứ hạng có thể dùng xác suất thô để phá hòa; thứ hạng ấy không chứng minh lợi thế dự báo.")
         else:
+            state = "active"
             note = ("Mức tin thành phần ML điều khiển phép co xác suất thô về mức nền. "
                     "Đây là trọng số của thành phần ML, không phải xác suất trúng hay Confidence Score.")
     evidence_id = f"ml-{mode}-summary"
-    return f"""<section class="app-lab-summary" aria-label="Tóm tắt bản dự báo ML">
-<article class="app-lab-stat"><span>Kỳ dự báo</span><strong class="app-lab-forecast-date">{html.escape(date or "—")}</strong><small>Ngày đích ghi trong bản dự báo</small></article>
-<article class="app-lab-stat"><span>Danh sách công bố</span><strong>{len(frame)}</strong><small>Số ứng viên hiện có trong bảng</small></article>
-<article class="app-lab-stat"><span>Mức tin thành phần ML</span><strong data-ml-trust data-evidence="{evidence_id}">{value}</strong><small>Trọng số co về xác suất nền</small></article>
-</section><p class="app-lab-trust-note">{note}</p>"""
+    return f"""<section class="app-ml-context app-lab-summary" aria-label="Kỳ dự báo và mức tin ML" data-ml-trust-state="{state}">
+<dl class="app-ml-meta">
+<div><dt>Kỳ dự báo</dt><dd class="app-lab-forecast-date">{html.escape(date or "—")}</dd></div>
+<div><dt>Mức tin thành phần ML</dt><dd><strong data-ml-trust data-evidence="{evidence_id}">{value}</strong></dd></div>
+<div><dt>Danh sách công bố</dt><dd>{len(frame)} số</dd></div>
+</dl><p class="app-lab-trust-note">{note}</p></section>"""
 
 
-def _forecast_body(frame: pd.DataFrame, table: str, date: str,
-                   rows: list, mode: str) -> str:
-    """Dải số giữ nguyên thứ tự công bố; bảng giữ toàn bộ độ chính xác cũ."""
+def _forecast_body(frame: pd.DataFrame, table: str, date: str, mode: str) -> str:
+    """Đưa kỳ dự báo và bảng lên trước; giữ giải thích kỹ thuật trong mục gập."""
     name = "LOTO" if mode == "loto" else "Đặc Biệt"
     current = f"ml_top10_{mode}.html"
     subtitle = (
-        "Quan sát thứ hạng của thành phần học máy trên dải 00–99. Xác suất biểu diễn khả năng "
-        "một số xuất hiện ít nhất một lần trong kỳ dự báo."
+        "Xác suất một số xuất hiện ít nhất một lần trong kỳ · Dải số 00–99"
         if mode == "loto" else
-        "Theo dõi hai chữ số cuối giải Đặc Biệt qua thành phần học máy. "
-        "Phân phối xác suất trên toàn bộ dải 00–99 được chuẩn hóa về tổng xấp xỉ một."
+        "Dự báo hai số cuối giải Đặc Biệt · Dải số 00–99"
     )
-    numbers = []
-    if "number" in frame:
-        for index, number in enumerate(frame["number"]):
-            evidence = f' data-evidence="{html.escape(rows[index][0])}"' if index < len(rows) else ""
-            numbers.append(f'<li{evidence}><b>{html.escape(lottery_code(number))}</b></li>')
-    strip = ('<ol class="app-lab-number-strip" aria-label="Các số theo thứ tự công bố">'
-             + ''.join(numbers) + '</ol>') if numbers else ''
-    hero = lab_hero(current, f"Dự báo ML · Top 10 {name}", subtitle,
-                    eyebrow="PHÒNG PHÂN TÍCH DỰ BÁO", core="ML / LOTO" if mode == "loto" else "ML / ĐB",
-                    meta="Bản dự báo theo kỳ · Đọc cùng mức tin và kết quả kiểm ngoài mẫu",
-                    action=("#app-lab-ranking", "Xem bảng xếp hạng"))
+    switch = ''.join(
+        f'<a href="{url}" data-ml-mode="{kind}"'
+        + (' aria-current="page"' if url == current else '')
+        + f'>{label}</a>'
+        for kind, url, label in (
+            ("de", "ml_top10_de.html", "Đặc Biệt"),
+            ("loto", "ml_top10_loto.html", "LOTO"),
+        )
+    )
+    header = f'''<header class="app-ml-header" id="app-lab-top">
+<div><p class="app-ml-eyebrow">Dự báo bằng học máy</p><h1>Top 10 {name}</h1>
+<p class="app-ml-subtitle">{subtitle}</p></div>
+<nav class="app-ml-switch" aria-label="Chọn loại dự báo">{switch}</nav></header>'''
     guide = lab_guide([
         ("Xác suất công bố", "Giá trị sau phép co về nền: mức tin × xác suất thô + (1 − mức tin) × xác suất nền. "
          + ("Đặc Biệt được chuẩn hóa sau co để xác suất của toàn bộ 100 số cộng lại 100%. " if mode == "de" else "")
-         + "Nhấp vào giá trị trong bảng để xem bước tính."),
+         + "Hai cột xác suất biểu diễn cùng một giá trị, theo phần trăm và theo thang 0–1. Nhấn vào giá trị trong bảng để xem bước tính."),
         ("Thứ hạng", "Danh sách giữ nguyên thứ tự từ bản dự báo. Nếu xác suất sau co bằng nhau, thứ hạng không biểu thị khác biệt về xác suất công bố."),
         ("Chu kỳ cập nhật", "Sau 18:35 giờ Việt Nam, quy trình cập nhật dự báo cho kỳ tiếp theo. Ngày đích ở trên cho biết bản dự báo đang được hiển thị."),
-    ])
-    ranking = lab_card(table, title=f"10 số {name} đứng đầu" + (" (00–99)" if mode == "loto" else " (2 số cuối Đặc Biệt)"),
-                       aside=_date_badge(date), span=12, flush=True, ident="app-lab-ranking")
-    return (f'<div class="app-lab app-lab-forecast" data-lab-layout="forecast">{hero}'
-            + _prediction_overview(frame, date, mode) + strip + '<div class="ui-grid">' + ranking + '</div>'
+    ]).replace('<details ', '<details data-app-workspace-guide ', 1)
+    if frame.empty:
+        table = '<p class="ui-table-empty">Chưa có bản dự báo để hiển thị. Vui lòng xem lại sau khi cập nhật.</p>'
+    else:
+        table = table.replace(
+            '<div class="ui-table-wrap">',
+            '<div class="ui-table-wrap" tabindex="0" role="region" aria-label="Bảng xếp hạng dự báo ML">',
+            1,
+        ).replace('<table class="ui-table">', '<table class="ui-table" aria-labelledby="app-ml-ranking-title">', 1)
+        table = table.replace('>#</th>', '>Hạng</th>', 1)
+    ranking = f'''<section class="app-ml-ranking" id="app-lab-ranking" aria-labelledby="app-ml-ranking-title">
+<div class="app-ml-ranking-head"><h2 id="app-ml-ranking-title">Bảng xếp hạng</h2>
+<p>Nhấn vào xác suất để xem căn cứ tính toán.</p></div>{table}</section>'''
+    return (f'<div class="app-ml-forecast" data-ml-mode="{mode}">{header}'
+            + _prediction_overview(frame, date, mode) + ranking
             + values_block([(f"ml-{mode}-summary", ml_summary_evidence(mode))])
-            + guide + lab_footer() + '</div>')
+            + guide + '<p class="app-ml-links"><a href="model-quality.html">Chất lượng mô hình</a>'
+            + '<a href="do-tin-cay.html">Độ tin cậy dự báo</a></p></div>')
 
 
 def build() -> None:
@@ -193,13 +204,13 @@ def build() -> None:
     de_table = tag_rows(de_table, [ident for ident, _ in de_rows], cols=(2, 3)) + values_block(de_rows)
 
     write_stylesheet(DOCS_DIR)
-    for mode, frame, table, date, rows in (
-        ("loto", loto_top, loto_table, loto_date, loto_rows),
-        ("de", de_top, de_table, de_date, de_rows),
+    for mode, frame, table, date in (
+        ("loto", loto_top, loto_table, loto_date),
+        ("de", de_top, de_table, de_date),
     ):
         current = f"ml_top10_{mode}.html"
         name = "LOTO" if mode == "loto" else "Đặc Biệt"
-        body = _forecast_body(frame, table, date, rows, mode)
+        body = _forecast_body(frame, table, date, mode)
         write_page(DOCS_DIR / current, _base_page(body, f"ML — 10 số {name} đứng đầu", current))
 
     index_body = f"""

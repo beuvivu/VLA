@@ -33,6 +33,8 @@ nhầm trong `architecture/` về `plans/`.
 
 | Document | Scope |
 | --- | --- |
+| [`plans/2026-10-25-readable-stat-pages.md`](plans/2026-10-25-readable-stat-pages.md) | Sửa lịch sử Đặc Biệt hôm sau, làm rõ bảng ML/cầu vị trí và tô ba mức số đường cầu LOTO. |
+| [`qa/2026-10-25-readable-stat-pages.md`](qa/2026-10-25-readable-stat-pages.md) | Bằng chứng đối chiếu số liệu, hồi quy, màu hạng và kiểm trình duyệt sáu trang. |
 | [`qa/2026-10-19-kiem-toan-dinh-luong.md`](qa/2026-10-19-kiem-toan-dinh-luong.md) | Kiểm toán định lượng VLA và engine Vietlott: đối chiếu toán học các hàm lõi (Bayes thực nghiệm, DerSimonian–Laird, Hedge, e-process, phân phối tập con), đo thời gian thật của pipeline và vector hoá các điểm nghẽn đã đo, đầu ra không đổi; phát hiện về độ tin của tác tử mẫu hình và công suất của bandit Thompson. |
 | [`qa/2026-10-18-quality-plan.md`](qa/2026-10-18-quality-plan.md) | Phạm vi, ràng buộc và kế hoạch kiểm toán XSMB, Vietlott, UI, bảo mật và kiểm chứng. |
 | [`qa/2026-10-18-repository-audit.md`](qa/2026-10-18-repository-audit.md) | Lỗi đã tái hiện, mã đã sửa, số đo hiệu năng, kiểm thử và checklist duy trì chất lượng toàn repo. |

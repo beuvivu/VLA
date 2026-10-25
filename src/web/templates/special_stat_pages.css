@@ -1,0 +1,80 @@
+/* Bốn trang Đặc Biệt: cùng dữ liệu, màu chỉ mã hoá lượt hoặc khoảng theo kỳ. */
+body.app-specialstats-page .app-specialstats-shell{max-width:1200px;min-width:0;margin:0 auto;color:var(--ui-ink);font-size:14px;line-height:1.6}
+body.app-specialstats-page .app-specialstats-shell *{box-sizing:border-box}
+body.app-specialstats-page .app-specialstats-header{margin:0 0 16px;padding:0;border:0;background:none;box-shadow:none}
+body.app-specialstats-page .app-specialstats-header h1{margin:4px 0 8px;color:var(--ui-ink);font-size:clamp(24px,2.5vw,32px);font-weight:700;line-height:1.25;letter-spacing:-.035em}
+body.app-specialstats-page .app-specialstats-header p{margin:0;color:var(--ui-ink-soft);font-size:13px;max-width:80ch}
+body.app-specialstats-page .app-specialstats-header p:first-child{font-size:12px;font-weight:600}
+body.app-specialstats-page .app-specialstats-nav{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 24px;padding:4px;border:1px solid var(--ui-border-strong);border-radius:12px;background:var(--ui-surface);width:fit-content;max-width:100%}
+body.app-specialstats-page .app-specialstats-nav a{display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px 24px;border:1px solid transparent;border-radius:8px;color:var(--ui-ink-soft);font-size:14px;font-weight:600;text-decoration:none}
+body.app-specialstats-page .app-specialstats-nav a[aria-current]{color:var(--ui-brand-ink);background:var(--ui-brand-soft);border-color:var(--ui-brand-border)}
+body.app-specialstats-page .app-specialstats-nav a:hover{background:var(--ui-surface-2);color:var(--ui-ink)}
+body.app-specialstats-page .app-specialstats-filters{margin:0 0 24px;padding:16px 24px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface)}
+body.app-specialstats-page .app-specialstats-filters h2{margin:0 0 8px;color:var(--ui-ink);font-size:14px;font-weight:650}
+body.app-specialstats-page .app-specialstats-shell .sp-controls{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none}
+body.app-specialstats-page .app-specialstats-shell .sp-controls label{font-size:13px;color:var(--ui-ink-2)}
+body.app-specialstats-page .app-specialstats-shell .sp-controls input[type="date"]{min-height:40px;padding:8px;border:1px solid var(--ui-border-strong);border-radius:8px;background:var(--ui-surface);color:var(--ui-ink);font:inherit}
+body.app-specialstats-page .app-specialstats-shell .sp-chips{gap:8px;flex-wrap:wrap}
+body.app-specialstats-page .app-specialstats-shell .sp-chip{min-height:36px;padding:8px 12px;border-radius:8px;font-size:12px}
+body.app-specialstats-page .app-specialstats-shell .sp-count{margin-left:0;color:var(--ui-ink-2);font-size:13px;font-weight:600}
+body.app-specialstats-page .app-specialstats-shell .sp-marktools{display:flex;flex:1 1 100%;flex-wrap:wrap;gap:8px 16px;margin:0;padding:8px 0 0;border-top:1px solid var(--ui-border);font-size:12px}
+body.app-specialstats-page .app-specialstats-shell .sp-hint{font-size:12px}
+body.app-specialstats-page .app-specialstats-shell .sp-chip-check{min-height:32px;padding:4px 8px;font-size:12px}
+body.app-specialstats-page .app-specialstats-shell .sp-btn{min-height:36px;padding:8px 12px;border-radius:8px;box-shadow:none}
+body.app-specialstats-page .app-specialstats-panel{min-width:0;max-width:100%;margin:0 0 24px;border:1px solid var(--ui-border-strong);border-radius:12px;background:var(--ui-surface);overflow:hidden}
+body.app-specialstats-page .app-specialstats-panel>header{padding:16px 24px}
+body.app-specialstats-page .app-specialstats-panel h2{margin:0 0 4px;color:var(--ui-ink);font-size:17px;line-height:1.4;font-weight:650}
+body.app-specialstats-page .app-specialstats-panel>header p{margin:0;color:var(--ui-ink-soft);font-size:13px;max-width:90ch}
+body.app-specialstats-page .app-specialstats-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+body.app-specialstats-page .app-specialstats-shell .sp-scroll{width:100%;min-width:0;max-width:100%;max-height:min(68vh,640px);margin:0;padding:0;overflow:auto;overscroll-behavior:contain;border:0;border-top:1px solid var(--ui-border);border-radius:0;background:var(--ui-surface);box-shadow:none;backdrop-filter:none;scrollbar-width:thin}
+/* Ma trận 00–99 luôn hiện đủ mười hàng; chỉ cuộn ngang khi khung hẹp. */
+body.app-specialstats-page .app-specialstats-shell .app-special-matrix{max-height:none;height:auto;overscroll-behavior-y:auto}
+body.app-specialstats-page .app-specialstats-shell .sp-table{width:100%;min-width:600px;table-layout:fixed;margin:0;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums}
+body.app-specialstats-page .app-specialstats-shell .sp-table :is(th,td){padding:8px 16px;vertical-align:middle}
+body.app-specialstats-page .app-specialstats-shell .sp-table th{height:48px;color:var(--ui-ink-2);font-size:12px;font-weight:650;white-space:normal;line-height:1.5;text-transform:none;letter-spacing:0;background:var(--ui-surface-2);border-bottom:1px solid var(--ui-border-strong)}
+body.app-specialstats-page .app-specialstats-shell .sp-table td{height:44px;color:var(--ui-ink);border-bottom:1px solid var(--ui-border);background:var(--ui-surface);box-shadow:none}
+body.app-specialstats-page .app-specialstats-shell .sp-table td:not(.num){white-space:normal;overflow-wrap:normal}
+body.app-specialstats-page .app-specialstats-shell .sp-table tbody tr:hover{background:none;outline:1px solid var(--ui-brand-border);outline-offset:-1px}
+body.app-specialstats-page .app-specialstats-shell .sp-table td:not(.marked):first-child{background:var(--ui-surface-2)}
+body.app-specialstats-page .app-specialstats-shell .sp-table .sp-empty-row{height:auto;padding:24px!important;white-space:normal;color:var(--ui-ink-soft);font-size:13px;font-style:normal}
+body.app-specialstats-page .app-special-matrix #sp-grid{min-width:760px;table-layout:fixed}
+body.app-specialstats-page .app-special-matrix #sp-grid :is(th,td){padding:8px 4px;text-align:center}
+body.app-specialstats-page .app-special-matrix #sp-grid td{height:64px}
+body.app-specialstats-page .app-special-matrix #sp-grid td b,body.app-specialstats-page .app-special-matrix #sp-grid .sp-none{display:block;font-size:24px;font-weight:700;line-height:1.2;color:inherit}
+body.app-specialstats-page .app-special-matrix #sp-grid td:first-child b{font-size:13px;font-weight:650}
+body.app-specialstats-page .app-special-matrix #sp-grid .sp-times{display:block;margin-top:4px;color:inherit;font-size:12px;font-weight:500;font-style:normal;line-height:1.4}
+body.app-specialstats-page .app-specialstats-shell #sp-lon{min-width:400px}
+body.app-specialstats-page .app-specialstats-shell #sp-lon td:nth-child(2){font-size:24px;font-weight:650;color:var(--ui-special-ink)}
+body.app-specialstats-page .app-specialstats-shell[data-stat-view="chu-ky-dac-biet"] #sp-grid th:first-child{width:12%}
+body.app-specialstats-page .app-specialstats-shell[data-stat-view="chu-ky-dac-biet"] #sp-grid td:nth-child(2),body.app-specialstats-page .app-specialstats-shell[data-stat-view="cau-dac-biet-theo-bo-so"] #sp-grid td:first-child{font-size:22px;font-weight:700;color:var(--ui-special-ink);font-family:var(--ui-mono)}
+body.app-specialstats-page .app-specialstats-shell[data-stat-view="giai-dac-biet-theo-tong"] :is(#sp-grid,#sp-parity){min-width:480px}
+body.app-specialstats-page .app-specialstats-shell[data-stat-view="giai-dac-biet-theo-tong"] :is(#sp-grid,#sp-parity) td:first-child,body.app-specialstats-page .app-specialstats-shell #sp-trans td:nth-child(-n+2){text-align:center;font-size:22px;font-weight:700;color:var(--ui-special-ink)}
+body.app-specialstats-page .app-specialstats-shell #sp-trans{min-width:700px}
+body.app-specialstats-page .app-specialstats-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:0 24px 16px;color:var(--ui-ink-soft);font-size:12px}
+body.app-specialstats-page .app-specialstats-legend>span{display:inline-flex;align-items:center;gap:8px;line-height:1.5}
+body.app-specialstats-page .app-specialstats-legend i{display:inline-block;width:16px;height:16px;flex:none;border:1px solid var(--ui-border-strong);border-radius:4px}
+body.app-specialstats-page .app-specialstats-shell .app-stat-level-0:not(.marked){background:var(--ui-surface-2);color:var(--ui-ink-soft)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-frequency.app-stat-level-1:not(.marked){background:color-mix(in srgb,var(--ui-special-bg) 35%,var(--ui-surface));color:var(--ui-special-ink)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-frequency.app-stat-level-2:not(.marked){background:color-mix(in srgb,var(--ui-special-bg) 65%,var(--ui-surface));color:var(--ui-special-ink)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-frequency.app-stat-level-3:not(.marked){background:var(--ui-special-bg);color:var(--ui-special-ink)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-gap.app-stat-level-1:not(.marked){background:color-mix(in srgb,var(--ui-warn-soft) 35%,var(--ui-surface));color:var(--ui-warn)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-gap.app-stat-level-2:not(.marked){background:color-mix(in srgb,var(--ui-warn-soft) 65%,var(--ui-surface));color:var(--ui-warn)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-gap.app-stat-level-3:not(.marked){background:var(--ui-warn-soft);color:var(--ui-warn)}
+body.app-specialstats-page .app-specialstats-shell .app-stat-parity-even:not(.marked){background:var(--ui-ok-soft);color:var(--ui-ok);font-weight:650}
+body.app-specialstats-page .app-specialstats-shell .app-stat-parity-odd:not(.marked){background:var(--ui-warn-soft);color:var(--ui-warn);font-weight:650}
+body.app-specialstats-page .app-specialstats-legend :is(.app-stat-parity-even,.app-stat-parity-odd){padding:4px 8px;border-radius:4px}
+body.app-specialstats-page .app-specialstats-shell .sp-table td.marked,body.app-specialstats-page .app-specialstats-shell .sp-table td.marked *{color:var(--ui-mark-ink)}
+body.app-specialstats-page :is(.app-specialstats-method,.app-specialstats-recent){margin:16px 0 0;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface);overflow:hidden}
+body.app-specialstats-page :is(.app-specialstats-method,.app-specialstats-recent)>summary{min-height:48px;padding:16px 24px;color:var(--ui-ink);font-size:14px;font-weight:600;cursor:pointer}
+body.app-specialstats-page :is(.app-specialstats-method,.app-specialstats-recent)>p{margin:0;padding:0 24px 16px;color:var(--ui-ink-soft);font-size:13px;line-height:1.75}
+body.app-specialstats-page .app-specialstats-method .sp-note{margin:0;padding:0 24px 16px;border:0;border-radius:0;background:none;box-shadow:none;color:var(--ui-ink-soft);font-size:13px;line-height:1.75}
+body.app-specialstats-page .app-specialstats-recent .sp-recent{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:0 24px 24px}
+body.app-specialstats-page .app-specialstats-recent .sp-draw{min-width:0;margin:0;padding:16px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface-2)}
+body.app-specialstats-page .app-specialstats-recent .sp-draw h4{margin:0 0 8px;font-size:13px;color:var(--ui-ink)}
+body.app-specialstats-page .app-specialstats-recent .sp-db{margin:0 0 8px;color:var(--ui-special-ink);font-size:15px}
+body.app-specialstats-page .app-specialstats-recent .sp-lolist{display:flex;flex-wrap:wrap;gap:4px}
+body.app-specialstats-page .app-specialstats-footer{max-width:1200px;margin:24px auto 0!important;color:var(--ui-ink-soft);font-size:12px!important}
+body.app-specialstats-page .app-specialstats-shell :is(a,button,input,summary,[tabindex]):focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:3px}
+@media(max-width:1100px){body.app-specialstats-page .app-specialstats-pair{grid-template-columns:minmax(0,1fr);gap:0}body.app-specialstats-page .app-specialstats-shell[data-stat-view="giai-dac-biet-theo-tong"] :is(#sp-grid,#sp-parity){min-width:480px}}
+@media(max-width:700px){body.app-specialstats-page .app-specialstats-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;margin-bottom:16px}body.app-specialstats-page .app-specialstats-nav a{padding:8px 16px}body.app-specialstats-page .app-specialstats-filters{padding:16px;margin-bottom:16px}body.app-specialstats-page .app-specialstats-shell .sp-controls{gap:12px}body.app-specialstats-page .app-specialstats-shell .sp-count{flex-basis:100%}body.app-specialstats-page .app-specialstats-panel{margin-bottom:16px}body.app-specialstats-page .app-specialstats-panel>header{padding:16px}body.app-specialstats-page .app-specialstats-legend{padding:0 16px 16px;gap:8px 12px}body.app-specialstats-page .app-specialstats-shell .sp-table :is(th,td){padding:8px 12px}body.app-specialstats-page .app-special-matrix #sp-grid :is(th,td){padding:8px 4px}body.app-specialstats-page :is(.app-specialstats-method,.app-specialstats-recent)>summary{padding:16px}body.app-specialstats-page :is(.app-specialstats-method,.app-specialstats-recent)>p,body.app-specialstats-page .app-specialstats-method .sp-note{padding:0 16px 16px}body.app-specialstats-page .app-specialstats-recent .sp-recent{grid-template-columns:minmax(0,1fr);padding:0 16px 16px}}
+@media print{body.app-specialstats-page :is(.app-specialstats-nav,.app-specialstats-filters){display:none}body.app-specialstats-page .app-specialstats-shell .sp-scroll{max-height:none;overflow:visible}body.app-specialstats-page .app-specialstats-shell .sp-table{min-width:0}body.app-specialstats-page .app-specialstats-shell .sp-table :is(th,td){position:static;padding:4px;font-size:10px}}
