@@ -10,6 +10,63 @@ PRESET_PAGES = ("cau-dac-biet-theo-bo-so.html", "chu-ky-dac-biet.html",
                 "lo-gan.html", "giai-db-ngay-mai.html")
 
 
+def check_tomorrow_panels(page, width):
+    """Hai khung cân nhau; mọi LOTO phải thuộc đúng ngày nằm cạnh giải."""
+    state = page.evaluate("""() => {
+      const left = document.querySelector('.app-tomorrow-history');
+      const right = document.querySelector('.app-tomorrow-stat');
+      const scroll = left.querySelector('.sp-scroll');
+      const box = e => {const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,bottom:r.bottom}};
+      const rightStyle=getComputedStyle(right),end=right.lastElementChild;
+      const rightContentBottom=box(end).bottom+parseFloat(getComputedStyle(end).marginBottom)
+        +parseFloat(rightStyle.paddingBottom)+parseFloat(rightStyle.borderBottomWidth);
+      const errors=[];
+      const byDate=new Map(DRAWS.map(r=>[r.d,r]));
+      const rows=[...document.querySelectorAll('#sp-grid tbody tr[data-trigger-date]')];
+      for (const row of rows) {
+        const day=row.dataset.triggerDate;
+        const next=new Date(day+'T00:00:00Z'); next.setUTCDate(next.getUTCDate()+1);
+        for (const [kind,date] of [['trigger',day],['next',next.toISOString().slice(0,10)]]) {
+          const field=row.querySelector(`[data-${kind}-loto]`), draw=byDate.get(date);
+          if (!field || field.dataset.lotoDate!==date) {errors.push({day,kind,date,error:'sai ngày LOTO'});continue;}
+          const actual=[...field.querySelectorAll('[data-loto-number]')].map(e=>[e.dataset.lotoNumber,+e.dataset.lotoCount]);
+          const counts=new Map();
+          for (const n of draw?.n||[]) counts.set(n,(counts.get(n)||0)+1);
+          const expected=[...counts].sort((a,b)=>a[0].localeCompare(b[0]));
+          if (JSON.stringify(actual)!==JSON.stringify(expected)) errors.push({day,kind,error:'sai số hoặc nháy'});
+        }
+      }
+      scroll.scrollTop=scroll.scrollHeight; scroll.scrollLeft=scroll.scrollWidth;
+      const lastRow=document.querySelector('#sp-grid tbody tr:last-child');
+      const lastColumn=document.querySelector('#sp-grid thead th:last-child');
+      const result={left:box(left),right:box(right),rightContentBottom,scroll:box(scroll),errors,rows:rows.length,
+        clippedSpecials:[...document.querySelectorAll('[data-trigger-special],[data-next-special]')].filter(e=>{
+          const r=e.getBoundingClientRect(),cell=e.closest('td').getBoundingClientRect();
+          return r.left<cell.left-.5 || r.right>cell.right+.5;
+        }).map(e=>e.textContent),
+        columns:[...document.querySelectorAll('#sp-grid thead th')].map(e=>getComputedStyle(e).display),
+        lastRow:box(lastRow),lastColumn:box(lastColumn),pageOverflow:document.documentElement.scrollWidth-innerWidth};
+      scroll.scrollTop=0;scroll.scrollLeft=0;
+      return result;
+    }""")
+    assert not state["errors"], state
+    assert not state["clippedSpecials"], state
+    assert state["pageOverflow"] <= 1, state
+    assert len(state["columns"]) == 5 and "none" not in state["columns"], state
+    assert state["lastColumn"]["x"] + state["lastColumn"]["w"] <= state["scroll"]["x"] + state["scroll"]["w"] + 1, state
+    assert state["lastRow"]["bottom"] <= state["scroll"]["bottom"] + 1, state
+    left, right = state["left"], state["right"]
+    if width > 1050:
+        assert abs(left["y"] - right["y"]) <= 1, state
+        assert abs(left["bottom"] - right["bottom"]) <= 1, state
+        assert abs(left["w"] - right["w"]) <= 1, state
+        assert abs(state["scroll"]["bottom"] - left["bottom"]) <= 2, state
+        assert abs(state["rightContentBottom"] - right["bottom"]) <= 1, state
+    else:
+        assert right["y"] >= left["bottom"] - 1, state
+    return {"equal_panels": "passed", "loto_dates": "passed", "rows": state["rows"]}
+
+
 def check_preset_ranges(page, base, out: Path, width, dark):
     """Bấm các mốc thật, đối chiếu số kỳ và số lần về với dữ liệu gốc."""
     results = []
@@ -45,11 +102,37 @@ def check_preset_ranges(page, base, out: Path, width, dark):
                     assert state["first"] in state["count"] and state["last"] in state["count"], state
                 if name != "giai-db-ngay-mai.html":
                     assert state["hits"] == state["wantHits"], state
+                else:
+                    check_tomorrow_panels(page, width)
                 page.locator("#sp-clear-marks").click()
                 assert page.locator("#sp-count").inner_text() == state["count"]
                 results.append({"page": name, "width": width, "dark": dark,
                                 "days": days, "preset_range": "passed", "draws": state["actual"]})
             assert not errors, errors
+            if name == "giai-db-ngay-mai.html":
+                page.locator('.sp-chip[data-days="30"]').click()
+                empty_number = page.evaluate("""() => {
+                  const seen=new Set(selected().map(r=>r.s.slice(-2)));
+                  return Array.from({length:100},(_,i)=>String(i).padStart(2,'0')).find(n=>!seen.has(n));
+                }""")
+                selected_number = page.locator('#sp-tomorrow-number').input_value()
+                page.locator('#sp-tomorrow-number').select_option(empty_number)
+                empty_state = check_tomorrow_panels(page, width)
+                assert empty_state["rows"] == 0, empty_state
+                page.locator('#sp-tomorrow-number').select_option(selected_number)
+                page.locator('.sp-chip[data-days="0"]').click()
+                check_tomorrow_panels(page, width)
+                results.append({"page": name, "width": width, "dark": dark,
+                                "empty_tomorrow_panels": "passed"})
+                if width == 1440:
+                    viewport = page.viewport_size
+                    page.set_viewport_size({"width": 1100, "height": viewport["height"]})
+                    try:
+                        check_tomorrow_panels(page, 1100)
+                        results.append({"page": name, "width": 1100, "dark": dark,
+                                        "narrow_tomorrow_panels": "passed"})
+                    finally:
+                        page.set_viewport_size(viewport)
             page.screenshot(path=str(out / f"preset-{name}-{width}-{'dark' if dark else 'light'}.png"))
         finally:
             page.remove_listener("pageerror", record_error)

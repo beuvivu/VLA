@@ -92,3 +92,16 @@ Tệp: `src/pages/build_stat_pages.py`, `src/web/templates/stat_pages.js`, CSS r
 - [x] Dựng ba trang qua `write_page`, kiểm Chromium 390/768/1440 px, sáng/tối và thao tác lọc/đánh dấu/cuộn riêng. Review độc lập, cập nhật QA và PR.
 
 Điểm review: thang Đầu/Đuôi cùng đại lượng dùng cùng trần; màu các đại lượng khác nhau có chú giải riêng; các bảng max toàn lịch sử không thay theo preset; gan đếm một lần mỗi kỳ dù có nhiều nháy; 45 cặp lộn và 10 kép giữ đúng quan hệ số và thứ tự.
+
+## Tinh chỉnh tiếp: hai khung bằng chiều cao và LOTO theo từng ngày
+
+Yêu cầu tiếp nối cho `giai-db-ngay-mai` và bốn trang `soi-path-*`: hai khung nhìn thấy phải có cùng mép trên/dưới ở bố cục hai cột, vùng bảng trái điền đủ chiều cao khối phải khi đổi lọc hoặc chọn cầu. Trang Đặc Biệt hôm sau bổ sung LOTO của chính ngày đã về và ngày lịch kế tiếp, nằm cạnh giải Đặc Biệt tương ứng.
+
+Hướng thực hiện: tiếp tục CSS/JS/Jinja hiện có, dùng grid/flex và vùng cuộn có phạm vi. CSS riêng phải thắng giới hạn chiều cao của lớp nền; không đặt chiều cao pixel cố định hay đổi khung chung. Trên màn hình nhỏ, xếp dọc và cho đọc đủ nội dung, không giữ containment khiến bảng mất chiều cao. Đồng bộ bằng JavaScript chỉ cần nếu CSS không đáp ứng được.
+
+- [x] Lưu baseline dữ liệu và kích thước thật; xác định quy tắc CSS đang chặn chiều cao.
+- [x] Đặc Biệt hôm sau: hai cột bằng chiều rộng/chiều cao, giữ thứ tự và khóa đánh dấu cũ; LOTO đủ 27 lượt, giữ số 0 đầu/nháy trùng, không lấy nhầm ngày hay bịa kết quả khi thiếu/chờ.
+- [x] Bốn đường cầu: cân hai khung có viền, ghi chú trong khung trái, bảng cuộn điền phần còn lại; giữ query/chọn cầu/lọc/ngày và trạng thái trống hợp lệ.
+- [x] Kiểm đỏ → xanh và đột biến đúng hành vi; kiểm cả trạng thái ít/nhiều/rỗng, đổi số, đổi 5/10/toàn bộ kỳ và đánh dấu.
+- [x] Dựng đúng năm HTML qua nguồn và `write_page`, chốt manifest, đo Chromium ở desktop/tablet/mobile sáng/tối; review độc lập đối chiếu dữ liệu và hình học sau mỗi thao tác.
+- [ ] Chạy kiểm liên quan và toàn bộ frontend, Ruff/hợp đồng trang; đưa bản sửa qua PR và chỉ hợp nhất khi CI đạt.
