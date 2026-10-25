@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-10-24T12:16:53Z",
+  "generated_at": "2026-10-25T04:26:37Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -107,7 +107,7 @@
     },
     "tong": {
       "mean_brier_skill": 5.184394684019419e-05,
-      "mean_logloss_skill": 5.193632398411547e-05
+      "mean_logloss_skill": 5.193632398421705e-05
     }
   },
   "screened_groups": [

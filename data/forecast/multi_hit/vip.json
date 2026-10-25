@@ -1,6 +1,6 @@
 {
   "version": 9,
-  "generated_at": "2026-10-24T12:19:15Z",
+  "generated_at": "2026-10-25T04:28:29Z",
   "source_date": "2026-10-24",
   "target_date": "2026-10-25",
   "draws": 4245,
@@ -86,7 +86,7 @@
       {
         "start_date": "2024-07-20",
         "C": 0.0001,
-        "inner_gain": -1.3290760156714487e-05
+        "inner_gain": -1.3290760156686732e-05
       },
       {
         "start_date": "2025-03-31",
@@ -142,7 +142,7 @@
     "lift": 1.0237988325101033,
     "z": 0.5836705076182348,
     "p_value": 0.2797210065690602,
-    "predicted": 0.02855737004450466
+    "predicted": 0.02855737004450476
   },
   "prospective": {
     "after": "2026-10-15",
@@ -158,8 +158,8 @@
   "picks": [
     {
       "number": "87",
-      "probability": 0.0330588676035491,
-      "x_base": 1.1113854578951938,
+      "probability": 0.03305886760354911,
+      "x_base": 1.1113854578951943,
       "confidence": "Low",
       "reasons": [
         "bóng của Đặc Biệt 32",
@@ -168,8 +168,8 @@
     },
     {
       "number": "69",
-      "probability": 0.03045584620771426,
-      "x_base": 1.0238761045617992,
+      "probability": 0.030455846207714275,
+      "x_base": 1.0238761045617997,
       "confidence": "Low",
       "reasons": [
         "cùng tổng với Đặc Biệt 32",
@@ -178,8 +178,8 @@
     },
     {
       "number": "96",
-      "probability": 0.030284196250488712,
-      "x_base": 1.0181055116728788,
+      "probability": 0.030284196250488723,
+      "x_base": 1.018105511672879,
       "confidence": "Low",
       "reasons": [
         "cùng tổng với Đặc Biệt 32",
@@ -188,8 +188,8 @@
     },
     {
       "number": "62",
-      "probability": 0.029771473037886537,
-      "x_base": 1.0008685896692289,
+      "probability": 0.02977147303788655,
+      "x_base": 1.0008685896692293,
       "confidence": "Low",
       "reasons": [
         "đầu 6 về 21 lần/7 kỳ",
@@ -198,8 +198,8 @@
     },
     {
       "number": "64",
-      "probability": 0.029743721125226004,
-      "x_base": 0.9999356154206982,
+      "probability": 0.029743721125226018,
+      "x_base": 0.9999356154206986,
       "confidence": "Low",
       "reasons": [
         "đầu 6 về 21 lần/7 kỳ",
