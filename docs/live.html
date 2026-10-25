@@ -520,6 +520,9 @@
     }
 
     function syncPrizes(prizes) {
+      window.clearTimeout(revealTimer);
+      revealTimer = null;
+      revealQueue = [];
       var filled = 0;
       PRIZES.forEach(function (prize) {
         var incoming = Array.isArray(prizes && prizes[prize.key]) ? prizes[prize.key] : [];

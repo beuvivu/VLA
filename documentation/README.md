@@ -90,6 +90,8 @@ nhầm trong `architecture/` về `plans/`.
 
 | Document | Scope |
 | --- | --- |
+| [`plans/2026-10-25-full-repo-audit.md`](plans/2026-10-25-full-repo-audit.md) | Kế hoạch hợp nhất PR #191 khi CI xanh, rà toàn kho và sửa lỗi có bằng chứng tái hiện. |
+| [`qa/2026-10-25-full-repo-audit.md`](qa/2026-10-25-full-repo-audit.md) | Báo cáo lỗi đã tái hiện, bản sửa và kiểm chứng toàn kho sau PR #191; nêu riêng lỗi lịch nghỉ quay cần chuyển chính sách sổ. |
 | [`architecture/2026-09-26-theme-search-icons-design.md`](architecture/2026-09-26-theme-search-icons-design.md) | Đặc tả chủ đề sáng/tối, biểu tượng SVG và tìm kiếm toàn cục (nguồn chuẩn của hợp đồng giao diện 26-09-2026). |
 | [`plans/2026-09-26-compact-results-calendar.md`](plans/2026-09-26-compact-results-calendar.md) | Kế hoạch: bảng kết quả gọn và lịch vạn niên. |
 | [`plans/2026-09-26-crafto-integration.md`](plans/2026-09-26-crafto-integration.md) | Kế hoạch tích hợp ngôn ngữ thị giác Crafto Application. |

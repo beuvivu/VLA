@@ -55,10 +55,14 @@ jobs:
           set -euo pipefail
           # Mã nguồn tự dừng sạch khi dữ liệu chưa về hoặc kỳ đích đã quay xong.
           # Đó là kết quả hợp lệ của một lượt chạy sớm, không phải sự cố, nên
-          # lượt chạy được đánh dấu bỏ qua thay vì làm đỏ workflow.
+          # mã 3 đánh dấu bỏ qua; mọi lỗi thật vẫn làm đỏ workflow.
           if python src/forecast/modeling/run_daily_prediction.py; then
             echo "generated=true" >> "$GITHUB_OUTPUT"
           else
+            prediction_status=$?
+            if (( prediction_status != 3 )); then
+              exit "$prediction_status"
+            fi
             echo "generated=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Chưa sinh được dự đoán ở lượt này; mốc giờ sau sẽ thử lại."
           fi
@@ -130,7 +134,13 @@ jobs:
               git rebase --abort 2>/dev/null || true
               git fetch origin "${GITHUB_REF_NAME}"
               git reset --hard "origin/${GITHUB_REF_NAME}"
-              if ! python src/forecast/modeling/run_daily_prediction.py; then
+              if python src/forecast/modeling/run_daily_prediction.py; then
+                :
+              else
+                prediction_status=$?
+                if (( prediction_status != 3 )); then
+                  exit "$prediction_status"
+                fi
                 echo "::notice::Trên nền mới nhất không còn dự đoán nào cần ghi."
                 exit 0
               fi

@@ -78,13 +78,15 @@ function rowFor(dom, id, number, column = 0) {
 
 const viDate = iso => iso.split('-').reverse().join('-');
 // Hand-checked outcomes for the marked draws above; independent of the production helpers.
+// Gan LOTO chỉ đếm kỳ trượt giữa hai lần về: chỉ số 402 và 412 có 9 kỳ trượt.
+// Cột chu kỳ Đặc Biệt báo khoảng cách hai lần về, là phép đo khác.
 const outcomes = {
-  30: {specialHits: 2, specialGap: 20, lotoHits: 2, lotoGap: 10, pairHits: 5, pairGap: 8},
-  60: {specialHits: 3, specialGap: 30, lotoHits: 2, lotoGap: 10, pairHits: 5, pairGap: 8},
-  90: {specialHits: 4, specialGap: 35, lotoHits: 2, lotoGap: 10, pairHits: 5, pairGap: 8},
-  180: {specialHits: 5, specialGap: 70, lotoHits: 3, lotoGap: 102, pairHits: 6, pairGap: 101},
-  365: {specialHits: 8, specialGap: 70, lotoHits: 4, lotoGap: 200, pairHits: 8, pairGap: 140},
-  0: {specialHits: 10, specialGap: 70, lotoHits: 5, lotoGap: 200, pairHits: 10, pairGap: 140},
+  30: {specialHits: 2, specialGap: 20, lotoHits: 2, lotoGap: 9, pairHits: 5, pairGap: 7},
+  60: {specialHits: 3, specialGap: 30, lotoHits: 2, lotoGap: 9, pairHits: 5, pairGap: 7},
+  90: {specialHits: 4, specialGap: 35, lotoHits: 2, lotoGap: 9, pairHits: 5, pairGap: 7},
+  180: {specialHits: 5, specialGap: 70, lotoHits: 3, lotoGap: 101, pairHits: 6, pairGap: 100},
+  365: {specialHits: 8, specialGap: 70, lotoHits: 4, lotoGap: 199, pairHits: 8, pairGap: 139},
+  0: {specialHits: 10, specialGap: 70, lotoHits: 5, lotoGap: 199, pairHits: 10, pairGap: 139},
 };
 
 for (const slug of slugs) {
@@ -111,8 +113,8 @@ for (const slug of slugs) {
           ['12', viDate(draws[412].d), '7', String(wanted.lotoGap), String(wanted.lotoHits)]);
         assert.deepEqual(rowFor(dom, 'sp-pair-gan', '12 - 21'),
           ['12 - 21', viDate(draws[418].d), '1', String(wanted.pairGap), String(wanted.pairHits)]);
-        assert.deepEqual(rowFor(dom, 'sp-max-lo', '12'), ['12', '200 kỳ']);
-        assert.deepEqual(rowFor(dom, 'sp-max-hi', '99'), ['99', '1 kỳ']);
+        assert.deepEqual(rowFor(dom, 'sp-max-lo', '12'), ['12', '199 kỳ']);
+        assert.deepEqual(rowFor(dom, 'sp-max-hi', '99'), ['99', '0 kỳ']);
       } else {
         const matches = selected.filter(row => row.s.endsWith('99')).slice().reverse();
         assert.deepEqual([...dom.window.document.querySelectorAll('#sp-grid tr[data-trigger-date]')].map(row => row.dataset.triggerDate), matches.map(row => row.d));
@@ -139,7 +141,7 @@ for (const slug of slugs) {
       } else if (slug === 'chu-ky-dac-biet') {
         assert.deepEqual(rowFor(dom, 'sp-grid', '12', 1).slice(1), ['12', '4', '—', '1']);
       } else if (slug === 'lo-gan') {
-        assert.deepEqual(rowFor(dom, 'sp-grid', '99'), ['99', viDate(draws[419].d), '0', '1', '7']);
+        assert.deepEqual(rowFor(dom, 'sp-grid', '99'), ['99', viDate(draws[419].d), '0', '0', '7']);
       } else {
         assert.equal(dom.window.document.querySelectorAll('#sp-grid tr[data-trigger-date]').length, fixtures.short.filter(row => row.s.endsWith('99')).length);
       }

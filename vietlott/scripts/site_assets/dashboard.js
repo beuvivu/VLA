@@ -145,6 +145,10 @@
       const nums = isMax ? [t.symbol] : t.numbers;
       const matched = isMax && t.hits>0 ? [t.symbol] : t.matched_numbers || [];
       let caption = isMax ? (t.hits ? `Trùng ${t.hits} lần · ${t.tiers.join(', ')}` : 'Không trùng số đầy đủ') : isBingo ? `${t.position_hits}/3 đúng vị trí · ${t.multiset_hits}/3 trùng đa tập${t.sum_match?' · đúng tổng':''}${t.exact?' · đúng cả bộ':''}` : `${t.hits}/${t.numbers.length} số chính${t.bonus_hit?' + số phụ/đặc biệt':''}${t.tier?' · '+(tiers[t.tier]||t.tier):' · chưa đạt hạng giải'}`;
+      if (p.product==='max3dpro') {
+        const groups=t.matched_groups || [];
+        caption=`Xuất hiện ${t.hits} lần${groups.length?' · Nhóm có số trùng: '+groups.join(', '):''} · Chưa phân hạng: cần vé cặp`;
+      }
       if (p.product==='keno') caption = `${t.hits}/20 số trong dãy tham chiếu`;
       return h('div', {class:'prediction-row'},
         h('div', {class:'prediction-row-top'}, h('span', {class:'rank'}, String(i+1)), balls(nums,matched,{digit:isMax,keno:p.product==='keno',position:isBingo?t.position_matches:null})),
@@ -232,7 +236,7 @@
     const catalogue=t=>obj(t) && str(t.label) && str(t.condition) && nullable(t.value_vnd,moneyValue) && nullable(t.note,str) && nullable(t.product,str) && nullable(t.value_text,str);
     const result=(r,code)=>obj(r) && int(r.draw_id) && stamp(r.draw_date) && numbers(r.numbers) && nullable(r.bonus,int) && ['day','second'].includes(r.time_precision) && str(r.source) && str(r.official_url) && array(r.prizes,t=>obj(t)&&str(t.label)&&(code.startsWith('max')?numbers(t.numbers):nullable(t.value_vnd,moneyValue)&&nullable(t.winners,int))) && obj(r.facts) && (code!=='keno'||['large','small','even','odd'].every(k=>int(r.facts[k]))) && (code!=='bingo18'||int(r.facts.sum)&&str(r.facts.size)&&obj(r.facts.multiplicity)&&Object.values(r.facts.multiplicity).every(int));
     const forecast=f=>obj(f) && int(f.target_id) && int(f.based_on_id) && stamp(f.made_at) && nullable(f.target_time,stamp) && nullable(f.target_date,date) && str(f.engine) && typeof f.registered==='boolean' && str(f.note) && array(f.components,c=>obj(c)&&str(c.name)&&array(c.top,t=>obj(t)&&numbers(t.numbers)&&nullable(t.p_model,probability)&&nullable(t.p_fair,probability)));
-    const ticket=(t,code)=>obj(t) && numbers(t.numbers) && (code.startsWith('max')?str(t.symbol)&&int(t.hits)&&array(t.tiers,str):code==='bingo18'?int(t.position_hits)&&int(t.multiset_hits)&&array(t.position_matches,b=>typeof b==='boolean')&&typeof t.sum_match==='boolean'&&typeof t.exact==='boolean':int(t.hits)&&array(t.matched_numbers,int)&&typeof t.bonus_hit==='boolean'&&nullable(t.special,int)&&nullable(t.tier,str));
+    const ticket=(t,code)=>obj(t) && numbers(t.numbers) && (code.startsWith('max')?str(t.symbol)&&int(t.hits)&&array(t.tiers,str)&&nullable(t.matched_groups,v=>array(v,str))&&nullable(t.prize_status,str):code==='bingo18'?int(t.position_hits)&&int(t.multiset_hits)&&array(t.position_matches,b=>typeof b==='boolean')&&typeof t.sum_match==='boolean'&&typeof t.exact==='boolean':int(t.hits)&&array(t.matched_numbers,int)&&typeof t.bonus_hit==='boolean'&&nullable(t.special,int)&&nullable(t.tier,str));
     const comparison=(c,code)=>obj(c) && int(c.target_id) && date(c.target_date) && stamp(c.made_at) && str(c.engine) && ['pending','matched','date_mismatch'].includes(c.status) && (c.status!=='matched'||result(c.result,code)&&array(c.tickets,t=>ticket(t,code)));
     if(!obj(data)||data.schema_version!==1||!stamp(data.generated_at)||Date.parse(data.generated_at)>Date.now()+300000||!obj(data.stats)||!['products','results','registered_next','compared_draws'].every(k=>int(data.stats[k]))||!array(data.warnings,str)||!Array.isArray(data.products)||data.products.length!==7) throw new Error('schema');
     const codes=new Set();

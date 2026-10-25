@@ -117,6 +117,51 @@ def test_murphy_separates_a_miscalibrated_model_from_a_blind_one() -> None:
     assert dull["resolution"] == pytest.approx(0.0, abs=1e-12)
 
 
+@pytest.mark.parametrize(
+    ("probability", "positive_per_draw"), [(0.5, 20), (0.01, 1), (0.0, 20), (1.0, 20)]
+)
+def test_constant_predictions_keep_one_complete_calibration_bin(
+    probability: float, positive_per_draw: int,
+) -> None:
+    """Dự báo hằng vẫn có đủ quan sát, kể cả nền Đặc Biệt và hai biên 0/1."""
+    p = np.full((10, 100), probability)
+    y = np.zeros_like(p)
+    y[:, :positive_per_draw] = 1.0
+
+    rows = mq.calibration(p, y)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["count"] == p.size
+    assert row["predicted"] == pytest.approx(probability)
+    assert row["observed"] == pytest.approx(positive_per_draw / 100)
+    assert 0 <= row["ci_low"] <= row["observed"] <= row["ci_high"] <= 1
+
+
+@pytest.mark.parametrize(
+    ("probability", "positive_per_draw"), [(0.5, 20), (0.01, 1), (0.0, 20), (1.0, 20)]
+)
+def test_constant_murphy_matches_exact_brier_without_binning_residual(
+    probability: float, positive_per_draw: int,
+) -> None:
+    """Một bin hằng không có sai số chia nhóm và không thể giấu lệch hiệu chỉnh."""
+    p = np.full((10, 100), probability)
+    y = np.zeros_like(p)
+    y[:, :positive_per_draw] = 1.0
+
+    out = mq.murphy(p, y)
+
+    prevalence = positive_per_draw / 100
+    expected_brier = prevalence * (1 - probability) ** 2 + (1 - prevalence) * probability**2
+    assert out["reliability"] == pytest.approx((probability - prevalence) ** 2, abs=1e-12)
+    assert out["resolution"] == pytest.approx(0, abs=1e-12)
+    assert out["uncertainty"] == pytest.approx(prevalence * (1 - prevalence), abs=1e-12)
+    assert out["brier_binned"] == pytest.approx(expected_brier, abs=1e-12)
+    assert out["brier_from_decomposition"] == pytest.approx(expected_brier, abs=1e-12)
+    assert out["brier_direct"] == pytest.approx(expected_brier, abs=1e-12)
+    assert out["binning_residual"] == pytest.approx(0, abs=1e-12)
+
+
 def test_calibration_bins_carry_wilson_intervals_that_stay_in_range() -> None:
     """Ở chế độ Đặc Biệt tỉ lệ thực quanh 0,01; khoảng chuẩn tràn xuống dưới 0."""
     rng = np.random.default_rng(3)

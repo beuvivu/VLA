@@ -45,6 +45,10 @@ from core.resilience import RetryPolicy, with_retry
 
 logger = logging.getLogger(__name__)
 
+# Hợp đồng với daily_prediction.yml: chỉ mã này được coi là bỏ qua hợp lệ.
+# Lỗi nhập, dữ liệu hỏng hoặc mô hình vẫn thoát khác 0 để workflow báo đỏ.
+PREDICTION_UNAVAILABLE = 3
+
 DISCLAIMER = (
     "Qua ba cổng đo trên dữ liệu thật của kho, không có bằng chứng nào cho thấy "
     "các đường soi cầu hoặc mô hình hơn được đường cơ sở. Các con số dưới đây là "
@@ -184,7 +188,7 @@ def main() -> int:
             latest,
             staleness,
         )
-        return 1
+        return PREDICTION_UNAVAILABLE
 
     # Kỳ được dự đoán là kỳ kế tiếp kỳ mới nhất đã có kết quả. Nếu kỳ đó đã
     # quay xong rồi thì đây không còn là dự đoán — đó là hậu đoán mang nhãn dự
@@ -201,7 +205,7 @@ def main() -> int:
             target,
             now.strftime("%Y-%m-%d %H:%M"),
         )
-        return 1
+        return PREDICTION_UNAVAILABLE
 
     bundle = build_bundle(
         tensor, warmup_days=args.warmup_days, research_dir=Path(args.research_dir)
