@@ -9,56 +9,56 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 <!-- SNAPSHOT:BEGIN -->
 | Xổ số | LOTO |
 | :------------: | :----------: |
-| <table><tr><td>Ngày</td><td>26-10-2026</td></tr><tr><td>Giải Đặc Biệt</td><td>13221</td></tr><tr><td>Giải nhất</td><td>82697</td></tr><tr><td>Giải nhì</td><td>34264, 74828</td></tr><tr><td>Giải ba</td><td>56825, 14797, 58426, 50810, 01089, 62776</td></tr><tr><td>Giải tư</td><td>5523, 2444, 1938, 6713</td></tr><tr><td>Giải năm</td><td>0335, 8731, 9947, 2747, 9934, 9250</td></tr><tr><td>Giải sáu</td><td>004, 343, 794</td></tr><tr><td>Giải bảy</td><td>92, 66, 69, 82</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr><tr><td>0</td><td>4</td></tr><tr><td>1</td><td>0, 3</td></tr><tr><td>2</td><td>1, 8, 5, 6, 3</td></tr><tr><td>3</td><td>8, 5, 1, 4</td></tr><tr><td>4</td><td>4, 7, 7, 3</td></tr><tr><td>5</td><td>0</td></tr><tr><td>6</td><td>4, 6, 9</td></tr><tr><td>7</td><td>6</td></tr><tr><td>8</td><td>9, 2</td></tr><tr><td>9</td><td>7, 7, 4, 2</td></tr></table> |
+| <table><tr><td>Ngày</td><td>27-10-2026</td></tr><tr><td>Giải Đặc Biệt</td><td>44691</td></tr><tr><td>Giải nhất</td><td>89116</td></tr><tr><td>Giải nhì</td><td>78273, 85201</td></tr><tr><td>Giải ba</td><td>76185, 73369, 17234, 68024, 73576, 07572</td></tr><tr><td>Giải tư</td><td>8193, 6579, 6928, 7419</td></tr><tr><td>Giải năm</td><td>2932, 2166, 3893, 5969, 4596, 5434</td></tr><tr><td>Giải sáu</td><td>647, 386, 507</td></tr><tr><td>Giải bảy</td><td>19, 41, 91, 06</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr><tr><td>0</td><td>1, 7, 6</td></tr><tr><td>1</td><td>6, 9, 9</td></tr><tr><td>2</td><td>4, 8</td></tr><tr><td>3</td><td>4, 2, 4</td></tr><tr><td>4</td><td>7, 1</td></tr><tr><td>5</td><td></td></tr><tr><td>6</td><td>9, 6, 9</td></tr><tr><td>7</td><td>3, 6, 2, 9</td></tr><tr><td>8</td><td>5, 6</td></tr><tr><td>9</td><td>1, 3, 3, 6, 1</td></tr></table> |
 <!-- SNAPSHOT:END -->
 
 <!-- FUN_PREDICTION:BEGIN -->
-## 🎲 Dự đoán vui ngày 27-10-2026
+## 🎲 Dự đoán vui ngày 28-10-2026
 
-> **Ngày neo:** kết quả thực đến **26-10-2026**. **Không phải kết quả thật.** Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp tất định, không phải xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế.
+> **Ngày neo:** kết quả thực đến **27-10-2026**. **Không phải kết quả thật.** Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp tất định, không phải xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế.
 
 ### Bảng mô phỏng đầy đủ
 
 | Giải | Dự đoán vui |
 |---|---|
-| Đặc Biệt | `99474` |
-| Giải nhất | `93366` |
-| Giải nhì | `95970` · `96666` |
-| Giải ba | `26958` · `59349` · `04018` · `03062` · `27553` · `06868` |
-| Giải tư | `9226` · `3489` · `5576` · `1225` |
-| Giải năm | `3849` · `9447` · `7428` · `6392` · `8734` · `6326` |
-| Giải sáu | `834` · `304` · `700` |
-| Giải bảy | `15` · `90` · `78` · `25` |
+| Đặc Biệt | `24718` |
+| Giải nhất | `27026` |
+| Giải nhì | `21978` · `92893` |
+| Giải ba | `13364` · `09686` · `66880` · `71105` · `36388` · `37118` |
+| Giải tư | `7207` · `6123` · `7617` · `6195` |
+| Giải năm | `2881` · `2428` · `9644` · `4336` · `8746` · `2917` |
+| Giải sáu | `393` · `193` · `651` |
+| Giải bảy | `89` · `62` · `72` · `90` |
 
 ### LOTO đứng đầu cho ngày mai
 
 | # | Số | Xác suất mô hình |
 |---:|:---:|---:|
-| 1 | **66** | **23.78%** |
-| 2 | **71** | **23.78%** |
-| 3 | **75** | **23.78%** |
-| 4 | **63** | **23.78%** |
-| 5 | **06** | **23.77%** |
-| 6 | **04** | **23.77%** |
-| 7 | **26** | **23.77%** |
-| 8 | **67** | **23.77%** |
-| 9 | **91** | **23.77%** |
-| 10 | **55** | **23.77%** |
+| 1 | **59** | **23.78%** |
+| 2 | **53** | **23.78%** |
+| 3 | **79** | **23.78%** |
+| 4 | **66** | **23.78%** |
+| 5 | **75** | **23.78%** |
+| 6 | **63** | **23.78%** |
+| 7 | **37** | **23.78%** |
+| 8 | **49** | **23.77%** |
+| 9 | **56** | **23.77%** |
+| 10 | **95** | **23.77%** |
 
 ### Đặc Biệt đứng đầu cho ngày mai
 
 | # | Số | Xác suất mô hình |
 |---:|:---:|---:|
-| 1 | **54** | **1.048%** |
-| 2 | **38** | **1.047%** |
-| 3 | **51** | **1.041%** |
-| 4 | **83** | **1.035%** |
-| 5 | **32** | **1.035%** |
-| 6 | **42** | **1.034%** |
-| 7 | **39** | **1.030%** |
-| 8 | **67** | **1.029%** |
-| 9 | **21** | **1.027%** |
-| 10 | **22** | **1.024%** |
+| 1 | **38** | **1.048%** |
+| 2 | **54** | **1.045%** |
+| 3 | **42** | **1.038%** |
+| 4 | **51** | **1.035%** |
+| 5 | **83** | **1.034%** |
+| 6 | **32** | **1.034%** |
+| 7 | **67** | **1.029%** |
+| 8 | **21** | **1.028%** |
+| 9 | **39** | **1.026%** |
+| 10 | **63** | **1.023%** |
 
 > Xác suất ở bảng LOTO là xác suất mô hình cho số 00–99 xuất hiện trong kỳ; xác suất Đặc Biệt là phân phối riêng cho 2 số cuối giải Đặc Biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh tất định để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.
 <!-- FUN_PREDICTION:END -->
@@ -236,9 +236,9 @@ Dữ liệu dẫn xuất:
 ## Thống kê 1 năm hiện tại
 
 - Tần suất lớn nhất: **124.0**
-- Tần suất nhỏ nhất: **80.0**
+- Tần suất nhỏ nhất: **81.0**
 - Trung bình: **97.47**
-- Độ lệch chuẩn: **9.25**
+- Độ lệch chuẩn: **9.22**
 
 ![Ma trận nhiệt tần suất](images/heatmap.jpg)
 
