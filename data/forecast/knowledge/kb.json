@@ -1,9 +1,9 @@
 {
   "version": 1,
   "alpha_budget": 0.01,
-  "generated_at": "2026-10-28T11:39:28Z",
-  "source_date": "2026-10-28",
-  "draws": 4249,
+  "generated_at": "2026-10-29T11:40:15Z",
+  "source_date": "2026-10-29",
+  "draws": 4250,
   "config": {
     "window": 30,
     "neighbours": 50,
@@ -73,7 +73,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 8,
         "hits": 2,
         "expected": 1.96,
@@ -100,7 +100,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 5,
         "hits": 1,
         "expected": 1.22,
@@ -127,7 +127,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 5,
         "hits": 2,
         "expected": 1.24,
@@ -154,7 +154,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 1,
         "hits": 0,
         "expected": 0.23,
@@ -181,7 +181,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 5,
         "hits": 0,
         "expected": 1.22,
@@ -208,7 +208,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 2,
         "hits": 1,
         "expected": 0.51,
@@ -235,7 +235,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 4,
         "hits": 0,
         "expected": 0.95,
@@ -262,7 +262,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 7,
         "hits": 3,
         "expected": 1.69,
@@ -289,7 +289,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 1,
         "hits": 0,
         "expected": 0.25,
@@ -316,7 +316,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 7,
         "hits": 2,
         "expected": 1.69,
@@ -343,7 +343,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 5,
         "hits": 2,
         "expected": 1.18,
@@ -370,11 +370,11 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
-        "fired": 4,
+        "draws_after": 17,
+        "fired": 5,
         "hits": 2,
-        "expected": 1.01,
-        "e_value": 1.42103400857,
+        "expected": 1.26,
+        "e_value": 1.117750028746375,
         "e_max": 2.7225202000000004,
         "p_anytime": 0.3673067329307602
       },
@@ -397,7 +397,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 5,
         "hits": 1,
         "expected": 1.21,
@@ -424,7 +424,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 3,
         "hits": 2,
         "expected": 0.7,
@@ -451,7 +451,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 2,
         "hits": 1,
         "expected": 0.45999999999999996,
@@ -478,7 +478,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 1,
         "hits": 0,
         "expected": 0.23,
@@ -505,7 +505,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 1,
         "hits": 1,
         "expected": 0.23,
@@ -532,7 +532,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 6,
         "hits": 1,
         "expected": 1.53,
@@ -559,7 +559,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 6,
         "hits": 1,
         "expected": 1.4500000000000002,
@@ -586,7 +586,7 @@
       "alpha": 0.0003039635509270133,
       "threshold_e": 3289.8681336964532,
       "prospective": {
-        "draws_after": 16,
+        "draws_after": 17,
         "fired": 4,
         "hits": 1,
         "expected": 0.96,
@@ -604,27 +604,27 @@
       "kind": "snapshot",
       "title": "Tần suất LOTO — con về nhiều nhất (z)",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.42357642357642356,
+      "p": 0.3866133866133866,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.424; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.387; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-freq_chi2",
       "kind": "snapshot",
       "title": "Tần suất LOTO — χ² toàn bảng",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.8521478521478522,
+      "p": 0.8621378621378621,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.852; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.862; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-bayes_post_max",
       "kind": "snapshot",
       "title": "Bayes LOTO — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.42357642357642356,
+      "p": 0.3866133866133866,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.424; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.387; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-bayes60_post_max",
@@ -640,18 +640,18 @@
       "kind": "snapshot",
       "title": "Markov LOTO — về rồi về lại (z)",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.2187812187812188,
+      "p": 0.19480519480519476,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.219; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.195; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-pair_z_max",
       "kind": "snapshot",
       "title": "Bạc nhớ i hôm nay → j ngày mai (z)",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.8181818181818181,
+      "p": 0.8141858141858141,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.818; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.814; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-cau_loto_max",
@@ -676,9 +676,9 @@
       "kind": "snapshot",
       "title": "Tần suất Đặc Biệt — χ²",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.8211788211788211,
+      "p": 0.8141858141858141,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.821; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.814; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-de_bayes_post_max",
@@ -712,9 +712,9 @@
       "kind": "snapshot",
       "title": "Xu hướng dài hạn / đứt gãy từng con (CUSUM)",
       "status": "khong-hon-ngau-nhien",
-      "p": 0.6383616383616384,
+      "p": 0.6393606393606394,
       "p_holm": 1.0,
-      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.638; sau Holm trên 15 họ: 1"
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.639; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-year_persist",
@@ -739,14 +739,14 @@
       "kind": "hypothesis",
       "title": "Giả thuyết đuôi nóng",
       "status": "dang-kiem",
-      "summary": "30/180 kỳ tiến cứu đã đăng ký, z = 0,49"
+      "summary": "31/180 kỳ tiến cứu đã đăng ký, z = 0,56"
     },
     {
       "id": "gia-thuyet-tong-bong-cham",
       "kind": "hypothesis",
       "title": "Giả thuyết tổng – bóng – chạm",
       "status": "dang-kiem",
-      "summary": "23/180 kỳ tiến cứu đã đăng ký"
+      "summary": "24/180 kỳ tiến cứu đã đăng ký"
     },
     {
       "id": "bo-loc-lo-nhieu-nhay",
@@ -760,618 +760,108 @@
       "kind": "challenger",
       "title": "Cặp xiên 2 cùng về",
       "status": "chua-co-bang-chung",
-      "summary": "hồi cứu 0.0549 so với chọn bừa 0.0552"
+      "summary": "hồi cứu 0.0548 so với chọn bừa 0.0552"
     },
     {
       "id": "tu-hoc-loto",
       "kind": "self-learning",
       "title": "Tự học trực tuyến (LOTO)",
       "status": "bong-mo",
-      "summary": "31 kỳ đã chốt; Giữ đương nhiệm; chưa đủ bằng chứng hoặc vừa suy giảm"
+      "summary": "32 kỳ đã chốt; Giữ đương nhiệm; chưa đủ bằng chứng hoặc vừa suy giảm"
     },
     {
       "id": "tu-hoc-de",
       "kind": "self-learning",
       "title": "Tự học trực tuyến (Đặc Biệt)",
       "status": "bong-mo",
-      "summary": "31 kỳ đã chốt; Giữ đương nhiệm; chưa đủ bằng chứng hoặc vừa suy giảm"
+      "summary": "32 kỳ đã chốt; Giữ đương nhiệm; chưa đủ bằng chứng hoặc vừa suy giảm"
     }
   ],
   "analog": {
-    "first_date": "2024-01-21",
-    "last_date": "2026-10-28",
+    "first_date": "2024-01-22",
+    "last_date": "2026-10-29",
     "draws": 1000,
     "constant_logloss": 54.88221855759363,
     "analog": {
-      "logloss": 55.13887716777016,
-      "skill": -0.0046765348945796426,
-      "gain_per_draw": -0.2566586101765402,
-      "z": -11.160068651560561
+      "logloss": 55.137602395659925,
+      "skill": -0.004653307478783786,
+      "gain_per_draw": -0.2553838380662958,
+      "z": -11.110796416761522
     },
     "bayes_30": {
-      "logloss": 55.106025853467415,
-      "skill": -0.004077956426614238,
-      "gain_per_draw": -0.22380729587378886,
-      "z": -10.566061767656144
+      "logloss": 55.106542285298545,
+      "skill": -0.004087366247220947,
+      "gain_per_draw": -0.22432372770491496,
+      "z": -10.602065856765336
     },
     "top_k": {
       "k": 10,
-      "hits": 2360,
+      "hits": 2362,
       "expected": 2380.5,
-      "rate": 0.236,
+      "rate": 0.2362,
       "random_rate": 0.23805,
-      "z": -0.4970912441326981
+      "z": -0.4488484855318057
     }
   },
   "insights": {
     "loto": {
       "mode": "loto",
-      "target_date": "2026-10-29",
+      "target_date": "2026-10-30",
       "items": [
         {
-          "number": "75",
+          "number": "80",
           "mode": "loto",
-          "probability": 0.23775672056732786,
+          "probability": 0.2377276406302774,
           "base": 0.23765728565289646,
-          "x_base": 1.0004183962387614,
-          "mixture": 0.24074849813818955,
+          "x_base": 1.000296035432651,
+          "mixture": 0.23808487553859053,
           "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.24747834333793867,
+              "delta": 0.0014073510610497462
+            },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.2575385510762082,
-              "delta": 0.0028147014923265525
+              "weight": 0.1418516834102481,
+              "prob": 0.2309140830517837,
+              "delta": -0.0009565346405442067
             },
             {
               "expert": "lag_repeat",
               "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23939651264365958,
-              "delta": 0.00024840556337687715
+              "weight": 0.14257545308144143,
+              "prob": 0.23740862642472724,
+              "delta": -3.5452702119107766e-05
             },
             {
               "expert": "incumbent",
               "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.23775672056732786,
-              "delta": 1.4222579186020945e-05
+              "weight": 0.14303132687391543,
+              "prob": 0.2377276406302774,
+              "delta": 1.0062965766981392e-05
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.2377022886285139,
-              "delta": 6.439309980480381e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23770201824980217,
-              "delta": 6.410436163353944e-06
+              "weight": 0.14307910728709117,
+              "prob": 0.23767118312461682,
+              "delta": 1.988437847298124e-06
             },
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766450604180892,
-              "delta": 1.0331042598343808e-06
+              "weight": 0.14307668368295587,
+              "prob": 0.23765850712161457,
+              "delta": 1.7476369341044703e-07
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.002997002997002997,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 14,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,78% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (25,75%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 14/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "66",
-          "mode": "loto",
-          "probability": 0.23772384940598018,
-          "base": 0.23765728565289646,
-          "x_base": 1.0002800829475977,
-          "mixture": 0.2396636922344988,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.24996019485130197,
-              "delta": 0.0017417913871873498
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23938908089675212,
-              "delta": 0.00024734412212324834
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.23772384940598018,
-              "delta": 9.520883630921822e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.2376823732489616,
-              "delta": 3.5896916928751003e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23768210364691938,
-              "delta": 3.5565600343265486e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766150658171173,
-              "delta": 6.039369336452369e-07
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 16,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (25,00%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 16/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "91",
-          "mode": "loto",
-          "probability": 0.2377120576520097,
-          "base": 0.23765728565289646,
-          "x_base": 1.0002304663160768,
-          "mixture": 0.23871575833778025,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.24490795736803114,
-              "delta": 0.0010265179837612144
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23777490297754023,
-              "delta": 1.6798726069791178e-05
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.2377120576520097,
-              "delta": 7.834261225238208e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.237681377479984,
-              "delta": 3.447210778495829e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.2376801079557737,
-              "delta": 3.2705661154384006e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766150658171173,
-              "delta": 6.039369336452369e-07
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.003996003996003996
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 15,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,49%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 15/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "35",
-          "mode": "loto",
-          "probability": 0.2377091017993418,
-          "base": 0.23765728565289646,
-          "x_base": 1.000218028857407,
-          "mixture": 0.23914885880959014,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.24743407610966656,
-              "delta": 0.001384154685474282
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23830718911858656,
-              "delta": 9.282263752386947e-05
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.2377091017993418,
-              "delta": 7.411473627220738e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23768412472320932,
-              "delta": 3.846191789112031e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.23767739440407354,
-              "delta": 2.877287120974773e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766050676167935,
-              "delta": 4.6088115825150303e-07
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 11,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,74%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 11/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "63",
-          "mode": "loto",
-          "probability": 0.23770804842133855,
-          "base": 0.23765728565289646,
-          "x_base": 1.0002135965169452,
-          "mixture": 0.23963636480894737,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.2524863135929374,
-              "delta": 0.0020994280889004174
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23675746649147653,
-              "delta": -0.00012851691407557601
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.23770804842133855,
-              "delta": 7.260804698207489e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766250640174413,
-              "delta": 7.46992709042942e-07
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23765821035431745,
-              "delta": 1.3251498547948014e-07
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.23765747902452125,
-              "delta": 2.7668833369492286e-08
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 9,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (25,25%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 9/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "14",
-          "mode": "loto",
-          "probability": 0.23770257974380282,
-          "base": 0.23765728565289646,
-          "x_base": 1.0001905857452758,
-          "mixture": 0.2391100005435921,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.24743407610966656,
-              "delta": 0.001384154685474282
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.2380596438328651,
-              "delta": 5.7466915420023125e-05
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.23770257974380282,
-              "delta": 6.4785975656373835e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23767215480719275,
-              "delta": 2.1308345817792923e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.23767042402123023,
-              "delta": 1.8799207203119317e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766150658171173,
-              "delta": 6.039369336452369e-07
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 12,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,74%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 12/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "86",
-          "mode": "loto",
-          "probability": 0.237696072315837,
-          "base": 0.23765728565289646,
-          "x_base": 1.000163204182165,
-          "mixture": 0.23876957892696604,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.24743407610966656,
-              "delta": 0.001384154685474282
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23575756114891713,
-              "delta": -0.0002713286639283268
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.237696072315837,
-              "delta": 5.547813745181342e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23763231290885506,
-              "delta": -3.578736594224166e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.2376335805690585,
-              "delta": -3.3918731117568443e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766350622177654,
-              "delta": 8.900484844406471e-07
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
+              "weight": 0.14308640803870826,
               "prob": 0.23765728565289646,
               "delta": 0.0
             }
@@ -1390,73 +880,583 @@
             "k": 50,
             "hits": 10,
             "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
             ]
           },
           "reasons": [
             "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,74%, trọng số 0,142).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (24,75%, trọng số 0,143).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
             "Ngữ cảnh tương tự quá khứ: 10/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
           ]
         },
         {
-          "number": "94",
+          "number": "75",
           "mode": "loto",
-          "probability": 0.2376929285321306,
+          "probability": 0.23772326539357377,
           "base": 0.23765728565289646,
-          "x_base": 1.0001499759586003,
-          "mixture": 0.23845654673659944,
+          "x_base": 1.0002776255753998,
+          "mixture": 0.23997303319824967,
           "contributions": [
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.2423818386263957,
-              "delta": 0.0006688812820481428
+              "weight": 0.1418516834102481,
+              "prob": 0.2524597985887651,
+              "delta": 0.002099761378654942
             },
             {
               "expert": "lag_repeat",
               "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23847620445950538,
-              "delta": 0.00011696229911102772
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.2376929285321306,
-              "delta": 5.0981456083512415e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.23768536055589445,
-              "delta": 4.017134436016885e-06
+              "weight": 0.14257545308144143,
+              "prob": 0.23869550854960667,
+              "delta": 0.00014802509989798496
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23768409087635026,
-              "delta": 3.841341341242289e-06
+              "weight": 0.1432993376256396,
+              "prob": 0.23801378212533852,
+              "delta": 5.108570836682562e-05
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23772326539357377,
+              "delta": 9.437169855873762e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.23770205193218466,
+              "delta": 6.405119277121015e-06
             },
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23766050676167935,
-              "delta": 4.6088115825150303e-07
+              "weight": 0.14307668368295587,
+              "prob": 0.23766450604180892,
+              "delta": 1.0330693004959638e-06
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.002997002997002997,
+              "c_markov": 0.0,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 10,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (25,25%, trọng số 0,142).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 10/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "59",
+          "mode": "loto",
+          "probability": 0.23772285059505324,
+          "base": 0.23765728565289646,
+          "x_base": 1.0002758802111902,
+          "mixture": 0.23612019318114696,
+          "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.21898813169719522,
+              "delta": -0.002675277395883076
+            },
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.2459960839276707,
+              "delta": 0.0011828725728951985
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23730191170195064,
+              "delta": -5.066760206944141e-05
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23772285059505324,
+              "delta": 9.37784067309679e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.237640314317049,
+              "delta": -2.428243582524767e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23765050856135542,
+              "delta": -9.696437827075465e-07
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 16,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (21,90%, trọng số 0,143).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 16/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "70",
+          "mode": "loto",
+          "probability": 0.23771561949541567,
+          "base": 0.23765728565289646,
+          "x_base": 1.0002454536260437,
+          "mixture": 0.2383007123421056,
+          "contributions": [
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.24168694082027442,
+              "delta": 0.0005716133690553695
+            },
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.23798575786641957,
+              "delta": 4.7069850626289634e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23776012921310438,
+              "delta": 1.4662967193153686e-05
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23771561949541567,
+              "delta": 8.34356689717732e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.23766620428468652,
+              "delta": 1.2760698747442514e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23766050676167935,
+              "delta": 4.608655624389526e-07
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 15,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,17%, trọng số 0,142).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 15/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "91",
+          "mode": "loto",
+          "probability": 0.23771023224705412,
+          "base": 0.23765728565289646,
+          "x_base": 1.0002227854871446,
+          "mixture": 0.23860302673902234,
+          "contributions": [
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.24384151237397256,
+              "delta": 0.000877242970975284
+            },
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.23799743464096912,
+              "delta": 4.874312468484431e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23771555605860512,
+              "delta": 8.307929495151649e-06
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23771023224705412,
+              "delta": 7.5730216158256194e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.23768114080447741,
+              "delta": 3.413173792401898e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23766050676167935,
+              "delta": 4.608655624389526e-07
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.002997002997002997
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 8,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,38%, trọng số 0,142).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 8/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "37",
+          "mode": "loto",
+          "probability": 0.23770803727619377,
+          "base": 0.23765728565289646,
+          "x_base": 1.000213549621077,
+          "mixture": 0.23939346442491358,
+          "contributions": [
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.25030522703506697,
+              "delta": 0.0017941317767350272
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23693552110514657,
+              "delta": -0.00010290590741356179
+            },
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.23794994909113426,
+              "delta": 4.193847684671984e-05
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23770803727619377,
+              "delta": 7.25907202122054e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.2376203989573278,
+              "delta": -5.2777154727323156e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23766450604180892,
+              "delta": 1.0330693004959638e-06
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 13,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (25,03%, trọng số 0,142).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 13/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "81",
+          "mode": "loto",
+          "probability": 0.23770424804816714,
+          "base": 0.23765728565289646,
+          "x_base": 1.0001976055358104,
+          "mixture": 0.23603390414848455,
+          "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.22377373624060498,
+              "delta": -0.001989503434674206
+            },
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.23953236926657628,
+              "delta": 0.000265983767135455
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23827536854790846,
+              "delta": 8.812344879822503e-05
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23770424804816714,
+              "delta": 6.717093708743909e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.23769309002031014,
+              "delta": 5.12285692652881e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23765850712161457,
+              "delta": 1.7476369341044703e-07
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.003996003996003996
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 20,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (22,38%, trọng số 0,143).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 20/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "66",
+          "mode": "loto",
+          "probability": 0.23770238307425412,
+          "base": 0.23765728565289646,
+          "x_base": 1.0001897582110044,
+          "mixture": 0.2383330087964303,
+          "contributions": [
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.2459960839276707,
+              "delta": 0.0011828725728951985
+            },
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.23325386648593785,
+              "delta": -0.0006310070499132138
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23845158586520568,
+              "delta": 0.00011324771265267267
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23770238307425412,
+              "delta": 6.450344015378867e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.23768213657246348,
+              "delta": 3.555647386913467e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23766150658171173,
+              "delta": 6.039164969512199e-07
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
               "prob": 0.23765728565289646,
               "delta": 0.0
             }
@@ -1475,73 +1475,158 @@
             "k": 50,
             "hits": 14,
             "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
             ]
           },
           "reasons": [
             "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,24%, trọng số 0,142).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,60%, trọng số 0,142).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
             "Ngữ cảnh tương tự quá khứ: 14/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
           ]
         },
         {
-          "number": "90",
+          "number": "63",
           "mode": "loto",
-          "probability": 0.23769140606355196,
+          "probability": 0.23769661480524087,
           "base": 0.23765728565289646,
-          "x_base": 1.0001435698070933,
-          "mixture": 0.2383084295929434,
+          "x_base": 1.000165486836376,
+          "mixture": 0.24117809749272173,
           "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.2522117916216937,
+              "delta": 0.0020856510647970653
+            },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.2423818386263957,
-              "delta": 0.0006688812820481428
+              "weight": 0.1418516834102481,
+              "prob": 0.24815065548136886,
+              "delta": 0.0014885021748151169
             },
             {
               "expert": "lag_repeat",
               "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.23740868145007818,
-              "delta": -3.5506962223393895e-05
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23770004794380079,
-              "delta": 6.128080080367109e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.23769531824567058,
-              "delta": 5.441943579817539e-06
+              "weight": 0.14257545308144143,
+              "prob": 0.2372385075652474,
+              "delta": -5.9707475587144776e-05
             },
             {
               "expert": "incumbent",
               "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.23769140606355196,
-              "delta": 4.880380751393989e-06
+              "weight": 0.14303132687391543,
+              "prob": 0.23769661480524087,
+              "delta": 5.625300844648678e-06
             },
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.2376665056818737,
-              "delta": 1.3192158106258199e-06
+              "weight": 0.14307668368295587,
+              "prob": 0.23766250640174413,
+              "delta": 7.469674314674582e-07
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.237657242372812,
+              "delta": -6.192475847954102e-09
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
+              "weight": 0.14308640803870826,
+              "prob": 0.23765728565289646,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": {
+            "k": 50,
+            "hits": 13,
+            "similar_dates": [
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
+            ]
+          },
+          "reasons": [
+            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (25,22%, trọng số 0,143).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
+            "Ngữ cảnh tương tự quá khứ: 13/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+          ]
+        },
+        {
+          "number": "95",
+          "mode": "loto",
+          "probability": 0.23769405809568678,
+          "base": 0.23765728565289646,
+          "x_base": 1.000154728868039,
+          "mixture": 0.23912075024427534,
+          "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.1432993376256396,
+              "prob": 0.24275579337709655,
+              "delta": 0.0007306127797570801
+            },
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1418516834102481,
+              "prob": 0.24168694082027442,
+              "delta": 0.0005716133690553695
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14257545308144143,
+              "prob": 0.23870111900104074,
+              "delta": 0.00014882501255318944
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14307910728709117,
+              "prob": 0.2376990646282265,
+              "delta": 5.97769849359028e-06
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14303132687391543,
+              "prob": 0.23769405809568678,
+              "delta": 5.259611284694994e-06
+            },
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14307668368295587,
+              "prob": 0.23766550586184132,
+              "delta": 1.1761202350122022e-06
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14308640803870826,
               "prob": 0.23765728565289646,
               "delta": 0.0
             }
@@ -1558,166 +1643,81 @@
           "rules": [],
           "analog": {
             "k": 50,
-            "hits": 12,
+            "hits": 8,
             "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
+              "2023-06-09",
+              "2023-06-19",
+              "2023-06-08"
             ]
           },
           "reasons": [
             "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,24%, trọng số 0,142).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (24,28%, trọng số 0,143).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 12/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
-          ]
-        },
-        {
-          "number": "43",
-          "mode": "loto",
-          "probability": 0.23769093793196425,
-          "base": 0.23765728565289646,
-          "x_base": 1.0001416000312187,
-          "mixture": 0.23869182923872279,
-          "contributions": [
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.14157557038729424,
-              "prob": 0.2423818386263957,
-              "delta": 0.0006688812820481428
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14282526932719933,
-              "prob": 0.2401275476862396,
-              "delta": 0.00035281584022098825
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.1430340566726482,
-              "prob": 0.23769093793196425,
-              "delta": 4.813421991346302e-06
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14330570113928517,
-              "prob": 0.23768808648949896,
-              "delta": 4.413935484998822e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.14308631578542716,
-              "prob": 0.23768635632487206,
-              "delta": 4.159615350396156e-06
-            },
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.14308152543578123,
-              "prob": 0.23765350802145258,
-              "delta": -5.405092695244902e-07
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14309156125236455,
-              "prob": 0.23765728565289646,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": {
-            "k": 50,
-            "hits": 12,
-            "similar_dates": [
-              "2023-06-15",
-              "2025-08-17",
-              "2025-05-01"
-            ]
-          },
-          "reasons": [
-            "Xác suất đã công bố 23,77% so với mức nền 23,77% (×1,000).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 30 kỳ (24,24%, trọng số 0,142).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng.",
-            "Ngữ cảnh tương tự quá khứ: 12/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
+            "Ngữ cảnh tương tự quá khứ: 8/50 kỳ giống nhất có con này về ở kỳ sau (nền 23,8%)."
           ]
         }
       ]
     },
     "de": {
       "mode": "de",
-      "target_date": "2026-10-29",
+      "target_date": "2026-10-30",
       "items": [
         {
-          "number": "54",
+          "number": "38",
           "mode": "de",
-          "probability": 0.010418310063361108,
+          "probability": 0.010393565968326822,
           "base": 0.01,
-          "x_base": 1.0418310063361107,
-          "mixture": 0.011055958433901935,
+          "x_base": 1.0393565968326821,
+          "mixture": 0.011088085345511367,
           "contributions": [
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.0167366596031593,
-              "delta": 0.0009928748096502092
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010418310063361108,
-              "delta": 5.938903466362454e-05
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.010011574810568979,
-              "delta": 1.6458146768562864e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.010006482456044267,
-              "delta": 9.191767494632943e-07
+              "weight": 0.14674253834254358,
+              "prob": 0.01496267365402679,
+              "delta": 0.0007282353289575571
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.010006092218447747,
-              "delta": 8.951141612693532e-07
+              "weight": 0.14699999814051495,
+              "prob": 0.012041809520582482,
+              "delta": 0.0003001459957289106
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.010393565968326822,
+              "delta": 5.590422424196815e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.010017582197913873,
+              "delta": 2.5020055078341095e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14191005607966317,
+              "prob": 0.010008464027881504,
+              "delta": 1.2011306713240782e-06
             },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000169994900153,
-              "delta": 2.3448400051147563e-07
+              "weight": 0.1380904336947029,
+              "prob": 0.01000069997900063,
+              "delta": 9.66604037742369e-08
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -1727,73 +1727,73 @@
             "components": {
               "c_bayes": 0.0,
               "c_markov": 0.0,
-              "c_cau": 0.0
+              "c_cau": 0.06793206793206794
             }
           },
           "online_active": false,
           "rules": [],
           "analog": null,
           "reasons": [
-            "Xác suất đã công bố 1,04% so với mức nền 1,00% (×1,042).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,67%, trọng số 0,147).",
+            "Xác suất đã công bố 1,04% so với mức nền 1,00% (×1,039).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,50%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
         },
         {
-          "number": "38",
+          "number": "54",
           "mode": "de",
-          "probability": 0.010415367474395119,
+          "probability": 0.010392942310411319,
           "base": 0.01,
-          "x_base": 1.0415367474395119,
-          "mixture": 0.010866036979563358,
+          "x_base": 1.039294231041132,
+          "mixture": 0.011260149093906149,
           "contributions": [
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.015441148141013283,
-              "delta": 0.0008019373462559384
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010415367474395119,
-              "delta": 5.897126436974786e-05
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.010017551348767414,
-              "delta": 2.495614699513988e-06
+              "weight": 0.14674253834254358,
+              "prob": 0.016144262619271266,
+              "delta": 0.0009016246929950709
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.010009083639737546,
-              "delta": 1.334636082846537e-06
+              "weight": 0.14699999814051495,
+              "prob": 0.01204016318926899,
+              "delta": 0.00029990398502888866
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.010392942310411319,
+              "delta": 5.581563652157455e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.010011605637384197,
+              "delta": 1.651520975899993e-06
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.010008473993999496,
-              "delta": 1.2015659198054381e-06
+              "weight": 0.14191005607966317,
+              "prob": 0.010006472491909385,
+              "delta": 9.185116898360164e-07
             },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000069997900063,
-              "delta": 9.655223550482378e-08
+              "weight": 0.1380904336947029,
+              "prob": 0.01000169994900153,
+              "delta": 2.3474669488005006e-07
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -1810,8 +1810,8 @@
           "rules": [],
           "analog": null,
           "reasons": [
-            "Xác suất đã công bố 1,04% so với mức nền 1,00% (×1,042).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,54%, trọng số 0,147).",
+            "Xác suất đã công bố 1,04% so với mức nền 1,00% (×1,039).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,61%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
@@ -1819,57 +1819,57 @@
         {
           "number": "51",
           "mode": "de",
-          "probability": 0.010335427432148197,
+          "probability": 0.010344810496130305,
           "base": 0.01,
-          "x_base": 1.0335427432148196,
-          "mixture": 0.010847821969522666,
+          "x_base": 1.0344810496130303,
+          "mixture": 0.011628523839998215,
           "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.14699999814051495,
+              "prob": 0.01580010303733142,
+              "delta": 0.0008526151357025136
+            },
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.015441148141013283,
-              "delta": 0.0008019373462559384
+              "weight": 0.14674253834254358,
+              "prob": 0.01496267365402679,
+              "delta": 0.0007282353289575571
             },
             {
               "expert": "incumbent",
               "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010335427432148197,
-              "delta": 4.7621879413843284e-05
+              "weight": 0.14204537165557118,
+              "prob": 0.010344810496130305,
+              "delta": 4.8978735073570986e-05
             },
             {
               "expert": "lag_repeat",
               "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.009993592457557064,
-              "delta": -9.110842317736747e-07
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.009996134917006363,
-              "delta": -5.67886813606473e-07
+              "weight": 0.14230334114598459,
+              "prob": 0.009993623221251963,
+              "delta": -9.074369215944004e-07
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.009996524766268127,
-              "delta": -4.927691022469327e-07
+              "weight": 0.14191005607966317,
+              "prob": 0.009996514812048793,
+              "delta": -4.945832176040467e-07
             },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000169994900153,
-              "delta": 2.3448400051147563e-07
+              "weight": 0.1380904336947029,
+              "prob": 0.01000069997900063,
+              "delta": 9.66604037742369e-08
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -1879,7 +1879,7 @@
             "components": {
               "c_bayes": 0.0,
               "c_markov": 0.0,
-              "c_cau": 0.0
+              "c_cau": 0.06793206793206794
             }
           },
           "online_active": false,
@@ -1887,7 +1887,7 @@
           "analog": null,
           "reasons": [
             "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,034).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,54%, trọng số 0,147).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (1,58%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
@@ -1895,133 +1895,57 @@
         {
           "number": "32",
           "mode": "de",
-          "probability": 0.010312619213669149,
+          "probability": 0.010275079431545433,
           "base": 0.01,
-          "x_base": 1.0312619213669147,
-          "mixture": 0.010658510342861499,
+          "x_base": 1.0275079431545433,
+          "mixture": 0.010168774990443531,
           "contributions": [
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.014145636678867262,
-              "delta": 0.0006109998828616672
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010312619213669149,
-              "delta": 4.438371185224104e-05
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.010010573223581374,
-              "delta": 1.503399684012583e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.010005486687066655,
-              "delta": 7.779821642924684e-07
+              "weight": 0.14674253834254358,
+              "prob": 0.012599495723537843,
+              "delta": 0.00038145660088252995
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.01000509648830361,
-              "delta": 7.488140637818216e-07
-            },
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000069997900063,
-              "delta": 9.655223550482378e-08
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
-              "prob": 0.01,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": null,
-          "reasons": [
-            "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,031).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,41%, trọng số 0,147).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
-          ]
-        },
-        {
-          "number": "83",
-          "mode": "de",
-          "probability": 0.01028401619558645,
-          "base": 0.01,
-          "x_base": 1.028401619558645,
-          "mixture": 0.01084266958602239,
-          "contributions": [
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.015441148141013283,
-              "delta": 0.0008019373462559384
+              "weight": 0.14699999814051495,
+              "prob": 0.008271168518982354,
+              "delta": -0.00025413822449485765
             },
             {
               "expert": "incumbent",
               "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.01028401619558645,
-              "delta": 4.032283505011814e-05
+              "weight": 0.14204537165557118,
+              "prob": 0.010275079431545433,
+              "delta": 3.907376008867419e-05
             },
             {
               "expert": "lag_repeat",
               "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.010001572056427384,
-              "delta": 2.2352966604641026e-07
-            },
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000069997900063,
-              "delta": 9.655223550482378e-08
+              "weight": 0.14230334114598459,
+              "prob": 0.010010604047327126,
+              "delta": 1.5089913643201375e-06
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.010000507842178583,
-              "delta": 7.200923843710891e-08
+              "weight": 0.14191005607966317,
+              "prob": 0.010005476723923325,
+              "delta": 7.772021990918624e-07
             },
             {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.010000117837582916,
-              "delta": 1.731357634365364e-08
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1380904336947029,
+              "prob": 0.01000069997900063,
+              "delta": 9.66604037742369e-08
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -2039,7 +1963,7 @@
           "analog": null,
           "reasons": [
             "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,028).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,54%, trọng số 0,147).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,26%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
@@ -2047,57 +1971,57 @@
         {
           "number": "42",
           "mode": "de",
-          "probability": 0.010278158496261139,
+          "probability": 0.0102682624622514,
           "base": 0.01,
-          "x_base": 1.0278158496261138,
-          "mixture": 0.010649325323770577,
+          "x_base": 1.02682624622514,
+          "mixture": 0.01033710341021169,
           "contributions": [
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.014145636678867262,
-              "delta": 0.0006109998828616672
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010278158496261139,
-              "delta": 3.94911957022986e-05
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.00999558984126263,
-              "delta": -6.270775607060799e-07
+              "weight": 0.14674253834254358,
+              "prob": 0.013781084688782317,
+              "delta": 0.0005548459649200435
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.009997130647150503,
-              "delta": -4.215867161186864e-07
+              "weight": 0.14699999814051495,
+              "prob": 0.008264583193728386,
+              "delta": -0.0002551062672949456
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.0102682624622514,
+              "delta": 3.81054411517388e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.009995620612080166,
+              "delta": -6.232015331667334e-07
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.009997520535245741,
-              "delta": -3.515745170758608e-07
+              "weight": 0.14191005607966317,
+              "prob": 0.009997510580034851,
+              "delta": -3.532737268601388e-07
             },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
+              "weight": 0.1380904336947029,
               "prob": 0.01000169994900153,
-              "delta": 2.3448400051147563e-07
+              "delta": 2.3474669488005006e-07
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -2107,15 +2031,91 @@
             "components": {
               "c_bayes": 0.0,
               "c_markov": 0.0,
-              "c_cau": 0.1798201798201798
+              "c_cau": 0.0
             }
           },
           "online_active": false,
           "rules": [],
           "analog": null,
           "reasons": [
-            "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,028).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,41%, trọng số 0,147).",
+            "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,027).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,38%, trọng số 0,147).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
+          ]
+        },
+        {
+          "number": "83",
+          "mode": "de",
+          "probability": 0.010254291551079903,
+          "base": 0.01,
+          "x_base": 1.0254291551079902,
+          "mixture": 0.010510008421453821,
+          "contributions": [
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14674253834254358,
+              "prob": 0.01496267365402679,
+              "delta": 0.0007282353289575571
+            },
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.14699999814051495,
+              "prob": 0.008267052690698625,
+              "delta": -0.0002547432512449125
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.010254291551079903,
+              "delta": 3.612093788201641e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.010001602848592157,
+              "delta": 2.280907100150028e-07
+            },
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1380904336947029,
+              "prob": 0.01000069997900063,
+              "delta": 9.66604037742369e-08
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14191005607966317,
+              "prob": 0.01000049788399303,
+              "delta": 7.0654745372077e-08
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14190826094101947,
+              "prob": 0.01,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.4825174825174825,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": null,
+          "reasons": [
+            "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,025).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,50%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
@@ -2123,57 +2123,57 @@
         {
           "number": "39",
           "mode": "de",
-          "probability": 0.010257671784741572,
+          "probability": 0.010240592866619517,
           "base": 0.01,
-          "x_base": 1.025767178474157,
-          "mixture": 0.01065385530821565,
+          "x_base": 1.0240592866619518,
+          "mixture": 0.010894061394593958,
           "contributions": [
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.014145636678867262,
-              "delta": 0.0006109998828616672
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010257671784741572,
-              "delta": 3.658262111338428e-05
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.01002155619144489,
-              "delta": 3.0650606371223665e-06
+              "weight": 0.14674253834254358,
+              "prob": 0.013781084688782317,
+              "delta": 0.0005548459649200435
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.010011075100025824,
-              "delta": 1.627236277821855e-06
+              "weight": 0.14699999814051495,
+              "prob": 0.012043455851895972,
+              "delta": 0.00030038800642893227
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.010240592866619517,
+              "delta": 3.417510315664856e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.010021587054857667,
+              "delta": 3.071910031747673e-06
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.010010465531954725,
-              "delta": 1.4839550901475818e-06
+              "weight": 0.14191005607966317,
+              "prob": 0.010010455563853621,
+              "delta": 1.483749652811894e-06
             },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
+              "weight": 0.1380904336947029,
               "prob": 0.01000069997900063,
-              "delta": 9.655223550482378e-08
+              "delta": 9.66604037742369e-08
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -2182,82 +2182,6 @@
             "tier": "Low/Noise",
             "components": {
               "c_bayes": 0.000999000999000999,
-              "c_markov": 0.0,
-              "c_cau": 0.0
-            }
-          },
-          "online_active": false,
-          "rules": [],
-          "analog": null,
-          "reasons": [
-            "Xác suất đã công bố 1,03% so với mức nền 1,00% (×1,026).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,41%, trọng số 0,147).",
-            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
-            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
-          ]
-        },
-        {
-          "number": "67",
-          "mode": "de",
-          "probability": 0.01024490139309616,
-          "base": 0.01,
-          "x_base": 1.024490139309616,
-          "mixture": 0.010458100325242619,
-          "contributions": [
-            {
-              "expert": "bayes_180",
-              "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.012850125216721242,
-              "delta": 0.0004200624194673961
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.01024490139309616,
-              "delta": 3.476956114058925e-05
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.010011569054119152,
-              "delta": 1.6449961710538998e-06
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.010005486687066655,
-              "delta": 7.779821642924684e-07
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.01000509648830361,
-              "delta": 7.488140637818216e-07
-            },
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000069997900063,
-              "delta": 9.655223550482378e-08
-            },
-            {
-              "expert": "constant",
-              "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
-              "prob": 0.01,
-              "delta": 0.0
-            }
-          ],
-          "confidence": {
-            "tier": "Low/Noise",
-            "components": {
-              "c_bayes": 0.0,
               "c_markov": 0.0,
               "c_cau": 0.0
             }
@@ -2267,7 +2191,7 @@
           "analog": null,
           "reasons": [
             "Xác suất đã công bố 1,02% so với mức nền 1,00% (×1,024).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,29%, trọng số 0,147).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,38%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
@@ -2275,57 +2199,57 @@
         {
           "number": "21",
           "mode": "de",
-          "probability": 0.010222152295085432,
+          "probability": 0.010224423307634003,
           "base": 0.01,
-          "x_base": 1.0222152295085432,
-          "mixture": 0.010451588446171622,
+          "x_base": 1.0224423307634003,
+          "mixture": 0.010712363117202766,
           "contributions": [
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.012850125216721242,
-              "delta": 0.0004200624194673961
-            },
-            {
-              "expert": "incumbent",
-              "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010222152295085432,
-              "delta": 3.153978713164062e-05
-            },
-            {
-              "expert": "bayes_30",
-              "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000069997900063,
-              "delta": 9.655223550482378e-08
-            },
-            {
-              "expert": "bayes_all",
-              "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.00999951207320097,
-              "delta": -6.9185346733717e-08
-            },
-            {
-              "expert": "lag_repeat",
-              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.009999584620608022,
-              "delta": -5.9062521646212004e-08
+              "weight": 0.14674253834254358,
+              "prob": 0.012599495723537843,
+              "delta": 0.00038145660088252995
             },
             {
               "expert": "lag_special",
               "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.0100001220684403,
-              "delta": 1.7935205458242314e-08
+              "weight": 0.14699999814051495,
+              "prob": 0.012034401029671769,
+              "delta": 0.00029905694757881166
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.010224423307634003,
+              "delta": 3.187829214104454e-05
+            },
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1380904336947029,
+              "prob": 0.01000069997900063,
+              "delta": 9.66604037742369e-08
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14191005607966317,
+              "prob": 0.00999950211600697,
+              "delta": -7.0654745372077e-08
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.009999615405670868,
+              "delta": -5.4729058021266475e-08
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -2343,65 +2267,65 @@
           "analog": null,
           "reasons": [
             "Xác suất đã công bố 1,02% so với mức nền 1,00% (×1,022).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,29%, trọng số 0,147).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,26%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
         },
         {
-          "number": "63",
+          "number": "22",
           "mode": "de",
-          "probability": 0.010208316966434854,
+          "probability": 0.010212950728901259,
           "base": 0.01,
-          "x_base": 1.0208316966434854,
-          "mixture": 0.010257393140014306,
+          "x_base": 1.0212950728901258,
+          "mixture": 0.01164614155293273,
           "contributions": [
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.14699999814051495,
+              "prob": 0.019572390370245035,
+              "delta": 0.0014071413666263033
+            },
             {
               "expert": "bayes_180",
               "label": "Bayes tần suất 180 kỳ",
-              "weight": 0.1473838472088718,
-              "prob": 0.011554613754575222,
-              "delta": 0.00022912495607312498
+              "weight": 0.14674253834254358,
+              "prob": 0.01141790675829337,
+              "delta": 0.0002080672368450164
             },
             {
               "expert": "incumbent",
               "label": "Tổ hợp sản xuất",
-              "weight": 0.14197371726234737,
-              "prob": 0.010208316966434854,
-              "delta": 2.957553409357188e-05
+              "weight": 0.14204537165557118,
+              "prob": 0.010212950728901259,
+              "delta": 3.024866543110408e-05
             },
             {
               "expert": "lag_repeat",
               "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
-              "weight": 0.14218934012338863,
-              "prob": 0.009994594018658218,
-              "delta": -7.686729197073527e-07
-            },
-            {
-              "expert": "lag_special",
-              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
-              "weight": 0.14692745654916373,
-              "prob": 0.009997130647150503,
-              "delta": -4.215867161186864e-07
+              "weight": 0.14230334114598459,
+              "prob": 0.01000361021517404,
+              "delta": 5.13745681521742e-07
             },
             {
               "expert": "bayes_all",
               "label": "Bayes tần suất toàn lịch sử",
-              "weight": 0.1417945209634255,
-              "prob": 0.009997520535245741,
-              "delta": -3.515745170758608e-07
+              "weight": 0.14191005607966317,
+              "prob": 0.010001493651979089,
+              "delta": 2.1196423611598484e-07
             },
             {
               "expert": "bayes_30",
               "label": "Bayes tần suất 30 kỳ",
-              "weight": 0.1379359029597584,
-              "prob": 0.01000169994900153,
-              "delta": 2.3448400051147563e-07
+              "weight": 0.1380904336947029,
+              "prob": 0.00999970000899973,
+              "delta": -4.142588733181582e-08
             },
             {
               "expert": "constant",
               "label": "Hằng số (mức nền)",
-              "weight": 0.14179521493304456,
+              "weight": 0.14190826094101947,
               "prob": 0.01,
               "delta": 0.0
             }
@@ -2419,7 +2343,83 @@
           "analog": null,
           "reasons": [
             "Xác suất đã công bố 1,02% so với mức nền 1,00% (×1,021).",
-            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,16%, trọng số 0,147).",
+            "Nguồn kéo mạnh nhất: Điều kiện trễ: cùng Đặc Biệt kỳ trước (1,96%, trọng số 0,147).",
+            "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
+            "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
+          ]
+        },
+        {
+          "number": "67",
+          "mode": "de",
+          "probability": 0.01021211905787435,
+          "base": 0.01,
+          "x_base": 1.021211905787435,
+          "mixture": 0.010159973471355385,
+          "contributions": [
+            {
+              "expert": "bayes_180",
+              "label": "Bayes tần suất 180 kỳ",
+              "weight": 0.14674253834254358,
+              "prob": 0.012599495723537843,
+              "delta": 0.00038145660088252995
+            },
+            {
+              "expert": "lag_special",
+              "label": "Điều kiện trễ: cùng Đặc Biệt kỳ trước",
+              "weight": 0.14699999814051495,
+              "prob": 0.008271168518982354,
+              "delta": -0.00025413822449485765
+            },
+            {
+              "expert": "incumbent",
+              "label": "Tổ hợp sản xuất",
+              "weight": 0.14204537165557118,
+              "prob": 0.01021211905787435,
+              "delta": 3.0130530410991602e-05
+            },
+            {
+              "expert": "lag_repeat",
+              "label": "Điều kiện trễ: cùng trạng thái kỳ trước (Markov bậc 1)",
+              "weight": 0.14230334114598459,
+              "prob": 0.010011599881918168,
+              "delta": 1.650701953854198e-06
+            },
+            {
+              "expert": "bayes_all",
+              "label": "Bayes tần suất toàn lịch sử",
+              "weight": 0.14191005607966317,
+              "prob": 0.010005476723923325,
+              "delta": 7.772021990918624e-07
+            },
+            {
+              "expert": "bayes_30",
+              "label": "Bayes tần suất 30 kỳ",
+              "weight": 0.1380904336947029,
+              "prob": 0.01000069997900063,
+              "delta": 9.66604037742369e-08
+            },
+            {
+              "expert": "constant",
+              "label": "Hằng số (mức nền)",
+              "weight": 0.14190826094101947,
+              "prob": 0.01,
+              "delta": 0.0
+            }
+          ],
+          "confidence": {
+            "tier": "Low/Noise",
+            "components": {
+              "c_bayes": 0.0,
+              "c_markov": 0.0,
+              "c_cau": 0.0
+            }
+          },
+          "online_active": false,
+          "rules": [],
+          "analog": null,
+          "reasons": [
+            "Xác suất đã công bố 1,02% so với mức nền 1,00% (×1,021).",
+            "Nguồn kéo mạnh nhất: Bayes tần suất 180 kỳ (1,26%, trọng số 0,147).",
             "Độ tin cậy Thấp / nhiễu (đã hiệu chỉnh đa kiểm trên 10 000 lịch sử công bằng).",
             "Tự học trực tuyến đang ở chế độ bóng mờ: chưa thắng hằng số đủ chắc để được dùng."
           ]
