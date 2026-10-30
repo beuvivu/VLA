@@ -1,87 +1,87 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-10-29T11:35:27Z",
+  "generated_at_utc": "2026-10-30T11:36:13Z",
   "start_date": "2015-01-01",
-  "end_date": "2026-10-29",
-  "draw_days": 4250,
+  "end_date": "2026-10-30",
+  "draw_days": 4251,
   "permutations": 127,
   "primary_tests": [
     {
       "name": "de_suffix_uniformity",
-      "statistic": 86.28235294117646,
-      "p_value": 0.8153443421170828,
-      "q_value_fdr": 0.828125,
+      "statistic": 86.45001176193837,
+      "p_value": 0.8118446193753336,
+      "q_value_fdr": 0.8515625,
       "fdr_05": false
     },
     {
       "name": "all_prize_suffix_uniformity",
-      "statistic": 90.54553376906318,
-      "p_value": 0.7160326770434106,
-      "q_value_fdr": 0.828125,
+      "statistic": 90.42204448626465,
+      "p_value": 0.7191813088047264,
+      "q_value_fdr": 0.8515625,
       "fdr_05": false
     },
     {
       "name": "de_runs_independence",
-      "statistic": -0.23079332103731595,
-      "p_value": 0.8174753702170074,
-      "q_value_fdr": 0.828125,
+      "statistic": -0.21526814282943516,
+      "p_value": 0.8295582657088676,
+      "q_value_fdr": 0.8515625,
       "fdr_05": false
     },
     {
       "name": "weekday_vs_de_tail",
-      "statistic": 43.888647987208735,
-      "p_value": 0.828125,
-      "q_value_fdr": 0.828125,
+      "statistic": 43.75597051165794,
+      "p_value": 0.8515625,
+      "q_value_fdr": 0.8515625,
       "fdr_05": false
     },
     {
       "name": "loto_repeat_dependency",
-      "statistic": 0.0011768374997377373,
-      "p_value": 0.3359375,
-      "q_value_fdr": 0.828125,
+      "statistic": 0.0011802731636230135,
+      "p_value": 0.3828125,
+      "q_value_fdr": 0.8515625,
       "fdr_05": false
     }
   ],
-  "de_entropy_ratio": 0.9977648965267104,
-  "all_prize_entropy_ratio": 0.9999143460891206,
+  "de_entropy_ratio": 0.9977608346168932,
+  "all_prize_entropy_ratio": 0.9999144761180466,
   "weekday_test": {
-    "statistic": 43.888647987208735,
-    "p_value_asymptotic": 0.835484853968242,
-    "p_value_permutation": 0.828125,
-    "min_expected_cell": 57.843529411764706,
+    "statistic": 43.75597051165794,
+    "p_value_asymptotic": 0.8390952092933739,
+    "p_value_permutation": 0.8515625,
+    "min_expected_cell": 57.82992237120678,
     "method": "weekday labels permuted; DE tail distribution preserved"
   },
   "loto_repeat_test": {
-    "effect": 0.0011768374997377373,
-    "p_value": 0.3359375,
-    "null_mean": 0.00011339665158536448,
-    "null_std": 0.0013970847995631469,
+    "effect": 0.0011802731636230135,
+    "p_value": 0.3828125,
+    "null_mean": 2.3286795140527664e-05,
+    "null_std": 0.0014467168223876894,
     "method": "two-sided day-level circular-shift permutation"
   },
   "coverage": [
     {
       "window_days": 7,
-      "observed_mean_distinct": 85.05890669180019,
+      "observed_mean_distinct": 85.05936395759717,
       "observed_min_distinct": 75,
       "observed_max_distinct": 95,
-      "expected_from_empirical_marginals": 85.1038615648251,
-      "mean_minus_expected": -0.044954873024906306
+      "expected_from_empirical_marginals": 85.10486815689968,
+      "mean_minus_expected": -0.04550419930251337
     },
     {
       "window_days": 14,
-      "observed_mean_distinct": 97.73400991267407,
+      "observed_mean_distinct": 97.73430863614912,
       "observed_min_distinct": 92,
       "observed_max_distinct": 100,
-      "expected_from_empirical_marginals": 97.77432204673877,
-      "mean_minus_expected": -0.04031213406470613
+      "expected_from_empirical_marginals": 97.7746155544954,
+      "mean_minus_expected": -0.040306918346274756
     },
     {
       "window_days": 30,
-      "observed_mean_distinct": 99.9729921819474,
+      "observed_mean_distinct": 99.97299857887258,
       "observed_min_distinct": 99,
       "observed_max_distinct": 100,
-      "expected_from_empirical_marginals": 99.97080500746868,
-      "mean_minus_expected": 0.0021871744787205216
+      "expected_from_empirical_marginals": 99.97081252013514,
+      "mean_minus_expected": 0.0021860587374362694
     }
   ],
   "acf_significant_lags_fdr05": [],

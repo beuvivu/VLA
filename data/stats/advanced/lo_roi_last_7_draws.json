@@ -1,21 +1,33 @@
 [
   {
-    "value":1,
+    "value":25,
     "count_in_window":5,
     "days_in_window":5,
-    "value_str":"01"
+    "value_str":"25"
   },
   {
-    "value":25,
+    "value":52,
+    "count_in_window":5,
+    "days_in_window":4,
+    "value_str":"52"
+  },
+  {
+    "value":1,
     "count_in_window":4,
     "days_in_window":4,
-    "value_str":"25"
+    "value_str":"01"
   },
   {
     "value":28,
     "count_in_window":4,
     "days_in_window":4,
     "value_str":"28"
+  },
+  {
+    "value":59,
+    "count_in_window":4,
+    "days_in_window":4,
+    "value_str":"59"
   },
   {
     "value":76,
@@ -30,16 +42,10 @@
     "value_str":"85"
   },
   {
-    "value":88,
+    "value":94,
     "count_in_window":4,
     "days_in_window":4,
-    "value_str":"88"
-  },
-  {
-    "value":16,
-    "count_in_window":4,
-    "days_in_window":3,
-    "value_str":"16"
+    "value_str":"94"
   },
   {
     "value":34,
@@ -48,16 +54,16 @@
     "value_str":"34"
   },
   {
+    "value":47,
+    "count_in_window":4,
+    "days_in_window":3,
+    "value_str":"47"
+  },
+  {
     "value":49,
     "count_in_window":4,
     "days_in_window":3,
     "value_str":"49"
-  },
-  {
-    "value":52,
-    "count_in_window":4,
-    "days_in_window":3,
-    "value_str":"52"
   },
   {
     "value":69,
@@ -66,16 +72,16 @@
     "value_str":"69"
   },
   {
+    "value":81,
+    "count_in_window":4,
+    "days_in_window":3,
+    "value_str":"81"
+  },
+  {
     "value":91,
     "count_in_window":4,
     "days_in_window":2,
     "value_str":"91"
-  },
-  {
-    "value":0,
-    "count_in_window":3,
-    "days_in_window":3,
-    "value_str":"00"
   },
   {
     "value":5,
@@ -84,10 +90,16 @@
     "value_str":"05"
   },
   {
-    "value":21,
+    "value":6,
     "count_in_window":3,
     "days_in_window":3,
-    "value_str":"21"
+    "value_str":"06"
+  },
+  {
+    "value":23,
+    "count_in_window":3,
+    "days_in_window":3,
+    "value_str":"23"
   },
   {
     "value":24,
@@ -102,24 +114,6 @@
     "value_str":"27"
   },
   {
-    "value":50,
-    "count_in_window":3,
-    "days_in_window":3,
-    "value_str":"50"
-  },
-  {
-    "value":59,
-    "count_in_window":3,
-    "days_in_window":3,
-    "value_str":"59"
-  },
-  {
-    "value":64,
-    "count_in_window":3,
-    "days_in_window":3,
-    "value_str":"64"
-  },
-  {
     "value":66,
     "count_in_window":3,
     "days_in_window":3,
@@ -132,22 +126,10 @@
     "value_str":"86"
   },
   {
-    "value":94,
+    "value":88,
     "count_in_window":3,
     "days_in_window":3,
-    "value_str":"94"
-  },
-  {
-    "value":96,
-    "count_in_window":3,
-    "days_in_window":3,
-    "value_str":"96"
-  },
-  {
-    "value":14,
-    "count_in_window":3,
-    "days_in_window":2,
-    "value_str":"14"
+    "value_str":"88"
   },
   {
     "value":19,
@@ -162,22 +144,10 @@
     "value_str":"41"
   },
   {
-    "value":47,
+    "value":75,
     "count_in_window":3,
     "days_in_window":2,
-    "value_str":"47"
-  },
-  {
-    "value":53,
-    "count_in_window":3,
-    "days_in_window":2,
-    "value_str":"53"
-  },
-  {
-    "value":81,
-    "count_in_window":3,
-    "days_in_window":2,
-    "value_str":"81"
+    "value_str":"75"
   },
   {
     "value":82,
@@ -192,22 +162,34 @@
     "value_str":"97"
   },
   {
+    "value":0,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"00"
+  },
+  {
     "value":3,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"03"
   },
   {
-    "value":6,
+    "value":4,
     "count_in_window":2,
     "days_in_window":2,
-    "value_str":"06"
+    "value_str":"04"
   },
   {
-    "value":11,
+    "value":14,
     "count_in_window":2,
     "days_in_window":2,
-    "value_str":"11"
+    "value_str":"14"
+  },
+  {
+    "value":16,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"16"
   },
   {
     "value":17,
@@ -216,16 +198,10 @@
     "value_str":"17"
   },
   {
-    "value":22,
+    "value":21,
     "count_in_window":2,
     "days_in_window":2,
-    "value_str":"22"
-  },
-  {
-    "value":23,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"23"
+    "value_str":"21"
   },
   {
     "value":26,
@@ -282,28 +258,58 @@
     "value_str":"45"
   },
   {
+    "value":48,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"48"
+  },
+  {
+    "value":50,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"50"
+  },
+  {
+    "value":53,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"53"
+  },
+  {
+    "value":57,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"57"
+  },
+  {
+    "value":60,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"60"
+  },
+  {
     "value":63,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"63"
   },
   {
-    "value":67,
+    "value":64,
     "count_in_window":2,
     "days_in_window":2,
-    "value_str":"67"
+    "value_str":"64"
+  },
+  {
+    "value":65,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"65"
   },
   {
     "value":68,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"68"
-  },
-  {
-    "value":72,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"72"
   },
   {
     "value":73,
@@ -330,22 +336,16 @@
     "value_str":"92"
   },
   {
-    "value":40,
+    "value":96,
     "count_in_window":2,
-    "days_in_window":1,
-    "value_str":"40"
+    "days_in_window":2,
+    "value_str":"96"
   },
   {
     "value":61,
     "count_in_window":2,
     "days_in_window":1,
     "value_str":"61"
-  },
-  {
-    "value":75,
-    "count_in_window":2,
-    "days_in_window":1,
-    "value_str":"75"
   },
   {
     "value":93,
