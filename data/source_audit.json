@@ -1570,5 +1570,21 @@
       "G1"
     ],
     "candidates": 1
+  },
+  "2026-10-31": {
+    "checked_at_utc": "2026-10-31T11:34:28Z",
+    "accepted": true,
+    "required_agreement": 1,
+    "agreement": 1,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "sources": [
+      "P1"
+    ],
+    "source_agreement": 1,
+    "independent_groups": [
+      "G1"
+    ],
+    "candidates": 1
   }
 }
