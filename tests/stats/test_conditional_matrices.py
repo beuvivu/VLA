@@ -108,7 +108,7 @@ def test_a_fair_history_puts_no_cell_above_its_baseline() -> None:
         # trong 10 000 ô, không phải tín hiệu.
         b, n = top["baseline_rate"], top["base_count"]
         assert (top["conditional_rate"] - b) / np.sqrt(b * (1 - b) / n) > 3
-        # Nhưng sau co và đa kiểm thì không ô nào khác mức nền.
+        # Nhưng sau co và đa kiểm thì không ô nào lệch khỏi mức nền có ý nghĩa.
         assert (table["posterior_rate"] - table["baseline_rate"]).abs().max() < 0.005
         assert table["q_value_fdr"].min() > 0.05
 
@@ -167,8 +167,13 @@ def test_the_reading_note_is_derived_from_the_table() -> None:
 
     fair = build_conditional_tables(*_fair_frames(), top=500)[0]
     planted = build_conditional_tables(*_fair_frames(plant=(42, 96)), top=500)[0]
-    assert "Không ô nào khác mức nền" in reading_note(fair)
-    assert reading_note(planted).startswith("Xếp theo p tăng dần") and "1 ô khác mức nền" in reading_note(planted)
+    assert "Không ô nào lệch khỏi mức nền" in reading_note(fair)
+    assert reading_note(planted).startswith("Xếp theo p tăng dần") and " 1 ô lệch khỏi mức nền" in reading_note(planted)
+    # q ≥ ngưỡng chỉ là chưa có bằng chứng lệch, không phải bằng chứng "ngang mức nền".
+    assert "ngang" not in reading_note(planted).lower()
+    # Trang chỉ đọc vài chục dòng đầu: khi mọi dòng đã đọc đều đạt ngưỡng, số thật có thể lớn hơn.
+    assert "ít nhất 1 ô" in reading_note(planted.head(1))
+    assert "ít nhất" not in reading_note(planted.head(2))
 
 
 def test_statistical_matrices_builds_the_same_calendar_safe_tables() -> None:

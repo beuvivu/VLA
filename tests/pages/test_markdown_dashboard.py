@@ -104,6 +104,6 @@ def test_the_conditional_table_puts_the_raw_rate_beside_its_baseline_in_evidence
     text = _conditional(path)
     rows = [line for line in text.splitlines() if line.startswith("| 1 ") or line.startswith("| 2 ")]
     assert "`42` → **`96`**" in rows[0] and "Qua FDR 5%" in rows[0] and "30/60" in rows[0]
-    assert "`37` → **`52`**" in rows[1] and "Ngang mức nền sau hiệu chỉnh đa kiểm" in rows[1]
+    assert "`37` → **`52`**" in rows[1] and "Chưa có bằng chứng lệch khỏi mức nền" in rows[1]
     assert "| Mức nền |" in text and "24.00%" in rows[1]
-    assert text.startswith("> Xếp theo p tăng dần") and "1 ô khác mức nền" in text
+    assert text.startswith("> Xếp theo p tăng dần") and "1 ô lệch khỏi mức nền" in text

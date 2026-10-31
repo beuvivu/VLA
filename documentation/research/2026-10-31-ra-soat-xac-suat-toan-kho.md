@@ -75,7 +75,7 @@ Mỗi hàng của bảng Đặc Biệt chỉ có khoảng 42 kỳ, nên đầu b
 | LOTO → LOTO | 94 → 10 | 300/1 035 = 29,0% | 24,7% | 24,7% | 0,97 |
 
 Trên lịch sử quay công bằng giả lập (20 lịch sử × 4 250 kỳ), ô đầu bảng theo tỉ lệ thô đạt TB **53,4%**,
-đúng như ô 52,5% của dữ liệu thật. Không ô nào của ba bảng thật khác mức nền sau hiệu chỉnh đa kiểm.
+đúng như ô 52,5% của dữ liệu thật. Không ô nào của ba bảng thật lệch khỏi mức nền có ý nghĩa sau hiệu chỉnh đa kiểm — tức chưa có bằng chứng lệch, không phải bằng chứng "ngang mức nền" (muốn nói ngang phải có phép kiểm tương đương).
 
 **Sửa.** Mỗi ô có thêm năm cột:
 

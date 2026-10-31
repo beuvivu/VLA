@@ -497,7 +497,7 @@ def _conditional(path: Path, top_n: int=15) -> str:
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
         q=_safe_float(r.get("q_value_fdr"),math.nan)
-        meaning="Qua FDR 5%" if q<FDR_LEVEL else "Ngang mức nền sau hiệu chỉnh đa kiểm" if math.isfinite(q) else "—"
+        meaning="Qua FDR 5%" if q<FDR_LEVEL else "Chưa có bằng chứng lệch khỏi mức nền" if math.isfinite(q) else "—"
         rows.append([i,f"`{_fmt2(r.get(prev))}` → **`{_fmt2(r.get(nxt))}`**" if prev and nxt else "—",
                      _fmt_pct(r.get("conditional_rate"),2),f"{_fmt_num(r.get('count'),0)}/{_fmt_num(r.get('base_count'),0)}",
                      _fmt_pct(r.get("baseline_rate"),2),_fmt_pct(r.get("posterior_rate"),2),

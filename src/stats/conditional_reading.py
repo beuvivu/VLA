@@ -13,24 +13,31 @@ import pandas as pd
 #: bảng 100 × 100 ô là ô may mắn nhất, không phải xác suất kỳ sau.
 DISPLAY_COLUMNS = ("count", "base_count", "conditional_rate", "baseline_rate", "posterior_rate", "q_value_fdr")
 
-#: Ngưỡng FDR mà câu đọc bảng dùng để nói một ô "khác mức nền".
+#: Ngưỡng FDR mà câu đọc bảng dùng để nói một ô "lệch khỏi mức nền có ý nghĩa".
 FDR_LEVEL = 0.05
 
 
 def reading_note(table: pd.DataFrame) -> str:
     """Câu đọc bảng cho trang, suy TỪ q của chính bảng — không viết cứng kết luận.
 
-    q của BH không giảm theo p và bảng xếp theo p tăng dần, nên mọi ô đạt ngưỡng đều nằm
-    trong ``top`` dòng đã ghi (khi số ô đạt ngưỡng không vượt ``top``).
+    q của BH không giảm theo p và bảng xếp theo p tăng dần, nên các ô đạt ngưỡng là các dòng ĐẦU
+    của bảng. Trang có thể chỉ đọc vài chục dòng đầu (trang Thống kê đọc 80): nếu MỌI dòng đã
+    đọc đều đạt ngưỡng thì số thật có thể lớn hơn, và câu nói "ít nhất".
+
+    q ≥ ngưỡng là CHƯA CÓ BẰNG CHỨNG lệch, không phải bằng chứng "ngang mức nền": muốn nói ngang
+    thì phải có phép kiểm tương đương.
     """
     if table is None or table.empty or "q_value_fdr" not in table.columns:
         return "Chưa có số đo mức nền cho bảng này."
     q = pd.to_numeric(table["q_value_fdr"], errors="coerce")
     passed = int((q < FDR_LEVEL).sum())
     order = "Xếp theo p tăng dần: ô lệch khỏi mức nền mạnh nhất lên đầu."
+    level = f"{FDR_LEVEL:.2f}".replace(".", ",")
     if passed == 0:
         q_min = f"{q.min():.2f}".replace(".", ",")
-        return (f"{order} Không ô nào khác mức nền sau hiệu chỉnh đa kiểm trên 100 × 100 ô (q nhỏ nhất "
-                f"{q_min}): tỉ lệ thô ở đầu bảng là ô may mắn nhất trong cả bảng, ước lượng sau co ≈ mức nền.")
-    level = f"{FDR_LEVEL:.2f}".replace(".", ",")
-    return f"{order} {passed} ô khác mức nền sau hiệu chỉnh đa kiểm (q < {level}); các ô còn lại ngang mức nền."
+        return (f"{order} Không ô nào lệch khỏi mức nền có ý nghĩa sau hiệu chỉnh đa kiểm trên 100 × 100 ô "
+                f"(q nhỏ nhất {q_min}): tỉ lệ thô ở đầu bảng là ô may mắn nhất trong cả bảng, ước lượng sau co "
+                "≈ mức nền.")
+    count = f"ít nhất {passed}" if passed >= len(q) else str(passed)
+    return (f"{order} {count} ô lệch khỏi mức nền có ý nghĩa sau hiệu chỉnh đa kiểm (q < {level}); "
+            "các ô còn lại chưa có bằng chứng lệch.")
