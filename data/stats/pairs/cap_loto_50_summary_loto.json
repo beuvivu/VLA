@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-31T11:36:15Z",
+  "generated_at": "2026-10-31T23:02:41Z",
   "mode": "loto",
   "history_start": "2015-01-01",
   "history_end": "2026-10-31",
@@ -20,6 +20,8 @@
   "kep_bong_mean_phi": -0.01193925716098359,
   "reverse_mean_member_rate_gap_365d": 0.02599695585996956,
   "reverse_mean_member_balance_365d": 0.8999504287878712,
-  "current_cau_scores_aligned": false,
-  "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities"
+  "current_cau_scores_aligned": true,
+  "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities",
+  "kep_bong_mean_current_cau_score_gap": 12.22778,
+  "kep_bong_mean_current_cau_score_balance": 0.7650528172971418
 }

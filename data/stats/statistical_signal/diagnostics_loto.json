@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-10-31T11:36:21Z",
+  "generated_at_utc": "2026-10-31T23:02:53Z",
   "anchor_date": "2026-10-31",
   "target_date": "2026-11-01",
   "history_days": 4252,
@@ -20,7 +20,7 @@
     "sharpness": 1.0,
     "selected": true,
     "brier_by_candidate": {
-      "linear": 0.18113429010379428,
+      "linear": 0.1811342901037943,
       "log(s=0)": 0.18112295616024182,
       "log(s=0.1)": 0.18112399405682236,
       "log(s=0.2)": 0.18112505285942646,
@@ -31,7 +31,7 @@
       "log(s=1)": 0.18113427390630296,
       "log(s=1.2)": 0.18113678706786007,
       "log(s=1.5)": 0.18114071219764025,
-      "log(s=2)": 0.18114766734718724,
+      "log(s=2)": 0.1811476673471873,
       "log(s=3)": 0.18116311999012014
     },
     "holdout_days": 90,
@@ -53,7 +53,7 @@
   "max_stability": 0.9993825930242225,
   "dynamics_weight_in_stat_signal": 0.3,
   "global_dynamics_reliability": 0.7606221070662557,
-  "regime_js_divergence_30_vs_180": 0.010415679627338902,
+  "regime_js_divergence_30_vs_180": 0.010415679627338904,
   "transition_active_mean_trials": 1002.0,
   "calendar_contiguous": true,
   "interpretation": "Empirical-Bayes + higher-order dynamics component. Markov, transition, hazard, lag and regime evidence is shrinkage-regularized, calendar-validated, and used only as probabilistic ranking support."
