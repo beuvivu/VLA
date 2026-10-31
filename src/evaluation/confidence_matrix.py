@@ -42,8 +42,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-#: Xác suất một con về ít nhất một lần trong 27 giải của một kỳ công bằng.
-BASE = 1 - 0.99**27
+from core.xsmb_domain import LOTO_BASELINE_RATE
+
+#: Xác suất một con về ít nhất một lần trong 27 giải của một kỳ công bằng — hằng số chung của
+#: ``core.xsmb_domain`` (cùng giá trị với bản viết tay cũ, nên phân vị null đã lưu vẫn hợp lệ).
+BASE = LOTO_BASELINE_RATE
 #: Prior Beta "ngây thơ": 100 kỳ giả, tâm ở tỉ lệ nền.
 PRIOR_N = 100.0
 #: Mốc chia mẫu học / mẫu kiểm cho phép kiểm ngoài mẫu.

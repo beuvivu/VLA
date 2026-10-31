@@ -237,3 +237,14 @@ def test_the_footer_clock_shows_local_time_not_utc() -> None:
     assert "getTimezoneOffset()" in script, script
     for call in ("getFullYear()", "getMonth()", "getDate()", "getHours()"):
         assert call in script, call
+
+
+def test_highlighted_tables_keep_tied_rows_in_file_order() -> None:
+    # quicksort của numpy xếp dòng hoà theo lệnh vector của CPU: cùng dữ liệu, runner CI và máy
+    # khác in thứ tự khác nhau. Ổn định nghĩa là trong mỗi mức điểm, dòng giữ thứ tự của tệp.
+    pairs = [f"{i:02d}-{i:02d}" for i in range(100)] * 3
+    df = pd.DataFrame({"pair": pairs, "freq": [1, 2, 3] * 100})
+    page = _table(df, title="t", columns=["pair", "freq"], max_rows=300, highlight_col="freq")
+    shown = re.findall(r"<span class='num-pill'>(\d\d-\d\d)</span>", page)
+    expected = [pair for score in (3, 2, 1) for pair, s in zip(pairs, df["freq"], strict=True) if s == score]
+    assert shown == expected

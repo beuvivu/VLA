@@ -174,15 +174,6 @@ function installFrequencyBento(renderName) {
     });
     $("bf-selection-count").textContent = pairPage ? `${pickedPairs.size}/50 họ cặp` : `${Array.from({length:100},(_,i)=>i).filter(isPicked).length}/100 số`;
     $("sp-matrix-note").textContent = `${rows.length} kỳ · mới nhất trước`;
-    if (!pairPage) {
-      // Bảng xếp hạng đếm tổng số nháy trên trọn dải đã chọn.
-      const expected = rows.length * 27 / 100;
-      $("sp-grid").querySelectorAll("tbody tr").forEach(tr => {
-        if (tr.cells.length !== 5) return;
-        tr.cells[3].textContent = expected.toFixed(1);
-        tr.cells[4].textContent = expected ? (Number(tr.cells[2].textContent) / expected).toFixed(2) + "×" : "—";
-      });
-    }
     paintMarks();
   }
   function decorateCells(rows, specials) {

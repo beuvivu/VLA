@@ -190,6 +190,17 @@ test('dải LOTO rỗng xóa tổng 00–99 và bảng xếp hạng rồi phục
   assert.equal(d.querySelector('#sp-grid tbody tr').cells[1].textContent, '01');
 });
 
+test('bảng xếp hạng LOTO so số nháy với 27/100 nháy mỗi kỳ, không với tỉ lệ có mặt 1 − 0,99²⁷', t => {
+  // Bộ máy thống kê tự tính cột kỳ vọng; trước đây nó dùng 23,77% và một đoạn vá trong
+  // frequency_bento.js ghi đè lại sau mỗi lần dựng. Đoạn vá đã gỡ, nên phép kiểm này canh
+  // chính bộ máy: 3 kỳ → 0,81 nháy, số 55 về 29 nháy → 35,80×.
+  const dom = setup(t, 'tan-suat-loto'), d = dom.window.document;
+  const top = () => d.querySelector('#sp-grid tbody tr').cells;
+  assert.deepEqual([...top()].map(cell => cell.textContent), ['1', '55', '29', '0.8', '35.80×']);
+  change(dom, 'sp-from', '2026-09-02');
+  assert.deepEqual([...top()].map(cell => cell.textContent), ['1', '55', '29', '0.5', '53.70×']);
+});
+
 test('bấm tổng nháy của số 00 mở đúng khối, con số, phép đếm và dải hiện tại', t => {
   const dom = setup(t, 'thong-ke-tong-hop', { evidence: true }), d = dom.window.document;
   click(dom, d.querySelector('#sp-overview-matrix .sp-cell i'));

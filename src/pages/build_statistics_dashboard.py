@@ -18,6 +18,8 @@ import numpy as np
 import pandas as pd
 
 from core.safe_io import read_csv_or_empty, read_json_or_empty
+from stats.conditional_reading import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
+from stats.conditional_reading import reading_note as conditional_reading_note
 
 from web.ui_locale import (
     COLUMN_LABELS,
@@ -117,8 +119,10 @@ def _display_cell(value: object, col: str) -> str:
         return html.escape(mode_label(value))
     if col == "score_band":
         return html.escape(str(value_label(value)))
-    if col in {"hit_rate", "rate", "conditional_rate", "ml_prob"}:
+    if col in {"hit_rate", "rate", "conditional_rate", "baseline_rate", "posterior_rate", "ml_prob"}:
         return html.escape(_fmt_value(value, decimals=3, percent=False))
+    if col == "q_value_fdr":
+        return html.escape(_fmt_value(value, decimals=2, percent=False))
     if col in {
         "ai_ml_signal_score",
         "z_score",
@@ -525,7 +529,9 @@ def _table(
     if highlight_col and highlight_col in view.columns:
         view = view.copy()
         view["_highlight"] = pd.to_numeric(view[highlight_col], errors="coerce").fillna(0.0)
-        view = view.sort_values("_highlight", ascending=False)
+        # Ổn định: quicksort của numpy xếp dòng hoà theo lệnh vector của CPU (xem _sort_top của
+        # trang chủ), nên runner CI và máy khác in dòng hoà khác nhau.
+        view = view.sort_values("_highlight", ascending=False, kind="stable")
     view = view.head(max_rows).copy()
     zfill = set(zfill_cols)
     full_results = set(result_cols)
@@ -2146,8 +2152,8 @@ def main() -> None:
 
     conditional_body = f"""
     <div class="layout-grid two">
-      {_table(cond_de_loto, title="LOTO sau Đặc Biệt", subtitle="Quan hệ điều kiện lịch sử: Đặc Biệt hôm trước → LOTO hôm sau.", columns=["prev_special_2d", "next_loto", "count", "base_count", "conditional_rate"], max_rows=45, highlight_col="conditional_rate", zfill_cols={"prev_special_2d", "next_loto"})}
-      {_table(cond_loto_loto, title="LOTO sau LOTO", subtitle="Quan hệ điều kiện lịch sử: LOTO hôm trước → LOTO hôm sau.", columns=["prev_loto", "next_loto", "count", "base_count", "conditional_rate"], max_rows=45, highlight_col="conditional_rate", zfill_cols={"prev_loto", "next_loto"})}
+      {_table(cond_de_loto, title="LOTO sau Đặc Biệt", subtitle="Đặc Biệt hôm trước → LOTO hôm sau. " + conditional_reading_note(cond_de_loto), columns=["prev_special_2d", "next_loto", *CONDITIONAL_DISPLAY], max_rows=45, zfill_cols={"prev_special_2d", "next_loto"})}
+      {_table(cond_loto_loto, title="LOTO sau LOTO", subtitle="LOTO hôm trước → LOTO hôm sau. " + conditional_reading_note(cond_loto_loto), columns=["prev_loto", "next_loto", *CONDITIONAL_DISPLAY], max_rows=45, zfill_cols={"prev_loto", "next_loto"})}
     </div>
     """
 
