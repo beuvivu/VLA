@@ -297,9 +297,21 @@ def main():
                             search.press("Escape")
                             assert not page.locator("#app-global-search").is_visible()
                             if name in ("tan-suat-loto.html", "tan-suat-cap-loto.html"):
+                                # Ô được cuộn tới (bàn phím, scrollIntoView) không được nằm khuất
+                                # dưới cột nhãn dính: khoảng đệm cuộn trái ≥ bề rộng cột ấy, ở cả
+                                # hai chế độ. Không phụ thuộc dữ liệu — lỗi cũ chỉ lộ khi ô "1" đầu
+                                # tiên rơi vào cột bị cắt mép (31-10-2026, 390px).
+                                for mode in ("vertical", "horizontal"):
+                                    page.locator(f'[data-app-orientation="{mode}"]').click()
+                                    pad, label = page.evaluate(
+                                        "() => { const g = document.querySelector('#sp-matrix-grid');"
+                                        " return [parseFloat(getComputedStyle(g.parentElement).scrollPaddingLeft),"
+                                        " g.querySelector('tbody td:first-child').getBoundingClientRect().width]; }")
+                                    assert pad >= label - 1, (
+                                        f"{name} {width}px {mode}: khoảng đệm cuộn {pad}px hẹp hơn cột nhãn dính "
+                                        f"{label}px — ô cuộn tới nằm khuất dưới cột ấy")
                                 # Kiểm bảng chi tiết trong chế độ Ngang; thẻ Dọc được
                                 # kiểm riêng cùng biểu đồ và lịch sử từng số.
-                                page.locator('[data-app-orientation="horizontal"]').click()
                                 if name == "tan-suat-cap-loto.html":
                                     picker = page.locator("details").filter(has=page.locator("#bf-pair-picker"))
                                     if picker.get_attribute("open") is None:
