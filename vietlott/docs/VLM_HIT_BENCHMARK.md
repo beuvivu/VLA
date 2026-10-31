@@ -101,6 +101,10 @@ Drift của đặc trưng không bao giờ là bằng chứng mô hình dự bá
 - Từ 15-10-2026 bảng điều khiển phát năm vé RỜI NHAU cho lần ghi có `ticket_rule = coverage-v1`
   (`distribution.coverage_tickets`), chấm đúng năm vé ấy; benchmark này (đã đăng ký 13-10) vẫn chấm vé
   ML là bộ đầu của `Law.top` — đổi nó là đăng ký giao thức mới.
+- Từ 31-10-2026 lần ghi mang `ticket_rule = coverage-v2`: như v1, và vé Lotto 5/35 thứ j mang số đặc
+  biệt hạng j (`distribution.coverage_specials`), được chấm đúng số ấy. Mốc chính xác "ít nhất một vé trúng
+  giải" là 45,7% so với 14,7% khi năm vé chung một số (`dashboard.prize_coverage`). Benchmark H chỉ chấm
+  Mega/Power nên không đổi.
 - Vé công bố giữ quy tắc cũ: legacy = 6 số π cao nhất (sổ `ledger.jsonl`), ML = bộ đầu của
   `Law.top(PUBLISHED_TOP_N)` (`ml-ledger.jsonl`). Sổ chỉ ghi thêm; bảng điều khiển lấy bản ghi SỚM NHẤT trước giờ quay.
 - Checkpoint ML lên version 3 ngày 13-10-2026 (`pair_link`/`triple_link` không còn gộp tần suất

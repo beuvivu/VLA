@@ -111,6 +111,31 @@ quay bằng cách gọi trực tiếp `issue()`.
 5. Bootstrap tối đa 1.000 kỳ gần nhất, rồi chỉ nạp kỳ mới. Backtest bootstrap là
    thử nghiệm hồi cứu. Kiểm định live là một luồng riêng, bắt đầu sau khởi tạo.
 
+### Chuyên gia hỗn hợp Bayes cho bộ chữ số (từ 31-10-2026, checkpoint version 5)
+
+Thành phần chữ số (Lotto đặc biệt, Max 3D, Max 3D Pro, Max 4D, Bingo18) có thêm chuyên gia
+`bayes_mixture` (`vlm.forecast.bayes_expert`). Nó là luật hậu nghiệm `Σ_j v_j q_j` của hỗn hợp Bayes
+chia sẻ cố định trong `vietlott_engine.forecast`. Hỗn hợp ấy gồm Dirichlet co mạnh và các "tilt" thưa,
+mỗi giả thuyết một tham số. Chuyên gia chạy trên đúng các kỳ bộ ML học, chấm trước rồi mới học.
+
+Vì sao cần: Max 3D lệch thật ở hàng đơn vị (chữ số 6 chiếm 10,6–11,3% ở cả sáu giai đoạn 2019 → 2026).
+Logistic, GRU và RF không học được độ lệch nhỏ và ổn định ấy. Một Dirichlet đầy đủ cũng không học được,
+vì chi phí học 27 tham số lớn hơn lợi ích.
+
+Log-score so với quay công bằng trên 1 000 kỳ cuối:
+
+| Sản phẩm | Trước | Sau |
+|---|---|---|
+| Max 3D | −0,158 log10 | +0,771 log10 |
+| Max 3D Pro | −0,161 log10 | +0,641 log10 |
+| Max 4D | −0,248 | −0,222 |
+| Bingo18 | −0,271 | −0,241 |
+| Số đặc biệt Lotto | −0,241 | −0,234 |
+
+Trọng số Bayes của ensemble tự quyết có tin chuyên gia này hay không. Xác suất triển khai
+(`p_deployed`) vẫn là luật công bằng cho tới khi cổng live mở. Mega, Power và Keno không đổi, và vẫn
+nạp checkpoint 3/4.
+
 ## Vận hành và phục hồi
 
 API/CLI updater tự gọi bộ học sau khi lưu kết quả, mặc định

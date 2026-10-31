@@ -18,10 +18,17 @@ from vietlott_engine.game_theory.popularity import elementary_symmetric
 #: mọi nơi chấm vé đã phát phải gọi đúng số này, không gọi ``top(1)``.
 PUBLISHED_TOP_N = 5
 
-#: Quy tắc dựng các vé công bố từ luật đã ghi trước kỳ quay (từ 15-10-2026). Ghi vào sổ CÙNG lần ghi
-#: luật (``pending['ticket_rule']``), nên lượt chấm biết vé nào đã thật sự được phát; dự báo ghi trước
-#: ngày ấy không có khoá này và giữ ``Law.top`` — không kỳ cũ nào bị chấm lại bằng quy tắc mới.
-COVERAGE_RULE = 'coverage-v1'
+#: Quy tắc dựng các vé công bố từ luật đã ghi trước kỳ quay. Ghi vào sổ CÙNG lần ghi luật
+#: (``pending['ticket_rule']``), nên lượt chấm biết vé nào đã thật sự được phát; mỗi lần ghi được dựng
+#: và chấm theo ĐÚNG quy tắc của nó — không kỳ cũ nào bị chấm lại bằng quy tắc mới.
+#:
+#: * không có khoá (trước 15-10-2026): ``Law.top``;
+#: * ``coverage-v1`` (15-10-2026): năm vé bộ số chính RỜI NHAU (``coverage_tickets``); Lotto 5/35 dùng
+#:   CHUNG số đặc biệt hạng nhất cho cả năm vé;
+#: * ``coverage-v2`` (31-10-2026): như v1, và vé Lotto thứ j mang số đặc biệt hạng j
+#:   (``coverage_specials``) — năm số đặc biệt khác nhau.
+COVERAGE_RULE = 'coverage-v2'
+COVERAGE_RULES = ('coverage-v1', COVERAGE_RULE)
 
 
 class Law:
@@ -182,3 +189,22 @@ def coverage_tickets(law: Law, count: int = PUBLISHED_TOP_N) -> list[list[int]]:
     marginals = law.marginals()
     order = sorted(range(spec.n), key=lambda i: (-float(marginals[i]), i))[:count * spec.k]
     return [sorted(int(i) + 1 for i in order[j::count]) for j in range(count)]
+
+
+def coverage_specials(law: Law, count: int = PUBLISHED_TOP_N) -> list[int]:
+    """``count`` số đặc biệt KHÁC NHAU theo xác suất biên giảm dần; vé thứ j mang số thứ j.
+
+    Lotto 5/35 trả thưởng cho một vé khi trùng ≥ 3 số chính HOẶC trùng số đặc biệt (lồng riêng 12 số).
+    Năm vé dùng chung một số đặc biệt thì cùng trúng hoặc cùng trượt phần ấy: ít nhất một vé trúng giải
+    ở 14,7% số kỳ; năm số khác nhau thì 45,7% (``dashboard.prize_coverage``). Xác suất và kỳ vọng tiền
+    thưởng của TỪNG vé không đổi.
+
+    Raises:
+        ValueError: luật không phải một vị trí chữ số, hoặc ``count`` vượt số ký hiệu trong lồng.
+    """
+    spec = law.spec
+    if not isinstance(spec, DigitSpec) or spec.positions != 1 or not 1 <= count <= spec.alphabet:
+        raise ValueError('Số đặc biệt khác nhau cần luật một vị trí và 1 ≤ count ≤ số ký hiệu')
+    marginals = law.marginals()
+    order = sorted(range(spec.alphabet), key=lambda i: (-float(marginals[i]), i))[:count]
+    return [int(i) + spec.symbol_offset for i in order]
