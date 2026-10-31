@@ -510,6 +510,13 @@ năm của kỳ ấy tính theo đúng ngày quay (`build_cau_keo_feature_frame(
 (`documentation/research/2026-10-15-lo-vip-cau-keo.md`, `tests/forecast/test_multi_hit_forecast.py`). Đã nghỉ: bộ
 lọc VIP (chỉ số phân tán đẩy con gan lên đầu — con 32 đứng đầu mười kỳ khi gan 10 → 19 kỳ) và luật lô rơi
 (chỉ liệt kê con vừa về). `build_cau_keo_feature_frame` nhận `raw`/`two` để kiểm trên lịch sử giả định.
+Thước theo KỲ (31-10-2026): kỳ "đạt" khi ít nhất một trong năm con về ≥ 2 nháy. Quay công bằng thì MỌI cách
+chọn 5 con chỉ đạt `multi_hit_vip.any_multi_chance(5)` = 14,11% số kỳ (khoảng 1 kỳ trong 7), và 2,1% số kỳ không con
+nào về ≥ 2 nháy; trang in số kỳ đạt của mô hình, của chọn bừa cùng kỳ (`random_any_hit`) và mức ấy TỪ `vip.json`
+(`MEASURE_VERSION` 10). "Đa số kỳ trượt" là bản chất phép chọn: mô hình gần như hằng số (C mạnh nhất ở 12/16 khối,
+lợi log-loss ±3·10⁻⁵) và ngang chọn bừa cả theo lượt lẫn theo kỳ — đừng "sửa" bằng mô hình phức tạp hơn khi chưa qua
+`scripts/research/benchmark_probability_models.py` (`documentation/research/2026-10-31-kiem-toan-lo-vip-nhieu-nhay.md`,
+`scripts/research/audit_multi_hit_vip.py`).
 `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
 từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. Từ 13-10-2026 trang GỌN theo yêu cầu: năm con ≥ 2 nháy và
 năm cặp xiên 2 (`src/forecast/multi_hit_pairs.py`: số kỳ cùng về trong 100 kỳ, luật chốt trước, mốc C(d, 2)/4 950
