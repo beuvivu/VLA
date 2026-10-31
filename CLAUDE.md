@@ -573,6 +573,19 @@ tính lại khi số kỳ trôi quá 2% hoặc `STAT_VERSION` đổi (~8 phút, 
 lưu ĐỦ độ chính xác: làm tròn 7 chữ số từng thổi tin cậy cầu Đặc Biệt từ
 50,7% lên 66,5% vì cả khối giá trị hoà bị đếm là "nhỏ hơn".
 
+## Bảng có điều kiện "hôm trước → hôm sau" — 31-10-2026
+
+`stats.conditional_matrices` là bản DUY NHẤT (cặp kỳ đúng +1 ngày lịch); `statistical_matrices._conditional_tables`
+gọi lại nó. Mỗi bảng 100 × 100 ô, hàng Đặc Biệt chỉ ~42 kỳ, nên tỉ lệ thô ở đầu bảng là ô may mắn nhất
+(dữ liệu thật 21/40 = 52,5%, nền 23,8%; lịch sử công bằng giả lập 53,4%). Mỗi ô mang `baseline_rate`, `posterior_rate`
+(Bayes thực nghiệm, MỘT κ chung cho cả bảng — κ riêng từng hàng vẫn để ô 30,6% trên lịch sử không có gì), p một phía
+và q BH trên MỌI ô đã kiểm; bảng xếp theo p. Trang in tỉ lệ thô CẠNH mức nền, ước lượng sau co và q, câu đọc bảng
+từ `reading_note` (`DISPLAY_COLUMNS`). Đừng xếp lại theo `conditional_rate` và đừng gọi một ô "đáng tin" vì cỡ mẫu
+≥ 10. q mới là công cụ phát hiện; `posterior_rate` là ước lượng thận trọng
+(`documentation/research/2026-10-31-ra-soat-xac-suat-toan-kho.md`, `tests/stats/test_conditional_matrices.py`).
+Bảng xếp hạng phía trang dùng `sort_values(..., kind="stable")`: quicksort của numpy xếp dòng hoà theo lệnh vector
+của CPU, nên CI và máy khác in thứ tự khác nhau.
+
 ## Top LOTO và giả thuyết "đuôi nóng"
 
 Top LOTO (tệp top-4/8/10 và trang chủ) chọn qua `pick_diversity.diversified_order`:

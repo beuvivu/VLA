@@ -114,3 +114,32 @@ def test_every_number_element_on_the_landing_page_can_still_be_opened() -> None:
     assert trang.count("data-number=") > 100, (
         "trang phải còn các phần tử mang data-number để uỷ quyền có việc"
     )
+
+
+def test_the_conditional_tables_print_the_baseline_and_fdr_beside_the_raw_rate() -> None:
+    import pandas as pd
+
+    from pages.build_landing_page import CONDITIONAL_COLUMNS, _render_table
+
+    df = pd.DataFrame([{"prev_special_2d": "42", "next_loto": "96", "count": 21, "base_count": 40,
+                        "conditional_rate": 0.525, "baseline_rate": 0.24, "posterior_rate": 0.24004,
+                        "lift": 1.0, "p_value": 9.4e-5, "q_value_fdr": 0.94}])
+    for prev in ("prev_special_2d", "prev_loto"):
+        assert CONDITIONAL_COLUMNS[prev][:2] == [prev, "next_loto"]
+    html = _render_table(title="t", subtitle="s", df=df, columns=CONDITIONAL_COLUMNS["prev_special_2d"])
+    for label in ("Tỷ lệ có điều kiện", "Mức nền", "Ước lượng sau co về nền", "q (FDR)"):
+        assert f">{label}</th>" in html
+    assert ">52.5%</td>" in html and ">24.0%</td>" in html and ">0.94</td>" in html
+
+
+def test_tied_rows_keep_their_file_order_on_every_machine() -> None:
+    # Hai dòng cầu cùng điểm từng đổi chỗ giữa runner CI và máy khác: quicksort của numpy xếp
+    # dòng hoà theo lệnh vector của CPU.
+    import pandas as pd
+
+    from pages.build_landing_page import _sort_top
+
+    df = pd.DataFrame({"id": range(300), "rule_score": [1.0, 2.0, 3.0] * 100})
+    out = _sort_top(df, "rule_score", limit=300)
+    for score, group in out.groupby("rule_score", sort=False):
+        assert group["id"].is_monotonic_increasing, score

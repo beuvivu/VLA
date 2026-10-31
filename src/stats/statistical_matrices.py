@@ -22,6 +22,7 @@ import pandas as pd
 
 from ingest.lottery import Lottery, RepoPaths
 from core.number_reference import all_cap_loto_50
+from stats.conditional_matrices import build_conditional_tables
 from stats.plot_utils import save_heatmap, save_labeled_heatmap, save_ranked_bar
 
 PeriodKind = Literal["day", "week", "month", "year"]
@@ -500,62 +501,14 @@ def _first_prize_stats(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame
 
 
 def _conditional_tables(raw_df: pd.DataFrame, sparse_df: pd.DataFrame, *, top: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    raw = _prepare_raw(raw_df)
-    sparse = _prepare_sparse(sparse_df)
-    if raw.empty or sparse.empty or len(raw) < 2:
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    """Ba bảng có điều kiện hôm trước → hôm sau, dựng bằng bản chuẩn ``conditional_matrices``.
 
-    raw = raw.reset_index(drop=True)
-    sparse = sparse.reset_index(drop=True)
-    prev_de = (raw["special"].astype(int).to_numpy() % 100).astype(int)
-    next_de = prev_de[1:]
-    mat = (sparse[NUMBER_COLS].to_numpy(dtype=int, copy=False) > 0).astype(np.int16)
-
-    # next-day loto conditional on previous special/de
-    de_loto = np.zeros((100, 100), dtype=np.int32)
-    de_de = np.zeros((100, 100), dtype=np.int32)
-    prev_loto_next_loto = np.zeros((100, 100), dtype=np.int32)
-    prev_de_counts = np.zeros(100, dtype=np.int32)
-    prev_loto_counts = np.zeros(100, dtype=np.int32)
-
-    for t in range(len(raw) - 1):
-        d = prev_de[t]
-        prev_de_counts[d] += 1
-        next_hits = np.where(mat[t + 1] > 0)[0]
-        de_loto[d, next_hits] += 1
-        de_de[d, next_de[t]] += 1
-
-        prev_hits = np.where(mat[t] > 0)[0]
-        prev_loto_counts[prev_hits] += 1
-        if len(prev_hits) and len(next_hits):
-            prev_loto_next_loto[np.ix_(prev_hits, next_hits)] += 1
-
-    def top_matrix(mat_counts: np.ndarray, row_counts: np.ndarray, row_name: str, col_name: str) -> pd.DataFrame:
-        rows: list[dict[str, object]] = []
-        for i in range(100):
-            denom = int(row_counts[i])
-            if denom == 0:
-                continue
-            for j in range(100):
-                c = int(mat_counts[i, j])
-                if c <= 0:
-                    continue
-                rows.append(
-                    {
-                        row_name: _fmt2(i),
-                        col_name: _fmt2(j),
-                        "count": c,
-                        "base_count": denom,
-                        "conditional_rate": c / denom,
-                    }
-                )
-        return pd.DataFrame(rows).sort_values(["conditional_rate", "count"], ascending=[False, False]).head(top).reset_index(drop=True)
-
-    return (
-        top_matrix(de_loto, prev_de_counts, "prev_special_2d", "next_loto"),
-        top_matrix(de_de, prev_de_counts, "prev_special_2d", "next_special_2d"),
-        top_matrix(prev_loto_next_loto, prev_loto_counts, "prev_loto", "next_loto"),
-    )
+    Bản cũ ở đây đếm theo HÀNG kề nhau (nối cả hai kỳ hai bên một ngày nghỉ) và xếp theo tỉ lệ
+    thô; pipeline ghi đè nó bằng ``conditional_matrices`` ngay sau đó, nhưng bước ấy được phép
+    lỗi mềm và khi ấy bảng sai sẽ được xuất bản. Gọi chung một hàm thì hai nơi không thể lệch.
+    """
+    de_loto, de_de, loto_loto, _diagnostics = build_conditional_tables(raw_df, sparse_df, top=top)
+    return de_loto, de_de, loto_loto
 
 
 def _load_ml_probs(data_dir: Path, mode: str) -> pd.DataFrame:

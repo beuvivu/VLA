@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-10-31T09:27:12Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-10-31T10:25:40Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -925,7 +925,7 @@
 | 17 | **48** | 1.815 | trễ 7.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 18 | **79** | 1.647 | trễ 14.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 19 | **58** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
-| 20 | **84** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
+| 20 | **07** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 
@@ -1066,61 +1066,67 @@
 | **27**<br>`96` | **28**<br>`00` | **29**<br>`83` | **30**<br>`34` | **31**<br>`10` |  |  |
 
 ### Đặc Biệt hôm trước → LOTO hôm sau
-| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `42` → **`96`** | 52.50% | n=40 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `37` → **`52`** | 50.00% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `27` → **`55`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | `27` → **`93`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | `82` → **`70`** | 47.83% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | `47` → **`22`** | 47.73% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | `22` → **`67`** | 47.73% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | `33` → **`80`** | 47.62% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | `53` → **`07`** | 47.37% | n=38 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | `31` → **`89`** | 47.37% | n=38 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | `06` → **`31`** | 46.67% | n=30 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | `06` → **`13`** | 46.67% | n=30 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | `13` → **`19`** | 46.15% | n=39 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | `41` → **`02`** | 45.71% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | `74` → **`42`** | 45.45% | n=33 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+> Xếp theo p tăng dần: ô lệch khỏi mức nền mạnh nhất lên đầu. Không ô nào khác mức nền sau hiệu chỉnh đa kiểm trên 100 × 100 ô (q nhỏ nhất 0,94): tỉ lệ thô ở đầu bảng là ô may mắn nhất trong cả bảng, ước lượng sau co ≈ mức nền.
+
+| # | Điều kiện → kết quả | Tỷ lệ thô | Về/mẫu | Mức nền | Sau co về nền | q (FDR) | Ý nghĩa |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `42` → **`96`** | 52.50% | 21/40 | 24.00% | 24.00% | 0.94 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 2 | `82` → **`70`** | 47.83% | 22/46 | 24.03% | 24.03% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 3 | `22` → **`67`** | 47.73% | 21/44 | 24.12% | 24.12% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 4 | `47` → **`22`** | 47.73% | 21/44 | 24.45% | 24.45% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 5 | `33` → **`80`** | 47.62% | 20/42 | 24.05% | 24.05% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 6 | `27` → **`55`** | 48.57% | 17/35 | 23.29% | 23.30% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 7 | `53` → **`07`** | 47.37% | 18/38 | 23.58% | 23.58% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 8 | `31` → **`89`** | 47.37% | 18/38 | 23.88% | 23.89% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 9 | `01` → **`71`** | 44.68% | 21/47 | 24.00% | 24.00% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 10 | `27` → **`93`** | 48.57% | 17/35 | 24.40% | 24.40% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 11 | `37` → **`52`** | 50.00% | 16/32 | 24.78% | 24.78% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 12 | `77` → **`28`** | 42.22% | 19/45 | 22.14% | 22.14% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 13 | `13` → **`19`** | 46.15% | 18/39 | 24.50% | 24.50% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 14 | `83` → **`75`** | 45.24% | 19/42 | 24.90% | 24.90% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 15 | `81` → **`47`** | 41.67% | 20/48 | 23.25% | 23.25% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
 
 ### LOTO hôm trước → LOTO hôm sau
-| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `76` → **`49`** | 29.15% | n=1.043 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `96` → **`52`** | 29.04% | n=1.016 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `94` → **`10`** | 28.99% | n=1.035 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `72` → **`49`** | 28.88% | n=1.011 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `51` → **`62`** | 28.53% | n=950 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `51` → **`36`** | 28.42% | n=950 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | `34` → **`04`** | 28.20% | n=968 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | `52` → **`52`** | 28.12% | n=1.049 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | `69` → **`52`** | 28.00% | n=957 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | `69` → **`35`** | 28.00% | n=957 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | `61` → **`95`** | 28.00% | n=1.007 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 12 | `33` → **`49`** | 27.96% | n=1.012 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 13 | `47` → **`80`** | 27.96% | n=987 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 14 | `52` → **`81`** | 27.93% | n=1.049 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | `29` → **`39`** | 27.90% | n=993 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+> Xếp theo p tăng dần: ô lệch khỏi mức nền mạnh nhất lên đầu. Không ô nào khác mức nền sau hiệu chỉnh đa kiểm trên 100 × 100 ô (q nhỏ nhất 0,97): tỉ lệ thô ở đầu bảng là ô may mắn nhất trong cả bảng, ước lượng sau co ≈ mức nền.
+
+| # | Điều kiện → kết quả | Tỷ lệ thô | Về/mẫu | Mức nền | Sau co về nền | q (FDR) | Ý nghĩa |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `94` → **`10`** | 28.99% | 300/1.035 | 24.71% | 24.72% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 2 | `96` → **`52`** | 29.04% | 295/1.016 | 24.78% | 24.79% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 3 | `51` → **`36`** | 28.42% | 270/950 | 24.22% | 24.22% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 4 | `34` → **`04`** | 28.20% | 273/968 | 24.12% | 24.12% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 5 | `47` → **`80`** | 27.96% | 276/987 | 24.05% | 24.05% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 6 | `22` → **`14`** | 27.88% | 288/1.033 | 24.07% | 24.08% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 7 | `86` → **`87`** | 27.37% | 269/983 | 23.51% | 23.51% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 8 | `03` → **`15`** | 26.71% | 265/992 | 22.92% | 22.92% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 9 | `76` → **`49`** | 29.15% | 304/1.043 | 25.37% | 25.38% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 10 | `01` → **`03`** | 27.08% | 274/1.012 | 23.41% | 23.42% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 11 | `74` → **`70`** | 27.74% | 273/984 | 24.03% | 24.03% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 12 | `29` → **`39`** | 27.90% | 277/993 | 24.19% | 24.20% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 13 | `37` → **`71`** | 27.73% | 269/970 | 24.00% | 24.01% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 14 | `69` → **`35`** | 28.00% | 268/957 | 24.26% | 24.27% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 15 | `51` → **`62`** | 28.53% | 271/950 | 24.81% | 24.81% | 0.97 | Ngang mức nền sau hiệu chỉnh đa kiểm |
 
 ### Đặc Biệt hôm trước → Đặc Biệt hôm sau
-| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `27` → **`34`** | 11.43% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `72` → **`66`** | 10.71% | n=28 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | `88` → **`93`** | 10.42% | n=48 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | `45` → **`54`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | `60` → **`83`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | `37` → **`53`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | `37` → **`88`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | `04` → **`81`** | 9.09% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | `74` → **`42`** | 9.09% | n=33 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | `97` → **`98`** | 8.89% | n=45 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | `41` → **`61`** | 8.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | `08` → **`83`** | 8.51% | n=47 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | `08` → **`81`** | 8.51% | n=47 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | `01` → **`57`** | 8.51% | n=47 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | `85` → **`39`** | 8.33% | n=36 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
+> Xếp theo p tăng dần: ô lệch khỏi mức nền mạnh nhất lên đầu. Không ô nào khác mức nền sau hiệu chỉnh đa kiểm trên 100 × 100 ô (q nhỏ nhất 0,92): tỉ lệ thô ở đầu bảng là ô may mắn nhất trong cả bảng, ước lượng sau co ≈ mức nền.
+
+| # | Điều kiện → kết quả | Tỷ lệ thô | Về/mẫu | Mức nền | Sau co về nền | q (FDR) | Ý nghĩa |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `88` → **`93`** | 10.42% | 5/48 | 0.94% | 1.02% | 0.92 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 2 | `27` → **`34`** | 11.43% | 4/35 | 0.99% | 1.05% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 3 | `60` → **`83`** | 9.52% | 4/42 | 1.01% | 1.07% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 4 | `97` → **`98`** | 8.89% | 4/45 | 1.01% | 1.07% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 5 | `08` → **`83`** | 8.51% | 4/47 | 1.01% | 1.07% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 6 | `45` → **`54`** | 9.52% | 4/42 | 1.16% | 1.21% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 7 | `48` → **`16`** | 8.16% | 4/49 | 0.99% | 1.05% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 8 | `04` → **`81`** | 9.09% | 4/44 | 1.11% | 1.17% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 9 | `08` → **`81`** | 8.51% | 4/47 | 1.11% | 1.17% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 10 | `38` → **`97`** | 8.00% | 4/50 | 1.06% | 1.12% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 11 | `01` → **`57`** | 8.51% | 4/47 | 1.13% | 1.19% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 12 | `72` → **`66`** | 10.71% | 3/28 | 0.99% | 1.04% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 13 | `37` → **`53`** | 9.38% | 3/32 | 0.90% | 0.94% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 14 | `44` → **`37`** | 7.69% | 3/39 | 0.76% | 0.80% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
+| 15 | `74` → **`42`** | 9.09% | 3/33 | 0.94% | 0.99% | 1.00 | Ngang mức nền sau hiệu chỉnh đa kiểm |
 
 ---
 

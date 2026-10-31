@@ -3,7 +3,10 @@
 // mạng. Xem docstring của src/pages/build_stat_pages.py để biết vì sao.
 "use strict";
 const DRAWS = window.__D_DEMO_DRAWS__ || window.__D_DRAWS__ || [];
-const LOTO_BASELINE = 1 - Math.pow(0.99, 27);
+// Kỳ vọng số NHÁY của một con mỗi kỳ: 27 lô chia đều 100 số. Bảng nào đếm đủ nháy (countLoto)
+// thì so với mốc này; 1 − 0,99²⁷ ≈ 23,8% là tỉ lệ có mặt ÍT NHẤT một lần — một phép đếm khác,
+// và đem nó làm kỳ vọng cho số nháy thì "so kỳ vọng" thổi lên 27/23,77 ≈ 1,14 lần.
+const NHAY_PER_DRAW = 27 / 100;
 const PAIR_BASELINE = 1 - 2 * Math.pow(0.99, 27) + Math.pow(0.98, 27);
 
 // Mốc "cực đại do ngẫu nhiên" của 4950 cặp, tra theo số kỳ ĐANG CHỌN.
@@ -1109,7 +1112,7 @@ function renderLotoFrequency() {
   setCount(rows);
   renderLotoMatrix(rows);
   const counts = countLoto(rows);
-  const expected = LOTO_BASELINE * rows.length;
+  const expected = NHAY_PER_DRAW * rows.length;
   const max = Math.max(...counts, 1);
 
   const m = $("sp-matrix");
@@ -1860,8 +1863,7 @@ function renderOverview() {
     : "Không có kỳ phù hợp với bộ lọc";
   const counts = countLoto(rows);
   // Bảng đếm đủ số nháy, nên mốc so sánh là 27/100 nháy mỗi kỳ.
-  // Tỉ lệ có mặt ít nhất một lần (LOTO_BASELINE) là một phép đếm khác.
-  const expected = 27 / 100 * rows.length;
+  const expected = NHAY_PER_DRAW * rows.length;
   const total = rows.reduce((sum, row) => sum + row.n.length, 0);
   const s = specialGaps();
   const hottest = counts.indexOf(Math.max(...counts));

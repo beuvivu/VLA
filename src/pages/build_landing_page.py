@@ -31,6 +31,8 @@ from pages.build_position_bridges import load as load_position_bridges
 from web.shared_results import draw_from_row, render_result_board, shared_results_css
 from web.ui_locale import COLUMN_LABELS, mode_label, value_label
 from core.xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
+from stats.conditional_matrices import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
+from stats.conditional_matrices import reading_note as conditional_reading_note
 from web.ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
 from web.web_security import json_for_html_script, security_meta_tags
 from web.page_output import write_page
@@ -79,12 +81,13 @@ NUMERIC_TABLE_COLUMNS = frozenset({
     "count", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period",
     "top_k", "validation_days", "hit_any_days", "avg_hits_per_day", "val_brier",
     "val_logloss", "base_count", "current_gap", "hit_count", "mean_gap", "max_gap",
-    "z_score", "lag_days", "p_mean", "hit_ratio", "current_streak", "rule_score",
+    "z_score", "lag_days", "p_mean", "hit_ratio", "current_streak", "rule_score", "q_value_fdr",
 })
 TABLE_DECIMALS = {
     "avg_per_draw": 2, "avg_hits_per_day": 2, "mean_gap": 2, "z_score": 2,
-    "val_brier": 4, "val_logloss": 3, "rule_score": 1,
+    "val_brier": 4, "val_logloss": 3, "rule_score": 1, "q_value_fdr": 2,
 }
+CONDITIONAL_COLUMNS = {prev: [prev, "next_loto", *CONDITIONAL_DISPLAY] for prev in ("prev_special_2d", "prev_loto")}
 
 PALETTES = {
     "blue": ("#eff6ff", "#2563eb"),
@@ -311,7 +314,9 @@ def _sort_top(df: pd.DataFrame, col: str, limit: int = 12, ascending: bool = Fal
         return pd.DataFrame()
     out = df.copy()
     out["_sort_value"] = pd.to_numeric(out[col], errors="coerce").fillna(0.0)
-    out = out.sort_values("_sort_value", ascending=ascending).drop(columns=["_sort_value"])
+    # Sắp xếp ỔN ĐỊNH: quicksort mặc định của numpy xếp các dòng hoà điểm theo lệnh vector của
+    # CPU, nên runner CI và máy khác in hai dòng cầu cùng điểm theo thứ tự ngược nhau.
+    out = out.sort_values("_sort_value", ascending=ascending, kind="stable").drop(columns=["_sort_value"])
     return out.head(limit)
 
 
@@ -2563,8 +2568,8 @@ def _render_html(
         <div class="two-col">
           {_render_table(title="Báo cáo kiểm định LOTO", subtitle="Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình LOTO.", df=report_loto, columns=["mode", "top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss"], limit=8, dense=False)}
           {_render_table(title="Báo cáo kiểm định Đặc Biệt", subtitle="Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình Đặc Biệt.", df=report_de, columns=["mode", "top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss"], limit=8, dense=False)}
-          {_render_table(title="Điều kiện Đặc Biệt hôm trước → LOTO hôm sau", subtitle="Các cặp điều kiện thường gặp, lọc theo số lần và tỷ lệ có điều kiện.", df=conditional_special, columns=["prev_special_2d", "next_loto", "count", "base_count", "conditional_rate"], limit=12, dense=False, searchable=True)}
-          {_render_table(title="Điều kiện LOTO hôm trước → LOTO hôm sau", subtitle="Quan hệ chuyển tiếp giữa LOTO hôm trước và LOTO ngày sau.", df=conditional_loto, columns=["prev_loto", "next_loto", "count", "base_count", "conditional_rate"], limit=12, dense=False, searchable=True)}
+          {_render_table(title="Điều kiện Đặc Biệt hôm trước → LOTO hôm sau", subtitle=conditional_reading_note(conditional_special), df=conditional_special, columns=CONDITIONAL_COLUMNS["prev_special_2d"], limit=12, dense=False, searchable=True)}
+          {_render_table(title="Điều kiện LOTO hôm trước → LOTO hôm sau", subtitle=conditional_reading_note(conditional_loto), df=conditional_loto, columns=CONDITIONAL_COLUMNS["prev_loto"], limit=12, dense=False, searchable=True)}
           {_render_table(title="Giải nhất lâu chưa về", subtitle="Một bảng phụ để đối chiếu giải nhất với nhịp chung.", df=first_prize, columns=["number_str", "last_seen", "current_gap", "hit_count", "mean_gap", "max_gap"], limit=10, dense=False)}
           {_render_table(title="Tần suất LOTO nổi bật tháng hiện tại", subtitle="Bảng hỗ trợ đọc số liệu bên cạnh ma trận.", df=_sort_top(loto_snapshot[loto_snapshot["period_kind"] == "month"] if not loto_snapshot.empty and "period_kind" in loto_snapshot.columns else loto_snapshot, "freq", 10), columns=["number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], limit=10, dense=False)}
         </div>
