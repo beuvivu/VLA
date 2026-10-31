@@ -169,6 +169,20 @@ Phép kiểm trình duyệt: `tests/frontend/frequency-overview.test.mjs`, «b�
 | JS | 1 | kỳ vọng 1 − 0,99²⁷ |
 | Sắp xếp | 2 | bỏ `kind="stable"` ở hai trình dựng |
 
+**p của bảng LOTO → LOTO thận trọng, không lạc quan.** Hai lý do khiến p không đúng nhị thức:
+
+- ở ô chéo i → i, hai lượt thử liền nhau dùng chung một kỳ;
+- mức nền ước lượng trên chính dữ liệu, mà hàng LOTO chiếm khoảng 24% số cặp kỳ.
+
+Đo trên 40 lịch sử công bằng × 4 250 kỳ:
+
+| Ô | P(p < 0,05) | P(p < 0,01) |
+|---|---|---|
+| Chéo | 2,1% | 0,2% |
+| Ngoài chéo | 2,7% | 0,34% |
+
+Không lịch sử nào có q < 0,05. Lệch theo hướng mất bớt độ nhạy, không theo hướng báo động giả.
+
 ## Còn mở — chủ dự án quyết
 
 - `research.conditional_nextday` vẫn co bằng κ riêng từng hàng. Đầu ra của nó là bảng nghiên cứu có
