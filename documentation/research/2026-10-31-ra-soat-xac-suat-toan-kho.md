@@ -86,7 +86,7 @@ Trên lịch sử quay công bằng giả lập (20 lịch sử × 4 250 kỳ), 
 - `q_value_fdr`: Benjamini–Hochberg trên **mọi** ô đã kiểm, kể cả ô đếm 0 và ô không được ghi ra.
 
 Bảng xếp theo p tăng dần. Các trang in tỉ lệ thô cạnh mức nền, ước lượng sau co và q, kèm một câu đọc
-bảng suy từ q (`conditional_matrices.reading_note`), không viết cứng.
+bảng suy từ q (`stats.conditional_reading.reading_note`), không viết cứng. Phần trang cần (cột in, ngưỡng, câu đọc) nằm ở mô-đun nhẹ ấy để trình dựng trang không kéo theo `ingest` và scipy.
 
 **Vì sao một κ chung cho cả bảng, không κ riêng từng hàng.** Đo trên cùng 20 lịch sử công bằng:
 

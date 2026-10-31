@@ -18,8 +18,8 @@ import numpy as np
 import pandas as pd
 
 from core.safe_io import read_csv_or_empty, read_json_or_empty
-from stats.conditional_matrices import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
-from stats.conditional_matrices import reading_note as conditional_reading_note
+from stats.conditional_reading import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
+from stats.conditional_reading import reading_note as conditional_reading_note
 
 from web.ui_locale import (
     COLUMN_LABELS,

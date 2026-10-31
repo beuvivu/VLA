@@ -163,7 +163,7 @@ def test_baseline_is_the_next_day_rate_over_exact_pairs_only() -> None:
 
 
 def test_the_reading_note_is_derived_from_the_table() -> None:
-    from stats.conditional_matrices import reading_note
+    from stats.conditional_reading import reading_note
 
     fair = build_conditional_tables(*_fair_frames(), top=500)[0]
     planted = build_conditional_tables(*_fair_frames(plant=(42, 96)), top=500)[0]

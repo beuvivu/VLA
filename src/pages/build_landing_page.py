@@ -31,8 +31,8 @@ from pages.build_position_bridges import load as load_position_bridges
 from web.shared_results import draw_from_row, render_result_board, shared_results_css
 from web.ui_locale import COLUMN_LABELS, mode_label, value_label
 from core.xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
-from stats.conditional_matrices import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
-from stats.conditional_matrices import reading_note as conditional_reading_note
+from stats.conditional_reading import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
+from stats.conditional_reading import reading_note as conditional_reading_note
 from web.ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
 from web.web_security import json_for_html_script, security_meta_tags
 from web.page_output import write_page

@@ -15,7 +15,7 @@ from core.safe_io import read_csv_or_empty, read_json_or_empty
 
 from web.ui_locale import strategy_label, value_label
 from core.paths import REPO_ROOT
-from stats.conditional_matrices import FDR_LEVEL, reading_note
+from stats.conditional_reading import FDR_LEVEL, reading_note
 
 ROOT = REPO_ROOT
 DATA = ROOT / "data"
