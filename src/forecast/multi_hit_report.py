@@ -39,8 +39,8 @@ from scipy.stats import norm, spearmanr
 from forecast import multi_hit_forecast as forecast
 from forecast import multi_hit_pairs as pairs
 from core.atomic_io import atomic_write_text
-from forecast.multi_hit_vip import (base_rate, counts_matrix, draws_from_frame, model_confidence, number_confidence,
-                           random_pick_null)
+from forecast.multi_hit_vip import (any_multi_chance, base_rate, counts_matrix, draws_from_frame, model_confidence,
+                                    number_confidence, random_any_hit, random_pick_null)
 
 OUT_DIR = "forecast/multi_hit"
 VIP_FILE = "vip.json"
@@ -56,7 +56,9 @@ BENCHMARK_FILE = "benchmark.json"
 #:   đẩy con gan lên đầu (con 32 đứng đầu mười kỳ liền khi gan 10 → 19 kỳ).
 #: 9 (chỉ vip.json): năm con là DỰ BÁO của mô hình Lô VIP (``multi_hit_forecast``) từ kinh nghiệm cầu
 #:   kèo và cầu hai nháy, kèm lý do từng con; luật lô rơi chỉ liệt kê con vừa về nên đã nghỉ.
-MEASURE_VERSION = 9
+#: 10 (chỉ vip.json): thêm thước theo KỲ — kỳ có ít nhất một con về ≥ 2 nháy — cạnh thước theo lượt,
+#:   cùng mức mọi cách chọn đạt được khi quay công bằng (``any_multi_chance``).
+MEASURE_VERSION = 10
 #: Phiên bản của benchmark.json. Tách khỏi MEASURE_VERSION vì lượt hai là phép kiểm MỘT lần đã
 #: đóng băng: đổi số đo hằng ngày không được buộc nó chạy lại. Chỉ tăng khi định nghĩa của chính
 #: lượt hai (hay phép kiểm độ nhạy của nó) đổi.
@@ -186,6 +188,12 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
     pro_expected = per_draw_expected[later]
     p_anytime, e_max = anytime_p(pro_hits, pro_expected)
     pro_lift = float(pro_hits.sum() / pro_expected.sum()) if pro_expected.sum() > 0 else float("nan")
+    # Thước theo KỲ: kỳ "đạt" khi ít nhất một trong k con về ≥ 2 nháy. Mốc là chọn bừa k con trên
+    # chính kỳ ấy; mức ``day_fair`` là tỉ lệ mà mọi cách chọn k con đạt được khi quay công bằng.
+    day_hit = hits > 0
+    day_random = random_any_hit(n_multi, k)
+    day_var = float((day_random * (1 - day_random)).sum())
+    day_z = float((day_hit.sum() - day_random.sum()) / math.sqrt(day_var)) if day_var > 0 else 0.0
     # Mức tin lấy p luôn hợp lệ của phần TIẾN CỨU: trang xem lại mỗi ngày (anytime_p), và mô hình được
     # thiết kế sau khi đã xem phần hồi cứu.
     level = model_confidence(p_anytime, pro_lift)
@@ -248,6 +256,11 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
             "p_value": float(norm.sf(z)),
             # Xác suất TB đã in cho các con được chọn (hiệu chỉnh bằng các khối trước): so với tỉ lệ trúng.
             "predicted": float(wf.printed.mean()),
+            "days_hit": int(day_hit.sum()),
+            "day_rate": float(day_hit.mean()),
+            "day_random_rate": float(day_random.mean()),
+            "day_z": day_z,
+            "day_fair": any_multi_chance(k),
         },
         "prospective": {
             "after": after,
@@ -258,6 +271,8 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
             "lift": pro_lift if later.any() and math.isfinite(pro_lift) else None,
             "p_anytime": p_anytime,
             "e_max": e_max,
+            "days_hit": int(day_hit[later].sum()),
+            "days_expected": float(day_random[later].sum()),
         },
         "confidence": level,
         "picks": picks,

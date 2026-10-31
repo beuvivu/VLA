@@ -158,6 +158,41 @@ def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
                                                          planted_vip["base_theory"])
 
 
+def test_the_day_measure_counts_draws_where_any_pick_came_twice(planted_vip) -> None:
+    history = _mock(150, seed=2026, planted=PLANTED)
+    table = mf.build_table(*history, SMALL)
+    wf = mf.walk_forward(table, SMALL)
+    k = planted_vip["config"]["top_k"]
+    bt, pro = planted_vip["backtest"], planted_vip["prospective"]
+    day = (wf.hits > 0)
+    assert bt["days_hit"] == int(day.sum()) and 0 < bt["days_hit"] < bt["hits"]
+    assert bt["day_rate"] == pytest.approx(day.mean())
+    n_multi = (table.counts[table.anchors[wf.rows] + 1] >= 2).sum(axis=1)
+    rand = m.random_any_hit(n_multi, k)
+    assert bt["day_random_rate"] == pytest.approx(rand.mean())
+    assert bt["day_z"] == pytest.approx((day.sum() - rand.sum()) / math.sqrt((rand * (1 - rand)).sum()))
+    assert bt["day_fair"] == pytest.approx(m.any_multi_chance(k))
+    # Mọi kỳ giả định đều sau ngày chốt: phần tiến cứu là toàn bộ.
+    assert pro["days_hit"] == bt["days_hit"] and pro["days_expected"] == pytest.approx(rand.sum())
+
+
+def test_the_page_prints_the_day_measure_from_the_measurement(planted_vip) -> None:
+    def line(vip: dict) -> str:
+        return " ".join(_soup(vip, None).select_one(".app-vip-days").get_text(" ").split())
+
+    bt = planted_vip["backtest"]
+    text = line(planted_vip)
+    assert f"{bt['days_hit']}/{bt['draws']}" in text
+    assert page._pct(bt["day_rate"], 1) in text and page._pct(bt["day_random_rate"], 1) in text
+    assert f"chỉ đạt {page._pct(bt['day_fair'], 1)} số kỳ" in text
+    assert f"1 kỳ trong {round(1 / bt['day_fair'])}." in text
+    changed = copy.deepcopy(planted_vip)
+    changed["backtest"].update(days_hit=bt["days_hit"] + 1, day_fair=0.25)
+    other = line(changed)
+    assert f"{bt['days_hit'] + 1}/{bt['draws']}" in other and "chỉ đạt 25,0% số kỳ" in other
+    assert "1 kỳ trong 4." in other
+
+
 # --------------------------------------------------------------------------- p luôn hợp lệ
 
 
