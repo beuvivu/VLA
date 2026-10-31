@@ -23,9 +23,15 @@ from vlm.forecast.models import GRU, OnlineLogistic, TreeExpert
 from vlm.forecast.adaptation import RunningFeatureStats
 from vlm.forecast.recovery import NumericalModelError, RecoveryLog, auto_patch_and_retry, require_finite
 from vlm.forecast.multi_agent import MultiAgentExpert
+from vlm.forecast.bayes_expert import NAME as BAYES_NAME, BayesMixtureExpert
 
 # 3 (13-10-2026): pair_link/triple_link không còn gộp đường chéo (tần suất của chính số ấy).
-VERSION = 4
+# 5 (31-10-2026): bộ chữ số có thêm chuyên gia hỗn hợp Bayes (``bayes_expert``). Checkpoint 3/4 của
+# sản phẩm CHỈ có bộ số (Mega, Power, Keno) vẫn nạp được vì kiến trúc của chúng không đổi; sản phẩm có
+# thành phần chữ số (Lotto, Max 3D, Max 3D Pro, Max 4D, Bingo18) học lại và bằng chứng live bắt đầu lại.
+VERSION = 5
+#: Phiên bản checkpoint còn nạp được cho sản phẩm chỉ có bộ số.
+SET_ONLY_VERSIONS = (3, 4)
 LIVE_THRESHOLD = float(np.log(140))  # seven active products, family alpha .05
 
 
@@ -85,7 +91,8 @@ def _prefix_digest(series: Series, count: int) -> str:
 
 
 class MLComponent:
-    def __init__(self, spec: SetSpec | DigitSpec, config: MLConfig):
+    def __init__(self, spec: SetSpec | DigitSpec, config: MLConfig, *,
+                 product: ProductCode | None = None, name: str | None = None):
         self.spec, self.config = spec, config
         self.features = FeatureState(spec)
         f = len(self.features.names)
@@ -99,6 +106,12 @@ class MLComponent:
         self.names = ['uniform', 'logistic_l2_.001', 'logistic_l2_.01',
                       *(['adaptive_logistic'] if config.adaptive else []), 'gru', *config.backends]
         self.base_expert_count = len(self.names)
+        # Bộ chữ số: thêm luật hậu nghiệm của hỗn hợp Bayes (engine cũ); cần biết sản phẩm để lấy
+        # tốc độ chia sẻ cố định và cỡ lô như engine cũ.
+        self.bayes = (BayesMixtureExpert(get_product(product), name or 'digits', spec)
+                      if isinstance(spec, DigitSpec) and product is not None else None)
+        if self.bayes is not None:
+            self.names.append(BAYES_NAME)
         self.multi_agent = (MultiAgentExpert(spec.n, spec.k, config.seed)
                             if config.multi_agent and isinstance(spec, SetSpec) else None)
         if self.multi_agent is not None:
@@ -145,6 +158,8 @@ class MLComponent:
                 self.recovery.record('prediction_fallback', name, next_id or (self.features.last_id or 0) + 1, error)
                 prediction = np.full(nodes, self.features.base)
             probabilities.append(prediction)
+        if self.bayes is not None:
+            probabilities.append(self.bayes.predict())
         p = np.clip(np.stack(probabilities), .001, .999)
         if isinstance(self.spec, SetSpec):
             # Bounded log odds prevent a neural overfit from assigning near-zero support.
@@ -208,6 +223,8 @@ class MLComponent:
         self.buffer = (self.buffer + [(x.copy(), target.copy())])[-self.config.tree_buffer:]
         if self.multi_agent is not None:
             self.multi_agent.learn(row)
+        if self.bayes is not None:
+            self.bayes.learn(row, draw_id)
         self.features.observe(row, draw_id, draw_date)
         self.frames = frames
         if self.features.seen >= self.config.warmup and self.features.seen % self.config.tree_every == 0:
@@ -263,11 +280,21 @@ class MLComponent:
                 'scored':self.scored, 'log_gain':self.log_gain, 'expert_nll':self.expert_nll.tolist(),
                 'brier':self.brier, 'brier_fair':self.brier_fair, 'reliability':self.reliability.tolist(),
                 'recent_gain':self.recent_gain, 'statistics':self.statistics.to_dict(), 'recovery':self.recovery.to_dict(),
-                'multi_agent':self.multi_agent.to_dict() if self.multi_agent is not None else None}
+                'multi_agent':self.multi_agent.to_dict() if self.multi_agent is not None else None,
+                'bayes':self.bayes.to_dict() if self.bayes is not None else None}
 
     @classmethod
-    def from_dict(cls, spec: SetSpec | DigitSpec, config: MLConfig, data: dict) -> MLComponent:
-        out = cls(spec, config)
+    def from_dict(cls, spec: SetSpec | DigitSpec, config: MLConfig, data: dict, *,
+                  product: ProductCode | None = None, name: str | None = None) -> MLComponent:
+        out = cls(spec, config, product=product, name=name)
+        if out.bayes is not None:
+            if not data.get('bayes'):
+                raise ValueError('Checkpoint thiếu chuyên gia hỗn hợp Bayes của bộ chữ số.')
+            out.bayes = BayesMixtureExpert.from_dict(data['bayes'], out.bayes.product, out.bayes.name, spec)
+            if int(out.bayes.state['draws']) != data['features']['seen']:
+                raise ValueError('Lịch sử chuyên gia hỗn hợp Bayes không khớp component.')
+        elif data.get('bayes') is not None:
+            raise ValueError('Checkpoint chứa chuyên gia hỗn hợp Bayes ngoài cấu hình.')
         out.features = FeatureState.from_dict(data['features'], expected_spec=spec)
         if out.features.spec != spec:
             raise ValueError('Incompatible feature spec')
@@ -330,7 +357,8 @@ class MLForecaster:
     def __init__(self, product: str | ProductCode, config: MLConfig | None = None):
         self.product = get_product(product)
         self.config = config or MLConfig()
-        self.components = {name:MLComponent(spec, self.config) for name, spec in CONFIGS[self.product].components.items()}
+        self.components = {name:MLComponent(spec, self.config, product=self.product, name=name)
+                           for name, spec in CONFIGS[self.product].components.items()}
         self.last_id: int | None = None
         self.last_date: str | None = None
         self.draws_on_last_date = 0
@@ -641,13 +669,15 @@ class MLForecaster:
         if len(raw) > 128 * 1024 * 1024:
             raise ValueError('Checkpoint too large')
         data = json.loads(raw)
-        if data['version'] not in (3, VERSION):
+        has_digits = any(isinstance(spec, DigitSpec) for spec in CONFIGS[get_product(data['product'])].components.values())
+        if data['version'] != VERSION and (has_digits or data['version'] not in SET_ONLY_VERSIONS):
             raise ValueError('Incompatible ML checkpoint')
         json.dumps(data, allow_nan=False)
         out = cls(data['product'], MLConfig.model_validate(data['config']))
         if set(data['components']) != set(out.components):
             raise ValueError('Incompatible ML components')
-        out.components = {k:MLComponent.from_dict(c.spec, out.config, data['components'][k]) for k, c in out.components.items()}
+        out.components = {k:MLComponent.from_dict(c.spec, out.config, data['components'][k], product=out.product, name=k)
+                          for k, c in out.components.items()}
         for key in ('last_id', 'last_date', 'draws_on_last_date', 'prefix_hash', 'prefix_count', 'available', 'learned', 'missing', 'date_anomalies',
                     'first_learned_id', 'live_log_e', 'max_live_log_e', 'live_scored', 'live_recent', 'pending', 'warnings'):
             setattr(out, key, data[key])

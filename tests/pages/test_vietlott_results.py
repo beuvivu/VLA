@@ -4,6 +4,7 @@ lộ nguồn, không bịa giá trị khuyết, và đọc đúng dữ liệu đ
 from __future__ import annotations
 
 import copy
+import math
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -364,7 +365,8 @@ def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> Non
     """Max 3D / Pro lệch thật ở hàng đơn vị; trang tổng quan không được viết cứng "ngẫu nhiên"."""
     dashboard = _dashboard()
     dashboard["analysis"]["max3dpro"] = {"draws": 786, "last_id": 786, "last_date": "2026-10-01", "verdict": "ĐÃ",
-                                         "evidence": {"found": True, "text": "Có bằng chứng."}, "max_rtp": 0.6293}
+                                         "evidence": {"found": True, "text": "Có bằng chứng.", "max_log10_wealth": 2.837},
+                                         "max_rtp": 0.6293}
     overview = {p.name: p.read_text(encoding="utf-8") for p in b.build(tmp_path, dashboard=dashboard)}["vietlott.html"]
     hero = overview.split('class="vl-hero"', 1)[1].split("</section>", 1)[0]
     assert "độ lệch nhỏ có ý nghĩa thống kê ở Max 3D Pro;" in hero
@@ -383,6 +385,31 @@ def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> Non
     assert "Mega" not in wide.split("Dù vậy", 1)[1]
     dashboard["analysis"]["keno"]["max_rtp"] = 1.02
     assert "kỳ vọng âm" not in b.randomness_summary(dashboard["analysis"], names)
+
+
+def test_a_signal_must_clear_the_threshold_of_the_whole_family_of_products(tmp_path: Path) -> None:
+    """Engine kiểm từng sản phẩm ở e ≥ 20; bảy sản phẩm cùng được kết luận thì cần e ≥ 7/α = 140.
+
+    Max 3D (10^2,57) và Max 3D Pro (10^2,84) vượt cả 140; một sản phẩm chỉ đạt 10^1,5 (≈ 32) thì
+    với bảy sản phẩm, chừng ấy xảy ra do may rủi đủ thường để không được gọi là tín hiệu.
+    """
+    assert b.family_threshold_log10() == pytest.approx(math.log10(140))
+    weak = {"draws": 900, "last_id": 900, "last_date": "2026-10-01", "verdict": "Mô hình tự học ĐÃ tìm thấy độ lệch.",
+            "evidence": {"found": True, "text": "Có bằng chứng kết quả lệch.", "max_log10_wealth": 1.5}}
+    strong = {**weak, "evidence": {**weak["evidence"], "max_log10_wealth": 2.57}}
+    assert not b.family_signal(weak) and b.family_signal(strong)
+    assert not b.family_signal({"evidence": {"found": False, "max_log10_wealth": 3.0}})
+    names = {c: v[0] for c, v in b.PRODUCTS.items()}
+    assert "chưa thấy sản phẩm nào" in b.randomness_summary({"keno": weak}, names)
+    summary = b.randomness_summary({"keno": weak, "max3d": strong}, names)
+    assert "ở Max 3D / Max 3D+;" in summary and "Keno" not in summary.split(";", 1)[0]
+    assert "e-value ≥ 140 (α họ 5%)" in summary
+    weak_card = b.analysis_markup(weak)
+    assert "Chưa hơn ngẫu nhiên" in weak_card and "Có tín hiệu thống kê" not in weak_card
+    assert "chưa tới 140 = 20 × 7 sản phẩm" in weak_card and "ĐÃ tìm thấy" not in weak_card
+    assert "Có bằng chứng kết quả lệch" not in weak_card
+    strong_card = b.analysis_markup(strong)
+    assert "Có tín hiệu thống kê" in strong_card and "Vẫn vượt ngưỡng 140 khi tính đủ 7 sản phẩm" in strong_card
 
 
 def test_max_rtp_reads_every_bet_of_every_component() -> None:
@@ -627,12 +654,42 @@ def test_the_coverage_note_prints_the_engine_exact_rates_not_hard_coded_ones() -
                                 "top": [{"numbers": list(range(1 + 6 * j, 7 + 6 * j))} for j in range(5)]}]}
     text = BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text(" ", strip=True)
     assert "5 vé rời nhau, phủ 30/45 số" in text and "70,9%" in text and "11,9%" in text and "17,5%" in text
-    assert "Xác suất của từng vé không đổi" in text
+    assert "Xác suất và tiền thưởng kỳ vọng của từng vé không đổi" in text
+    assert "trúng giải" not in text  # Mega không có số đặc biệt
     changed = {**COVERAGE, "any_ticket_ge": {"2": 0.5367, "3": 0.0665}}
     forecast["components"][0]["coverage"] = changed
     assert "53,7%" in BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text()
     del forecast["components"][0]["coverage"]
     assert "rời nhau" not in BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text()
+
+
+def test_a_v2_lotto_forecast_prints_each_ticket_with_its_own_special_and_the_prize_rate() -> None:
+    """coverage-v2: vé thứ j mang số đặc biệt thứ j; mốc "ít nhất một vé trúng giải" in TỪ engine."""
+    coverage = {"rule": "coverage-v2", "covered": 25, "pool": 35, "any_ticket_ge": {"2": 0.6, "3": 0.0693},
+                "one_ticket_ge": {"2": 0.15, "3": 0.0143}, "specials": 5, "any_ticket_prize": 0.45707,
+                "shared_special_prize": 0.14687, "one_ticket_prize": 0.09604}
+    tickets = [list(range(1 + 5 * j, 6 + 5 * j)) for j in range(5)]
+    forecast = {"target_id": 930, "registered": True, "made_at": "2026-10-31T14:00:00+07:00",
+                "components": [{"name": "main", "kind": "set", "coverage": coverage, "top": [{"numbers": t} for t in tickets]},
+                               {"name": "special", "kind": "digit", "per_ticket": True,
+                                "top": [{"numbers": [s]} for s in (7, 3, 10, 1, 12)]}]}
+    page = BeautifulSoup(b.forecast_markup("lotto535", forecast), "html.parser")
+    rows = page.select('[data-vl-component="main"] .vl-ticket')
+    assert [r.select_one(".vl-ball--bonus").get_text() for r in rows] == ["07", "03", "10", "01", "12"]
+    assert not page.select('[data-vl-component="special"]')
+    text = page.get_text(" ", strip=True)
+    assert "ít nhất một vé trúng giải ở 45,7% số kỳ" in text and "chung một số đặc biệt: 14,7%" in text
+    assert "một vé riêng lẻ: 9,6%" in text
+    pending = {"components": forecast["components"]}
+    assert [t["special"] for t in b._stored_tickets("lotto535", pending)] == [7, 3, 10, 1, 12]
+    # Lần ghi cũ (coverage-v1): một danh sách số đặc biệt riêng, năm vé chung số hạng nhất.
+    old = {**forecast, "components": [forecast["components"][0] | {"coverage": {**coverage, "rule": "coverage-v1"}},
+                                      {k: v for k, v in forecast["components"][1].items() if k != "per_ticket"}]}
+    for key in ("any_ticket_prize", "shared_special_prize", "one_ticket_prize", "specials"):
+        old["components"][0]["coverage"].pop(key)
+    legacy = BeautifulSoup(b.forecast_markup("lotto535", old), "html.parser")
+    assert legacy.select('[data-vl-component="special"]') and "trúng giải" not in legacy.get_text()
+    assert {t["special"] for t in b._stored_tickets("lotto535", {"components": old["components"]})} == {7}
 
 
 def test_the_summary_counts_draws_where_some_published_ticket_hit_two_numbers() -> None:

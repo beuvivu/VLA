@@ -471,6 +471,14 @@ viết cứng. Kỳ đã qua giờ quay mà chưa có kết quả: thẻ hiện 
 quả" (`build_vietlott_results.shown_forecast`). Kết quả Mega/Power/Lotto: chuỗi `auto` hỏi `xskt` (trang
 đăng lại, đọc được từ runner) SAU bản sao NhanAZ (trễ hàng giờ); `vlm-results.yml` nhận `repository_dispatch`
 `vietlott-results` và chạy sau lượt `daily-finalize` — lịch mười phút của GitHub chạy cách nhau 1–5 giờ.
+Bộ chữ số của nhánh ML (Lotto đặc biệt, Max 3D/Pro, Max 4D, Bingo18) có chuyên gia `bayes_mixture` (31-10-2026,
+`vlm.forecast.bayes_expert`, checkpoint ML version 5): luật hậu nghiệm của hỗn hợp Bayes của engine cũ, chạy chấm trước –
+học sau trên đúng các kỳ bộ ML học. Không có nó, bộ ML bỏ qua độ lệch thật của Max 3D (chữ số 6 hàng đơn vị 10,6–11,3% ở
+cả sáu giai đoạn 2019 → 2026) và kém công bằng (−0,158 log10); có nó +0,771. Đừng thay bằng Dirichlet đầy đủ: 27 tham số
+tốn nhiều hơn lợi ích. Lần ghi `ticket_rule = coverage-v2`: vé Lotto thứ j mang số đặc biệt hạng j và được chấm đúng số ấy
+(ít nhất một vé trúng giải 45,7% so với 14,7% khi chung một số, `dashboard.prize_coverage`); lần ghi v1 giữ số chung.
+Kết luận e-value trên trang dùng ngưỡng HỌ 7/α = 140 (`build_vietlott_results.family_signal`), không phải 20 của từng
+sản phẩm (`documentation/research/2026-10-31-ra-soat-engine-vietlott.md`).
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 

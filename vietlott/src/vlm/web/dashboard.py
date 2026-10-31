@@ -18,13 +18,14 @@ import numpy as np
 from vietlott_engine.core.games import GAMES, get_game
 from vietlott_engine.core.prizes import PrizeRecord
 from vietlott_engine.core.products import PRODUCT_INFO, SEED_FILES, ProductCode, load_exclusions
-from vietlott_engine.forecast.data import CONFIGS, SetSpec
+from vietlott_engine.forecast.data import CONFIGS, DigitSpec, SetSpec
 from vietlott_engine.forecast.engine import Forecaster, state_path
 from vietlott_engine.forecast.schedule import FAST, MARGIN, VN, WEEKLY, target_draw_time
 from vietlott_engine.game_theory.fastgames import KENO_TABLE, KENO_SIDE_BETS, bingo18_odds
 from vietlott_engine.game_theory.max3d import PRODUCTS as MAX_PRODUCTS
 from vlm.database.schema import DrawRecord
-from vlm.forecast.distribution import COVERAGE_RULE, PUBLISHED_TOP_N, Law, coverage_tickets
+from vlm.forecast.distribution import (COVERAGE_RULE, COVERAGE_RULES, PUBLISHED_TOP_N, Law, coverage_specials,
+                                      coverage_tickets)
 from vlm.forecast.hits import any_ticket_tail, fair_hit_pmf
 from vlm.forecast.pipeline import MLForecaster
 
@@ -128,13 +129,35 @@ def _valid_issue(code: ProductCode, entry: dict, now: datetime) -> bool:
         return False
 
 
-def coverage_summary(spec: SetSpec, tickets: list[list[int]]) -> dict:
+def coverage_summary(spec: SetSpec, tickets: list[list[int]], rule: str = COVERAGE_RULE) -> dict:
     """Mốc CHÍNH XÁC của danh mục khi quay ngẫu nhiên: ít nhất một vé trúng ≥ L số, so với một vé."""
     tail = any_ticket_tail(tickets, spec.n, spec.k)
     one = fair_hit_pmf(spec.n, spec.k, spec.k)
-    return {'rule': COVERAGE_RULE, 'covered': len({v for t in tickets for v in t}), 'pool': spec.n,
+    return {'rule': rule, 'covered': len({v for t in tickets for v in t}), 'pool': spec.n,
             'any_ticket_ge': {str(level): float(tail[level]) for level in (2, 3)},
             'one_ticket_ge': {str(level): float(one[level:].sum()) for level in (2, 3)}}
+
+
+def prize_coverage(code: ProductCode, tickets: list[list[int]], specials: int) -> dict:
+    """Mốc CHÍNH XÁC "ít nhất một vé trúng giải" của danh mục Lotto 5/35 khi quay ngẫu nhiên.
+
+    Một vé Lotto trúng giải khi trùng ≥ 3 số chính HOẶC trùng số đặc biệt (giải Khuyến khích nhận
+    0–2 số chính cộng số đặc biệt) — điều kiện ấy đọc thẳng từ bảng giải, không viết cứng. Số đặc
+    biệt quay từ lồng riêng, độc lập với bộ chính, nên P(không vé nào trúng) = P(mọi vé < 3 số chính)
+    × P(số đặc biệt nằm ngoài ``specials`` số mà các vé mang).
+    """
+    game = get_game(code.value)
+    if not game.separate_special:
+        raise ValueError('Mốc trúng giải theo số đặc biệt chỉ dành cho trò có lồng số đặc biệt riêng')
+    plain = min(m for m in range(game.pick + 1) if game.classify(m, False) is not None)
+    if any(game.classify(m, True) is None for m in range(game.pick + 1)):
+        raise ValueError('Bảng giải không trả thưởng cho mọi vé trùng số đặc biệt')
+    pool = game.bonus_pool_size or 1
+    if not 1 <= specials <= pool:
+        raise ValueError('Số số đặc biệt phải trong 1..kích thước lồng')
+    none_plain = 1 - float(any_ticket_tail(tickets, game.pool_size, game.pick)[plain])
+    return {'specials': specials, 'any_ticket_prize': 1 - none_plain * (1 - specials / pool),
+            'shared_special_prize': 1 - none_plain * (1 - 1 / pool), 'one_ticket_prize': float(game.p_any_prize)}
 
 
 def _covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-untyped-def]
@@ -142,10 +165,31 @@ def _covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-unt
     return name == 'main' and isinstance(spec, SetSpec) and code.value in GAMES
 
 
-def _coverage_component(name: str, spec: SetSpec, law: Law) -> dict:
+def _special_covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-untyped-def]
+    """Số đặc biệt Lotto 5/35 (lồng riêng): từ ``coverage-v2`` mỗi vé mang một số khác nhau."""
+    return name == 'special' and isinstance(spec, DigitSpec) and spec.positions == 1 and code.value in GAMES
+
+
+def _coverage_component(name: str, spec: SetSpec, law: Law, rule: str = COVERAGE_RULE) -> dict:
     tickets = coverage_tickets(law)
     return {'name': name, 'kind': spec.kind, 'top': [{'numbers': t} for t in tickets], 'ranking_exact': None,
-            'coverage': coverage_summary(spec, tickets)}
+            'coverage': coverage_summary(spec, tickets, rule)}
+
+
+def _special_component(name: str, spec: DigitSpec, law: Law) -> dict:
+    """Năm số đặc biệt khác nhau, vé thứ j mang số thứ j (``per_ticket``)."""
+    return {'name': name, 'kind': spec.kind, 'top': [{'numbers': [s]} for s in coverage_specials(law)],
+            'ranking_exact': True, 'per_ticket': True}
+
+
+def _with_prize_coverage(code: ProductCode, components: list[dict]) -> list[dict]:
+    """Gắn mốc "ít nhất một vé trúng giải" vào bộ chính khi số đặc biệt được chia theo vé."""
+    by_name = {c['name']: c for c in components}
+    main, special = by_name.get('main'), by_name.get('special')
+    if main and special and special.get('per_ticket') and main.get('coverage'):
+        tickets = [t['numbers'] for t in main['top']]
+        main['coverage'] = {**main['coverage'], **prize_coverage(code, tickets, len(special['top']))}
+    return components
 
 
 def _from_issue(code: ProductCode, event: dict, now: datetime) -> dict | None:
@@ -157,16 +201,21 @@ def _from_issue(code: ProductCode, event: dict, now: datetime) -> dict | None:
     if set(p.get('laws', {})) != set(cfg.components):
         return None
     components = []
+    rule = p.get('ticket_rule')
     for name, spec in cfg.components.items():
         raw = p['laws'][name]
         law = Law(spec, np.array(raw['values']), np.array(raw['mixture']))
         # Quy tắc dựng vé đọc từ CHÍNH lần ghi: dự báo ghi trước 15-10-2026 không có khoá này và
         # giữ đúng các vé đã phát lúc ấy (Law.top), không bị chấm lại bằng quy tắc mới.
-        if p.get('ticket_rule') == COVERAGE_RULE and _covered(code, name, spec):
-            components.append(_coverage_component(name, spec, law))
+        if rule in COVERAGE_RULES and _covered(code, name, spec):
+            components.append(_coverage_component(name, spec, law, rule))
+            continue
+        if rule == COVERAGE_RULE and _special_covered(code, name, spec):
+            components.append(_special_component(name, spec, law))
             continue
         tops, exact = law.top(PUBLISHED_TOP_N, max_nodes=event.get('config', {}).get('search_nodes', 1000))
         components.append({'name': name, 'kind': spec.kind, 'top': tops, 'ranking_exact': exact})
+    components = _with_prize_coverage(code, components)
     return {k: p[k] for k in ('target_id', 'target_date', 'target_time', 'made_at', 'based_on_id')} | {
         'product': code.value, 'engine': 'ml', 'registered': True, 'components': components,
         'multi_agent': deepcopy(p.get('multi_agent') or {}),
@@ -232,10 +281,14 @@ def compare_prediction(prediction: dict, draw: DrawRecord) -> dict:
         return {**out, 'status': 'date_mismatch'}
     components = {c['name']: c for c in prediction['components']}
     if code in GAMES or code == 'keno':
-        for row in components['main']['top']:
+        specials = components.get('special', {}).get('top') or [{}]
+        per_ticket = bool(components.get('special', {}).get('per_ticket'))
+        for index, row in enumerate(components['main']['top']):
             nums = row['numbers']
             hits = sorted(set(nums) & set(draw.winning_numbers))
-            special = components.get('special', {}).get('top', [{}])[0].get('numbers', [None])[0]
+            # coverage-v2: vé thứ j mang số đặc biệt thứ j; quy tắc cũ: cả năm vé mang số hạng nhất.
+            chosen = specials[index] if per_ticket and index < len(specials) else specials[0]
+            special = (chosen.get('numbers') or [None])[0]
             bonus_hit = draw.bonus_number in nums if code == 'power655' else special == draw.bonus_number if code == 'lotto535' else False
             tier = get_game(code).classify(len(hits), bonus_hit) if code in GAMES else None
             out['tickets'].append({'numbers': nums, 'matched_numbers': hits, 'hits': len(hits),
@@ -403,10 +456,13 @@ def _fallback(code: ProductCode, latest: DrawRecord, recent: list[DrawRecord], d
             components = rep['components']
             made_at = rep['made_at']
             context = model._target_context()
-            components = [_coverage_component(c['name'], CONFIGS[code].components[c['name']],
-                                              model._target_law(c['name'], context))
-                          if _covered(code, c['name'], CONFIGS[code].components[c['name']]) else c
-                          for c in components]
+            specs = CONFIGS[code].components
+            components = _with_prize_coverage(code, [
+                _coverage_component(c['name'], specs[c['name']], model._target_law(c['name'], context))
+                if _covered(code, c['name'], specs[c['name']]) else
+                _special_component(c['name'], specs[c['name']], model._target_law(c['name'], context))
+                if _special_covered(code, c['name'], specs[c['name']]) else c
+                for c in components])
         elif state_path(directory, code).exists():
             rep = Forecaster.load(state_path(directory, code)).forecast().model_dump(mode='json')
             if rep['last_id'] != latest.draw_id or rep['last_date'] != latest.draw_date.date().isoformat():

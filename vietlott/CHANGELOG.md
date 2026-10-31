@@ -1,5 +1,26 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — hỗn hợp Bayes cho bộ chữ số, số đặc biệt Lotto theo vé (31-10-2026)
+
+- **Chuyên gia `bayes_mixture` trong bộ ML (`vlm.forecast.bayes_expert`), chỉ cho thành phần chữ số.**
+  - Là luật hậu nghiệm của hỗn hợp Bayes chia sẻ cố định của `vietlott_engine.forecast`, chạy trên đúng
+    các kỳ bộ ML học, chấm trước – học sau.
+  - Max 3D lệch thật ở hàng đơn vị: chữ số 6 chiếm 10,6–11,3% ở cả sáu giai đoạn 2019 → 2026. Bộ ML cũ
+    không học được độ lệch ấy.
+  - Log-score so với quay công bằng trên 1 000 kỳ cuối:
+    - Max 3D: −0,158 → +0,771 log10;
+    - Max 3D Pro: −0,161 → +0,641 log10;
+    - Max 4D, Bingo18, số đặc biệt Lotto: không kém đi.
+  - Checkpoint ML lên version 5. Sản phẩm có thành phần chữ số học lại; Mega, Power, Keno vẫn nạp
+    checkpoint 3/4.
+- **`ticket_rule = coverage-v2`:** vé Lotto 5/35 thứ j mang số đặc biệt hạng j
+  (`distribution.coverage_specials`), chấm đúng từng vé.
+  - "Ít nhất một vé trúng giải" tăng từ 14,7% lên 45,7% (`dashboard.prize_coverage`, chính xác, đọc
+    điều kiện trúng từ bảng giải). Xác suất và kỳ vọng của từng vé không đổi.
+  - Lần ghi `coverage-v1` giữ số đặc biệt chung.
+- **Phép kiểm dòng "tương lai"** dựng ngày từ ngày Việt Nam như engine. Bản cũ dùng `date.today()` của máy
+  (UTC) nên đỏ từ 17:00 đến 24:00 UTC.
+
 ## Chưa phát hành — kiểm toán định lượng (19-10-2026)
 
 - **`vlm.multi_agent.models.SubsetDistribution` nhanh hơn 4–9 lần, kết quả không đổi một bit.**
