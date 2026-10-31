@@ -18,6 +18,8 @@
   - "Ít nhất một vé trúng giải" tăng từ 14,7% lên 45,7% (`dashboard.prize_coverage`, chính xác, đọc
     điều kiện trúng từ bảng giải). Xác suất và kỳ vọng của từng vé không đổi.
   - Lần ghi `coverage-v1` giữ số đặc biệt chung.
+- **Phép kiểm dòng "tương lai"** dựng ngày từ ngày Việt Nam như engine. Bản cũ dùng `date.today()` của máy
+  (UTC) nên đỏ từ 17:00 đến 24:00 UTC.
 
 ## Chưa phát hành — kiểm toán định lượng (19-10-2026)
 

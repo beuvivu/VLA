@@ -15,6 +15,7 @@ from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.products import ProductCode
 from vietlott_engine.crawler.http import AsyncHttpClient, RetryPolicy
 from vietlott_engine.crawler.product_store import ProductStore, ProductSyncPipeline
+from vietlott_engine.forecast.schedule import VN as VN_TZ
 from tests.test_fallback_sources import DRAW_COLS, _csv, _draw
 
 
@@ -261,7 +262,10 @@ def test_rejected_source_row_cannot_be_hidden_by_a_valid_cached_row(tmp_path,fau
     store=ProductStore(tmp_path)
     store.upsert(ProductCode.BINGO18,[row(1)],'seed')
     bad=row(2)
-    if fault=='future': bad['date']=(date.today()+timedelta(days=1)).isoformat()
+    # "Tương lai" là sau hôm nay GIỜ VIỆT NAM — đồng hồ engine dùng. date.today() của máy (UTC) chậm một ngày
+    # từ 17:00 đến 24:00 UTC: khi ấy "ngày mai UTC" là "hôm nay VN", dòng hợp lệ và phép kiểm đỏ dù engine
+    # đúng (31-10-2026, 22:29 UTC). Lùi ngày thì so với ngày của row(1), nên giữ đồng hồ máy.
+    if fault=='future': bad['date']=(datetime.now(VN_TZ).date()+timedelta(days=1)).isoformat()
     elif fault=='backdated': bad['date']=(date.today()-timedelta(days=1)).isoformat()
     elif fault=='invalid_values': bad['result']=[7,8,9]
     else: bad=dict(row(1),result=[6,6,6])

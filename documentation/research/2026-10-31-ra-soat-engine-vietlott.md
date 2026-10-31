@@ -129,6 +129,17 @@ Trang nay dùng ngưỡng họ 7/α = 140, cũng là ngưỡng cổng live của
 Sản phẩm vượt 20 nhưng chưa tới 140 được ghi rõ là chưa đủ bằng chứng khi xét cả họ. Max 3D (10^2,57)
 và Max 3D Pro (10^2,84) vượt cả 140 (10^2,15), nên kết luận hôm nay không đổi.
 
+## 5. Phép kiểm phụ thuộc giờ máy — đã sửa
+
+`test_rejected_source_row_cannot_be_hidden_by_a_valid_cached_row[future]` đỏ lúc 22:29 UTC.
+
+- Engine xét dòng "tương lai" theo ngày Việt Nam (`datetime.now(VN)`).
+- Phép kiểm dựng ngày tương lai bằng `date.today()` của máy (UTC).
+- Từ 17:00 đến 24:00 UTC, "ngày mai UTC" là "hôm nay VN". Dòng ấy hợp lệ, engine đúng khi nhận nó, và
+  phép kiểm đỏ.
+
+Nay phép kiểm dựng ngày tương lai từ ngày VN. Bản cũ đỏ trong khung giờ ấy, bản mới xanh.
+
 ## Phép kiểm và đột biến
 
 | Tệp | Đột biến |
