@@ -1,0 +1,309 @@
+{
+  "protocol": "retrospective_prequential_fixed_split",
+  "initial_draws": 400,
+  "holdout_draws": 200,
+  "baseline_file": "baseline.json.gz",
+  "candidate_file": "patterns.json.gz",
+  "source_tree_sha256": "d321b2c43e55abed4c036fd87e4dd3a00421fe4ec1b9fc6825429bbd1e5f6a07",
+  "data_source": "repository seed only; no results journal, archived SQLite, collector, checkpoint or live ledger",
+  "multiple_testing": "BH over 14 exploratory comparisons: 7 candidate-vs-current + 7 candidate-vs-fair; original per-family q_value_bh also retained",
+  "paired_comparison": [
+    {
+      "product": "mega645",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0006554099361950527,
+      "hac_standard_error": 0.0022053736605837705,
+      "ci95": [
+        -0.005004310958703664,
+        0.003693491086313558
+      ],
+      "p_value_greater": 0.6163998350385497,
+      "hac_lag": 6,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "power655",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.00014530253874891485,
+      "hac_standard_error": 0.00021175676709455217,
+      "ci95": [
+        -0.0005628776814106114,
+        0.0002722726039127816
+      ],
+      "p_value_greater": 0.7527591414025175,
+      "hac_lag": 4,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "lotto535",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0007074819723710802,
+      "hac_standard_error": 0.000671454905980637,
+      "ci95": [
+        -0.002031561868389543,
+        0.0006165979236473827
+      ],
+      "p_value_greater": 0.8527374782953372,
+      "hac_lag": 4,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "keno",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 4.375115624149828e-05,
+      "hac_standard_error": 0.00017005688878439718,
+      "ci95": [
+        -0.0002915936384919863,
+        0.00037909595097498287
+      ],
+      "p_value_greater": 0.3988648992404246,
+      "hac_lag": 4,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "bingo18",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 0.00039934094978619325,
+      "hac_standard_error": 0.0012099878773150694,
+      "ci95": [
+        -0.001986702563350545,
+        0.002785384462922932
+      ],
+      "p_value_greater": 0.3711712079582394,
+      "hac_lag": 4,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "max3d",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 0.004763342220826559,
+      "hac_standard_error": 0.012203786126020412,
+      "ci95": [
+        -0.019301993695028146,
+        0.028828678136681263
+      ],
+      "p_value_greater": 0.3487205795693233,
+      "hac_lag": 4,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "max3dpro",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 3.702701952548182e-05,
+      "hac_standard_error": 0.0025100898624765217,
+      "ci95": [
+        -0.004912761111445078,
+        0.004986815150496042
+      ],
+      "p_value_greater": 0.4941374069663642,
+      "hac_lag": 4,
+      "q_value_bh": 0.8527374782953372,
+      "q_value_bh_14": 0.9937493964195631
+    }
+  ],
+  "fair_comparison": [
+    {
+      "product": "mega645",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0008391431410558159,
+      "hac_standard_error": 0.0022222427697242745,
+      "ci95": [
+        -0.005221309313729741,
+        0.0035430230316181094
+      ],
+      "p_value_greater": 0.64658831825307,
+      "hac_lag": 5,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "power655",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0004403401377436467,
+      "hac_standard_error": 0.0005272062015232819,
+      "ci95": [
+        -0.0014799678570075912,
+        0.0005992875815202977
+      ],
+      "p_value_greater": 0.7971184127167757,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "lotto535",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0011073498382589552,
+      "hac_standard_error": 0.0007661013569483109,
+      "ci95": [
+        -0.002618068422653325,
+        0.0004033687461354148
+      ],
+      "p_value_greater": 0.9245370704442962,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "keno",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0005357902683913807,
+      "hac_standard_error": 0.00021203415587380718,
+      "ci95": [
+        -0.0009539124096716312,
+        -0.0001176681271111303
+      ],
+      "p_value_greater": 0.9937493964195631,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "bingo18",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 7.697526895551033e-05,
+      "hac_standard_error": 0.0011293170718891278,
+      "ci95": [
+        -0.002149988921491483,
+        0.0023039394594025035
+      ],
+      "p_value_greater": 0.47293081635780204,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "max3d",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 0.0028895904052396305,
+      "hac_standard_error": 0.012553476739103498,
+      "ci95": [
+        -0.021865320203547672,
+        0.027644501014026934
+      ],
+      "p_value_greater": 0.4093167671401548,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    },
+    {
+      "product": "max3dpro",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.003286929663079974,
+      "hac_standard_error": 0.016225799988146147,
+      "ci95": [
+        -0.03528350213542479,
+        0.028709642809264843
+      ],
+      "p_value_greater": 0.5799646963862868,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195631,
+      "q_value_bh_14": 0.9937493964195631
+    }
+  ],
+  "wall_seconds": {
+    "baseline": 160.709798,
+    "patterns": 167.313276
+  },
+  "products": [
+    {
+      "product": "mega645",
+      "data_sha256": "a7c0d76e54c2fd862017871ebb93322496ef0ee0ef94a99299dd3fbc0860084a",
+      "test_first_id": 1370,
+      "test_last_id": 1569,
+      "test_first_date": "2025-06-22",
+      "test_last_date": "2026-09-30",
+      "baseline_log_gain_nats": -0.00018373320486076317,
+      "patterns_log_gain_nats": -0.0008391431410558159,
+      "patterns_brier_minus_fair": 7.773466632610138e-06,
+      "baseline_seconds": 32.299,
+      "patterns_seconds": 31.071
+    },
+    {
+      "product": "power655",
+      "data_sha256": "74e7d43e04b8c0e88b1cba81a3adb243b7ea95cdccd373c278e36381b52af493",
+      "test_first_id": 1206,
+      "test_last_id": 1405,
+      "test_first_date": "2025-06-21",
+      "test_last_date": "2026-10-01",
+      "baseline_log_gain_nats": -0.0002950375989947318,
+      "patterns_log_gain_nats": -0.0004403401377436467,
+      "patterns_brier_minus_fair": 1.98099375367522e-06,
+      "baseline_seconds": 29.359,
+      "patterns_seconds": 30.267
+    },
+    {
+      "product": "lotto535",
+      "data_sha256": "72ff4920f3d338ebf47dc5d47fdee29785d51b0f3b8ea1262ea1715df0f66b37",
+      "test_first_id": 721,
+      "test_last_id": 920,
+      "test_first_date": "2026-06-24",
+      "test_last_date": "2026-10-01",
+      "baseline_log_gain_nats": -0.00039986786588787517,
+      "patterns_log_gain_nats": -0.0011073498382589552,
+      "patterns_brier_minus_fair": 1.238952110196867e-05,
+      "baseline_seconds": 28.64,
+      "patterns_seconds": 35.084
+    },
+    {
+      "product": "keno",
+      "data_sha256": "7e71e8036190d7a669e9feb3fea6ad7ddaf7f5119bfd584a83e0537d72e84138",
+      "test_first_id": 297308,
+      "test_last_id": 297782,
+      "test_first_date": "2026-09-28",
+      "test_last_date": "2026-10-02",
+      "baseline_log_gain_nats": -0.0005795414246328789,
+      "patterns_log_gain_nats": -0.0005357902683913807,
+      "patterns_brier_minus_fair": 2.9269089802108628e-06,
+      "baseline_seconds": 53.753,
+      "patterns_seconds": 55.464
+    },
+    {
+      "product": "bingo18",
+      "data_sha256": "580922f652d31c80799ef63297eac5d8395c8d6ac26a1da552defd90dd8540eb",
+      "test_first_id": 188600,
+      "test_last_id": 189249,
+      "test_first_date": "2026-09-28",
+      "test_last_date": "2026-10-02",
+      "baseline_log_gain_nats": -0.000322365680830683,
+      "patterns_log_gain_nats": 7.697526895551033e-05,
+      "patterns_brier_minus_fair": 2.1701938066331916e-06,
+      "baseline_seconds": 3.505,
+      "patterns_seconds": 2.96
+    },
+    {
+      "product": "max3d",
+      "data_sha256": "1681bc3c739925fb5d1909bf0a5e2c46c93745cb47dd98828bf85a68e20b344f",
+      "test_first_id": 940,
+      "test_last_id": 1139,
+      "test_first_date": "2025-06-20",
+      "test_last_date": "2026-09-30",
+      "baseline_log_gain_nats": -0.0018737518155869282,
+      "patterns_log_gain_nats": 0.0028895904052396305,
+      "patterns_brier_minus_fair": -9.723231416524508e-07,
+      "baseline_seconds": 3.704,
+      "patterns_seconds": 3.745
+    },
+    {
+      "product": "max3dpro",
+      "data_sha256": "b048001ea5e422c8413800e661a880e5a28ae2a80e7253397ba42cd3efb09674",
+      "test_first_id": 587,
+      "test_last_id": 786,
+      "test_first_date": "2025-06-21",
+      "test_last_date": "2026-10-01",
+      "baseline_log_gain_nats": -0.0033239566826054555,
+      "patterns_log_gain_nats": -0.003286929663079974,
+      "patterns_brier_minus_fair": 6.652479261947189e-07,
+      "baseline_seconds": 4.196,
+      "patterns_seconds": 3.788
+    }
+  ],
+  "decision": "keep_patterns_default_false",
+  "live_certification": false
+}

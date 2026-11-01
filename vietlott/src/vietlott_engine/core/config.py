@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     ml_backends: list[Literal['rf', 'xgb', 'lgb']] = ['rf']
     ml_adaptive: bool = False  # challenger research; chỉ bật sau fit tường minh, không mở gate live
     ml_multi_agent: bool = True  # ba lớp cùng bộ nhớ; vẫn chịu cổng live hiện hành
+    ml_patterns: bool = False  # challenger Bayes/chuyển trạng thái/hazard; cần kiểm chứng trước khi bật
     storage_backend: Literal["duckdb", "memory"] = "duckdb"
     seed_file_dir: Path | None = None  # optional offline JSONL dir loaded on startup when the store is empty
     log_level: str = "INFO"

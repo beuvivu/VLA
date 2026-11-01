@@ -466,7 +466,7 @@ POST/PUT/PATCH/DELETE và mọi `?record=` mà FastAPI đọc là True (`on`, `y
 chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`; ba GET làm mới dự báo (`/forecast/{p}`,
 `/forecast/{p}/evidence`, `/ml/forecast/{p}`) cũng là lệnh ghi. Không có token thì lệnh ghi do trình
 duyệt gửi từ trang khác (`Sec-Fetch-Site`/`Origin`) bị 403; `vietlott serve` và compose chỉ nghe
-`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; nên đưa ngược bản vá về kho VLM.
+`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; bản vá đã đưa ngược về kho VLM ở beuvivu/vlm#9 (01-11-2026).
 Kiểm chứng xác suất và số khớp H cho Mega/Power (13-10-2026, `vietlott/docs/VLM_HIT_BENCHMARK.md`):
 `vlm.forecast.hits` (H = |vé ∩ 6 số chính| so với siêu bội C(6,h)C(N−6,6−h)/C(N,6), đơn vị KỲ, số đặc biệt
 Power KHÔNG cộng vào H), `vlm.forecast.challengers`, `vlm.forecast.hit_benchmark` (giao thức `PROTOCOL` đăng ký
@@ -496,6 +496,12 @@ tốn nhiều hơn lợi ích. Lần ghi `ticket_rule = coverage-v2`: vé Lotto 
 (ít nhất một vé trúng giải 45,7% so với 14,7% khi chung một số, `dashboard.prize_coverage`); lần ghi v1 giữ số chung.
 Kết luận e-value trên trang dùng ngưỡng HỌ 7/α = 140 (`build_vietlott_results.family_signal`), không phải 20 của từng
 sản phẩm (`documentation/research/2026-10-31-ra-soat-engine-vietlott.md`).
+Challenger mẫu hình `vlm.forecast.patterns` (PR #190, ghép 01-11-2026) mặc định TẮT (`MLConfig.patterns`,
+`VQE_ML_PATTERNS`). Nó dùng chung checkpoint version 5 với `bayes_mixture`: khoá `patterns` là TUỲ CHỌN, nên đừng tăng
+`VERSION` vì nó. Tăng thì mọi sản phẩm có bộ chữ số học lại và mất bằng chứng live. Thứ tự chuyên gia là cơ sở → bayes →
+mẫu hình, trùng thứ tự xác suất trong `predict`. Đo lại trên mã đã ghép: tắt thì trùng `main` từng bit; bật thì không
+cải thiện (q = 0,99, `vietlott/reports/vlm/pattern-learning-2026-11-01/`). Muốn bật mặc định thì phải qua phép đo
+trước khi bật, như mọi challenger.
 Keno/Bingo18 từ 01-11-2026: vietlott.vn chặn runner bằng Cloudflare (không vượt) và kho NhanAZ chỉ đăng lại
 từ trang thứ cấp, nên bản sao `vietvudanh` được nhập qua cổng hồ sơ `product_store._vet_fast_mirror`: trùng
 tuyệt đối ≥ 10 000 kỳ seed CHÍNH THỨC (không đếm dòng trong kho — tự chứng nhận) và ≥ 50 kỳ đăng lại độc lập

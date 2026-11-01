@@ -6,6 +6,39 @@ có thể cung cấp JSONL khác; mọi dòng được validator kiểm tra trư
 
 ## Sử dụng
 
+### Chuyên gia mẫu hình thử nghiệm — 24-10-2026
+
+`--patterns` bổ sung bốn chuyên gia được chấm riêng trong cùng luật xác suất:
+
+| Chuyên gia | Cách học | Co về nền |
+| --- | --- | --- |
+| `bayes_short` | Tần suất có trọng số, half-life 16 kỳ | Prior 32 kỳ |
+| `bayes_long` | Tần suất có trọng số, half-life 128 kỳ | Prior 128 kỳ |
+| `markov_repeat` | Tỷ lệ sau trạng thái xuất hiện/vắng ở kỳ trước | Prior 32 kỳ mỗi trạng thái |
+| `gap_hazard` | Tỷ lệ theo nhóm tuổi kể từ lần xuất hiện đã quan sát | Prior 64 kỳ mỗi nhóm |
+
+Mọi chuyên gia dự báo trước khi học kết quả mới. Kỳ thiếu không được xem là
+kết quả trượt: hai chuyên gia có điều kiện trở về nền khi dự báo qua khoảng
+trống, transition không được học qua khoảng trống và tuổi gap bị kiểm duyệt
+cho tới khi quan sát lại một lần xuất hiện. Không mặc định số vắng lâu phải về.
+
+Cờ vận hành mặc định `VQE_ML_PATTERNS=false`; bật tường minh trong môi trường
+thử nghiệm bằng `vlm-forecast fit --product mega645 --patterns`. Có thể dùng
+`--no-patterns` để học lại chính sách không có nhóm mới. Vé/law đã phát trước
+lần fit được giữ nguyên hoặc chấm bằng chính law đã khóa. Dấu vân tay cấu
+hình tách điểm live của các chính sách; không chuyển thành tích cũ sang mô hình mới.
+
+Phép đánh giá riêng hỗ trợ `--patterns` và `--multi-agent` độc lập để so đúng
+cấu hình đang chạy. Báo cáo 600/400 và dữ liệu seed là thăm dò hồi cứu; không
+thay giao thức H benchmark đã đăng ký và không tự mở cổng chứng nhận live.
+Xem [kết quả và lệnh tái lập](../reports/vlm/pattern-learning-2026-10-24/README.md).
+
+Đo lại 01-11-2026 sau khi ghép với chuyên gia hỗn hợp Bayes của bộ chữ số: tắt mẫu hình thì kết quả trùng
+`main` từng bit trên 7 sản phẩm × 200 kỳ; bật thì vẫn không có cải thiện có ý nghĩa (mọi CI ghép cặp chứa 0,
+q = 0,99). Phần hơn ở Max 3D thu từ +0,0048 xuống +0,0019 nats/kỳ vì chuyên gia Bayes đã học độ lệch chữ số 6.
+Khoá `patterns` là tuỳ chọn trong checkpoint version 5, không cần tăng phiên bản
+([báo cáo đo lại](../reports/vlm/pattern-learning-2026-11-01/README.md)).
+
 ```bash
 pip install -e ".[dev]"
 vlm-forecast next --product mega645 --top-n 10

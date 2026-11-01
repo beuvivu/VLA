@@ -18,7 +18,7 @@ from vietlott_engine.core.products import get_product
 from vietlott_engine.forecast.data import Series, SetSpec, load_series
 from vietlott_engine.forecast.engine import refresh as legacy_refresh, state_path
 from vietlott_engine.forecast.schedule import FAST, now_vn, record_window
-from vlm.forecast.pipeline import MLConfig, MLForecaster, _prefix_digest
+from vlm.forecast.pipeline import MLConfig, MLForecaster, PATTERN_POLICY, _prefix_digest
 from vlm.forecast.distribution import Law
 from vlm.updates.lease import WriterLease
 
@@ -46,7 +46,8 @@ def forecast_guard(directory: Path):
 def model_config(settings) -> MLConfig:  # type: ignore[no-untyped-def]
     return MLConfig(bootstrap=settings.ml_bootstrap, tree_every=settings.ml_tree_every,
                     backends=tuple(settings.ml_backends), search_nodes=settings.ml_search_nodes,
-                    adaptive=settings.ml_adaptive, multi_agent=settings.ml_multi_agent)
+                    adaptive=settings.ml_adaptive, multi_agent=settings.ml_multi_agent,
+                    patterns=settings.ml_patterns)
 
 
 def directory_for(state) -> Path:  # type: ignore[no-untyped-def]
@@ -211,7 +212,9 @@ def _verify_restored_evidence(model: MLForecaster, series: Series, directory: Pa
         identity = (event['target_id'], event.get('history_sha256'))
         if event['event'] == 'issue':
             issues.setdefault(identity, event)
-        elif event['event'] == 'score' and type(event['target_id']) is int and event['target_id'] <= model.last_id:
+        elif (event['event'] == 'score' and type(event['target_id']) is int and event['target_id'] <= model.last_id
+              and event.get('pattern_policy') == (PATTERN_POLICY if model.config.patterns else None)
+              and event.get('counts_toward_live', True)):
             scores.setdefault(identity, event)
     candidates = sorted(scores.values(), key=lambda event:event['target_id'])[-model.live_scored:] if model.live_scored else []
     verified = _restore_pending_issue(model, series, issues) and len(candidates) == model.live_scored
@@ -225,6 +228,8 @@ def _verify_restored_evidence(model: MLForecaster, series: Series, directory: Pa
             context.pending = pending
             index = int(np.searchsorted(series.draw_ids, event['target_id']))
             if (not context.pending_valid() or index >= len(series) or int(series.draw_ids[index]) != event['target_id']
+                or not model.pending_policy_matches(pending)
+                or event.get('model_policy') != pending.get('model_policy')
                 or index < 1 or int(series.draw_ids[index-1]) != pending['based_on_id']
                 or str(series.dates[index])[:10] != pending['target_date']
                 or pending['history_sha256'] != _prefix_digest(series, index)
@@ -264,9 +269,11 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
     with forecast_guard(directory):
         path = directory / 'ml' / f'{code.value}.json.gz'
         recovery = False
-        if path.exists() and not refit:
+        loaded_checkpoint = False
+        if path.exists():
             try:
                 model = MLForecaster.load(path)
+                loaded_checkpoint = True
             except (ValueError, KeyError, TypeError, OSError, EOFError, gzip.BadGzipFile):
                 # Keep failed bytes for diagnosis; a failed restore never keeps its scores.
                 suffix = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')
@@ -276,7 +283,7 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
             model = MLForecaster(code, config)
         if model.product != code:
             raise ValueError('Checkpoint belongs to another product')
-        if require_config_match and config is not None and model.config != config:
+        if require_config_match and not refit and config is not None and model.config != config:
             raise ValueError('config_change_requires_fit')
         if recovery:
             model.warnings.append('checkpoint_recovered')
@@ -288,8 +295,12 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
                               'issued':False, 'note':'stale_snapshot_ignored', 'error':None}
         _verify_restored_evidence(model, series, directory)
         preserved_pending = None
-        if (config is not None and config.multi_agent and not model.config.multi_agent
-                and not require_config_match):
+        upgrades = []
+        if config is not None and config.multi_agent and not model.config.multi_agent:
+            upgrades.append('multi_agent_policy_upgrade')
+        if config is not None and config.patterns != model.config.patterns:
+            upgrades.append('pattern_policy_upgrade')
+        if loaded_checkpoint and (refit or upgrades and not require_config_match):
             # Chấm đúng law cũ trước khi nâng cấp; kết quả mới không được làm mất issue.
             model.update(series, now=now_vn())
             for score in model.last_live_scores:
@@ -297,7 +308,7 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
             preserved_pending = deepcopy(model.pending)
             warnings = list(model.warnings)
             model = MLForecaster(code, config)
-            model.warnings = list(dict.fromkeys([*warnings, 'multi_agent_policy_upgrade']))
+            model.warnings = list(dict.fromkeys([*warnings, *upgrades, *(['explicit_refit'] if refit else [])]))
         previous_components = model.components
         learned = model.update(series, now=now_vn())
         if preserved_pending is not None:
