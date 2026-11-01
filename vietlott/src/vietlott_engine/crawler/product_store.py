@@ -183,6 +183,9 @@ class ProductSyncReport:
     exclusions_added: int = 0
     attempts: list[dict] = field(default_factory=list)
     continuity: dict = field(default_factory=dict)
+    # Nguồn của kỳ có mã LỚN NHẤT vừa nhận (``source_used`` ghép mọi nguồn có góp dòng): độ mới đo theo
+    # nhịp của chính nguồn đã đưa kho tới kỳ mới nhất (`vlm.updates.runner`).
+    latest_source: str | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -531,7 +534,8 @@ class ProductSyncPipeline:
             inserted=inserted, rejected=rejected+sum(a['rejected'] for a in attempts), total_after=total,
             last_id=cov['last_id'], last_date=cov['last_date'], missing_ids_inside_range=cov['missing_ids_inside_range'],
             elapsed_s=round(time.perf_counter()-t0,3), error='; '.join(errors) or None, source_used=used,
-            exclusions_added=added, attempts=attempts, continuity=continuity)
+            exclusions_added=added, attempts=attempts, continuity=continuity,
+            latest_source=origins.get(max(r['id'] for r in delta)) if delta else None)
 
 
 # ----------------------------------------------------------------- official prize data

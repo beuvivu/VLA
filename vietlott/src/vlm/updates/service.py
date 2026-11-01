@@ -561,7 +561,8 @@ async def update_product(state, product: str, *, learn: bool = True) -> dict:  #
     h = await asyncio.to_thread(state.product_store().load, code)
     count = int((h.dates == h.dates[-1]).sum()) if len(h) else 0
     return {'last_draw_id':report['last_id'], 'last_draw_date':report['last_date'], 'draws_on_last_date':count,
-            'inserted':report['inserted'], 'source':report['source_used'], 'error':report['error'],
+            'inserted':report['inserted'], 'source':report['source_used'], 'latest_source':report.get('latest_source'),
+            'error':report['error'],
             'source_attempts':report['attempts'], 'continuity':report['continuity'],
             'learning':await _learn(state, product) if learn else None}
 

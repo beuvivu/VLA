@@ -57,12 +57,22 @@ class UpdateRunner:
         # Monitor actual ID progress instead, allowing a startup/publication grace.
         progress = entry.get('last_draw_advance') or entry.get('first_polled_at')
         minute = now.hour * 60 + now.minute
-        if product in ('keno', 'bingo18') and result['status'] == 'date_only' and progress and 360 <= minute < 1314:
-            baseline = max(vietnam_time(datetime.fromisoformat(progress)), now.replace(hour=6, minute=0, second=0, microsecond=0))
-            # Nguồn kiểm chứng được nhịp nào thì báo "không tiến" theo nhịp ấy (01-11-2026): bản sao cộng đồng
-            # cập nhật lúc ~00:00 và ~12:00 UTC, nên chờ nó 12 giờ là bình thường; quá MIRROR_GRACE nghĩa là
-            # bản sao đã lỡ một lượt — lúc ấy mới là sự cố. Nguồn khác giữ 20 phút như cũ.
-            grace = MIRROR_GRACE if 'mirror' in str(entry.get('last_advance_source') or '') else timedelta(minutes=20)
+        if product not in ('keno', 'bingo18') or not progress:
+            return result
+        advanced_at = vietnam_time(datetime.fromisoformat(progress))
+        # Nguồn kiểm chứng được nhịp nào thì đo độ mới theo nhịp ấy (01-11-2026). Bản sao cộng đồng cập nhật
+        # lúc ~00:00 và ~12:00 UTC, nên chờ nó tới MIRROR_GRACE là bình thường; quá hạn nghĩa là bản sao đã lỡ
+        # một lượt — lúc ấy mới là sự cố. Chỉ áp khi chính KỲ MỚI NHẤT đến từ bản sao (``latest_source``) và
+        # đo từ lần tiến THẬT: mốc 06:00 hằng ngày sẽ dời báo động về một lượt ~07:00 bị lỡ thêm ~11 giờ.
+        # Nguồn khác giữ 20 phút như cũ.
+        from_mirror = entry.get('last_advance_source') == 'mirror'
+        waiting = from_mirror and now - advanced_at < MIRROR_GRACE
+        if result['status'] == 'behind_schedule' and waiting:
+            # Từ kỳ đầu buổi sáng tới lượt cập nhật ~07:00, kho còn mang ngày hôm qua: đang chờ, không trễ lịch.
+            result.update(status='date_only', note='Waiting for the next twice-daily verified mirror update.')
+        if result['status'] == 'date_only' and 360 <= minute < 1314:
+            grace = MIRROR_GRACE if from_mirror else timedelta(minutes=20)
+            baseline = advanced_at if from_mirror else max(advanced_at, now.replace(hour=6, minute=0, second=0, microsecond=0))
             if now - baseline >= grace:
                 result.update(status='not_advancing', verified=False,
                               note=f'No observed draw-ID advance for {grace} during selling hours; check source delay.')
@@ -135,7 +145,7 @@ class UpdateRunner:
                 previous_id = entry.get('last_draw_id')
                 if result.get('last_draw_id') is not None and (previous_id is None or result['last_draw_id'] > previous_id):
                     entry['last_draw_advance'] = vietnam_time(self.clock()).isoformat()
-                    entry['last_advance_source'] = result.get('source')
+                    entry['last_advance_source'] = result.get('latest_source') or result.get('source')
                 entry.update({key: result.get(key) for key in
                               ('last_draw_id', 'last_draw_date', 'draws_on_last_date', 'inserted', 'source', 'prize_error', 'learning')})
                 entry.update(last_success=vietnam_time(self.clock()).isoformat(), failures=0, error=None)

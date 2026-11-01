@@ -188,3 +188,21 @@ def test_a_later_sync_cross_checks_on_the_mirror_window_and_waits_for_newer_repu
     assert mirror_attempt(report)['audit']['cross_checked'] == 18
     assert report.error is None
     assert report.continuity['awaiting_verification'] == 3
+
+
+def test_the_report_names_the_source_of_the_newest_draw_not_every_contributor(tmp_path):
+    """NhanAZ đưa kỳ mới nhất, bản sao chỉ lấp khoảng giữa: `latest_source` là nguồn của kỳ có mã lớn nhất."""
+    store = ProductStore(tmp_path / 'data')
+    store.upsert(ProductCode.BINGO18, [{'id': d, 'date': day(d), 'result': digits(d)} for d in range(1, 13)], 'seed')
+
+    class Sources(ProductSyncPipeline):
+        async def fetch(self, product, source, max_pages, full):
+            ids = [*range(13, 16), *range(18, 23)] if source == 'nhanaz' else range(1, 18)
+            return [{'id': d, 'date': day(d), 'result': digits(d)} for d in ids]
+
+    report = asyncio.run(Sources(None, store, vietlott_base_url='https://o.test', mirror_base_url='https://m.test',
+                                 canonical_base_url='https://c.test', fallback_order=['nhanaz', 'mirror'])
+                         .run(ProductCode.BINGO18, 'auto'))
+    assert store.max_draw_id(ProductCode.BINGO18) == 22
+    assert set(report.source_used.split('+')) == {'nhanaz', 'mirror'}
+    assert report.latest_source == 'nhanaz'
