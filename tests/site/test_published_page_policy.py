@@ -27,15 +27,19 @@ PAGES = sorted(DOCS.glob("*.html"))
 #: Thẻ được phép trong `<head>`. Theo HTML5, gặp thẻ nào khác (`<body>`, `<div>`…) là trình duyệt đã đóng `<head>`
 #: ngầm, và thẻ CSP đứng sau đó bị bỏ qua. `HTMLParser` không tự đóng, nên luật ấy phải viết ra ở đây.
 HEAD_TAGS = {"base", "link", "meta", "noscript", "script", "style", "template", "title"}
+#: Vỏ bọc mà nội dung KHÔNG được áp dụng: `<template>` là mảnh tài liệu trơ, `<noscript>` không được phân tích
+#: khi trình duyệt chạy script. Thẻ CSP chỉ có hiệu lực khi là con TRỰC TIẾP của `<head>`.
+INERT_TAGS = {"noscript", "template"}
 
 
 class _Head(HTMLParser):
-    """Ghi các thẻ CSP trong `<head>` và tên thẻ tài nguyên đứng trước thẻ CSP đầu tiên."""
+    """Ghi các thẻ CSP là con trực tiếp của `<head>` và thẻ tài nguyên đứng trước thẻ CSP đầu tiên."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.in_head = False
         self.head_closed = False
+        self.inert_depth = 0
         self.policies: list[str] = []
         self.before_policy: list[str] = []
 
@@ -43,9 +47,14 @@ class _Head(HTMLParser):
         if tag == "head" and not self.head_closed:
             self.in_head = True
             return
-        if self.in_head and tag not in HEAD_TAGS:
+        if self.in_head and self.inert_depth == 0 and tag not in HEAD_TAGS:
             self.in_head, self.head_closed = False, True
         if not self.in_head:
+            return
+        if tag in INERT_TAGS:
+            self.inert_depth += 1
+            return
+        if self.inert_depth:
             return
         values = {name.lower(): value or "" for name, value in attrs}
         if tag == "meta" and values.get("http-equiv", "").lower() == "content-security-policy":
@@ -56,8 +65,22 @@ class _Head(HTMLParser):
     handle_startendtag = handle_starttag
 
     def handle_endtag(self, tag):
-        if tag == "head" and self.in_head:
+        if tag in INERT_TAGS and self.inert_depth:
+            self.inert_depth -= 1
+        elif tag == "head" and self.in_head and self.inert_depth == 0:
             self.in_head, self.head_closed = False, True
+
+
+def lxml_head_policies(html: str) -> list[str]:
+    """Ý kiến thứ hai, độc lập với `_Head`: thẻ CSP là con trực tiếp của `<head>` theo bộ phân tích của libxml2
+    (tự đóng `<head>` ngầm như trình duyệt). Hai bộ phải thấy cùng một thẻ, để chỗ hở của bộ tự viết không lọt."""
+    import lxml.html
+
+    head = lxml.html.fromstring(html).find("head")
+    if head is None:
+        return []
+    return [node.get("content", "") for node in head
+            if node.tag == "meta" and (node.get("http-equiv") or "").lower() == "content-security-policy"]
 
 
 #: `connect-src` của từng trang, danh sách trắng ĐÓNG. Chỉ trang Live được nới, đúng cho Worker đúng giờ và nguồn
@@ -88,7 +111,11 @@ def test_there_are_pages_to_check():
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_every_published_page_declares_the_shared_content_security_policy(page: Path):
-    assert policy_problems(page.read_text(encoding="utf-8"), CONNECT_SOURCES.get(page.name, "'self'")) == []
+    html = page.read_text(encoding="utf-8")
+    assert policy_problems(html, CONNECT_SOURCES.get(page.name, "'self'")) == []
+    head = _Head()
+    head.feed(html)
+    assert lxml_head_policies(html) == head.policies
 
 
 def test_the_policy_rule_itself_catches_a_missing_late_or_loosened_policy():
@@ -113,6 +140,10 @@ def test_the_policy_rule_itself_catches_a_missing_late_or_loosened_policy():
     assert policy_problems(f"<html><head><title>t</title><body>{ok}</body></html>") != []
     assert policy_problems(f"<html><head><div></div>{ok}</head><body></body></html>") != []
     assert policy_problems(f"<html><head><title>t</title>{ok}</head><body></body></html>") == []
+    # Thẻ CSP trong vỏ bọc trơ không được áp dụng, dù vẫn nằm trong <head>.
+    assert policy_problems(f"<html><head><template>{ok}</template></head><body></body></html>") != []
+    assert policy_problems(f"<html><head><noscript>{ok}</noscript></head><body></body></html>") != []
+    assert policy_problems(f"<html><head><template><div></div></template>{ok}</head><body></body></html>") == []
 
 
 def test_github_pages_keeps_files_that_start_with_an_underscore():
