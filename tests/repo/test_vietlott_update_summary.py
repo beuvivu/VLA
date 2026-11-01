@@ -37,8 +37,8 @@ def test_summary_reports_product_health_without_free_form_fields(tmp_path):
         SECRET: {'error': SECRET}}}
     (tmp_path / 'results-status.json').write_text(json.dumps(data))
     text = run_summary(tmp_path)
-    assert '| mega645 | 1572 | 2026-10-07 | caught_up | không |' in text
-    assert '| lotto535 | — | — | unavailable | có |' in text
+    assert '| mega645 | 1572 | 2026-10-07 | caught_up | không | — |' in text
+    assert '| lotto535 | — | — | unavailable | có | khác |' in text
     assert 'Lỗi worker: có' in text
 
 
@@ -59,3 +59,16 @@ def test_summary_falls_back_to_checkpoint_when_update_output_is_invalid(tmp_path
     text = run_summary(tmp_path)
     assert 'Nguồn tóm tắt: checkpoint' in text
     assert '| keno | 245 | 2026-10-09 | behind_schedule | có |' in text
+
+
+def test_summary_names_the_kind_of_error_from_a_fixed_list_never_the_message(tmp_path):
+    """Câu lỗi có thể mang địa chỉ kèm token: chỉ NHÃN cố định được in, kể cả khi câu lỗi chứa nó."""
+    data = {'products': {
+        'keno': {'last_draw_id': 301336, 'last_draw_date': '2026-11-01', 'freshness': {'status': 'date_only'},
+                 'error': f'{SECRET}; historical verified draw gaps remain: [[1, 2]]'},
+        'bingo18': {'last_draw_id': 193999, 'last_draw_date': '2026-11-01', 'freshness': {'status': 'date_only'},
+                    'error': f'mirror: unverified fast-game mirror: x; new source rows remain unverified ({SECRET})'}}}
+    (tmp_path / 'results-status.json').write_text(json.dumps(data))
+    text = run_summary(tmp_path)
+    assert '| keno | 301336 | 2026-11-01 | date_only | có | khoảng hở lịch sử |' in text
+    assert '| bingo18 | 193999 | 2026-11-01 | date_only | có | kỳ chưa xác minh, bản sao chưa đủ tin |' in text

@@ -28,7 +28,7 @@ import asyncio
 import json
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
@@ -82,6 +82,10 @@ FAST_PRODUCTS = {ProductCode.KENO, ProductCode.BINGO18}
 KNOWN_GAPS_FILE = "known_gaps.json"
 MIRROR_TRACK_RECORD_MIN = 10_000
 MIRROR_CROSS_CHECK_MIN = 50
+# Cửa sổ đối chiếu NEO THEO NGÀY MỚI NHẤT CỦA BẢN SAO, không theo ngày của kho: sau lần nhập đầu, kho
+# cộng đồng tải từ ngày của kho chỉ còn các kỳ MỚI HƠN bản sao (nó đăng lại mỗi 10 phút, bản sao chỉ
+# cập nhật lúc ~00:00 và ~12:00 UTC), nên phép đối chiếu ra 0 và cổng từ chối mọi lượt sau (01-11-2026).
+MIRROR_CROSS_CHECK_DAYS = 31
 OFFICIAL_SEED_SOURCES = frozenset({'vietlott.vn/list', 'nhanaz:official_vietlott'})
 
 
@@ -243,7 +247,7 @@ class ProductSyncPipeline:
         parsed, _, _ = parse_fast_rows(product, rows, 'seed')
         return identities(parsed)
 
-    def _vet_fast_mirror(self, product: ProductCode, rows: list[dict]) -> None:
+    def _vet_fast_mirror(self, product: ProductCode, rows: list[dict], secondary_rows: list[dict]) -> None:
         """Cổng hồ sơ kiểm chứng của bản sao Keno/Bingo18; ném ``SourceError`` khi chưa đủ tin.
 
         Luật và lý do: chú thích ở ``MIRROR_TRACK_RECORD_MIN``. Kết quả đo ghi vào
@@ -252,7 +256,7 @@ class ProductSyncPipeline:
         parsed, _, duplicates = parse_fast_rows(product, rows, 'mirror')
         mirror = identities(parsed)
         official = self._official_seed_identities(product)
-        secondary_rows, _, _ = parse_fast_rows(product, self._archive_secondary.get(product, []), 'nhanaz')
+        secondary_rows, _, _ = parse_fast_rows(product, secondary_rows, 'nhanaz')
         secondary = identities(secondary_rows)
         track = [did for did in mirror if did in official]
         track_bad = sorted(did for did in track if mirror[did] != official[did])
@@ -321,11 +325,10 @@ class ProductSyncPipeline:
                 raise SourceError(f"no mirror file for {product.value}")
             rows = await self._jsonl(f"{self.mirror_base_url}/{MIRROR_FILES[product]}")
             if product in FAST_PRODUCTS:
-                if product not in self._archive_secondary:
-                    # Gọi thẳng ``--source mirror``: chưa có lượt kho cộng đồng nào để đối chiếu.
-                    got = await self._archive().draws(product, since=self._since_date, verified_only=True)
-                    self._archive_secondary[product] = got.secondary
-                await asyncio.to_thread(self._vet_fast_mirror, product, rows)
+                dates = [str(r.get('date', ''))[:10] for r in rows if r.get('date')]
+                since = (date.fromisoformat(max(dates)) - timedelta(days=MIRROR_CROSS_CHECK_DAYS)) if dates else self._since_date
+                got = await self._archive().draws(product, since=since, verified_only=True)
+                await asyncio.to_thread(self._vet_fast_mirror, product, rows, got.secondary)
             return rows
         if source == "canonical":
             if product not in CANONICAL_FILES:
@@ -504,7 +507,14 @@ class ProductSyncPipeline:
         continuity['latest_observed'] = max(continuity['latest_observed'] or 0,max(blocked_ids,default=0)) or None
         # Một số kỳ đã xác thực không được che các kỳ mới hơn còn pending.
         pending_new = blocked_ids - set(candidates) - excluded
-        if any(i > (continuity['contiguous_through'] or 0) for i in pending_new):
+        through = continuity['contiguous_through'] or 0
+        # Kỳ đúng cấu trúc của kho cộng đồng chỉ bị chặn vì xuất xứ thứ cấp là kỳ CHỜ XÁC MINH: chúng luôn
+        # đi trước bản sao (đăng lại mỗi 10 phút, bản sao 12 giờ một lần). Độ trễ ấy do quy tắc độ mới
+        # (`vlm.updates.runner`) canh. Kỳ bị chặn vì lý do khác (sai cấu trúc, mâu thuẫn) vẫn là lỗi.
+        secondary_ids = {int(r['id']) for r in self._archive_secondary.get(product, [])}
+        awaiting = {i for i in pending_new if i > through and i in secondary_ids}
+        continuity['awaiting_verification'] = len(awaiting)
+        if any(i > through for i in pending_new - awaiting):
             errors.append('new source rows remain unverified or invalid')
         if delta and before_upsert is not None:
             validated, _ = await asyncio.to_thread(parse_product_rows, product, delta, used or source)

@@ -152,3 +152,39 @@ def test_only_gaps_audited_as_absent_everywhere_stop_counting_as_sync_errors(tmp
     assert 6 not in store.load(ProductCode.BINGO18).draw_ids.tolist()
     assert bool(report.error) is expect_error
     assert ('historical verified draw gaps remain' in (report.error or '')) is expect_error
+
+
+def _feb(did: int) -> str:
+    return f'2026-01-{did:02d}' if did <= 31 else f'2026-02-{did - 31:02d}'
+
+
+def test_a_later_sync_cross_checks_on_the_mirror_window_and_waits_for_newer_republished_draws(tmp_path):
+    """Lượt production thứ hai ngày 01-11-2026: kho đã đuổi kịp bản sao, phần kho cộng đồng tải theo ngày của
+    kho chỉ còn kỳ MỚI HƠN bản sao, nên phép đối chiếu cũ ra 0 và cổng từ chối mọi lượt sau. Cửa sổ nay neo
+    theo ngày mới nhất của bản sao; kỳ đăng lại mới hơn là «chờ xác minh», không phải lỗi."""
+    seed = tmp_path / 'seed'
+    write_seed(seed)
+    store = ProductStore(tmp_path / 'data', seed_dir=seed)
+    store.upsert(ProductCode.BINGO18, [{'id': d, 'date': _feb(d), 'result': digits(d)} for d in range(13, 39)], 'mirror')
+    folder = tmp_path / 'archive' / 'datasets' / 'draws' / 'bingo18'
+    folder.mkdir(parents=True)
+    def partition(ids):
+        return _csv([_draw('bingo18', f'{d:07d}', _feb(d), {'digits': digits(d)}, source='xosominhngoc_net_vn',
+                           official_verification_status='pending') for d in ids], DRAW_COLS)
+    (folder / '2026-01.csv').write_text(partition(range(13, 31)), encoding='utf-8')
+    (folder / '2026-02.csv').write_text(partition(range(41, 44)), encoding='utf-8')
+    (tmp_path / 'archive' / 'datasets' / 'exclusions.csv').write_text('product,draw_id,draw_status\n', encoding='utf-8')
+    text = '\n'.join(json.dumps({'date': _feb(d), 'id': f'{d:07d}', 'result': digits(d)}) for d in range(1, 41)) + '\n'
+
+    async def run():
+        handler = lambda request: httpx.Response(200, text=text)  # noqa: E731
+        async with AsyncHttpClient(transport=httpx.MockTransport(handler), rate_limit_per_s=10000, burst=1000) as client:
+            pipe = ProductSyncPipeline(client, store, vietlott_base_url='https://official.test',
+                                       mirror_base_url='https://mirror.test', canonical_base_url='https://canonical.test',
+                                       nhanaz_dir=tmp_path / 'archive' / 'datasets', fallback_order=['nhanaz', 'mirror'])
+            return await pipe.run(ProductCode.BINGO18, 'auto')
+    report = asyncio.run(run())
+    assert store.max_draw_id(ProductCode.BINGO18) == 40
+    assert mirror_attempt(report)['audit']['cross_checked'] == 18
+    assert report.error is None
+    assert report.continuity['awaiting_verification'] == 3

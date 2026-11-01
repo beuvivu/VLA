@@ -428,6 +428,27 @@ def test_fast_game_no_id_advance_for_twenty_minutes_is_reported(tmp_path):
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('source, hours, expected', [('mirror', 12, 'date_only'), ('mirror', 14, 'not_advancing'),
+                                                     ('vietlott', 1, 'not_advancing')])
+def test_fast_game_stall_is_judged_by_the_cadence_of_the_source_that_last_advanced(tmp_path, source, hours, expected):
+    """Bản sao cập nhật 12 giờ một lần (01-11-2026): chờ nó 12 giờ là bình thường, quá 13 giờ là lỡ một lượt.
+    Nguồn khác vẫn bị báo sau 20 phút không tiến."""
+    from vlm.updates.runner import UpdateRunner
+    async def run():
+        now=datetime.fromisoformat('2026-10-03T07:05:00+07:00')
+        ids=iter([76, 77])
+        async def update(product):
+            return {'last_draw_id':next(ids, 77),'last_draw_date':'2026-10-03','draws_on_last_date':1,'inserted':1,
+                    'source':source}
+        r=UpdateRunner(tmp_path/'status.json',update,products=('keno',),clock=lambda:now)
+        await r.tick()
+        now+=timedelta(minutes=10)
+        await r.tick()
+        now+=timedelta(hours=hours)
+        assert r.status()['products']['keno']['freshness']['status']==expected
+    asyncio.run(run())
+
+
 @pytest.mark.parametrize('filename', ['draws.jsonl', 'draws.jsonl.gz'])
 def test_product_atomic_write_failure_keeps_existing_results(tmp_path,monkeypatch,filename):
     from vietlott_engine.core.products import write_jsonl,read_jsonl

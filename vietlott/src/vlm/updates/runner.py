@@ -13,6 +13,10 @@ from pathlib import Path
 from vietlott_engine.forecast.schedule import VN
 from vlm.updates.schedule import LIVE_PRODUCTS, freshness, poll_interval, slot_key, vietnam_time
 
+# Bản sao Keno/Bingo18 cập nhật hai lần mỗi ngày (~00:00, ~12:00 UTC; đo trên `process_time` của nó):
+# 12 giờ giữa hai lượt + 1 giờ trễ cho phép.
+MIRROR_GRACE = timedelta(hours=13)
+
 
 class UpdateRunner:
     def __init__(self, path: Path, update: Callable[[str], Awaitable[dict]], *,
@@ -55,9 +59,13 @@ class UpdateRunner:
         minute = now.hour * 60 + now.minute
         if product in ('keno', 'bingo18') and result['status'] == 'date_only' and progress and 360 <= minute < 1314:
             baseline = max(vietnam_time(datetime.fromisoformat(progress)), now.replace(hour=6, minute=0, second=0, microsecond=0))
-            if now - baseline >= timedelta(minutes=20):
+            # Nguồn kiểm chứng được nhịp nào thì báo "không tiến" theo nhịp ấy (01-11-2026): bản sao cộng đồng
+            # cập nhật lúc ~00:00 và ~12:00 UTC, nên chờ nó 12 giờ là bình thường; quá MIRROR_GRACE nghĩa là
+            # bản sao đã lỡ một lượt — lúc ấy mới là sự cố. Nguồn khác giữ 20 phút như cũ.
+            grace = MIRROR_GRACE if 'mirror' in str(entry.get('last_advance_source') or '') else timedelta(minutes=20)
+            if now - baseline >= grace:
                 result.update(status='not_advancing', verified=False,
-                              note='No observed draw-ID advance for 20 minutes during selling hours; check source delay.')
+                              note=f'No observed draw-ID advance for {grace} during selling hours; check source delay.')
         return result
 
     def _save(self) -> None:
@@ -127,6 +135,7 @@ class UpdateRunner:
                 previous_id = entry.get('last_draw_id')
                 if result.get('last_draw_id') is not None and (previous_id is None or result['last_draw_id'] > previous_id):
                     entry['last_draw_advance'] = vietnam_time(self.clock()).isoformat()
+                    entry['last_advance_source'] = result.get('source')
                 entry.update({key: result.get(key) for key in
                               ('last_draw_id', 'last_draw_date', 'draws_on_last_date', 'inserted', 'source', 'prize_error', 'learning')})
                 entry.update(last_success=vietnam_time(self.clock()).isoformat(), failures=0, error=None)
