@@ -23,7 +23,13 @@ function setup(t, fetcher, extra = {}) {
       Object.assign(window, extra);
     },
   });
-  t.after(() => dom.window.close());
+  // Lượt tải cuối (do timers.advance hay đổi tab gọi) có thể còn chạy sau câu kiểm cuối. Đóng
+  // cửa sổ giữa chừng thì schedule() đọc document đã đóng và ném unhandledRejection — node:test
+  // tính là phép kiểm hỏng (đỏ thật trên main ngày 31-10-2026). Chờ hàng đợi cạn rồi mới đóng.
+  t.after(async () => {
+    for (let round = 0; round < 3; round += 1) await tick();
+    dom.window.close();
+  });
   return dom.window;
 }
 
