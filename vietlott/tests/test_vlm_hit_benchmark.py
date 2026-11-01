@@ -25,7 +25,8 @@ def _synthetic(t: int, n: int = 45, k: int = 6, hot: float = 0.0, seed: int = 0)
     x = np.zeros((t, n), dtype=bool)
     for row in x:
         row[sample_product_subsets(w, k, 1, rng)[0] - 1] = True
-    days = np.arange(np.datetime64('2016-07-20'), np.datetime64('2016-07-20') + np.timedelta64(3 * t, 'D'), 3)[:t]
+    days = np.arange(np.datetime64('2016-07-20'), np.datetime64('2016-07-20') + np.timedelta64(3 * t, 'D'),
+                     np.timedelta64(3, 'D'))[:t]
     return Series(ProductCode.MEGA_645, np.arange(1, t + 1), days.astype(str),
                   {'main': {'X': x, 'bonus': np.zeros(t, dtype=np.int16)}})
 

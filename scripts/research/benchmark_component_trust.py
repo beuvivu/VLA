@@ -31,7 +31,7 @@ import json
 import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -215,7 +215,7 @@ def main() -> None:
     ap.add_argument("--refit-every", type=int, default=50)
     ap.add_argument("--workers", type=int, default=4)
     args = ap.parse_args()
-    report = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report = {"generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
               "last": args.last, "refit_every": args.refit_every,
               "assumptions": ("Tổ hợp mô phỏng: ML và thống kê bằng tỉ lệ nền; cầu-kèo và cầu vị trí "
                               "từ walk-forward; trọng số mặc định; không hiệu chỉnh, không xếp chồng."),

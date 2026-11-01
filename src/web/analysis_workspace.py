@@ -32,8 +32,8 @@ class _Node:
     opened: int
     end: int = 0
     closed: int = 0
-    parent: '_Node | None' = None
-    children: list['_Node'] = field(default_factory=list)
+    parent: _Node | None = None
+    children: list[_Node] = field(default_factory=list)
 
     def has(self, name: str) -> bool:
         return name in (self.attrs.get('class') or '').split()

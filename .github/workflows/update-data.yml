@@ -88,10 +88,10 @@ jobs:
       - name: Đồng bộ nhanh nhánh mặc định mới nhất
         run: git pull --ff-only origin "${GITHUB_REF_NAME}"
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Xác định có cần hoàn tất dữ liệu hay không
         id: guard
@@ -304,10 +304,10 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài đặt thư viện phụ thuộc
         run: python -m pip install --no-cache-dir -r requirements.txt
@@ -371,10 +371,10 @@ jobs:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài đặt thư viện phụ thuộc
         run: |
@@ -563,15 +563,15 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài bộ chạy kiểm thử
         # Cùng mốc phiên bản với requirements.txt. scipy vì xsmb_domain nhập nó
         # (lười, trong hàm) — phép kiểm cây import tính cả nhánh ấy.
-        run: python -m pip install --no-cache-dir "pytest>=9.1.1,<10" "beautifulsoup4==4.15.0" "numpy==2.2.6" "pandas==3.0.5" "scipy>=1.10,<2.0"
+        run: python -m pip install --no-cache-dir "pytest>=9.1.1,<10" "beautifulsoup4==4.15.0" "numpy==2.5.4" "pandas==3.1.0" "scipy==1.18.1"
 
       - name: Một khung, không mã chết, không tham chiếu gãy, không lộ nguồn
         run: >-

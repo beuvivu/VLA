@@ -69,7 +69,7 @@ def main() -> None:
         df["_tdate"] = pd.to_datetime(df["target_date"]).dt.date
         need = df["y"].isna() & (df["_tdate"] <= last_date)
         if not need.any():
-            df.drop(columns=["_tdate"], inplace=True)
+            df = df.drop(columns=["_tdate"])
             write_code_csv(df, f, index=False)
             print(f"[OK] labels already up to date for {mode}")
             continue
@@ -89,7 +89,7 @@ def main() -> None:
                     df.loc[df["_tdate"] == tdate, "number"].astype(int).isin(s)
                 ).astype(int)
 
-        df.drop(columns=["_tdate"], inplace=True)
+        df = df.drop(columns=["_tdate"])
         df["y"] = df["y"].astype("Int64")
         write_code_csv(df, f, index=False)
         print(f"[OK] updated labels for {mode} history: {f}")

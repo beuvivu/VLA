@@ -1,5 +1,5 @@
 """Exact vectors from the requested Nexlink shell; no hand-drawn substitutes."""
-from functools import lru_cache
+from functools import cache
 from html import escape
 import json
 import re
@@ -11,7 +11,7 @@ _NAMES = frozenset(name.removesuffix('.svg') for name in
                    json.loads((_ASSETS / 'provenance.json').read_text())['sha256'])
 
 
-@lru_cache(maxsize=None)
+@cache
 def _source(name: str) -> str:
     if name not in _NAMES:
         raise ValueError(f'Unknown Nexlink icon: {name}')

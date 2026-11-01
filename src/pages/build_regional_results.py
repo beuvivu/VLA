@@ -7,7 +7,7 @@ import html
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
-from typing import Sequence
+from collections.abc import Sequence
 
 from web.css_links import stylesheet_link
 from web.page_output import write_page

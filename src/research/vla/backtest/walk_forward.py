@@ -10,13 +10,14 @@ phép kiểm ``test_walk_forward_never_trains_on_a_draw_it_scores`` ghim luật 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Protocol
+from typing import Protocol
+from collections.abc import Callable
 
 import numpy as np
 
 
 class Model(Protocol):
-    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> "Model": ...
+    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> Model: ...
 
     def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray: ...
 

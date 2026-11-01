@@ -213,7 +213,7 @@ def main() -> int:
         print("[DRY-RUN] không ghi tệp")
         return 0
 
-    result.sort_values(["mode", "target_date"], inplace=True)
+    result = result.sort_values(["mode", "target_date"])
     result.to_csv(path, index=False)
     print(f"[OK] đã ghi {path}")
     return 0

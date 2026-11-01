@@ -34,6 +34,7 @@ nhầm trong `architecture/` về `plans/`.
 | Document | Scope |
 | --- | --- |
 | [`plans/2026-10-25-readable-stat-pages.md`](plans/2026-10-25-readable-stat-pages.md) | Sửa lịch sử Đặc Biệt hôm sau, làm rõ bảng ML/cầu vị trí và tô ba mức số đường cầu LOTO. |
+| [`qa/2026-11-01-python-3-15-va-dong-bo-keno.md`](qa/2026-11-01-python-3-15-va-dong-bo-keno.md) | Nâng Python 3.11/3.12 → 3.15 với bằng chứng dự đoán không đổi (xác suất công bố trùng từng bit, 1 287 cột số cùng thứ tự); cổng hồ sơ kiểm chứng đưa Keno/Bingo18 đồng bộ lại sau 13 ngày; sổ khoảng hở lịch sử đã kiểm; bỏ commit chỉ đổi giờ dựng; sửa phép kiểm chập chờn; bản đồ workflow. |
 | [`qa/2026-10-25-readable-stat-pages.md`](qa/2026-10-25-readable-stat-pages.md) | Bằng chứng đối chiếu số liệu, hồi quy, màu hạng và kiểm trình duyệt sáu trang. |
 | [`qa/2026-10-19-kiem-toan-dinh-luong.md`](qa/2026-10-19-kiem-toan-dinh-luong.md) | Kiểm toán định lượng VLA và engine Vietlott: đối chiếu toán học các hàm lõi (Bayes thực nghiệm, DerSimonian–Laird, Hedge, e-process, phân phối tập con), đo thời gian thật của pipeline và vector hoá các điểm nghẽn đã đo, đầu ra không đổi; phát hiện về độ tin của tác tử mẫu hình và công suất của bandit Thompson. |
 | [`qa/2026-10-18-quality-plan.md`](qa/2026-10-18-quality-plan.md) | Phạm vi, ràng buộc và kế hoạch kiểm toán XSMB, Vietlott, UI, bảo mật và kiểm chứng. |
@@ -87,6 +88,7 @@ nhầm trong `architecture/` về `plans/`.
 | [`operations/live-worker.md`](operations/live-worker.md) | Worker đúng giờ: đồng hồ và nguồn phát `live.json`, chạy đúng khung quay số mà không phụ thuộc bộ lập lịch của GitHub. Gồm số đo độ trễ lịch GitHub (trung vị 4h04m trên 32 mốc), kiến trúc, các bước triển khai Cloudflare, bốn phép kiểm đối chiếu chống trôi lệch hai bản mã, và phần nói rõ điều CHƯA kiểm chứng được. Viết bằng tiếng Việt. |
 | [`operations/on-time-trigger.md`](operations/on-time-trigger.md) | Chẩn đoán độ trễ lịch chạy và cách dựng bộ hẹn giờ ngoài gọi `repository_dispatch`. Viết bằng tiếng Việt. |
 | [`operations/scheduling.md`](operations/scheduling.md) | Lịch chạy các workflow và ràng buộc thời gian. |
+| [`operations/workflow-map.md`](operations/workflow-map.md) | Bản đồ mắt xích của 27 workflow: bốn chuỗi (XSMB hằng ngày, Vietlott, miền Trung/Nam, cổng chất lượng) theo thứ tự từng bước, sơ đồ và bảng dựng tự động từ YAML (`scripts/ops/workflow_map.py`), và các bất biến có phép kiểm canh. Viết bằng tiếng Việt. |
 | [`history/legacy-consolidation.md`](history/legacy-consolidation.md) | Consolidated migration, retirement acceptance and forensic re-audit record for the three predecessor repositories. |
 
 ## Kế hoạch, giao diện và nghiệm thu (chuyển từ `docs/` ngày 13-10-2026)

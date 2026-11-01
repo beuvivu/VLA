@@ -17,7 +17,8 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd

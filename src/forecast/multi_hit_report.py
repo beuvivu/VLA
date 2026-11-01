@@ -474,7 +474,7 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
 
     n = registered_draws(labels)
     draws, labels = draws[:n], list(labels[:n])
-    weekdays = pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
+    weekdays = pd.to_datetime(pd.Series(labels)).dt.day_of_week.to_numpy()
     scores = bm.strategy_scores(draws, weekdays)
     real = bm.run_protocol(draws, weekdays, scores=scores)
     planted_runs, power = power_estimate(len(draws))

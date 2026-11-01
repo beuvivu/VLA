@@ -27,7 +27,7 @@ import json
 import sys
 import time
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -233,7 +233,7 @@ def main() -> None:
     args = ap.parse_args()
 
     history = load_history(Path(args.data_dir))
-    report = {"generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    report = {"generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "history_draws": len(history), "last": args.last, "refit_every": args.refit_every,
               "payout": evaluator.Payout().__dict__, "modes": {}}
     frames = []

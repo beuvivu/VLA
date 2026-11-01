@@ -39,7 +39,7 @@ jobs:
           ref: main
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version-file: .python-version
           cache: pip
           cache-dependency-path: vietlott/pyproject.toml
       - name: Cài gói

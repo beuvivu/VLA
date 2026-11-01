@@ -205,7 +205,7 @@ def _loto_signal(
     alpha, beta = _eb_parameters(counts, ess, prior_strength)
     ewm = alpha / (alpha + beta)
 
-    weekday_mask = dates.dt.weekday.to_numpy() == int(target_weekday)
+    weekday_mask = dates.dt.day_of_week.to_numpy() == int(target_weekday)
     weekday_hit = hit[weekday_mask]
     wk_hits = weekday_hit.sum(axis=0) if len(weekday_hit) else np.zeros(100)
     wk_n = int(len(weekday_hit))
@@ -296,7 +296,7 @@ def _de_signal(
     w = _exp_weights(n, half_life)
     ewm, ci_low, ci_high = _de_posterior(onehot, w, prior_strength)
 
-    weekday_mask = dates.dt.weekday.to_numpy() == int(target_weekday)
+    weekday_mask = dates.dt.day_of_week.to_numpy() == int(target_weekday)
     weekday_rows = onehot[weekday_mask]
     weekday = (
         _de_posterior(
@@ -592,7 +592,7 @@ def build_statistical_signal(
     df["number_str"] = df["number"].map(lambda x: f"{int(x):02d}")
     df["anchor_date"] = anchor.isoformat()
     df["target_date"] = target.isoformat()
-    df.sort_values("prob", ascending=False, inplace=True, ignore_index=True)
+    df = df.sort_values("prob", ascending=False, ignore_index=True)
 
     diagnostics = {
         "schema_version": 3,

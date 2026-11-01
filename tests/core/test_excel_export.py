@@ -8,7 +8,7 @@ from pathlib import Path as _Path
 
 import pandas as pd
 
-sys.path.insert(0, str((_Path(__file__).resolve().parents[2] / "src")))
+sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "src"))
 
 from core.excel_export import export_excel_outputs
 

@@ -14,7 +14,7 @@
 .PARAMETER SkipForecast   Không học bộ dự báo lúc cài (học sau: vietlott forecast fit).
 .PARAMETER Offline        Không kiểm tra mạng ở bước cuối.
 .PARAMETER NoDeps         Không tải gói phụ thuộc (dùng gói đã có trong Python hệ thống; cần setuptools).
-.PARAMETER InstallPython  Nếu chưa có Python 3.11+, cài Python 3.12 bằng winget.
+.PARAMETER InstallPython  Nếu chưa có Python 3.11+, cài Python 3.15 bằng winget.
 .PARAMETER Python         Đường dẫn python.exe muốn dùng.
 .PARAMETER Venv           Thư mục môi trường ảo (mặc định .venv).
 #>
@@ -69,7 +69,7 @@ function Test-Python([string]$exe, [string[]]$pre) {
 function Find-Python {
   if ($Python) { return (Test-Python $Python @()) }
   $candidates = @(
-    @("py", @("-3.14")), @("py", @("-3.13")), @("py", @("-3.12")), @("py", @("-3.11")), @("py", @("-3")),
+    @("py", @("-3.15")), @("py", @("-3.14")), @("py", @("-3.13")), @("py", @("-3.12")), @("py", @("-3.11")), @("py", @("-3")),
     @("python", @()), @("python3", @())
   )
   foreach ($c in $candidates) {
@@ -92,8 +92,8 @@ function Find-Python {
 $py = Find-Python
 if (-not $py -and $InstallPython -and $OnWindows) {
   if (Get-Command winget -ErrorAction SilentlyContinue) {
-    Say "Cài Python 3.12 bằng winget"
-    winget install -e --id Python.Python.3.12 --scope user --source winget --accept-package-agreements --accept-source-agreements
+    Say "Cài Python 3.15 bằng winget"
+    winget install -e --id Python.Python.3.15 --scope user --source winget --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -ne 0) { Warn "winget báo mã thoát $LASTEXITCODE; thử tìm Python lần nữa" }
     $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + [Environment]::GetEnvironmentVariable("Path", "Machine")
     $py = Find-Python
@@ -104,7 +104,7 @@ if (-not $py -and $InstallPython -and $OnWindows) {
 if (-not $py) {
   Fail ("cần Python 3.11 trở lên.`n" +
         "  Cách 1: chạy lại với -InstallPython (dùng winget):  install.cmd -InstallPython`n" +
-        "  Cách 2: tải Python 3.12 tại https://www.python.org/downloads/windows/ , khi cài nhớ chọn `"Add python.exe to PATH`"`n" +
+        "  Cách 2: tải Python 3.15 tại https://www.python.org/downloads/windows/ , khi cài nhớ chọn `"Add python.exe to PATH`"`n" +
         "  rồi chạy lại install.cmd")
 }
 $pyver = & $py -c "import sys; print(sys.version.split()[0])"

@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài thư viện tối thiểu
         run: |

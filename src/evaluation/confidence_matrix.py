@@ -442,7 +442,7 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray, *,
         "p": mc_two_sided_p(observed, null["hot"]),
     })
 
-    weekdays = pd.to_datetime(raw["date"]).dt.weekday.to_numpy()
+    weekdays = pd.to_datetime(raw["date"]).dt.day_of_week.to_numpy()
     table = np.zeros((7, 10))
     np.add.at(table, (weekdays, special // 10), 1)
     expected = table.sum(axis=1, keepdims=True) * table.sum(axis=0, keepdims=True) / table.sum()

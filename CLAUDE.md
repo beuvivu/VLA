@@ -105,6 +105,20 @@ bằng địa chỉ cố định (Worker đọc `xsmb.json`, trang Live đọc `
 hai lệnh `--backfill-from-git`) phải hỏi cả chỗ cũ qua `paths.legacy_data_path` — commit trước ngày gom
 giữ tệp ở đó; `fun_draw_ledger.show_data_at` làm việc ấy.
 
+## Phiên bản Python và workflow — một nguồn (01-11-2026)
+
+`.python-version` (3.15) là nguồn DUY NHẤT: mọi bước `setup-python` đọc `python-version-file`, ruff `py315`,
+Docker engine `python:3.15-slim`; ma trận `vlm-ci.yml` kiểm 3.11 (sàn `requires-python` của engine) và 3.15.
+`tests/repo/test_python_version.py` canh. Gói trực tiếp trong `requirements*.txt` ghim ĐÚNG bản (joblib của
+mô hình phụ thuộc scikit-learn). Đổi phiên bản thì chạy lại phép so đầu ra pipeline cũ/mới
+(`documentation/qa/2026-11-01-python-3-15-va-dong-bo-keno.md`): đợt này xác suất công bố trùng từng bit.
+Bộ đọc CSV mặc định của pandas ≥ 3.1 đúng từng bit nên không còn `float_precision`
+(`tests/core/test_csv_float_round_trip.py`).
+Mắt xích giữa workflow (tên `workflow_run`, tệp gọi qua API, không vòng) và bản đồ
+`documentation/operations/workflow-map.md` dựng bằng `scripts/ops/workflow_map.py --write`;
+`tests/repo/test_workflow_map.py` canh. Dựng lại trang Vietlott mà chỉ đổi giờ dựng thì KHÔNG commit
+(`scripts/web/stamp_only_change.py`).
+
 ## Khung ứng dụng
 
 Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
@@ -479,6 +493,11 @@ tốn nhiều hơn lợi ích. Lần ghi `ticket_rule = coverage-v2`: vé Lotto 
 (ít nhất một vé trúng giải 45,7% so với 14,7% khi chung một số, `dashboard.prize_coverage`); lần ghi v1 giữ số chung.
 Kết luận e-value trên trang dùng ngưỡng HỌ 7/α = 140 (`build_vietlott_results.family_signal`), không phải 20 của từng
 sản phẩm (`documentation/research/2026-10-31-ra-soat-engine-vietlott.md`).
+Keno/Bingo18 từ 01-11-2026: vietlott.vn chặn runner bằng Cloudflare (không vượt) và kho NhanAZ chỉ đăng lại
+từ trang thứ cấp, nên bản sao `vietvudanh` được nhập qua cổng hồ sơ `product_store._vet_fast_mirror`: trùng
+tuyệt đối ≥ 10 000 kỳ seed CHÍNH THỨC (không đếm dòng trong kho — tự chứng nhận) và ≥ 50 kỳ đăng lại độc lập
+của NhanAZ, lệch một kỳ là loại cả lượt. Khoảng hở lịch sử không nguồn nào có nằm ở
+`vietlott/data/seed/known_gaps.json` (chỉ đổi báo cáo, không suy ra số); khoảng hở mới vẫn đỏ.
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 

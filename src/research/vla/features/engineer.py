@@ -71,7 +71,7 @@ class History:
         out[np.arange(len(self)), self.special] = True
         return out
 
-    def head(self, n: int) -> "History":
+    def head(self, n: int) -> History:
         return History(self.dates[:n], self.digits[:n], self.values[:n])
 
 
@@ -361,7 +361,7 @@ def weekday_features(dates: tuple[str, ...]) -> tuple[np.ndarray, np.ndarray]:
     day = pd.to_datetime(pd.Series(dates))
     nxt = day.shift(-1)
     nxt.iloc[-1] = day.iloc[-1] + pd.Timedelta(days=1)
-    target = nxt.dt.weekday.to_numpy(dtype=np.float64)
+    target = nxt.dt.day_of_week.to_numpy(dtype=np.float64)
     angle = 2.0 * np.pi * target / 7.0
     return np.sin(angle), np.cos(angle)
 

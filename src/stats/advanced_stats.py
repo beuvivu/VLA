@@ -39,7 +39,7 @@ class AdvancedOutputs:
     images_dir: Path
 
     @classmethod
-    def from_paths(cls, paths: RepoPaths) -> "AdvancedOutputs":
+    def from_paths(cls, paths: RepoPaths) -> AdvancedOutputs:
         return cls(data_dir=paths.data_dir / "stats" / "advanced", images_dir=paths.images_dir)
 
 

@@ -6,7 +6,7 @@
 #   bash install.sh --skip-forecast không học bộ dự báo lúc cài (học sau: ./vietlott forecast fit)
 #   bash install.sh --offline       không kiểm tra mạng ở bước cuối
 #   bash install.sh --no-deps       không tải gói phụ thuộc (dùng gói đã có trong Python hệ thống)
-#   bash install.sh --python /usr/bin/python3.12 --venv .venv
+#   bash install.sh --python /usr/bin/python3.15 --venv .venv
 #
 # Cài lại an toàn: chạy lại bất cứ lúc nào; dữ liệu đã đồng bộ và sổ dự báo được giữ.
 # Biến VQE_PYTHON chọn sẵn bản Python (như --python).
@@ -42,16 +42,16 @@ done
 # Debian/Ubuntu tách venv/ensurepip ra gói riêng: bản thiếu chúng bị bỏ qua.
 version_ok() { "$1" -c 'import sys, venv, ensurepip; sys.exit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; }
 if [ -z "$PYTHON_BIN" ]; then
-  for c in python3.14 python3.13 python3.12 python3.11 python3 python; do
+  for c in python3.15 python3.14 python3.13 python3.12 python3.11 python3 python; do
     if command -v "$c" >/dev/null 2>&1 && version_ok "$c"; then PYTHON_BIN="$(command -v "$c")"; break; fi
   done
 fi
 if [ -z "$PYTHON_BIN" ] || ! version_ok "$PYTHON_BIN"; then
   die "cần Python 3.11 trở lên, có kèm venv.
   Ubuntu 24.04 / Debian 13: sudo apt install python3 python3-venv
-  Bản Linux cũ hơn: cài Python 3.12 qua pyenv, conda hoặc kho của bản phân phối
-  macOS (Homebrew): brew install python@3.12
-  rồi chạy lại: bash install.sh   (hoặc: bash install.sh --python /đường/dẫn/python3.12)"
+  Bản Linux cũ hơn: cài Python 3.15 qua pyenv, conda hoặc kho của bản phân phối
+  macOS (Homebrew): brew install python@3.15
+  rồi chạy lại: bash install.sh   (hoặc: bash install.sh --python /đường/dẫn/python3.15)"
 fi
 say "Python: $("$PYTHON_BIN" -c 'import sys; print(sys.version.split()[0])') ($PYTHON_BIN)"
 

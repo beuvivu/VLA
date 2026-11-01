@@ -281,7 +281,7 @@ def _build_same_weekday_feature(
     # Mặt nạ thứ trên lát cửa sổ, một phép vector. Bản cũ lấy từng
     # ``dates[i]`` (mỗi lần bọc một Timestamp): 1,47 triệu lượt mỗi lần dựng
     # khung, 16 trong 75 giây của cau_keo_domain_challenger.
-    same = np.asarray(dates[start : anchor_t + 1].weekday) == target_weekday
+    same = np.asarray(dates[start : anchor_t + 1].day_of_week) == target_weekday
     if not same.any():
         return np.zeros(100, dtype=np.int16)
     return hit[start : anchor_t + 1][same].sum(axis=0).astype(np.int16)

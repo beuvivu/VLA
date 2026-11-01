@@ -203,7 +203,7 @@ class ReplicationGate:
             (scored["q_value_replication"] <= self.alpha)
             & (scored["precision_replication"] > scored["expected_rate_replication"])
         ].copy()
-        replicated.sort_values(["q_value_replication", "p_value_replication"], inplace=True)
+        replicated = replicated.sort_values(["q_value_replication", "p_value_replication"])
 
         return (
             ReplicationVerdict(

@@ -16,7 +16,7 @@ import json
 import os
 import tempfile
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -609,7 +609,7 @@ def main() -> None:
     json_path, csv_path = write_artifacts(payload, data_dir)
     # Sổ nhật ký: ghi bảng này nếu còn trước giờ khoá của kỳ, rồi chấm mọi kỳ đã quay.
     ledger = fun_draw_ledger.update(
-        data_dir, payload, _prob_lookup(inputs.de), datetime.now(timezone.utc)
+        data_dir, payload, _prob_lookup(inputs.de), datetime.now(UTC)
     )
 
     injected: list[str] = []
