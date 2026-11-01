@@ -11,7 +11,6 @@ tài liệu SAU nó, nên phải đứng trước mọi `<script>`, `<link>` và
 """
 from __future__ import annotations
 
-import re
 import subprocess
 from html.parser import HTMLParser
 from pathlib import Path
@@ -52,7 +51,12 @@ class _Head(HTMLParser):
             self.in_head = False
 
 
-def policy_problems(html: str) -> list[str]:
+#: `connect-src` của từng trang, danh sách trắng ĐÓNG. Chỉ trang Live được nới, đúng cho Worker đúng giờ và nguồn
+#: dự phòng cũ (`test_live_page_keeps_security_contract` ghim cùng chuỗi). Trang khác: chỉ `'self'`.
+CONNECT_SOURCES = {"live.html": "'self' https://raw.githubusercontent.com https://*.workers.dev https://*.deno.dev"}
+
+
+def policy_problems(html: str, connect: str = "'self'") -> list[str]:
     """Điều gì sai với CSP của một trang. Rỗng là đúng luật."""
     head = _Head()
     head.feed(html)
@@ -61,10 +65,10 @@ def policy_problems(html: str) -> list[str]:
     problems = []
     if head.before_policy:
         problems.append(f"thẻ CSP đứng sau {head.before_policy}: phần ấy không được bảo vệ")
-    # `connect-src` được nới cho đúng host Worker của trang Live (`security_meta_tags(connect_sources=...)`);
-    # mọi chỉ thị khác phải trùng từng chữ với chính sách chung.
-    normalized = re.sub(r"connect-src [^;]*", "connect-src 'self'", head.policies[0])
-    if normalized != CONTENT_SECURITY_POLICY:
+    # Trùng từng chữ với chính sách chung, chỉ `connect-src` lấy theo danh sách trắng của trang. So cả chỉ thị ấy:
+    # thay nó bằng `'self'` trước khi so thì một trang nới `connect-src *` vẫn lọt.
+    expected = CONTENT_SECURITY_POLICY.replace("connect-src 'self'", f"connect-src {connect}")
+    if head.policies[0] != expected:
         problems.append(f"chính sách khác bản chung: {head.policies[0]!r}")
     return problems
 
@@ -75,7 +79,7 @@ def test_there_are_pages_to_check():
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_every_published_page_declares_the_shared_content_security_policy(page: Path):
-    assert policy_problems(page.read_text(encoding="utf-8")) == []
+    assert policy_problems(page.read_text(encoding="utf-8"), CONNECT_SOURCES.get(page.name, "'self'")) == []
 
 
 def test_the_policy_rule_itself_catches_a_missing_late_or_loosened_policy():
@@ -83,8 +87,13 @@ def test_the_policy_rule_itself_catches_a_missing_late_or_loosened_policy():
     ok = f'<meta content="{CONTENT_SECURITY_POLICY}" http-equiv="Content-Security-Policy"/>'
     page = "<html><head>{}</head><body><script>x()</script></body></html>".format
     assert policy_problems(page(ok + '<script src="a.js"></script>')) == []
-    live = CONTENT_SECURITY_POLICY.replace("connect-src 'self'", "connect-src 'self' https://w.example")
-    assert policy_problems(page(f'<meta http-equiv="Content-Security-Policy" content="{live}">')) == []
+    worker = "'self' https://w.example"
+    live = CONTENT_SECURITY_POLICY.replace("connect-src 'self'", f"connect-src {worker}")
+    assert policy_problems(page(f'<meta http-equiv="Content-Security-Policy" content="{live}">'), worker) == []
+    # Nới `connect-src` ngoài danh sách trắng của trang: thêm host, hay mở hẳn `*`.
+    assert policy_problems(page(f'<meta http-equiv="Content-Security-Policy" content="{live}">')) != []
+    wide = CONTENT_SECURITY_POLICY.replace("connect-src 'self'", "connect-src *")
+    assert policy_problems(page(f'<meta http-equiv="Content-Security-Policy" content="{wide}">')) != []
     assert policy_problems(page('<script src="a.js"></script>')) != []
     assert policy_problems(page('<script src="a.js"></script>' + ok)) != []
     loose = CONTENT_SECURITY_POLICY.replace("object-src 'none'", "object-src *")
