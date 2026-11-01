@@ -152,3 +152,77 @@ def test_only_gaps_audited_as_absent_everywhere_stop_counting_as_sync_errors(tmp
     assert 6 not in store.load(ProductCode.BINGO18).draw_ids.tolist()
     assert bool(report.error) is expect_error
     assert ('historical verified draw gaps remain' in (report.error or '')) is expect_error
+
+
+def _feb(did: int) -> str:
+    return f'2026-01-{did:02d}' if did <= 31 else f'2026-02-{did - 31:02d}'
+
+
+def _second_run(tmp_path, republished=()):
+    """Lượt thứ hai: kho đã có kỳ 13–38 từ bản sao; bản sao có 1–40; NhanAZ đăng lại 13–30 và 41–43
+    (mới hơn bản sao), cộng ``republished`` — các dòng thêm vào phân vùng tháng 2."""
+    seed = tmp_path / 'seed'
+    write_seed(seed)
+    store = ProductStore(tmp_path / 'data', seed_dir=seed)
+    store.upsert(ProductCode.BINGO18, [{'id': d, 'date': _feb(d), 'result': digits(d)} for d in range(13, 39)], 'mirror')
+    folder = tmp_path / 'archive' / 'datasets' / 'draws' / 'bingo18'
+    folder.mkdir(parents=True)
+    def partition(rows):
+        return _csv([_draw('bingo18', f'{d:07d}', _feb(d), {'digits': values}, source='xosominhngoc_net_vn',
+                           official_verification_status='pending') for d, values in rows], DRAW_COLS)
+    (folder / '2026-01.csv').write_text(partition((d, digits(d)) for d in range(13, 31)), encoding='utf-8')
+    (folder / '2026-02.csv').write_text(partition([*((d, digits(d)) for d in range(41, 44)), *republished]),
+                                        encoding='utf-8')
+    (tmp_path / 'archive' / 'datasets' / 'exclusions.csv').write_text('product,draw_id,draw_status\n', encoding='utf-8')
+    text = '\n'.join(json.dumps({'date': _feb(d), 'id': f'{d:07d}', 'result': digits(d)}) for d in range(1, 41)) + '\n'
+
+    async def run():
+        handler = lambda request: httpx.Response(200, text=text)  # noqa: E731
+        async with AsyncHttpClient(transport=httpx.MockTransport(handler), rate_limit_per_s=10000, burst=1000) as client:
+            pipe = ProductSyncPipeline(client, store, vietlott_base_url='https://official.test',
+                                       mirror_base_url='https://mirror.test', canonical_base_url='https://canonical.test',
+                                       nhanaz_dir=tmp_path / 'archive' / 'datasets', fallback_order=['nhanaz', 'mirror'])
+            return await pipe.run(ProductCode.BINGO18, 'auto')
+    return store, asyncio.run(run())
+
+
+def test_a_later_sync_cross_checks_on_the_mirror_window_and_waits_for_newer_republished_draws(tmp_path):
+    """Lượt production thứ hai ngày 01-11-2026: kho đã đuổi kịp bản sao, phần kho cộng đồng tải theo ngày của
+    kho chỉ còn kỳ MỚI HƠN bản sao, nên phép đối chiếu cũ ra 0 và cổng từ chối mọi lượt sau. Cửa sổ nay neo
+    theo ngày mới nhất của bản sao; kỳ đăng lại mới hơn là «chờ xác minh», không phải lỗi."""
+    store, report = _second_run(tmp_path)
+    assert store.max_draw_id(ProductCode.BINGO18) == 40
+    assert mirror_attempt(report)['audit']['cross_checked'] == 18
+    assert report.error is None
+    assert report.continuity['awaiting_verification'] == 3
+
+
+@pytest.mark.parametrize('republished', [
+    pytest.param([(44, [7, 1, 1])], id='ngoài-luật-bingo18'),
+    pytest.param([(44, digits(44)), (44, digits(45))], id='hai-kết-quả-một-kỳ'),
+])
+def test_a_republished_draw_the_engine_would_reject_is_an_error_not_awaiting(tmp_path, republished):
+    """Kho cộng đồng tự khai ``validation_status=valid``; lời khai ấy không thay được phép kiểm luật trò chơi
+    của engine. Kỳ mới hơn bản sao mà engine sẽ loại (chữ số ngoài 1–6, hai kết quả cho một mã) vẫn là lỗi."""
+    store, report = _second_run(tmp_path, republished)
+    assert store.max_draw_id(ProductCode.BINGO18) == 40
+    assert report.continuity['awaiting_verification'] == 3
+    assert 'new source rows remain unverified or invalid' in (report.error or '')
+
+
+def test_the_report_names_the_source_of_the_newest_draw_not_every_contributor(tmp_path):
+    """NhanAZ đưa kỳ mới nhất, bản sao chỉ lấp khoảng giữa: `latest_source` là nguồn của kỳ có mã lớn nhất."""
+    store = ProductStore(tmp_path / 'data')
+    store.upsert(ProductCode.BINGO18, [{'id': d, 'date': day(d), 'result': digits(d)} for d in range(1, 13)], 'seed')
+
+    class Sources(ProductSyncPipeline):
+        async def fetch(self, product, source, max_pages, full):
+            ids = [*range(13, 16), *range(18, 23)] if source == 'nhanaz' else range(1, 18)
+            return [{'id': d, 'date': day(d), 'result': digits(d)} for d in ids]
+
+    report = asyncio.run(Sources(None, store, vietlott_base_url='https://o.test', mirror_base_url='https://m.test',
+                                 canonical_base_url='https://c.test', fallback_order=['nhanaz', 'mirror'])
+                         .run(ProductCode.BINGO18, 'auto'))
+    assert store.max_draw_id(ProductCode.BINGO18) == 22
+    assert set(report.source_used.split('+')) == {'nhanaz', 'mirror'}
+    assert report.latest_source == 'nhanaz'

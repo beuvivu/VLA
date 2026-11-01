@@ -28,7 +28,7 @@ import asyncio
 import json
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
@@ -82,6 +82,10 @@ FAST_PRODUCTS = {ProductCode.KENO, ProductCode.BINGO18}
 KNOWN_GAPS_FILE = "known_gaps.json"
 MIRROR_TRACK_RECORD_MIN = 10_000
 MIRROR_CROSS_CHECK_MIN = 50
+# Cửa sổ đối chiếu NEO THEO NGÀY MỚI NHẤT CỦA BẢN SAO, không theo ngày của kho: sau lần nhập đầu, kho
+# cộng đồng tải từ ngày của kho chỉ còn các kỳ MỚI HƠN bản sao (nó đăng lại mỗi 10 phút, bản sao chỉ
+# cập nhật lúc ~00:00 và ~12:00 UTC), nên phép đối chiếu ra 0 và cổng từ chối mọi lượt sau (01-11-2026).
+MIRROR_CROSS_CHECK_DAYS = 31
 OFFICIAL_SEED_SOURCES = frozenset({'vietlott.vn/list', 'nhanaz:official_vietlott'})
 
 
@@ -179,6 +183,9 @@ class ProductSyncReport:
     exclusions_added: int = 0
     attempts: list[dict] = field(default_factory=list)
     continuity: dict = field(default_factory=dict)
+    # Nguồn của kỳ có mã LỚN NHẤT vừa nhận (``source_used`` ghép mọi nguồn có góp dòng): độ mới đo theo
+    # nhịp của chính nguồn đã đưa kho tới kỳ mới nhất (`vlm.updates.runner`).
+    latest_source: str | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -222,7 +229,7 @@ class ProductSyncPipeline:
         self._since_date: date | None = None
         self._fetch_rejected: list[dict] = []
         self._rejected_exclusions: list[dict] = []
-        self._archive_secondary: dict[ProductCode, list[dict]] = {}
+        self._secondary_ids: dict[ProductCode, set[int]] = {}
         self._source_audit: dict | None = None
 
     async def _jsonl(self, url: str) -> list[dict]:
@@ -243,7 +250,7 @@ class ProductSyncPipeline:
         parsed, _, _ = parse_fast_rows(product, rows, 'seed')
         return identities(parsed)
 
-    def _vet_fast_mirror(self, product: ProductCode, rows: list[dict]) -> None:
+    def _vet_fast_mirror(self, product: ProductCode, rows: list[dict], secondary_rows: list[dict]) -> None:
         """Cổng hồ sơ kiểm chứng của bản sao Keno/Bingo18; ném ``SourceError`` khi chưa đủ tin.
 
         Luật và lý do: chú thích ở ``MIRROR_TRACK_RECORD_MIN``. Kết quả đo ghi vào
@@ -252,7 +259,7 @@ class ProductSyncPipeline:
         parsed, _, duplicates = parse_fast_rows(product, rows, 'mirror')
         mirror = identities(parsed)
         official = self._official_seed_identities(product)
-        secondary_rows, _, _ = parse_fast_rows(product, self._archive_secondary.get(product, []), 'nhanaz')
+        secondary_rows, _, _ = parse_fast_rows(product, secondary_rows, 'nhanaz')
         secondary = identities(secondary_rows)
         track = [did for did in mirror if did in official]
         track_bad = sorted(did for did in track if mirror[did] != official[did])
@@ -301,7 +308,10 @@ class ProductSyncPipeline:
                                       verified_only=product in FAST_PRODUCTS)
             self._fetch_rejected = got.rejected
             if product in FAST_PRODUCTS:
-                self._archive_secondary[product] = got.secondary
+                # Chỉ kỳ đăng lại ĐÚNG LUẬT trò chơi và không tự mâu thuẫn mới được coi là «chờ xác minh»:
+                # ``validation_status=valid`` của kho cộng đồng là lời tự khai, không phải phép kiểm của engine.
+                parsed, _, conflicting = parse_fast_rows(product, got.secondary, 'nhanaz')
+                self._secondary_ids[product] = set(identities(parsed)) - set(conflicting)
             self._pending_exclusions += [e for e in await archive.exclusions(verified_only=product in FAST_PRODUCTS)
                                          if e["product"] == product.value]
             self._rejected_exclusions = [e for e in archive.rejected_exclusions if e.get('product')==product.value]
@@ -321,11 +331,10 @@ class ProductSyncPipeline:
                 raise SourceError(f"no mirror file for {product.value}")
             rows = await self._jsonl(f"{self.mirror_base_url}/{MIRROR_FILES[product]}")
             if product in FAST_PRODUCTS:
-                if product not in self._archive_secondary:
-                    # Gọi thẳng ``--source mirror``: chưa có lượt kho cộng đồng nào để đối chiếu.
-                    got = await self._archive().draws(product, since=self._since_date, verified_only=True)
-                    self._archive_secondary[product] = got.secondary
-                await asyncio.to_thread(self._vet_fast_mirror, product, rows)
+                dates = [str(r.get('date', ''))[:10] for r in rows if r.get('date')]
+                since = (date.fromisoformat(max(dates)) - timedelta(days=MIRROR_CROSS_CHECK_DAYS)) if dates else self._since_date
+                got = await self._archive().draws(product, since=since, verified_only=True)
+                await asyncio.to_thread(self._vet_fast_mirror, product, rows, got.secondary)
             return rows
         if source == "canonical":
             if product not in CANONICAL_FILES:
@@ -504,7 +513,14 @@ class ProductSyncPipeline:
         continuity['latest_observed'] = max(continuity['latest_observed'] or 0,max(blocked_ids,default=0)) or None
         # Một số kỳ đã xác thực không được che các kỳ mới hơn còn pending.
         pending_new = blocked_ids - set(candidates) - excluded
-        if any(i > (continuity['contiguous_through'] or 0) for i in pending_new):
+        through = continuity['contiguous_through'] or 0
+        # Kỳ đúng cấu trúc của kho cộng đồng chỉ bị chặn vì xuất xứ thứ cấp là kỳ CHỜ XÁC MINH: chúng luôn
+        # đi trước bản sao (đăng lại mỗi 10 phút, bản sao 12 giờ một lần). Độ trễ ấy do quy tắc độ mới
+        # (`vlm.updates.runner`) canh. Kỳ bị chặn vì lý do khác (sai cấu trúc, mâu thuẫn) vẫn là lỗi.
+        secondary_ids = self._secondary_ids.get(product, set())
+        awaiting = {i for i in pending_new if i > through and i in secondary_ids}
+        continuity['awaiting_verification'] = len(awaiting)
+        if any(i > through for i in pending_new - awaiting):
             errors.append('new source rows remain unverified or invalid')
         if delta and before_upsert is not None:
             validated, _ = await asyncio.to_thread(parse_product_rows, product, delta, used or source)
@@ -521,7 +537,8 @@ class ProductSyncPipeline:
             inserted=inserted, rejected=rejected+sum(a['rejected'] for a in attempts), total_after=total,
             last_id=cov['last_id'], last_date=cov['last_date'], missing_ids_inside_range=cov['missing_ids_inside_range'],
             elapsed_s=round(time.perf_counter()-t0,3), error='; '.join(errors) or None, source_used=used,
-            exclusions_added=added, attempts=attempts, continuity=continuity)
+            exclusions_added=added, attempts=attempts, continuity=continuity,
+            latest_source=origins.get(max(r['id'] for r in delta)) if delta else None)
 
 
 # ----------------------------------------------------------------- official prize data

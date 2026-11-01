@@ -498,6 +498,9 @@ từ trang thứ cấp, nên bản sao `vietvudanh` được nhập qua cổng h
 tuyệt đối ≥ 10 000 kỳ seed CHÍNH THỨC (không đếm dòng trong kho — tự chứng nhận) và ≥ 50 kỳ đăng lại độc lập
 của NhanAZ, lệch một kỳ là loại cả lượt. Khoảng hở lịch sử không nguồn nào có nằm ở
 `vietlott/data/seed/known_gaps.json` (chỉ đổi báo cáo, không suy ra số); khoảng hở mới vẫn đỏ.
+Cửa sổ đối chiếu neo theo ngày mới nhất của BẢN SAO (không theo ngày của kho: sau lần nhập đầu nó ra 0); kỳ
+đăng lại mới hơn bản sao là «chờ xác minh», không phải lỗi; `not_advancing` theo nhịp nguồn vừa làm kho tiến
+(bản sao ~00:00/~12:00 UTC → `runner.MIRROR_GRACE` 13 giờ; nguồn khác 20 phút).
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 

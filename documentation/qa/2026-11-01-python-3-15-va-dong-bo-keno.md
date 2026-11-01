@@ -120,6 +120,24 @@ khoảng Bingo18 (24–25/01/2026). Cả ba nguồn đều không có các kỳ 
 
 Đột biến: 2/2 đỏ. Chạy thật: cả hai sản phẩm thoát 0, `error = None`.
 
+**Lượt production thứ hai — hai chỗ phải sửa.** Lượt chạy ngay sau khi gộp đã đưa Keno lên #301336 và
+Bingo18 lên #193999, nhưng vẫn đỏ vì hai lý do:
+
+- **Lỗi của cổng.** Phép đối chiếu chỉ so trên phần kho NhanAZ tải từ ngày của kho. Phần ấy toàn kỳ mới hơn
+  bản sao, vì bản sao chỉ cập nhật lúc ~00:00 và ~12:00 UTC (đọc từ `process_time` của nó), nên phép đối chiếu
+  ra 0 và cổng từ chối. Nay cửa sổ neo theo ngày mới nhất của bản sao (31 ngày).
+- **Báo đỏ không có nghĩa.** Engine báo lỗi khi NhanAZ có kỳ mới hơn chưa xác minh, và báo `not_advancing`
+  sau 20 phút không tiến. Với nguồn 12 giờ một lần, cả hai đúng gần như suốt ngày. Nay:
+  - kỳ đăng lại mới hơn là "chờ xác minh", không phải lỗi;
+  - `not_advancing` theo nhịp của nguồn vừa làm kho tiến: 13 giờ với bản sao, 20 phút với nguồn khác.
+    "Nguồn vừa làm kho tiến" là nguồn của kỳ có mã lớn nhất vừa nhận (`latest_source`), không phải chuỗi
+    ghép mọi nguồn có góp dòng. Ân hạn đo từ lần tiến thật; trong ân hạn, kho mang ngày hôm qua là
+    `date_only`, quá ân hạn là `behind_schedule` (hai điểm do Codex chỉ ra, sửa ở `94b79e13`, đột biến 4/4 đỏ).
+  - Đỏ còn nghĩa là bản sao đã lỡ một lượt, hoặc có dữ liệu sai.
+- Bảng tóm tắt in thêm loại lỗi, chỉ từ một danh sách nhãn cố định.
+- Đột biến: 5/5 đỏ.
+- Chạy thật từ trạng thái sau gộp: thoát 0; đối chiếu 1 509 / 1 558 kỳ, 0 lệch; 18 kỳ chờ xác minh.
+
 ## 3. Tinh gọn không đổi tính năng
 
 - **Commit chỉ đổi giờ dựng.** 78/100 commit dựng trang Vietlott chỉ đổi câu "Bản dữ liệu được dựng lúc

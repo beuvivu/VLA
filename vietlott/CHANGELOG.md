@@ -13,6 +13,24 @@
     - Keno: 86 272 kỳ chính thức và 1 509 kỳ đối chiếu, 0 lệch; tiến tới #301336;
     - Bingo18: 92 759 và 1 558, 0 lệch; tiến tới #193999.
   - `ArchiveDraws.secondary` giữ kỳ bị loại chỉ vì xuất xứ, để làm phép đối chiếu; chúng không bao giờ được nhập.
+- **Sửa sau lượt production thứ hai (01-11-2026).**
+  - Cửa sổ đối chiếu của cổng nay neo theo ngày mới nhất của BẢN SAO (31 ngày), không theo ngày của kho.
+    Sau lần nhập đầu, phần kho NhanAZ tải theo ngày của kho chỉ còn kỳ mới hơn bản sao, nên phép đối chiếu
+    ra 0 và cổng từ chối mọi lượt sau.
+  - Kỳ đăng lại của NhanAZ mới hơn bản sao là "chờ xác minh" (`continuity.awaiting_verification`), không phải
+    lỗi. Kỳ bị chặn vì lý do khác vẫn là lỗi.
+    - Chỉ kỳ qua được phép kiểm luật trò chơi của engine (`parse_fast_rows`) mới được miễn. `validation_status=valid`
+      là lời tự khai của kho cộng đồng: kỳ ngoài luật hoặc hai kết quả cho một mã vẫn là lỗi.
+  - `not_advancing` của Keno/Bingo18 theo nhịp của nguồn vừa làm kho tiến (`last_advance_source`). Bản sao cập
+    nhật ~00:00 và ~12:00 UTC, nên ân hạn 13 giờ (`runner.MIRROR_GRACE`); nguồn khác giữ 20 phút.
+    - Nguồn ấy là nguồn của kỳ có mã LỚN NHẤT vừa nhận (`ProductSyncReport.latest_source`), so bằng đúng
+      `'mirror'`. `source_used` ghép mọi nguồn có góp dòng, nên dò chuỗi con cho NhanAZ ân hạn 13 giờ khi bản
+      sao chỉ lấp kỳ cũ.
+    - Ân hạn đo từ lần tiến THẬT, không từ 06:00. Luật theo ngày theo cùng nhịp: trong ân hạn, kho mang ngày
+      hôm qua là "đang chờ" (`date_only`); quá 13 giờ là `behind_schedule`. Lượt ~07:00 bị lỡ được báo lúc
+      ~08:00, không phải ~19:00.
+  - Bảng tóm tắt của `vlm-results.yml` in thêm loại lỗi, chỉ từ một danh sách nhãn cố định.
+  - Đo trên dữ liệu thật từ trạng thái sau gộp: thoát 0, đối chiếu 1 509 / 1 558 kỳ, 0 lệch; 18 kỳ chờ xác minh.
 - **`data/seed/known_gaps.json`:** 2 khoảng mã kỳ Keno và 20 khoảng Bingo18 đã kiểm là không có ở seed, bản sao
   lẫn kho NhanAZ.
   - Khoảng hở nằm trọn trong sổ không còn là lỗi đồng bộ, nên workflow thôi đỏ mãi vì thứ không nguồn nào lấp được.

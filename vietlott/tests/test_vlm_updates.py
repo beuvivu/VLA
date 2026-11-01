@@ -428,6 +428,86 @@ def test_fast_game_no_id_advance_for_twenty_minutes_is_reported(tmp_path):
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('source, hours, expected', [('mirror', 12, 'date_only'), ('mirror', 14, 'not_advancing'),
+                                                     ('vietlott', 1, 'not_advancing')])
+def test_fast_game_stall_is_judged_by_the_cadence_of_the_source_that_last_advanced(tmp_path, source, hours, expected):
+    """Bản sao cập nhật 12 giờ một lần (01-11-2026): chờ nó 12 giờ là bình thường, quá 13 giờ là lỡ một lượt.
+    Nguồn khác vẫn bị báo sau 20 phút không tiến."""
+    from vlm.updates.runner import UpdateRunner
+    async def run():
+        now=datetime.fromisoformat('2026-10-03T07:05:00+07:00')
+        ids=iter([76, 77])
+        async def update(product):
+            return {'last_draw_id':next(ids, 77),'last_draw_date':'2026-10-03','draws_on_last_date':1,'inserted':1,
+                    'source':source}
+        r=UpdateRunner(tmp_path/'status.json',update,products=('keno',),clock=lambda:now)
+        await r.tick()
+        now+=timedelta(minutes=10)
+        await r.tick()
+        now+=timedelta(hours=hours)
+        assert r.status()['products']['keno']['freshness']['status']==expected
+    asyncio.run(run())
+
+
+def test_the_mirror_grace_applies_only_when_the_newest_draw_came_from_the_mirror(tmp_path):
+    """Lượt ghép hai nguồn: bản sao lấp kỳ cũ, NhanAZ đưa kỳ mới nhất — NhanAZ đứng thì vẫn bị báo sau 20 phút."""
+    from vlm.updates.runner import UpdateRunner
+    async def run():
+        now=datetime.fromisoformat('2026-10-03T08:00:00+07:00')
+        ids=iter([76, 77])
+        async def update(product):
+            return {'last_draw_id':next(ids, 77),'last_draw_date':'2026-10-03','draws_on_last_date':1,'inserted':1,
+                    'source':'nhanaz+mirror','latest_source':'nhanaz'}
+        r=UpdateRunner(tmp_path/'status.json',update,products=('keno',),clock=lambda:now)
+        await r.tick()
+        now+=timedelta(minutes=10)
+        await r.tick()
+        now+=timedelta(minutes=30)
+        assert r.status()['products']['keno']['freshness']['status']=='not_advancing'
+    asyncio.run(run())
+
+
+def test_a_missed_morning_mirror_update_is_reported_from_the_last_real_advance(tmp_path):
+    """Bản sao tiến lúc 19:05 rồi lỡ lượt ~07:00: phải báo lúc ~08:05, không phải 19:00 (mốc 06:00 cũ).
+    Trước lượt ấy, kho mang ngày hôm qua mà không bị gọi là trễ lịch."""
+    from vlm.updates.runner import UpdateRunner
+    async def run():
+        now=datetime.fromisoformat('2026-10-03T19:00:00+07:00')
+        ids=iter([76, 77])
+        async def update(product):
+            return {'last_draw_id':next(ids, 77),'last_draw_date':'2026-10-03','draws_on_last_date':1,'inserted':1,
+                    'source':'mirror','latest_source':'mirror'}
+        r=UpdateRunner(tmp_path/'status.json',update,products=('keno',),clock=lambda:now)
+        await r.tick()
+        now+=timedelta(minutes=5)
+        await r.tick()
+        now=datetime.fromisoformat('2026-10-04T07:30:00+07:00')  # kho còn mang ngày hôm qua: đang chờ lượt ~07:00
+        assert r.status()['products']['keno']['freshness']['status']=='date_only'
+        now=datetime.fromisoformat('2026-10-04T08:30:00+07:00')  # quá 13 giờ từ lần tiến thật: lỡ lượt
+        assert r.status()['products']['keno']['freshness']['status']=='behind_schedule'
+    asyncio.run(run())
+
+
+def test_a_missed_evening_mirror_update_is_reported_within_the_same_day(tmp_path):
+    """Bản sao tiến lúc 07:05 rồi lỡ lượt ~19:00: cùng ngày nên luật theo ngày im, luật không tiến báo lúc 20:05."""
+    from vlm.updates.runner import UpdateRunner
+    async def run():
+        now=datetime.fromisoformat('2026-10-03T07:00:00+07:00')
+        ids=iter([76, 77])
+        async def update(product):
+            return {'last_draw_id':next(ids, 77),'last_draw_date':'2026-10-03','draws_on_last_date':1,'inserted':1,
+                    'source':'mirror','latest_source':'mirror'}
+        r=UpdateRunner(tmp_path/'status.json',update,products=('keno',),clock=lambda:now)
+        await r.tick()
+        now+=timedelta(minutes=5)
+        await r.tick()
+        now=datetime.fromisoformat('2026-10-03T19:30:00+07:00')
+        assert r.status()['products']['keno']['freshness']['status']=='date_only'
+        now=datetime.fromisoformat('2026-10-03T20:30:00+07:00')
+        assert r.status()['products']['keno']['freshness']['status']=='not_advancing'
+    asyncio.run(run())
+
+
 @pytest.mark.parametrize('filename', ['draws.jsonl', 'draws.jsonl.gz'])
 def test_product_atomic_write_failure_keeps_existing_results(tmp_path,monkeypatch,filename):
     from vietlott_engine.core.products import write_jsonl,read_jsonl
