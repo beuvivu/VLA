@@ -431,6 +431,11 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
             "Giá trị của số ấy in ở cuối thanh và có cách tính của khối chứa biểu đồ.",
         ])),
         _sec("#mo-phong, #du-doan-vui", "Bảng mô phỏng", _ev([_MO_PHONG, _du_bao(f)], ["Rút hai chữ số cuối theo xác suất mô hình bằng hạt giống cố định của kỳ.", "Phần đầu là số ngẫu nhiên, không mang thông tin.", "Sổ nhật ký chấm bảng đã hiện với kết quả thật."])),
+        _sec(".app-simulation-loto", "LOTO từ bảng mô phỏng", _ev([_MO_PHONG], [
+            "Lấy hai số cuối của đủ 27 giải trong bảng mô phỏng ngay phía trên, gồm cả Đặc Biệt.",
+            "Sắp từ nhỏ đến lớn, giữ số 0 đầu và mỗi lần xuất hiện khi có số trùng.",
+            "Đây là các số của bảng mô phỏng, không phải kết quả quay thật hay một danh sách dự báo riêng.",
+        ])),
         _sec(".fun-ledger", "Sổ nhật ký mô phỏng", _ev([_MO_PHONG, _ket_qua(f)], [
             "Mỗi kỳ ghi bảng mô phỏng đang hiện lúc 18:10, trước giờ quay; sau giờ ấy dòng của kỳ đóng băng.",
             "Phần chấm tính lại từ sổ kết quả: Đặc Biệt trúng đúng / trúng lộn (2 số cuối đảo), và số vị trí LOTO có về.",
@@ -693,7 +698,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "bang-dac-biet-nam.html": tk("Một tháng soi qua mọi năm: hàng là năm, cột là ngày trong tháng."),
         "chu-ky-dac-biet.html": tk("Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử."),
         "cau-dac-biet-theo-bo-so.html": tk("Điểm rơi của từng bộ số ở giải Đặc Biệt: lần về gần nhất, khoảng cách và số lần."),
-        "giai-db-ngay-mai.html": tk("Xếp hạng tham khảo cho kỳ kế tiếp, dựng từ chu kỳ và tần suất lịch sử — không phải dự báo đã kiểm định."),
+        "giai-db-ngay-mai.html": tk("Chọn cùng hai số cuối giải Đặc Biệt, liệt kê các lần xuất hiện từ mới đến cũ và đối chiếu kết quả của đúng ngày lịch kế tiếp. LOTO cạnh mỗi giải Đặc Biệt lấy hai số cuối của 27 giải trong chính ngày đó, giữ đủ số nháy khi trùng. Ngày thiếu hoặc đang chờ không được thay bằng ngày khác và không được tính vào tần suất kết quả hôm sau."),
         "lo-vip-nhieu-nhay.html": _lo_vip(f),
         "tan-suat-loto.html": tk("Ma trận con lô × từng kỳ: mỗi ô là số nháy của con lô ở kỳ ấy."),
         "tan-suat-cap-loto.html": tk("Ma trận 50 họ cặp × từng kỳ; kèm bảng đồng xuất hiện."),

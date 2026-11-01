@@ -211,7 +211,7 @@ def de_weekday_profile(two: pd.DataFrame, *, prior_strength: float = 28.0) -> pd
     rows: list[dict[str, object]] = []
 
     for weekday in range(7):
-        mask = dates.weekday == weekday
+        mask = dates.day_of_week == weekday
         trials = int(mask.sum())
         counts = np.bincount(de[mask], minlength=100) if trials else np.zeros(100, dtype=int)
         raw_rate = counts / max(trials, 1)

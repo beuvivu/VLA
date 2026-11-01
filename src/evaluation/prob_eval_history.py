@@ -139,7 +139,7 @@ def evaluate_latest_emitted(
 
     sub = df[df["target_date"].astype(str) == tdate].copy()
     sub["number"] = pd.to_numeric(sub["number"], errors="raise").astype(int)
-    sub.sort_values("number", inplace=True)
+    sub = sub.sort_values("number")
     y = pd.to_numeric(sub["y"], errors="raise").astype(int).to_numpy()
 
     # Đường cơ sở không thông tin, chấm bằng ĐÚNG các hàm đo dùng cho mô hình
@@ -223,7 +223,7 @@ def main() -> None:
     else:
         result = new_row
     result = label_brier_units(result)
-    result.sort_values(["mode", "target_date"], inplace=True)
+    result = result.sort_values(["mode", "target_date"])
     result.to_csv(out, index=False)
     print(
         f"[OK] exact emitted ensemble metrics {row['mode']} {row['target_date']}: "

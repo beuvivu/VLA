@@ -27,6 +27,30 @@ def test_the_base_rate_is_the_binomial_tail() -> None:
     assert m.base_rate() == pytest.approx(0.02975, abs=5e-5)
 
 
+def test_the_any_multi_chance_counts_every_fair_draw_exactly() -> None:
+    """Đếm thẳng mọi kỳ quay của một xổ số tí hon: n con, mỗi kỳ ``per_draw`` lô."""
+    from itertools import product
+
+    for n, per_draw, k in ((5, 3, 2), (6, 4, 3), (4, 5, 1), (4, 5, 4)):
+        draws = list(product(range(n), repeat=per_draw))
+        good = sum(any(d.count(x) >= 2 for x in range(k)) for d in draws)
+        assert m.any_multi_chance(k, per_draw, n) == pytest.approx(good / len(draws), rel=1e-12)
+    assert m.any_multi_chance(1) == pytest.approx(m.base_rate(), rel=1e-12)
+    # Cả 100 con: kỳ có ít nhất một con về hai lần — phần bù của bài toán ngày sinh.
+    birthday = np.prod([1 - i / 100 for i in range(m.LOTO_PER_DRAW)])
+    assert m.any_multi_chance(100) == pytest.approx(1 - birthday, rel=1e-12)
+    assert m.any_multi_chance(5) == pytest.approx(0.1411, abs=1e-4)
+
+
+def test_random_any_hit_is_the_hypergeometric_zero_complement() -> None:
+    from scipy.stats import hypergeom
+
+    n_multi = np.array([0, 1, 3, 7, 13, 95, 100])
+    for k in (1, 5, 10):
+        expected = 1 - hypergeom.pmf(0, m.N_NUMBERS, n_multi, k)
+        assert m.random_any_hit(n_multi, k) == pytest.approx(expected, abs=1e-12)
+
+
 def test_counts_matrix_counts_every_nhay() -> None:
     draw = [5, 5, 5] + list(range(10, 34))
     counts = m.counts_matrix([draw])

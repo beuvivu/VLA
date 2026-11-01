@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -9,12 +10,12 @@ import pandas as pd
 from core.safe_io import read_csv_or_empty, read_json_or_empty
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from core.path_models import index_to_label
+from core.path_models import FIELD_WIDTHS
 from core.paths import TEMPLATES
 from web.ui_locale import mode_label, path_kind_label
 from web.ui_theme import refresh_live_page
 from core.xsmb_domain import baseline_rate
-from web.web_security import security_meta_tags
+from web.web_security import json_for_html_script, security_meta_tags
 from web.page_output import write_page
 
 
@@ -27,7 +28,7 @@ class PickRow:
 
 @dataclass
 class Cell:
-    num: int
+    num: int | None
     hit: bool
     hitde: bool
     tooltip: str
@@ -45,6 +46,86 @@ class UiRow:
     streak: str
     cells: list[Cell]
     p_next: float | None = None
+    next_num: str | None = None
+
+
+def _position_info(index: int) -> dict[str, Any]:
+    """Vị trí 0-based của engine, nhãn chữ số 1-based cho người đọc."""
+    start = 0
+    for field, width in FIELD_WIDTHS:
+        if start <= index < start + width:
+            if field == "special":
+                label = "Đặc Biệt"
+            elif field == "prize1":
+                label = "Giải nhất"
+            else:
+                prize, order = field.removeprefix("prize").split("_")
+                label = f"Giải {prize} · số {order}"
+            return {"field": field, "offset": index - start, "width": width,
+                    "label": f"{label} · chữ số {index - start + 1}"}
+        start += width
+    raise ValueError(f"Vị trí đường cầu không hợp lệ: {index}")
+
+
+def _path_payload(
+    ui_df: pd.DataFrame, raw_df: pd.DataFrame | None, *, anchor_date: str, mode: str, kind: str
+) -> dict[str, Any]:
+    """Nối ngày nguồn D−lag với đúng ngày đích D, không tính lại dự báo."""
+    raw_rows = {} if raw_df is None else {
+        str(row["date"])[:10]: {field: str(int(row[field])).zfill(width)
+                                if field in row and pd.notna(row[field]) else None
+                                for field, width in FIELD_WIDTHS}
+        for _, row in raw_df.iterrows() if str(row["date"])[:10] <= anchor_date
+    }
+    days = [col[:-4] for col in ui_df.columns if col.endswith("_num")]
+    next_date = (date.fromisoformat(anchor_date) + timedelta(days=1)).isoformat()
+    rows = []
+    for _, rule in ui_df.iterrows():
+        lag, i, j = (int(rule.get(key, 0)) for key in ("lag", "i", "j"))
+        a, b = _position_info(i), _position_info(j)
+
+        def source(info, record):
+            if record is None:
+                return None
+            value = record[info["field"]]
+            if value is None:
+                return None
+            return {**info, "value": value, "digit": value[info["offset"]]}
+
+        def cell(target, number, hit=None, hitde=False, *, future=False, _lag=lag, _a=a, _b=b, _i=i, _j=j):
+            source_date = (date.fromisoformat(target) - timedelta(days=_lag)).isoformat()
+            record = raw_rows.get(source_date)
+            source_a, source_b = source(_a, record), source(_b, record)
+            num = None if pd.isna(number) else f"{int(number):02d}"
+            if source_a and source_b and num is not None:
+                expected = source_a["digit"] + source_b["digit"]
+                if expected != num:
+                    raise ValueError(f"Đường cầu {_lag}/{_i}/{_j} ngày {target}: số {num} không khớp nguồn {source_date}")
+            actual = raw_rows.get(target)
+            actual_numbers = [value[-2:] for value in actual.values() if value is not None] if actual else []
+            complete = bool(actual) and all(value is not None for value in actual.values())
+            count = actual_numbers.count(num) if complete and num is not None else None
+            return {"target_date": target, "source_date": source_date, "num": num,
+                    "source_a": source_a, "source_b": source_b,
+                    "actual_special": actual["special"] if actual else None,
+                    "actual_numbers": actual_numbers, "count": count,
+                    "state": "future" if future else "unknown" if hit is None or num is None or not complete or not source_a or not source_b
+                    else "hit-de" if hit and (hitde or mode == "de") else "hit" if hit else "miss"}
+
+        next_value = rule.get("next_day_pred")
+        cells = [cell(day, rule[f"{day}_num"],
+                      bool(int(rule[f"{day}_hit"])) if pd.notna(rule.get(f"{day}_hit")) else None,
+                      bool(int(rule[f"{day}_is_de"])) if pd.notna(rule.get(f"{day}_is_de")) else False) for day in days]
+        forecast = cell(next_date, next_value, future=True)
+        p_next = float(rule["p_next"]) if pd.notna(rule.get("p_next")) else None
+        rows.append({"id": str(rule.get("path_id", "")) or f"L{lag}-[{i},{j}]",
+                     "lag": lag, "i": i, "j": j, "i_label": a["label"], "j_label": b["label"],
+                     "p_mean": float(rule.get("p_mean", 0)), "p_next": p_next,
+                     "current_streak": int(rule.get("current_streak", 0)),
+                     "max_streak": int(rule.get("max_streak", 0)),
+                     "next_num": forecast["num"], "forecast": forecast, "cells": cells})
+    return {"mode": mode, "kind": kind, "anchor_date": anchor_date, "target_date": next_date,
+            "days": days, "rows": rows}
 
 
 def _latest_anchor_date(path_ui_dir: Path, mode: str) -> str:
@@ -227,6 +308,7 @@ def _render_page(
     picks_df: pd.DataFrame,
     empty_reason: dict[str, Any] | None = None,
     experience: dict[str, Any] | None = None,
+    raw_df: pd.DataFrame | None = None,
 ) -> None:
     tpl = env.get_template("path_ui_page.html.j2")
 
@@ -253,8 +335,8 @@ def _render_page(
         i = int(r.get("i", 0))
         j = int(r.get("j", 0))
 
-        i_label = str(r.get("i_label", "")) or index_to_label(i)
-        j_label = str(r.get("j_label", "")) or index_to_label(j)
+        i_label = _position_info(i)["label"]
+        j_label = _position_info(j)["label"]
 
         p_mean = float(r.get("p_mean", 0.0))
         # ``p_next`` do ``path_prob.rule_next_probability`` tính ở bước dựng dữ
@@ -276,12 +358,12 @@ def _render_page(
 
         cells: list[Cell] = []
         for d in days:
-            num = int(r[f"{d}_num"])
-            hit = bool(int(r[f"{d}_hit"])) if f"{d}_hit" in ui_df.columns else False
-            is_de = bool(int(r[f"{d}_is_de"])) if f"{d}_is_de" in ui_df.columns else False
+            num = int(r[f"{d}_num"]) if pd.notna(r[f"{d}_num"]) else None
+            hit = bool(int(r[f"{d}_hit"])) if pd.notna(r.get(f"{d}_hit")) else False
+            is_de = bool(int(r[f"{d}_is_de"])) if pd.notna(r.get(f"{d}_is_de")) else False
             tooltip = (
                 f"{d} · trễ={lag} · vị trí A={i} ({i_label}) · "
-                f"vị trí B={j} ({j_label}) · số={num:02d}"
+                f"vị trí B={j} ({j_label}) · số={num if num is not None else 'chưa có'}"
             )
             cells.append(Cell(num=num, hit=hit, hitde=(hit and is_de), tooltip=tooltip))
 
@@ -297,6 +379,7 @@ def _render_page(
                 streak=streak,
                 cells=cells,
                 p_next=p_next,
+                next_num=f"{int(r['next_day_pred']):02d}" if pd.notna(r.get("next_day_pred")) else None,
             )
         )
 
@@ -317,20 +400,24 @@ def _render_page(
         days=days,
         rows=rows,
         picks=picks,
+        path_payload_json=json_for_html_script(_path_payload(ui_df, raw_df, anchor_date=anchor_date, mode=mode, kind=kind)),
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     write_page(out_path, html)
 
 
-def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
+def build_docs(*, repo_root: Path, display_days: int = 10, docs_dir: Path | None = None) -> None:
     path_ui_dir = repo_root / "data" / "soi_cau" / "path_ui"
-    docs_dir = repo_root / "docs"
+    docs_dir = docs_dir or repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
 
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES)),
         autoescape=select_autoescape(["html", "xml"]),
     )
+    raw_df = read_csv_or_empty(repo_root / "data" / "xsmb.csv")
+    if raw_df.empty:
+        raw_df = None
 
     index_items: list[dict[str, Any]] = []
 
@@ -374,6 +461,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
                 picks_df=picks_df,
                 empty_reason=empty_reason,
                 experience=experience,
+                raw_df=raw_df,
             )
 
             index_items.append(

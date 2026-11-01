@@ -1,14 +1,33 @@
-from __future__ import annotations
+"""Bảng xác suất có điều kiện "hôm trước → hôm sau", chỉ đếm cặp kỳ cách nhau ĐÚNG một ngày lịch.
 
-from core.lottery_codes import write_code_csv
+Mô-đun này là bản chuẩn: ``statistical_matrices`` gọi lại ``build_conditional_tables`` thay vì
+tự đếm theo hàng kề nhau (hàng kề nhau nối cả hai kỳ hai bên một ngày nghỉ). Dữ liệu Đặc Biệt
+thô và dữ liệu LOTO thưa phải cùng một trục ngày.
 
-"""Canonical calendar-safe next-day conditional matrices.
+Mỗi bảng có 100 × 100 ô, và mỗi hàng chỉ có vài chục kỳ (Đặc Biệt hôm trước = x xảy ra
+khoảng 42 lần trên 4 250 kỳ). Xếp theo tỉ lệ thô thì đầu bảng là ô may mắn nhất trong
+10 000 ô: đo 31-10-2026, ô đầu bảng LOTO sau Đặc Biệt là 21/40 = 52,5% so với mức nền
+23,8%, và trên lịch sử quay công bằng giả lập ô đầu bảng cũng đạt TB 53,4%. Vì vậy mỗi ô
+mang thêm:
 
-This module supersedes the row-adjacent conditional-table implementation that
-historically lived inside ``statistical_matrices.py``. A "next day" transition
-is counted only when source and target dates differ by exactly one calendar day.
-Raw special-prize data and sparse loto data must describe the same date axis.
+* ``baseline_rate``: tỉ lệ số đích về ở kỳ sau trên MỌI cặp kỳ liền nhau — mức của ô khi điều
+  kiện không mang thông tin;
+* ``posterior_rate``: tỉ lệ co về mức nền bằng Bayes thực nghiệm, MỘT κ chung cho cả bảng
+  (``fit_shrinkage_to_prior``). Không dùng κ riêng từng hàng: phương pháp mô men cho κ hữu
+  hạn ở khoảng nửa số hàng ngay cả khi không có tín hiệu, và trên lịch sử công bằng giả lập
+  ô cao nhất khi ấy vẫn đạt 30,6% so với nền 23,8%. κ chung cho ô cao nhất vượt nền 0,08
+  điểm %;
+* ``p_value``: một phía, P(X ≥ count) với X ~ Nhị thức(base_count, baseline_rate);
+* ``q_value_fdr``: Benjamini–Hochberg trên MỌI ô đã kiểm của bảng (100 × số hàng có kỳ),
+  không chỉ trên các dòng được ghi ra.
+
+κ chung co rất mạnh một ô có tín hiệu thật nằm giữa 10 000 ô không có gì: ``posterior_rate``
+khi ấy thận trọng, còn ``q_value_fdr`` mới là công cụ phát hiện (tín hiệu cài sẵn "42 → 96
+một nửa số lần" bị q < 0,05 bắt 65% số lần, "luôn luôn" 100%). Bảng xếp theo ``p_value``
+tăng dần — ô có bằng chứng lệch mạnh nhất lên đầu — chứ không theo tỉ lệ thô.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -18,9 +37,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binom
 
 from core.calendar_alignment import consecutive_next_pairs, normalize_dates
+from core.lottery_codes import write_code_csv
+from ensemble.hierarchical_pooling import fit_shrinkage_to_prior
 from ingest.lottery import Lottery, RepoPaths
+from stats.statistical_corrections import benjamini_hochberg
 
 NUMBER_COLS = list(range(100))
 
@@ -184,40 +207,71 @@ def build_cooccurrence_matrix(
     )
 
 
+#: Cột của mỗi bảng, theo thứ tự ghi ra. Năm cột đầu giữ nguyên từ bản cũ.
+TABLE_COLUMNS = ("count", "base_count", "conditional_rate", "baseline_rate", "posterior_rate", "lift",
+                 "p_value", "q_value_fdr")
+
+
 def _top_matrix(
     mat_counts: np.ndarray,
     row_counts: np.ndarray,
+    baseline: np.ndarray,
     row_name: str,
     col_name: str,
     *,
     top: int,
 ) -> pd.DataFrame:
+    """Chấm cả 100 × 100 ô so với mức nền rồi ghi ``top`` ô có p nhỏ nhất (chỉ ô có đếm > 0).
+
+    ``row_counts[i]`` là số cặp kỳ có điều kiện i ở kỳ trước, ``baseline[j]`` là tỉ lệ số j về
+    ở kỳ sau trên mọi cặp kỳ. q của BH tính trên mọi ô có ``row_counts > 0`` (kể cả ô đếm 0,
+    p = 1), vì chọn ô nào để ghi ra chính là phép đa kiểm.
+    """
+    columns = [row_name, col_name, *TABLE_COLUMNS]
+    counts = np.asarray(mat_counts, dtype=float)
+    trials = np.asarray(row_counts, dtype=float)
+    base = np.clip(np.asarray(baseline, dtype=float), 0.0, 1.0)
+    tested = trials > 0
+    if not tested.any():
+        return pd.DataFrame(columns=columns)
+
+    n_cell = np.broadcast_to(trials[:, None], counts.shape)
+    base_cell = np.broadcast_to(base[None, :], counts.shape)
+    kappa = fit_shrinkage_to_prior(counts[tested], n_cell[tested], base_cell[tested])
+    posterior = (counts + kappa * base_cell) / (n_cell + kappa)
+    # P(X ≥ count): sf(count − 1). Ô đếm 0 cho p = 1.
+    p_values = binom.sf(counts - 1.0, n_cell, base_cell)
+    q_values = np.full(counts.shape, np.nan)
+    q_values[tested] = benjamini_hochberg(p_values[tested].ravel()).reshape(p_values[tested].shape)
+
     rows: list[dict[str, object]] = []
-    for i in range(100):
-        denom = int(row_counts[i])
-        if denom <= 0:
-            continue
-        nz = np.flatnonzero(mat_counts[i] > 0)
-        for j in nz:
-            count = int(mat_counts[i, j])
+    for i in np.flatnonzero(tested):
+        denom = int(trials[i])
+        for j in np.flatnonzero(counts[i] > 0):
+            count = int(counts[i, j])
+            b = float(base[j])
+            post = float(posterior[i, j])
             rows.append(
                 {
-                    row_name: _fmt2(i),
+                    row_name: _fmt2(int(i)),
                     col_name: _fmt2(int(j)),
                     "count": count,
                     "base_count": denom,
                     "conditional_rate": count / denom,
+                    "baseline_rate": b,
+                    "posterior_rate": post,
+                    "lift": post / b if b > 0 else float("nan"),
+                    "p_value": float(p_values[i, j]),
+                    "q_value_fdr": float(q_values[i, j]),
                 }
             )
     if not rows:
-        return pd.DataFrame(
-            columns=[row_name, col_name, "count", "base_count", "conditional_rate"]
-        )
+        return pd.DataFrame(columns=columns)
     return (
-        pd.DataFrame(rows)
+        pd.DataFrame(rows, columns=columns)
         .sort_values(
-            ["conditional_rate", "count", row_name, col_name],
-            ascending=[False, False, True, True],
+            ["p_value", "count", row_name, col_name],
+            ascending=[True, False, True, True],
         )
         .head(max(0, int(top)))
         .reset_index(drop=True)
@@ -256,13 +310,19 @@ def build_conditional_tables(
     prev_de_counts = np.zeros(100, dtype=np.int32)
     prev_loto_counts = np.zeros(100, dtype=np.int32)
 
+    # Mức nền: tỉ lệ số đích về ở kỳ SAU trên chính các cặp kỳ được đếm.
+    next_loto_counts = np.zeros(100, dtype=np.int32)
+    next_de_counts = np.zeros(100, dtype=np.int32)
+
     for src, dst in zip(src_idx, dst_idx, strict=True):
         d = int(prev_de[src])
         prev_de_counts[d] += 1
         next_hits = np.flatnonzero(loto[dst])
         if next_hits.size:
             de_loto[d, next_hits] += 1
+            next_loto_counts[next_hits] += 1
         de_de[d, int(prev_de[dst])] += 1
+        next_de_counts[int(prev_de[dst])] += 1
 
         prev_hits = np.flatnonzero(loto[src])
         if prev_hits.size:
@@ -270,8 +330,11 @@ def build_conditional_tables(
         if prev_hits.size and next_hits.size:
             loto_loto[np.ix_(prev_hits, next_hits)] += 1
 
+    pairs = max(int(len(src_idx)), 1)
+    loto_base = next_loto_counts / pairs
+    de_base = next_de_counts / pairs
     diagnostics = {
-        "schema_version": 1,
+        "schema_version": 2,
         "calendar_rows": int(len(raw_dates)),
         "calendar_start": raw_dates[0].date().isoformat(),
         "calendar_end": raw_dates[-1].date().isoformat(),
@@ -283,12 +346,14 @@ def build_conditional_tables(
         .isoformat(timespec="seconds")
         .replace("+00:00", "Z"),
         "contract": "only exact +1 calendar-day transitions are counted",
+        "ranking": "p_value ascending; posterior_rate shrinks to baseline with one kappa per table",
     }
 
     return (
         _top_matrix(
             de_loto,
             prev_de_counts,
+            loto_base,
             "prev_special_2d",
             "next_loto",
             top=top,
@@ -296,6 +361,7 @@ def build_conditional_tables(
         _top_matrix(
             de_de,
             prev_de_counts,
+            de_base,
             "prev_special_2d",
             "next_special_2d",
             top=top,
@@ -303,6 +369,7 @@ def build_conditional_tables(
         _top_matrix(
             loto_loto,
             prev_loto_counts,
+            loto_base,
             "prev_loto",
             "next_loto",
             top=top,

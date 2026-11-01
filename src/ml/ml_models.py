@@ -31,7 +31,7 @@ class PlattCalibratedClassifier(BaseEstimator, ClassifierMixin):
         X: np.ndarray,
         y: np.ndarray,
         sample_weight: np.ndarray | None = None,
-    ) -> "PlattCalibratedClassifier":
+    ) -> PlattCalibratedClassifier:
         if self.base is None:
             self.base_ = HistGradientBoostingClassifier(
                 max_depth=3,

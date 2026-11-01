@@ -163,7 +163,7 @@ def build_meta_features(
     work = _normalize_components_by_day(df[required], mode, selected)
     work["target_date"] = pd.to_datetime(work["target_date"])
     work["number"] = pd.to_numeric(work["number"], errors="raise").astype(int)
-    work.sort_values(["target_date", "number"], inplace=True, ignore_index=True)
+    work = work.sort_values(["target_date", "number"], ignore_index=True)
 
     p = work[selected].to_numpy(dtype=np.float64)
     if not np.isfinite(p).all():
@@ -198,7 +198,7 @@ def build_meta_features(
                 work[selected[i]] * work[selected[j]]
             )
 
-    weekday = out["target_date"].dt.weekday.to_numpy(dtype=np.float64)
+    weekday = out["target_date"].dt.day_of_week.to_numpy(dtype=np.float64)
     angle = 2.0 * np.pi * weekday / 7.0
     out["weekday_sin"] = np.sin(angle)
     out["weekday_cos"] = np.cos(angle)

@@ -165,7 +165,9 @@ def calibration(p: np.ndarray, y: np.ndarray, bins: int = CALIBRATION_BINS) -> l
     flat_p, flat_y = p.reshape(-1), y.reshape(-1)
     edges = np.unique(np.quantile(flat_p, np.linspace(0.0, 1.0, bins + 1)))
     if len(edges) < 2:
-        return []
+        # Dự báo hằng vẫn tạo một nhóm chứa TOÀN BỘ quan sát. Bỏ nhóm ấy
+        # khiến phân rã Murphy báo độ lệch hiệu chỉnh và Brier nhóm bằng 0.
+        edges = np.repeat(edges, 2)
     edges[-1] += 1e-12
     index = np.clip(np.digitize(flat_p, edges) - 1, 0, len(edges) - 2)
     rows = []

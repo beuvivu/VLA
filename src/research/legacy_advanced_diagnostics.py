@@ -77,7 +77,7 @@ def weekday_special_tail_contingency(raw: pd.DataFrame) -> dict[str, object]:
     dates = pd.to_datetime(raw["date"])
     special = raw["special"].to_numpy(dtype=int)
     tails = special % 10
-    weekdays = dates.dt.weekday.to_numpy(dtype=int)
+    weekdays = dates.dt.day_of_week.to_numpy(dtype=int)
     table = np.zeros((7, 10), dtype=int)
     np.add.at(table, (weekdays, tails), 1)
     keep = table.sum(axis=1) > 0

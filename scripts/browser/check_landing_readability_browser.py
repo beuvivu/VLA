@@ -19,6 +19,25 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
     expect(number).to_have_attribute("aria-pressed", "true")
     number.click()
     expect(number).to_have_attribute("aria-pressed", "false")
+    simulation = page.locator("#mo-phong")
+    expect(simulation.locator(".app-simulation-loto td")).to_have_count(27)
+    loto = simulation.evaluate("""section => {
+      const board=section.querySelector('.fun-board-wrap');
+      const table=section.querySelector('.app-simulation-loto');
+      const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,right:r.right,y:r.y,bottom:r.bottom,width:r.width,height:r.height}};
+      return {expected:[...board.querySelectorAll('.fun-prize-number')].map(e=>e.textContent.trim().slice(-2)).sort(),
+        actual:[...table.querySelectorAll('td')].map(e=>e.textContent.trim()),
+        clipped:[...table.querySelectorAll('td')].some(e=>e.scrollWidth>e.clientWidth+1),
+        board:rect(board),table:rect(table),note:rect(section.querySelector('.fun-simulation-note'))};
+    }""")
+    assert loto["actual"] == loto["expected"], loto
+    assert not loto["clipped"], loto
+    assert loto["board"]["bottom"] <= loto["table"]["y"] <= loto["board"]["bottom"] + 16, loto
+    assert loto["table"]["bottom"] <= loto["note"]["y"], loto
+    assert loto["table"]["width"] > 2 * loto["table"]["height"], loto
+    assert loto["table"]["height"] < loto["board"]["height"] / 3, loto
+    assert loto["table"]["x"] >= loto["board"]["x"] - 1, loto
+    assert loto["table"]["right"] <= loto["board"]["right"] + 1, loto
     measured = page.evaluate("""() => {
       const box = element => {
         const r = element.getBoundingClientRect();
@@ -50,6 +69,7 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
         }))
       };
     }""")
+    measured["simulationLoto"] = loto
     # Lưu đủ bảy vùng ngay cả khi một phép đo sau đó không đạt.
     for target in ("ket-qua", "db-tuan-thang", "ai-ml", "tan-suat-cap", "cap-lon", "dau-duoi-tong", "duong-cau"):
         page.locator(f"#{target}").screenshot(

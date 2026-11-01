@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,6 +75,32 @@ TIE_SEED = 20261008
 def base_rate(per_draw: int = LOTO_PER_DRAW, p: float = 1 / N_NUMBERS) -> float:
     """P(X ≥ 2) với X ~ Binomial(per_draw, p): một con số định trước về ≥ 2 nháy khi quay công bằng."""
     return float(binom.sf(1, per_draw, p))
+
+
+def any_multi_chance(k: int, per_draw: int = LOTO_PER_DRAW, n: int = N_NUMBERS) -> float:
+    """P(ít nhất một trong ``k`` con định trước về ≥ 2 nháy) khi quay công bằng.
+
+    Đây là tỉ lệ KỲ ĐẠT của MỌI cách chọn ``k`` con, kể cả cách chọn dựa trên lịch sử: kỳ quay công
+    bằng không phụ thuộc kỳ trước. Không con nào trong ``k`` con về ≥ 2 nháy ⇔ đúng j lô rơi vào
+    ``k`` con ấy, mỗi lô một con khác nhau, còn ``per_draw − j`` lô rơi ngoài:
+    Σⱼ C(per_draw, j)·k·(k − 1)…(k − j + 1)·(n − k)^(per_draw − j) / n^per_draw (số nguyên, chính xác).
+    ``k = 1`` cho lại ``base_rate``; ``k = n`` là bài toán ngày sinh.
+    """
+    if not 0 <= k <= n:
+        raise ValueError("cần 0 ≤ k ≤ n")
+    none = sum(math.comb(per_draw, j) * math.perm(k, j) * (n - k) ** (per_draw - j)
+               for j in range(min(k, per_draw) + 1))
+    return 1 - none / n ** per_draw
+
+
+def random_any_hit(n_multi: np.ndarray, k: int) -> np.ndarray:
+    """Từng kỳ: P(chọn BỪA ``k`` trong 100 con có ít nhất một con thuộc ``n_multi`` con về ≥ 2 nháy).
+
+    Mốc của tỉ lệ kỳ đạt trên CHÍNH các kỳ đã chấm: 1 − C(100 − m, k) / C(100, k) với m con về
+    ≥ 2 nháy ở kỳ ấy (siêu bội, như ``random_pick_null``).
+    """
+    total = math.comb(N_NUMBERS, k)
+    return np.array([1 - math.comb(N_NUMBERS - int(m), k) / total for m in n_multi], dtype=float)
 
 
 @dataclass(frozen=True)
@@ -448,7 +475,7 @@ class VIPMultiHitModel:
         model.fit(bt.oos_scores.reshape(-1, 1), bt.oos_labels)
         return lambda s: model.predict_proba(np.asarray(s, dtype=float).reshape(-1, 1))[:, 1]
 
-    def predict_next(self) -> "VIPReport":
+    def predict_next(self) -> VIPReport:
         """Dự báo kỳ KẾ TIẾP (hàng T của đặc trưng) kèm bằng chứng walk-forward."""
         bt = self.backtest()
         t = len(self.draws)

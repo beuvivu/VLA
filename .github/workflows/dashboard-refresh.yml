@@ -28,13 +28,13 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài đặt thư viện cho bảng điều khiển
-        run: python -m pip install --no-cache-dir pandas==2.2.3 numpy==2.2.6
+        run: python -m pip install --no-cache-dir pandas==3.1.0 numpy==2.5.4
 
       - name: Ghi nhận bảng điều khiển đã làm mới
         shell: bash

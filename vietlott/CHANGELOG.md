@@ -1,5 +1,70 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — Keno/Bingo18 đồng bộ lại, Python 3.15 (01-11-2026)
+
+- **Cổng hồ sơ kiểm chứng cho bản sao Keno/Bingo18 (`ProductSyncPipeline._vet_fast_mirror`).**
+  - Từ 19-10-2026 vietlott.vn trả thử thách Cloudflare cho runner. Kho NhanAZ chỉ còn đăng lại kết quả từ
+    trang thứ cấp (`pending`), nên hai sản phẩm đứng ở kỳ 299797 / 191942 suốt 13 ngày.
+  - Bản sao `vietvudanh/vietlott-data` nay được nhập khi, đo lại mỗi lượt:
+    - trùng tuyệt đối ≥ 10 000 kỳ seed có xuất xứ chính thức mà nó chồng lên;
+    - trùng tuyệt đối ≥ 50 kỳ "trang đăng lại" độc lập của kho NhanAZ (nguồn thu thập khác);
+    - một kỳ lệch ở bất kỳ phép so nào thì loại cả bản sao lượt ấy.
+  - Đo 01-11-2026:
+    - Keno: 86 272 kỳ chính thức và 1 509 kỳ đối chiếu, 0 lệch; tiến tới #301336;
+    - Bingo18: 92 759 và 1 558, 0 lệch; tiến tới #193999.
+  - `ArchiveDraws.secondary` giữ kỳ bị loại chỉ vì xuất xứ, để làm phép đối chiếu; chúng không bao giờ được nhập.
+- **Sửa sau lượt production thứ hai (01-11-2026).**
+  - Cửa sổ đối chiếu của cổng nay neo theo ngày mới nhất của BẢN SAO (31 ngày), không theo ngày của kho.
+    Sau lần nhập đầu, phần kho NhanAZ tải theo ngày của kho chỉ còn kỳ mới hơn bản sao, nên phép đối chiếu
+    ra 0 và cổng từ chối mọi lượt sau.
+  - Kỳ đăng lại của NhanAZ mới hơn bản sao là "chờ xác minh" (`continuity.awaiting_verification`), không phải
+    lỗi. Kỳ bị chặn vì lý do khác vẫn là lỗi.
+    - Chỉ kỳ qua được phép kiểm luật trò chơi của engine (`parse_fast_rows`) mới được miễn. `validation_status=valid`
+      là lời tự khai của kho cộng đồng: kỳ ngoài luật hoặc hai kết quả cho một mã vẫn là lỗi.
+  - `not_advancing` của Keno/Bingo18 theo nhịp của nguồn vừa làm kho tiến (`last_advance_source`). Bản sao cập
+    nhật ~00:00 và ~12:00 UTC, nên ân hạn 13 giờ (`runner.MIRROR_GRACE`); nguồn khác giữ 20 phút.
+    - Nguồn ấy là nguồn của kỳ có mã LỚN NHẤT vừa nhận (`ProductSyncReport.latest_source`), so bằng đúng
+      `'mirror'`. `source_used` ghép mọi nguồn có góp dòng, nên dò chuỗi con cho NhanAZ ân hạn 13 giờ khi bản
+      sao chỉ lấp kỳ cũ.
+    - Ân hạn đo từ lần tiến THẬT, không từ 06:00. Luật theo ngày theo cùng nhịp: trong ân hạn, kho mang ngày
+      hôm qua là "đang chờ" (`date_only`); quá 13 giờ là `behind_schedule`. Lượt ~07:00 bị lỡ được báo lúc
+      ~08:00, không phải ~19:00.
+  - Bảng tóm tắt của `vlm-results.yml` in thêm loại lỗi, chỉ từ một danh sách nhãn cố định.
+  - Đo trên dữ liệu thật từ trạng thái sau gộp: thoát 0, đối chiếu 1 509 / 1 558 kỳ, 0 lệch; 18 kỳ chờ xác minh.
+- **`data/seed/known_gaps.json`:** 2 khoảng mã kỳ Keno và 20 khoảng Bingo18 đã kiểm là không có ở seed, bản sao
+  lẫn kho NhanAZ.
+  - Khoảng hở nằm trọn trong sổ không còn là lỗi đồng bộ, nên workflow thôi đỏ mãi vì thứ không nguồn nào lấp được.
+  - Không phải thông báo loại kỳ, không có số nào được suy ra. Khoảng hở mới hoặc chỉ trùng một phần vẫn là lỗi.
+- **Challenger mẫu hình (PR #190, 24-10-2026) ghép với main, mặc định TẮT.** Bốn chuyên gia `bayes_short`,
+  `bayes_long`, `markov_repeat`, `gap_hazard` bật bằng `--patterns` / `VQE_ML_PATTERNS=true`.
+  - Cùng checkpoint version 5 với chuyên gia hỗn hợp Bayes. Khoá `patterns` là tuỳ chọn, nên checkpoint production
+    nạp nguyên vẹn. Thứ tự chuyên gia là cơ sở → bayes → mẫu hình.
+  - Đo lại: tắt thì trùng `main` từng bit (7 sản phẩm × 200 kỳ); bật thì không cải thiện (q = 0,99).
+    Xem `reports/vlm/pattern-learning-2026-11-01/`.
+- **Python 3.15:** Docker `python:3.15-slim`; bộ cài ưu tiên 3.15 (vẫn nhận 3.11+); ma trận CI 3.11 (sàn) + 3.15.
+  Phép kiểm `test_vlm_hit_benchmark` dùng bước `np.timedelta64(3, 'D')`: numpy sắp cấm bước số nguyên cho ngày.
+
+## Chưa phát hành — hỗn hợp Bayes cho bộ chữ số, số đặc biệt Lotto theo vé (31-10-2026)
+
+- **Chuyên gia `bayes_mixture` trong bộ ML (`vlm.forecast.bayes_expert`), chỉ cho thành phần chữ số.**
+  - Là luật hậu nghiệm của hỗn hợp Bayes chia sẻ cố định của `vietlott_engine.forecast`, chạy trên đúng
+    các kỳ bộ ML học, chấm trước – học sau.
+  - Max 3D lệch thật ở hàng đơn vị: chữ số 6 chiếm 10,6–11,3% ở cả sáu giai đoạn 2019 → 2026. Bộ ML cũ
+    không học được độ lệch ấy.
+  - Log-score so với quay công bằng trên 1 000 kỳ cuối:
+    - Max 3D: −0,158 → +0,771 log10;
+    - Max 3D Pro: −0,161 → +0,641 log10;
+    - Max 4D, Bingo18, số đặc biệt Lotto: không kém đi.
+  - Checkpoint ML lên version 5. Sản phẩm có thành phần chữ số học lại; Mega, Power, Keno vẫn nạp
+    checkpoint 3/4.
+- **`ticket_rule = coverage-v2`:** vé Lotto 5/35 thứ j mang số đặc biệt hạng j
+  (`distribution.coverage_specials`), chấm đúng từng vé.
+  - "Ít nhất một vé trúng giải" tăng từ 14,7% lên 45,7% (`dashboard.prize_coverage`, chính xác, đọc
+    điều kiện trúng từ bảng giải). Xác suất và kỳ vọng của từng vé không đổi.
+  - Lần ghi `coverage-v1` giữ số đặc biệt chung.
+- **Phép kiểm dòng "tương lai"** dựng ngày từ ngày Việt Nam như engine. Bản cũ dùng `date.today()` của máy
+  (UTC) nên đỏ từ 17:00 đến 24:00 UTC.
+
 ## Chưa phát hành — kiểm toán định lượng (19-10-2026)
 
 - **`vlm.multi_agent.models.SubsetDistribution` nhanh hơn 4–9 lần, kết quả không đổi một bit.**

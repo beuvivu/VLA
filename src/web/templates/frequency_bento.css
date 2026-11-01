@@ -186,10 +186,13 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .bf-page .app-frequency-controls{grid-template-areas:"from to weekday sort" "quick quick gan gan" "count count count count" "marks marks marks marks"}
 .bf-page .bf-totals #sp-matrix .sp-cell i::after{content:" lượt";font-size:10px;font-weight:500}
 @media(max-width:800px){.bf-page .app-frequency-controls{grid-template-areas:"from to" "weekday sort" "quick quick" "gan gan" "count count" "marks marks"}}
-body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix{--app-frequency-label-width:176px;--app-frequency-cell-width:54px;width:max(100%,calc(var(--app-frequency-label-width) + var(--sp-data-columns,90) * var(--app-frequency-cell-width)))}
+/* Bề rộng cột nhãn dính khai trên KHUNG CUỘN, bảng kế thừa: scroll-padding-left phải bằng đúng bề rộng ấy,
+   nếu không ô được cuộn tới (bàn phím, Tab, scrollIntoView) nằm khuất dưới cột dính. */
+body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix){--app-frequency-label-width:176px;--app-frequency-cell-width:54px;scroll-padding-left:var(--app-frequency-label-width)}
+body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical]){--app-frequency-label-width:86px;--app-frequency-cell-width:96px}
+body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical][data-app-frequency-kind=pair]){--app-frequency-cell-width:160px}
+body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix{width:max(100%,calc(var(--app-frequency-label-width) + var(--sp-data-columns,90) * var(--app-frequency-cell-width)))}
 body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix :is(td,th):first-child{width:var(--app-frequency-label-width);min-width:var(--app-frequency-label-width);max-width:var(--app-frequency-label-width)}
-body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical]{--app-frequency-label-width:86px;--app-frequency-cell-width:96px}
-body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical][data-app-frequency-kind=pair]{--app-frequency-cell-width:160px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical] thead th:not(:first-child){padding:8px;vertical-align:top}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical] .app-frequency-member-heading{flex-direction:column;gap:4px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-member small{display:none}

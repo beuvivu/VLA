@@ -19,7 +19,7 @@ _DETAIL = {
     'giai-dac-biet-theo-tong.html': ('Phân bố theo tổng', 'Bắt đầu từ tổng hai chữ số, sau đó đối chiếu chuyển tiếp giữa hai kỳ và chẵn lẻ.'),
     'cau-dac-biet-theo-bo-so.html': ('Nhóm số Đặc Biệt', 'So sánh các bộ số trên cùng lịch sử. Đánh dấu ô để giữ mốc khi đối chiếu nhiều hàng.'),
     'chu-ky-dac-biet.html': ('Chu kỳ Đặc Biệt', 'Đối chiếu khoảng cách hiện tại với các chu kỳ đã ghi nhận; đọc đơn vị kỳ ngay trong bảng.'),
-    'giai-db-ngay-mai.html': ('Tham khảo lịch sử', 'Đọc thống kê theo kỳ gần nhất rồi đối chiếu với tần suất toàn dải. Kết quả là mô tả lịch sử.'),
+    'giai-db-ngay-mai.html': ('Đối chiếu lịch sử', 'Chọn hai số cuối, xem các lần từng về từ mới đến cũ và giải Đặc Biệt của đúng ngày hôm sau.'),
     'thong-ke-tong-hop.html': ('Toàn cảnh dữ liệu', 'Từ 100 số LOTO đến phân bố đầu, đuôi và tổng; đối chiếu nhóm xuất hiện nhiều với gan Đặc Biệt.'),
 }
 
@@ -32,8 +32,8 @@ class _Node:
     opened: int
     end: int = 0
     closed: int = 0
-    parent: '_Node | None' = None
-    children: list['_Node'] = field(default_factory=list)
+    parent: _Node | None = None
+    children: list[_Node] = field(default_factory=list)
 
     def has(self, name: str) -> bool:
         return name in (self.attrs.get('class') or '').split()

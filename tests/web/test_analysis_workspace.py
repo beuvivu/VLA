@@ -21,6 +21,7 @@ class _Contract(HTMLParser):
         self.ids = []
         self.controls = []
         self.links = []
+        self.guides = []
         self.feed(page)
 
     def handle_starttag(self, tag, attrs):
@@ -31,6 +32,8 @@ class _Contract(HTMLParser):
             self.controls.append((tag, tuple((k, v) for k, v in attrs if k != 'class')))
         if tag == 'a':
             self.links.append(values.get('href'))
+        if 'data-app-workspace-guide' in values:
+            self.guides.append((tag, values.get('class', '').split()))
 
 
 def test_workspace_covers_actual_navigation_but_excludes_other_owners():
@@ -59,7 +62,28 @@ def test_actual_pages_keep_ids_controls_data_scripts_and_existing_links(name):
     assert result == refine_page(name, result)
     assert result.count('data-app-workspace-guide') == 1
     assert result.count('id="app-analysis-workspace-style"') == 1
-    assert 'class="app-workspace-guide"' in result
+    # Các trang có hướng dẫn riêng giữ khối gọn của mình, không bị thêm lại
+    # thẻ hướng dẫn chung. Những trang còn lại vẫn phải có đúng khối chung.
+    guide_tag, guide_class = {
+        'giai-db-ngay-mai.html': ('div', 'app-tomorrow-shell'),
+        'ml_top10_de.html': ('details', 'app-lab-guide'),
+        'ml_top10_loto.html': ('details', 'app-lab-guide'),
+        'soi-cau-vi-tri.html': ('ol', 'app-position-steps'),
+        'soi-path-loto-active.html': ('ol', 'path-steps'),
+        'soi-path-loto-stable.html': ('ol', 'path-steps'),
+        'soi-path-de-active.html': ('ol', 'path-steps'),
+        'soi-path-de-stable.html': ('ol', 'path-steps'),
+        'cau-giai-dac-biet.html': ('div', 'app-specialstats-shell'),
+        'giai-dac-biet-theo-tong.html': ('div', 'app-specialstats-shell'),
+        'cau-dac-biet-theo-bo-so.html': ('div', 'app-specialstats-shell'),
+        'chu-ky-dac-biet.html': ('div', 'app-specialstats-shell'),
+        'dau-duoi-loto.html': ('div', 'app-lotostats-shell'),
+        'cap-lon-loto.html': ('div', 'app-lotostats-shell'),
+        'lo-gan.html': ('div', 'app-lotostats-shell'),
+    }.get(name, ('aside', 'app-workspace-guide'))
+    assert len(after.guides) == 1
+    assert after.guides[0][0] == guide_tag
+    assert guide_class in after.guides[0][1]
 
 
 def test_wrapped_refresh_keeps_the_guide_inside_the_single_content_shell():

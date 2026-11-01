@@ -33,6 +33,12 @@ cấu hình đang chạy. Báo cáo 600/400 và dữ liệu seed là thăm dò h
 thay giao thức H benchmark đã đăng ký và không tự mở cổng chứng nhận live.
 Xem [kết quả và lệnh tái lập](../reports/vlm/pattern-learning-2026-10-24/README.md).
 
+Đo lại 01-11-2026 sau khi ghép với chuyên gia hỗn hợp Bayes của bộ chữ số: tắt mẫu hình thì kết quả trùng
+`main` từng bit trên 7 sản phẩm × 200 kỳ; bật thì vẫn không có cải thiện có ý nghĩa (mọi CI ghép cặp chứa 0,
+q = 0,99). Phần hơn ở Max 3D thu từ +0,0048 xuống +0,0019 nats/kỳ vì chuyên gia Bayes đã học độ lệch chữ số 6.
+Khoá `patterns` là tuỳ chọn trong checkpoint version 5, không cần tăng phiên bản
+([báo cáo đo lại](../reports/vlm/pattern-learning-2026-11-01/README.md)).
+
 ```bash
 pip install -e ".[dev]"
 vlm-forecast next --product mega645 --top-n 10
@@ -137,6 +143,31 @@ quay bằng cách gọi trực tiếp `issue()`.
    proper loss thay vì thay loss để làm đẹp backtest.
 5. Bootstrap tối đa 1.000 kỳ gần nhất, rồi chỉ nạp kỳ mới. Backtest bootstrap là
    thử nghiệm hồi cứu. Kiểm định live là một luồng riêng, bắt đầu sau khởi tạo.
+
+### Chuyên gia hỗn hợp Bayes cho bộ chữ số (từ 31-10-2026, checkpoint version 5)
+
+Thành phần chữ số (Lotto đặc biệt, Max 3D, Max 3D Pro, Max 4D, Bingo18) có thêm chuyên gia
+`bayes_mixture` (`vlm.forecast.bayes_expert`). Nó là luật hậu nghiệm `Σ_j v_j q_j` của hỗn hợp Bayes
+chia sẻ cố định trong `vietlott_engine.forecast`. Hỗn hợp ấy gồm Dirichlet co mạnh và các "tilt" thưa,
+mỗi giả thuyết một tham số. Chuyên gia chạy trên đúng các kỳ bộ ML học, chấm trước rồi mới học.
+
+Vì sao cần: Max 3D lệch thật ở hàng đơn vị (chữ số 6 chiếm 10,6–11,3% ở cả sáu giai đoạn 2019 → 2026).
+Logistic, GRU và RF không học được độ lệch nhỏ và ổn định ấy. Một Dirichlet đầy đủ cũng không học được,
+vì chi phí học 27 tham số lớn hơn lợi ích.
+
+Log-score so với quay công bằng trên 1 000 kỳ cuối:
+
+| Sản phẩm | Trước | Sau |
+|---|---|---|
+| Max 3D | −0,158 log10 | +0,771 log10 |
+| Max 3D Pro | −0,161 log10 | +0,641 log10 |
+| Max 4D | −0,248 | −0,222 |
+| Bingo18 | −0,271 | −0,241 |
+| Số đặc biệt Lotto | −0,241 | −0,234 |
+
+Trọng số Bayes của ensemble tự quyết có tin chuyên gia này hay không. Xác suất triển khai
+(`p_deployed`) vẫn là luật công bằng cho tới khi cổng live mở. Mega, Power và Keno không đổi, và vẫn
+nạp checkpoint 3/4.
 
 ## Vận hành và phục hồi
 

@@ -28,7 +28,7 @@ import argparse
 import csv
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Sequence
+from collections.abc import Sequence
 
 from web.ui_theme import app_shell_close, app_shell_open
 from web.css_links import stylesheet_link

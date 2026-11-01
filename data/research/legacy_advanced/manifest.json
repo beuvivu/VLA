@@ -1,35 +1,35 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-10-24T12:14:34Z",
-  "anchor_date": "2026-10-24",
+  "generated_at_utc": "2026-11-01T12:33:43Z",
+  "anchor_date": "2026-11-01",
   "research_only": true,
   "aggregate_transition": {
     "name": "aggregate_loto_transition_independence",
     "table": {
-      "prev_hit_next_hit": 24186,
-      "prev_hit_next_miss": 76942,
-      "prev_miss_next_hit": 76944,
-      "prev_miss_next_miss": 246328
+      "prev_hit_next_hit": 24236,
+      "prev_hit_next_miss": 77089,
+      "prev_miss_next_hit": 77089,
+      "prev_miss_next_miss": 246786
     },
-    "statistic": 0.551035254803129,
-    "p_value": 0.4578949978861895,
-    "expected_min": 24097.72535344015,
-    "p_next_given_hit": 0.23916224982200776,
-    "p_next_given_absent": 0.23801628350120022,
-    "effect": 0.0011459663208075455,
-    "lift": 1.0048146551317854,
+    "statistic": 0.5755111051383026,
+    "p_value": 0.4480772231022345,
+    "expected_min": 24145.709372060206,
+    "p_next_given_hit": 0.23919072292129287,
+    "p_next_given_absent": 0.23802084137398688,
+    "effect": 0.0011698815473059898,
+    "lift": 1.0049150382821639,
     "method": "2x2 chi-square with Yates continuity correction; all 00..99 transitions pooled"
   },
   "weekday_special_tail": {
     "name": "weekday_vs_full_special_tail",
-    "statistic": 43.3521516155342,
-    "p_value": 0.8498066004631287,
+    "statistic": 43.48429702930764,
+    "p_value": 0.8463476224151819,
     "dof": 54,
-    "min_expected_cell": 57.81625441696113,
+    "min_expected_cell": 57.80272748648013,
     "table": [
       [
         51,
-        62,
+        63,
         62,
         65,
         62,
@@ -41,7 +41,7 @@
       ],
       [
         68,
-        61,
+        62,
         47,
         51,
         59,
@@ -57,7 +57,7 @@
         60,
         54,
         55,
-        68,
+        69,
         62,
         64,
         63,
@@ -65,7 +65,7 @@
       ],
       [
         65,
-        54,
+        55,
         63,
         58,
         65,
@@ -85,7 +85,7 @@
         66,
         63,
         63,
-        62
+        63
       ],
       [
         60,
@@ -95,7 +95,7 @@
         73,
         61,
         57,
-        56,
+        57,
         54,
         58
       ],
@@ -107,8 +107,8 @@
         48,
         65,
         60,
-        55,
-        76,
+        56,
+        77,
         69
       ]
     ],

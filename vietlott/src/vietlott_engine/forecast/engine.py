@@ -36,11 +36,12 @@ from pathlib import Path
 
 import numpy as np
 from pydantic import BaseModel, Field
+from scipy.special import expit
 
 from vietlott_engine.core.products import PRODUCT_INFO, ProductCode, get_product
 from vietlott_engine.forecast.data import CONFIGS, DigitSpec, Series, SetSpec
 from vietlott_engine.forecast.experts import DigitExperts, DigitTilts, SetExperts, SetTilts, log_comb
-from vietlott_engine.game_theory.popularity import divide_out, elementary_symmetric
+from vietlott_engine.game_theory.popularity import elementary_symmetric
 
 VERSION = "3.5.0"
 ALPHA = 0.05
@@ -163,12 +164,34 @@ def vn_int(x: float) -> str:
 
 
 def inclusion_probabilities(w: np.ndarray, k: int) -> np.ndarray:
-    """π_i = w_i e_{k−1}(w_{−i}) / e_k(w) for CB weights ``w`` (J, n)."""
-    e = elementary_symmetric(w, k)
+    """Biên của luật tích trọng số, tính bằng DP log và truyền xác suất ngược.
+
+    Chia đa thức e_j để bỏ một số phải trừ hai hệ số gần nhau; với Keno
+    nó có thể cho π > 1. DP giữ hai nhánh có/không có số i, rồi chia khối
+    xác suất của mỗi trạng thái theo hai nhánh ấy, không trừ hệ số đa thức.
+    """
+    w = np.asarray(w, dtype=float)
+    experts, n = w.shape
+    log_w = np.log(w)
+    log_w -= log_w.mean(axis=1, keepdims=True)  # Đổi cùng thang trọng số không đổi luật.
+    prefix = np.full((experts, n + 1, k + 1), -np.inf)
+    prefix[:, :, 0] = 0.
+    for i in range(n):
+        upto = min(i + 1, k)
+        prefix[:, i + 1, 1:upto + 1] = np.logaddexp(
+            prefix[:, i, 1:upto + 1], log_w[:, i, None] + prefix[:, i, :upto])
+    mass = np.zeros((experts, k + 1))
+    mass[:, k] = 1.
     pi = np.empty_like(w)
-    for i in range(w.shape[1]):
-        h = divide_out(e, w[:, i])
-        pi[:, i] = w[:, i] * h[:, k - 1] / e[:, k]
+    for i in range(n - 1, -1, -1):
+        upto = min(i + 1, k)
+        included = log_w[:, i, None] + prefix[:, i, :upto]
+        excluded = prefix[:, i, 1:upto + 1]
+        difference = included - excluded
+        moved = mass[:, 1:upto + 1] * expit(difference)
+        pi[:, i] = moved.sum(axis=1)
+        mass[:, 1:upto + 1] *= expit(-difference)
+        mass[:, :upto] += moved
     return pi
 
 

@@ -85,6 +85,28 @@ def test_max_digits_match_full_padded_number_and_every_tier():
     assert tickets[1]['hits'] == 0
 
 
+@pytest.mark.parametrize(('numbers', 'hits', 'groups'), [
+    (['016', '122'] + [f'{x:03d}' for x in range(200, 218)], 1, ['Đặc biệt']),
+    (['016', '122', '016'] + [f'{x:03d}' for x in range(200, 217)], 2, ['Đặc biệt', 'Nhất']),
+    ([f'{x:03d}' for x in range(200, 220)], 0, []),
+])
+def test_pro_single_number_reports_matches_without_claiming_a_pair_prize(numbers, hits, groups):
+    """Một bộ ba Pro chỉ là tham chiếu; nhóm chứa nó không phải hạng giải của vé cặp."""
+    from vlm.web.dashboard import compare_prediction
+    pred = prediction('max3dpro')
+    pred['components'] = [{'name': 'digits', 'kind': 'digit', 'top': [{'numbers': [0, 1, 6]}]}]
+    draw = DrawRecord.from_legacy('max3dpro', {'id': 2, 'date': '2026-10-04', 'result': numbers})
+
+    ticket = compare_prediction(pred, draw)['tickets'][0]
+
+    assert ticket['numbers'] == [0, 1, 6]
+    assert ticket['symbol'] == '016'
+    assert ticket['hits'] == hits
+    assert ticket['tiers'] == []
+    assert ticket['matched_groups'] == groups
+    assert ticket['prize_status'] == 'requires_pair'
+
+
 def test_bingo_repeated_dice_keep_order_and_multiplicity():
     from vlm.web.dashboard import compare_prediction
     pred = prediction('bingo18')

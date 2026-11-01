@@ -87,6 +87,9 @@ jobs:
   collect:
     name: Thăm dò tới khi đủ 27 ô
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
 
     # Chặn runner treo. Xấu nhất: đến sớm đúng mức trần MAX_WAIT_MINUTES (260)
     # rồi thăm dò tới hạn 19:30 (75 phút nữa), cộng nới cho khâu cài đặt.
@@ -109,10 +112,10 @@ jobs:
       - name: Lấy mã nguồn
         uses: actions/checkout@v7
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài thư viện tối thiểu
         # Lớp thăm dò không đụng tới pandas/sklearn, và cài cả requirements.txt

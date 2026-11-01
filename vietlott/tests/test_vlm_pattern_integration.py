@@ -175,3 +175,53 @@ def test_explicit_pattern_refit_keeps_or_scores_existing_issue(tmp_path, result_
         assert upgraded.pending == event['pending']
         assert upgraded.pending_valid()
         assert len(events) == 1
+
+
+def _strip_pattern_keys(data: dict) -> dict:
+    """Checkpoint v5 do production ghi TRƯỚC khi có challenger mẫu hình: cấu hình và component không có khoá
+    ``patterns``."""
+    data = deepcopy(data)
+    data['version'] = 5  # bản production ghi từ 31-10-2026; bật challenger không được buộc tăng phiên bản
+    data['config'].pop('patterns', None)
+    for component in data['components'].values():
+        component.pop('patterns', None)
+    return data
+
+
+@pytest.mark.parametrize('product', ['max3d', 'mega645'])
+def test_a_production_v5_checkpoint_without_pattern_keys_loads_and_publishes_the_same_law(tmp_path, product):
+    """Gộp với chuyên gia hỗn hợp Bayes (checkpoint v5, 31-10-2026): bật tắt mẫu hình là khoá TUỲ CHỌN trong
+    cùng phiên bản. Tắt thì checkpoint production đã có phải nạp nguyên vẹn và cho đúng từng bit luật cũ —
+    không học lại, không mất bằng chứng live."""
+    from tests.test_vlm_bayes_expert import NOW, max3d_series
+    if product == 'max3d':
+        series = max3d_series(60, six=0.13)
+    else:
+        series = mega_series(40)
+    production = MLConfig(bootstrap=40, warmup=8, tree_every=64, tree_buffer=16, search_nodes=20, multi_agent=True)
+    model = MLForecaster(product, production)
+    model.update(series, now=NOW)
+    path = tmp_path / f'{product}.json.gz'
+    path.write_bytes(gzip.compress(json.dumps(_strip_pattern_keys(model.to_dict())).encode()))
+    restored = MLForecaster.load(path)
+    assert restored.config == production and not restored.config.patterns
+    for name, component in model.components.items():
+        assert restored.components[name].names == component.names
+        assert restored.components[name].law().to_dict() == component.law().to_dict()
+    assert restored.to_dict()['components'] == model.to_dict()['components']
+
+
+def test_digit_components_carry_the_bayes_expert_and_the_pattern_experts_in_the_same_order_they_predict():
+    """Tên chuyên gia và hàng xác suất phải cùng thứ tự (cơ sở → bayes → mẫu hình): lệch thì trọng số của
+    chuyên gia này chấm điểm cho chuyên gia khác mà không lỗi nào báo."""
+    from tests.test_vlm_bayes_expert import NOW, max3d_series
+    from vlm.forecast.bayes_expert import NAME as BAYES_NAME
+    model = MLForecaster('max3d', MLConfig(bootstrap=40, warmup=8, tree_every=64, tree_buffer=16, search_nodes=20,
+                                           patterns=True))
+    model.update(max3d_series(40, six=0.13), now=NOW)
+    component = model.components['digits']
+    base = component.base_expert_count
+    assert component.names[base] == BAYES_NAME
+    assert component.names[base + 1:base + 1 + len(component.patterns.names)] == list(component.patterns.names)
+    assert len(component.law().mixture) == len(component.names)
+    assert component.expert_nll.shape == (len(component.names),) and np.isfinite(component.expert_nll).all()

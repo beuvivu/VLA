@@ -105,6 +105,20 @@ bằng địa chỉ cố định (Worker đọc `xsmb.json`, trang Live đọc `
 hai lệnh `--backfill-from-git`) phải hỏi cả chỗ cũ qua `paths.legacy_data_path` — commit trước ngày gom
 giữ tệp ở đó; `fun_draw_ledger.show_data_at` làm việc ấy.
 
+## Phiên bản Python và workflow — một nguồn (01-11-2026)
+
+`.python-version` (3.15) là nguồn DUY NHẤT: mọi bước `setup-python` đọc `python-version-file`, ruff `py315`,
+Docker engine `python:3.15-slim`; ma trận `vlm-ci.yml` kiểm 3.11 (sàn `requires-python` của engine) và 3.15.
+`tests/repo/test_python_version.py` canh. Gói trực tiếp trong `requirements*.txt` ghim ĐÚNG bản (joblib của
+mô hình phụ thuộc scikit-learn). Đổi phiên bản thì chạy lại phép so đầu ra pipeline cũ/mới
+(`documentation/qa/2026-11-01-python-3-15-va-dong-bo-keno.md`): đợt này xác suất công bố trùng từng bit.
+Bộ đọc CSV mặc định của pandas ≥ 3.1 đúng từng bit nên không còn `float_precision`
+(`tests/core/test_csv_float_round_trip.py`).
+Mắt xích giữa workflow (tên `workflow_run`, tệp gọi qua API, không vòng) và bản đồ
+`documentation/operations/workflow-map.md` dựng bằng `scripts/ops/workflow_map.py --write`;
+`tests/repo/test_workflow_map.py` canh. Dựng lại trang Vietlott mà chỉ đổi giờ dựng thì KHÔNG commit
+(`scripts/web/stamp_only_change.py`).
+
 ## Khung ứng dụng
 
 Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
@@ -471,6 +485,28 @@ viết cứng. Kỳ đã qua giờ quay mà chưa có kết quả: thẻ hiện 
 quả" (`build_vietlott_results.shown_forecast`). Kết quả Mega/Power/Lotto: chuỗi `auto` hỏi `xskt` (trang
 đăng lại, đọc được từ runner) SAU bản sao NhanAZ (trễ hàng giờ); `vlm-results.yml` nhận `repository_dispatch`
 `vietlott-results` và chạy sau lượt `daily-finalize` — lịch mười phút của GitHub chạy cách nhau 1–5 giờ.
+Bộ chữ số của nhánh ML (Lotto đặc biệt, Max 3D/Pro, Max 4D, Bingo18) có chuyên gia `bayes_mixture` (31-10-2026,
+`vlm.forecast.bayes_expert`, checkpoint ML version 5): luật hậu nghiệm của hỗn hợp Bayes của engine cũ, chạy chấm trước –
+học sau trên đúng các kỳ bộ ML học. Không có nó, bộ ML bỏ qua độ lệch thật của Max 3D (chữ số 6 hàng đơn vị 10,6–11,3% ở
+cả sáu giai đoạn 2019 → 2026) và kém công bằng (−0,158 log10); có nó +0,771. Đừng thay bằng Dirichlet đầy đủ: 27 tham số
+tốn nhiều hơn lợi ích. Lần ghi `ticket_rule = coverage-v2`: vé Lotto thứ j mang số đặc biệt hạng j và được chấm đúng số ấy
+(ít nhất một vé trúng giải 45,7% so với 14,7% khi chung một số, `dashboard.prize_coverage`); lần ghi v1 giữ số chung.
+Kết luận e-value trên trang dùng ngưỡng HỌ 7/α = 140 (`build_vietlott_results.family_signal`), không phải 20 của từng
+sản phẩm (`documentation/research/2026-10-31-ra-soat-engine-vietlott.md`).
+Challenger mẫu hình `vlm.forecast.patterns` (PR #190, ghép 01-11-2026) mặc định TẮT (`MLConfig.patterns`,
+`VQE_ML_PATTERNS`). Nó dùng chung checkpoint version 5 với `bayes_mixture`: khoá `patterns` là TUỲ CHỌN, nên đừng tăng
+`VERSION` vì nó. Tăng thì mọi sản phẩm có bộ chữ số học lại và mất bằng chứng live. Thứ tự chuyên gia là cơ sở → bayes →
+mẫu hình, trùng thứ tự xác suất trong `predict`. Đo lại trên mã đã ghép: tắt thì trùng `main` từng bit; bật thì không
+cải thiện (q = 0,99, `vietlott/reports/vlm/pattern-learning-2026-11-01/`). Muốn bật mặc định thì phải qua phép đo
+trước khi bật, như mọi challenger.
+Keno/Bingo18 từ 01-11-2026: vietlott.vn chặn runner bằng Cloudflare (không vượt) và kho NhanAZ chỉ đăng lại
+từ trang thứ cấp, nên bản sao `vietvudanh` được nhập qua cổng hồ sơ `product_store._vet_fast_mirror`: trùng
+tuyệt đối ≥ 10 000 kỳ seed CHÍNH THỨC (không đếm dòng trong kho — tự chứng nhận) và ≥ 50 kỳ đăng lại độc lập
+của NhanAZ, lệch một kỳ là loại cả lượt. Khoảng hở lịch sử không nguồn nào có nằm ở
+`vietlott/data/seed/known_gaps.json` (chỉ đổi báo cáo, không suy ra số); khoảng hở mới vẫn đỏ.
+Cửa sổ đối chiếu neo theo ngày mới nhất của BẢN SAO (không theo ngày của kho: sau lần nhập đầu nó ra 0); kỳ
+đăng lại mới hơn bản sao là «chờ xác minh», không phải lỗi; `not_advancing` theo nhịp nguồn vừa làm kho tiến
+(bản sao ~00:00/~12:00 UTC → `runner.MIRROR_GRACE` 13 giờ; nguồn khác 20 phút).
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 
@@ -510,6 +546,13 @@ năm của kỳ ấy tính theo đúng ngày quay (`build_cau_keo_feature_frame(
 (`documentation/research/2026-10-15-lo-vip-cau-keo.md`, `tests/forecast/test_multi_hit_forecast.py`). Đã nghỉ: bộ
 lọc VIP (chỉ số phân tán đẩy con gan lên đầu — con 32 đứng đầu mười kỳ khi gan 10 → 19 kỳ) và luật lô rơi
 (chỉ liệt kê con vừa về). `build_cau_keo_feature_frame` nhận `raw`/`two` để kiểm trên lịch sử giả định.
+Thước theo KỲ (31-10-2026): kỳ "đạt" khi ít nhất một trong năm con về ≥ 2 nháy. Quay công bằng thì MỌI cách
+chọn 5 con chỉ đạt `multi_hit_vip.any_multi_chance(5)` = 14,11% số kỳ (khoảng 1 kỳ trong 7), và 2,1% số kỳ không con
+nào về ≥ 2 nháy; trang in số kỳ đạt của mô hình, của chọn bừa cùng kỳ (`random_any_hit`) và mức ấy TỪ `vip.json`
+(`MEASURE_VERSION` 10). "Đa số kỳ trượt" là bản chất phép chọn: mô hình gần như hằng số (C mạnh nhất ở 12/16 khối,
+lợi log-loss ±3·10⁻⁵) và ngang chọn bừa cả theo lượt lẫn theo kỳ — đừng "sửa" bằng mô hình phức tạp hơn khi chưa qua
+`scripts/research/benchmark_probability_models.py` (`documentation/research/2026-10-31-kiem-toan-lo-vip-nhieu-nhay.md`,
+`scripts/research/audit_multi_hit_vip.py`).
 `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
 từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. Từ 13-10-2026 trang GỌN theo yêu cầu: năm con ≥ 2 nháy và
 năm cặp xiên 2 (`src/forecast/multi_hit_pairs.py`: số kỳ cùng về trong 100 kỳ, luật chốt trước, mốc C(d, 2)/4 950
@@ -565,6 +608,20 @@ tính lại khi số kỳ trôi quá 2% hoặc `STAT_VERSION` đổi (~8 phút, 
 định nghĩa thống kê nào trong `stats()` thì PHẢI tăng `STAT_VERSION`. Phân vị
 lưu ĐỦ độ chính xác: làm tròn 7 chữ số từng thổi tin cậy cầu Đặc Biệt từ
 50,7% lên 66,5% vì cả khối giá trị hoà bị đếm là "nhỏ hơn".
+
+## Bảng có điều kiện "hôm trước → hôm sau" — 31-10-2026
+
+`stats.conditional_matrices` là bản DUY NHẤT (cặp kỳ đúng +1 ngày lịch); `statistical_matrices._conditional_tables`
+gọi lại nó. Mỗi bảng 100 × 100 ô, hàng Đặc Biệt chỉ ~42 kỳ, nên tỉ lệ thô ở đầu bảng là ô may mắn nhất
+(dữ liệu thật 21/40 = 52,5%, nền 23,8%; lịch sử công bằng giả lập 53,4%). Mỗi ô mang `baseline_rate`, `posterior_rate`
+(Bayes thực nghiệm, MỘT κ chung cho cả bảng — κ riêng từng hàng vẫn để ô 30,6% trên lịch sử không có gì), p một phía
+và q BH trên MỌI ô đã kiểm; bảng xếp theo p. Trang in tỉ lệ thô CẠNH mức nền, ước lượng sau co và q, câu đọc bảng
+từ `reading_note` (`DISPLAY_COLUMNS`) — cả hai ở `stats.conditional_reading`, mô-đun chỉ cần pandas, để
+workflow chỉ dựng trang không phải cài `ingest`/scipy (`test_every_workflow_installs_what_its_python_scripts_import`). Đừng xếp lại theo `conditional_rate` và đừng gọi một ô "đáng tin" vì cỡ mẫu
+≥ 10. q mới là công cụ phát hiện; `posterior_rate` là ước lượng thận trọng
+(`documentation/research/2026-10-31-ra-soat-xac-suat-toan-kho.md`, `tests/stats/test_conditional_matrices.py`).
+Bảng xếp hạng phía trang dùng `sort_values(..., kind="stable")`: quicksort của numpy xếp dòng hoà theo lệnh vector
+của CPU, nên CI và máy khác in thứ tự khác nhau.
 
 ## Top LOTO và giả thuyết "đuôi nóng"
 

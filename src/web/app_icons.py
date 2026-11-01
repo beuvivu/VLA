@@ -7,7 +7,7 @@ Assets here retain their pinned upstream provenance and ISC/MIT notices.
 
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 from html import escape
 from pathlib import Path
 from typing import Final
@@ -76,7 +76,7 @@ BIEU_TUONG: Final[dict[str, str]] = {
 }
 
 
-@lru_cache(maxsize=None)
+@cache
 def _noi_dung_svg(ten: str) -> str:
     """Đọc nguyên các phần tử hình học của asset đã ghim, chỉ một lần mỗi tên."""
     svg = (_THU_MUC / f"{ten}.svg").read_text(encoding="utf-8")

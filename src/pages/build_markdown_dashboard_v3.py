@@ -6,7 +6,8 @@ import math
 from calendar import monthrange
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from core.safe_io import read_csv_or_empty, read_json_or_empty
 
 from web.ui_locale import strategy_label, value_label
 from core.paths import REPO_ROOT
+from stats.conditional_reading import FDR_LEVEL, reading_note
 
 ROOT = REPO_ROOT
 DATA = ROOT / "data"
@@ -480,23 +482,29 @@ def _week_board(path: Path, tail: int=10) -> str:
 
 
 def _conditional(path: Path, top_n: int=15) -> str:
+    """Bảng có điều kiện: tỉ lệ thô CẠNH mức nền, ước lượng sau co và q (FDR), theo thứ tự p của tệp.
+
+    Bản cũ xếp lại theo tỉ lệ thô và gắn nhãn "Có mẫu lịch sử tương đối tốt hơn" cho mọi ô có
+    từ 10 kỳ: ô 52,5% đứng đầu chỉ là ô may mắn nhất trong 10 000 ô, mức nền 23,8%.
+    """
     df=_read_csv(path)
     if df.empty:
         return "_Chưa có dữ liệu._"
-    score="conditional_rate" if "conditional_rate" in df.columns else "rate" if "rate" in df.columns else "count"
-    df["__s"]=pd.to_numeric(df[score],errors="coerce").fillna(0)
-    df=df.sort_values("__s",ascending=False).head(top_n)
+    if "p_value" in df.columns:
+        df=df.assign(__p=pd.to_numeric(df["p_value"],errors="coerce")).sort_values("__p",kind="stable")
+    df=df.head(top_n)
     prev=next((c for c in ["prev_special_2d","prev_loto","prev_special"] if c in df.columns),None)
     nxt=next((c for c in ["next_loto","next_special_2d","next_special"] if c in df.columns),None)
-    max_v=float(df["__s"].max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
-        s=_safe_float(r.get(score))
-        sample=_safe_float(r.get("base_count",r.get("count",0)))
-        meaning="Mẫu nhỏ – chỉ tham khảo" if sample<10 else "Có mẫu lịch sử tương đối tốt hơn"
-        score_txt=_fmt_pct(s,2) if "rate" in score else _fmt_num(s,3)
-        rows.append([i,f"`{_fmt2(r.get(prev))}` → **`{_fmt2(r.get(nxt))}`**" if prev and nxt else "—",score_txt,f"n={_fmt_num(sample,0)}",meaning,_bar(s,max_v)])
-    return _md_table(["#","Điều kiện → kết quả","Tỷ lệ","Mẫu","Ý nghĩa","Thanh so sánh"],rows)
+        q=_safe_float(r.get("q_value_fdr"),math.nan)
+        meaning="Qua FDR 5%" if q<FDR_LEVEL else "Chưa có bằng chứng lệch khỏi mức nền" if math.isfinite(q) else "—"
+        rows.append([i,f"`{_fmt2(r.get(prev))}` → **`{_fmt2(r.get(nxt))}`**" if prev and nxt else "—",
+                     _fmt_pct(r.get("conditional_rate"),2),f"{_fmt_num(r.get('count'),0)}/{_fmt_num(r.get('base_count'),0)}",
+                     _fmt_pct(r.get("baseline_rate"),2),_fmt_pct(r.get("posterior_rate"),2),
+                     _fmt_num(q,2) if math.isfinite(q) else "—",meaning])
+    table=_md_table(["#","Điều kiện → kết quả","Tỷ lệ thô","Về/mẫu","Mức nền","Sau co về nền","q (FDR)","Ý nghĩa"],rows)
+    return f"> {reading_note(_read_csv(path))}\n\n{table}"
 
 
 def _significance(path: Path, top_n: int=15) -> str:

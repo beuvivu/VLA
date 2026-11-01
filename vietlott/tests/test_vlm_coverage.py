@@ -130,3 +130,86 @@ def test_comparisons_score_the_disjoint_tickets_that_were_shown(tmp_path, monkey
     assert [t['numbers'] for t in match['tickets']] == shown and len({v for t in shown for v in t}) == 30
     assert [t['hits'] for t in match['tickets']] == [len(set(t) & {1, 2, 3, 4, 5, 6}) for t in shown]
     assert deepcopy(match['components'][0]['coverage'])['rule'] == COVERAGE_RULE
+
+
+# --- coverage-v2: mỗi vé Lotto 5/35 mang một số đặc biệt khác nhau (31-10-2026) ------------------------
+
+def _lotto_issue(rule: str | None) -> dict:
+    main = CONFIGS[ProductCode.LOTTO_535].components['main']
+    values = np.ones((1, main.n)) * (1 + 1e-4 * np.arange(main.n)[::-1] / main.n)
+    special = np.ones((1, 1, 12)); special[0, 0, [6, 2, 9, 0, 11]] = [1.05, 1.04, 1.03, 1.02, 1.01]
+    pending = {'target_id': 2, 'target_date': '2026-10-04', 'target_time': '2026-10-04T21:00:00+07:00',
+               'made_at': '2026-10-04T14:00:00+07:00', 'based_on_id': 1, 'based_on_date': '2026-10-04',
+               'draws_on_last_date': 1, 'history_sha256': 'abc',
+               'laws': {'main': {'values': values.tolist(), 'mixture': [1]},
+                        'special': {'values': special.tolist(), 'mixture': [1]}}}
+    if rule:
+        pending['ticket_rule'] = rule
+    return {'event': 'issue', 'product': 'lotto535', 'target_id': 2, 'history_sha256': 'abc',
+            'config': {'search_nodes': 1000}, 'pending': pending}
+
+
+def test_coverage_specials_are_distinct_and_ranked_by_their_marginal():
+    from vlm.forecast.distribution import coverage_specials
+
+    spec = CONFIGS[ProductCode.LOTTO_535].components['special']
+    issue = _lotto_issue(None)['pending']['laws']['special']
+    law = Law(spec, np.array(issue['values']), np.array(issue['mixture']))
+    assert coverage_specials(law) == [7, 3, 10, 1, 12]  # ký hiệu = chỉ số + 1
+    with pytest.raises(ValueError):
+        coverage_specials(_law(ProductCode.LOTTO_535, [1, 2, 3, 4, 5]))
+
+
+def test_the_any_ticket_prize_rate_is_exact_over_every_lotto_draw():
+    """Vét cạn mọi bộ năm số chính × 12 số đặc biệt, chấm bằng CHÍNH bảng giải của trò chơi."""
+    from itertools import combinations as combos
+
+    from vietlott_engine.core.games import get_game
+    from vlm.web.dashboard import prize_coverage
+
+    game = get_game('lotto535')
+    tickets = [list(range(1 + 5 * j, 6 + 5 * j)) for j in range(5)]
+    draws = np.array(list(combos(range(1, 36), 5)))
+    member = np.zeros((len(draws), 36), dtype=bool)
+    np.put_along_axis(member, draws, True, axis=1)
+    hits = np.stack([member[:, t].sum(axis=1) for t in tickets], axis=1)
+    for specials in ([1, 2, 3, 4, 5], [1] * 5):
+        wins = np.zeros(len(draws))
+        for special in range(1, 13):
+            won = np.zeros(len(draws), dtype=bool)
+            for j, own in enumerate(specials):
+                tier = np.array([game.classify(int(h), own == special) is not None for h in range(6)])
+                won |= tier[hits[:, j]]
+            wins += won
+        exact = wins.sum() / (len(draws) * 12)
+        got = prize_coverage(ProductCode.LOTTO_535, tickets, len(set(specials)))
+        assert got['any_ticket_prize'] == pytest.approx(exact, abs=1e-12)
+    assert got['shared_special_prize'] == pytest.approx(exact, abs=1e-12)  # vòng cuối: chung một số
+    assert got['one_ticket_prize'] == pytest.approx(game.p_any_prize)
+
+
+def test_a_v2_issue_pairs_each_lotto_ticket_with_its_own_special_and_scores_it(monkeypatch):
+    from vlm.database.schema import DrawRecord
+    from vlm.web import dashboard as db
+
+    monkeypatch.setattr(db, '_valid_issue', lambda code, entry, now: True)
+    now = datetime(2026, 10, 4, 15, tzinfo=VN)
+    new = db._from_issue(ProductCode.LOTTO_535, _lotto_issue(COVERAGE_RULE), now)
+    main, special = new['components']
+    assert special['per_ticket'] and [s['numbers'][0] for s in special['top']] == [7, 3, 10, 1, 12]
+    assert main['coverage']['rule'] == COVERAGE_RULE == 'coverage-v2'
+    assert main['coverage']['any_ticket_prize'] == pytest.approx(0.4571, abs=1e-4)
+    assert main['coverage']['shared_special_prize'] == pytest.approx(0.1469, abs=1e-4)
+    old = db._from_issue(ProductCode.LOTTO_535, _lotto_issue('coverage-v1'), now)
+    assert 'per_ticket' not in old['components'][1] and 'any_ticket_prize' not in old['components'][0]['coverage']
+    assert old['components'][0]['coverage']['rule'] == 'coverage-v1'
+
+    tickets = [t['numbers'] for t in main['top']]
+    draw = DrawRecord.from_legacy('lotto535', {'id': 2, 'date': '2026-10-04', 'result': tickets[3][:2] + [31, 32, 33],
+                                               'bonus_number': 1})
+    scored = db.compare_prediction(new, draw)['tickets']
+    assert [t['special'] for t in scored] == [7, 3, 10, 1, 12]
+    assert [t['bonus_hit'] for t in scored] == [False, False, False, True, False]
+    assert scored[3]['tier'] == 'consolation'
+    legacy = db.compare_prediction(old, draw)['tickets']
+    assert {t['special'] for t in legacy} == {7} and not any(t['bonus_hit'] for t in legacy)

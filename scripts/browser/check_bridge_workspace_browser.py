@@ -1,4 +1,4 @@
-"""Kiểm tra bố cục, tương tác và in của chín trang soi cầu/phôi trên HTML thật."""
+"""Kiểm bố cục, tương tác, in của soi cầu/phôi và bốn trang đường cầu thật."""
 from functools import partial
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -84,12 +84,114 @@ def check_sheet(page):
         page.emulate_media(media="screen")
 
 
+def path_geometry(page):
+    state = page.evaluate("""() => {
+      const workspace = document.querySelector('.path-workspace');
+      const overflow = document.documentElement.scrollWidth - innerWidth;
+      if (!workspace) return {empty:true,overflow,
+        rows:JSON.parse(document.querySelector('#path-data').textContent).rows.length};
+      const box = selector => {
+        const element = workspace.querySelector(selector), rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {top:rect.top,bottom:rect.bottom,height:rect.height,
+          border:parseFloat(style.borderTopWidth),borderBottom:parseFloat(style.borderBottomWidth),
+          paddingBottom:parseFloat(style.paddingBottom),marginTop:parseFloat(style.marginTop),
+          marginBottom:parseFloat(style.marginBottom),
+          contain:style.contain,maxHeight:style.maxHeight};
+      };
+      return {empty:false,overflow,width:innerWidth,list:box('.path-list'),
+        detail:box('.path-detail'),scroll:box('.path-list>.path-table-scroll'),
+        note:box('.path-list>.path-note'),detailEnd:box('.path-detail>:last-child'),
+        hasTimeline:Boolean(workspace.querySelector('.path-timeline'))};
+    }""")
+    assert state["overflow"] <= 1, state
+    if state["empty"]:
+        assert state["rows"] == 0 and page.locator('.path-empty').is_visible(), state
+        return state
+    assert page.locator('.path-workspace').is_visible(), state
+    left, right = state["list"], state["detail"]
+    if state["width"] > 1150:
+        assert left["border"] > 0 and right["border"] > 0, state
+        assert abs(left["top"] - right["top"]) <= 1, state
+        assert abs(left["bottom"] - right["bottom"]) <= 1, state
+        assert abs(left["height"] - right["height"]) <= 1, state
+        assert state["scroll"]["maxHeight"] == "none", state
+        assert abs(state["scroll"]["bottom"] + state["note"]["marginTop"] - state["note"]["top"]) <= 1, state
+        assert abs(state["note"]["bottom"] + left["paddingBottom"] + left["borderBottom"] - left["bottom"]) <= 1, state
+        if state['hasTimeline']:
+            end = state['detailEnd']
+            assert abs(end['bottom'] + end['marginBottom'] + right['paddingBottom'] + right['borderBottom'] - right['bottom']) <= 1, state
+    else:
+        assert right["bottom"] <= left["top"], state
+        assert state["scroll"]["contain"] == "none", state
+    return state
+
+
+def check_path_workspace(page):
+    """Đo lại hai khung sau thao tác thật, không phụ thuộc dữ liệu mẫu Python."""
+    initial = path_geometry(page)
+    if initial["empty"]:
+        return initial
+    data = page.locator('#path-data').text_content()
+    buttons = page.locator('[data-path-index]')
+    chosen = buttons.nth(min(1, buttons.count() - 1))
+    chosen.focus()
+    chosen.press('Enter')
+    assert page.locator('#path-detail-title').evaluate('e => e === document.activeElement')
+    path_geometry(page)
+    day_states = []
+    for days in ('5', '10', 'all'):
+        page.locator('#path-days-filter').select_option(days)
+        expected = page.evaluate("""() => {
+          const state = window.PathExplorer.state, row = state.data.rows[state.selected];
+          const days = document.querySelector('#path-days-filter').value;
+          return Number(Boolean(row.forecast)) + (days === 'all' ? row.cells.length : Math.min(Number(days),row.cells.length));
+        }""")
+        assert page.locator('.path-evidence').count() == expected
+        measured = path_geometry(page)
+        day_states.append({'days':days, 'cards':expected, 'height':measured['detail']['height']})
+    if initial['width'] > 1150:
+        for before, after in zip(day_states, day_states[1:], strict=False):
+            if after['cards'] > before['cards']:
+                assert after['height'] > before['height'], day_states
+    numbers = page.evaluate("""() => {
+      const values = new Set(window.PathExplorer.state.data.rows.map(row => row.next_num));
+      return {present:[...values].find(value => /^\\d{2}$/.test(value)),
+        missing:Array.from({length:100},(_,n) => String(n).padStart(2,'0')).find(value => !values.has(value))};
+    }""")
+    if numbers.get('present') is not None:
+        page.locator('#path-number-filter').fill(numbers['present'])
+        assert page.locator('[data-path-row]:not([hidden])').count() > 0
+        path_geometry(page)
+    # Nếu đủ cả 100 số thì giao diện không có bộ lọc số nào tạo danh sách rỗng.
+    if numbers.get('missing') is not None:
+        page.locator('#path-number-filter').fill(numbers['missing'])
+        assert page.locator('[data-path-row]:not([hidden])').count() == 0
+        assert page.locator('.path-evidence').count() == 0
+        path_geometry(page)
+    page.locator('#path-reset').click()
+    assert page.locator('[data-path-row]:not([hidden])').count() == buttons.count()
+    assert page.locator('#path-data').text_content() == data
+    final = path_geometry(page)
+    scroll = page.locator('.path-list>.path-table-scroll')
+    scroll.evaluate('e => { e.scrollTop = e.scrollHeight; }')
+    assert scroll.evaluate("e => e.querySelector('tbody tr:last-child').getBoundingClientRect().bottom <= e.getBoundingClientRect().bottom + 1")
+    if final['width'] <= 1150:
+        buttons.last.click()
+        assert page.locator('#path-detail-title').evaluate('e => e === document.activeElement')
+        assert page.locator('#path-detail-title').bounding_box()['y'] >= 0
+        path_geometry(page)
+    return {**initial, 'empty_filter_checked':numbers.get('missing') is not None}
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(ROOT / "docs")))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     names = sorted(p.name for p in (ROOT / "docs").glob("soi-cau-*.html")) + ["tao-phoi-tuan.html"]
     assert len(names) >= 9
+    path_names = [f"soi-path-{mode}-{kind}.html" for mode in ('loto', 'de') for kind in ('active', 'stable')]
+    assert all((ROOT / 'docs' / name).is_file() for name in path_names)
     results, failures = [], []
     try:
         with sync_playwright() as pw:
@@ -100,7 +202,7 @@ def main():
                 page = context.new_page()
                 errors = []
                 page.on("pageerror", lambda e, errors=errors: errors.append(str(e)))
-                for name in names:
+                for name in names + path_names:
                     for dark in (False, True):
                         try:
                             errors.clear()
@@ -108,11 +210,14 @@ def main():
                             page.locator("body[data-app-shell-ready]").wait_for()
                             if page.locator("html").evaluate("e => e.classList.contains('dark')") != dark:
                                 page.locator("#app-theme").click()
-                            state = geometry(page)
-                            if page.locator("#app-cau-form").count():
-                                check_grid(page)
-                            elif page.locator("#app-phoi-form").count():
-                                check_sheet(page)
+                            if name in path_names:
+                                state = check_path_workspace(page)
+                            else:
+                                state = geometry(page)
+                                if page.locator("#app-cau-form").count():
+                                    check_grid(page)
+                                elif page.locator("#app-phoi-form").count():
+                                    check_sheet(page)
                             page.evaluate("window.scrollTo(0,0)")
                             page.screenshot(path=str(OUT / f"{name[:-5]}-{width}-{'dark' if dark else 'light'}.png"))
                             assert not errors, errors

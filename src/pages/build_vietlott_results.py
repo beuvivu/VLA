@@ -22,6 +22,7 @@ from __future__ import annotations
 import contextlib
 import html
 import json
+import math
 import shutil
 import sys
 import tempfile
@@ -174,6 +175,53 @@ def _max_rtp(components: list[dict]) -> float | None:
     return max(rtps) if rtps else None
 
 
+#: α của CẢ HỌ phép kiểm e-value trên trang: bảy sản phẩm cùng được kết luận một lúc, nên mỗi sản phẩm
+#: cần e-value ≥ số sản phẩm / α (Bonferroni cho e-value; với 7 sản phẩm là 140, đúng ngưỡng cổng live
+#: của bộ ML ``vlm.forecast.pipeline.LIVE_THRESHOLD``). Engine kiểm TỪNG sản phẩm ở 1/α = 20: đúng cho
+#: một sản phẩm, nhưng khi bảy sản phẩm cùng được xét thì chừng ấy sẽ sớm muộn vượt 20 do may rủi.
+FAMILY_ALPHA = 0.05
+
+
+def family_threshold_log10(products: int | None = None) -> float:
+    """log10 của ngưỡng e-value cho cả họ ``products`` sản phẩm (mặc định: mọi sản phẩm trên trang)."""
+    return math.log10((products or len(PRODUCTS)) / FAMILY_ALPHA)
+
+
+def family_signal(entry: dict | None) -> bool:
+    """Sản phẩm có tín hiệu SAU KHI tính đủ cả họ: engine báo bằng chứng VÀ e-value cao nhất ≥ ngưỡng họ."""
+    ev = (entry or {}).get("evidence") or {}
+    try:
+        best = float(ev.get("max_log10_wealth"))
+    except (TypeError, ValueError):
+        return False
+    return bool(ev.get("found")) and best >= family_threshold_log10()
+
+
+def evidence_text(entry: dict | None) -> str:
+    """Câu bằng chứng của MỘT sản phẩm, khớp với kết luận theo họ của trang."""
+    ev = (entry or {}).get("evidence") or {}
+    text = str(ev.get("text") or "")
+    if not ev.get("found"):
+        return text
+    limit = f"{10 ** family_threshold_log10():.0f}"
+    best = ev.get("max_log10_wealth")
+    shown = f"{float(best):.2f}".replace(".", ",") if isinstance(best, (int, float)) else "?"
+    if family_signal(entry):
+        return f"{text} Vẫn vượt ngưỡng {limit} khi tính đủ {len(PRODUCTS)} sản phẩm (α họ 5%)."
+    return (f"E-value cao nhất 10^{shown} vượt 20 của riêng sản phẩm này nhưng chưa tới {limit} = 20 × "
+            f"{len(PRODUCTS)} sản phẩm: khi xét cả {len(PRODUCTS)} sản phẩm, chừng ấy chưa đủ bằng chứng lệch "
+            "khỏi máy quay công bằng.")
+
+
+def verdict_text(entry: dict) -> str:
+    """Câu kết luận của engine, trừ khi nó dựa trên ngưỡng 20 của riêng sản phẩm mà ngưỡng họ chưa đạt."""
+    ev = (entry or {}).get("evidence") or {}
+    if ev.get("found") and not family_signal(entry):
+        return (f"Mô hình tự học chưa có bằng chứng lệch khỏi máy quay công bằng khi xét cả "
+                f"{len(PRODUCTS)} sản phẩm; xác suất của nó không đáng tin hơn ngẫu nhiên.")
+    return str((entry or {}).get("verdict") or "")
+
+
 def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
     """Kết luận về độ ngẫu nhiên in TỪ SỐ ĐO của engine, không viết cứng.
 
@@ -183,7 +231,7 @@ def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
     """
     if not analysis:
         return "Chưa có phân tích độ ngẫu nhiên của kỳ quay."
-    found = [code for code in names if ((analysis.get(code) or {}).get("evidence") or {}).get("found")]
+    found = [code for code in names if family_signal(analysis.get(code))]
     if not found:
         return ("Phép kiểm e-value của engine chưa thấy sản phẩm nào lệch khỏi máy quay công bằng; "
                 "dự báo không làm tăng xác suất trúng.")
@@ -195,8 +243,10 @@ def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
         best = f"{max(analysis[c]['max_rtp'] for c in priced):.2f}".replace(".", ",")
         money = (f" Dù vậy mọi cửa của {_join([names[c] for c in priced])} mà mô hình tính được vẫn có kỳ vọng âm: "
                  f"RTP cao nhất là {best} (dưới 1).")
+    limit = f"{10 ** family_threshold_log10(len(names)):.0f}"
     return (f"Phép kiểm e-value của engine thấy độ lệch nhỏ có ý nghĩa thống kê ở {_join([names[c] for c in found])}; "
-            f"các sản phẩm còn lại chưa lệch khỏi máy quay công bằng.{money}")
+            f"các sản phẩm còn lại chưa có bằng chứng lệch khỏi máy quay công bằng. Ngưỡng đã tính đủ "
+            f"{len(names)} sản phẩm: e-value ≥ {limit} (α họ 5%).{money}")
 
 
 def _join(labels: list[str]) -> str:
@@ -355,11 +405,16 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
                                                 "Kết quả kỳ này chưa có trong dữ liệu. Bộ số cho kỳ sau được ghi ngay "
                                                 "khi kết quả về, luôn trước giờ quay.") + '</p>')
     components = []
+    specials = per_ticket_specials(forecast)
     for comp in forecast.get("components") or []:
+        if specials and comp.get("name") == "special":
+            continue  # coverage-v2: số đặc biệt đã in ngay trên vé của nó
         rows = []
-        for t in (comp.get("top") or [])[:5]:
+        for index, t in enumerate((comp.get("top") or [])[:5]):
             numbers = t["numbers"]
-            if product in MAX:
+            if specials and comp.get("name") == "main" and index < len(specials):
+                sequence = balls(numbers, specials[index], product=product)
+            elif product in MAX:
                 symbol = _symbol(product, numbers)
                 sequence = f'<span class="vl-number-sequence"><span class="vl-ball vl-ball--symbol">{esc(symbol)}</span></span>'
             elif comp.get("name") == "special":
@@ -378,6 +433,14 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
     return "".join(parts)
 
 
+def per_ticket_specials(forecast: dict | None) -> list[int]:
+    """Số đặc biệt của TỪNG vé Lotto khi lần ghi theo ``coverage-v2`` (vé j mang số j); rỗng nếu dùng chung."""
+    for comp in (forecast or {}).get("components") or []:
+        if comp.get("name") == "special" and comp.get("per_ticket"):
+            return [int((row.get("numbers") or [0])[0]) for row in comp.get("top") or []]
+    return []
+
+
 def _pct(value: float) -> str:
     return f"{100 * value:.1f}%".replace(".", ",")
 
@@ -392,9 +455,18 @@ def coverage_note(coverage: dict | None, tickets: int) -> str:
         covered, pool = int(coverage["covered"]), int(coverage["pool"])
     except (KeyError, TypeError, ValueError):
         return ""
+    prize = ""
+    if coverage.get("any_ticket_prize") is not None:
+        try:
+            prize = (f' Mỗi vé mang một số đặc biệt khác nhau: ít nhất một vé trúng giải ở {_pct(coverage["any_ticket_prize"])} '
+                     f'số kỳ (năm vé chung một số đặc biệt: {_pct(coverage["shared_special_prize"])}; một vé riêng lẻ: '
+                     f'{_pct(coverage["one_ticket_prize"])}), phần lớn là giải Khuyến khích bằng đúng giá một vé.')
+        except (KeyError, TypeError, ValueError):
+            prize = ""
     return (f'<p class="vl-muted vl-coverage-note">{tickets} vé rời nhau, phủ {covered}/{pool} số. Khi quay ngẫu nhiên, '
             f'ít nhất một vé trúng từ 2 số trở lên ở {_pct(any2)} số kỳ (từ 3 số: {_pct(any3)}); một vé riêng lẻ: '
-            f'{_pct(one2)}. Xác suất của từng vé không đổi; {tickets} vé tốn {tickets} lần tiền vé.</p>')
+            f'{_pct(one2)}.{prize} Xác suất và tiền thưởng kỳ vọng của từng vé không đổi; {tickets} vé tốn '
+            f'{tickets} lần tiền vé.</p>')
 
 
 def _ticket_score(product: str, ticket: dict) -> tuple[int, int] | None:
@@ -444,13 +516,18 @@ def _stored_tickets(product: str, comparison: dict) -> list[dict]:
         return comparison["tickets"]
     components = {c.get("name"): c for c in comparison.get("components") or []}
     name = "digits" if product in MAX else "dice" if product == "bingo18" else "main"
+    own = per_ticket_specials(comparison)
     special = ((components.get("special") or {}).get("top") or [{}])[0].get("numbers") or []
-    return [{"numbers": row.get("numbers") or [], **({"special": special[0]} if special else {})}
-            for row in (components.get(name) or {}).get("top") or []]
+    rows = (components.get(name) or {}).get("top") or []
+    return [{"numbers": row.get("numbers") or [],
+             **({"special": own[i]} if i < len(own) else {"special": special[0]} if special else {})}
+            for i, row in enumerate(rows)]
 
 
 def _ticket_prize(product: str, ticket: dict) -> str:
     """Chỉ hiện phân hạng có sẵn trong kết quả engine, không suy từ phần trăm."""
+    if product == "max3dpro":
+        return "Chưa phân hạng: cần vé cặp"
     if product in MAX:
         return " · ".join(str(t) for t in ticket["tiers"]) if ticket.get("tiers") else "Không trùng hạng giải" if "tiers" in ticket else "Chưa có phân hạng"
     if product not in MATRIX:
@@ -474,7 +551,7 @@ def _comparison_summary(product: str, comparisons: list[dict]) -> str:
         detail += f" · chọn bừa {100 * FAIR_MATCH_RATE[product]:.1f}%".replace(".", ",")
     if product in MAX:
         percent, detail = "Không áp dụng", "Bộ ba được đối chiếu nguyên vẹn"
-    cards = [("Số vé đã chấm", str(len(scored)), "Trong các kỳ hiển thị bên dưới"),
+    cards = [("Bộ ba đã đối chiếu" if product == "max3dpro" else "Số vé đã chấm", str(len(scored)), "Trong các kỳ hiển thị bên dưới"),
              ("Kỳ chờ kết quả", str(sum(c.get("status") == "pending" for c in comparisons)), "Chưa được đưa vào tỷ lệ"),
              ("Kỳ lệch ngày", str(sum(c.get("status") == "date_mismatch" for c in comparisons)), "Cần kiểm tra lại kỳ đối chiếu"),
              ("Tỷ lệ trùng theo từng vé", percent, detail)]
@@ -497,6 +574,7 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
     if not comparisons:
         return '<p class="vl-muted">Chưa có dự báo đăng ký trước kỳ nào để đối chiếu.</p>'
     shown = comparisons[:COMPARISONS_SHOWN]
+    item_label = "Bộ ba" if product == "max3dpro" else "Vé"
     rows = []
     for c in shown:
         scored = c.get("status") == "matched"
@@ -538,7 +616,7 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
             special = ticket.get("special") if product == "lotto535" else None
             bonus_main = result.get("bonus") if scored and product == "power655" and bonus_hit else None
             prediction = ('<div class="vl-comparison-ticket"' + (f' data-vl-ticket="{index}"' if scored else "") + '>'
-                          f'<small>Vé {index}</small>' + _comparison_balls(product, pred_values, matched=pred_marks,
+                          f'<small>{item_label} {index}</small>' + _comparison_balls(product, pred_values, matched=pred_marks,
                           bonus=special, bonus_hit=bonus_hit, bonus_main=bonus_main, label="Bộ số đã đăng ký: ") + '</div>')
             actual = '<span class="vl-muted">Chưa đối chiếu kết quả</span>'
             score = '<span class="vl-muted">Chưa chấm · —</span>'
@@ -546,21 +624,25 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
                 sequence = (_max_result_markup(product, result, matched_symbol=symbol) if product in MAX else
                             _comparison_balls(product, drawn, matched=drawn_marks, bonus=result.get("bonus") if product in MATRIX else None,
                                               bonus_hit=bonus_hit, label="Kết quả: "))
-                actual = f'<div class="vl-comparison-actual"><small>Đối chiếu vé {index}</small>{sequence}</div>'
+                actual = f'<div class="vl-comparison-actual"><small>Đối chiếu {item_label.lower()} {index}</small>{sequence}</div>'
                 pair = _ticket_score(product, ticket)
                 score = f"{pair[0]} / {pair[1]} · {_hit_percent(*pair)}" if pair else f"Xuất hiện {int(ticket['hits'])} lần" if product in MAX and ticket.get("hits") is not None else "Chưa đủ dữ liệu chấm"
                 secondary = ""
                 if product == "bingo18" and ticket.get("multiset_hits") is not None:
                     secondary = f'<small class="vl-comparison-secondary">Bộ có lặp: {int(ticket["multiset_hits"])} / {len(numbers)}</small>'
+                elif product == "max3dpro" and ticket.get("matched_groups"):
+                    secondary = '<small class="vl-comparison-secondary">Nhóm có số trùng: ' + esc(" · ".join(ticket["matched_groups"])) + '</small>'
                 elif product in ("power655", "lotto535"):
                     secondary = f'<small class="vl-comparison-secondary">Số {"phụ" if product == "power655" else "đặc biệt"}: {"trùng" if bonus_hit else "không trùng"}</small>'
-                score = (f'<div class="vl-comparison-score"><small>Vé {index}{" · theo vị trí" if product == "bingo18" else ""}</small>'
+                score = (f'<div class="vl-comparison-score"><small>{item_label} {index}{" · theo vị trí" if product == "bingo18" else ""}</small>'
                          f'<strong>{esc(score)}</strong>{secondary}<span class="vl-comparison-tier">{esc(_ticket_prize(product, ticket))}</span></div>')
             rows.append(f'<tr data-vl-comparison-status="{esc(c.get("status") or "pending")}" '
                         f'data-vl-comparison-target="{esc(c.get("target_id"))}" data-vl-comparison-ticket="{index}">'
                         f'{metadata if index == 1 else ""}<td class="vl-comparison-prediction">{prediction}</td>'
                         f'<td class="vl-comparison-result">{actual}</td><td class="vl-comparison-score-cell">{score}</td></tr>')
     unit = "Tỷ lệ đếm vị trí trùng của từng vé Bingo18; bộ có lặp được đếm riêng." if product == "bingo18" else "Max 3D đối chiếu cả bộ ba; số lần xuất hiện và hạng giải do engine chấm." if product in MAX else "Tỷ lệ = tổng số chính trùng / tổng số chính đã chọn trên từng vé; số phụ được xét riêng."
+    if product == "max3dpro":
+        unit = "Max 3D Pro chỉ đối chiếu từng bộ ba và nhóm có số trùng; cần vé cặp hai số để phân hạng giải."
     note = (unit + " Đây là mức khớp của các vé đã chấm, không phải xác suất trúng giải.") if product not in MAX else unit
     legend = ('<div class="vl-comparison-legend"><span><span class="vl-ball vl-ball--match" aria-hidden="true">✓</span> Trùng</span>'
               '<span><span class="vl-ball" aria-hidden="true">•</span> Không trùng</span>'
@@ -576,8 +658,7 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
 def analysis_markup(analysis: dict | None) -> str:
     if not analysis:
         return ""
-    ev = analysis.get("evidence") or {}
-    badge = ('<span class="vl-badge vl-badge--warn">Có tín hiệu thống kê</span>' if ev.get("found")
+    badge = ('<span class="vl-badge vl-badge--warn">Có tín hiệu thống kê</span>' if family_signal(analysis)
              else '<span class="vl-badge">Chưa hơn ngẫu nhiên</span>')
     board = analysis.get("board") or {}
     if board.get("scored"):
@@ -588,8 +669,8 @@ def analysis_markup(analysis: dict | None) -> str:
     else:
         ledger = "Chưa có dự báo nào được ghi trước kỳ quay."
     return (f'<p>{badge} Học từ {vn_int(analysis["draws"])} kỳ, dữ liệu tới #{esc(analysis["last_id"])} '
-            f'ngày {day_label(analysis["last_date"])}.</p><p>{esc(analysis.get("verdict"))}</p>'
-            f'<p class="vl-muted">{esc(ev.get("text"))}</p><p class="vl-muted">Sổ dự báo: {esc(ledger)}</p>')
+            f'ngày {day_label(analysis["last_date"])}.</p><p>{esc(verdict_text(analysis))}</p>'
+            f'<p class="vl-muted">{esc(evidence_text(analysis))}</p><p class="vl-muted">Sổ dự báo: {esc(ledger)}</p>')
 
 
 def draw_card(product: str, draw: dict) -> str:
@@ -842,8 +923,7 @@ def overview(dashboard: dict) -> str:
             state = (("sắp quay, bộ số đã khoá" if nxt.get("drawn") is False else "đang chờ kết quả")
                      if nxt.get("awaiting_result") else "đã đăng ký trước kỳ" if nxt.get("registered") else "tham khảo")
             follow = f'<p>Dự báo kỳ #{esc(nxt.get("target_id"))}: {state}</p>'
-        ev = (analysis.get(code) or {}).get("evidence") or {}
-        signal = " · có tín hiệu thống kê" if ev.get("found") else ""
+        signal = " · có tín hiệu thống kê" if family_signal(analysis.get(code)) else ""
         tiles.append(f'<a class="vl-tile" href="{file}"><div class="vl-tile-heading"><h2>{esc(name)}</h2>'
                      f'<span class="vl-tile-arrow" aria-hidden="true">↗</span></div>'
                      f'<p>{head} · {esc(data.get("schedule") or desc)}{signal}</p>{result}{follow}</a>')

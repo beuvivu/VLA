@@ -35,6 +35,8 @@ on:
       - vietlott/src/vietlott_engine/core/config.py
       - vietlott/src/vietlott_engine/cli.py
       - vietlott/tests/test_fast_results_recovery.py
+      - vietlott/tests/test_fast_mirror_gate.py
+      - vietlott/data/seed/known_gaps.json
       - vietlott/src/vlm/forecast/**
       - vietlott/src/vlm/web/**
       - vietlott/scripts/build_site.py
@@ -80,13 +82,13 @@ jobs:
           ref: main
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version-file: .python-version
           cache: pip
           cache-dependency-path: vietlott/pyproject.toml
       - name: Cài crawler
         run: python -m pip install -e ".[dev,crawler]"
       - name: Kiểm thử hồi quy thu thập Keno và Bingo18
-        run: python -m pytest tests/test_fast_results_recovery.py -q
+        run: python -m pytest tests/test_fast_results_recovery.py tests/test_fast_mirror_gate.py -q
       - name: Đồng bộ main mới nhất trước khi cập nhật
         run: python scripts/persist_site.py sync
 
@@ -120,6 +122,13 @@ jobs:
           products = ('mega645', 'power655', 'lotto535', 'max3d', 'max3dpro', 'keno', 'bingo18')
           statuses = {'caught_up', 'behind_schedule', 'not_advancing', 'invalid_schedule',
                       'awaiting_publication', 'date_only'}
+          # Chỉ in NHÃN cố định, không bao giờ in câu lỗi: câu lỗi có thể mang địa chỉ kèm token.
+          kinds = (('historical verified draw gaps', 'khoảng hở lịch sử'),
+                   ('missing verified draw ranges', 'thiếu kỳ'),
+                   ('conflicting source results', 'nguồn mâu thuẫn'),
+                   ('remain unverified', 'kỳ chưa xác minh'),
+                   ('unverified fast-game mirror', 'bản sao chưa đủ tin'),
+                   ('failed validation', 'dòng sai cấu trúc'))
           data, source = None, None
           for filename, label in (('results-status.json', 'lượt cập nhật'),
                                   ('data/results/status.json', 'checkpoint')):
@@ -137,8 +146,8 @@ jobs:
           else:
               lines += [f'Nguồn tóm tắt: {source}',
                         'Lỗi worker: ' + ('có' if data.get('worker_error') else 'không'), '',
-                        '| Sản phẩm | Kỳ mới nhất | Ngày | Độ mới | Có lỗi |',
-                        '| --- | --- | --- | --- | --- |']
+                        '| Sản phẩm | Kỳ mới nhất | Ngày | Độ mới | Có lỗi | Loại lỗi |',
+                        '| --- | --- | --- | --- | --- | --- |']
               for product in products:
                   entry = data['products'].get(product)
                   if not isinstance(entry, dict):
@@ -150,8 +159,11 @@ jobs:
                   freshness = entry.get('freshness')
                   status = freshness.get('status') if isinstance(freshness, dict) else None
                   status = status if isinstance(status, str) and status in statuses else 'unavailable'
-                  error = 'có' if entry.get('error') else 'không'
-                  lines.append(f'| {product} | {draw} | {day} | {status} | {error} |')
+                  raw = entry.get('error')
+                  error = 'có' if raw else 'không'
+                  labels = [label for key, label in kinds if isinstance(raw, str) and key in raw]
+                  kind = ', '.join(labels) if labels else ('khác' if raw else '—')
+                  lines.append(f'| {product} | {draw} | {day} | {status} | {error} | {kind} |')
           text = '\n'.join(lines) + '\n'
           print(text, end='')
           if os.environ.get('GITHUB_STEP_SUMMARY'):

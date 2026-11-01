@@ -20,7 +20,7 @@ import argparse
 import io
 import json
 import subprocess
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from pathlib import Path
 from typing import Any
 
@@ -54,7 +54,7 @@ def cutoff_utc(target_date: str) -> datetime:
     """Giờ khoá của kỳ ``target_date`` (UTC)."""
     y, m, d = (int(part) for part in target_date.split("-"))
     local = datetime(y, m, d, CUTOFF_HOUR, CUTOFF_MINUTE, tzinfo=VN)
-    return local.astimezone(timezone.utc)
+    return local.astimezone(UTC)
 
 
 def reverse_of(suffix: str) -> str:
@@ -86,7 +86,7 @@ def simulation_row(
         "model_rank": rank,
         "loto": " ".join(loto),
         "source": source,
-        "recorded_at_utc": recorded_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "recorded_at_utc": recorded_at.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
 

@@ -16,7 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -108,7 +108,7 @@ def main() -> None:
     ap.add_argument("--refit-every", type=int, default=50)
     args = ap.parse_args()
     history = load_history(Path(args.data_dir))
-    report = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report = {"generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
               "last": args.last, "refit_every": args.refit_every, "current": CURRENT, "candidate": CANDIDATE}
     for mode in ("loto", "de"):
         report[mode] = run_mode(mode, history, args.last, args.refit_every)

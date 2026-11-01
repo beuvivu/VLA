@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import pandas as pd
@@ -64,7 +64,7 @@ def _payload(target: str, special: str, loto: list[str] | None = None) -> dict:
 
 
 def _utc(text: str) -> datetime:
-    return datetime.fromisoformat(text).astimezone(timezone.utc)
+    return datetime.fromisoformat(text).astimezone(UTC)
 
 
 def _row(target: str, special: str, when: str, loto: list[str] | None = None) -> dict:
@@ -87,7 +87,7 @@ def _prizes(special: str, loto_tails: list[str]) -> list[str]:
 
 
 def test_cutoff_is_ten_past_six_in_the_evening_vietnam_time() -> None:
-    assert L.cutoff_utc("2026-10-01") == datetime(2026, 10, 1, 11, 10, tzinfo=timezone.utc)
+    assert L.cutoff_utc("2026-10-01") == datetime(2026, 10, 1, 11, 10, tzinfo=UTC)
 
 
 def test_a_board_is_recorded_before_the_cutoff_and_the_last_one_before_it_wins() -> None:

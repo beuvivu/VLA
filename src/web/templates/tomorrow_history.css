@@ -1,0 +1,53 @@
+/* Tra cứu Đặc Biệt hôm sau: ưu tiên bảng đối chiếu, chỉ dùng token chung. */
+.app-tomorrow-page .app-tomorrow-shell{max-width:1280px;margin:0 auto;color:var(--ui-ink)}
+.app-tomorrow-header{margin:0 0 24px}
+.app-tomorrow-header>a{color:var(--ui-ink-soft);font-size:13px;text-decoration:none}
+.app-tomorrow-header h1{margin:12px 0 8px;font-size:clamp(24px,3vw,34px);letter-spacing:-.025em;line-height:1.2}
+.app-tomorrow-header p{margin:0;color:var(--ui-ink-2);font-size:14px;line-height:1.6}
+.app-tomorrow-controls{padding:20px 24px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface)}
+.app-tomorrow-pick{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+.app-tomorrow-pick label{font-weight:700;font-size:14px}
+.app-tomorrow-pick select{min-width:84px;min-height:44px;padding:4px 12px;border:1px solid var(--ui-border-strong);border-radius:8px;background:var(--ui-surface-2);color:var(--ui-special-ink);font:inherit;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.app-tomorrow-pick>span{font-size:12px;color:var(--ui-ink-soft)}
+body.app-tomorrow-page[data-ui-page] .sp-controls{margin:0;padding:0;border:0;background:none;box-shadow:none;gap:12px}
+.app-tomorrow-page .sp-marktools{width:100%;padding-top:12px;border-top:1px solid var(--ui-border)}
+.app-tomorrow-page .sp-chip{min-height:36px;border-radius:8px}
+.app-tomorrow-summary{margin:20px 0 16px;color:var(--ui-ink-2);font-size:14px;font-weight:600;line-height:1.6}
+.app-tomorrow-workspace{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch}
+.app-tomorrow-card{min-width:0;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface);overflow:hidden}
+.app-tomorrow-history{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0}
+.app-tomorrow-card>header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;padding:18px 20px;border-bottom:1px solid var(--ui-border)}
+.app-tomorrow-card h2{margin:0;font-size:16px;line-height:1.4}
+.app-tomorrow-card>header>span{color:var(--ui-ink-soft);font-size:12px}
+/* Bảng không quyết định chiều cao hàng lưới; khung cuộn lấp đầy chiều cao thẻ bên phải. */
+body.app-tomorrow-page .app-tomorrow-history .sp-scroll{width:100%;min-width:0;min-height:0;max-height:none;margin:0;padding:0;border:0;border-radius:0;overflow:auto;contain:size;box-shadow:none;backdrop-filter:none}
+.app-tomorrow-page #sp-grid{width:100%;min-width:560px;table-layout:fixed}
+.app-tomorrow-page #sp-grid th{padding:14px 10px;font-size:12px;white-space:normal;text-align:center;background:var(--ui-surface-2)}
+.app-tomorrow-page #sp-grid td{padding:14px 10px;text-align:center;white-space:normal;font-variant-numeric:tabular-nums}
+.app-tomorrow-page #sp-grid td:not(.marked){background:var(--ui-surface)}
+.app-tomorrow-page #sp-grid th:first-child{width:16%}
+.app-tomorrow-page #sp-grid th:nth-child(2),.app-tomorrow-page #sp-grid th:nth-child(4){width:16%}
+.app-tomorrow-page #sp-grid th:nth-child(3),.app-tomorrow-page #sp-grid th:nth-child(5){width:26%}
+.app-tomorrow-page #sp-grid td:nth-child(2),.app-tomorrow-page #sp-grid td:nth-child(4){padding-inline:4px}
+.app-tomorrow-page #sp-grid td:first-child{font-size:12px;color:var(--ui-ink-2);font-weight:500}
+.app-tomorrow-page #sp-grid td .sp-de{font-size:20px;font-weight:500;letter-spacing:.04em}
+.app-tomorrow-page #sp-grid td:not(.marked) .sp-de{color:var(--ui-ink)}
+.app-tomorrow-page #sp-grid td .sp-de b{font-weight:800}
+.app-tomorrow-page #sp-grid td:not(.marked) .sp-de b{color:var(--ui-special-ink)}
+.app-tomorrow-result{display:inline-flex;flex-direction:column;gap:4px;align-items:center}
+.app-tomorrow-next-date{color:var(--ui-ink-soft);font-size:11px;white-space:nowrap}
+.app-tomorrow-pending{font-size:12px;color:var(--ui-ink-soft);font-weight:500}
+.app-tomorrow-loto{text-align:left}
+.app-tomorrow-loto-total{display:block;margin-bottom:8px;color:var(--ui-ink-soft);font-size:11px}
+.app-tomorrow-loto-numbers{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.app-tomorrow-loto-numbers>span{display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap}
+.app-tomorrow-loto-numbers b{color:var(--ui-n3-ink);font-size:13px;font-weight:700}
+.app-tomorrow-loto-numbers small{color:var(--ui-ink-soft);font-size:10px}
+.app-tomorrow-stat>p{margin:14px 16px;font-size:12px;color:var(--ui-ink-soft);line-height:1.6}
+.app-tomorrow-frequencies{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px}
+.app-tomorrow-frequencies>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border-radius:8px;background:var(--ui-surface-2)}
+.app-tomorrow-frequencies b{font-size:19px;color:var(--ui-special-ink);font-variant-numeric:tabular-nums}
+.app-tomorrow-frequencies span{font-size:12px;color:var(--ui-ink-2)}
+.app-tomorrow-page .app-tomorrow-shell>.sp-note{margin:20px 0;padding:14px 16px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface);color:var(--ui-ink-soft);font-size:12px;line-height:1.7}
+@media(max-width:1050px){.app-tomorrow-workspace{grid-template-columns:minmax(0,1fr)}.app-tomorrow-history{display:block}body.app-tomorrow-page .app-tomorrow-history .sp-scroll{contain:none;max-height:72vh}.app-tomorrow-frequencies{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))}}
+@media(max-width:600px){.app-tomorrow-controls{padding:16px}.app-tomorrow-pick{gap:8px}.app-tomorrow-pick label{flex:1 1 60%}.app-tomorrow-pick>span{flex-basis:100%}.app-tomorrow-card>header{padding:14px 12px}.app-tomorrow-page #sp-grid th,.app-tomorrow-page #sp-grid td{padding:12px 7px}.app-tomorrow-page #sp-grid th{font-size:11px}.app-tomorrow-page #sp-grid td:first-child{font-size:11px}.app-tomorrow-page #sp-grid td .sp-de{font-size:18px}}

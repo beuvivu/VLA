@@ -47,10 +47,8 @@ def load_daily_forecast(data_dir: Path, anchor_date: str) -> dict | None:
                 or metadata.get("target_date") != target_date
             ):
                 return None
-            frame = pd.read_csv(
-                pred_dir / f"predict_next_{mode}_all_{target_date}.csv",
-                float_precision="round_trip",
-            )
+            # Mặc định của pandas ≥ 3.1 đã đúng từng bit (tests/core/test_csv_float_round_trip.py).
+            frame = pd.read_csv(pred_dir / f"predict_next_{mode}_all_{target_date}.csv")
             checked = probability_component(
                 frame, mode=mode, expected_target_date=target_date,
                 expected_anchor_date=anchor_date,

@@ -26,10 +26,10 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Cài đặt thư viện phụ thuộc
         # Việc này TỪNG chạy không cần cài gì: cả hai kịch bản khi ấy chỉ dùng

@@ -314,6 +314,22 @@ def _check_line(bt: dict, pro: dict, what: str) -> str:
     return f'<p class="app-vip-line" data-evidence-split>{html.escape(retro)} · {html.escape(later)}.</p>'
 
 
+def day_line(vip: dict) -> str:
+    """Thước theo KỲ: kỳ có ít nhất một trong k con về ≥ 2 nháy, so với chọn bừa cùng kỳ và với mức mà
+    MỌI cách chọn k con đạt được khi quay công bằng — để người đọc thấy "đa số kỳ trượt" là bản chất
+    của phép chọn, không phải lỗi của một mô hình."""
+    bt, pro, k = vip["backtest"], vip["prospective"], vip["config"]["top_k"]
+    fair = bt["day_fair"]
+    text = (f"Kỳ có ít nhất một trong {k} con về ≥ 2 nháy: {_count(bt['days_hit'])}/{_count(bt['draws'])} kỳ "
+            f"({_pct(bt['day_rate'], 1)}) · chọn bừa cùng kỳ {_pct(bt['day_random_rate'], 1)}")
+    if pro["draws"]:
+        text += (f" · sau {_date(pro['after'])}: {_count(pro['days_hit'])}/{_count(pro['draws'])} kỳ, "
+                 f"chọn bừa {_num(pro['days_expected'], 1)}")
+    text += (f". Quay công bằng thì mọi cách chọn {k} con đều chỉ đạt {_pct(fair, 1)} số kỳ, "
+             f"tức khoảng 1 kỳ trong {round(1 / fair)}.")
+    return f'<p class="app-vip-line app-vip-days" data-evidence-split>{html.escape(text)}</p>'
+
+
 def _strip(items: list[tuple[str, ...]], label: str, extra: str = "") -> str:
     """Dải số: mỗi mục là (số, dòng phụ, …); mỗi dòng phụ một thẻ ``small``."""
     lis = "".join(f"<li><b>{html.escape(big)}</b>"
@@ -353,6 +369,7 @@ def picks_card(vip: dict, bench: dict | None = None, *, picks: bool = True) -> s
         + f'<p class="app-vip-verdict" data-verdict="{v["state"]}">'
         f"<b>{html.escape(_HEADLINE[(v['state'], v['reason'])])}.</b></p>"
         + _check_line(vip["backtest"], vip["prospective"], f"top-{vip['config']['top_k']}")
+        + day_line(vip)
     )
 
 

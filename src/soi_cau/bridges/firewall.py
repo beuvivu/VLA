@@ -116,7 +116,7 @@ class FirewallGate:
         q = bh_fdr(frame["p_value"].to_numpy(dtype=float))
         survivors = frame.assign(q_value_fdr=q)
         survivors = survivors[survivors["q_value_fdr"] <= self.q_value].copy()
-        survivors.sort_values(["q_value_fdr", "p_value"], inplace=True)
+        survivors = survivors.sort_values(["q_value_fdr", "p_value"])
 
         if survivors.empty:
             return SurvivorSet(

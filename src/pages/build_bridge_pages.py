@@ -31,6 +31,8 @@ from core.paths import TEMPLATES
 TOOL_PAGE = "tao-phoi-tuan.html"
 TOOL_DRAWS = 600
 WEEKDAYS = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật")
+NUMBER_RANK_RULES = frozenset(RULES)
+NUMBER_RANK_LABELS = {1: "Nhất", 2: "Nhì", 3: "Ba"}
 
 #: Luật của từng kiểu, viết cho người đọc.
 RULE_TEXT = {
@@ -82,16 +84,42 @@ def form_card(key: str, cfg: dict, report: dict) -> str:
     )
 
 
-def static_grid(counts: dict[str, int]) -> str:
+def number_ranks(counts: dict[str, int], rule_key: str) -> dict[str, int]:
+    """Ba mức số đường cầu cao nhất, đồng hạng cùng màu, chỉ xét số có hơn bảy cầu."""
+    if rule_key not in NUMBER_RANK_RULES:
+        return {}
+    levels = sorted({count for count in counts.values() if count > 7}, reverse=True)[:3]
+    return {number: levels.index(count) + 1 for number, count in counts.items() if count in levels}
+
+
+def rank_legend(rule_key: str) -> str:
+    """Chú giải màu theo số đường cầu, không gán ý nghĩa tin cậy dự báo."""
+    if rule_key not in NUMBER_RANK_RULES:
+        return ""
+    labels = "".join(
+        f'<span class="app-cau-rank-key" data-rank="{rank}">{label}</span>'
+        for rank, label in NUMBER_RANK_LABELS.items()
+    )
+    return ('<p class="app-cau-rank-legend"><span>Số có &gt;7 đường cầu:</span>' + labels
+            + '<span>Ba mức số đường cầu cao nhất; đồng hạng cùng màu. Không phải độ tin cậy.</span></p>')
+
+
+def static_grid(counts: dict[str, int], *, rule_key: str = "") -> str:
     """Bảng đầu 0–9 dựng sẵn — đúng khi chưa ai đổi tham số và khi JS không chạy."""
+    ranks = number_ranks(counts, rule_key)
     rows = []
     for head in range(10):
-        cells = "".join(
-            (f'<td><span class="app-cau-cell"><b>{head}{tail}</b><span>{counts[f"{head}{tail}"]} cầu</span></span></td>'
-             if f"{head}{tail}" in counts else f'<td class="app-cau-empty"><span>{head}{tail}</span></td>')
-            for tail in range(10)
-        )
-        rows.append(f'<tr><th scope="row">Đầu {head}</th>{cells}</tr>')
+        cells = []
+        for tail in range(10):
+            number = f"{head}{tail}"
+            if number in counts:
+                rank = ranks.get(number)
+                attr = f' data-cau-rank="{rank}"' if rank else ""
+                cells.append(f'<td><span class="app-cau-cell" data-number="{number}"{attr}>'
+                             f'<b>{number}</b><span>{counts[number]} cầu</span></span></td>')
+            else:
+                cells.append(f'<td class="app-cau-empty"><span>{number}</span></td>')
+        rows.append(f'<tr><th scope="row">Đầu {head}</th>{"".join(cells)}</tr>')
     heads = ''.join(f'<th scope="col">{tail}</th>' for tail in range(10))
     return ('<div class="app-cau-grid-wrap" tabindex="0" role="region" aria-label="Bảng cầu theo đầu và đuôi">'
             '<table class="app-cau-grid"><caption class="ui-sr-only">Số cầu theo các số 00 đến 99</caption>'
@@ -170,7 +198,8 @@ def render(key: str, report: dict) -> str:
              f'{data["total"]} cầu chạy từ {cfg["count"]} ngày, cầu dài nhất {data["longest"]} ngày.</p>'
              f'<p class="app-cau-help">Rê chuột hoặc chạm vào một ô để thấy các vị trí tạo cầu trên bảng kết quả; '
              f'bấm vào ô để chọn từng cầu và xem cách tính.</p>'
-             f'<div id="app-cau-grid">{static_grid(data["counts"])}</div>'
+             f'{rank_legend(key)}'
+             f'<div id="app-cau-grid">{static_grid(data["counts"], rule_key=key)}</div>'
              '<div id="app-cau-detail" class="app-cau-detail" aria-live="polite"></div>',
              title="Bảng phân bố cầu", lift=True,
              aside='<span class="app-analysis-caption">Đầu 0–9 · Đuôi 0–9</span>')
