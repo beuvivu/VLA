@@ -24,17 +24,17 @@ dependencies = [
   "scipy>=1.11",
   "scikit-learn>=1.4",
   "pydantic>=2.7,<3",
-  "pydantic-settings>=2.3",
+  "pydantic-settings>=2.16.0",
   "httpx[socks]>=0.27",
   "sqlalchemy>=2.0,<3",
   "beautifulsoup4>=4.12",
-  "duckdb>=1.1",
+  "duckdb>=1.5.6",
   "fastapi>=0.115",
-  "uvicorn[standard]>=0.30",
+  "uvicorn[standard]>=0.54.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.2", "ruff>=0.6", "mypy>=1.11", "pyyaml>=6"]
+dev = ["pytest>=8.2", "ruff>=0.6", "mypy>=2.4.0", "pyyaml>=6"]
 crawler = ["curl_cffi>=0.13,<1"]
 postgres = ["psycopg[binary]>=3.2,<4"]
 ml = ["xgboost>=2.0,<4", "lightgbm>=4.0,<5"]

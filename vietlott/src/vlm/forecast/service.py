@@ -122,11 +122,19 @@ def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
         return
     document = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {'schema_version': 1, 'products': {}}
     if components:
-        document['products'][model.product.value] = {
+        entry = {
             'last_id': model.last_id, 'last_date': model.last_date,
             'generated_at': datetime.now(timezone.utc).isoformat(),
             'confidence': model.confidence(), 'components': components,
         }
+        # Cùng nội dung thì giữ nguyên tệp và dấu giờ của lần đổi thật: tệp này được commit, và 32/113
+        # commit tuần 25-10 → 01-11-2026 chỉ mang mỗi `generated_at` mới. So sau một vòng JSON để
+        # số thực, tuple… ở cùng dạng với bản đọc từ đĩa.
+        unchanged = json.loads(json.dumps(entry, ensure_ascii=False, allow_nan=False))
+        old = document['products'].get(model.product.value)
+        if old is not None and {**unchanged, 'generated_at': old.get('generated_at')} == old:
+            return
+        document['products'][model.product.value] = entry
     else:
         document['products'].pop(model.product.value, None)
     payload = json.dumps(document, ensure_ascii=False, allow_nan=False, separators=(',', ':'))

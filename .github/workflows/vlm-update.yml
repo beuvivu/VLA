@@ -110,7 +110,7 @@ jobs:
 
       - name: Lưu trang đã dựng
         if: always() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: vlm-site-${{ github.run_id }}-${{ github.run_attempt }}
           path: vietlott/site
