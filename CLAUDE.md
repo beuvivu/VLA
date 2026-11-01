@@ -257,12 +257,15 @@ là xong.
   `test_no_page_spells_out_where_the_data_lives` (mọi trang) và
   `test_the_live_page_never_renders_a_source_field` (trang live).
 - **Chỉ `Content-Security-Policy` được phép chứa tên host thật.** Phép kiểm
-  `test_the_only_place_a_real_host_may_appear_is_the_policy_header`. Lưu ý
-  không có phép kiểm nào bảo đảm MỌI trang đều khai CSP — đừng nói là có.
+  `test_the_only_place_a_real_host_may_appear_is_the_policy_header`. Từ 01-11-2026
+  `tests/site/test_published_page_policy.py` buộc MỌI trang khai đúng MỘT thẻ CSP trong `<head>`,
+  trước mọi `<script>`/`<link>`/`<style>`, trùng từng chữ `web_security.CONTENT_SECURITY_POLICY`
+  (chỉ `connect-src` được nới cho host Worker). Đọc bằng bộ phân tích HTML: ba trang landing có
+  thuộc tính đã chuẩn hoá thứ tự (`content` trước `http-equiv`), phép dò chuỗi trượt chúng.
 - **`frame-ancestors` bị bỏ qua trong `<meta>`.** Nó chỉ có hiệu lực ở HTTP
   header, và GitHub Pages không đặt được header.
 - **Giữ `docs/.nojekyll`.** Thiếu nó, Jekyll ăn mất mọi tệp bắt đầu bằng `_`.
-  Chưa có phép kiểm nào canh việc này.
+  `test_github_pages_keeps_files_that_start_with_an_underscore` buộc tệp có và được git theo dõi.
 - **Không thêm workflow nào xuất bản Pages từ GỐC KHO.** `static.yml` từng
   làm thế và thắng cuộc đua deploy với `pages.yml`, khiến site 404.
   `pages.yml` là workflow deploy duy nhất.

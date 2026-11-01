@@ -35,6 +35,12 @@
   lẫn kho NhanAZ.
   - Khoảng hở nằm trọn trong sổ không còn là lỗi đồng bộ, nên workflow thôi đỏ mãi vì thứ không nguồn nào lấp được.
   - Không phải thông báo loại kỳ, không có số nào được suy ra. Khoảng hở mới hoặc chỉ trùng một phần vẫn là lỗi.
+- **Bản tóm tắt đa tác tử không còn ghi lại khi chỉ đổi `generated_at`.** `multi-agent-summary.json` được commit
+  vào kho; tuần 25-10 → 01-11-2026 có 32/113 commit chạm tệp chỉ mang mỗi dấu giờ mới. Nay cùng nội dung thì
+  giữ nguyên tệp (và dấu giờ của lần đổi thật). Trang không in dấu giờ ấy.
+- **Phụ thuộc:** cận dưới theo bản CI đang cài (`pydantic-settings>=2.16.0`, `duckdb>=1.5.6`,
+  `uvicorn[standard]>=0.54.0`, `mypy>=2.4.0`); `requirements*.txt` và `pyproject.toml` bị buộc khớp từng dòng
+  (`test_requirements_files_say_the_same_as_pyproject`): dependabot chỉ sửa tệp txt.
 - **Python 3.15:** Docker `python:3.15-slim`; bộ cài ưu tiên 3.15 (vẫn nhận 3.11+); ma trận CI 3.11 (sàn) + 3.15.
   Phép kiểm `test_vlm_hit_benchmark` dùng bước `np.timedelta64(3, 'D')`: numpy sắp cấm bước số nguyên cho ngày.
 

@@ -24,6 +24,13 @@ lưới dự phòng: đo trên 32 mốc, nó trễ trung vị 4 giờ 04 phút. 
 giữ tối đa một lượt chạy và một lượt chờ; lượt chờ mới thay lượt chờ cũ, nên kích hoạt trùng không
 chạy chồng.
 
+Trên trang Actions, lượt chờ bị thay hiện là `cancelled` với **0 job**: đó không phải lỗi, cũng không mất
+việc, vì `update-data.yml` chỉ nhận tham số `reason` và tự xác định việc cần làm từ dữ liệu trên `main`.
+`daily_update.yml` (nhóm `daily-xsmb-collect`) cũng vậy: lượt cron đến trước giữ nhóm và CHỜ trong runner
+tới khung quay, các lượt đến sau xếp hàng và thay nhau. Ví dụ ngày 31-10-2026: lượt 06:56 UTC giữ nhóm và
+xong 11:32 UTC; năm lượt đến lúc 07:34 → 10:36 UTC bị thay (0 job); lượt 10:59 UTC chạy sau và xanh.
+Đáng lo chỉ là lượt `cancelled` CÓ job đã chạy (job quá `timeout-minutes`).
+
 ## 2. Chuỗi Vietlott
 
 | Bước | Khi nào | Workflow | Việc làm | Bước kế |

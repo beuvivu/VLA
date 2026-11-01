@@ -108,3 +108,19 @@ def test_disabling_multi_agent_removes_stale_public_summary(tmp_path):
                      config=cfg.model_copy(update={'multi_agent': False}), refit=True, issue=False)
     report = json.loads((tmp_path / 'multi-agent-summary.json').read_text())
     assert 'mega645' not in report['products']
+
+
+def test_refreshing_with_nothing_new_keeps_the_committed_summary_byte_for_byte(tmp_path):
+    """Tệp tóm tắt được commit vào kho. Làm mới không có kỳ mới chỉ đổi `generated_at`, nên không được ghi lại;
+    có kỳ mới thì phải ghi, kèm dấu giờ mới."""
+    from vlm.forecast.service import refresh_snapshot
+    cfg = MLConfig(backends=(), multi_agent=True, bootstrap=8, search_nodes=1)
+    path = tmp_path / 'multi-agent-summary.json'
+    refresh_snapshot('mega645', mega_series(8), tmp_path, config=cfg, issue=False)
+    first = path.read_bytes()
+    refresh_snapshot('mega645', mega_series(8), tmp_path, config=cfg, issue=False)
+    assert path.read_bytes() == first
+    refresh_snapshot('mega645', mega_series(9), tmp_path, config=cfg, issue=False)
+    import json
+    before, after = json.loads(first)['products']['mega645'], json.loads(path.read_bytes())['products']['mega645']
+    assert after['last_id'] == before['last_id'] + 1 and after['generated_at'] > before['generated_at']

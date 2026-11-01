@@ -120,3 +120,19 @@ def test_audit_resolves_defaults_inside_the_project(tmp_path: Path, monkeypatch:
     monkeypatch.setattr(gap_analyzer, "_run", fake_run)
     assert gap_analyzer.main(["--game", "mega645"]) == 0
     assert seen["cwd"] == ROOT.resolve() and seen["seed"] == SEED.resolve()
+
+
+def _requirement_lines(path: Path) -> list[str]:
+    """Dòng yêu cầu thật của một tệp ``requirements*.txt``: bỏ chú thích, dòng trống và ``-r``."""
+    lines = [line.split("#", 1)[0].strip() for line in path.read_text(encoding="utf-8").splitlines()]
+    return [line for line in lines if line and not line.startswith("-r")]
+
+
+def test_requirements_files_say_the_same_as_pyproject() -> None:
+    """Hai nơi khai phụ thuộc: ``pyproject.toml`` (cài bằng ``pip install -e``) và ``requirements*.txt``
+    (bộ cài, dependabot). Dependabot chỉ sửa tệp txt, nên lệch là chuyện đã xảy ra: phải khớp từng dòng."""
+    import tomllib
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    assert _requirement_lines(ROOT / "requirements.txt") == project["dependencies"]
+    assert _requirement_lines(ROOT / "requirements-dev.txt") == project["optional-dependencies"]["dev"]
