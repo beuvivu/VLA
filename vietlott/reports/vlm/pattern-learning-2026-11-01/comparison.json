@@ -1,0 +1,279 @@
+{
+  "protocol": "retrospective_prequential_fixed_split",
+  "initial_draws": 400,
+  "holdout_draws": 200,
+  "baseline_file": "baseline.json.gz",
+  "candidate_file": "patterns.json.gz",
+  "code": "PR #190 ghép với main 01-11-2026 (chuyên gia hỗn hợp Bayes cho bộ chữ số, checkpoint v5)",
+  "data_source": "repository seed only; no results journal, archived SQLite, collector, checkpoint or live ledger",
+  "multiple_testing": "BH over 14 exploratory comparisons: 7 candidate-vs-current + 7 candidate-vs-fair",
+  "patterns_off_identical_to_main": {
+    "mega645": true,
+    "power655": true,
+    "lotto535": true,
+    "keno": true,
+    "bingo18": true,
+    "max3d": true,
+    "max3dpro": true
+  },
+  "paired_comparison": [
+    {
+      "product": "mega645",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0006554099361951061,
+      "hac_standard_error": 0.002205373660583761,
+      "ci95": [
+        -0.005004310958703698,
+        0.003693491086313486
+      ],
+      "p_value_greater": 0.6163998350385594,
+      "hac_lag": 6,
+      "q_value_bh": 0.8629597690539832,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "power655",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.00014530253874893263,
+      "hac_standard_error": 0.0002117567670945358,
+      "ci95": [
+        -0.0005628776814105968,
+        0.0002722726039127315
+      ],
+      "p_value_greater": 0.7527591414025605,
+      "hac_lag": 4,
+      "q_value_bh": 0.8667586713664447,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "lotto535",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.000683054803532368,
+      "hac_standard_error": 0.00061144045771157,
+      "ci95": [
+        -0.001888788815536986,
+        0.00052267920847225
+      ],
+      "p_value_greater": 0.8667586713664446,
+      "hac_lag": 4,
+      "q_value_bh": 0.8667586713664447,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "keno",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 4.375115624149828e-05,
+      "hac_standard_error": 0.00017005688878442903,
+      "ci95": [
+        -0.00029159363849204915,
+        0.0003790959509750457
+      ],
+      "p_value_greater": 0.39886489924044316,
+      "hac_lag": 4,
+      "q_value_bh": 0.8475006647797804,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "bingo18",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 0.0003336135944151408,
+      "hac_standard_error": 0.0010412593576790102,
+      "ci95": [
+        -0.0017197046102233604,
+        0.002386931799053642
+      ],
+      "p_value_greater": 0.3748063213866913,
+      "hac_lag": 4,
+      "q_value_bh": 0.8475006647797804,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "max3d",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 0.0018817271532310543,
+      "hac_standard_error": 0.0065575137717231785,
+      "ci95": [
+        -0.011049405042939464,
+        0.014812859349401573
+      ],
+      "p_value_greater": 0.38749637559284983,
+      "hac_lag": 4,
+      "q_value_bh": 0.8475006647797804,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "max3dpro",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 8.486226098781913e-05,
+      "hac_standard_error": 0.002145819901622274,
+      "ci95": [
+        -0.004146601336801878,
+        0.0043163258587775154
+      ],
+      "p_value_greater": 0.4842860941598745,
+      "hac_lag": 4,
+      "q_value_bh": 0.8475006647797804,
+      "q_value_bh_14": 0.9937493964195738
+    }
+  ],
+  "fair_comparison": [
+    {
+      "product": "mega645",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0008391431410558603,
+      "hac_standard_error": 0.0022222427697242723,
+      "ci95": [
+        -0.005221309313729781,
+        0.0035430230316180608
+      ],
+      "p_value_greater": 0.6465883182530774,
+      "hac_lag": 5,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "power655",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0004403401377436289,
+      "hac_standard_error": 0.0005272062015233065,
+      "ci95": [
+        -0.001479967857007622,
+        0.0005992875815203641
+      ],
+      "p_value_greater": 0.7971184127167554,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "lotto535",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.001164772798343252,
+      "hac_standard_error": 0.0007883602426960513,
+      "ci95": [
+        -0.002719384938155631,
+        0.00038983934146912674
+      ],
+      "p_value_greater": 0.9289374305218289,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "keno",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.0005357902683915227,
+      "hac_standard_error": 0.00021203415587381103,
+      "ci95": [
+        -0.0009539124096717808,
+        -0.00011766812711126474
+      ],
+      "p_value_greater": 0.9937493964195738,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "bingo18",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 4.96192502805215e-05,
+      "hac_standard_error": 0.0010203987469261566,
+      "ci95": [
+        -0.0019625627364668018,
+        0.0020618012370278447
+      ],
+      "p_value_greater": 0.480680976764474,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "max3d",
+      "observations": 200,
+      "mean_log_gain_difference_nats": 0.0040047399755864885,
+      "hac_standard_error": 0.011616981099544944,
+      "ci95": [
+        -0.01890344192811009,
+        0.02691292187928307
+      ],
+      "p_value_greater": 0.36565406580059107,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    },
+    {
+      "product": "max3dpro",
+      "observations": 200,
+      "mean_log_gain_difference_nats": -0.002955572835977591,
+      "hac_standard_error": 0.016076174104522795,
+      "ci95": [
+        -0.034657089567921885,
+        0.028745943895966707
+      ],
+      "p_value_greater": 0.5726597794912119,
+      "hac_lag": 4,
+      "q_value_bh": 0.9937493964195738,
+      "q_value_bh_14": 0.9937493964195738
+    }
+  ],
+  "products": {
+    "mega645": {
+      "current": -0.00018373320486075428,
+      "patterns": -0.0008391431410558603,
+      "first_date": "2025-06-22",
+      "last_date": "2026-09-30",
+      "first_id": 1370,
+      "last_id": 1569
+    },
+    "power655": {
+      "current": -0.0002950375989946963,
+      "patterns": -0.0004403401377436289,
+      "first_date": "2025-06-21",
+      "last_date": "2026-10-01",
+      "first_id": 1206,
+      "last_id": 1405
+    },
+    "lotto535": {
+      "current": -0.00048171799481088406,
+      "patterns": -0.001164772798343252,
+      "first_date": "2026-06-24",
+      "last_date": "2026-10-01",
+      "first_id": 721,
+      "last_id": 920
+    },
+    "keno": {
+      "current": -0.0005795414246330211,
+      "patterns": -0.0005357902683915227,
+      "first_date": "2026-09-28",
+      "last_date": "2026-10-02",
+      "first_id": 297308,
+      "last_id": 297782
+    },
+    "bingo18": {
+      "current": -0.0002839943441346193,
+      "patterns": 4.96192502805215e-05,
+      "first_date": "2026-09-28",
+      "last_date": "2026-10-02",
+      "first_id": 188600,
+      "last_id": 189249
+    },
+    "max3d": {
+      "current": 0.0021230128223554347,
+      "patterns": 0.0040047399755864885,
+      "first_date": "2025-06-20",
+      "last_date": "2026-09-30",
+      "first_id": 940,
+      "last_id": 1139
+    },
+    "max3dpro": {
+      "current": -0.0030404350969654103,
+      "patterns": -0.002955572835977591,
+      "first_date": "2025-06-21",
+      "last_date": "2026-10-01",
+      "first_id": 587,
+      "last_id": 786
+    }
+  },
+  "decision": "keep_patterns_disabled_by_default",
+  "live_certification": false
+}

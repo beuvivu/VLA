@@ -41,6 +41,12 @@
 - **Phụ thuộc:** cận dưới theo bản CI đang cài (`pydantic-settings>=2.16.0`, `duckdb>=1.5.6`,
   `uvicorn[standard]>=0.54.0`, `mypy>=2.4.0`); `requirements*.txt` và `pyproject.toml` bị buộc khớp từng dòng
   (`test_requirements_files_say_the_same_as_pyproject`): dependabot chỉ sửa tệp txt.
+- **Challenger mẫu hình (PR #190, 24-10-2026) ghép với main, mặc định TẮT.** Bốn chuyên gia `bayes_short`,
+  `bayes_long`, `markov_repeat`, `gap_hazard` bật bằng `--patterns` / `VQE_ML_PATTERNS=true`.
+  - Cùng checkpoint version 5 với chuyên gia hỗn hợp Bayes. Khoá `patterns` là tuỳ chọn, nên checkpoint production
+    nạp nguyên vẹn. Thứ tự chuyên gia là cơ sở → bayes → mẫu hình.
+  - Đo lại: tắt thì trùng `main` từng bit (7 sản phẩm × 200 kỳ); bật thì không cải thiện (q = 0,99).
+    Xem `reports/vlm/pattern-learning-2026-11-01/`.
 - **Python 3.15:** Docker `python:3.15-slim`; bộ cài ưu tiên 3.15 (vẫn nhận 3.11+); ma trận CI 3.11 (sàn) + 3.15.
   Phép kiểm `test_vlm_hit_benchmark` dùng bước `np.timedelta64(3, 'D')`: numpy sắp cấm bước số nguyên cho ngày.
 
