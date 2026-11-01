@@ -16,6 +16,6 @@
     "core_three": 64
   },
   "trained_through_target_date": null,
-  "evaluated_at_utc": "2026-11-01T11:39:20Z",
+  "evaluated_at_utc": "2026-11-01T12:36:30Z",
   "reason": "Stacked ML history is not mature for any supported tier: five_component=28, four_with_cau=28, four_with_stat=64, core_three=64"
 }
