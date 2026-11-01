@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-11-01T12:37:50Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-11-01T18:09:36Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -924,7 +924,7 @@
 | 16 | **97** | 1.856 | trễ 7.0 · trước=trượt · mẫu=45 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 17 | **48** | 1.815 | trễ 7.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 18 | **79** | 1.649 | trễ 14.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
-| 19 | **07** | 1.491 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
+| 19 | **58** | 1.491 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
 | 20 | **84** | 1.491 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
