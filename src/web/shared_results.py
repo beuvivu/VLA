@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from datetime import date
 from html import escape
-from typing import Mapping, Any
+from typing import Any
+from collections.abc import Mapping
 
 from web.web_security import json_for_html_script
 from core.paths import TEMPLATES

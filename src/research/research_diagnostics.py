@@ -57,7 +57,7 @@ def _entropy_ratio(counts: np.ndarray) -> float:
 
 
 def _weekday_test(dates: pd.Series, de_tail: np.ndarray, *, permutations: int, seed: int) -> dict:
-    weekday = pd.to_datetime(dates).dt.weekday.to_numpy(dtype=int)
+    weekday = pd.to_datetime(dates).dt.day_of_week.to_numpy(dtype=int)
     table = np.zeros((7, 10), dtype=int)
     np.add.at(table, (weekday, de_tail % 10), 1)
     keep = table.sum(axis=1) > 0

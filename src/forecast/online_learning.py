@@ -699,7 +699,9 @@ def _locked(path: Path):
 
 
 def _prediction_frame(path: Path, mode: str) -> tuple[pd.DataFrame, np.ndarray]:
-    frame = pd.read_csv(path, float_precision="round_trip")
+    # Bộ đọc mặc định của pandas ≥ 3.1 đã khôi phục float đúng từng bit (bản ghim trong
+    # requirements.txt); tests/core/test_csv_float_round_trip.py canh giả định ấy.
+    frame = pd.read_csv(path)
     if not {"number", "prob"}.issubset(frame.columns) or len(frame) != 100:
         raise ValueError("Tệp dự báo phải có đủ 100 số và cột xác suất")
     numbers = pd.to_numeric(frame["number"], errors="raise").to_numpy(dtype=float)

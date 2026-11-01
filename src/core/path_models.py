@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from numbers import Integral, Real
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,7 @@ import pandas as pd
 # We reconstruct each field with zero-fill to keep positions stable.
 # This makes "paths" reproducible even when source stores numbers as int.
 
-FIELD_WIDTHS: List[Tuple[str, int]] = [
+FIELD_WIDTHS: list[tuple[str, int]] = [
     ("special", 5),
     ("prize1", 5),
     ("prize2_1", 5),
@@ -43,12 +42,12 @@ FIELD_WIDTHS: List[Tuple[str, int]] = [
 ]
 
 # Precompute position metadata: index -> (field, digit_index_in_field)
-_POSITION_LABELS: List[str] | None = None
-_SCOPE_INDICES: Dict[str, List[int]] | None = None
+_POSITION_LABELS: list[str] | None = None
+_SCOPE_INDICES: dict[str, list[int]] | None = None
 
 
-def _build_position_labels() -> List[str]:
-    labels: List[str] = []
+def _build_position_labels() -> list[str]:
+    labels: list[str] = []
     for field, width in FIELD_WIDTHS:
         # digit order: d0..d{width-1} (left->right)
         for k in range(width):
@@ -56,7 +55,7 @@ def _build_position_labels() -> List[str]:
     return labels
 
 
-def get_position_labels() -> List[str]:
+def get_position_labels() -> list[str]:
     global _POSITION_LABELS
     if _POSITION_LABELS is None:
         _POSITION_LABELS = _build_position_labels()
@@ -70,7 +69,7 @@ def index_to_label(idx: int) -> str:
     return labels[idx]
 
 
-def get_scope_indices(scope: str) -> List[int]:
+def get_scope_indices(scope: str) -> list[int]:
     """Return allowed indices for a given scope.
 
     scope:
@@ -95,7 +94,7 @@ def get_scope_indices(scope: str) -> List[int]:
 
 def build_rawdata_digits_from_row(row: pd.Series) -> np.ndarray:
     """Flatten all prizes into a digit array (0..9) with stable positions."""
-    parts: List[str] = []
+    parts: list[str] = []
     for field, width in FIELD_WIDTHS:
         v = int(row[field])
         parts.append(str(v).zfill(width))

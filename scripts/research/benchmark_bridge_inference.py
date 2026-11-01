@@ -43,7 +43,7 @@ import hashlib
 import json
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 
 import numpy as np
@@ -361,7 +361,7 @@ def main() -> None:
         parts = [run_part(args.last, args.workers, k, args.parts) for k in range(1, args.parts + 1)]
     raw, _, dates, _ = _history()
     run = run_identity(raw, last=args.last, parts=args.parts)
-    report = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report = {"generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
               "last": args.last,
               "window_days": PRODUCTION_WINDOW_DAYS,
               "run": run,

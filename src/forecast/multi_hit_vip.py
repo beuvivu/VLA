@@ -475,7 +475,7 @@ class VIPMultiHitModel:
         model.fit(bt.oos_scores.reshape(-1, 1), bt.oos_labels)
         return lambda s: model.predict_proba(np.asarray(s, dtype=float).reshape(-1, 1))[:, 1]
 
-    def predict_next(self) -> "VIPReport":
+    def predict_next(self) -> VIPReport:
         """Dự báo kỳ KẾ TIẾP (hàng T của đặc trưng) kèm bằng chứng walk-forward."""
         bt = self.backtest()
         t = len(self.draws)

@@ -6,7 +6,8 @@ import math
 from calendar import monthrange
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 import pandas as pd

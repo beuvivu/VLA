@@ -85,7 +85,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
+
       - run: python -m pip install playwright==1.55.0 'pytest>=9.1.1,<10'
       - run: python -m playwright install --with-deps chromium
       - name: Kiểm menu dài bằng thao tác cuộn trên điện thoại
@@ -124,10 +125,10 @@ jobs:
       - name: Lấy mã nguồn
         uses: actions/checkout@v7
 
-      - name: Thiết lập Python 3.11
+      - name: Thiết lập Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
 
       - name: Thiết lập Node 22
         # Bốn phép kiểm đối chiếu Python/JS gọi `node` để chạy bản mã của

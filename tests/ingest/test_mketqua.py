@@ -5,7 +5,7 @@ import unittest
 from datetime import date
 from pathlib import Path as _Path
 
-sys.path.insert(0, str((_Path(__file__).resolve().parents[2] / "src")))
+sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "src"))
 
 from ingest.sources import MketquaSource
 

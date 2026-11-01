@@ -85,7 +85,7 @@ class DirichletPrior:
         rows: np.ndarray,
         half_lives: tuple[float, ...] = (30.0, 90.0, 180.0, 365.0, 730.0, np.inf),
         alphas: tuple[float, ...] = (10.0, 30.0, 100.0, 300.0, 1000.0, 3000.0, 10000.0),
-    ) -> "DirichletPrior":
+    ) -> DirichletPrior:
         """Chọn (h, α) theo logloss trên các hàng ``rows`` (nhãn = kỳ t+1)."""
         y = hit[rows + 1].astype(np.float64)
         best, best_loss = cls(mode), np.inf
@@ -112,7 +112,7 @@ class Calibrator:
         self.method = method
         self._model = None
 
-    def fit(self, p: np.ndarray, y: np.ndarray) -> "Calibrator":
+    def fit(self, p: np.ndarray, y: np.ndarray) -> Calibrator:
         p, y = p.reshape(-1), y.reshape(-1)
         if self.method == "platt":
             self._model = LogisticRegression(C=1e6, max_iter=1000).fit(logit(p)[:, None], y)
@@ -216,7 +216,7 @@ class BayesianLGBModel:
             z = z + self.booster.predict(design, num_iteration=self.rounds, raw_score=True)
         return sigmoid(z).reshape(len(rows), 100)
 
-    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> "BayesianLGBModel":
+    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> BayesianLGBModel:
         cfg = self.config
         rows = np.asarray(rows, dtype=np.int64)
         if rows.size and rows.max() + 1 >= len(hit):
@@ -304,7 +304,7 @@ class ConstantModel:
     def __init__(self, mode: Mode):
         self.mode = mode
 
-    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> "ConstantModel":
+    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> ConstantModel:
         return self
 
     def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray:

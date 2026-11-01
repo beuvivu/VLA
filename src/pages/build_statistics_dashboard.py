@@ -12,7 +12,7 @@ import html
 import calendar
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -662,15 +662,25 @@ def _full_special_boards(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
         return empty_week, empty_month
     iso = view["date"].dt.isocalendar()
     view["week_key"] = iso["year"].astype(str) + "-W" + iso["week"].astype(str).str.zfill(2)
-    view["weekday"] = view["date"].dt.weekday.map(dict(enumerate(WEEKDAY_COLS)))
+    view["weekday"] = view["date"].dt.day_of_week.map(dict(enumerate(WEEKDAY_COLS)))
     view["month_key"] = view["date"].dt.strftime("%Y-%m")
     view["day"] = view["date"].dt.strftime("%d")
     week = view.pivot(index="week_key", columns="weekday", values="special")
     month = view.pivot(index="month_key", columns="day", values="special")
     return (
-        week.reindex(columns=WEEKDAY_COLS).fillna("").sort_index().reset_index(),
-        month.reindex(columns=day_cols).fillna("").sort_index().reset_index(),
+        _blank_missing(week.reindex(columns=WEEKDAY_COLS)).sort_index().reset_index(),
+        _blank_missing(month.reindex(columns=day_cols)).sort_index().reset_index(),
     )
+
+
+def _blank_missing(frame: pd.DataFrame) -> pd.DataFrame:
+    """Ô thiếu thành chuỗi rỗng; CHỈ cột có ô thiếu đổi sang object — đúng việc pandas vẫn ngầm làm.
+
+    pandas 3.1 cảnh báo `fillna("")` trên cột số sẽ bị cấm. Đổi tường minh từng cột cho cùng giá trị,
+    cùng kiểu và cùng cách in như trước (kiểm trên pandas 3.0.5 và 3.1.0).
+    """
+    holes = frame.columns[frame.isna().any()]
+    return frame.astype({column: object for column in holes}).fillna("")
 
 
 def _board_week_table(df: pd.DataFrame) -> str:

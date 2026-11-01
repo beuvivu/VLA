@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -177,7 +177,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--data-dir", default=str(ROOT / "data"))
     args = ap.parse_args()
-    report = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report = {"generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
               **run(Path(args.data_dir))}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

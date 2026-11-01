@@ -33,7 +33,7 @@ import json
 from dataclasses import dataclass
 from math import comb, sqrt
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd

@@ -15,7 +15,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 from zoneinfo import ZoneInfo
 
 import requests

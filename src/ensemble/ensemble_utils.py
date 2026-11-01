@@ -4,7 +4,8 @@ import json
 from dataclasses import dataclass
 from numbers import Integral
 from pathlib import Path
-from typing import Final, Iterable
+from typing import Final
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -199,7 +200,7 @@ class EnsembleWeights:
     w_active: float = 0.0
     w_stable: float = 0.0
 
-    def normalized(self) -> "EnsembleWeights":
+    def normalized(self) -> EnsembleWeights:
         arr = np.array(
             [self.w_ml, self.w_cau, self.w_stat, self.w_active, self.w_stable],
             dtype=float,

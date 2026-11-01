@@ -6,7 +6,6 @@ import argparse
 import json
 from datetime import date
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -39,7 +38,7 @@ def _parse_date(s: str) -> date:
     return date.fromisoformat(s)
 
 
-def _resolve_anchor_date(dates: list[date], anchor: Optional[date]) -> date:
+def _resolve_anchor_date(dates: list[date], anchor: date | None) -> date:
     if anchor is None:
         return dates[-1]
     if anchor not in dates:

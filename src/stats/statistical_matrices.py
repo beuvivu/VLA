@@ -40,7 +40,7 @@ class StatsOutputs:
     excel_dir: Path
 
     @classmethod
-    def from_paths(cls, paths: RepoPaths) -> "StatsOutputs":
+    def from_paths(cls, paths: RepoPaths) -> StatsOutputs:
         return cls(data_dir=paths.data_dir / "stats" / "advanced", images_dir=paths.images_dir, excel_dir=paths.data_dir / "excel")
 
 
@@ -328,7 +328,7 @@ def _special_boards(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, p
     df["special_2d"] = (df["special"].astype(int) % 100).map(_fmt2)
     df["special_full"] = df["special"].astype(int).map(lambda x: f"{x:05d}")
     df["week_key"] = _period_series(df["date"], "week")
-    df["weekday"] = pd.to_datetime(df["date"]).dt.weekday.map({0: "T2", 1: "T3", 2: "T4", 3: "T5", 4: "T6", 5: "T7", 6: "CN"})
+    df["weekday"] = pd.to_datetime(df["date"]).dt.day_of_week.map({0: "T2", 1: "T3", 2: "T4", 3: "T5", 4: "T6", 5: "T7", 6: "CN"})
     df["month_key"] = _period_series(df["date"], "month")
     df["day"] = pd.to_datetime(df["date"]).dt.day.map(lambda d: f"{d:02d}")
     df["year"] = _period_series(df["date"], "year")

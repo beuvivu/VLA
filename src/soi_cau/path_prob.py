@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -123,7 +123,7 @@ class BridgeEvidence:
         }
 
 
-def _resolve_anchor_index(dates: list[date], anchor_date: Optional[date]) -> int:
+def _resolve_anchor_index(dates: list[date], anchor_date: date | None) -> int:
     if anchor_date is None:
         return len(dates) - 1
     try:
@@ -285,7 +285,7 @@ def fit_paths(
     df_2digits: pd.DataFrame | None = None,
     params: PathParams,
     mode: Mode,
-    anchor_date: Optional[date] = None,
+    anchor_date: date | None = None,
     scope: str = "all",
     prepared: PreparedPathHistory | None = None,
 ) -> tuple[list[PathStats], dict[date, np.ndarray], list[date]]:
@@ -308,7 +308,7 @@ def fit_paths_with_evidence(
     df_2digits: pd.DataFrame | None = None,
     params: PathParams,
     mode: Mode,
-    anchor_date: Optional[date] = None,
+    anchor_date: date | None = None,
     scope: str = "all",
     prepared: PreparedPathHistory | None = None,
 ) -> tuple[list[PathStats], dict[date, np.ndarray], list[date], BridgeEvidence | None]:
@@ -634,7 +634,7 @@ def predict_from_fitted_paths_full(
     params: PathParams,
     kind: FilterKind,
     mode: Mode = "loto",
-    anchor_date: Optional[date] = None,
+    anchor_date: date | None = None,
     scope: str = "all",
     bias_special_touch: float = 1.0,
     bias_special_both: float = 1.0,
@@ -744,7 +744,7 @@ def predict_from_fitted_paths(
     kind: FilterKind,
     mode: Mode = "loto",
     top_numbers: int = 20,
-    anchor_date: Optional[date] = None,
+    anchor_date: date | None = None,
     scope: str = "all",
     bias_special_touch: float = 1.0,
     bias_special_both: float = 1.0,
@@ -776,7 +776,7 @@ def predict_next_day(
     mode: Mode,
     kind: FilterKind,
     top_numbers: int = 20,
-    anchor_date: Optional[date] = None,
+    anchor_date: date | None = None,
     scope: str = "all",
     bias_special_touch: float = 1.0,
     bias_special_both: float = 1.0,

@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version-file: .python-version
       - name: install.sh --dev (cài editable + chạy bộ test với .env bộ cài tạo)
         if: runner.os == 'Linux'
         run: bash install.sh --dev --skip-forecast --offline && ./vietlott doctor --offline

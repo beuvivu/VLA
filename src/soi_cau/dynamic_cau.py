@@ -10,7 +10,8 @@ period is explicitly labelled as selection-bias risk.
 
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Literal, Mapping, Sequence
+from typing import Literal
+from collections.abc import Mapping, Sequence
 
 import pandas as pd
 

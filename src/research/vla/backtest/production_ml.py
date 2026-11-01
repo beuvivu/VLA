@@ -46,7 +46,7 @@ class ProductionMLModel:
         self.dates = pd.to_datetime(X["date"])
 
 
-    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> "ProductionMLModel":
+    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> ProductionMLModel:
         last = int(np.max(rows))
         keep = self.row <= last
         days = pd.DatetimeIndex(sorted(self.dates[keep].unique()))

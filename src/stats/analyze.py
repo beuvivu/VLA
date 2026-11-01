@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def _last_appearing_table(df: pd.DataFrame, value_columns: list[str]) -> pd.DataFrame:
     """Return a table indexed by number 00..99 with the last appearance delta."""
     numbers = df[value_columns].copy()
-    numbers.reset_index(inplace=True)  # create numeric 'index'
+    numbers = numbers.reset_index()  # create numeric 'index'
     predict_index = int(numbers["index"].max()) + 1
 
     melted = numbers.melt(id_vars="index", var_name="prize", value_name="value")
@@ -138,7 +138,7 @@ def main() -> None:
     detail = counts.reset_index()
     detail.columns = ["value", "freq"]
     detail = detail.astype({"value": int})
-    detail.sort_values("freq", ascending=False, inplace=True)
+    detail = detail.sort_values("freq", ascending=False)
 
     heatmap_data = detail.copy()
     heatmap_data["tens"] = heatmap_data["value"] // 10

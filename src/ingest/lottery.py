@@ -51,7 +51,7 @@ class RepoPaths:
     images_dir: Path
 
     @classmethod
-    def from_module(cls) -> "RepoPaths":
+    def from_module(cls) -> RepoPaths:
         root = REPO_ROOT
         return cls(root=root, data_dir=root / "data", images_dir=root / "images")
 
@@ -350,7 +350,7 @@ class Lottery:
         self._raw_data = pd.DataFrame(ordered)
         self._raw_data["date"] = pd.to_datetime(self._raw_data["date"])
         self._raw_data.iloc[:, 1:] = self._raw_data.iloc[:, 1:].astype("int64")
-        self._raw_data.sort_values("date", inplace=True, ignore_index=True)
+        self._raw_data = self._raw_data.sort_values("date", ignore_index=True)
 
         # 2-digit view (LOTO) - vectorised.
         self._2_digits_data = self._raw_data.copy(deep=True)

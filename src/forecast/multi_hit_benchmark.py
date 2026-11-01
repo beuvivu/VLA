@@ -390,7 +390,7 @@ def planted_history(n_draws: int, planted: tuple[int, ...] = PLANTED, plant_rate
     """
     frame = mock_history(n_draws, seed=seed, planted=planted, plant_rate=plant_rate)
     draws, labels = draws_from_frame(frame)
-    return draws, pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
+    return draws, pd.to_datetime(pd.Series(labels)).dt.day_of_week.to_numpy()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -405,7 +405,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.until:
         frame = until(frame, args.until)
     draws, labels = draws_from_frame(frame)
-    weekdays = pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
+    weekdays = pd.to_datetime(pd.Series(labels)).dt.day_of_week.to_numpy()
     result = run_protocol(draws, weekdays)
     print(render(result, "LÔ NHIỀU NHÁY — LƯỢT THỬ THỨ HAI, DỮ LIỆU THẬT"))
     payload = {"real": to_json(result)}

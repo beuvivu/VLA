@@ -4,7 +4,7 @@ import argparse
 import logging
 import time
 from datetime import datetime, time as dtime, timedelta
-from typing import Iterable
+from collections.abc import Iterable
 from zoneinfo import ZoneInfo
 
 from core.calendar_alignment import known_non_draw_days
