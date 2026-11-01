@@ -73,6 +73,10 @@ class ArchiveDraws:
     not_confirmed: list[dict] = field(default_factory=list)
     rejected: list[dict] = field(default_factory=list)
     sources: Counter = field(default_factory=Counter)
+    # Kỳ Keno/Bingo18 đúng cấu trúc, đã «confirmed», chỉ bị loại vì xuất xứ KHÔNG chính thức
+    # (trang đăng lại). Không bao giờ được nhập; chỉ dùng làm phép đối chiếu ĐỘC LẬP cho nguồn
+    # khác (``ProductSyncPipeline._vet_fast_mirror``).
+    secondary: list[dict] = field(default_factory=list)
 
 
 def _digits_tiers(result: dict, layout: tuple[tuple[str, int], ...]) -> list[dict]:
@@ -102,9 +106,13 @@ def convert_draws(product: ProductCode, csv_rows: list[dict], *, verified_only: 
                 # «confirmed» là trạng thái kỳ, «valid» chỉ là kiểm tra cấu trúc.
                 # Dữ liệu đăng lại còn pending không chứng minh kết quả chính thức.
                 verification = attrs.get('official_verification_status') if isinstance(attrs, dict) else None
-                if (r.get('product') != product.value or r.get('draw_status') != 'confirmed'
-                        or r.get('validation_status') != 'valid' or src != OFFICIAL_SOURCE
-                        or verification not in (None, 'verified') or did <= 0):
+                structural = (r.get('product') == product.value and r.get('draw_status') == 'confirmed'
+                              and r.get('validation_status') == 'valid' and did > 0)
+                if not structural or src != OFFICIAL_SOURCE or verification not in (None, 'verified'):
+                    if structural and product in (ProductCode.KENO, ProductCode.BINGO18):
+                        key = 'numbers' if product == ProductCode.KENO else 'digits'
+                        out.secondary.append({'id': did, 'date': d, 'result': [int(x) for x in result[key]],
+                                              'data_source': src})
                     raise ValueError('unverified archive result (product/status/validation/official provenance)')
             if product in MATRIX:
                 row = {

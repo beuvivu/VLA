@@ -35,6 +35,8 @@ on:
       - vietlott/src/vietlott_engine/core/config.py
       - vietlott/src/vietlott_engine/cli.py
       - vietlott/tests/test_fast_results_recovery.py
+      - vietlott/tests/test_fast_mirror_gate.py
+      - vietlott/data/seed/known_gaps.json
       - vietlott/src/vlm/forecast/**
       - vietlott/src/vlm/web/**
       - vietlott/scripts/build_site.py
@@ -86,7 +88,7 @@ jobs:
       - name: Cài crawler
         run: python -m pip install -e ".[dev,crawler]"
       - name: Kiểm thử hồi quy thu thập Keno và Bingo18
-        run: python -m pytest tests/test_fast_results_recovery.py -q
+        run: python -m pytest tests/test_fast_results_recovery.py tests/test_fast_mirror_gate.py -q
       - name: Đồng bộ main mới nhất trước khi cập nhật
         run: python scripts/persist_site.py sync
 

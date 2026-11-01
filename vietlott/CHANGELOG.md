@@ -1,5 +1,25 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — Keno/Bingo18 đồng bộ lại, Python 3.15 (01-11-2026)
+
+- **Cổng hồ sơ kiểm chứng cho bản sao Keno/Bingo18 (`ProductSyncPipeline._vet_fast_mirror`).**
+  - Từ 19-10-2026 vietlott.vn trả thử thách Cloudflare cho runner. Kho NhanAZ chỉ còn đăng lại kết quả từ
+    trang thứ cấp (`pending`), nên hai sản phẩm đứng ở kỳ 299797 / 191942 suốt 13 ngày.
+  - Bản sao `vietvudanh/vietlott-data` nay được nhập khi, đo lại mỗi lượt:
+    - trùng tuyệt đối ≥ 10 000 kỳ seed có xuất xứ chính thức mà nó chồng lên;
+    - trùng tuyệt đối ≥ 50 kỳ "trang đăng lại" độc lập của kho NhanAZ (nguồn thu thập khác);
+    - một kỳ lệch ở bất kỳ phép so nào thì loại cả bản sao lượt ấy.
+  - Đo 01-11-2026:
+    - Keno: 86 272 kỳ chính thức và 1 509 kỳ đối chiếu, 0 lệch; tiến tới #301336;
+    - Bingo18: 92 759 và 1 558, 0 lệch; tiến tới #193999.
+  - `ArchiveDraws.secondary` giữ kỳ bị loại chỉ vì xuất xứ, để làm phép đối chiếu; chúng không bao giờ được nhập.
+- **`data/seed/known_gaps.json`:** 2 khoảng mã kỳ Keno và 20 khoảng Bingo18 đã kiểm là không có ở seed, bản sao
+  lẫn kho NhanAZ.
+  - Khoảng hở nằm trọn trong sổ không còn là lỗi đồng bộ, nên workflow thôi đỏ mãi vì thứ không nguồn nào lấp được.
+  - Không phải thông báo loại kỳ, không có số nào được suy ra. Khoảng hở mới hoặc chỉ trùng một phần vẫn là lỗi.
+- **Python 3.15:** Docker `python:3.15-slim`; bộ cài ưu tiên 3.15 (vẫn nhận 3.11+); ma trận CI 3.11 (sàn) + 3.15.
+  Phép kiểm `test_vlm_hit_benchmark` dùng bước `np.timedelta64(3, 'D')`: numpy sắp cấm bước số nguyên cho ngày.
+
 ## Chưa phát hành — hỗn hợp Bayes cho bộ chữ số, số đặc biệt Lotto theo vé (31-10-2026)
 
 - **Chuyên gia `bayes_mixture` trong bộ ML (`vlm.forecast.bayes_expert`), chỉ cho thành phần chữ số.**

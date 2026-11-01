@@ -11,7 +11,11 @@ Sources (``--source``):
 * ``nhanaz``    — community archive ``NhanAZ-Data/vietlott-research`` (GitHub raw, or a local
   folder via ``VQE_NHANAZ_DIR``); Keno/Bingo18 updated about every 10 minutes in the day;
   all 8 products + exclusions.
-* ``mirror``    — ``vietvudanh/vietlott-data`` JSONL (Keno, Bingo18, Max 3D, Max 3D Pro).
+* ``mirror``    — ``vietvudanh/vietlott-data`` JSONL (Keno, Bingo18, Max 3D, Max 3D Pro). Với
+  Keno/Bingo18 chỉ được nhập qua cổng hồ sơ :meth:`ProductSyncPipeline._vet_fast_mirror`
+  (01-11-2026): trùng tuyệt đối mọi kỳ seed có xuất xứ chính thức mà nó chồng lên
+  (≥ ``MIRROR_TRACK_RECORD_MIN``) và mọi kỳ đăng lại độc lập của kho cộng đồng mà nó chồng lên
+  (≥ ``MIRROR_CROSS_CHECK_MIN``).
 * ``canonical`` — ``pqminh-4/vietlott-data`` canonical records (Max 3D, Max 3D Pro).
 * ``v130``      — the snapshot of Vietlott Quant Engine 1.3.0 (``VQE_V130_DIR``).
 * ``auto``      — the first of ``VQE_FALLBACK_ORDER`` that answers (default vietlott → nhanaz →
@@ -57,6 +61,29 @@ CANONICAL_FILES = {ProductCode.MAX3D: "max3d.jsonl", ProductCode.MAX3D_PRO: "max
 SOURCE_ALIASES = {"github_mirror": "mirror"}
 FAST_PRODUCTS = {ProductCode.KENO, ProductCode.BINGO18}
 
+# Cổng hồ sơ kiểm chứng của bản sao cộng đồng cho Keno/Bingo18 (01-11-2026).
+#
+# Từ 19-10-2026 vietlott.vn trả thử thách Cloudflare cho runner và kho cộng đồng chỉ còn đăng lại
+# kết quả từ trang thứ cấp, nên không nguồn nào mang dấu «chính thức» và hai sản phẩm đứng yên.
+# Bản sao chỉ được nhận khi chính nó chứng minh độ tin, đo lại MỖI lượt:
+#
+# * Hồ sơ: trùng tuyệt đối mọi kỳ của seed có xuất xứ chính thức mà nó chồng lên, ít nhất
+#   ``MIRROR_TRACK_RECORD_MIN`` kỳ, không lệch kỳ nào. Không lệch trong n kỳ ⇒ cận trên 95% của tỉ lệ
+#   sai mỗi kỳ là 3/n («quy tắc ba»): 10 000 kỳ ⇒ ≤ 3·10⁻⁴. Đo 01-11-2026: 86 462 kỳ Keno và
+#   92 954 kỳ Bingo18 chồng nhau, 0 lệch. CHỈ đếm seed: kho sản phẩm không lưu xuất xứ từng dòng,
+#   và sau lần nhập đầu nó chứa chính dòng của bản sao — đếm vào là tự chứng nhận.
+# * Đối chiếu độc lập trên phần MỚI: hồ sơ cũ không thấy được lỗi vừa phát sinh (đổi khuôn trang,
+#   lệch mã kỳ), nên bản sao còn phải trùng tuyệt đối mọi kỳ «trang đăng lại» của kho cộng đồng
+#   (nguồn thu thập khác) mà nó chồng lên, ít nhất ``MIRROR_CROSS_CHECK_MIN`` kỳ. Lỗi hệ thống làm
+#   lệch gần như mọi kỳ chồng nhau, nên 50 kỳ đủ để thấy. Đo 01-11-2026: 1 509 kỳ Keno và 1 558 kỳ
+#   Bingo18 tháng 10, 0 lệch.
+# * Một kỳ lệch ở bất kỳ phép so nào ⇒ loại CẢ bản sao lượt ấy. Mọi phép kiểm sẵn có của đường
+#   nhập (mâu thuẫn với kỳ đã lưu, ngày tương lai, mã kỳ liên tục, thông báo loại kỳ) vẫn áp dụng.
+KNOWN_GAPS_FILE = "known_gaps.json"
+MIRROR_TRACK_RECORD_MIN = 10_000
+MIRROR_CROSS_CHECK_MIN = 50
+OFFICIAL_SEED_SOURCES = frozenset({'vietlott.vn/list', 'nhanaz:official_vietlott'})
+
 
 class ProductStore:
     def __init__(self, data_dir: Path, seed_dir: Path | None = None) -> None:
@@ -68,6 +95,18 @@ class ProductStore:
 
     def exclusions(self) -> dict[str, set[int]]:
         return load_exclusions(self.seed_dir, self.dir)
+
+    def known_gaps(self) -> dict[str, list[tuple[int, int]]]:
+        """Khoảng hở lịch sử đã kiểm là không nguồn nào có (``seed/known_gaps.json``, 01-11-2026).
+
+        Chỉ đổi BÁO CÁO: khoảng hở nằm trọn trong danh sách không còn là lỗi đồng bộ. Không phải
+        thông báo loại kỳ, không thêm hay suy ra kết quả nào; khoảng hở mới vẫn là lỗi.
+        """
+        path = self.seed_dir / KNOWN_GAPS_FILE if self.seed_dir else None
+        if path is None or not path.exists():
+            return {}
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return {product: [(int(a), int(b)) for a, b in ranges] for product, ranges in data.get("products", {}).items()}
 
     def load(self, product: str | ProductCode, include_unconfirmed: bool = False) -> ProductHistory:
         code = get_product(product)
@@ -183,6 +222,8 @@ class ProductSyncPipeline:
         self._since_date: date | None = None
         self._fetch_rejected: list[dict] = []
         self._rejected_exclusions: list[dict] = []
+        self._archive_secondary: dict[ProductCode, list[dict]] = {}
+        self._source_audit: dict | None = None
 
     async def _jsonl(self, url: str) -> list[dict]:
         text = (await self.client.get(url)).text
@@ -192,6 +233,46 @@ class ProductSyncPipeline:
         from vietlott_engine.crawler.sources.nhanaz import NhanAZArchive
 
         return NhanAZArchive(local_dir=self.nhanaz_dir) if self.nhanaz_dir else NhanAZArchive(self.client, self.nhanaz_base_url)
+
+    def _official_seed_identities(self, product: ProductCode) -> dict[int, tuple]:
+        """Kỳ của seed có xuất xứ chính thức → (ngày, kết quả) theo đúng chuẩn của ``identities``."""
+        if self.store.seed_dir is None:
+            return {}
+        rows = [r for r in self.store._rows(self.store.seed_dir / SEED_FILES[product])
+                if r.get('src') in OFFICIAL_SEED_SOURCES]
+        parsed, _, _ = parse_fast_rows(product, rows, 'seed')
+        return identities(parsed)
+
+    def _vet_fast_mirror(self, product: ProductCode, rows: list[dict]) -> None:
+        """Cổng hồ sơ kiểm chứng của bản sao Keno/Bingo18; ném ``SourceError`` khi chưa đủ tin.
+
+        Luật và lý do: chú thích ở ``MIRROR_TRACK_RECORD_MIN``. Kết quả đo ghi vào
+        ``self._source_audit`` để báo cáo đồng bộ in ra từng lượt.
+        """
+        parsed, _, duplicates = parse_fast_rows(product, rows, 'mirror')
+        mirror = identities(parsed)
+        official = self._official_seed_identities(product)
+        secondary_rows, _, _ = parse_fast_rows(product, self._archive_secondary.get(product, []), 'nhanaz')
+        secondary = identities(secondary_rows)
+        track = [did for did in mirror if did in official]
+        track_bad = sorted(did for did in track if mirror[did] != official[did])
+        cross = [did for did in mirror if did in secondary]
+        cross_bad = sorted(did for did in cross if mirror[did] != secondary[did])
+        self._source_audit = {
+            'rule': 'fast-mirror-track-record-v1',
+            'official_overlap': len(track), 'official_mismatches': len(track_bad),
+            'cross_checked': len(cross), 'cross_mismatches': len(cross_bad),
+            'duplicates_conflicting': len(duplicates),
+            'mismatched_ids': (track_bad + cross_bad)[:20],
+        }
+        if duplicates or track_bad or cross_bad:
+            raise SourceError('unverified fast-game mirror: disagrees with official or independent results; not imported')
+        if len(track) < MIRROR_TRACK_RECORD_MIN:
+            raise SourceError(f'unverified fast-game mirror: official track record {len(track)} < '
+                              f'{MIRROR_TRACK_RECORD_MIN} draws; not imported')
+        if len(cross) < MIRROR_CROSS_CHECK_MIN:
+            raise SourceError(f'unverified fast-game mirror: independent cross-check {len(cross)} < '
+                              f'{MIRROR_CROSS_CHECK_MIN} draws; not imported')
 
     def chain(self, product: ProductCode) -> list[str]:
         """Sources of ``auto`` that can serve this product."""
@@ -219,6 +300,8 @@ class ProductSyncPipeline:
             got = await archive.draws(product, since=None if full else self._since_date,
                                       verified_only=product in FAST_PRODUCTS)
             self._fetch_rejected = got.rejected
+            if product in FAST_PRODUCTS:
+                self._archive_secondary[product] = got.secondary
             self._pending_exclusions += [e for e in await archive.exclusions(verified_only=product in FAST_PRODUCTS)
                                          if e["product"] == product.value]
             self._rejected_exclusions = [e for e in archive.rejected_exclusions if e.get('product')==product.value]
@@ -234,11 +317,16 @@ class ProductSyncPipeline:
             self._pending_exclusions += [e for e in v130_exclusions(self.v130_dir) if e["product"] == product.value]
             return got.rows
         if source == "mirror":
-            if product in FAST_PRODUCTS:
-                raise SourceError('unverified fast-game mirror: no official verification metadata; not imported')
             if product not in MIRROR_FILES:
                 raise SourceError(f"no mirror file for {product.value}")
-            return await self._jsonl(f"{self.mirror_base_url}/{MIRROR_FILES[product]}")
+            rows = await self._jsonl(f"{self.mirror_base_url}/{MIRROR_FILES[product]}")
+            if product in FAST_PRODUCTS:
+                if product not in self._archive_secondary:
+                    # Gọi thẳng ``--source mirror``: chưa có lượt kho cộng đồng nào để đối chiếu.
+                    got = await self._archive().draws(product, since=self._since_date, verified_only=True)
+                    self._archive_secondary[product] = got.secondary
+                await asyncio.to_thread(self._vet_fast_mirror, product, rows)
+            return rows
         if source == "canonical":
             if product not in CANONICAL_FILES:
                 raise SourceError(f"no canonical records for {product.value}; use --source nhanaz, mirror or vietlott")
@@ -318,15 +406,21 @@ class ProductSyncPipeline:
         validation_errors = []
         today = datetime.now(VN).date().isoformat()
         for s in self.chain(product) if source == 'auto' else [source]:
-            budget = self.archive_timeout_s if s == 'nhanaz' else self.source_timeout_s
+            # Bản sao tải cả lịch sử (~13 MB) và có thể phải tải kho đối chiếu: ngân sách như kho.
+            budget = self.archive_timeout_s if s in ('nhanaz', 'mirror') else self.source_timeout_s
             started = time.perf_counter()
             self._fetch_rejected = []
             self._rejected_exclusions = []
+            self._source_audit = None
             attempt = {'source':s, 'ok':False, 'rows':0, 'rejected':0, 'error':None,
                        'timeout_s':budget}
             attempts.append(attempt)
             try:
-                rows = await asyncio.wait_for(self.fetch(product, s, max_pages, full), budget)
+                try:
+                    rows = await asyncio.wait_for(self.fetch(product, s, max_pages, full), budget)
+                finally:
+                    if self._source_audit is not None:
+                        attempt['audit'] = self._source_audit
                 parsed, rejected, duplicates = await asyncio.to_thread(parse_fast_rows, product, rows, s)
                 incoming = await asyncio.to_thread(identities, parsed)
                 attempt.update(rows=len(rows), rejected=len(rejected)+len(self._fetch_rejected))
@@ -396,8 +490,12 @@ class ProductSyncPipeline:
             errors.append('missing verified draw ranges: '+str(continuity['missing_ranges'][:10]))
         if conflicts:
             errors.append('conflicting source results: '+str(sorted(conflicts)[:20]))
-        if continuity['historical_missing_ranges']:
-            errors.append('historical verified draw gaps remain: '+str(continuity['historical_missing_ranges'][:10]))
+        known_gaps = self.store.known_gaps().get(product.value, [])
+        unexplained = [g for g in continuity['historical_missing_ranges']
+                       if not any(a <= g[0] and g[1] <= b for a, b in known_gaps)]
+        continuity['acknowledged_gaps'] = len(continuity['historical_missing_ranges']) - len(unexplained)
+        if unexplained:
+            errors.append('historical verified draw gaps remain: '+str(unexplained[:10]))
         if not used:
             errors.append('; '.join(f"{a['source']}: {a['error'] or 'no verified results'}" for a in attempts))
         continuity['unverified_rows'] = len(blocked_ids)
