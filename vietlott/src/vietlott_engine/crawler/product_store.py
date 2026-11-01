@@ -229,7 +229,7 @@ class ProductSyncPipeline:
         self._since_date: date | None = None
         self._fetch_rejected: list[dict] = []
         self._rejected_exclusions: list[dict] = []
-        self._archive_secondary: dict[ProductCode, list[dict]] = {}
+        self._secondary_ids: dict[ProductCode, set[int]] = {}
         self._source_audit: dict | None = None
 
     async def _jsonl(self, url: str) -> list[dict]:
@@ -308,7 +308,10 @@ class ProductSyncPipeline:
                                       verified_only=product in FAST_PRODUCTS)
             self._fetch_rejected = got.rejected
             if product in FAST_PRODUCTS:
-                self._archive_secondary[product] = got.secondary
+                # Chỉ kỳ đăng lại ĐÚNG LUẬT trò chơi và không tự mâu thuẫn mới được coi là «chờ xác minh»:
+                # ``validation_status=valid`` của kho cộng đồng là lời tự khai, không phải phép kiểm của engine.
+                parsed, _, conflicting = parse_fast_rows(product, got.secondary, 'nhanaz')
+                self._secondary_ids[product] = set(identities(parsed)) - set(conflicting)
             self._pending_exclusions += [e for e in await archive.exclusions(verified_only=product in FAST_PRODUCTS)
                                          if e["product"] == product.value]
             self._rejected_exclusions = [e for e in archive.rejected_exclusions if e.get('product')==product.value]
@@ -514,7 +517,7 @@ class ProductSyncPipeline:
         # Kỳ đúng cấu trúc của kho cộng đồng chỉ bị chặn vì xuất xứ thứ cấp là kỳ CHỜ XÁC MINH: chúng luôn
         # đi trước bản sao (đăng lại mỗi 10 phút, bản sao 12 giờ một lần). Độ trễ ấy do quy tắc độ mới
         # (`vlm.updates.runner`) canh. Kỳ bị chặn vì lý do khác (sai cấu trúc, mâu thuẫn) vẫn là lỗi.
-        secondary_ids = {int(r['id']) for r in self._archive_secondary.get(product, [])}
+        secondary_ids = self._secondary_ids.get(product, set())
         awaiting = {i for i in pending_new if i > through and i in secondary_ids}
         continuity['awaiting_verification'] = len(awaiting)
         if any(i > through for i in pending_new - awaiting):

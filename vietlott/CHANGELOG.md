@@ -19,6 +19,8 @@
     ra 0 và cổng từ chối mọi lượt sau.
   - Kỳ đăng lại của NhanAZ mới hơn bản sao là "chờ xác minh" (`continuity.awaiting_verification`), không phải
     lỗi. Kỳ bị chặn vì lý do khác vẫn là lỗi.
+    - Chỉ kỳ qua được phép kiểm luật trò chơi của engine (`parse_fast_rows`) mới được miễn. `validation_status=valid`
+      là lời tự khai của kho cộng đồng: kỳ ngoài luật hoặc hai kết quả cho một mã vẫn là lỗi.
   - `not_advancing` của Keno/Bingo18 theo nhịp của nguồn vừa làm kho tiến (`last_advance_source`). Bản sao cập
     nhật ~00:00 và ~12:00 UTC, nên ân hạn 13 giờ (`runner.MIRROR_GRACE`); nguồn khác giữ 20 phút.
     - Nguồn ấy là nguồn của kỳ có mã LỚN NHẤT vừa nhận (`ProductSyncReport.latest_source`), so bằng đúng
