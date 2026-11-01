@@ -21,6 +21,12 @@
     lỗi. Kỳ bị chặn vì lý do khác vẫn là lỗi.
   - `not_advancing` của Keno/Bingo18 theo nhịp của nguồn vừa làm kho tiến (`last_advance_source`). Bản sao cập
     nhật ~00:00 và ~12:00 UTC, nên ân hạn 13 giờ (`runner.MIRROR_GRACE`); nguồn khác giữ 20 phút.
+    - Nguồn ấy là nguồn của kỳ có mã LỚN NHẤT vừa nhận (`ProductSyncReport.latest_source`), so bằng đúng
+      `'mirror'`. `source_used` ghép mọi nguồn có góp dòng, nên dò chuỗi con cho NhanAZ ân hạn 13 giờ khi bản
+      sao chỉ lấp kỳ cũ.
+    - Ân hạn đo từ lần tiến THẬT, không từ 06:00. Luật theo ngày theo cùng nhịp: trong ân hạn, kho mang ngày
+      hôm qua là "đang chờ" (`date_only`); quá 13 giờ là `behind_schedule`. Lượt ~07:00 bị lỡ được báo lúc
+      ~08:00, không phải ~19:00.
   - Bảng tóm tắt của `vlm-results.yml` in thêm loại lỗi, chỉ từ một danh sách nhãn cố định.
   - Đo trên dữ liệu thật từ trạng thái sau gộp: thoát 0, đối chiếu 1 509 / 1 558 kỳ, 0 lệch; 18 kỳ chờ xác minh.
 - **`data/seed/known_gaps.json`:** 2 khoảng mã kỳ Keno và 20 khoảng Bingo18 đã kiểm là không có ở seed, bản sao

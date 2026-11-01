@@ -130,6 +130,9 @@ Bingo18 lên #193999, nhưng vẫn đỏ vì hai lý do:
   sau 20 phút không tiến. Với nguồn 12 giờ một lần, cả hai đúng gần như suốt ngày. Nay:
   - kỳ đăng lại mới hơn là "chờ xác minh", không phải lỗi;
   - `not_advancing` theo nhịp của nguồn vừa làm kho tiến: 13 giờ với bản sao, 20 phút với nguồn khác.
+    "Nguồn vừa làm kho tiến" là nguồn của kỳ có mã lớn nhất vừa nhận (`latest_source`), không phải chuỗi
+    ghép mọi nguồn có góp dòng. Ân hạn đo từ lần tiến thật; trong ân hạn, kho mang ngày hôm qua là
+    `date_only`, quá ân hạn là `behind_schedule` (hai điểm do Codex chỉ ra, sửa ở `94b79e13`, đột biến 4/4 đỏ).
   - Đỏ còn nghĩa là bản sao đã lỡ một lượt, hoặc có dữ liệu sai.
 - Bảng tóm tắt in thêm loại lỗi, chỉ từ một danh sách nhãn cố định.
 - Đột biến: 5/5 đỏ.
