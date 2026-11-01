@@ -463,7 +463,7 @@ POST/PUT/PATCH/DELETE và mọi `?record=` mà FastAPI đọc là True (`on`, `y
 chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`; ba GET làm mới dự báo (`/forecast/{p}`,
 `/forecast/{p}/evidence`, `/ml/forecast/{p}`) cũng là lệnh ghi. Không có token thì lệnh ghi do trình
 duyệt gửi từ trang khác (`Sec-Fetch-Site`/`Origin`) bị 403; `vietlott serve` và compose chỉ nghe
-`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; nên đưa ngược bản vá về kho VLM.
+`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; bản vá đã đưa ngược về kho VLM ở beuvivu/vlm#9 (01-11-2026).
 Kiểm chứng xác suất và số khớp H cho Mega/Power (13-10-2026, `vietlott/docs/VLM_HIT_BENCHMARK.md`):
 `vlm.forecast.hits` (H = |vé ∩ 6 số chính| so với siêu bội C(6,h)C(N−6,6−h)/C(N,6), đơn vị KỲ, số đặc biệt
 Power KHÔNG cộng vào H), `vlm.forecast.challengers`, `vlm.forecast.hit_benchmark` (giao thức `PROTOCOL` đăng ký
