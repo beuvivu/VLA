@@ -10,195 +10,197 @@
       "n_settled": 14,
       "agent_policy": 2,
       "weights": {
-        "incumbent": 0.20037980983406825,
         "constant": 0.20035931415498204,
-        "statistical": 0.19913516052631663,
+        "incumbent": 0.20037980983406825,
+        "pattern": 0.20035235451588806,
         "probabilistic": 0.19977336096874498,
-        "pattern": 0.20035235451588806
+        "statistical": 0.19913516052631663
       },
       "tuning": {
-        "eta": 4.0,
         "discount": 0.97,
-        "replay_draws": 14,
+        "eta": 4.0,
         "history_draws": 14,
         "replay_brier": 0.49499675325615666,
+        "replay_draws": 14,
         "selection_only": true
       },
       "gate": {
         "active": false,
-        "n_observations": 14,
-        "minimum_observations": 60,
+        "benchmark_required": true,
         "blend_fraction": 0.5,
         "comparisons": {
-          "mixture_vs_incumbent": {
-            "logloss_gain": {
-              "mean": 0.0002820456724518091,
-              "lower": -0.0463596872172844,
-              "se": 0.011660433222434053,
-              "blocks": 2
-            },
+          "blend_vs_constant": {
             "brier_gain": {
-              "mean": -1.6432181398510055e-07,
-              "lower": -0.00047119449920679475,
-              "se": 0.00011775754434820241,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.0002457960522782376,
+              "mean": 5.842248224022636e-06,
+              "se": 6.290957512556507e-05
             },
-            "recent_logloss_gain": {
-              "mean": 0.0002820456724518091,
-              "lower": -0.0463596872172844,
-              "se": 0.011660433222434053,
-              "blocks": 2
-            },
-            "pass": false
-          },
-          "mixture_vs_constant": {
             "logloss_gain": {
-              "mean": 0.0006896676321067449,
-              "lower": -0.046833121016312255,
-              "se": 0.01188069716210475,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.024264171568312273,
+              "mean": 0.0007695740997011313,
+              "se": 0.006258436417003351
             },
-            "brier_gain": {
-              "mean": 3.2467438432255095e-06,
-              "lower": -0.0004765639012068888,
-              "se": 0.00011995266126252857,
-              "blocks": 2
-            },
+            "pass": false,
             "recent_logloss_gain": {
-              "mean": 0.0006896676321067449,
-              "lower": -0.046833121016312255,
-              "se": 0.01188069716210475,
-              "blocks": 2
-            },
-            "pass": false
+              "blocks": 2,
+              "lower": -0.024264171568312273,
+              "mean": 0.0007695740997011313,
+              "se": 0.006258436417003351
+            }
           },
           "blend_vs_incumbent": {
-            "logloss_gain": {
-              "mean": 0.0003619521400461956,
-              "lower": -0.02306188554894027,
-              "se": 0.005855959422246616,
-              "blocks": 2
-            },
             "brier_gain": {
-              "mean": 2.4311825668120257e-06,
+              "blocks": 2,
               "lower": -0.0002329555938663611,
-              "se": 5.884669410829328e-05,
-              "blocks": 2
+              "mean": 2.4311825668120257e-06,
+              "se": 5.884669410829328e-05
             },
-            "recent_logloss_gain": {
-              "mean": 0.0003619521400461956,
-              "lower": -0.02306188554894027,
-              "se": 0.005855959422246616,
-              "blocks": 2
-            },
-            "pass": false
-          },
-          "blend_vs_constant": {
             "logloss_gain": {
-              "mean": 0.0007695740997011313,
-              "lower": -0.024264171568312273,
-              "se": 0.006258436417003351,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.02306188554894027,
+              "mean": 0.0003619521400461956,
+              "se": 0.005855959422246616
             },
-            "brier_gain": {
-              "mean": 5.842248224022636e-06,
-              "lower": -0.0002457960522782376,
-              "se": 6.290957512556507e-05,
-              "blocks": 2
-            },
+            "pass": false,
             "recent_logloss_gain": {
-              "mean": 0.0007695740997011313,
-              "lower": -0.024264171568312273,
-              "se": 0.006258436417003351,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.02306188554894027,
+              "mean": 0.0003619521400461956,
+              "se": 0.005855959422246616
+            }
+          },
+          "mixture_vs_constant": {
+            "brier_gain": {
+              "blocks": 2,
+              "lower": -0.0004765639012068888,
+              "mean": 3.2467438432255095e-06,
+              "se": 0.00011995266126252857
             },
-            "pass": false
+            "logloss_gain": {
+              "blocks": 2,
+              "lower": -0.046833121016312255,
+              "mean": 0.0006896676321067449,
+              "se": 0.01188069716210475
+            },
+            "pass": false,
+            "recent_logloss_gain": {
+              "blocks": 2,
+              "lower": -0.046833121016312255,
+              "mean": 0.0006896676321067449,
+              "se": 0.01188069716210475
+            }
+          },
+          "mixture_vs_incumbent": {
+            "brier_gain": {
+              "blocks": 2,
+              "lower": -0.00047119449920679475,
+              "mean": -1.6432181398510055e-07,
+              "se": 0.00011775754434820241
+            },
+            "logloss_gain": {
+              "blocks": 2,
+              "lower": -0.0463596872172844,
+              "mean": 0.0002820456724518091,
+              "se": 0.011660433222434053
+            },
+            "pass": false,
+            "recent_logloss_gain": {
+              "blocks": 2,
+              "lower": -0.0463596872172844,
+              "mean": 0.0002820456724518091,
+              "se": 0.011660433222434053
+            }
           }
         },
-        "reason": "Ba tác tử đang kiểm song song; đề bạt cần benchmark và kiểm tiến cứu",
-        "uncertainty": "Chặn thực nghiệm: max(SE theo ngày, SE khối 7 kỳ), hệ số 4; không phải bảo đảm anytime-valid khi kiểm lặp",
         "experimental_pass": false,
-        "benchmark_required": true
+        "minimum_observations": 60,
+        "n_observations": 14,
+        "reason": "Ba tác tử đang kiểm song song; đề bạt cần benchmark và kiểm tiến cứu",
+        "uncertainty": "Chặn thực nghiệm: max(SE theo ngày, SE khối 7 kỳ), hệ số 4; không phải bảo đảm anytime-valid khi kiểm lặp"
       },
       "diagnostics": {
-        "statistical": {
-          "windows": [
-            10,
-            30,
-            180
-          ],
-          "ngram_order": 2,
-          "cycle": "Hazard có co Bayes theo nhóm độ gan",
-          "history_draws": 4254
-        },
-        "probabilistic": {
-          "transitions": 4240,
-          "edges": [
-            {
-              "from": "29",
-              "to": "71",
-              "support": 43,
-              "probability": 0.027770101603507062,
-              "descriptive_only": true
-            },
-            {
-              "from": "29",
-              "to": "88",
-              "support": 43,
-              "probability": 0.02777048258768428,
-              "descriptive_only": true
-            },
-            {
-              "from": "29",
-              "to": "95",
-              "support": 43,
-              "probability": 0.020522300872801432,
-              "descriptive_only": true
-            },
-            {
-              "from": "29",
-              "to": "41",
-              "support": 43,
-              "probability": 0.02052274628520659,
-              "descriptive_only": true
-            },
-            {
-              "from": "29",
-              "to": "19",
-              "support": 43,
-              "probability": 0.020778424416227917,
-              "descriptive_only": true
-            }
-          ],
-          "prior": "Tác tử thống kê",
-          "shrinkage": 100
-        },
         "pattern": {
-          "status": "fitted",
+          "alpha": 1.0,
+          "baseline_validation_brier": 0.49499999999999983,
+          "baseline_validation_logloss": 4.605170185988091,
+          "converged": false,
           "hidden_layers": [
             24,
             12
           ],
-          "alpha": 1.0,
-          "validation_draws": 30,
-          "validation_logloss": 4.60552288141495,
-          "validation_brier": 0.49498625467688945,
-          "baseline_validation_logloss": 4.605170185988091,
-          "baseline_validation_brier": 0.49499999999999983,
-          "validation_skill": {
-            "logloss": -7.658683883861694e-05,
-            "brier": 2.77683295159217e-05
-          },
-          "trust": 0.0,
           "policy": 2,
+          "retrieval_feature": true,
+          "status": "fitted",
           "training_draws": 240,
           "training_until": "2026-11-02",
-          "converged": false,
-          "retrieval_feature": true,
-          "validation_is_prospective": false
+          "trust": 0.0,
+          "validation_brier": 0.49498625467688945,
+          "validation_draws": 30,
+          "validation_is_prospective": false,
+          "validation_logloss": 4.60552288141495,
+          "validation_skill": {
+            "brier": 2.77683295159217e-05,
+            "logloss": -7.658683883861694e-05
+          }
+        },
+        "probabilistic": {
+          "edges": [
+            {
+              "descriptive_only": true,
+              "from": "29",
+              "probability": 0.027770101603507062,
+              "support": 43,
+              "to": "71"
+            },
+            {
+              "descriptive_only": true,
+              "from": "29",
+              "probability": 0.02777048258768428,
+              "support": 43,
+              "to": "88"
+            },
+            {
+              "descriptive_only": true,
+              "from": "29",
+              "probability": 0.020522300872801432,
+              "support": 43,
+              "to": "95"
+            },
+            {
+              "descriptive_only": true,
+              "from": "29",
+              "probability": 0.02052274628520659,
+              "support": 43,
+              "to": "41"
+            },
+            {
+              "descriptive_only": true,
+              "from": "29",
+              "probability": 0.020778424416227917,
+              "support": 43,
+              "to": "19"
+            }
+          ],
+          "prior": "Tác tử thống kê",
+          "shrinkage": 100,
+          "transitions": 4240
+        },
+        "statistical": {
+          "cycle": "Hazard có co Bayes theo nhóm độ gan",
+          "history_draws": 4254,
+          "ngram_order": 2,
+          "windows": [
+            10,
+            30,
+            180
+          ]
         }
       },
       "knowledge": {
+        "matching_rules": [],
+        "rule_snapshot_date": "2026-11-02",
         "short_term": {
           "10": {
             "draws": 10,
@@ -512,9 +514,7 @@
             "index": 3600,
             "similarity": 0.38178882002830505
           }
-        ],
-        "matching_rules": [],
-        "rule_snapshot_date": "2026-11-02"
+        ]
       },
       "confidence_matrix": {
         "incumbent": {
@@ -6970,195 +6970,240 @@
       "n_settled": 14,
       "agent_policy": 2,
       "weights": {
-        "incumbent": 0.20020785028895996,
         "constant": 0.20022401486621746,
-        "statistical": 0.1998714327441583,
+        "incumbent": 0.20020785028895996,
+        "pattern": 0.20018008412522434,
         "probabilistic": 0.19951661797543993,
-        "pattern": 0.20018008412522434
+        "statistical": 0.1998714327441583
       },
       "tuning": {
-        "eta": 4.0,
         "discount": 0.97,
-        "replay_draws": 14,
+        "eta": 4.0,
         "history_draws": 14,
         "replay_brier": 0.18542369446942938,
+        "replay_draws": 14,
         "selection_only": true
       },
       "gate": {
         "active": false,
-        "n_observations": 14,
-        "minimum_observations": 60,
+        "benchmark_required": true,
         "blend_fraction": 0.5,
         "comparisons": {
-          "mixture_vs_incumbent": {
-            "logloss_gain": {
-              "mean": -5.063997026748852e-05,
-              "lower": -0.0003428178425707361,
-              "se": 7.304446807581189e-05,
-              "blocks": 2
-            },
+          "blend_vs_constant": {
             "brier_gain": {
-              "mean": -1.824496888127144e-05,
-              "lower": -0.00012402849547818418,
-              "se": 2.6445881649228187e-05,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -6.597708092390019e-05,
+              "mean": -1.0553918512841629e-05,
+              "se": 1.3855790602764639e-05
             },
-            "recent_logloss_gain": {
-              "mean": -5.063997026748852e-05,
-              "lower": -0.0003428178425707361,
-              "se": 7.304446807581189e-05,
-              "blocks": 2
-            },
-            "pass": false
-          },
-          "mixture_vs_constant": {
             "logloss_gain": {
-              "mean": -5.5489863854499676e-05,
-              "lower": -0.00035411374884800095,
-              "se": 7.465597124837531e-05,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.0001822257457880799,
+              "mean": -2.919524811505005e-05,
+              "se": 3.825762441825746e-05
             },
-            "brier_gain": {
-              "mean": -2.000370923607323e-05,
-              "lower": -0.00012811791888469074,
-              "se": 2.702855241215438e-05,
-              "blocks": 2
-            },
+            "pass": false,
             "recent_logloss_gain": {
-              "mean": -5.5489863854499676e-05,
-              "lower": -0.00035411374884800095,
-              "se": 7.465597124837531e-05,
-              "blocks": 2
-            },
-            "pass": false
+              "blocks": 2,
+              "lower": -0.0001822257457880799,
+              "mean": -2.919524811505005e-05,
+              "se": 3.825762441825746e-05
+            }
           },
           "blend_vs_incumbent": {
-            "logloss_gain": {
-              "mean": -2.4345354528038892e-05,
-              "lower": -0.00017008904791116432,
-              "se": 3.643592334578136e-05,
-              "blocks": 2
-            },
             "brier_gain": {
-              "mean": -8.795178158039843e-06,
+              "blocks": 2,
               "lower": -6.158091832124807e-05,
-              "se": 1.3196435040802055e-05,
-              "blocks": 2
+              "mean": -8.795178158039843e-06,
+              "se": 1.3196435040802055e-05
             },
-            "recent_logloss_gain": {
-              "mean": -2.4345354528038892e-05,
-              "lower": -0.00017008904791116432,
-              "se": 3.643592334578136e-05,
-              "blocks": 2
-            },
-            "pass": false
-          },
-          "blend_vs_constant": {
             "logloss_gain": {
-              "mean": -2.919524811505005e-05,
-              "lower": -0.0001822257457880799,
-              "se": 3.825762441825746e-05,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.00017008904791116432,
+              "mean": -2.4345354528038892e-05,
+              "se": 3.643592334578136e-05
             },
-            "brier_gain": {
-              "mean": -1.0553918512841629e-05,
-              "lower": -6.597708092390019e-05,
-              "se": 1.3855790602764639e-05,
-              "blocks": 2
-            },
+            "pass": false,
             "recent_logloss_gain": {
-              "mean": -2.919524811505005e-05,
-              "lower": -0.0001822257457880799,
-              "se": 3.825762441825746e-05,
-              "blocks": 2
+              "blocks": 2,
+              "lower": -0.00017008904791116432,
+              "mean": -2.4345354528038892e-05,
+              "se": 3.643592334578136e-05
+            }
+          },
+          "mixture_vs_constant": {
+            "brier_gain": {
+              "blocks": 2,
+              "lower": -0.00012811791888469074,
+              "mean": -2.000370923607323e-05,
+              "se": 2.702855241215438e-05
             },
-            "pass": false
+            "logloss_gain": {
+              "blocks": 2,
+              "lower": -0.00035411374884800095,
+              "mean": -5.5489863854499676e-05,
+              "se": 7.465597124837531e-05
+            },
+            "pass": false,
+            "recent_logloss_gain": {
+              "blocks": 2,
+              "lower": -0.00035411374884800095,
+              "mean": -5.5489863854499676e-05,
+              "se": 7.465597124837531e-05
+            }
+          },
+          "mixture_vs_incumbent": {
+            "brier_gain": {
+              "blocks": 2,
+              "lower": -0.00012402849547818418,
+              "mean": -1.824496888127144e-05,
+              "se": 2.6445881649228187e-05
+            },
+            "logloss_gain": {
+              "blocks": 2,
+              "lower": -0.0003428178425707361,
+              "mean": -5.063997026748852e-05,
+              "se": 7.304446807581189e-05
+            },
+            "pass": false,
+            "recent_logloss_gain": {
+              "blocks": 2,
+              "lower": -0.0003428178425707361,
+              "mean": -5.063997026748852e-05,
+              "se": 7.304446807581189e-05
+            }
           }
         },
-        "reason": "Ba tác tử đang kiểm song song; đề bạt cần benchmark và kiểm tiến cứu",
-        "uncertainty": "Chặn thực nghiệm: max(SE theo ngày, SE khối 7 kỳ), hệ số 4; không phải bảo đảm anytime-valid khi kiểm lặp",
         "experimental_pass": false,
-        "benchmark_required": true
+        "minimum_observations": 60,
+        "n_observations": 14,
+        "reason": "Ba tác tử đang kiểm song song; đề bạt cần benchmark và kiểm tiến cứu",
+        "uncertainty": "Chặn thực nghiệm: max(SE theo ngày, SE khối 7 kỳ), hệ số 4; không phải bảo đảm anytime-valid khi kiểm lặp"
       },
       "diagnostics": {
-        "statistical": {
-          "windows": [
-            10,
-            30,
-            180
-          ],
-          "ngram_order": 2,
-          "cycle": "Hazard có co Bayes theo nhóm độ gan",
-          "history_draws": 4254
-        },
-        "probabilistic": {
-          "transitions": 4240,
-          "edges": [
-            {
-              "from": "76",
-              "to": "49",
-              "support": 1043,
-              "probability": 0.2869131385449023,
-              "descriptive_only": true
-            },
-            {
-              "from": "72",
-              "to": "49",
-              "support": 1011,
-              "probability": 0.28437598321946295,
-              "descriptive_only": true
-            },
-            {
-              "from": "29",
-              "to": "39",
-              "support": 993,
-              "probability": 0.27513740508318196,
-              "descriptive_only": true
-            },
-            {
-              "from": "34",
-              "to": "68",
-              "support": 969,
-              "probability": 0.2696292297293866,
-              "descriptive_only": true
-            },
-            {
-              "from": "33",
-              "to": "49",
-              "support": 1013,
-              "probability": 0.2757787217940911,
-              "descriptive_only": true
-            }
-          ],
-          "prior": "Tác tử thống kê",
-          "shrinkage": 100
-        },
         "pattern": {
-          "status": "fitted",
+          "alpha": 10.0,
+          "baseline_validation_brier": 0.18362975431079864,
+          "baseline_validation_logloss": 0.5538146956372377,
+          "converged": false,
           "hidden_layers": [
             24,
             12
           ],
-          "alpha": 10.0,
-          "validation_draws": 30,
-          "validation_logloss": 0.5538185232442339,
-          "validation_brier": 0.1836312998958082,
-          "baseline_validation_logloss": 0.5538146956372377,
-          "baseline_validation_brier": 0.18362975431079864,
-          "validation_skill": {
-            "logloss": -6.911349637856132e-06,
-            "brier": -8.416854966457725e-06
-          },
-          "trust": 0.0,
           "policy": 2,
+          "retrieval_feature": true,
+          "status": "fitted",
           "training_draws": 240,
           "training_until": "2026-11-02",
-          "converged": false,
-          "retrieval_feature": true,
-          "validation_is_prospective": false
+          "trust": 0.0,
+          "validation_brier": 0.1836312998958082,
+          "validation_draws": 30,
+          "validation_is_prospective": false,
+          "validation_logloss": 0.5538185232442339,
+          "validation_skill": {
+            "brier": -8.416854966457725e-06,
+            "logloss": -6.911349637856132e-06
+          }
+        },
+        "probabilistic": {
+          "edges": [
+            {
+              "descriptive_only": true,
+              "from": "76",
+              "probability": 0.2869131385449023,
+              "support": 1043,
+              "to": "49"
+            },
+            {
+              "descriptive_only": true,
+              "from": "72",
+              "probability": 0.28437598321946295,
+              "support": 1011,
+              "to": "49"
+            },
+            {
+              "descriptive_only": true,
+              "from": "29",
+              "probability": 0.27513740508318196,
+              "support": 993,
+              "to": "39"
+            },
+            {
+              "descriptive_only": true,
+              "from": "34",
+              "probability": 0.2696292297293866,
+              "support": 969,
+              "to": "68"
+            },
+            {
+              "descriptive_only": true,
+              "from": "33",
+              "probability": 0.2757787217940911,
+              "support": 1013,
+              "to": "49"
+            }
+          ],
+          "prior": "Tác tử thống kê",
+          "shrinkage": 100,
+          "transitions": 4240
+        },
+        "statistical": {
+          "cycle": "Hazard có co Bayes theo nhóm độ gan",
+          "history_draws": 4254,
+          "ngram_order": 2,
+          "windows": [
+            10,
+            30,
+            180
+          ]
         }
       },
       "knowledge": {
+        "matching_rules": [
+          {
+            "id": "tre-34-04-2026-10-12",
+            "status": "dang-kiem",
+            "text": "34 về hôm nay → 04 về kỳ sau",
+            "then": 4
+          },
+          {
+            "id": "tre-22-14-2026-10-12",
+            "status": "dang-kiem",
+            "text": "22 về hôm nay → 14 về kỳ sau",
+            "then": 14
+          },
+          {
+            "id": "tre-29-39-2026-10-12",
+            "status": "dang-kiem",
+            "text": "29 về hôm nay → 39 về kỳ sau",
+            "then": 39
+          },
+          {
+            "id": "tre-37-71-2026-10-12",
+            "status": "dang-kiem",
+            "text": "37 về hôm nay → 71 về kỳ sau",
+            "then": 71
+          },
+          {
+            "id": "tre-76-49-2026-10-12",
+            "status": "dang-kiem",
+            "text": "76 về hôm nay → 49 về kỳ sau",
+            "then": 49
+          },
+          {
+            "id": "tre-10-55-2026-10-12",
+            "status": "dang-kiem",
+            "text": "10 về hôm nay → 55 về kỳ sau",
+            "then": 55
+          },
+          {
+            "id": "tre-45-27-2026-10-12",
+            "status": "dang-kiem",
+            "text": "45 về hôm nay → 27 về kỳ sau",
+            "then": 27
+          }
+        ],
+        "rule_snapshot_date": "2026-11-02",
         "short_term": {
           "10": {
             "draws": 10,
@@ -7472,52 +7517,7 @@
             "index": 691,
             "similarity": 0.16721567511558533
           }
-        ],
-        "matching_rules": [
-          {
-            "id": "tre-34-04-2026-10-12",
-            "text": "34 về hôm nay → 04 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 4
-          },
-          {
-            "id": "tre-22-14-2026-10-12",
-            "text": "22 về hôm nay → 14 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 14
-          },
-          {
-            "id": "tre-29-39-2026-10-12",
-            "text": "29 về hôm nay → 39 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 39
-          },
-          {
-            "id": "tre-37-71-2026-10-12",
-            "text": "37 về hôm nay → 71 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 71
-          },
-          {
-            "id": "tre-76-49-2026-10-12",
-            "text": "76 về hôm nay → 49 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 49
-          },
-          {
-            "id": "tre-10-55-2026-10-12",
-            "text": "10 về hôm nay → 55 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 55
-          },
-          {
-            "id": "tre-45-27-2026-10-12",
-            "text": "45 về hôm nay → 27 về kỳ sau",
-            "status": "dang-kiem",
-            "then": 27
-          }
-        ],
-        "rule_snapshot_date": "2026-11-02"
+        ]
       },
       "confidence_matrix": {
         "incumbent": {
