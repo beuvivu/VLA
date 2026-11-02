@@ -32,6 +32,21 @@ Mỗi mục mang ``rule`` mà trang chấm trên kết quả đang về (``src/w
 ``base`` là xác suất CHÍNH XÁC của đúng sự kiện ấy khi kỳ quay công bằng (27 giải, hai số
 cuối đều trên 00–99; Đặc Biệt đều trên 100 số) — mốc "chọn bừa". ``prob`` là xác suất mà
 nguồn đã công bố cho sự kiện ấy, hoặc ``None`` khi nguồn chỉ xếp hạng.
+
+Vị trí cầu (schema 2, 02-11-2026)
+---------------------------------
+
+Mười bốn danh sách sinh ra từ CẶP VỊ TRÍ chữ số trên bảng kết quả — ba ô "cầu đẹp nhất", bảy trang
+soi cầu, bốn bảng soi đường. Mỗi mục của chúng mang ``bridges`` (các cầu báo mục ấy: vị trí ``a``,
+``b`` theo cách đánh số 0–106 của ``position_bridges``, độ dài ``streak``; soi đường thêm ``lag`` và
+kỳ gốc ``base``) và ``bridge_total`` (tổng số cầu, vì một số soi đường có tới ~100 đường). Danh
+sách mang ``bridge`` (kiểu, luật tô ô về, chuỗi kỳ để vẽ đường cầu) và sổ mang ``draws`` — kết quả
+đúng các kỳ ấy — để trang Live vẽ lại đường cầu khi người đọc bấm vào một số.
+
+Cầu được TÍNH LẠI từ chính ảnh chụp mà trang đã dựng (``draws`` trong ``latest.json``) và phải ra
+đúng số cầu trang đã công bố; lệch thì danh sách ấy không mang vị trí — thà không vẽ còn hơn vẽ
+một cầu trang không hề in. Cầu Kèo KHÔNG có vị trí: đặc trưng "cầu" của nó đếm số lần một số được
+ghép từ MỌI cặp vị trí trong 30 kỳ (``ml_features._path_support_matrix``), không phải một cầu cụ thể.
 """
 
 from __future__ import annotations
@@ -54,12 +69,19 @@ from core.calendar_alignment import known_non_draw_days
 from evaluation.fun_draw_ledger import VN, cutoff_utc, show_data_at
 from forecast.multi_hit_forecast import next_draw_date
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY
+from soi_cau import bridge_rules
+from soi_cau.position_bridges import WIDTHS
 
 LOGGER = logging.getLogger(__name__)
-SCHEMA = 1
+#: 2 (02-11-2026): danh sách cầu mang vị trí cầu và sổ mang ``draws`` (xem docstring).
+SCHEMA = 2
 OUT = Path("evaluation") / "prediction_board"
 #: Số mục tối đa lấy từ một bảng xếp hạng (các trang soi cầu liệt kê theo số cầu).
 TOP = 10
+#: Số cầu tối đa ghi cho MỘT mục (cầu dài nhất trước); tổng thật ghi ở ``bridge_total``.
+BRIDGES_PER_ITEM = 12
+#: Số kỳ cuối của chuỗi mà trang Live vẽ được đường cầu: cầu chạy dài hơn thì vẽ đoạn cuối.
+PATH_DRAWS = 8
 
 
 # --- Mốc chọn bừa ------------------------------------------------------------------
@@ -299,6 +321,171 @@ SOURCES: tuple[tuple[str, str, str, str, str, Callable[[Path, str], list[dict]]]
 )
 
 
+# --- Vị trí cầu ---------------------------------------------------------------------
+
+
+def decode_draw(text: str) -> tuple[str, list[str]]:
+    """``YYYY-MM-DD`` + 27 giải nối liền (đúng độ rộng ``WIDTHS``) → (ngày, 27 giá trị)."""
+    day, rest = text[:10], text[10:]
+    if len(rest) != sum(WIDTHS) or not rest.isdigit():
+        raise ValueError(f"kỳ đã nhúng sai khuôn: {text[:24]!r}")
+    values, k = [], 0
+    for width in WIDTHS:
+        values.append(rest[k:k + width])
+        k += width
+    return day, values
+
+
+def _digits(values: list[str]) -> list[int]:
+    return [int(ch) for ch in "".join(values)]
+
+
+def _formed(values: list[str], a: int, b: int) -> int:
+    digits = _digits(values)
+    return 10 * digits[a] + digits[b]
+
+
+def _arrays(draws: dict[str, list[str]]):  # type: ignore[no-untyped-def]
+    """Như ``position_bridges.load_draws`` nhưng từ kỳ đã nhúng: ngày, chữ số (T, 107), giá trị (T, 27)."""
+    import numpy as np
+
+    dates = sorted(draws)
+    digits = np.array([_digits(draws[d]) for d in dates], dtype=np.int8)
+    values = np.array([[int(v) for v in draws[d]] for d in dates], dtype=np.int64)
+    return dates, digits, values
+
+
+def _ranked_bridges(bridges: list[dict]) -> list[dict]:
+    return sorted(bridges, key=lambda r: (-r["streak"], r.get("lag", 0), r["a"], r["b"]))[:BRIDGES_PER_ITEM]
+
+
+def _attach(item: dict, bridges: list[dict]) -> None:
+    item["bridges"] = _ranked_bridges(bridges)
+    item["bridge_total"] = len(bridges)
+
+
+def _position_bridges(data: Path, entry: dict, key: str, draws: dict[str, list[str]]) -> None:
+    report = _json(data / "soi_cau" / "position_bridges" / "latest.json")
+    embedded = {row["date"]: [str(v) for v in row["values"]] for row in report.get("draws", [])}
+    if not embedded:
+        raise Skip("latest.json không nhúng kỳ quay")
+    mode = report["modes"][key]
+    series = sorted(embedded)
+    last = embedded[series[-1]]
+    best = mode.get("best", [])[:TOP]
+    if len(best) != len(entry["items"]):
+        raise Skip("số cầu khác số mục")
+    for item, bridge in zip(entry["items"], best, strict=True):
+        a, b = int(bridge["a"]), int(bridge["b"])
+        n = _formed(last, a, b)
+        rev = 10 * (n % 10) + n // 10
+        if {_number(x) for x in bridge["numbers"]} != {f"{n:02d}", f"{rev:02d}"}:
+            raise Skip(f"cầu {a}x{b} không ghép ra {bridge['numbers']} ở kỳ {series[-1]}")
+        _attach(item, [{"a": a, "b": b, "streak": int(bridge["streak"])}])
+    # ``query``: đúng tham số trang soi cầu vị trí đọc (``readParams``), để liên kết mở đúng chế độ ấy.
+    entry["bridge"] = {"type": "position", "mark": "special-lon" if mode.get("db") else "loto-lon",
+                       "series": series[-PATH_DRAWS:],
+                       "query": {"limit": int(mode.get("limit", 5)), "exactlimit": 0,
+                                 "lon": 1 if mode.get("lon", True) else 0, "nhay": int(mode.get("nhay", 1)),
+                                 "db": 1 if mode.get("db") else 0}}
+    draws.update({d: embedded[d] for d in entry["bridge"]["series"]})
+
+
+#: Luật tô ô "về" ở kỳ sau của từng kiểu cầu trang soi cầu (``bridge_rules``).
+_RULE_MARK = {"loto": "loto-lon", "hai-nhay": "loto-lon", "bach-thu": "loto",
+              "dac-biet": "special-touch", "bo-so": "bo"}
+
+
+def _rule_bridges(data: Path, entry: dict, key: str, target: str, draws: dict[str, list[str]]) -> None:
+    report = _json(data / "soi_cau" / "bridge_pages" / "latest.json")
+    embedded = dict(decode_draw(text) for text in report.get("draws", []))
+    if not embedded:
+        raise Skip("latest.json không nhúng kỳ quay")
+    rule = report["rules"][key]
+    dates, digits, values = _arrays(embedded)
+    weekday = pd.Timestamp(target).weekday() if rule.get("weekday") else None
+    dates, digits, values = bridge_rules.weekday_subset(dates, digits, values, weekday)
+    found = bridge_rules.find(rule["kind"], digits, values, count=int(rule["count"]))["bridges"]
+    grouped: dict[str, list[dict]] = {}
+    for bridge in found:
+        n = int(bridge["number"])
+        if rule["kind"] == "bo-so":
+            group = ",".join(bridge_rules.bo_members(int(bridge_rules.BO_ID[n])))
+        else:
+            group = ",".join(sorted({f"{n:02d}", f"{10 * (n % 10) + n // 10:02d}"}))
+        grouped.setdefault(group, []).append({"a": bridge["a"], "b": bridge["b"], "streak": bridge["streak"]})
+    groups = rule.get("groups", [])[:TOP]
+    for item, group in zip(entry["items"], groups, strict=True):
+        bridges = grouped.get(group["key"], [])
+        if len(bridges) != int(group.get("bridges", -1)):
+            raise Skip(f"tính lại ra {len(bridges)} cầu cho {group['key']}, trang in {group.get('bridges')}")
+        _attach(item, bridges)
+    entry["bridge"] = {"type": "rule", "mark": _RULE_MARK[rule["kind"]], "series": dates[-PATH_DRAWS:]}
+    draws.update({d: embedded[d] for d in entry["bridge"]["series"]})
+
+
+def _path_bridges(data: Path, entry: dict, mode: str, kind: str, target: str,
+                  draws: dict[str, list[str]]) -> None:
+    from datetime import date, timedelta
+
+    manifest = _json(data / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json")
+    anchor = str(manifest.get("anchor_date", ""))[:10]
+    paths_file = data / "soi_cau" / "path_ui" / f"paths_{mode}_{kind}.csv"
+    if not paths_file.exists():
+        raise Skip(f"chưa có {paths_file.name}")
+    embedded = dict(decode_draw(text) for text in _json(data / "soi_cau" / "bridge_pages" / "latest.json")
+                    .get("draws", []))
+    support = {_number(row["number"]): int(float(row.get("support_paths_count") or -1)) for row in _csv(
+        data / "soi_cau" / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv").to_dict("records")}
+    # Cùng luật với ``path_prob.predict_from_fitted_paths_full``: kỳ gốc = ngày dữ liệu + 1 − độ trễ (lịch).
+    # Ngày ``following`` ấy KHÔNG phải kỳ đích khi nó là ngày nghỉ quay (Tết): ``_path`` nhận danh sách cho
+    # kỳ quay kế tiếp ``target``, nên khung chi tiết phải ghi ``target``, còn kỳ gốc vẫn theo luật của trang.
+    following = date.fromisoformat(anchor) + timedelta(days=1)
+    by_number: dict[str, list[dict]] = {}
+    for row in _csv(paths_file).to_dict("records"):
+        lag, i, j = int(row["lag"]), int(row["i"]), int(row["j"])
+        base = (following - timedelta(days=lag)).isoformat()
+        if base not in embedded:
+            continue
+        by_number.setdefault(f"{_formed(embedded[base], i, j):02d}", []).append(
+            {"a": i, "b": j, "streak": int(row["current_streak"]), "lag": lag, "base": base})
+    for item in entry["items"]:
+        number = item["rule"]["numbers"][0]
+        bridges = by_number.get(number, [])
+        if len(bridges) != support.get(number):
+            raise Skip(f"tính lại ra {len(bridges)} đường cho {number}, trang in {support.get(number)}")
+        _attach(item, bridges)
+        draws.update({b["base"]: embedded[b["base"]] for b in item["bridges"]})
+    entry["bridge"] = {"type": "path", "mark": "loto" if mode == "loto" else "special", "next": target}
+
+
+def attach_bridges(data_dir: Path, target: str, lists: list[dict]) -> dict[str, list[str]]:
+    """Gắn vị trí cầu cho các danh sách cầu; trả về kết quả các kỳ cần để vẽ đường cầu.
+
+    Lỗi ở một danh sách chỉ làm danh sách ấy không có vị trí (bảng đối chiếu vẫn đủ).
+    """
+    draws: dict[str, list[str]] = {}
+    for entry in lists:
+        kept = {d: v for d, v in draws.items()}
+        list_id = entry["id"]
+        try:
+            if list_id.startswith("best-"):
+                _position_bridges(data_dir, entry, list_id.removeprefix("best-"), draws)
+            elif list_id.startswith("bridge-"):
+                _rule_bridges(data_dir, entry, list_id.removeprefix("bridge-"), target, draws)
+            elif list_id.startswith("path-"):
+                _, mode, kind = list_id.split("-")
+                _path_bridges(data_dir, entry, mode, kind, target, draws)
+        except (Skip, KeyError, ValueError) as reason:
+            LOGGER.warning("Danh sách %s không mang vị trí cầu: %s", list_id, reason)
+            for item in entry["items"]:
+                item.pop("bridges", None)
+                item.pop("bridge_total", None)
+            entry.pop("bridge", None)
+            draws = kept
+    return dict(sorted(draws.items()))
+
+
 def _vector(data: Path, target: str, mode: str) -> list[float] | None:
     path = data / "forecast" / "predict" / f"predict_next_{mode}_all_{target}.csv"
     if not path.exists():
@@ -323,6 +510,7 @@ def build_board(data_dir: Path, target: str, *, now: datetime) -> dict:
             continue
         lists.append({"id": key, "group": group, "title": title, "page": page, "kind": kind, "items": items})
     vectors = {mode: _vector(data_dir, target, mode) for mode in ("loto", "de")}
+    draws = attach_bridges(data_dir, target, lists)
     return {
         "schema": SCHEMA,
         "target_date": target,
@@ -330,6 +518,7 @@ def build_board(data_dir: Path, target: str, *, now: datetime) -> dict:
         "locks_at": cutoff_utc(target).astimezone(VN).isoformat(timespec="minutes"),
         "lists": lists,
         "vectors": {mode: v for mode, v in vectors.items() if v is not None},
+        "draws": draws,
         "missing": missing,
     }
 
@@ -365,6 +554,7 @@ def source_files(target: str) -> list[str]:
             f"ai_ml/daily/cau_keo_{mode}_top10_{target}.csv",
             f"ml/predict_next_{mode}_ml_top10.csv",
             f"soi_cau/path_ui/path_manifest_{mode}.json",
+            *(f"soi_cau/path_ui/paths_{mode}_{kind}.csv" for kind in ("active", "stable")),
         ]
     return files
 

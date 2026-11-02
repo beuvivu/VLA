@@ -395,6 +395,15 @@ kỳ quay công bằng; hàng sau giờ quay chỉ "trượt" khi phần kết q
 Các mục trong một danh sách thường trùng nhau (cùng chữ số chạm) nên không độc lập — đừng in "trúng
 10/10" như bằng chứng. `tests/evaluation/test_prediction_board.py`, `tests/frontend/live-scorecard.test.mjs`.
 
+Vị trí cầu (schema 2, 02-11-2026): mục của 14 danh sách sinh từ cặp vị trí (`best-*`, `bridge-*`, `path-*`) mang
+`bridges` (a, b, độ dài; soi đường thêm độ trễ và kỳ gốc), `bridge_total`, và sổ nhúng `draws` — đúng các kỳ cần vẽ.
+Trang Live biến số ở hàng "Trước giờ quay" của các danh sách ấy thành nút mở đường cầu qua các kỳ. Cầu được TÍNH
+LẠI từ kỳ đã nhúng của chính nguồn (`bridge_rules.find`, cùng lọc theo thứ; soi đường: kỳ gốc = ngày dữ liệu + 1 −
+độ trễ) và chỉ gắn khi số cầu tính lại TRÙNG số trang đã in (`bridges` của nhóm, `support_paths_count`); lệch là cả
+danh sách không có vị trí, bảng vẫn đủ. Cầu Kèo KHÔNG mang vị trí: đặc trưng "cầu" của nó
+(`ml_features._path_support_matrix`) đếm mọi cặp vị trí trong 30 ngày, không phải một cầu cụ thể — đừng gán cho nó
+một cặp vị trí "tiêu biểu".
+
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 
 Theo yêu cầu chủ dự án: nguồn chính `xoso.com.vn`; dự phòng `mketqua.net` rồi

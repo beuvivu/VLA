@@ -156,3 +156,140 @@ test('Xác suất toàn bảng 100 số chấm bằng Brier và xác suất củ
   assert.match(text, /kỹ năng \+0,00%/, 'vector hằng số đúng bằng chọn bừa');
   assert.match(text, /cho số 63 là 1,99%/);
 });
+
+// ---- Vị trí đường cầu ---------------------------------------------------------------
+// 27 giá trị đúng độ rộng giải; `special` là giải Đặc Biệt, `tail7` là hai số cuối giải bảy cuối cùng.
+const WIDTHS = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2];
+function values(special, tail7 = '00') {
+  return WIDTHS.map((w, i) => (i === 0 ? special : i === 26 ? tail7 : '9'.repeat(w)));
+}
+// Cầu 0×1 ghép hai chữ số đầu giải Đặc Biệt: 34 (10-19) → 56 (10-20) → 78 (10-21).
+// Kỳ 10-20 có giải bảy đuôi 43 (lộn của 34), kỳ 10-21 có đuôi 65 (lộn của 56): cả hai bước trúng.
+const DRAWS = {
+  '2026-10-19': values('34111'),
+  '2026-10-20': values('56111', '43'),
+  '2026-10-21': values('78111', '65'),
+};
+const bridgeBoard = () => board('2026-10-22', {
+  schema: 2, draws: DRAWS,
+  lists: [
+    ...board().lists,
+    { id: 'bridge-loto', group: 'Soi cầu', title: 'Cầu LOTO', page: 'soi-cau-loto.html', kind: 'loto',
+      bridge: { type: 'rule', mark: 'loto-lon', series: Object.keys(DRAWS) },
+      items: [{ ...loto('78'), label: '78 · 87', rule: { on: 'loto', numbers: ['78', '87'], need: 1 },
+        bridges: [{ a: 0, b: 1, streak: 2 }, { a: 2, b: 5, streak: 1 }], bridge_total: 2 }] },
+    { id: 'path-de-stable', group: 'Soi cầu theo đường', title: 'Đường cầu', page: 'soi-path-de-stable.html',
+      kind: 'de', bridge: { type: 'path', mark: 'special', next: '2026-10-22' },
+      items: [{ label: '78', rule: { on: 'special', numbers: ['78'] }, prob: 0.011, base: 0.01,
+        bridges: [{ a: 0, b: 1, streak: 3, lag: 1, base: '2026-10-21' }], bridge_total: 5 }] },
+  ],
+});
+const chip = (d, id) => d.querySelector(`tbody[data-list-id="${id}"] .is-before .live-scorecard-chip-btn`);
+
+test('Chỉ số trước giờ quay của danh sách cầu mới bấm được; danh sách khác giữ nguyên', async (t) => {
+  const { api, d } = setup(t, async () => ok(bridgeBoard()));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  assert.ok(chip(d, 'bridge-loto'), 'mục có vị trí cầu thành nút');
+  assert.equal(chip(d, 'top'), null, 'Top LOTO không sinh từ cặp vị trí');
+  assert.equal(d.querySelector('.is-after .live-scorecard-chip-btn'), null, 'hàng sau giờ quay không mở cầu');
+  assert.equal(chip(d, 'bridge-loto').getAttribute('aria-expanded'), 'false');
+  // Sổ cũ (schema 1) không có vị trí: không nút nào.
+  const plain = setup(t, async () => ok(board()));
+  await plain.api.update({ draw_date: '2026-10-22', prizes: {} });
+  assert.equal(plain.d.querySelector('.live-scorecard-chip-btn'), null);
+});
+
+test('Bấm số: đường cầu qua từng kỳ, tô hai vị trí và ô về ở kỳ sau', async (t) => {
+  const { api, d } = setup(t, async () => ok(bridgeBoard()));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  chip(d, 'bridge-loto').click();
+  const group = d.querySelector('tbody[data-list-id="bridge-loto"]');
+  assert.deepEqual([...group.rows].map((r) => r.className), ['is-before', 'is-after', 'is-bridge']);
+  assert.equal(group.querySelector('.is-bridge td').colSpan, 4);
+  assert.equal(chip(d, 'bridge-loto').getAttribute('aria-expanded'), 'true');
+  assert.equal(d.activeElement, chip(d, 'bridge-loto'), 'tiêu điểm ở lại trên số vừa bấm');
+  const panel = d.getElementById('live-bridge-bridge-loto');
+  assert.match(panel.querySelector('h3').textContent, /^78 · 87: 2 cầu báo mục này$/);
+  assert.match(panel.querySelector('.live-bridge-where').textContent,
+    /Vị trí 0 \(ĐB · chữ số 1\) ghép Vị trí 1 \(ĐB · chữ số 2\)/);
+  // Cầu chạy 2 kỳ: vẽ 3 bảng (2 bước), mới nhất ở trên.
+  const days = [...panel.querySelectorAll('.live-bridge-day')];
+  assert.deepEqual(days.map((day) => day.querySelector('h4').textContent), ['21/10/2026', '20/10/2026', '19/10/2026']);
+  assert.match(days[0].querySelector('p').textContent, /Ghép 78 → báo 78 · 87 cho kỳ 22\/10\/2026 · kỳ trước báo 56 · 65: trúng/);
+  assert.deepEqual([...days[0].querySelectorAll('.live-bridge-src')].map((s) => s.textContent), ['7', '8']);
+  // Chữ số hàng chục lấy ở vị trí a, hàng đơn vị ở vị trí b: đảo hai vị trí là ghép ra số lộn.
+  assert.equal(days[0].querySelector('.live-bridge-src--a').textContent, '7');
+  assert.equal(days[0].querySelector('.live-bridge-src--b').textContent, '8');
+  assert.equal(days[0].querySelector('.live-bridge-src--a').getAttribute('aria-label'), 'Vị trí 0 (ĐB · chữ số 1): 7');
+  assert.deepEqual([...days[0].querySelectorAll('.live-bridge-hit')].map((s) => s.textContent).join(''), '65',
+    'đuôi 65 của kỳ 21/10 về theo cầu kỳ trước');
+  assert.equal(days[2].querySelectorAll('.live-bridge-hit').length, 0, 'kỳ đầu không có kỳ trước để chấm');
+  assert.match(panel.querySelector('.live-bridge-link').href, /soi-cau-loto\.html$/);
+});
+
+test('Đổi cầu, trang tự cập nhật và đóng bảng đều giữ đúng trạng thái', async (t) => {
+  const { api, d } = setup(t, async () => ok(bridgeBoard()));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  chip(d, 'bridge-loto').click();
+  d.querySelector('[data-bridge-pick="1"]').click();
+  let panel = d.getElementById('live-bridge-bridge-loto');
+  assert.equal(panel.querySelector('[data-bridge-pick="1"]').getAttribute('aria-pressed'), 'true');
+  assert.equal(panel.querySelectorAll('.live-bridge-day').length, 2, 'cầu chạy 1 kỳ: hai bảng');
+  // Kết quả về giữa chừng: bảng dựng lại nhưng cầu đang xem vẫn mở.
+  await api.update({ draw_date: '2026-10-22', prizes: prizes(FULL, 5) });
+  panel = d.getElementById('live-bridge-bridge-loto');
+  assert.ok(panel, 'cập nhật trực tiếp không đóng bảng cầu');
+  assert.equal(panel.querySelector('[data-bridge-pick="1"]').getAttribute('aria-pressed'), 'true');
+  panel.querySelector('.live-bridge-close').click();
+  assert.equal(d.getElementById('live-bridge-bridge-loto'), null);
+  assert.equal(d.activeElement, chip(d, 'bridge-loto'));
+});
+
+test('Soi đường: một bảng kỳ gốc với độ trễ, liên kết mở đúng số trên trang', async (t) => {
+  const { api, d } = setup(t, async () => ok(bridgeBoard()));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  chip(d, 'path-de-stable').click();
+  const panel = d.getElementById('live-bridge-path-de-stable');
+  assert.match(panel.querySelector('h3').textContent, /^78: 5 đường cầu báo mục này, hiện 1 cầu dài nhất$/);
+  const days = panel.querySelectorAll('.live-bridge-day');
+  assert.equal(days.length, 1);
+  assert.match(days[0].textContent, /Kỳ gốc · ghép 78 · trễ 1 ngày → báo 78 cho kỳ 22\/10\/2026/);
+  assert.match(panel.querySelector('.live-bridge-link').href, /soi-path-de-stable\.html\?number=78$/);
+});
+
+test('Cầu Đặc Biệt chỉ tô giải Đặc Biệt: số lộn về ở giải bảy không phải "về" theo cầu', async (t) => {
+  const special = {
+    ...bridgeBoard(),
+    lists: [{ id: 'best-db', group: 'Cầu đẹp nhất', title: 'Cầu Đặc Biệt', page: 'soi-cau-vi-tri.html', kind: 'de',
+      bridge: { type: 'position', mark: 'special-lon', series: Object.keys(DRAWS),
+        query: { limit: 5, exactlimit: 0, lon: 1, nhay: 1, db: 1 } },
+      items: [{ label: '78 · 87', rule: { on: 'special', numbers: ['78', '87'] }, prob: null, base: 0.02,
+        bridges: [{ a: 0, b: 1, streak: 2 }], bridge_total: 1 }] }],
+  };
+  const { api, d } = setup(t, async () => ok(special));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  chip(d, 'best-db').click();
+  const panel = d.getElementById('live-bridge-best-db');
+  const days = [...panel.querySelectorAll('.live-bridge-day')];
+  assert.equal(days.length, 3);
+  // Đuôi 65 của kỳ 21/10 nằm ở giải bảy: cầu LOTO tô nó, cầu Đặc Biệt thì không.
+  assert.equal(days[0].querySelectorAll('.live-bridge-hit').length, 0);
+  assert.match(panel.querySelector('.live-bridge-link').href,
+    /soi-cau-vi-tri\.html\?vt=0x1&limit=5&exactlimit=0&lon=1&nhay=1&db=1#app-bridge-results$/);
+});
+
+test('Sang kỳ khác thì bảng cầu đang mở đóng lại', async (t) => {
+  const forDate = (url) => {
+    const date = url.match(/(\d{4}-\d\d-\d\d)\.json$/)[1];
+    return ok({ ...bridgeBoard(), target_date: date, locks_at: date + 'T18:10+07:00' });
+  };
+  const { api, d } = setup(t, async (url) => forDate(url));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  chip(d, 'bridge-loto').click();
+  assert.ok(d.getElementById('live-bridge-bridge-loto'));
+  await api.update({ draw_date: '2026-10-23', prizes: {} });
+  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+  assert.ok(chip(d, 'bridge-loto'), 'sổ kỳ mới đã hiện');
+  assert.equal(d.getElementById('live-bridge-bridge-loto'), null, 'cầu của kỳ trước không mở sẵn ở kỳ mới');
+  assert.equal(chip(d, 'bridge-loto').getAttribute('aria-expanded'), 'false');
+});

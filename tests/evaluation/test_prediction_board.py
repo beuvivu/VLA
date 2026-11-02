@@ -244,3 +244,140 @@ def test_backfill_reads_a_commit_from_before_the_data_regrouping(tmp_path: Path)
     board = json.loads(pb.backfill_from_git(repo, tmp_path / "out", TARGET).read_text(encoding="utf-8"))
     assert board["missing"] == []
     assert board["lists"] == expected["lists"]
+
+
+# --- Vị trí cầu (schema 2) ---------------------------------------------------------------
+
+
+def _real_bridge_data(tmp_path: Path) -> tuple[Path, str]:
+    """Ảnh chụp THẬT của các nguồn cầu trong kho, chép ra thư mục tạm để còn đột biến được."""
+    import shutil
+
+    data = tmp_path / "data"
+    src = ROOT / "data" / "soi_cau"
+    for rel in ("position_bridges/latest.json", "bridge_pages/latest.json"):
+        (data / "soi_cau" / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src / rel, data / "soi_cau" / rel)
+    shutil.copytree(src / "path_ui", data / "soi_cau" / "path_ui")
+    target = json.loads((src / "position_bridges" / "latest.json").read_text(encoding="utf-8"))["target_date"]
+    return data, target
+
+
+def _formed(board: dict, day: str, a: int, b: int) -> int:
+    digits = [int(ch) for ch in "".join(board["draws"][day])]
+    return 10 * digits[a] + digits[b]
+
+
+def test_every_bridge_on_the_board_forms_the_number_its_list_published(tmp_path: Path) -> None:
+    """Trên dữ liệu thật: mỗi cầu ghép đúng số mà mục của nó in, ở đúng kỳ, và tổng cầu bằng số trang in."""
+    from soi_cau import bridge_rules
+
+    data, target = _real_bridge_data(tmp_path)
+    board = pb.build_board(data, target, now=BEFORE)
+    lists = {entry["id"]: entry for entry in board["lists"] if "bridge" in entry}
+    # MỌI danh sách sinh từ cặp vị trí có trên bảng phải mang vị trí: một kiểu bị bỏ lặng lẽ (lọc theo thứ sai,
+    # kỳ thiếu) thì người đọc bấm vào không thấy gì mà phép kiểm vẫn xanh.
+    positional = {entry["id"] for entry in board["lists"] if entry["id"].startswith(("best-", "bridge-", "path-"))}
+    assert positional == set(lists)
+    assert {"best-lo", "best-db", "bridge-loto", "bridge-loto-theo-thu", "bridge-dac-biet",
+            "bridge-dac-biet-theo-thu", "bridge-bo-so", "path-loto-stable"} <= set(lists)
+    assert not any(entry["id"].startswith(("ensemble", "cau-keo", "ml-", "vip", "fun")) and "bridge" in entry
+                   for entry in board["lists"]), "danh sách không sinh từ cặp vị trí không được mang vị trí"
+    pages = json.loads((data / "soi_cau" / "bridge_pages" / "latest.json").read_text(encoding="utf-8"))
+    checked = 0
+    for list_id, entry in lists.items():
+        cfg = entry["bridge"]
+        for index, item in enumerate(entry["items"]):
+            assert 1 <= len(item["bridges"]) <= min(item["bridge_total"], pb.BRIDGES_PER_ITEM)
+            for bridge in item["bridges"]:
+                checked += 1
+                if cfg["type"] == "path":
+                    assert cfg["next"] == target
+                    base = date.fromisoformat(cfg["next"]) - timedelta(days=bridge["lag"])
+                    assert bridge["base"] == base.isoformat()
+                    assert f"{_formed(board, bridge['base'], bridge['a'], bridge['b']):02d}" == item["rule"]["numbers"][0]
+                    continue
+                # Mọi cầu của trang ghép a < b (``pair_index(True)``), số = 10·d[a] + d[b] của kỳ cuối.
+                assert bridge["a"] < bridge["b"]
+                n = _formed(board, cfg["series"][-1], bridge["a"], bridge["b"])
+                pair = {f"{n:02d}", f"{10 * (n % 10) + n // 10:02d}"}
+                if cfg["mark"] == "bo":
+                    assert set(bridge_rules.bo_members(int(bridge_rules.BO_ID[n]))) == set(item["rule"]["numbers"])
+                elif cfg["mark"] == "special-touch":
+                    assert {n // 10, n % 10} == set(item["rule"]["digits"])
+                else:
+                    assert set(item["rule"]["numbers"]) == pair
+            if list_id.startswith("bridge-"):
+                key = list_id.removeprefix("bridge-")
+                assert item["bridge_total"] == pages["rules"][key]["groups"][index]["bridges"]
+        if cfg["type"] != "path":
+            assert all(day in board["draws"] for day in cfg["series"])
+    assert checked > 100
+
+
+def test_a_list_whose_bridges_do_not_recompute_carries_no_positions(tmp_path: Path) -> None:
+    """Số cầu tính lại lệch số trang in thì danh sách ấy KHÔNG mang vị trí; các danh sách khác giữ nguyên."""
+    data, target = _real_bridge_data(tmp_path)
+    clean = {e["id"]: e for e in pb.build_board(data, target, now=BEFORE)["lists"]}
+    path = data / "soi_cau" / "bridge_pages" / "latest.json"
+    pages = json.loads(path.read_text(encoding="utf-8"))
+    pages["rules"]["loto"]["groups"][0]["bridges"] += 1
+    path.write_text(json.dumps(pages), encoding="utf-8")
+    anchor = json.loads((data / "soi_cau" / "path_ui" / "path_manifest_loto.json").read_text(encoding="utf-8"))
+    support = data / "soi_cau" / "path_ui" / f"predict_next_loto_stable_{str(anchor['anchor_date'])[:10]}.csv"
+    rows = support.read_text(encoding="utf-8").splitlines()
+    head, first = rows[0].split(","), rows[1].split(",")
+    first[head.index("support_paths_count")] = str(int(first[head.index("support_paths_count")]) + 1)
+    support.write_text("\n".join([rows[0], ",".join(first), *rows[2:]]) + "\n", encoding="utf-8")
+    board = pb.build_board(data, target, now=BEFORE)
+    lists = {e["id"]: e for e in board["lists"]}
+    for broken in ("bridge-loto", "path-loto-stable"):
+        assert "bridge" not in lists[broken]
+        assert not any("bridges" in item for item in lists[broken]["items"])
+        assert lists[broken]["items"][0]["rule"] == clean[broken]["items"][0]["rule"], "mục vẫn còn trên bảng"
+    assert lists["bridge-bach-thu"]["bridge"] == clean["bridge-bach-thu"]["bridge"]
+    assert lists["path-loto-active"]["items"] == clean["path-loto-active"]["items"]
+
+
+def test_a_path_bridge_after_a_closed_day_names_the_real_target_draw(tmp_path: Path, monkeypatch) -> None:
+    """Ngày sau ngày dữ liệu là ngày nghỉ quay (Tết): kỳ gốc vẫn theo luật trang soi đường (ngày dữ liệu + 1 −
+    độ trễ), nhưng kỳ mà cầu báo là kỳ quay kế tiếp thật — chép ngày nghỉ vào khung là in một kỳ không có."""
+    data, _ = _real_bridge_data(tmp_path)
+    anchor = json.loads((data / "soi_cau" / "path_ui" / "path_manifest_loto.json").read_text(encoding="utf-8"))
+    following = date.fromisoformat(str(anchor["anchor_date"])[:10]) + timedelta(days=1)
+    target = (following + timedelta(days=1)).isoformat()
+    monkeypatch.setattr(pb, "known_non_draw_days", lambda: frozenset({following.isoformat()}))
+    board = pb.build_board(data, target, now=datetime.fromisoformat(target + "T08:00:00+00:00"))
+    lists = {e["id"]: e for e in board["lists"]}
+    entry = lists["path-loto-stable"]
+    assert entry["bridge"]["next"] == target
+    for bridge in entry["items"][0]["bridges"]:
+        assert bridge["base"] == (following - timedelta(days=bridge["lag"])).isoformat()
+        assert f"{_formed(board, bridge['base'], bridge['a'], bridge['b']):02d}" == entry["items"][0]["rule"]["numbers"][0]
+
+
+def test_each_bridge_source_embeds_the_draws_its_own_positions_need(tmp_path: Path) -> None:
+    """Cầu vị trí vẽ bằng kỳ của CHÍNH nguồn ấy: thiếu nguồn bảy kiểu cầu thì kỳ vẫn có, đúng từng giá trị."""
+    data, target = _real_bridge_data(tmp_path)
+    (data / "soi_cau" / "bridge_pages" / "latest.json").unlink()
+    board = pb.build_board(data, target, now=BEFORE)
+    lists = {e["id"]: e for e in board["lists"]}
+    report = json.loads((data / "soi_cau" / "position_bridges" / "latest.json").read_text(encoding="utf-8"))
+    source = {row["date"]: [str(v) for v in row["values"]] for row in report["draws"]}
+    for list_id in ("best-lo", "best-db"):
+        series = lists[list_id]["bridge"]["series"]
+        assert len(series) == pb.PATH_DRAWS
+        assert {day: board["draws"][day] for day in series} == {day: source[day] for day in series}
+
+
+def test_a_board_without_embedded_draws_still_publishes_every_list(tmp_path: Path) -> None:
+    """Nguồn cũ không nhúng kỳ quay: bảng vẫn đủ danh sách, chỉ thiếu vị trí cầu."""
+    board = pb.build_board(_data(tmp_path), TARGET, now=BEFORE)
+    assert board["schema"] == 2 and board["draws"] == {}
+    assert board["missing"] == []
+    assert not any("bridge" in entry for entry in board["lists"])
+
+
+def test_the_backfill_fetches_the_path_rules_it_recomputes_bridges_from() -> None:
+    files = pb.source_files(TARGET)
+    assert {f"soi_cau/path_ui/paths_{m}_{k}.csv" for m in ("loto", "de") for k in ("active", "stable")} <= set(files)
