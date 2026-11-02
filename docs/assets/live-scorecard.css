@@ -31,3 +31,32 @@
 .live-scorecard-chip[data-state="wait"]{border-style:dashed}
 .live-scorecard-note{margin:12px 0 0;color:var(--ui-ink-soft);font-size:11px;line-height:1.6}
 @media(max-width:700px){.live-scorecard-heading{flex-wrap:wrap}.live-scorecard-scroll{overflow:visible}.live-scorecard-table{min-width:0;font-size:12px}.live-scorecard-table thead{display:none}.live-scorecard-table,.live-scorecard-group,.live-scorecard-group tr,.live-scorecard-group td,.live-scorecard-name{display:block;width:auto}.live-scorecard-name{padding:12px 12px 4px}.live-scorecard-table td{padding:4px 12px}.live-scorecard-group tr{padding-bottom:8px}.live-scorecard-when{font-weight:650}}
+.live-scorecard-chip.has-bridge{padding:0}
+.live-scorecard-chip-btn{display:inline-flex;align-items:baseline;gap:6px;min-height:30px;padding:4px 8px;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.live-scorecard-chip-btn:hover{background:var(--ui-brand-soft)}
+.live-scorecard-chip-btn:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}
+.live-scorecard-chip[data-open="true"]{border-color:var(--ui-brand-border);background:var(--ui-brand-soft)}
+.is-bridge td.live-bridge-cell{padding:4px 12px 14px;background:var(--ui-surface)}
+.live-bridge{border:1px solid var(--ui-brand-border);border-radius:12px;padding:12px;background:var(--ui-surface)}
+.live-bridge-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.live-bridge-head h3{margin:0;font-size:14px;line-height:1.4;color:var(--ui-ink)}
+.live-bridge-close,.live-bridge-pick{min-height:30px;padding:4px 10px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface-2);color:var(--ui-ink);font:inherit;font-size:12px;cursor:pointer}
+.live-bridge-close:focus-visible,.live-bridge-pick:focus-visible,.live-bridge-link:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}
+.live-bridge-picker{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.live-bridge-pick{font-variant-numeric:tabular-nums}
+.live-bridge-pick[aria-pressed="true"]{border-color:var(--ui-brand-border);background:var(--ui-brand-soft);color:var(--ui-brand-ink);font-weight:700}
+.live-bridge-where{margin:0 0 10px;font-size:12px;line-height:1.6;color:var(--ui-ink-2)}
+.live-bridge-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.live-bridge-day{border:1px solid var(--ui-border);border-radius:10px;padding:8px 10px;background:var(--ui-surface-2)}
+.live-bridge-day-head h4{margin:0;font-size:13px;color:var(--ui-ink);font-variant-numeric:tabular-nums}
+.live-bridge-day-head p{margin:2px 0 6px;font-size:11px;line-height:1.5;color:var(--ui-ink-soft)}
+.live-bridge-board{display:grid;gap:2px}
+.live-bridge-prize{display:grid;grid-template-columns:28px 1fr;gap:6px;align-items:baseline;font-size:12px}
+.live-bridge-prize-name{font-weight:650;color:var(--ui-ink-soft)}
+.live-bridge-prize-values{display:flex;flex-wrap:wrap;gap:2px 8px;font-family:var(--ui-mono);font-variant-numeric:tabular-nums;color:var(--ui-ink)}
+.live-bridge-src{color:var(--ui-brand-ink);font-weight:900}
+.live-bridge-value .live-bridge-src{font-size:1.25em;line-height:1}
+.live-bridge-src--b{text-decoration:underline;text-underline-offset:3px}
+.live-bridge-hit{padding:0 1px;border-radius:3px;background:var(--ui-mark-bg);color:var(--ui-mark-ink);box-shadow:inset 0 0 0 1px var(--ui-mark-border);font-weight:800}
+.live-bridge-link{display:inline-block;margin-top:10px;font-size:12px;font-weight:650;color:var(--ui-brand-ink)}
+@media(max-width:700px){.live-bridge-days{grid-template-columns:1fr}.is-bridge td.live-bridge-cell{padding:4px 8px 12px}}

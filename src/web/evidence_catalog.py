@@ -676,6 +676,10 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                     "chính xác của đúng sự kiện ấy (27 giải đều trên 00–99).",
                     "Hàng sau giờ quay chấm dần theo giải đã về; một mục chỉ trượt khi phần kết quả "
                     "liên quan đã đủ.",
+                    "Số của danh sách cầu (cầu đẹp nhất, bảy trang soi cầu, soi đường) mở được vị trí: hai chữ "
+                    "số ghép thành số ấy và đường cầu qua các kỳ gần nhất, tính lại từ kết quả đã lưu và chỉ "
+                    "gắn khi số cầu tính lại trùng số trang đã in. Cầu Kèo không có vị trí vì tín hiệu «cầu» "
+                    "của nó đếm mọi cặp vị trí trong 30 ngày, không phải một cầu cụ thể.",
                     "Tỉ lệ trúng của một kỳ là một mẫu rất nhỏ; so sánh có ý nghĩa cần nhiều kỳ, như trang "
                     "Chất lượng mô hình đã làm.",
                 ],
