@@ -292,6 +292,7 @@ def test_every_bridge_on_the_board_forms_the_number_its_list_published(tmp_path:
             for bridge in item["bridges"]:
                 checked += 1
                 if cfg["type"] == "path":
+                    assert cfg["next"] == target
                     base = date.fromisoformat(cfg["next"]) - timedelta(days=bridge["lag"])
                     assert bridge["base"] == base.isoformat()
                     assert f"{_formed(board, bridge['base'], bridge['a'], bridge['b']):02d}" == item["rule"]["numbers"][0]
@@ -336,6 +337,23 @@ def test_a_list_whose_bridges_do_not_recompute_carries_no_positions(tmp_path: Pa
         assert lists[broken]["items"][0]["rule"] == clean[broken]["items"][0]["rule"], "mục vẫn còn trên bảng"
     assert lists["bridge-bach-thu"]["bridge"] == clean["bridge-bach-thu"]["bridge"]
     assert lists["path-loto-active"]["items"] == clean["path-loto-active"]["items"]
+
+
+def test_a_path_bridge_after_a_closed_day_names_the_real_target_draw(tmp_path: Path, monkeypatch) -> None:
+    """Ngày sau ngày dữ liệu là ngày nghỉ quay (Tết): kỳ gốc vẫn theo luật trang soi đường (ngày dữ liệu + 1 −
+    độ trễ), nhưng kỳ mà cầu báo là kỳ quay kế tiếp thật — chép ngày nghỉ vào khung là in một kỳ không có."""
+    data, _ = _real_bridge_data(tmp_path)
+    anchor = json.loads((data / "soi_cau" / "path_ui" / "path_manifest_loto.json").read_text(encoding="utf-8"))
+    following = date.fromisoformat(str(anchor["anchor_date"])[:10]) + timedelta(days=1)
+    target = (following + timedelta(days=1)).isoformat()
+    monkeypatch.setattr(pb, "known_non_draw_days", lambda: frozenset({following.isoformat()}))
+    board = pb.build_board(data, target, now=datetime.fromisoformat(target + "T08:00:00+00:00"))
+    lists = {e["id"]: e for e in board["lists"]}
+    entry = lists["path-loto-stable"]
+    assert entry["bridge"]["next"] == target
+    for bridge in entry["items"][0]["bridges"]:
+        assert bridge["base"] == (following - timedelta(days=bridge["lag"])).isoformat()
+        assert f"{_formed(board, bridge['base'], bridge['a'], bridge['b']):02d}" == entry["items"][0]["rule"]["numbers"][0]
 
 
 def test_each_bridge_source_embeds_the_draws_its_own_positions_need(tmp_path: Path) -> None:

@@ -424,7 +424,8 @@ def _rule_bridges(data: Path, entry: dict, key: str, target: str, draws: dict[st
     draws.update({d: embedded[d] for d in entry["bridge"]["series"]})
 
 
-def _path_bridges(data: Path, entry: dict, mode: str, kind: str, draws: dict[str, list[str]]) -> None:
+def _path_bridges(data: Path, entry: dict, mode: str, kind: str, target: str,
+                  draws: dict[str, list[str]]) -> None:
     from datetime import date, timedelta
 
     manifest = _json(data / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json")
@@ -437,6 +438,8 @@ def _path_bridges(data: Path, entry: dict, mode: str, kind: str, draws: dict[str
     support = {_number(row["number"]): int(float(row.get("support_paths_count") or -1)) for row in _csv(
         data / "soi_cau" / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv").to_dict("records")}
     # Cùng luật với ``path_prob.predict_from_fitted_paths_full``: kỳ gốc = ngày dữ liệu + 1 − độ trễ (lịch).
+    # Ngày ``following`` ấy KHÔNG phải kỳ đích khi nó là ngày nghỉ quay (Tết): ``_path`` nhận danh sách cho
+    # kỳ quay kế tiếp ``target``, nên khung chi tiết phải ghi ``target``, còn kỳ gốc vẫn theo luật của trang.
     following = date.fromisoformat(anchor) + timedelta(days=1)
     by_number: dict[str, list[dict]] = {}
     for row in _csv(paths_file).to_dict("records"):
@@ -453,8 +456,7 @@ def _path_bridges(data: Path, entry: dict, mode: str, kind: str, draws: dict[str
             raise Skip(f"tính lại ra {len(bridges)} đường cho {number}, trang in {support.get(number)}")
         _attach(item, bridges)
         draws.update({b["base"]: embedded[b["base"]] for b in item["bridges"]})
-    entry["bridge"] = {"type": "path", "mark": "loto" if mode == "loto" else "special",
-                       "next": following.isoformat()}
+    entry["bridge"] = {"type": "path", "mark": "loto" if mode == "loto" else "special", "next": target}
 
 
 def attach_bridges(data_dir: Path, target: str, lists: list[dict]) -> dict[str, list[str]]:
@@ -473,7 +475,7 @@ def attach_bridges(data_dir: Path, target: str, lists: list[dict]) -> dict[str, 
                 _rule_bridges(data_dir, entry, list_id.removeprefix("bridge-"), target, draws)
             elif list_id.startswith("path-"):
                 _, mode, kind = list_id.split("-")
-                _path_bridges(data_dir, entry, mode, kind, draws)
+                _path_bridges(data_dir, entry, mode, kind, target, draws)
         except (Skip, KeyError, ValueError) as reason:
             LOGGER.warning("Danh sách %s không mang vị trí cầu: %s", list_id, reason)
             for item in entry["items"]:
