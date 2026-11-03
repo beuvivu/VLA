@@ -5,7 +5,7 @@
   "calendar_end": "2026-11-03",
   "exact_next_day_pairs": 4241,
   "skipped_nonconsecutive_boundaries": 13,
-  "generated_at_utc": "2026-11-03T11:38:09Z",
+  "generated_at_utc": "2026-11-03T12:30:09Z",
   "contract": "only exact +1 calendar-day transitions are counted",
   "ranking": "p_value ascending; posterior_rate shrinks to baseline with one kappa per table"
 }
