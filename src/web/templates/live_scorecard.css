@@ -66,3 +66,7 @@
 .live-scorecard-view[aria-pressed="true"]{border-color:var(--ui-brand-border);background:var(--ui-brand-soft);color:var(--ui-brand-ink);font-weight:700}
 .live-scorecard-view:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}
 .live-bridge-note{margin:0 0 8px;font-size:12px;line-height:1.6;color:var(--ui-ink-2)}
+.live-bridge-onboard{margin:8px 0 0;font-size:12px;line-height:1.6;color:var(--ui-ink-2)}
+.live-bridge-onboard a{font-weight:650;color:var(--ui-brand-ink)}
+#results .live-board-src{padding:0 1px;border-radius:3px;background:var(--ui-brand-soft);color:var(--ui-brand-ink);box-shadow:inset 0 0 0 1px var(--ui-brand-border);font-weight:900}
+#results .live-board-src--b{text-decoration:underline;text-underline-offset:3px}

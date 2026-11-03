@@ -318,3 +318,26 @@ test('dải không có cầu hiển thị trạng thái rỗng và chỉ số th
   assert.equal(d.querySelector('[data-cau-metric="total"]').textContent, '0');
   assert.equal(d.querySelector('[data-cau-metric="date"]').textContent, '20/09/2026');
 });
+
+test('mở với so/vt (từ trang Live): chọn sẵn đúng số và đúng cầu, tô hai vị trí trên bảng kết quả', async t => {
+  const first = await open(t, fixture.pages.loto, '?ngay=2026-09-20');
+  const { result } = first.window.BridgePages.state;
+  // Một số có ít nhất hai cầu, chọn cầu KHÔNG đứng đầu danh sách để phân biệt với lựa chọn mặc định.
+  const number = Object.keys(result.counts).find((n) => result.counts[n] >= 2);
+  const list = result.bridges.filter((b) => b.number === number);
+  const chosen = list[list.length - 1];
+  const dom = await open(t, fixture.pages.loto, `?ngay=2026-09-20&so=${number}&vt=${chosen.vt}`);
+  const d = dom.window.document;
+  assert.match(d.querySelector('#app-cau-detail h3').textContent, new RegExp(`^Số ${number}: ${list.length} cầu`));
+  const pressed = [...d.querySelectorAll('.app-cau-bridge[aria-pressed="true"]')];
+  assert.deepEqual(pressed.map((b) => b.textContent.split(' ·')[0]), [chosen.vt]);
+  const card = d.querySelector('#app-cau-days .app-cau-day');
+  assert.equal(card.dataset.date, '2026-09-20', 'bảng mới nhất là kỳ biên đã chọn');
+  assert.deepEqual([...card.querySelectorAll('.app-cau-digit.is-src')].map((s) => Number(s.dataset.pos)).sort((x, y) => x - y),
+    [chosen.a, chosen.b]);
+  // `so` không kèm cầu hợp lệ: chọn số, cầu đầu tiên.
+  const bySo = await open(t, fixture.pages.loto, `?ngay=2026-09-20&so=${number}&vt=1x2`);
+  assert.equal(bySo.window.document.querySelector('.app-cau-bridge[aria-pressed="true"]').textContent.split(' ·')[0], list[0].vt);
+  // Không có tham số: không chọn gì.
+  assert.equal(first.window.document.querySelector('#app-cau-detail').childElementCount, 0);
+});

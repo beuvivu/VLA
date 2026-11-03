@@ -13,8 +13,8 @@ const markup = '<section id="live-scorecard" data-board-root="https://example.te
 
 // Đồng hồ cố định: 19:00 giờ VN ngày 22/10, tức tối của kỳ trong các sổ mẫu (kỳ đã quay hiện mặc định).
 const EVENING = '2026-10-22T12:00:00Z';
-function setup(t, fetcher, now = EVENING) {
-  const dom = new JSDOM(markup, { runScripts: 'outside-only', url: 'https://example.test/live.html' });
+function setup(t, fetcher, now = EVENING, before = '') {
+  const dom = new JSDOM(before + markup, { runScripts: 'outside-only', url: 'https://example.test/live.html' });
   t.after(() => dom.window.close());
   dom.window.fetch = fetcher;
   const fixed = Date.parse(now);
@@ -229,7 +229,9 @@ test('Bấm số: đường cầu qua từng kỳ, tô hai vị trí và ô về
   assert.deepEqual([...days[0].querySelectorAll('.live-bridge-hit')].map((s) => s.textContent).join(''), '65',
     'đuôi 65 của kỳ 21/10 về theo cầu kỳ trước');
   assert.equal(days[2].querySelectorAll('.live-bridge-hit').length, 0, 'kỳ đầu không có kỳ trước để chấm');
-  assert.match(panel.querySelector('.live-bridge-link').href, /soi-cau-loto\.html$/);
+  // Trang nguồn mở đúng kỳ biên, đúng số ghép ở kỳ ấy và đúng cầu.
+  assert.equal(panel.querySelector('.live-bridge-link').href,
+    'https://example.test/soi-cau-loto.html?ngay=2026-10-21&so=78&vt=0x1');
 });
 
 test('Đổi cầu, trang tự cập nhật và đóng bảng đều giữ đúng trạng thái', async (t) => {
@@ -259,7 +261,8 @@ test('Soi đường: một bảng kỳ gốc với độ trễ, liên kết mở
   const days = panel.querySelectorAll('.live-bridge-day');
   assert.equal(days.length, 1);
   assert.match(days[0].textContent, /Kỳ gốc · ghép 78 · trễ 1 ngày → báo 78 cho kỳ 22\/10\/2026/);
-  assert.match(panel.querySelector('.live-bridge-link').href, /soi-path-de-stable\.html\?number=78$/);
+  assert.equal(panel.querySelector('.live-bridge-link').href,
+    'https://example.test/soi-path-de-stable.html?number=78&path=L1-%5B0%2C1%5D');
 });
 
 test('Cầu Đặc Biệt chỉ tô giải Đặc Biệt: số lộn về ở giải bảy không phải "về" theo cầu', async (t) => {
@@ -337,7 +340,8 @@ test('Danh sách không sinh từ cặp vị trí: bấm số tra cầu LOTO đa
   assert.equal(days.length, 3, 'cầu chạy 2 kỳ: ba bảng');
   assert.deepEqual([...days[0].querySelectorAll('.live-bridge-src')].map((s) => s.textContent), ['7', '8']);
   assert.equal([...days[0].querySelectorAll('.live-bridge-hit')].map((s) => s.textContent).join(''), '65');
-  assert.match(panel.querySelector('.live-bridge-link').href, /soi-cau-loto\.html$/);
+  assert.equal(panel.querySelector('.live-bridge-link').href,
+    'https://example.test/soi-cau-loto.html?ngay=2026-10-21&so=78&vt=0x1');
   // Số lộn tra cùng nhóm; số không có cầu nào vẫn mở được và nói đúng là chưa có.
   item(d, 'cau-keo-loto', 1).click();
   assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^87: 1 cầu đang chạy/);
@@ -488,4 +492,63 @@ test('Bấm số trước khi bảng biết có kỳ sắp quay (lịch nghỉ �
   await api.reveal('2026-10-30', 'loto', '78');
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+});
+
+// Bảng kết quả đầu trang Live: 27 ô theo thứ tự giải (docs/live.html, #results).
+const resultsBoard = (vals) => '<div id="results">' + vals.map((v) => `<div class="slot">${v}</div>`).join('') + '</div>';
+
+test('Mở cầu: hai vị trí được tô trên bảng kết quả đầu trang khi bảng đang hiện đúng kỳ ghép số', async (t) => {
+  const { api, d } = setup(t, async () => ok(runningBoard()), EVENING, resultsBoard(DRAWS['2026-10-21']));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  item(d, 'cau-keo-loto', 0).click();
+  const slots = [...d.querySelectorAll('#results .slot')];
+  assert.deepEqual([...slots[0].querySelectorAll('.live-board-src')].map((s) => [s.className, s.textContent]),
+    [['live-board-src live-board-src--a', '7'], ['live-board-src live-board-src--b', '8']]);
+  assert.equal(slots[0].textContent, '78111', 'giá trị của ô không đổi');
+  assert.equal(d.querySelectorAll('#results .live-board-src').length, 2, 'chỉ hai chữ số được tô');
+  const note = d.querySelector('#live-bridge-cau-keo-loto .live-bridge-onboard');
+  assert.match(note.textContent, /đang được tô trên bảng kết quả kỳ 21\/10\/2026/);
+  assert.equal(note.querySelector('a').getAttribute('href'), '#results');
+  // Cầu ở hai giải khác nhau (giải bảy cuối), rồi đóng bảng: dấu được gỡ, ô trở lại chữ thường.
+  item(d, 'cau-keo-de', 0).click();
+  assert.deepEqual([...d.querySelectorAll('#results .live-board-src')].map((s) => s.textContent), ['6', '5']);
+  assert.equal(slots[0].querySelector('.live-board-src'), null, 'cầu cũ không còn tô');
+  d.querySelector('#live-bridge-cau-keo-de .live-bridge-close').click();
+  assert.equal(d.querySelector('#results [data-bridge-mark]'), null);
+  assert.equal(slots[26].childNodes.length, 1);
+  assert.equal(slots[26].textContent, '65');
+  // Đang tô thì live.json sang kỳ khác và sổ không khớp: bảng đối chiếu thành thông báo, dấu cũng được gỡ.
+  item(d, 'cau-keo-loto', 0).click();
+  assert.equal(d.querySelectorAll('#results .live-board-src').length, 2);
+  await api.update({ draw_date: '2026-10-25', prizes: {} });
+  assert.match(d.getElementById('live-scorecard-summary').textContent, /không khớp kỳ/);
+  assert.equal(d.querySelector('#results [data-bridge-mark]'), null);
+  assert.equal(slots[0].childNodes.length, 1);
+});
+
+test('Bảng đầu trang đang hiện kỳ khác (hay chưa hiện hết giải): không tô, không câu nhắc', async (t) => {
+  const other = setup(t, async () => ok(runningBoard()), EVENING, resultsBoard(DRAWS['2026-10-20']));
+  await other.api.update({ draw_date: '2026-10-22', prizes: {} });
+  item(other.d, 'cau-keo-loto', 0).click();
+  assert.equal(other.d.querySelector('#results .live-board-src'), null);
+  assert.equal(other.d.querySelector('.live-bridge-onboard'), null);
+  const partial = DRAWS['2026-10-21'].map((v, i) => (i > 20 ? '·'.repeat(v.length) : v));
+  const waiting = setup(t, async () => ok(runningBoard()), EVENING, resultsBoard(partial));
+  await waiting.api.update({ draw_date: '2026-10-22', prizes: {} });
+  item(waiting.d, 'cau-keo-loto', 0).click();
+  assert.equal(waiting.d.querySelector('#results .live-board-src'), null);
+});
+
+test('Danh sách cầu theo thứ: liên kết mang thêm thứ của kỳ biên', async (t) => {
+  const weekly = runningBoard();
+  weekly.lists.push({ id: 'bridge-loto-theo-thu', group: 'Soi cầu', title: 'Cầu LOTO theo thứ', page: 'soi-cau-loto-theo-thu.html',
+    kind: 'loto', bridge: { type: 'rule', mark: 'loto-lon', series: Object.keys(DRAWS) },
+    items: [{ ...loto('78'), label: '78 · 87', rule: { on: 'loto', numbers: ['78', '87'], need: 1 },
+      bridges: [{ a: 0, b: 1, streak: 2 }], bridge_total: 1 }] });
+  const { api, d } = setup(t, async () => ok(weekly));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  item(d, 'bridge-loto-theo-thu', 0).click();
+  // 21/10/2026 là Thứ Tư: 2 theo cách đánh số 0 = Thứ Hai của trang soi cầu.
+  assert.equal(d.querySelector('#live-bridge-bridge-loto-theo-thu .live-bridge-link').href,
+    'https://example.test/soi-cau-loto-theo-thu.html?ngay=2026-10-21&so=78&vt=0x1&thu=2');
 });
