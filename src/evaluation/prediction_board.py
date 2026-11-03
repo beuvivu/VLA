@@ -45,8 +45,18 @@ sách mang ``bridge`` (kiểu, luật tô ô về, chuỗi kỳ để vẽ đư�
 
 Cầu được TÍNH LẠI từ chính ảnh chụp mà trang đã dựng (``draws`` trong ``latest.json``) và phải ra
 đúng số cầu trang đã công bố; lệch thì danh sách ấy không mang vị trí — thà không vẽ còn hơn vẽ
-một cầu trang không hề in. Cầu Kèo KHÔNG có vị trí: đặc trưng "cầu" của nó đếm số lần một số được
-ghép từ MỌI cặp vị trí trong 30 kỳ (``ml_features._path_support_matrix``), không phải một cầu cụ thể.
+một cầu trang không hề in. Cầu Kèo KHÔNG có vị trí riêng: đặc trưng "cầu" của nó đếm số lần một số
+được ghép từ MỌI cặp vị trí trong 30 kỳ (``ml_features._path_support_matrix``), không phải một cầu cụ thể.
+
+Cầu đang chạy (schema 3, 03-11-2026)
+------------------------------------
+
+Danh sách KHÔNG sinh từ cặp vị trí (tổ hợp, Cầu Kèo, ML, tác tử, Lô VIP, xiên, bảng mô phỏng) vẫn bấm
+được trên trang Live: sổ mang ``running`` — mọi cầu đang chạy của hai trang in ĐỦ mọi nhóm, trang Cầu
+LOTO (≥ 3 kỳ, lộn) cho số LOTO và trang Cầu Đặc Biệt (chạm, ≥ 2 kỳ) cho số Đặc Biệt, xếp theo cặp số
+ghép ``{n, lộn n}``. Đó là phép TRA "cầu nào đang ghép ra số này", không phải lý do danh sách chọn số,
+và trang nói đúng như thế. Cùng luật tính lại: MỌI nhóm phải trùng số cầu trang đã in, lệch thì bỏ
+cả bảng của kiểu ấy.
 """
 
 from __future__ import annotations
@@ -73,8 +83,9 @@ from soi_cau import bridge_rules
 from soi_cau.position_bridges import WIDTHS
 
 LOGGER = logging.getLogger(__name__)
-#: 2 (02-11-2026): danh sách cầu mang vị trí cầu và sổ mang ``draws`` (xem docstring).
-SCHEMA = 2
+#: 2 (02-11-2026): danh sách cầu mang vị trí cầu và sổ mang ``draws``; 3 (03-11-2026): sổ mang
+#: ``running`` — cầu đang chạy tra theo số cho danh sách không sinh từ cặp vị trí (xem docstring).
+SCHEMA = 3
 OUT = Path("evaluation") / "prediction_board"
 #: Số mục tối đa lấy từ một bảng xếp hạng (các trang soi cầu liệt kê theo số cầu).
 TOP = 10
@@ -396,7 +407,11 @@ _RULE_MARK = {"loto": "loto-lon", "hai-nhay": "loto-lon", "bach-thu": "loto",
               "dac-biet": "special-touch", "bo-so": "bo"}
 
 
-def _rule_bridges(data: Path, entry: dict, key: str, target: str, draws: dict[str, list[str]]) -> None:
+def _recount(data: Path, key: str, target: str):  # type: ignore[no-untyped-def]
+    """Tính lại MỌI cầu của kiểu ``key`` từ kỳ đã nhúng trong ``bridge_pages/latest.json``.
+
+    Trả về (báo cáo, luật, ngày các kỳ đã lọc theo thứ, kỳ đã nhúng, cầu xếp theo khoá nhóm của trang).
+    """
     report = _json(data / "soi_cau" / "bridge_pages" / "latest.json")
     embedded = dict(decode_draw(text) for text in report.get("draws", []))
     if not embedded:
@@ -414,6 +429,11 @@ def _rule_bridges(data: Path, entry: dict, key: str, target: str, draws: dict[st
         else:
             group = ",".join(sorted({f"{n:02d}", f"{10 * (n % 10) + n // 10:02d}"}))
         grouped.setdefault(group, []).append({"a": bridge["a"], "b": bridge["b"], "streak": bridge["streak"]})
+    return report, rule, dates, embedded, grouped
+
+
+def _rule_bridges(data: Path, entry: dict, key: str, target: str, draws: dict[str, list[str]]) -> None:
+    _, rule, dates, embedded, grouped = _recount(data, key, target)
     groups = rule.get("groups", [])[:TOP]
     for item, group in zip(entry["items"], groups, strict=True):
         bridges = grouped.get(group["key"], [])
@@ -457,6 +477,40 @@ def _path_bridges(data: Path, entry: dict, mode: str, kind: str, target: str,
         _attach(item, bridges)
         draws.update({b["base"]: embedded[b["base"]] for b in item["bridges"]})
     entry["bridge"] = {"type": "path", "mark": "loto" if mode == "loto" else "special", "next": target}
+
+
+#: Bảng tra "cầu đang chạy ghép ra số này": số LOTO theo trang Cầu LOTO, số Đặc Biệt theo trang Cầu Đặc
+#: Biệt (chạm). Hai trang ấy in ĐỦ mọi nhóm (tổng nhóm = ``total``), nên tra được bất kỳ số nào.
+RUNNING = {"loto": "loto", "de": "dac-biet"}
+
+
+def running_bridges(data_dir: Path, target: str, draws: dict[str, list[str]]) -> dict:
+    """Mọi cầu đang chạy của trang Cầu LOTO và Cầu Đặc Biệt, xếp theo cặp số ghép ``{n, lộn n}``.
+
+    MỌI nhóm tính lại phải trùng số cầu trang đã in và ngược lại; lệch thì bỏ bảng của kiểu ấy (trang Live
+    khi đó để số ở dạng thường). Kỳ cần vẽ được thêm vào ``draws``.
+    """
+    running: dict[str, dict] = {}
+    for mode, key in RUNNING.items():
+        try:
+            report, rule, dates, embedded, grouped = _recount(data_dir, key, target)
+            _require(report.get("target_date"), target, "soi_cau/bridge_pages/latest.json")
+            printed = {str(g["key"]): int(g["bridges"]) for g in rule.get("groups", [])}
+            counted = {k: len(v) for k, v in grouped.items()}
+            if printed != counted:
+                raise Skip(f"tính lại ra {len(counted)} nhóm / {sum(counted.values())} cầu, "
+                           f"trang in {len(printed)} nhóm / {sum(printed.values())} cầu")
+        except (Skip, KeyError, ValueError) as reason:
+            LOGGER.warning("Bảng cầu đang chạy %s bị bỏ: %s", key, reason)
+            continue
+        series = dates[-PATH_DRAWS:]
+        running[mode] = {
+            "page": f"{rule['slug']}.html", "title": rule["title"], "count": int(rule["count"]),
+            "mark": _RULE_MARK[rule["kind"]], "series": series,
+            "groups": {k: {"total": len(v), "bridges": _ranked_bridges(v)} for k, v in sorted(grouped.items())},
+        }
+        draws.update({d: embedded[d] for d in series})
+    return running
 
 
 def attach_bridges(data_dir: Path, target: str, lists: list[dict]) -> dict[str, list[str]]:
@@ -511,6 +565,7 @@ def build_board(data_dir: Path, target: str, *, now: datetime) -> dict:
         lists.append({"id": key, "group": group, "title": title, "page": page, "kind": kind, "items": items})
     vectors = {mode: _vector(data_dir, target, mode) for mode in ("loto", "de")}
     draws = attach_bridges(data_dir, target, lists)
+    running = running_bridges(data_dir, target, draws)
     return {
         "schema": SCHEMA,
         "target_date": target,
@@ -518,7 +573,8 @@ def build_board(data_dir: Path, target: str, *, now: datetime) -> dict:
         "locks_at": cutoff_utc(target).astimezone(VN).isoformat(timespec="minutes"),
         "lists": lists,
         "vectors": {mode: v for mode, v in vectors.items() if v is not None},
-        "draws": draws,
+        "draws": dict(sorted(draws.items())),
+        "running": running,
         "missing": missing,
     }
 

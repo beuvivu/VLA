@@ -370,10 +370,65 @@ def test_each_bridge_source_embeds_the_draws_its_own_positions_need(tmp_path: Pa
         assert {day: board["draws"][day] for day in series} == {day: source[day] for day in series}
 
 
+# --- Cầu đang chạy (schema 3) -------------------------------------------------------------
+
+
+def _pair_key(n: int) -> str:
+    return ",".join(sorted({f"{n:02d}", f"{10 * (n % 10) + n // 10:02d}"}))
+
+
+def test_the_running_table_recounts_every_group_the_two_pages_print(tmp_path: Path) -> None:
+    """Trên dữ liệu thật: bảng tra cầu đang chạy có ĐỦ mọi nhóm hai trang in, đúng số cầu từng nhóm, và mỗi cầu
+    ghép ra đúng cặp số của nhóm ở kỳ cuối — nên bấm số nào trên trang Live cũng tra được."""
+    data, target = _real_bridge_data(tmp_path)
+    board = pb.build_board(data, target, now=BEFORE)
+    pages = json.loads((data / "soi_cau" / "bridge_pages" / "latest.json").read_text(encoding="utf-8"))
+    assert set(board["running"]) == {"loto", "de"}
+    checked = 0
+    for mode, key in (("loto", "loto"), ("de", "dac-biet")):
+        table, rule = board["running"][mode], pages["rules"][key]
+        assert (table["page"], table["count"]) == (f"{rule['slug']}.html", rule["count"])
+        assert table["mark"] == {"loto": "loto-lon", "de": "special-touch"}[mode]
+        assert {k: g["total"] for k, g in table["groups"].items()} == {g["key"]: g["bridges"] for g in rule["groups"]}
+        assert sum(g["total"] for g in table["groups"].values()) == rule["total"]
+        assert all(day in board["draws"] for day in table["series"]) and len(table["series"]) == pb.PATH_DRAWS
+        for key_, group in table["groups"].items():
+            assert 1 <= len(group["bridges"]) == min(group["total"], pb.BRIDGES_PER_ITEM)
+            streaks = [b["streak"] for b in group["bridges"]]
+            assert streaks == sorted(streaks, reverse=True) and min(streaks) >= rule["count"]
+            for bridge in group["bridges"]:
+                assert bridge["a"] < bridge["b"]
+                assert _pair_key(_formed(board, table["series"][-1], bridge["a"], bridge["b"])) == key_
+                checked += 1
+    assert checked > 500
+    # Bảng tự nhúng kỳ nó cần, không trông vào danh sách cầu cùng sổ (danh sách có thể vắng hay bị bỏ).
+    draws: dict = {}
+    running = pb.running_bridges(data, target, draws)
+    assert set(draws) == set(running["loto"]["series"]) | set(running["de"]["series"])
+    assert all(draws[day] == board["draws"][day] for day in draws)
+
+
+def test_a_running_table_that_does_not_recount_is_dropped(tmp_path: Path) -> None:
+    """Một nhóm lệch số cầu, hay trang in thiếu một nhóm, là bỏ cả bảng của kiểu ấy; kiểu kia giữ nguyên."""
+    data, target = _real_bridge_data(tmp_path)
+    clean = pb.build_board(data, target, now=BEFORE)["running"]
+    path = data / "soi_cau" / "bridge_pages" / "latest.json"
+    pages = json.loads(path.read_text(encoding="utf-8"))
+    pages["rules"]["loto"]["groups"][-1]["bridges"] += 1
+    path.write_text(json.dumps(pages), encoding="utf-8")
+    running = pb.build_board(data, target, now=BEFORE)["running"]
+    assert "loto" not in running and running["de"] == clean["de"]
+    pages["rules"]["loto"]["groups"][-1]["bridges"] -= 1
+    del pages["rules"]["dac-biet"]["groups"][-1]
+    path.write_text(json.dumps(pages), encoding="utf-8")
+    running = pb.build_board(data, target, now=BEFORE)["running"]
+    assert "de" not in running and running["loto"] == clean["loto"]
+
+
 def test_a_board_without_embedded_draws_still_publishes_every_list(tmp_path: Path) -> None:
     """Nguồn cũ không nhúng kỳ quay: bảng vẫn đủ danh sách, chỉ thiếu vị trí cầu."""
     board = pb.build_board(_data(tmp_path), TARGET, now=BEFORE)
-    assert board["schema"] == 2 and board["draws"] == {}
+    assert board["schema"] == 3 and board["draws"] == {} and board["running"] == {}
     assert board["missing"] == []
     assert not any("bridge" in entry for entry in board["lists"])
 

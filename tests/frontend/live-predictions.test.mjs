@@ -80,3 +80,21 @@ test('A finished draw moves the block to the next draw date', async t => {
   await api.loadForDraw('2026-02-30', 'complete_verified');
   assert.equal(d.querySelector('time').dateTime, '');
 });
+test('Each number is a button that opens that number in the scorecard of the same draw', async t => {
+  const {load, d} = setup(t, async url => csv(url.includes('_de_') ? 'number,prob\n65,0.1' : 'number,prob\n7,0.1\n78,0.1'));
+  const calls = [];
+  d.defaultView.LiveScorecard = {reveal: (date, mode, number) => { calls.push([date, mode, number]); return Promise.resolve(); }};
+  await load('2026-10-23');
+  const buttons = [...d.querySelectorAll('.live-prediction-pick')];
+  assert.equal(buttons.length, 3);
+  assert.ok(buttons.every(b => b.tagName === 'BUTTON' && b.type === 'button' && b.querySelector('.live-prediction-number')));
+  d.querySelector('[data-prediction-mode="loto"] [data-prediction-number="78"]').click();
+  d.querySelector('[data-prediction-mode="de"] [data-prediction-number="65"]').click();
+  assert.deepEqual(calls, [['2026-10-23', 'loto', '78'], ['2026-10-23', 'de', '65']]);
+  // Không có bảng đối chiếu trên trang: bấm không lỗi (lỗi trong trình xử lý chỉ hiện ở sự kiện error).
+  const errors = [];
+  d.defaultView.addEventListener('error', e => errors.push(e.error));
+  delete d.defaultView.LiveScorecard;
+  d.querySelector('[data-prediction-number="07"]').click();
+  assert.deepEqual(errors, []);
+});

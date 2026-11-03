@@ -400,9 +400,18 @@ Vị trí cầu (schema 2, 02-11-2026): mục của 14 danh sách sinh từ cặ
 Trang Live biến số ở hàng "Trước giờ quay" của các danh sách ấy thành nút mở đường cầu qua các kỳ. Cầu được TÍNH
 LẠI từ kỳ đã nhúng của chính nguồn (`bridge_rules.find`, cùng lọc theo thứ; soi đường: kỳ gốc = ngày dữ liệu + 1 −
 độ trễ) và chỉ gắn khi số cầu tính lại TRÙNG số trang đã in (`bridges` của nhóm, `support_paths_count`); lệch là cả
-danh sách không có vị trí, bảng vẫn đủ. Cầu Kèo KHÔNG mang vị trí: đặc trưng "cầu" của nó
+danh sách không có vị trí, bảng vẫn đủ. Cầu Kèo KHÔNG mang vị trí riêng: đặc trưng "cầu" của nó
 (`ml_features._path_support_matrix`) đếm mọi cặp vị trí trong 30 ngày, không phải một cầu cụ thể — đừng gán cho nó
 một cặp vị trí "tiêu biểu".
+Cầu đang chạy (schema 3, 03-11-2026): theo yêu cầu "bấm hiện vị trí đường cầu đang chạy, thay vì thông tin con số", số
+của MỌI danh sách khác (tổ hợp, Cầu Kèo, ML, tác tử, Lô VIP, xiên, bảng mô phỏng) tra `running` của sổ — mọi cầu đang
+chạy của trang Cầu LOTO (≥ 3 kỳ, cho số LOTO) và Cầu Đặc Biệt (chạm, ≥ 2 kỳ, cho số Đặc Biệt), theo cặp `{n, lộn n}`;
+hai trang in ĐỦ mọi nhóm, và MỌI nhóm tính lại phải trùng số trang in (`prediction_board.running_bridges`). Đó là phép TRA,
+không phải lý do danh sách chọn số; khung chi tiết nói đúng như thế. Số ở khối «Dự đoán trong ngày» là nút mở đúng số ấy
+trong bảng (`LiveScorecard.reveal`). live.json giữ ngày kỳ vừa quay tới phiên hôm sau, nên khi kỳ ấy đã quay xong bảng có
+hai nút «đã quay» / «sắp quay»; sang ngày mới giờ VN thì mặc định kỳ sắp quay — trước đó trang hiện sổ kỳ cũ (đã khoá, không
+có vị trí) suốt cả ngày và người đọc tưởng tính năng không chạy. Kỳ sắp quay bỏ ngày nghỉ của `data/non_draw_days.json`
+(cùng luật `next_draw_date`), và lệnh mở số mang kỳ của nó: sổ tải xong là kỳ khác thì bỏ.
 
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 

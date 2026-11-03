@@ -60,3 +60,9 @@
 .live-bridge-hit{padding:0 1px;border-radius:3px;background:var(--ui-mark-bg);color:var(--ui-mark-ink);box-shadow:inset 0 0 0 1px var(--ui-mark-border);font-weight:800}
 .live-bridge-link{display:inline-block;margin-top:10px;font-size:12px;font-weight:650;color:var(--ui-brand-ink)}
 @media(max-width:700px){.live-bridge-days{grid-template-columns:1fr}.is-bridge td.live-bridge-cell{padding:4px 8px 12px}}
+.live-scorecard-views{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.live-scorecard-views[hidden]{display:none}
+.live-scorecard-view{min-height:32px;padding:4px 12px;border:1px solid var(--ui-border);border-radius:999px;background:var(--ui-surface-2);color:var(--ui-ink);font:inherit;font-size:12px;font-variant-numeric:tabular-nums;cursor:pointer}
+.live-scorecard-view[aria-pressed="true"]{border-color:var(--ui-brand-border);background:var(--ui-brand-soft);color:var(--ui-brand-ink);font-weight:700}
+.live-scorecard-view:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}
+.live-bridge-note{margin:0 0 8px;font-size:12px;line-height:1.6;color:var(--ui-ink-2)}
