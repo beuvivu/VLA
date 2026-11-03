@@ -691,6 +691,11 @@
   }
 
   function choose() {
+    // Lệnh mở số đang chờ (bấm trước khi biết có những kỳ nào): kỳ của nó có thì chọn kỳ ấy, không thì bỏ.
+    if (state.reveal) {
+      if (state.views.indexOf(state.reveal.date) >= 0) state.chosen = state.reveal.date;
+      else state.reveal = null;
+    }
     var target = state.views.indexOf(state.chosen) >= 0 ? state.chosen
       : state.views.length > 1 && vnToday() > state.draw ? state.views[1] : state.views[0];
     return show(target);
@@ -720,10 +725,10 @@
   }
 
   function reveal(date, mode, value) {
-    if (!validDate(date) || state.views.indexOf(date) < 0 || (mode !== 'de' && mode !== 'loto')) {
-      return Promise.resolve();
-    }
+    if (!validDate(date) || (mode !== 'de' && mode !== 'loto')) return Promise.resolve();
     state.reveal = { date: date, list: 'cau-keo-' + mode, on: mode === 'de' ? 'special' : 'loto', number: two(Number(value)) };
+    // Chưa biết kỳ ấy có trên bảng không (live.json chưa về, lịch nghỉ đang tải): giữ lệnh, update() xử lý.
+    if (state.views.indexOf(date) < 0) return Promise.resolve();
     state.chosen = date;
     return show(date);
   }

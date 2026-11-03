@@ -469,3 +469,23 @@ test('Lệnh mở số gắn với kỳ đã bấm: sổ tải xong là kỳ kh�
   assert.equal(d.querySelector('.live-bridge'), null, 'không mở số 78 của kỳ 24/10');
   assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
 });
+
+test('Bấm số trước khi bảng biết có kỳ sắp quay (lịch nghỉ đang tải): lệnh mở chờ rồi mở đúng số', async (t) => {
+  let release;
+  const fetcher = forDate(runningBoard);
+  const { api, d } = setup(t, (url) => (url.endsWith('/closed.json')
+    ? new Promise((resolve) => { release = () => resolve({ ok: false, status: 404 }); })
+    : fetcher(url)));
+  const first = api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  await api.reveal('2026-10-23', 'loto', '78');
+  release();
+  await first;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
+  assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/);
+  // Lệnh cho kỳ không có trên bảng bị bỏ ở lần cập nhật sau, không treo mãi.
+  await api.reveal('2026-10-30', 'loto', '78');
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+});
