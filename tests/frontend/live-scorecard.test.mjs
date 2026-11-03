@@ -6,7 +6,8 @@ import { JSDOM } from 'jsdom';
 // Bảng đối chiếu của trang Live (src/web/assets/live-scorecard.js): mỗi danh sách đã đóng băng
 // là hai hàng song song, và một mục chỉ "trượt" khi phần kết quả liên quan đã đủ.
 const script = readFileSync(new URL('../../src/web/assets/live-scorecard.js', import.meta.url), 'utf8');
-const markup = '<section id="live-scorecard" data-board-root="https://example.test/board/">' +
+const markup = '<section id="live-scorecard" data-board-root="https://example.test/board/" ' +
+  'data-closed-days="https://example.test/closed.json">' +
   '<time id="live-scorecard-date"></time><div id="live-scorecard-summary"></div>' +
   '<table id="live-scorecard-table"><thead><tr><th>Danh sách</th></tr></thead></table></section>';
 
@@ -316,10 +317,13 @@ const runningBoard = (date = '2026-10-22') => board(date, {
       items: [{ label: '65', rule: { on: 'special', numbers: ['65'] }, prob: 0.011, base: 0.01 }] },
   ],
 });
-const forDate = (make) => async (url) => {
+// Sổ theo ngày trong URL; lịch nghỉ quay mặc định rỗng (404), hoặc đúng danh sách truyền vào.
+const forDate = (make, closedDays = null) => async (url) => {
+  if (url.endsWith('/closed.json')) return closedDays ? ok({ ngay_khong_quay: closedDays }) : { ok: false, status: 404 };
   const date = url.match(/(\d{4}-\d\d-\d\d)\.json$/)[1];
   return ok(make(date));
 };
+const boards = (urls) => urls.filter((u) => u.includes('/board/')).map((u) => u.slice(-15));
 const item = (d, id, index) => d.querySelector(`tbody[data-list-id="${id}"] .is-before [data-bridge-item="${index}"]`);
 
 test('Danh sách không sinh từ cặp vị trí: bấm số tra cầu LOTO đang chạy ghép ra số ấy', async (t) => {
@@ -394,7 +398,7 @@ test('Kỳ đã quay xong: tối hôm ấy mặc định đối chiếu, có nú
   views[1].click();
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(d.querySelector('time').dateTime, '2026-10-23');
-  assert.deepEqual(urls.map((u) => u.slice(-15)), ['2026-10-22.json', '2026-10-23.json']);
+  assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json']);
   assert.ok(states(d, 'top', 'is-after').every((s) => s === 'wait'), 'kỳ sắp quay chưa có giải nào');
   assert.ok(item(d, 'cau-keo-loto', 0), 'số trước giờ quay của kỳ sắp quay bấm được');
   // live.json cập nhật lại cùng kỳ: lựa chọn của người đọc được giữ.
@@ -408,7 +412,7 @@ test('Sang ngày mới (giờ VN) thì mặc định là kỳ sắp quay; kỳ �
   const morning = setup(t, async (url) => { urls.push(url); return forDate(runningBoard)(url); }, '2026-10-22T17:30:00Z');
   await morning.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.equal(morning.d.querySelector('time').dateTime, '2026-10-23', '00:30 giờ VN ngày 23/10');
-  assert.deepEqual(urls.map((u) => u.slice(-15)), ['2026-10-23.json']);
+  assert.deepEqual(boards(urls), ['2026-10-23.json']);
   const live = setup(t, forDate(runningBoard), '2026-10-23T11:20:00Z');
   await live.api.update({ draw_date: '2026-10-23', status: 'partial', prizes: prizes(FULL, 3) });
   assert.equal(live.d.querySelector('.live-scorecard-views').hidden, true);
@@ -429,4 +433,39 @@ test('Bấm số ở khối Dự đoán trong ngày: mở đúng số ấy trong
   // Kỳ không có trên bảng: không làm gì.
   await api.reveal('2026-10-30', 'loto', '78');
   assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+});
+
+test('Kỳ sắp quay bỏ qua ngày nghỉ quay đã khai (Tết), như next_draw_date của sổ', async (t) => {
+  const urls = [];
+  const fetcher = forDate(runningBoard, ['2026-10-23', '2026-10-24']);
+  const { api, d } = setup(t, async (url) => { urls.push(url); return fetcher(url); }, '2026-10-23T03:00:00Z');
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  assert.equal(d.querySelector('time').dateTime, '2026-10-25');
+  assert.deepEqual([...d.querySelectorAll('.live-scorecard-view')].map((b) => b.textContent),
+    ['Kỳ 22/10/2026 · đã quay', 'Kỳ 25/10/2026 · sắp quay']);
+  assert.deepEqual(boards(urls), ['2026-10-25.json'], 'không hỏi sổ của ngày nghỉ');
+  assert.equal(urls.filter((u) => u.endsWith('/closed.json')).length, 1);
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  assert.equal(urls.filter((u) => u.endsWith('/closed.json')).length, 1, 'lịch nghỉ chỉ đọc một lần');
+  // Không đọc được lịch nghỉ: ngày lịch kế tiếp.
+  const plain = setup(t, forDate(runningBoard), '2026-10-23T03:00:00Z');
+  await plain.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  assert.equal(plain.d.querySelector('time').dateTime, '2026-10-23');
+});
+
+test('Lệnh mở số gắn với kỳ đã bấm: sổ tải xong là kỳ khác thì không mở', async (t) => {
+  let release;
+  const fetcher = forDate(runningBoard);
+  const { api, d } = setup(t, (url) => (url.endsWith('2026-10-23.json')
+    ? new Promise((resolve) => { release = () => resolve(ok(runningBoard('2026-10-23'))); })
+    : fetcher(url)));
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  const pending = api.reveal('2026-10-23', 'loto', '78');
+  // live.json sang kỳ 24/10 trước khi sổ 23/10 tải xong.
+  await api.update({ draw_date: '2026-10-24', status: 'partial', prizes: {} });
+  release();
+  await pending;
+  assert.equal(d.querySelector('time').dateTime, '2026-10-24');
+  assert.equal(d.querySelector('.live-bridge'), null, 'không mở số 78 của kỳ 24/10');
+  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
 });

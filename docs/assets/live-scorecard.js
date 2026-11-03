@@ -23,7 +23,8 @@
   var RETRY_MISSING_MS = 300000;
   var RETRY_ERROR_MS = 60000;
   // Tên miền và đường dẫn dữ liệu không được viết thẳng ra trang (luật riêng tư của kho).
-  var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9ldmFsdWF0aW9uL3ByZWRpY3Rpb25fYm9hcmQv' };
+  var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9ldmFsdWF0aW9uL3ByZWRpY3Rpb25fYm9hcmQv',
+    c: 'ZGF0YS9ub25fZHJhd19kYXlzLmpzb24=' };
   function d(k) { return atob(E[k]); }
 
   var title = document.getElementById('live-scorecard-date');
@@ -71,16 +72,35 @@
     return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   }
 
-  function boardUrl(date) {
-    if (root.dataset.boardRoot) return root.dataset.boardRoot + date + '.json';
+  // Tệp trong kho: trên trang Pages đọc từ nhánh chính, chạy cục bộ thì đọc đường dẫn tương đối.
+  function dataUrl(path) {
     var host = location.hostname;
     if (host.endsWith(d('s'))) {
       var owner = host.split('.')[0];
       var first = location.pathname.split('/').filter(Boolean)[0];
       var repo = first || (owner + d('s'));
-      return 'https://' + d('h') + '/' + owner + '/' + repo + '/' + d('b') + '/' + d('p') + date + '.json';
+      return 'https://' + d('h') + '/' + owner + '/' + repo + '/' + d('b') + '/' + path;
     }
-    return d('p') + date + '.json';
+    return path;
+  }
+
+  function boardUrl(date) {
+    if (root.dataset.boardRoot) return root.dataset.boardRoot + date + '.json';
+    return dataUrl(d('p') + date + '.json');
+  }
+
+  // Lịch nghỉ quay (Tết…), đọc một lần: kỳ sắp quay bỏ qua những ngày ấy, cùng luật với
+  // forecast.multi_hit_forecast.next_draw_date — sổ của kỳ sắp quay mang đúng ngày quay thật.
+  // Không đọc được thì coi như không có ngày nghỉ nào.
+  var closed = null;
+  function closedDays() {
+    if (!closed) {
+      closed = fetch(root.dataset.closedDays || dataUrl(d('c')), { cache: 'no-store' })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (data) { return new Set(data && Array.isArray(data.ngay_khong_quay) ? data.ngay_khong_quay : []); })
+        .catch(function () { return new Set(); });
+    }
+    return closed;
   }
 
   function pct(p, digits) {
@@ -602,6 +622,12 @@
     return day.toISOString().slice(0, 10);
   }
 
+  function nextDraw(date, skip) {
+    var day = nextDay(date);
+    for (var i = 0; i < 366 && skip.has(day); i++) day = nextDay(day);
+    return day;
+  }
+
   function vnToday() {
     return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
   }
@@ -653,9 +679,20 @@
       return Promise.resolve();
     }
     if (date !== state.draw) { state.draw = date; state.chosen = ''; }
-    state.views = finished(snapshot.status) ? [date, nextDay(date)] : [date];
+    if (!finished(snapshot.status)) {
+      state.views = [date];
+      return choose();
+    }
+    return closedDays().then(function (skip) {
+      if (state.last !== snapshot) return undefined;
+      state.views = [date, nextDraw(date, skip)];
+      return choose();
+    });
+  }
+
+  function choose() {
     var target = state.views.indexOf(state.chosen) >= 0 ? state.chosen
-      : state.views.length > 1 && vnToday() > date ? state.views[1] : state.views[0];
+      : state.views.length > 1 && vnToday() > state.draw ? state.views[1] : state.views[0];
     return show(target);
   }
 
@@ -665,6 +702,8 @@
     var want = state.reveal;
     if (!want || !state.board) return;
     state.reveal = null;
+    // Lệnh mở gắn với kỳ đã bấm: live.json sang kỳ khác trong lúc sổ đang tải thì bỏ.
+    if (want.date !== state.board.target_date) return;
     var lists = state.board.lists.slice().sort(function (u, v) {
       return (u.id === want.list ? 0 : 1) - (v.id === want.list ? 0 : 1);
     });
@@ -684,7 +723,7 @@
     if (!validDate(date) || state.views.indexOf(date) < 0 || (mode !== 'de' && mode !== 'loto')) {
       return Promise.resolve();
     }
-    state.reveal = { list: 'cau-keo-' + mode, on: mode === 'de' ? 'special' : 'loto', number: two(Number(value)) };
+    state.reveal = { date: date, list: 'cau-keo-' + mode, on: mode === 'de' ? 'special' : 'loto', number: two(Number(value)) };
     state.chosen = date;
     return show(date);
   }

@@ -410,7 +410,8 @@ hai trang in ĐỦ mọi nhóm, và MỌI nhóm tính lại phải trùng số t
 không phải lý do danh sách chọn số; khung chi tiết nói đúng như thế. Số ở khối «Dự đoán trong ngày» là nút mở đúng số ấy
 trong bảng (`LiveScorecard.reveal`). live.json giữ ngày kỳ vừa quay tới phiên hôm sau, nên khi kỳ ấy đã quay xong bảng có
 hai nút «đã quay» / «sắp quay»; sang ngày mới giờ VN thì mặc định kỳ sắp quay — trước đó trang hiện sổ kỳ cũ (đã khoá, không
-có vị trí) suốt cả ngày và người đọc tưởng tính năng không chạy.
+có vị trí) suốt cả ngày và người đọc tưởng tính năng không chạy. Kỳ sắp quay bỏ ngày nghỉ của `data/non_draw_days.json`
+(cùng luật `next_draw_date`), và lệnh mở số mang kỳ của nó: sổ tải xong là kỳ khác thì bỏ.
 
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 
