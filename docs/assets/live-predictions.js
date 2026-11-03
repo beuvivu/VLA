@@ -1,5 +1,6 @@
 /* 10 số đứng đầu bảng Cầu Kèo, chụp theo ngày quay (src/ml/cau_keo_daily_top.py)
-   và khoá đúng vào ngày của phiên đang quay. */
+   và khoá đúng vào ngày của phiên đang quay. Mỗi số là một nút: bấm mở đúng số ấy trong bảng
+   đối chiếu (live-scorecard.js), nơi hiện các cầu đang chạy ghép ra số ấy. */
 (function () {
   'use strict';
   var root = document.getElementById('live-predictions');
@@ -22,12 +23,23 @@
     section.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false');
     var list = section.querySelector('.live-prediction-list');
     var fragment = document.createDocumentFragment();
+    var date = currentDate;
     (numbers || []).forEach(function (number) {
       var item = document.createElement('li');
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'live-prediction-pick';
+      button.dataset.predictionNumber = number;
+      button.setAttribute('aria-label', number + ': xem cầu đang chạy ghép ra số này');
+      button.addEventListener('click', function () {
+        var scorecard = window.LiveScorecard;
+        if (scorecard && typeof scorecard.reveal === 'function') scorecard.reveal(date, mode, number);
+      });
       var value = document.createElement('strong');
       value.className = 'live-prediction-number';
       value.textContent = number;
-      item.appendChild(value);
+      button.appendChild(value);
+      item.appendChild(button);
       fragment.appendChild(item);
     });
     list.replaceChildren(fragment);

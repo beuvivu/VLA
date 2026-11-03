@@ -25,3 +25,6 @@
 @media(max-width:1199px){.live-console .live-hero{flex-wrap:wrap}.live-actions{margin-left:auto}}
 @media(max-width:600px){.live-console .live-hero{align-items:flex-start}.live-actions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.live-console .live-action{flex-direction:column;gap:6px;padding:10px 4px;font-size:11px;text-align:center}.live-prediction-heading{flex-wrap:wrap}.live-prediction-columns{gap:10px}}
 @media(prefers-reduced-motion:reduce){.live-console .live-action{transition:none}}
+.live-prediction-pick{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:2px 10px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.live-prediction-pick:hover{background:var(--ui-brand-soft)}
+.live-prediction-pick:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}

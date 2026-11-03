@@ -4,8 +4,14 @@
    (từng số về hay không, tỉ lệ trúng thật so với kỳ vọng).
 
    Danh sách sinh ra từ cặp vị trí (cầu đẹp nhất, soi cầu, soi đường) mang vị trí cầu trong sổ
-   (`bridges` của từng mục, `draws` của sổ). Bấm một số ở hàng "Trước giờ quay" mở hàng chi tiết:
-   các cầu báo số ấy và đường cầu qua từng kỳ, tô hai chữ số ghép thành số và ô về ở kỳ sau. */
+   (`bridges` của từng mục, `draws` của sổ). Danh sách khác (tổ hợp, Cầu Kèo, ML…) tra bảng
+   `running` của sổ: các cầu đang chạy trên trang Cầu LOTO / Cầu Đặc Biệt ghép ra đúng số ấy.
+   Bấm một số ở hàng "Trước giờ quay" mở hàng chi tiết: các cầu và đường cầu qua từng kỳ, tô hai
+   chữ số ghép thành số và ô về ở kỳ sau.
+
+   live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau. Khi kỳ ấy đã quay xong, bảng có hai
+   nút: kỳ đã quay (đối chiếu) và kỳ sắp quay (sổ đang mở) — sang ngày mới (giờ VN) thì mặc định là
+   kỳ sắp quay, để số "trước giờ quay" người đọc thấy là của kỳ chưa quay. */
 (function () {
   'use strict';
   var root = document.getElementById('live-scorecard');
@@ -23,7 +29,16 @@
   var title = document.getElementById('live-scorecard-date');
   var summary = document.getElementById('live-scorecard-summary');
   var table = document.getElementById('live-scorecard-table');
-  var state = { date: '', board: null, revision: 0, pending: false, retryAt: 0, last: null, open: null, focus: null };
+  var state = { draw: '', views: [], chosen: '', date: '', board: null, revision: 0, pending: false, retryAt: 0,
+    last: null, open: null, focus: null, reveal: null };
+  var BRIDGES_SHOWN = 12;
+
+  // Hai nút chọn kỳ, đặt ngay trên dòng tóm tắt; chỉ hiện khi kỳ của live.json đã quay xong.
+  var viewBar = el('div', 'live-scorecard-views');
+  viewBar.setAttribute('role', 'group');
+  viewBar.setAttribute('aria-label', 'Chọn kỳ quay');
+  viewBar.hidden = true;
+  summary.parentNode.insertBefore(viewBar, summary);
 
   // 107 vị trí chữ số của bảng kết quả, cùng cách đánh số với src/soi_cau/position_bridges.py:
   // (nhãn ngắn, tên giải, số giải, số chữ số).
@@ -129,8 +144,31 @@
     return item.prob === null || item.prob === undefined ? item.base : item.prob;
   }
 
-  function hasBridges(list, item) {
-    return !!(list.bridge && Array.isArray(item.bridges) && item.bridges.length);
+  // Cầu của một mục: của chính danh sách (cầu đẹp nhất, soi cầu, soi đường), hoặc tra bảng cầu đang chạy
+  // của sổ cho danh sách không sinh từ cặp vị trí. null = mục không mở được (sổ cũ, luật nhiều chữ số).
+  function source(list, item) {
+    if (list.bridge) {
+      if (!Array.isArray(item.bridges) || !item.bridges.length) return null;
+      return { cfg: list.bridge, bridges: item.bridges, total: item.bridge_total || item.bridges.length,
+        page: list.page, title: list.title, running: false };
+    }
+    var rule = item.rule || {};
+    var mode = rule.on === 'loto' ? 'loto' : rule.on === 'special' ? 'de' : '';
+    var table = mode && state.board && state.board.running && state.board.running[mode];
+    if (!table || !table.groups || !Array.isArray(rule.numbers) || !rule.numbers.length) return null;
+    var keys = [], bridges = [], total = 0;
+    rule.numbers.forEach(function (text) {
+      var key = pairKey(Number(text));
+      if (keys.indexOf(key) >= 0) return;
+      keys.push(key);
+      var group = table.groups[key];
+      if (!group) return;
+      total += group.total;
+      group.bridges.forEach(function (b) { bridges.push(b); });
+    });
+    bridges.sort(function (u, v) { return v.streak - u.streak || u.a - v.a || u.b - v.b; });
+    return { cfg: { type: 'rule', mark: table.mark, series: table.series }, bridges: bridges.slice(0, BRIDGES_SHOWN),
+      total: total, page: table.page, title: table.title, running: true, count: table.count, keys: keys };
   }
 
   function chips(list, o, after) {
@@ -138,7 +176,8 @@
     list.items.forEach(function (item, index) {
       var chip = el('li', 'live-scorecard-chip');
       var host = chip;
-      if (!after && hasBridges(list, item)) {
+      var src = after ? null : source(list, item);
+      if (src) {
         var open = state.open && state.open.list === list.id && state.open.item === index;
         host = el('button', 'live-scorecard-chip-btn');
         host.type = 'button';
@@ -146,7 +185,8 @@
         host.dataset.bridgeItem = String(index);
         host.setAttribute('aria-expanded', open ? 'true' : 'false');
         host.setAttribute('aria-controls', 'live-bridge-' + list.id);
-        host.setAttribute('aria-label', item.label + ': xem vị trí đường cầu');
+        host.setAttribute('aria-label', item.label + (src.running ? ': xem cầu đang chạy ghép ra số này'
+          : ': xem vị trí đường cầu'));
         host.addEventListener('click', function () {
           state.open = open ? null : { list: list.id, item: index, bridge: 0 };
           state.focus = '[data-bridge-list="' + list.id + '"][data-bridge-item="' + index + '"]';
@@ -222,12 +262,13 @@
     if (t.wait === 0) stat.dataset.verdict = t.hits > t.exp ? 'above' : t.hits < t.exp ? 'below' : 'equal';
     after.append(el('td', 'live-scorecard-when', 'Sau giờ quay'), numsAfter, stat);
     tbody.append(before, after);
-    if (state.open && state.open.list === list.id && list.items[state.open.item] &&
-        hasBridges(list, list.items[state.open.item])) {
+    var openItem = state.open && state.open.list === list.id ? list.items[state.open.item] : null;
+    var openSource = openItem ? source(list, openItem) : null;
+    if (openSource) {
       var detail = el('tr', 'is-bridge');
       var cell = el('td', 'live-bridge-cell');
       cell.colSpan = 4;
-      cell.appendChild(bridgePanel(list, list.items[state.open.item]));
+      cell.appendChild(bridgePanel(list, openItem, openSource));
       detail.appendChild(cell);
       tbody.appendChild(detail);
     }
@@ -238,6 +279,11 @@
 
   function two(n) { return String(n).padStart(2, '0'); }
   function reverse(n) { return 10 * (n % 10) + Math.floor(n / 10); }
+  // Khoá nhóm của hai trang cầu: cặp số ghép {n, lộn n}, xếp tăng (src/evaluation/prediction_board.py).
+  function pairKey(n) {
+    var r = reverse(n);
+    return n === r ? two(n) : two(Math.min(n, r)) + ',' + two(Math.max(n, r));
+  }
   function dayLabel(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4); }
 
   function formed(values, a, b) {
@@ -326,20 +372,21 @@
     return told(n, mark).map(two).join(' · ');
   }
 
-  function bridgeLink(list, item, bridge) {
-    var cfg = list.bridge;
+  function bridgeLink(src, item, bridge) {
+    var cfg = src.cfg;
+    if (src.running || !bridge) return src.page;
     if (cfg.type === 'position' && cfg.query) {
       var q = new URLSearchParams();
       q.set('vt', bridge.a + 'x' + bridge.b);
       Object.keys(cfg.query).forEach(function (k) { q.set(k, String(cfg.query[k])); });
-      return list.page + '?' + q.toString() + '#app-bridge-results';
+      return src.page + '?' + q.toString() + '#app-bridge-results';
     }
-    if (cfg.type === 'path') return list.page + '?number=' + encodeURIComponent(item.rule.numbers[0]);
-    return list.page;
+    if (cfg.type === 'path') return src.page + '?number=' + encodeURIComponent(item.rule.numbers[0]);
+    return src.page;
   }
 
-  function bridgePath(list, bridge) {
-    var cfg = list.bridge;
+  function bridgePath(src, bridge) {
+    var cfg = src.cfg;
     var draws = state.board.draws || {};
     var wrap = el('div', 'live-bridge-days');
     if (cfg.type === 'path') {
@@ -369,16 +416,22 @@
     return wrap;
   }
 
-  function bridgePanel(list, item) {
-    var cfg = list.bridge;
+  function keysText(keys) {
+    return keys.map(function (key) { return key.split(',').join(' · '); }).join(', ');
+  }
+
+  function bridgePanel(list, item, src) {
+    var cfg = src.cfg;
     var panel = el('div', 'live-bridge');
     panel.id = 'live-bridge-' + list.id;
-    var pick = Math.min(state.open.bridge || 0, item.bridges.length - 1);
-    var bridge = item.bridges[pick];
     var head = el('div', 'live-bridge-head');
+    var shown = src.total > src.bridges.length ? ', hiện ' + src.bridges.length + ' cầu dài nhất' : '';
     // Dấu hai chấm tách nhãn khỏi số cầu: nhãn đã có dấu « · » giữa số và số lộn.
-    var heading = el('h3', '', item.label + ': ' + item.bridge_total + (cfg.type === 'path' ? ' đường cầu' : ' cầu') +
-      ' báo mục này' + (item.bridge_total > item.bridges.length ? ', hiện ' + item.bridges.length + ' cầu dài nhất' : ''));
+    var text = !src.running
+      ? item.label + ': ' + src.total + (cfg.type === 'path' ? ' đường cầu' : ' cầu') + ' báo mục này' + shown
+      : src.total
+        ? item.label + ': ' + src.total + ' cầu đang chạy trên trang ' + src.title + ' ghép ra ' + keysText(src.keys) + shown
+        : item.label + ': chưa có cầu nào đang chạy trên trang ' + src.title + ' ghép ra ' + keysText(src.keys);
     var close = el('button', 'live-bridge-close', 'Đóng');
     close.type = 'button';
     close.addEventListener('click', function () {
@@ -387,38 +440,47 @@
       render();
     });
     state.lastItem = state.open.item;
-    head.append(heading, close);
+    head.append(el('h3', '', text), close);
     panel.appendChild(head);
-
-    var picker = el('div', 'live-bridge-picker');
-    picker.setAttribute('role', 'group');
-    picker.setAttribute('aria-label', 'Chọn cầu');
-    item.bridges.forEach(function (b, i) {
-      var text = b.a + '×' + b.b + ' · ' + (cfg.type === 'path' ? 'trễ ' + b.lag + ' ngày · chuỗi ' + b.streak : b.streak + ' kỳ');
-      var button = el('button', 'live-bridge-pick', text);
-      button.type = 'button';
-      button.dataset.bridgePick = String(i);
-      button.setAttribute('aria-pressed', i === pick ? 'true' : 'false');
-      button.addEventListener('click', function () {
-        state.open = { list: list.id, item: state.open.item, bridge: i };
-        state.focus = '#live-bridge-' + list.id + ' [data-bridge-pick="' + i + '"]';
-        render();
-      });
-      picker.appendChild(button);
-    });
-    panel.appendChild(picker);
-
-    var where = el('p', 'live-bridge-where');
-    where.appendChild(el('span', 'live-bridge-src live-bridge-src--a', positionText(bridge.a)));
-    where.appendChild(document.createTextNode(' ghép '));
-    where.appendChild(el('span', 'live-bridge-src live-bridge-src--b', positionText(bridge.b)));
-    if (cfg.type !== 'path' && bridge.streak + 1 > (cfg.series || []).length) {
-      where.appendChild(document.createTextNode(' · cầu chạy ' + bridge.streak + ' kỳ, vẽ ' + (cfg.series || []).length + ' kỳ cuối'));
+    if (src.running) {
+      // Nói thẳng đây là phép TRA, không phải lý do danh sách chọn số.
+      panel.appendChild(el('p', 'live-bridge-note', 'Danh sách ' + list.title + ' không chọn số theo cầu. Đây là các cầu ' +
+        'đang chạy từ ' + src.count + ' kỳ trở lên trên trang ' + src.title + ' mà kỳ cuối ghép ra đúng số này.'));
     }
-    panel.appendChild(where);
-    panel.appendChild(bridgePath(list, bridge));
-    var link = el('a', 'live-bridge-link', 'Xem trên trang ' + list.title + ' →');
-    link.href = bridgeLink(list, item, bridge);
+    var bridge = null;
+    if (src.bridges.length) {
+      var pick = Math.min(state.open.bridge || 0, src.bridges.length - 1);
+      bridge = src.bridges[pick];
+      var picker = el('div', 'live-bridge-picker');
+      picker.setAttribute('role', 'group');
+      picker.setAttribute('aria-label', 'Chọn cầu');
+      src.bridges.forEach(function (b, i) {
+        var label = b.a + '×' + b.b + ' · ' + (cfg.type === 'path' ? 'trễ ' + b.lag + ' ngày · chuỗi ' + b.streak : b.streak + ' kỳ');
+        var button = el('button', 'live-bridge-pick', label);
+        button.type = 'button';
+        button.dataset.bridgePick = String(i);
+        button.setAttribute('aria-pressed', i === pick ? 'true' : 'false');
+        button.addEventListener('click', function () {
+          state.open = { list: list.id, item: state.open.item, bridge: i };
+          state.focus = '#live-bridge-' + list.id + ' [data-bridge-pick="' + i + '"]';
+          render();
+        });
+        picker.appendChild(button);
+      });
+      panel.appendChild(picker);
+
+      var where = el('p', 'live-bridge-where');
+      where.appendChild(el('span', 'live-bridge-src live-bridge-src--a', positionText(bridge.a)));
+      where.appendChild(document.createTextNode(' ghép '));
+      where.appendChild(el('span', 'live-bridge-src live-bridge-src--b', positionText(bridge.b)));
+      if (cfg.type !== 'path' && bridge.streak + 1 > (cfg.series || []).length) {
+        where.appendChild(document.createTextNode(' · cầu chạy ' + bridge.streak + ' kỳ, vẽ ' + (cfg.series || []).length + ' kỳ cuối'));
+      }
+      panel.appendChild(where);
+      panel.appendChild(bridgePath(src, bridge));
+    }
+    var link = el('a', 'live-bridge-link', 'Xem trên trang ' + src.title + ' →');
+    link.href = bridgeLink(src, item, bridge);
     panel.appendChild(link);
     return panel;
   }
@@ -449,7 +511,8 @@
 
   function render() {
     var board = state.board;
-    var o = outcome(state.last && state.last.prizes);
+    // Kỳ sắp quay chưa có giải nào: kết quả trong live.json là của kỳ đã quay.
+    var o = outcome(state.date === state.draw ? state.last && state.last.prizes : null);
     var frag = document.createDocumentFragment();
     var total = { hits: 0, exp: 0, base: 0, k: 0, wait: 0 };
     board.lists.forEach(function (list) {
@@ -511,6 +574,7 @@
         return;
       }
       state.board = board;
+      applyReveal();
       render();
     } catch (_error) {
       if (version !== state.revision) return;
@@ -521,16 +585,42 @@
     }
   }
 
-  function update(snapshot) {
-    state.last = snapshot || null;
-    var date = snapshot && snapshot.draw_date;
-    if (!validDate(date)) {
-      state.date = ''; state.board = null; state.revision += 1; state.pending = false;
-      title.dateTime = '';
-      title.textContent = 'Đang chờ ngày quay';
-      message('Đang chờ ngày quay.');
-      return Promise.resolve();
-    }
+  // Mọi trạng thái "complete*" đều nghĩa là kỳ đã quay đủ 27 giải (như live-predictions.js).
+  function finished(status) {
+    return typeof status === 'string' && status.indexOf('complete') === 0;
+  }
+
+  function nextDay(value) {
+    var day = new Date(value + 'T00:00:00Z');
+    day.setUTCDate(day.getUTCDate() + 1);
+    return day.toISOString().slice(0, 10);
+  }
+
+  function vnToday() {
+    return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+  }
+
+  function renderViews() {
+    viewBar.replaceChildren();
+    viewBar.hidden = state.views.length < 2;
+    if (viewBar.hidden) return;
+    state.views.forEach(function (date, i) {
+      var button = el('button', 'live-scorecard-view', 'Kỳ ' + dayLabel(date) + (i === 0 ? ' · đã quay' : ' · sắp quay'));
+      button.type = 'button';
+      button.dataset.view = date;
+      button.setAttribute('aria-pressed', date === state.date ? 'true' : 'false');
+      button.addEventListener('click', function () {
+        state.chosen = date;
+        state.focus = null;
+        show(date);
+        var again = viewBar.querySelector('[data-view="' + date + '"]');
+        if (again) again.focus();
+      });
+      viewBar.appendChild(button);
+    });
+  }
+
+  function show(date) {
     if (date !== state.date) {
       state.date = date; state.board = null; state.revision += 1; state.pending = false; state.retryAt = 0;
       state.open = null;
@@ -538,10 +628,60 @@
       title.textContent = date.split('-').reverse().join('/');
       message('Đang tải sổ phỏng đoán…');
     }
-    if (state.board) { render(); return Promise.resolve(); }
+    renderViews();
+    if (state.board) { applyReveal(); render(); return Promise.resolve(); }
     if (state.pending || Date.now() < state.retryAt) return Promise.resolve();
     return fetchBoard(date, state.revision);
   }
 
-  window.LiveScorecard = { update: update, judge: judge, outcome: outcome };
+  function update(snapshot) {
+    state.last = snapshot || null;
+    var date = snapshot && snapshot.draw_date;
+    if (!validDate(date)) {
+      state.draw = ''; state.views = []; state.chosen = '';
+      state.date = ''; state.board = null; state.revision += 1; state.pending = false;
+      renderViews();
+      title.dateTime = '';
+      title.textContent = 'Đang chờ ngày quay';
+      message('Đang chờ ngày quay.');
+      return Promise.resolve();
+    }
+    if (date !== state.draw) { state.draw = date; state.chosen = ''; }
+    state.views = finished(snapshot.status) ? [date, nextDay(date)] : [date];
+    var target = state.views.indexOf(state.chosen) >= 0 ? state.chosen
+      : state.views.length > 1 && vnToday() > date ? state.views[1] : state.views[0];
+    return show(target);
+  }
+
+  // Mở đúng số ấy trong bảng (bấm từ khối "Dự đoán trong ngày"): mục của danh sách Cầu Kèo cùng
+  // kiểu, không có thì mục đầu tiên nào chỉ gồm số ấy.
+  function applyReveal() {
+    var want = state.reveal;
+    if (!want || !state.board) return;
+    state.reveal = null;
+    var lists = state.board.lists.slice().sort(function (u, v) {
+      return (u.id === want.list ? 0 : 1) - (v.id === want.list ? 0 : 1);
+    });
+    for (var i = 0; i < lists.length; i++) {
+      for (var j = 0; j < lists[i].items.length; j++) {
+        var item = lists[i].items[j], rule = item.rule || {};
+        if (rule.on !== want.on || !Array.isArray(rule.numbers) || rule.numbers.length !== 1 ||
+            rule.numbers[0] !== want.number || !source(lists[i], item)) continue;
+        state.open = { list: lists[i].id, item: j, bridge: 0 };
+        state.focus = '[data-bridge-list="' + lists[i].id + '"][data-bridge-item="' + j + '"]';
+        return;
+      }
+    }
+  }
+
+  function reveal(date, mode, value) {
+    if (!validDate(date) || state.views.indexOf(date) < 0 || (mode !== 'de' && mode !== 'loto')) {
+      return Promise.resolve();
+    }
+    state.reveal = { list: 'cau-keo-' + mode, on: mode === 'de' ? 'special' : 'loto', number: two(Number(value)) };
+    state.chosen = date;
+    return show(date);
+  }
+
+  window.LiveScorecard = { update: update, reveal: reveal, judge: judge, outcome: outcome };
 })();
