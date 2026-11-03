@@ -363,6 +363,24 @@ test('Số Đặc Biệt tra trang Cầu Đặc Biệt (chạm), sổ cũ không
   assert.equal(item(plain.d, 'top', 0), null, 'sổ schema 2 không có bảng cầu đang chạy');
 });
 
+test('Danh sách cầu bị bỏ vị trí (tính lại lệch) không rơi xuống bảng cầu đang chạy', async (t) => {
+  const rejected = runningBoard();
+  rejected.lists.push(
+    { id: 'bridge-loto', group: 'Soi cầu', title: 'Cầu LOTO', page: 'soi-cau-loto.html', kind: 'loto',
+      items: [{ ...loto('78'), label: '78 · 87', rule: { on: 'loto', numbers: ['78', '87'], need: 1 } }] },
+    { id: 'path-loto-stable', group: 'Soi cầu theo đường', title: 'Đường cầu', page: 'soi-path-loto-stable.html', kind: 'loto',
+      items: [loto('78', 0.238)] },
+    { id: 'best-db', group: 'Cầu đẹp nhất', title: 'Cầu Đặc Biệt', page: 'soi-cau-vi-tri.html', kind: 'de',
+      items: [{ label: '65 · 56', rule: { on: 'special', numbers: ['65', '56'] }, prob: null, base: 0.02 }] });
+  const { api, d } = setup(t, async () => ok(rejected));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  for (const id of ['bridge-loto', 'path-loto-stable', 'best-db']) {
+    assert.equal(item(d, id, 0), null, id + ' giữ dạng thường');
+    assert.ok(d.querySelector(`tbody[data-list-id="${id}"] .is-before .live-scorecard-chip`), id + ' vẫn có trên bảng');
+  }
+  assert.ok(item(d, 'cau-keo-loto', 0), 'danh sách không vị trí vẫn tra được');
+});
+
 test('Kỳ đã quay xong: tối hôm ấy mặc định đối chiếu, có nút sang kỳ sắp quay', async (t) => {
   const urls = [];
   const { api, d } = setup(t, async (url) => { urls.push(url); return forDate(runningBoard)(url); });

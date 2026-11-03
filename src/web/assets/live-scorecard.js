@@ -144,10 +144,16 @@
     return item.prob === null || item.prob === undefined ? item.base : item.prob;
   }
 
+  // Danh sách sinh từ cặp vị trí (src/evaluation/prediction_board.py, `attach_bridges`). Sổ bỏ `bridge` của
+  // một danh sách như thế khi cầu tính lại lệch số trang in; nó vẫn KHÔNG được tra bảng cầu đang chạy, vì câu
+  // "danh sách không chọn số theo cầu" khi ấy là sai.
+  var POSITIONAL = /^(best|bridge|path)-/;
+
   // Cầu của một mục: của chính danh sách (cầu đẹp nhất, soi cầu, soi đường), hoặc tra bảng cầu đang chạy
   // của sổ cho danh sách không sinh từ cặp vị trí. null = mục không mở được (sổ cũ, luật nhiều chữ số).
   function source(list, item) {
-    if (list.bridge) {
+    if (list.bridge || POSITIONAL.test(list.id)) {
+      if (!list.bridge) return null;
       if (!Array.isArray(item.bridges) || !item.bridges.length) return null;
       return { cfg: list.bridge, bridges: item.bridges, total: item.bridge_total || item.bridges.length,
         page: list.page, title: list.title, running: false };
