@@ -170,6 +170,12 @@
     };
     const end = q.get("ngay");
     if (end && /^\d{4}-\d{2}-\d{2}$/.test(end)) params.end = end;
+    // Chọn sẵn một số (`so`) và một cầu (`vt` = a×b): trang Live mở thẳng cầu người đọc vừa xem, tô vị trí
+    // trên các bảng kết quả. Không phải tham số tính toán nên `query` không mang theo khi đổi bộ lọc.
+    const so = q.get("so");
+    params.so = so && /^\d{2}$/.test(so) ? so : null;
+    const vt = /^(\d{1,3})x(\d{1,3})$/.exec(q.get("vt") || "");
+    params.vt = vt ? { a: Number(vt[1]), b: Number(vt[2]) } : null;
     return params;
   }
 
@@ -451,7 +457,7 @@
       }
     }
 
-    function pick(number) {
+    function pick(number, preferred) {
       if (!detail) return;
       for (const cell of document.querySelectorAll("button.app-cau-cell")) {
         cell.setAttribute("aria-pressed", String(cell.dataset.number === number));
@@ -460,6 +466,7 @@
       const list = result.bridges.filter((x) => x.number === number);
       detail.append(el("h3", "app-cau-subhead", `Số ${number}: ${list.length} cầu`));
       const buttons = el("div", "app-cau-bridges");
+      const first = list.includes(preferred) ? preferred : list[0];
       for (const bridge of list) {
         const button = el("button", "app-cau-bridge", `${bridge.vt} · ${bridge.streak} ngày`);
         button.type = "button";
@@ -480,8 +487,8 @@
           `Trên toàn lịch sử, cầu kiểu này đã chạy ${history.plus ? "từ " : ""}${history.k} ngày thì kỳ sau đúng `
           + `${percent(history.rate)} số lần — kỳ vọng nếu độ dài cầu không mang thông tin là ${percent(history.expected)}.`));
       }
-      paint(list, list[0]);
-      buttons.firstChild?.setAttribute("aria-pressed", "true");
+      paint(list, first);
+      buttons.children[list.indexOf(first)]?.setAttribute("aria-pressed", "true");
       detail.scrollIntoView?.({ block: "nearest" });
     }
 
@@ -489,6 +496,11 @@
     if (grid) renderGrid(grid, result, pick, (number) => { if (!detail || !detail.childElementCount) hovered(number); });
     const groups = document.getElementById("app-cau-groups");
     if (groups) renderGroups(groups, result, rule.kind);
+
+    // Mở từ liên kết có `vt`/`so`: cầu đúng cặp vị trí quyết định số; không có cầu ấy thì chọn theo số.
+    const wanted = params.vt ? result.bridges.find((x) => x.a === params.vt.a && x.b === params.vt.b) : null;
+    if (wanted) pick(wanted.number, wanted);
+    else if (params.so) pick(params.so);
 
     window.BridgePages.state = { params, result, series };
   }

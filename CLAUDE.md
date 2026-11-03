@@ -412,6 +412,11 @@ trong bảng (`LiveScorecard.reveal`). live.json giữ ngày kỳ vừa quay t�
 hai nút «đã quay» / «sắp quay»; sang ngày mới giờ VN thì mặc định kỳ sắp quay — trước đó trang hiện sổ kỳ cũ (đã khoá, không
 có vị trí) suốt cả ngày và người đọc tưởng tính năng không chạy. Kỳ sắp quay bỏ ngày nghỉ của `data/non_draw_days.json`
 (cùng luật `next_draw_date`), và lệnh mở số mang kỳ của nó: sổ tải xong là kỳ khác thì bỏ.
+Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ số nguồn được tô trên bảng `#results` đầu trang Live
+CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi
+thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang
+mã `path`), và `bridge_pages.js` chọn sẵn đúng số và đúng cầu ấy rồi tô trên bảng 27 giải của trang. Bảng Đặc Biệt
+tuần/tháng/năm KHÔNG hiện được vị trí cầu: sổ 04-11 có 2/1 503 cầu nằm trọn trong 5 chữ số ĐB.
 
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 

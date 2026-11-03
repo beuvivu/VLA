@@ -398,17 +398,80 @@
     return told(n, mark).map(two).join(' · ');
   }
 
-  function bridgeLink(src, item, bridge) {
+  // Liên kết mở trang nguồn ở đúng cầu đang xem, để các bảng kết quả của trang ấy tô sẵn hai vị trí:
+  // soi cầu vị trí (`vt` + tham số chế độ), soi đường (`number` + mã đường `L<trễ>-[a,b]`), bảy trang soi cầu
+  // và hai trang tra cầu đang chạy (`ngay` = kỳ cuối của đường cầu, `so` = số ghép ở kỳ ấy, `vt`; trang theo
+  // thứ thêm `thu`, cùng cách đánh số 0 = Thứ Hai của bridge_pages.js).
+  function bridgeLink(list, src, item, bridge) {
     var cfg = src.cfg;
-    if (src.running || !bridge) return src.page;
+    var q = new URLSearchParams();
+    if (!bridge) return src.page;
     if (cfg.type === 'position' && cfg.query) {
-      var q = new URLSearchParams();
       q.set('vt', bridge.a + 'x' + bridge.b);
       Object.keys(cfg.query).forEach(function (k) { q.set(k, String(cfg.query[k])); });
       return src.page + '?' + q.toString() + '#app-bridge-results';
     }
-    if (cfg.type === 'path') return src.page + '?number=' + encodeURIComponent(item.rule.numbers[0]);
-    return src.page;
+    if (cfg.type === 'path') {
+      q.set('number', item.rule.numbers[0]);
+      q.set('path', 'L' + bridge.lag + '-[' + bridge.a + ',' + bridge.b + ']');
+      return src.page + '?' + q.toString();
+    }
+    var series = cfg.series || [];
+    var last = series[series.length - 1];
+    var values = last && state.board.draws ? state.board.draws[last] : null;
+    if (last) q.set('ngay', last);
+    if (Array.isArray(values)) q.set('so', two(formed(values, bridge.a, bridge.b)));
+    q.set('vt', bridge.a + 'x' + bridge.b);
+    if (last && !src.running && /-theo-thu$/.test(list.id)) {
+      q.set('thu', String((new Date(last + 'T00:00:00Z').getUTCDay() + 6) % 7));
+    }
+    return src.page + '?' + q.toString();
+  }
+
+  // Bảng kết quả đầu trang (docs/live.html, #results): 27 ô theo đúng thứ tự giải. Trước giờ quay nó hiện kỳ
+  // vừa quay — cũng là kỳ cuối mà cầu ghép số — nên hai vị trí của cầu đang mở được tô ngay trên đó. Chỉ tô khi
+  // MỌI ô trùng kết quả đã nhúng của kỳ ấy (bảng đang hiện kỳ khác, hay giải chưa hiện hết, thì không tô).
+  var MARK = 'data-bridge-mark';
+
+  function boardSlots(date) {
+    var host = document.getElementById('results');
+    var values = date && state.board && state.board.draws ? state.board.draws[date] : null;
+    if (!host || !Array.isArray(values)) return null;
+    var slots = host.querySelectorAll('.slot');
+    if (slots.length !== VALUE_FIRST.length) return null;
+    for (var i = 0; i < slots.length; i++) {
+      if (slots[i].textContent !== values[i]) return null;
+    }
+    return { slots: slots, values: values };
+  }
+
+  function markBoard(mark) {
+    var host = document.getElementById('results');
+    if (!host) return;
+    Array.prototype.forEach.call(host.querySelectorAll('[' + MARK + ']'), function (slot) {
+      slot.textContent = slot.textContent;
+      slot.removeAttribute(MARK);
+    });
+    var shown = mark && boardSlots(mark.date);
+    if (!shown) return;
+    var marks = {};
+    [['a', mark.a], ['b', mark.b]].forEach(function (pair) {
+      var index = POSITIONS[pair[1]].value;
+      (marks[index] = marks[index] || {})[pair[1] - VALUE_FIRST[index]] = pair[0];
+    });
+    Object.keys(marks).forEach(function (index) {
+      var slot = shown.slots[index];
+      var text = shown.values[index];
+      slot.setAttribute(MARK, '');
+      slot.replaceChildren();
+      for (var k = 0; k < text.length; k++) {
+        var which = marks[index][k];
+        if (!which) { slot.appendChild(document.createTextNode(text[k])); continue; }
+        var span = el('span', 'live-board-src live-board-src--' + which, text[k]);
+        span.setAttribute('aria-label', positionText(VALUE_FIRST[index] + k) + ': ' + text[k]);
+        slot.appendChild(span);
+      }
+    });
   }
 
   function bridgePath(src, bridge) {
@@ -505,8 +568,22 @@
       panel.appendChild(where);
       panel.appendChild(bridgePath(src, bridge));
     }
+    if (bridge) {
+      // Kỳ ghép số của cầu: kỳ cuối của chuỗi; soi đường thì kỳ gốc của chính đường ấy.
+      var source = cfg.type === 'path' ? bridge.base : (cfg.series || [])[(cfg.series || []).length - 1];
+      state.mark = { date: source, a: bridge.a, b: bridge.b };
+      if (boardSlots(source)) {
+        var onBoard = el('p', 'live-bridge-onboard');
+        onBoard.appendChild(document.createTextNode('Hai vị trí này đang được tô trên bảng kết quả kỳ ' +
+          dayLabel(source) + ' ở đầu trang. '));
+        var up = el('a', '', 'Lên bảng kết quả ↑');
+        up.href = '#results';
+        onBoard.appendChild(up);
+        panel.appendChild(onBoard);
+      }
+    }
     var link = el('a', 'live-bridge-link', 'Xem trên trang ' + src.title + ' →');
-    link.href = bridgeLink(src, item, bridge);
+    link.href = bridgeLink(list, src, item, bridge);
     panel.appendChild(link);
     return panel;
   }
@@ -541,6 +618,7 @@
     var o = outcome(state.date === state.draw ? state.last && state.last.prizes : null);
     var frag = document.createDocumentFragment();
     var total = { hits: 0, exp: 0, base: 0, k: 0, wait: 0 };
+    state.mark = null;
     board.lists.forEach(function (list) {
       var g = groupRows(list, o);
       frag.appendChild(g.body);
@@ -549,6 +627,7 @@
     });
     clearGroups();
     table.appendChild(frag);
+    markBoard(state.mark);
     if (state.focus) {
       var target = table.querySelector(state.focus);
       state.focus = null;
@@ -577,6 +656,7 @@
 
   function message(text) {
     clearGroups();
+    markBoard(null);
     summary.replaceChildren(el('p', '', text));
     root.dataset.state = 'empty';
   }
