@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "mode": "loto",
-  "learned_at_utc": "2026-11-02T12:38:45Z",
+  "learned_at_utc": "2026-11-03T11:38:13Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -33,18 +33,19 @@
     "2026-10-30",
     "2026-10-31",
     "2026-11-01",
-    "2026-11-02"
+    "2026-11-02",
+    "2026-11-03"
   ],
   "component_availability_required": true,
   "metric": {
-    "logloss": 0.5541991443050891,
-    "brier": 0.1838025353518828
+    "logloss": 0.5526260012579293,
+    "brier": 0.18309443642078826
   },
   "promotion": {
     "promoted": false,
     "reason": "lát thẩm định chỉ có 7 kỳ, cần 8",
     "baseline": "dang_hieu_luc",
-    "train_days": 10,
+    "train_days": 11,
     "validation_days": 7,
     "train_last_day": "",
     "validation_first_day": "",
@@ -54,12 +55,12 @@
     "delta_ci95_high": NaN
   },
   "chronological_split": {
-    "weight_days": 17,
+    "weight_days": 18,
     "calibration_days": 12,
     "weight_first_day": "2026-10-05",
-    "weight_last_day": "2026-10-21",
-    "calibration_first_day": "2026-10-22",
-    "calibration_last_day": "2026-11-02",
+    "weight_last_day": "2026-10-22",
+    "calibration_first_day": "2026-10-23",
+    "calibration_last_day": "2026-11-03",
     "disjoint": true
   },
   "weights": {
