@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-11-03T15:35:07Z",
+  "generated_at": "2026-11-04T10:40:25Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -87,7 +87,7 @@
   "screen_summary": {
     "partner": {
       "mean_brier_skill": 1.762643446642442e-05,
-      "mean_logloss_skill": 1.6375150449558507e-05
+      "mean_logloss_skill": 1.6375150449660178e-05
     },
     "cap_50": {
       "mean_brier_skill": 0.00010215273119156517,
