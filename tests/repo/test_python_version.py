@@ -121,9 +121,22 @@ def test_every_direct_requirement_is_pinned_to_one_version():
         "lightgbm>=4.7.0,<5.0", "pytest"]
 
 
+def workflow_pins(paths=WORKFLOWS) -> dict[str, str]:
+    """Bản `gói==bản` mà các workflow ghim thẳng trong lệnh `pip install` (như playwright của ci.yml)."""
+    pins: dict[str, str] = {}
+    for path in paths:
+        for line in re.findall(r"pip install([^\n]*)", Path(path).read_text(encoding="utf-8")):
+            for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
+                match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token.strip("\"'"))
+                if match:
+                    pins.setdefault(match.group(1).lower(), match.group(2))
+    return pins
+
+
 def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
-    """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim của requirements — kể cả cài gói đã ghim
-    theo một khoảng (`"pytest>=9.1.1,<10"`), tức bản do ngày cài quyết định."""
+    """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim — kể cả cài gói đã ghim theo một khoảng
+    (`"pytest>=9.1.1,<10"`) hay không ghim gì (`playwright`): bản khi ấy do ngày cài quyết định, và job kiểm lỗ
+    hổng hằng tuần chấm bản ghim chứ không chấm bản ấy."""
     out = []
     for line in re.findall(r"pip install([^\n]*)", run_text):
         for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
@@ -138,17 +151,22 @@ def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
             rest = token[name.end():].lstrip() if name else ""
             if name and name.group(0).lower() in pins and rest and rest[0] in "<>=!~":
                 out.append(f"{token} (requirements: {pins[name.group(0).lower()]})")
+            elif name and not rest and name.group(0).lower() in pins:
+                out.append(f"{token} (không ghim; bản ghim: {pins[name.group(0).lower()]})")
     return out
 
 
 def test_versions_pinned_inline_in_workflows_match_the_requirement_files():
     """Ngày 01-11-2026 hai job còn ghim tay numpy 2.2.6 / pandas 3.0.5 / pandas 2.2.3 — không có bánh xe
     cho Python 3.15 — trong khi requirements đã nâng: lượt chạy kế sẽ hỏng ở bước cài đặt."""
-    pins = requirement_pins()
-    assert {"numpy", "pandas", "scikit-learn"} <= set(pins)
+    pins = {**workflow_pins(), **requirement_pins()}
+    assert {"numpy", "pandas", "scikit-learn", "playwright"} <= set(pins)
     drift = {path.name: inline_pin_drift(path.read_text(encoding="utf-8"), pins) for path in WORKFLOWS}
     assert {name: found for name, found in drift.items() if found} == {}
     assert inline_pin_drift('python -m pip install "numpy==2.2.6" pandas==3.1.0', {"numpy": "2.5.4", "pandas": "3.1.0"}) == [
         "numpy==2.2.6 (requirements: 2.5.4)"]
     assert inline_pin_drift("""python -m pip install "pytest>=9.1.1,<10" 'numpy==2.5.4' playwright==1.55.0""",
                             {"numpy": "2.5.4", "pytest": "9.2.0"}) == ["pytest>=9.1.1,<10 (requirements: 9.2.0)"]
+    # Gói đã ghim mà cài trần thì cũng lệch; công cụ đóng gói không ghim (pip, wheel) thì không.
+    assert inline_pin_drift("python -m pip install --upgrade pip wheel && pip install --no-cache-dir playwright",
+                            {"playwright": "1.55.0"}) == ["playwright (không ghim; bản ghim: 1.55.0)"]
