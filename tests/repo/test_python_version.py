@@ -100,23 +100,78 @@ def requirement_pins(root: Path = ROOT) -> dict[str, str]:
     return pins
 
 
-def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
-    """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim của requirements."""
+def unpinned_requirements(text: str) -> list[str]:
+    """Dòng gói trực tiếp KHÔNG ghim đúng một bản (`gói==bản`), bỏ chú thích và `-r`."""
     out = []
-    for line in re.findall(r"pip install([^\n]*)", run_text):
-        for token in line.split():
-            match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token.strip("\"'"))
-            if match and match.group(1).lower() in pins and pins[match.group(1).lower()] != match.group(2):
-                out.append(f"{match.group(1)}=={match.group(2)} (requirements: {pins[match.group(1).lower()]})")
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line or line.startswith("-"):
+            continue
+        if not re.fullmatch(r"[A-Za-z0-9_.\[\],-]+==[^\s;,<>=!~]+(\s*;.*)?", line):
+            out.append(line)
+    return out
+
+
+def test_every_direct_requirement_is_pinned_to_one_version():
+    """04-11-2026: `requirements-ml-engine.txt` và `requirements-dev.txt` còn ghim khoảng (`lightgbm>=4.7.0,<5.0`…).
+    Khoảng thì bản cài trôi theo ngày cài, và `pip-audit` (job kiểm lỗ hổng hằng tuần) từ chối chấm dòng ấy."""
+    found = {name: unpinned_requirements((ROOT / name).read_text(encoding="utf-8")) for name in REQUIREMENT_FILES}
+    assert {name: lines for name, lines in found.items() if lines} == {}
+    assert unpinned_requirements("-r requirements.txt\n# chú thích\nnumpy==2.5.4  # ghim\nlightgbm>=4.7.0,<5.0\npytest\n") == [
+        "lightgbm>=4.7.0,<5.0", "pytest"]
+
+
+def workflow_pins(paths=WORKFLOWS) -> dict[str, str]:
+    """Bản `gói==bản` mà các workflow ghim thẳng trong lệnh `pip install` (như playwright của ci.yml)."""
+    pins: dict[str, str] = {}
+    for path in paths:
+        for line in re.findall(r"pip install([^\n]*)", Path(path).read_text(encoding="utf-8")):
+            for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
+                match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token.strip("\"'"))
+                if match:
+                    pins.setdefault(match.group(1).lower(), match.group(2))
+    return pins
+
+
+def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
+    """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim — kể cả cài gói đã ghim theo một khoảng
+    (`"pytest>=9.1.1,<10"`) hay không ghim gì (`playwright`): bản khi ấy do ngày cài quyết định, và job kiểm lỗ
+    hổng hằng tuần chấm bản ghim chứ không chấm bản ấy. Dòng chú thích YAML/shell không phải lệnh cài."""
+    out = []
+    lines = [line for raw in run_text.splitlines() if not raw.strip().startswith("#")
+             for line in re.findall(r"pip install(.*)", raw)]
+    for line in lines:
+        for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
+            token = token.strip("\"'")
+            match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token)
+            if match:
+                if match.group(1).lower() in pins and pins[match.group(1).lower()] != match.group(2):
+                    out.append(f"{match.group(1)}=={match.group(2)} (requirements: {pins[match.group(1).lower()]})")
+                continue
+            # Gói đã ghim mà theo sau là toán tử khác (>=, <, ~=, !=…): bản do ngày cài quyết định.
+            name = re.match(r"[A-Za-z0-9_.-]+", token)
+            rest = token[name.end():].lstrip() if name else ""
+            if name and name.group(0).lower() in pins and rest and rest[0] in "<>=!~":
+                out.append(f"{token} (requirements: {pins[name.group(0).lower()]})")
+            elif name and not rest and name.group(0).lower() in pins:
+                out.append(f"{token} (không ghim; bản ghim: {pins[name.group(0).lower()]})")
     return out
 
 
 def test_versions_pinned_inline_in_workflows_match_the_requirement_files():
     """Ngày 01-11-2026 hai job còn ghim tay numpy 2.2.6 / pandas 3.0.5 / pandas 2.2.3 — không có bánh xe
     cho Python 3.15 — trong khi requirements đã nâng: lượt chạy kế sẽ hỏng ở bước cài đặt."""
-    pins = requirement_pins()
-    assert {"numpy", "pandas", "scikit-learn"} <= set(pins)
+    pins = {**workflow_pins(), **requirement_pins()}
+    assert {"numpy", "pandas", "scikit-learn", "playwright"} <= set(pins)
     drift = {path.name: inline_pin_drift(path.read_text(encoding="utf-8"), pins) for path in WORKFLOWS}
     assert {name: found for name, found in drift.items() if found} == {}
     assert inline_pin_drift('python -m pip install "numpy==2.2.6" pandas==3.1.0', {"numpy": "2.5.4", "pandas": "3.1.0"}) == [
         "numpy==2.2.6 (requirements: 2.5.4)"]
+    assert inline_pin_drift("""python -m pip install "pytest>=9.1.1,<10" 'numpy==2.5.4' playwright==1.55.0""",
+                            {"numpy": "2.5.4", "pytest": "9.2.0"}) == ["pytest>=9.1.1,<10 (requirements: 9.2.0)"]
+    # Gói đã ghim mà cài trần thì cũng lệch; công cụ đóng gói không ghim (pip, wheel) thì không.
+    assert inline_pin_drift("python -m pip install --upgrade pip wheel && pip install --no-cache-dir playwright",
+                            {"playwright": "1.55.0"}) == ["playwright (không ghim; bản ghim: 1.55.0)"]
+    # Chú thích nhắc lệnh cài không phải lệnh cài.
+    assert inline_pin_drift("# lệnh `pip install` trần như playwright\n  # cũ: pip install numpy==2.2.6\n",
+                            {"playwright": "1.55.0", "numpy": "2.5.4"}) == []

@@ -125,6 +125,7 @@
     shown = until;
     moreNode.before(fragment);
     paintMarks();
+    applyBridge();
     moreNode.hidden = shown >= current.length;
     moreButton.textContent = `Xem thêm ${Math.min(PAGE_SIZE, current.length - shown)} kỳ`
       + ` (còn ${current.length - shown})`;
@@ -345,6 +346,57 @@
     }), "xlsx");
   }
 
+  // ---- Mở từ liên kết cầu ------------------------------------------------
+  //
+  // `?ngay=YYYY-MM-DD&vt=AxB` (trang Live, khung chi tiết cầu): mở đúng kỳ ấy và tô hai vị trí chữ số
+  // ghép thành số của cầu (shared_results.js, markBridge). Kỳ không có trong sổ hay vị trí sai thì bỏ
+  // qua, trang hiện như mặc định. Dấu tô khoá theo DỮ LIỆU nên còn nguyên khi danh sách dựng lại; kỳ
+  // ấy bị bộ lọc ẩn thì dòng báo nói rõ.
+  const { markBridge, clearBridge, positionLabel } = shared;
+  let bridge = null;
+  let bridgeStatus = null;
+
+  function readBridge() {
+    const query = new URLSearchParams(window.location.search);
+    const date = query.get("ngay") || "";
+    const vt = /^(\d{1,3})x(\d{1,3})$/.exec(query.get("vt") || "");
+    if (!vt || !ALL.some((draw) => draw.date === date)) return null;
+    const a = Number(vt[1]);
+    const b = Number(vt[2]);
+    if (a === b || !positionLabel(a) || !positionLabel(b)) return null;
+    return { date, a, b };
+  }
+
+  function applyBridge() {
+    if (!bridge) return;
+    const marked = markBridge(resultsNode, bridge.date, bridge.a, bridge.b);
+    if (bridgeStatus) {
+      bridgeStatus.textContent = marked ? "" : ` Kỳ ${formatDate(bridge.date)} đang bị bộ lọc ẩn.`;
+    }
+  }
+
+  function showBridgeNote() {
+    const note = document.createElement("p");
+    note.className = "tr-bridge-note";
+    note.setAttribute("role", "status");
+    const text = document.createElement("span");
+    text.textContent = `Đang tô vị trí cầu kỳ ${formatDate(bridge.date)}: vị trí ${bridge.a} `
+      + `(${positionLabel(bridge.a)}) ghép vị trí ${bridge.b} (${positionLabel(bridge.b)}).`;
+    bridgeStatus = document.createElement("span");
+    text.append(bridgeStatus);
+    const off = document.createElement("button");
+    off.type = "button";
+    off.className = "tr-btn";
+    off.textContent = "Bỏ tô";
+    off.addEventListener("click", () => {
+      bridge = null;
+      clearBridge(resultsNode);
+      note.remove();
+    });
+    note.append(text, off);
+    resultsNode.parentNode.insertBefore(note, resultsNode);
+  }
+
   // ---- Nối sự kiện ------------------------------------------------------
 
   period.addEventListener("change", () => {
@@ -379,5 +431,14 @@
   }
   applyLayout();
   applyToggles();
+  bridge = readBridge();
+  if (bridge) {
+    period.value = "custom";
+    customDates.hidden = false;
+    fromInput.value = bridge.date;
+    toInput.value = bridge.date;
+    showBridgeNote();
+  }
   refresh();
+  if (bridge) resultsNode.querySelector("[data-bridge-mark]")?.closest(".tr-day")?.scrollIntoView?.({ block: "start" });
 })();

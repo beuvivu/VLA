@@ -440,6 +440,9 @@ def main() -> None:
         # đặt cạnh kết quả đang về. Đọc bảng mô phỏng, cầu đẹp nhất và bảy trang soi cầu nên
         # đứng sau chúng; khoá 18:10 giờ VN của kỳ đích, sau đó sổ đóng băng.
         _run(_py("src/evaluation/prediction_board.py"), allow_fail=soft_fail)
+        # Thành tích nhiều kỳ của sổ ấy (trang Live): cộng mọi kỳ đã có kết quả đủ 27 giải, so với kỳ quay
+        # công bằng mô phỏng. Tất định, nên tệp chỉ đổi khi có kỳ mới.
+        _run(_py("src/evaluation/board_record.py"), allow_fail=soft_fail)
         _run(_py("src/pages/build_research_lab.py"), allow_fail=True)
         # Trang thống kê chi tiết: nhúng lịch sử và tính bằng JS phía
         # trình duyệt, nên phải chạy SAU khi dữ liệu đã chốt.

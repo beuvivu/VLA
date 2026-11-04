@@ -11,8 +11,7 @@ Important: The outputs are *statistics only* derived from historical results.
 No betting/prediction logic is included.
 
 Outputs are written under:
-  - data/stats/advanced/*.csv + *.json
-  - images/advanced_*.jpg
+  - data/stats/advanced/*.csv
 """
 
 import argparse
@@ -27,7 +26,6 @@ import pandas as pd
 from stats.frequency_stats import compute_frequency_stats
 from stats.gap_cycle_stats import compute_gap_stats
 from ingest.lottery import Lottery, RepoPaths
-from stats.plot_utils import save_heatmap, save_ranked_bar
 
 
 logger = logging.getLogger(__name__)
@@ -36,11 +34,10 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class AdvancedOutputs:
     data_dir: Path
-    images_dir: Path
 
     @classmethod
     def from_paths(cls, paths: RepoPaths) -> AdvancedOutputs:
-        return cls(data_dir=paths.data_dir / "stats" / "advanced", images_dir=paths.images_dir)
+        return cls(data_dir=paths.data_dir / "stats" / "advanced")
 
 
 def _ensure_dir(p: Path) -> None:
@@ -69,27 +66,9 @@ def _flatten_2d_values(two_digit_df: pd.DataFrame) -> np.ndarray:
 
 
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> None:
+    """Chỉ ghi CSV (như ``statistical_matrices._dump_table``): bản JSON kèm theo không ai đọc."""
     _ensure_dir(out_dir)
     write_code_csv(df, out_dir / f"{name}.csv", index=False)
-    df.to_json(out_dir / f"{name}.json", orient="records", indent=2)
-
-
-def _save_heatmap(matrix: pd.DataFrame, *, title: str, out_path: Path, cmap: str = "YlOrRd", cbar_label: str = "Giá trị") -> None:
-    save_heatmap(matrix, title=title, out_path=out_path, cmap=cmap, cbar_label=cbar_label)
-
-
-def _save_bar(
-    df: pd.DataFrame,
-    *,
-    x: str,
-    y: str,
-    title: str,
-    out_path: Path,
-    top_n: int = 20,
-    cmap: str = "YlGnBu",
-    ylabel: str | None = None,
-) -> None:
-    save_ranked_bar(df, x=x, y=y, title=title, out_path=out_path, top_n=top_n, cmap=cmap, ylabel=ylabel or y)
 
 
 def compute_frequency(sparse_df: pd.DataFrame, *, window_days: int) -> pd.DataFrame:
@@ -298,20 +277,6 @@ def compute_lo_roi(two_digit_df: pd.DataFrame, *, window_draws: int = 7) -> pd.D
     return out.sort_values(["count_in_window", "days_in_window"], ascending=False).reset_index(drop=True)
 
 
-def to_heatmap_10x10(df: pd.DataFrame, *, value_col: str, metric_col: str) -> pd.DataFrame:
-    """Convert a per-number table into a 10x10 matrix indexed by tens/ones."""
-    view = df[[value_col, metric_col]].copy()
-    view[value_col] = view[value_col].astype(int)
-    view["tens"] = view[value_col] // 10
-    view["ones"] = view[value_col] % 10
-    return (
-        view.pivot(index="tens", columns="ones", values=metric_col)
-        .fillna(0)
-        .astype(int)
-        .sort_index()
-    )
-
-
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -344,24 +309,9 @@ def main() -> None:
     freq = compute_frequency(sparse, window_days=args.freq_days)
     _dump_table(freq, out_dir=out.data_dir, name=f"freq_{args.freq_days}d")
 
-    freq_heat = to_heatmap_10x10(freq, value_col="value", metric_col="freq")
-    _save_heatmap(freq_heat, title=f"Tần suất loto ({args.freq_days} ngày)", out_path=out.images_dir / "advanced_freq_heatmap.jpg", cmap="YlGnBu", cbar_label="Số lần xuất hiện")
-    _save_bar(
-        freq.assign(value_str=freq["value"].apply(lambda v: f"{int(v):02d}")),
-        x="value_str",
-        y="freq",
-        title=f"Top loto theo tần suất ({args.freq_days} ngày)",
-        out_path=out.images_dir / "advanced_freq_top.jpg",
-        top_n=20,
-        cmap="YlGnBu",
-        ylabel="Số lần xuất hiện",
-    )
-
     # 2) Overdue (lô gan)
     overdue = compute_overdue(sparse)
     _dump_table(overdue, out_dir=out.data_dir, name="overdue")
-    overdue_heat = to_heatmap_10x10(overdue, value_col="value", metric_col="days_since_last")
-    _save_heatmap(overdue_heat, title="Lô gan (ngày chưa về)", out_path=out.images_dir / "advanced_overdue_heatmap.jpg", cmap="YlOrRd", cbar_label="Số ngày chưa về")
     overdue_list = overdue[overdue["days_since_last"].fillna(-1).astype(int) >= args.min_overdue].copy()
     _dump_table(overdue_list, out_dir=out.data_dir, name=f"overdue_ge_{args.min_overdue}d")
 

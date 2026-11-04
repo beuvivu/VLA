@@ -228,6 +228,8 @@ def test_the_home_panel_links_each_bridge_with_the_reference_parameters() -> Non
     assert chip.select_one(".app-bridge-streak").get_text() == "6"
     # Mỗi số một phần tử: "44,99" viết liền bị đọc thành số thập phân 44,99.
     assert [s.get_text() for s in chip.select(".app-bridge-num")] == ["44", "99"]
+    # Hai vị trí của cầu đi kèm để bảng kết quả bên cạnh tô chúng (shared_results.js, bindBridgeChips).
+    assert [(a["data-bridge-a"], a["data-bridge-b"]) for a in soup.select(".app-bridge-list a")] == [("60", "83")] * 3
 
 
 def test_the_home_panel_refuses_a_report_from_another_draw() -> None:

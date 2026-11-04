@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from core.lottery_codes import write_code_csv
+from evaluation.record_pred_history import write_history
 
 import argparse
 import logging
@@ -70,7 +70,7 @@ def main() -> None:
         need = df["y"].isna() & (df["_tdate"] <= last_date)
         if not need.any():
             df = df.drop(columns=["_tdate"])
-            write_code_csv(df, f, index=False)
+            write_history(df, f)
             print(f"[OK] labels already up to date for {mode}")
             continue
 
@@ -90,8 +90,7 @@ def main() -> None:
                 ).astype(int)
 
         df = df.drop(columns=["_tdate"])
-        df["y"] = df["y"].astype("Int64")
-        write_code_csv(df, f, index=False)
+        write_history(df, f)
         print(f"[OK] updated labels for {mode} history: {f}")
 
 

@@ -26,7 +26,7 @@
   var RETRY_ERROR_MS = 60000;
   // Tên miền và đường dẫn dữ liệu không được viết thẳng ra trang (luật riêng tư của kho).
   var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9ldmFsdWF0aW9uL3ByZWRpY3Rpb25fYm9hcmQv',
-    c: 'ZGF0YS9ub25fZHJhd19kYXlzLmpzb24=' };
+    c: 'ZGF0YS9ub25fZHJhd19kYXlzLmpzb24=', r: 'ZGF0YS9ldmFsdWF0aW9uL2JvYXJkX3JlY29yZC9yZWNvcmQuanNvbg==' };
   function d(k) { return atob(E[k]); }
 
   var title = document.getElementById('live-scorecard-date');
@@ -587,6 +587,12 @@
     var link = el('a', 'live-bridge-link', 'Xem trên trang ' + src.title + ' →');
     link.href = bridgeLink(list, src, item, bridge);
     panel.appendChild(link);
+    if (bridge && validDate(source)) {
+      // Sổ kết quả truyền thống mở đúng kỳ ghép số và tô hai vị trí (traditional_results.js, `vt`).
+      var book = el('a', 'live-bridge-link live-bridge-book', 'Xem trên Sổ kết quả →');
+      book.href = 'so-ket-qua-truyen-thong.html?' + new URLSearchParams({ ngay: source, vt: bridge.a + 'x' + bridge.b });
+      panel.appendChild(book);
+    }
     return panel;
   }
 
@@ -809,6 +815,108 @@
     state.chosen = date;
     return show(date);
   }
+
+  // Thành tích qua các kỳ đã quay (src/evaluation/board_record.py): mỗi danh sách trúng bao nhiêu so với chọn
+  // bừa, cộng dồn mọi kỳ đã có đủ 27 giải. Một kỳ là mẫu quá nhỏ; khối này là câu trả lời có cỡ mẫu. Chỉ tải khi
+  // người đọc mở khối, một lần (tải hỏng thì lần mở sau thử lại). Kết luận in TỪ p của tệp, không viết sẵn.
+  var record = el('details', 'live-record');
+  record.id = 'live-record';
+  var recordTitle = el('summary', 'live-record-summary', 'Thành tích qua các kỳ đã quay');
+  var recordBody = el('div', 'live-record-body');
+  record.append(recordTitle, recordBody);
+  root.appendChild(record);
+  var recordLoad = null;
+
+  function pValue(p) {
+    return p < 0.001 ? '< 0,001' : number(p, 3);
+  }
+
+  function verdictClass(text) {
+    return /nhiều hơn/.test(text) ? 'above' : /ít hơn/.test(text) ? 'below' : 'same';
+  }
+
+  function validRecord(data) {
+    return !!data && data.version === 1 && Array.isArray(data.lists) && !!data.family && data.draws > 0 &&
+      validDate(data.first) && validDate(data.last);
+  }
+
+  function renderRecord(data) {
+    if (!validRecord(data)) {
+      recordLoad = null;
+      recordBody.replaceChildren(el('p', 'live-record-status', 'Chưa đọc được thành tích các kỳ; mở lại để thử lần nữa.'));
+      return;
+    }
+    recordTitle.textContent = 'Thành tích qua ' + data.draws + ' kỳ đã quay (' + dayLabel(data.first) + ' → ' +
+      dayLabel(data.last) + ')';
+    var family = data.family;
+    var lead = el('p', 'live-record-lead');
+    lead.append('Gộp mọi danh sách: trúng ' + family.hits + ' mục, chọn bừa kỳ vọng ' + number(family.expected, 1) +
+      ' (p = ' + pValue(family.p) + ') — ');
+    var familyVerdict = el('strong', 'live-record-verdict', family.verdict);
+    familyVerdict.dataset.verdict = verdictClass(family.verdict);
+    lead.appendChild(familyVerdict);
+    lead.append('.');
+
+    var tableNode = el('table', 'live-record-table');
+    tableNode.appendChild(el('caption', '', 'Mỗi danh sách cộng qua các kỳ có mặt: mục trúng, kỳ vọng và kỳ có ít nhất một mục trúng'));
+    var head = el('tr');
+    ['Danh sách', 'Số kỳ', 'Mục trúng', 'Chọn bừa', 'Theo xác suất công bố', 'Kỳ có trúng', 'p (Holm)', 'Kết luận']
+      .forEach(function (text) {
+        var th = el('th', '', text);
+        th.scope = 'col';
+        head.appendChild(th);
+      });
+    var thead = el('thead');
+    thead.appendChild(head);
+    var tbody = el('tbody');
+    data.lists.forEach(function (row) {
+      var tr = el('tr');
+      tr.dataset.listId = row.id;
+      var name = el('th', 'live-record-name');
+      name.scope = 'row';
+      // Lớp riêng, không phải `span`/`small` chung: module bằng chứng bọc chữ số («10») trong span của nó.
+      name.appendChild(el('span', 'live-record-title', row.title));
+      if (row.group) name.appendChild(el('small', 'live-record-group', row.group));
+      var verdict = el('td', 'live-record-verdict', row.verdict);
+      verdict.dataset.verdict = verdictClass(row.verdict);
+      // Nhãn cột đi kèm từng ô: trên điện thoại bảng xếp thành khối và đầu cột bị ẩn.
+      function cell(label, text) {
+        var td = el('td', 'live-record-num', text);
+        td.dataset.label = label;
+        return td;
+      }
+      tr.append(
+        name,
+        cell('Số kỳ', row.draws),
+        cell('Mục trúng', row.hits),
+        cell('Chọn bừa', number(row.expected, 1)),
+        cell('Theo xác suất công bố', row.published_items > 0 ? number(row.expected_published, 1) : '—'),
+        cell('Kỳ có trúng', row.days_hit + ' / ' + number(row.days_expected, 1)),
+        cell('p (Holm)', pValue(row.p_holm)),
+        verdict
+      );
+      tbody.appendChild(tr);
+    });
+    tableNode.append(thead, tbody);
+    var scroll = el('div', 'live-scorecard-scroll');
+    scroll.appendChild(tableNode);
+    var method = data.method || {};
+    var note = el('p', 'live-record-note', 'Chấm theo kỳ, so với ' + Number(method.simulations || 0).toLocaleString('vi-VN') +
+      ' kỳ quay công bằng mô phỏng (27 đuôi độc lập, đều trên 00–99), nên tính đúng việc các mục trong một danh sách ' +
+      'trùng nhau. «Chọn bừa» là số mục trúng kỳ vọng khi mọi số như nhau; «Kỳ có trúng» là số kỳ có ít nhất một mục ' +
+      'trúng so với kỳ vọng. p hai phía, hiệu chỉnh ' + (method.adjust || 'Holm') + ' trên ' + data.lists.length +
+      ' danh sách; «chưa khác chọn bừa» nghĩa là chênh lệch nằm trong dao động ngẫu nhiên của chừng ấy kỳ.');
+    recordBody.replaceChildren(lead, scroll, note);
+  }
+
+  record.addEventListener('toggle', function () {
+    if (!record.open || recordLoad) return;
+    recordBody.replaceChildren(el('p', 'live-record-status', 'Đang tải thành tích các kỳ…'));
+    recordLoad = fetch(root.dataset.recordUrl || dataUrl(d('r')), { cache: 'no-store' })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .catch(function () { return null; })
+      .then(renderRecord);
+  });
 
   window.LiveScorecard = { update: update, reveal: reveal, judge: judge, outcome: outcome };
 })();

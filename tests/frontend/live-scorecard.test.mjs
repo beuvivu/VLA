@@ -7,7 +7,7 @@ import { JSDOM } from 'jsdom';
 // là hai hàng song song, và một mục chỉ "trượt" khi phần kết quả liên quan đã đủ.
 const script = readFileSync(new URL('../../src/web/assets/live-scorecard.js', import.meta.url), 'utf8');
 const markup = '<section id="live-scorecard" data-board-root="https://example.test/board/" ' +
-  'data-closed-days="https://example.test/closed.json">' +
+  'data-closed-days="https://example.test/closed.json" data-record-url="https://example.test/record.json">' +
   '<time id="live-scorecard-date"></time><div id="live-scorecard-summary"></div>' +
   '<table id="live-scorecard-table"><thead><tr><th>Danh sách</th></tr></thead></table></section>';
 
@@ -232,6 +232,9 @@ test('Bấm số: đường cầu qua từng kỳ, tô hai vị trí và ô về
   // Trang nguồn mở đúng kỳ biên, đúng số ghép ở kỳ ấy và đúng cầu.
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-cau-loto.html?ngay=2026-10-21&so=78&vt=0x1');
+  // Sổ kết quả truyền thống mở cùng kỳ ghép số và tô cùng hai vị trí.
+  assert.equal(panel.querySelector('.live-bridge-book').href,
+    'https://example.test/so-ket-qua-truyen-thong.html?ngay=2026-10-21&vt=0x1');
 });
 
 test('Đổi cầu, trang tự cập nhật và đóng bảng đều giữ đúng trạng thái', async (t) => {
@@ -263,6 +266,8 @@ test('Soi đường: một bảng kỳ gốc với độ trễ, liên kết mở
   assert.match(days[0].textContent, /Kỳ gốc · ghép 78 · trễ 1 ngày → báo 78 cho kỳ 22\/10\/2026/);
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-path-de-stable.html?number=78&path=L1-%5B0%2C1%5D');
+  // Soi đường: kỳ ghép số là kỳ gốc của đường, không phải kỳ cuối của chuỗi.
+  assert.match(panel.querySelector('.live-bridge-book').href, /so-ket-qua-truyen-thong\.html\?ngay=2026-10-21&vt=0x1$/);
 });
 
 test('Cầu Đặc Biệt chỉ tô giải Đặc Biệt: số lộn về ở giải bảy không phải "về" theo cầu', async (t) => {
@@ -561,4 +566,75 @@ test('Danh sách cầu theo thứ: liên kết mang thêm thứ của kỳ biên
   // 21/10/2026 là Thứ Tư: 2 theo cách đánh số 0 = Thứ Hai của trang soi cầu.
   assert.equal(d.querySelector('#live-bridge-bridge-loto-theo-thu .live-bridge-link').href,
     'https://example.test/soi-cau-loto-theo-thu.html?ngay=2026-10-21&so=78&vt=0x1&thu=2');
+});
+
+// Thành tích qua các kỳ (src/evaluation/board_record.py): khối thu gọn dưới bảng, chỉ tải khi mở.
+const RECORD = {
+  version: 1, draws: 14, first: '2026-10-21', last: '2026-11-03',
+  method: { simulations: 20000, adjust: 'Holm' },
+  family: { lists: 2, hits: 117, expected: 52.28, p: 0.0004, verdict: 'trúng nhiều hơn chọn bừa' },
+  lists: [
+    { id: 'cau-keo-loto', title: 'Cầu Kèo · Top 10 LOTO', group: 'Trang chủ · Live', draws: 14, items: 140, hits: 37,
+      expected: 33.27, expected_published: 33.32, published_items: 140, days_hit: 13, days_expected: 13.18,
+      p: 0.49, p_holm: 0.98, verdict: 'chưa khác chọn bừa' },
+    { id: 'biet-truoc', title: 'Biết trước', group: '', draws: 8, items: 80, hits: 80, expected: 19.01,
+      expected_published: 19.01, published_items: 0, days_hit: 8, days_expected: 7.4, p: 0.0002, p_holm: 0.0004,
+      verdict: 'trúng nhiều hơn chọn bừa' },
+  ],
+};
+
+// Như trình duyệt: đổi `open` là phát MỘT sự kiện toggle (jsdom tự phát, không cần phát tay).
+function openRecord(d) {
+  const details = d.getElementById('live-record');
+  details.open = true;
+  return details;
+}
+function closeRecord(d) {
+  d.getElementById('live-record').open = false;
+}
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test('Thành tích nhiều kỳ: chỉ tải khi mở, một lần, in từng danh sách và kết luận TỪ tệp', async (t) => {
+  const urls = [];
+  const { api, d } = setup(t, async (url) => { urls.push(url); return ok(url.endsWith('/record.json') ? RECORD : board()); });
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  const details = d.getElementById('live-record');
+  assert.ok(details && !details.open);
+  assert.equal(urls.filter((u) => u.endsWith('/record.json')).length, 0, 'chưa mở thì chưa tải');
+  openRecord(d);
+  await settle(); await settle(); await settle();
+  assert.equal(details.querySelector('summary').textContent, 'Thành tích qua 14 kỳ đã quay (21/10/2026 → 03/11/2026)');
+  const rows = [...details.querySelectorAll('tbody tr')];
+  assert.deepEqual(rows.map((tr) => tr.dataset.listId), ['cau-keo-loto', 'biet-truoc']);
+  assert.deepEqual([...rows[0].querySelectorAll('td')].map((td) => td.textContent),
+    ['14', '37', '33,3', '33,3', '13 / 13,2', '0,980', 'chưa khác chọn bừa']);
+  assert.deepEqual([...rows[1].querySelectorAll('td')].map((td) => td.textContent),
+    ['8', '80', '19,0', '—', '8 / 7,4', '< 0,001', 'trúng nhiều hơn chọn bừa']);
+  assert.equal(rows[1].querySelector('.live-record-verdict').dataset.verdict, 'above');
+  assert.equal(rows[0].querySelector('.live-record-verdict').dataset.verdict, 'same');
+  assert.equal(rows[0].querySelectorAll('td')[1].dataset.label, 'Mục trúng');
+  assert.match(details.querySelector('.live-record-lead').textContent,
+    /^Gộp mọi danh sách: trúng 117 mục, chọn bừa kỳ vọng 52,3 \(p = < 0,001\) — trúng nhiều hơn chọn bừa\.$/);
+  assert.match(details.querySelector('.live-record-note').textContent, /20\.000 kỳ quay công bằng mô phỏng/);
+  // Đóng rồi mở lại: không tải lần nữa.
+  closeRecord(d); await settle();
+  openRecord(d); await settle(); await settle();
+  assert.equal(urls.filter((u) => u.endsWith('/record.json')).length, 1);
+});
+
+test('Thành tích nhiều kỳ: tệp hỏng hay thiếu thì báo, và lần mở sau thử lại', async (t) => {
+  let calls = 0;
+  const { d } = setup(t, async (url) => {
+    if (!url.endsWith('/record.json')) return ok(board());
+    calls += 1;
+    return calls === 1 ? { ok: false, status: 404 } : ok({ ...RECORD, lists: 'hỏng' });
+  });
+  const details = openRecord(d);
+  await settle(); await settle(); await settle();
+  assert.match(details.querySelector('.live-record-status').textContent, /Chưa đọc được thành tích/);
+  assert.equal(details.querySelector('table'), null);
+  closeRecord(d); await settle();
+  openRecord(d); await settle(); await settle(); await settle();
+  assert.equal(calls, 2, 'lần mở sau thử lại');
+  assert.match(details.querySelector('.live-record-status').textContent, /Chưa đọc được thành tích/);
 });

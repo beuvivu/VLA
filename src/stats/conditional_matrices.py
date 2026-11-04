@@ -397,11 +397,10 @@ def write_canonical_tables(*, top: int = 500) -> list[Path]:
     }
     created: list[Path] = []
     for name, table in tables.items():
+        # Chỉ CSV: bản JSON kèm theo không ai đọc (xem ``statistical_matrices._dump_table``).
         csv_path = out / f"{name}.csv"
-        json_path = out / f"{name}.json"
         write_code_csv(table, csv_path, index=False)
-        table.to_json(json_path, orient="records", indent=2, force_ascii=False)
-        created.extend([csv_path, json_path])
+        created.append(csv_path)
 
     diag_path = out / "conditional_matrices_diagnostics.json"
     diag_path.write_text(

@@ -1,0 +1,118 @@
+"""Job kiểm lỗ hổng hằng tuần (`dependency-audit.yml`) chấm MỌI gói chạy trên runner (04-11-2026).
+
+Dependabot không cập nhật pip cho Python 3.15, nên job này là cảnh báo bảo mật duy nhất của gói Python.
+Ngoài requirements, nó phải cài cả gói mà workflow cài thẳng trong lệnh `pip install` (playwright của job
+Chromium, build của vlm-release.yml) và mọi phần tuỳ chọn của engine mà workflow cài (xgboost/lightgbm
+của job ML) — bốn góp ý Codex trên PR #206 chỉ ra từng gói lọt khỏi bản trước. Tập gói tính bằng
+`scripts/ops/audit_install_set.py`; luật đọc lệnh cài được ghim trên workflow dựng sẵn, còn phép trên kho
+thật canh rằng các gói đã biết vẫn nằm trong tập.
+"""
+from __future__ import annotations
+
+import importlib.util
+import tomllib
+from pathlib import Path
+
+import pytest
+import yaml
+
+from test_python_version import requirement_pins
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github" / "workflows" / "dependency-audit.yml"
+SCRIPT = ROOT / "scripts" / "ops" / "audit_install_set.py"
+
+_spec = importlib.util.spec_from_file_location("audit_install_set", SCRIPT)
+audit = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(audit)
+
+
+def _steps(job: str) -> list[dict]:
+    return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["jobs"][job]["steps"]
+
+
+def _fake_repo(tmp_path: Path, workflows: dict[str, str], requirements: str = "requests==2.32.5\n") -> Path:
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    for name, text in workflows.items():
+        (tmp_path / ".github" / "workflows" / name).write_text(text, encoding="utf-8")
+    (tmp_path / "requirements.txt").write_text(requirements, encoding="utf-8")
+    return tmp_path
+
+
+FAKE = """
+defaults:
+  run:
+    working-directory: vietlott
+jobs:
+  a:
+    steps:
+      - run: |
+          # python -m pip install commented==1.0
+          # cũ: cd x; pip install retired==0.1
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt playwright==1.55.0 requests
+          pip install build && python -m build
+          python -m pip install -e ".[dev,crawler]"
+          python -m pip install \\
+            joined==2.0
+  b:
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - run: python -m pip install -e ".[root]" bare
+      - working-directory: vietlott
+        run: python -m pip install ".[ml]" "$PKG" ./wheel.whl
+"""
+
+
+def test_the_install_set_follows_what_workflows_really_run(tmp_path: Path) -> None:
+    root = _fake_repo(tmp_path, {"x.yml": FAKE})
+    assert audit.extra_requirements(root) == ["bare", "build", "joined==2.0", "pip", "playwright==1.55.0"]
+    # Phần tuỳ chọn chỉ tính bước chạy trong vietlott/ (mặc định của workflow, của job, hay của bước).
+    assert audit.engine_extras(root) == ["crawler", "dev", "ml"]
+
+
+def test_a_pinned_install_wins_over_a_bare_one(tmp_path: Path) -> None:
+    root = _fake_repo(tmp_path, {"a.yml": "jobs:\n  a:\n    steps:\n      - run: pip install build\n",
+                                 "b.yml": "jobs:\n  b:\n    steps:\n      - run: pip install build==1.3.0\n"})
+    assert audit.extra_requirements(root) == ["build==1.3.0"]
+
+
+def test_the_real_install_set_covers_every_package_codex_found_missing() -> None:
+    extra = audit.extra_requirements()
+    assert {"playwright==1.55.0", "build"} <= set(extra)
+    pins = requirement_pins()
+    assert [line for line in extra if line.split("==")[0].lower() in pins] == [], "gói đã có trong requirements"
+    extras = audit.engine_extras()
+    assert {"dev", "crawler", "ml"} <= set(extras)
+    declared = tomllib.loads((ROOT / "vietlott" / "pyproject.toml").read_text(encoding="utf-8"))
+    assert set(extras) <= set(declared["project"]["optional-dependencies"]), "phần tuỳ chọn engine không khai"
+
+
+def test_the_vla_job_installs_the_computed_set_before_auditing() -> None:
+    steps = _steps("vla")
+    runs = [str(step.get("run", "")) for step in steps]
+    extra = next(i for i, run in enumerate(runs) if "scripts/ops/audit_install_set.py > audit-extra.txt" in run)
+    assert "python -m pip install --no-cache-dir -r audit-extra.txt" in runs[extra]
+    audit_step = next(i for i, run in enumerate(runs) if "pip_audit" in run)
+    assert audit_step > extra
+    assert 'exit "$status"' in runs[audit_step] and "--strict" in runs[audit_step]
+
+
+def test_the_engine_job_installs_every_extra_a_workflow_installs() -> None:
+    steps = _steps("vietlott")
+    runs = [str(step.get("run", "")) for step in steps]
+    install = next(i for i, run in enumerate(runs) if "--engine-extras" in run)
+    assert 'extras=$(python ../scripts/ops/audit_install_set.py --engine-extras)' in runs[install]
+    assert 'pip install --no-cache-dir -e ".[$extras]"' in runs[install]
+    audit_step = next(i for i, run in enumerate(runs) if "pip_audit" in run)
+    assert audit_step > install
+    assert 'exit "$status"' in runs[audit_step] and "--strict" in runs[audit_step]
+
+
+@pytest.mark.parametrize("argv, expected", [([], "playwright==1.55.0"), (["--engine-extras"], "ml")])
+def test_the_script_prints_what_the_workflow_reads(argv: list[str], expected: str,
+                                                   capsys: pytest.CaptureFixture[str]) -> None:
+    assert audit.main(argv) == 0
+    assert expected in capsys.readouterr().out

@@ -110,6 +110,7 @@ flowchart LR
 | `daily_prediction.yml` | Dự đoán hằng ngày | cron `35 11 * * *`, `15 12 * * *`, `15 13 * * *`; sau «Hoàn tất XSMB, thống kê và AI/ML»; workflow_dispatch | — | có | — |
 | `daily_update.yml` | Thu thập XSMB đúng giờ | cron `13 1 * * *`, `55 1 * * *`, `37 2 * * *`, `19 3 * * *`, `1 4 * * *`, `43 4 * * *`, `27 5 * * *`, `17 8 * * *`; hẹn giờ ngoài `daily-collect`; workflow_dispatch | `update-data.yml` (API) | — | — |
 | `dashboard-refresh.yml` | Làm mới bảng điều khiển Markdown | push (2 bộ lọc đường dẫn); workflow_dispatch | — | có | — |
+| `dependency-audit.yml` | Kiểm lỗ hổng thư viện Python | cron `17 3 * * 1`; push (4 bộ lọc đường dẫn); workflow_dispatch | — | — | — |
 | `diagnose-live-sources.yml` | Chẩn đoán nguồn live | workflow_dispatch | — | — | — |
 | `inspect-reference-articles.yml` | Đọc bài phân tích của trang tham chiếu | workflow_dispatch | — | — | — |
 | `inspect-reference-bridge.yml` | Đọc cách soi cầu của trang tham chiếu | workflow_dispatch | — | — | — |
