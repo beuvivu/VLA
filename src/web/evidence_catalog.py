@@ -681,8 +681,8 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                     "đường) mở chính các cầu của nó; danh sách khác (tổ hợp, Cầu Kèo, ML…) không chọn số theo "
                     "cầu, nên bảng tra các cầu đang chạy trên trang Cầu LOTO (từ 3 kỳ) hoặc Cầu Đặc Biệt (chạm, "
                     "từ 2 kỳ) ghép ra đúng số ấy.",
-                    "Khi kỳ trước đã quay xong, bảng có hai nút: kỳ đã quay (đối chiếu) và kỳ sắp quay; sang "
-                    "ngày mới theo giờ Việt Nam thì mặc định là kỳ sắp quay.",
+                    "Khi kỳ trước đã quay xong, bảng có hai nút: kỳ đã quay (đối chiếu) và kỳ sắp quay. Mặc "
+                    "định là kỳ đã quay, trùng bảng kết quả đầu trang, nên dấu về/trượt giữ tới phiên kế tiếp.",
                     "Tỉ lệ trúng của một kỳ là một mẫu rất nhỏ; so sánh có ý nghĩa cần nhiều kỳ, như trang "
                     "Chất lượng mô hình đã làm.",
                 ],

@@ -409,8 +409,9 @@ chạy của trang Cầu LOTO (≥ 3 kỳ, cho số LOTO) và Cầu Đặc Biệ
 hai trang in ĐỦ mọi nhóm, và MỌI nhóm tính lại phải trùng số trang in (`prediction_board.running_bridges`). Đó là phép TRA,
 không phải lý do danh sách chọn số; khung chi tiết nói đúng như thế. Số ở khối «Dự đoán trong ngày» là nút mở đúng số ấy
 trong bảng (`LiveScorecard.reveal`). live.json giữ ngày kỳ vừa quay tới phiên hôm sau, nên khi kỳ ấy đã quay xong bảng có
-hai nút «đã quay» / «sắp quay»; sang ngày mới giờ VN thì mặc định kỳ sắp quay — trước đó trang hiện sổ kỳ cũ (đã khoá, không
-có vị trí) suốt cả ngày và người đọc tưởng tính năng không chạy. Kỳ sắp quay bỏ ngày nghỉ của `data/non_draw_days.json`
+hai nút «đã quay» / «sắp quay». Mặc định LUÔN là kỳ đã quay (trùng bảng kết quả đầu trang): 03 → 04-11-2026 bảng tự sang kỳ
+sắp quay sau nửa đêm giờ VN, mọi số thành «chờ» và chủ dự án báo mất dấu, mất màu về/trượt. Kỳ sắp quay mở bằng nút hoặc số ở
+khối «Dự đoán trong ngày»; từ sổ 04-11 (schema 3) kỳ đã quay cũng có cầu cho mọi số. Kỳ sắp quay bỏ ngày nghỉ của `data/non_draw_days.json`
 (cùng luật `next_draw_date`), và lệnh mở số mang kỳ của nó: sổ tải xong là kỳ khác thì bỏ.
 Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ số nguồn được tô trên bảng `#results` đầu trang Live
 CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi

@@ -10,8 +10,10 @@
    chữ số ghép thành số và ô về ở kỳ sau.
 
    live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau. Khi kỳ ấy đã quay xong, bảng có hai
-   nút: kỳ đã quay (đối chiếu) và kỳ sắp quay (sổ đang mở) — sang ngày mới (giờ VN) thì mặc định là
-   kỳ sắp quay, để số "trước giờ quay" người đọc thấy là của kỳ chưa quay. */
+   nút: kỳ đã quay (đối chiếu) và kỳ sắp quay (sổ đang mở). Mặc định LUÔN là kỳ đã quay — kỳ mà bảng
+   kết quả đầu trang đang hiện —, để hàng "Sau giờ quay" giữ dấu về/trượt cho tới phiên kế tiếp; kỳ sắp
+   quay chưa có giải nào nên mọi số chỉ là "chờ". Kỳ sắp quay mở bằng nút hoặc bằng số ở khối «Dự đoán
+   trong ngày». */
 (function () {
   'use strict';
   var root = document.getElementById('live-scorecard');
@@ -708,10 +710,6 @@
     return day;
   }
 
-  function vnToday() {
-    return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
-  }
-
   function renderViews() {
     viewBar.replaceChildren();
     viewBar.hidden = state.views.length < 2;
@@ -776,8 +774,7 @@
       if (state.views.indexOf(state.reveal.date) >= 0) state.chosen = state.reveal.date;
       else state.reveal = null;
     }
-    var target = state.views.indexOf(state.chosen) >= 0 ? state.chosen
-      : state.views.length > 1 && vnToday() > state.draw ? state.views[1] : state.views[0];
+    var target = state.views.indexOf(state.chosen) >= 0 ? state.chosen : state.views[0];
     return show(target);
   }
 
