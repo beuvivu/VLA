@@ -97,7 +97,10 @@ def _chip(cfg: dict, bridge: dict) -> str:
     title = f'Vị trí {bridge["vt"]} · chạy {bridge["streak"]} ngày · {bridge.get("same_pair", 1)} cầu cùng báo cặp này'
     if shadow:
         title += f" · {shadow} là số bóng của {numbers}, chỉ tham khảo"
-    return (f'<li><a href="{html.escape(link(cfg, bridge))}" title="{html.escape(title)}">'
+    # data-bridge-a/b: đưa chuột hay Tab tới cầu thì hai vị trí của nó sáng trên bảng kết quả ngay cạnh
+    # (shared_results.js, bindBridgeChips).
+    return (f'<li><a href="{html.escape(link(cfg, bridge))}" title="{html.escape(title)}"'
+            f' data-bridge-a="{int(bridge["a"])}" data-bridge-b="{int(bridge["b"])}">'
             f'<b>{shown}{extra}</b>'
             f'<span class="app-bridge-streak">{bridge["streak"]}</span></a></li>')
 

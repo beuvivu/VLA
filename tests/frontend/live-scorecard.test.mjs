@@ -232,6 +232,9 @@ test('Bấm số: đường cầu qua từng kỳ, tô hai vị trí và ô về
   // Trang nguồn mở đúng kỳ biên, đúng số ghép ở kỳ ấy và đúng cầu.
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-cau-loto.html?ngay=2026-10-21&so=78&vt=0x1');
+  // Sổ kết quả truyền thống mở cùng kỳ ghép số và tô cùng hai vị trí.
+  assert.equal(panel.querySelector('.live-bridge-book').href,
+    'https://example.test/so-ket-qua-truyen-thong.html?ngay=2026-10-21&vt=0x1');
 });
 
 test('Đổi cầu, trang tự cập nhật và đóng bảng đều giữ đúng trạng thái', async (t) => {
@@ -263,6 +266,8 @@ test('Soi đường: một bảng kỳ gốc với độ trễ, liên kết mở
   assert.match(days[0].textContent, /Kỳ gốc · ghép 78 · trễ 1 ngày → báo 78 cho kỳ 22\/10\/2026/);
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-path-de-stable.html?number=78&path=L1-%5B0%2C1%5D');
+  // Soi đường: kỳ ghép số là kỳ gốc của đường, không phải kỳ cuối của chuỗi.
+  assert.match(panel.querySelector('.live-bridge-book').href, /so-ket-qua-truyen-thong\.html\?ngay=2026-10-21&vt=0x1$/);
 });
 
 test('Cầu Đặc Biệt chỉ tô giải Đặc Biệt: số lộn về ở giải bảy không phải "về" theo cầu', async (t) => {

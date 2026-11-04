@@ -424,7 +424,10 @@ Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ
 CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi
 thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang
 mã `path`), và `bridge_pages.js` chọn sẵn đúng số và đúng cầu ấy rồi tô trên bảng 27 giải của trang. Bảng Đặc Biệt
-tuần/tháng/năm KHÔNG hiện được vị trí cầu: sổ 04-11 có 2/1 503 cầu nằm trọn trong 5 chữ số ĐB.
+tuần/tháng/năm KHÔNG hiện được vị trí cầu: sổ 04-11 có 2/1 503 cầu nằm trọn trong 5 chữ số ĐB. Bảng `.tr-number[data-cell]`
+dùng chung (Sổ kết quả, trang chủ, kết quả miền) tô vị trí bằng `TraditionalResults.markBridge` (`shared_results.js`; 107 vị trí
+suy từ `PRIZES`, nhãn phải trùng `position_bridges.positions()`): Sổ kết quả đọc `?ngay=&vt=AxB` (khung chi tiết cầu trang Live
+liên kết tới đó, soi đường dùng kỳ gốc), ô «cầu đẹp nhất» trang chủ tô khi đưa chuột/Tab tới cầu (`data-bridge-a/b`).
 Thành tích nhiều kỳ (04-11-2026): `src/evaluation/board_record.py` (bước pipeline ngay sau `prediction_board`) cộng mọi
 kỳ có đủ 27 giải vào `data/evaluation/board_record/record.json`; trang Live hiện nó trong khối «Thành tích qua các kỳ đã
 quay» (chỉ tải khi mở). Chấm theo KỲ trên 20 000 kỳ quay công bằng MÔ PHỎNG — các mục trong một danh sách không độc lập,

@@ -587,6 +587,12 @@
     var link = el('a', 'live-bridge-link', 'Xem trên trang ' + src.title + ' →');
     link.href = bridgeLink(list, src, item, bridge);
     panel.appendChild(link);
+    if (bridge && validDate(source)) {
+      // Sổ kết quả truyền thống mở đúng kỳ ghép số và tô hai vị trí (traditional_results.js, `vt`).
+      var book = el('a', 'live-bridge-link live-bridge-book', 'Xem trên Sổ kết quả →');
+      book.href = 'so-ket-qua-truyen-thong.html?' + new URLSearchParams({ ngay: source, vt: bridge.a + 'x' + bridge.b });
+      panel.appendChild(book);
+    }
     return panel;
   }
 

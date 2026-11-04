@@ -374,16 +374,111 @@
     return { paintMarks, clear };
   }
 
+  // ---- Vị trí chữ số của một cầu ----------------------------------------
+  //
+  // 107 vị trí, cùng cách đánh số với src/soi_cau/position_bridges.py: ĐB 0–4, G1 5–9, G2 10–19 …
+  // G7 99–106. Suy từ PRIZES ở trên nên không có bản sao thứ hai để trôi lệch. Một cầu "AxB" ghép
+  // chữ số ở vị trí A với chữ số ở vị trí B của cùng một kỳ.
+  const SHORT = { special: "ĐB", prize1: "G1", prize2: "G2", prize3: "G3", prize4: "G4", prize5: "G5",
+    prize6: "G6", prize7: "G7" };
+  const POSITIONS = [];
+  for (const [code, , count, width] of PRIZES) {
+    for (let index = 0; index < count; index += 1) {
+      for (let digit = 0; digit < width; digit += 1) POSITIONS.push({ code, index, digit, count });
+    }
+  }
+  const BRIDGE = "data-bridge-mark";
+
+  /** "ĐB · chữ số 5", "G4.2 · chữ số 4": cùng cách gọi với trang Live và trang soi cầu. */
+  function positionLabel(pos) {
+    const spec = POSITIONS[pos];
+    if (!spec) return "";
+    const prize = SHORT[spec.code] + (spec.count > 1 ? "." + (spec.index + 1) : "");
+    return `${prize} · chữ số ${spec.digit + 1}`;
+  }
+
+  /** Dựng lại chữ số của một ô; `roles` = {chữ số → "a" | "b"} được bọc để tô. */
+  function paintCell(cell, roles) {
+    const value = cell.dataset.bridgeValue || cell.textContent.trim();
+    const digit = (k) => {
+      if (!roles[k]) return document.createTextNode(value[k]);
+      const span = el("span", `tr-bridge-src tr-bridge-src--${roles[k]}`, value[k]);
+      span.setAttribute("aria-label", `vị trí cầu: ${value[k]}`);
+      return span;
+    };
+    const kids = [];
+    // Ô Đặc Biệt bọc hai số cuối trong .tr-special-tail; giữ nguyên vỏ ấy khi dựng lại.
+    const special = Boolean(cell.querySelector(".tr-special-tail") || cell.dataset.bridgeTail);
+    const tailFrom = special ? value.length - 2 : value.length;
+    for (let k = 0; k < tailFrom; k += 1) kids.push(digit(k));
+    if (tailFrom < value.length) {
+      const tail = el("span", "tr-special-tail");
+      for (let k = tailFrom; k < value.length; k += 1) tail.append(digit(k));
+      kids.push(tail);
+      cell.dataset.bridgeTail = "1";
+    }
+    cell.dataset.bridgeValue = value;
+    cell.replaceChildren(...kids);
+  }
+
+  /** Gỡ dấu cầu: trả mọi ô đã tô về đúng chữ như lúc dựng. */
+  function clearBridge(root) {
+    if (!root) return;
+    for (const cell of root.querySelectorAll(`[${BRIDGE}]`)) {
+      paintCell(cell, {});
+      cell.removeAttribute(BRIDGE);
+    }
+  }
+
+  /** Tô hai vị trí `a`, `b` của kỳ `date` trên các bảng trong `root`. Trả về số ô đã tô — 0 khi kỳ ấy
+   *  không có trên bảng (bảng đang hiện kỳ khác, hay bộ lọc đã ẩn nó): khi ấy không tô gì cả. */
+  function markBridge(root, date, a, b) {
+    clearBridge(root);
+    if (!root || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return 0;
+    const cells = new Map();
+    for (const [pos, role] of [[a, "a"], [b, "b"]]) {
+      const spec = POSITIONS[Number(pos)];
+      if (!spec || !Number.isInteger(Number(pos))) return 0;
+      const cell = root.querySelector(`.tr-number[data-cell="${date}|${spec.code}|${spec.index}"]`);
+      if (!cell) return 0;
+      if (!cells.has(cell)) cells.set(cell, {});
+      cells.get(cell)[spec.digit] = role;
+    }
+    for (const [cell, roles] of cells) {
+      paintCell(cell, roles);
+      cell.setAttribute(BRIDGE, "");
+    }
+    return cells.size;
+  }
+
+  /** Ô "cầu đẹp nhất" cạnh bảng: đưa chuột hay Tab tới một cầu thì hai vị trí của nó sáng trên bảng. */
+  function bindBridgeChips(resultsNode, date) {
+    const chipOf = (target) => target && target.closest && target.closest("[data-bridge-a][data-bridge-b]");
+    const show = (event) => {
+      const chip = chipOf(event.target);
+      if (chip) markBridge(resultsNode, date, chip.dataset.bridgeA, chip.dataset.bridgeB);
+    };
+    const hide = (event) => {
+      const chip = chipOf(event.target);
+      if (chip && !chip.contains(event.relatedTarget)) clearBridge(resultsNode);
+    };
+    resultsNode.addEventListener("mouseover", show);
+    resultsNode.addEventListener("focusin", show);
+    resultsNode.addEventListener("mouseout", hide);
+    resultsNode.addEventListener("focusout", hide);
+  }
+
   function mount(resultsNode, draw, options = {}) {
     if (!resultsNode || !draw) return null;
     const extra = resultsNode.querySelector(".tr-day-extra");
     resultsNode.replaceChildren(renderDraw(draw, { ...options, extra }));
     const marks = createMarks(resultsNode, options);
     marks.paintMarks();
+    if (resultsNode.querySelector("[data-bridge-a][data-bridge-b]")) bindBridgeChips(resultsNode, draw.date);
     return marks;
   }
 
   window.TraditionalResults = Object.freeze({
-    decode, weekdayOf, formatDate, renderDraw, createMarks, mount,
+    decode, weekdayOf, formatDate, renderDraw, createMarks, mount, markBridge, clearBridge, positionLabel,
   });
 })();
