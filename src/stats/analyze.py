@@ -13,58 +13,12 @@ from web.templates import Render
 logger = logging.getLogger(__name__)
 
 
-def _last_appearing_table(df: pd.DataFrame, value_columns: list[str]) -> pd.DataFrame:
-    """Return a table indexed by number 00..99 with the last appearance delta."""
-    numbers = df[value_columns].copy()
-    numbers = numbers.reset_index()  # create numeric 'index'
-    predict_index = int(numbers["index"].max()) + 1
-
-    melted = numbers.melt(id_vars="index", var_name="prize", value_name="value")
-    melted["value"] = (melted["value"].astype(int) % 100).astype(int)
-
-    last_idx = melted.groupby("value")["index"].max().to_frame(name="last_index")
-    last_idx["delta"] = predict_index - last_idx["last_index"].astype(int)
-    return last_idx.drop(columns=["last_index"])
-
-
 def _save_heatmap(matrix: pd.DataFrame, *, title: str, out_path: Path, cmap: str = "YlOrRd") -> None:
     save_heatmap(matrix, title=title, out_path=out_path, cmap=cmap, cbar_label="Số ngày / tần suất")
 
 
 def _save_top10_bar(df: pd.DataFrame, *, x_col: str, y_col: str, title: str, out_path: Path, cmap: str = "YlOrRd") -> None:
     save_ranked_bar(df, x=x_col, y=y_col, title=title, out_path=out_path, top_n=len(df), cmap=cmap, ylabel=y_col)
-
-
-def plot_last_appearing(
-    df: pd.DataFrame,
-    *,
-    value_columns: list[str],
-    output_prefix: str,
-    paths: RepoPaths,
-) -> None:
-    table = _last_appearing_table(df, value_columns)
-
-    heatmap_data = table.copy()
-    heatmap_data["tens"] = heatmap_data.index // 10
-    heatmap_data["ones"] = heatmap_data.index % 10
-    heatmap = (
-        heatmap_data[["tens", "ones", "delta"]]
-        .pivot(index="tens", columns="ones", values="delta")
-        .fillna(0)
-        .astype(int)
-    )
-
-    top10 = table.sort_values("delta", ascending=False).head(10).reset_index(names="value")
-    top10["value"] = top10["value"].apply(lambda r: f"{int(r):02d}")
-
-    _save_heatmap(heatmap, title="Delta", out_path=paths.images_dir / f"{output_prefix}.jpg", cmap="YlOrRd")
-    _save_top10_bar(
-        top10,
-        x_col="value",
-        y_col="delta",
-        title="Top 10",
-        out_path=paths.images_dir / f"{output_prefix}_top_10.jpg",
-    )
 
 
 def main() -> None:
@@ -83,18 +37,10 @@ def main() -> None:
 
     last_date = results["date"].max()
 
-    results_2_year = results[
-        (last_date - pd.Timedelta(days=365 * 2) < results["date"]) & (results["date"] <= last_date)
-    ]
-    results_2_year = results_2_year.reset_index(drop=True)
-
     small_results = results[
         (last_date - pd.Timedelta(days=365) < results["date"]) & (results["date"] <= last_date)
     ]
     small_results = small_results.reset_index(drop=True)
-
-    # Special prize last-appearance delta (2 years)
-    plot_last_appearing(results_2_year, value_columns=["special"], output_prefix="special_delta", paths=paths)
 
     # Loto "Đầu/đuôi" table for the most recent draw
     recent_results = (small_results.iloc[-1].values[1:] % 100).astype(int)
@@ -165,10 +111,6 @@ def main() -> None:
         std=std,
         xlabel="Số lần xuất hiện",
     )
-
-    # Last appearing Loto (1 year)
-    value_columns = [c for c in small_results.columns if c != "date"]
-    plot_last_appearing(small_results, value_columns=value_columns, output_prefix="delta", paths=paths)
 
 
 if __name__ == "__main__":

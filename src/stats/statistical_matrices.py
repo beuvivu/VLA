@@ -23,7 +23,6 @@ import pandas as pd
 from ingest.lottery import Lottery, RepoPaths
 from core.number_reference import all_cap_loto_50
 from stats.conditional_matrices import build_conditional_tables
-from stats.plot_utils import save_heatmap, save_labeled_heatmap, save_ranked_bar
 
 PeriodKind = Literal["day", "week", "month", "year"]
 
@@ -36,12 +35,11 @@ NUMBER_COLS = list(range(100))
 @dataclass(frozen=True)
 class StatsOutputs:
     data_dir: Path
-    images_dir: Path
     excel_dir: Path
 
     @classmethod
     def from_paths(cls, paths: RepoPaths) -> StatsOutputs:
-        return cls(data_dir=paths.data_dir / "stats" / "advanced", images_dir=paths.images_dir, excel_dir=paths.data_dir / "excel")
+        return cls(data_dir=paths.data_dir / "stats" / "advanced", excel_dir=paths.data_dir / "excel")
 
 
 def _fmt2(n: int | float | str) -> str:
@@ -239,15 +237,6 @@ def _period_matrix(sparse_df: pd.DataFrame, *, period: PeriodKind, last_n: int |
     if last_n is not None and len(mat) > last_n:
         mat = mat.tail(last_n)
     return mat
-
-
-def _matrix_for_key(freq_table: pd.DataFrame, period_key: str) -> pd.DataFrame:
-    cur = freq_table[freq_table["period_key"] == period_key].copy()
-    if cur.empty:
-        return pd.DataFrame()
-    cur["tens"] = cur["number"] // 10
-    cur["ones"] = cur["number"] % 10
-    return cur.pivot(index="tens", columns="ones", values="freq").fillna(0).astype(int).sort_index()
 
 
 def _rhythm_from_sparse(sparse_df: pd.DataFrame, *, mode: str) -> pd.DataFrame:
@@ -617,14 +606,6 @@ def _ai_ml_signal(
     return out.sort_values(["ai_ml_signal_score", "ml_prob"], ascending=False).reset_index(drop=True)
 
 
-def _to_10x10_from_number_metric(df: pd.DataFrame, *, metric: str) -> pd.DataFrame:
-    tmp = df.copy()
-    tmp["number"] = tmp["number"].astype(int)
-    tmp["tens"] = tmp["number"] // 10
-    tmp["ones"] = tmp["number"] % 10
-    return tmp.pivot(index="tens", columns="ones", values=metric).fillna(0).astype(float).sort_index()
-
-
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> Path:
     """Chỉ ghi CSV. Bản JSON ``orient=records, indent=2`` từng được ghi kèm mọi bảng (52 tệp, 64 MB, riêng
     ``period_frequency_loto_week.json`` 18,5 MB) mà không trang, Worker hay mã nào đọc; mỗi lượt chốt
@@ -720,7 +701,6 @@ def generate_statistics(
     paths = RepoPaths.from_module()
     out = StatsOutputs.from_paths(paths)
     _ensure_dir(out.data_dir)
-    _ensure_dir(out.images_dir)
 
     lot = Lottery()
     lot.load()
@@ -764,59 +744,15 @@ def generate_statistics(
         created.append(_dump_table(m_loto.reset_index(), out_dir=out.data_dir, name=f"period_matrix_loto_{period}_{suffix}"))
         created.append(_dump_table(m_de.reset_index(), out_dir=out.data_dir, name=f"period_matrix_de_{period}_{suffix}"))
 
-    # 2) Timeframe 10x10 heatmaps for the current day/week/month/year.
-    for period, label in [
-        ("day", "ngày mới nhất"),
-        ("week", "tuần hiện tại"),
-        ("month", "tháng hiện tại"),
-        ("year", "năm hiện tại"),
-    ]:
-        p = period  # type: ignore[assignment]
-        key = _period_series(pd.Series([latest_date]), p).iloc[0]
-        heat = _matrix_for_key(freq_loto[p], key)
-        if not heat.empty:
-            img = out.images_dir / f"period_loto_current_{period}_heatmap.jpg"
-            save_heatmap(heat, title=f"Tần suất loto — {label}", out_path=img, cmap="YlGnBu", cbar_label="Số lần")
-        heat_de = _matrix_for_key(freq_de[p], key)
-        if not heat_de.empty and period in {"month", "year"}:
-            img = out.images_dir / f"period_de_current_{period}_heatmap.jpg"
-            save_heatmap(heat_de, title=f"Tần suất Đặc Biệt 2 số — {label}", out_path=img, cmap="YlOrRd", cbar_label="Số lần")
-
-    weekly_mat = _period_matrix(sparse_loto, period="week", last_n=min(recent_weeks, 16))
-    if not weekly_mat.empty:
-        top_numbers = snapshot_loto[snapshot_loto["period_kind"] == "year"].sort_values("freq", ascending=False)["number_str"].head(20)
-        trend = weekly_mat[[c for c in top_numbers if c in weekly_mat.columns]]
-        save_labeled_heatmap(
-            trend,
-            title="Ma trận xu hướng tuần — top loto trong năm",
-            out_path=out.images_dir / "period_loto_weekly_trend_top20.jpg",
-            cmap="YlGnBu",
-            cbar_label="Số lần/tuần",
-            xlabel="Bộ số",
-            ylabel="Tuần",
-            annotate=False,
-        )
+    # 2) Ảnh nhiệt/thanh của bước này (12 tệp trong ``images/``) đã gỡ 04-11-2026: thư mục ấy nằm ngoài
+    #    ``docs/`` nên không lên trang, không trang hay README nào nhúng chúng, mà mỗi lượt chốt commit lại
+    #    trọn bộ JPEG (git không nén delta được). Mọi bảng CSV vẫn ghi như cũ.
 
     # 3) Rhythm/gan, head-tail-total, cặp lộn.
     rhythm_loto = _rhythm_from_sparse(sparse_loto, mode="loto")
     rhythm_de = _rhythm_from_sparse(sparse_de, mode="de")
     created.append(_dump_table(rhythm_loto, out_dir=out.data_dir, name="loto_rhythm"))
     created.append(_dump_table(rhythm_de, out_dir=out.data_dir, name="de_rhythm"))
-
-    save_heatmap(
-        _to_10x10_from_number_metric(rhythm_loto, metric="current_gap"),
-        title="Nhịp loto / lô gan — số ngày chưa về",
-        out_path=out.images_dir / "loto_rhythm_current_gap_heatmap.jpg",
-        cmap="YlOrRd",
-        cbar_label="Số ngày",
-    )
-    save_heatmap(
-        _to_10x10_from_number_metric(rhythm_de, metric="current_gap"),
-        title="Nhịp Đặc Biệt — số ngày chưa về",
-        out_path=out.images_dir / "de_rhythm_current_gap_heatmap.jpg",
-        cmap="YlOrRd",
-        cbar_label="Số ngày",
-    )
 
     hht_frames: list[pd.DataFrame] = []
     pair_frames: list[pd.DataFrame] = []
@@ -849,20 +785,6 @@ def generate_statistics(
     created.append(_dump_table(hht_current, out_dir=out.data_dir, name="head_tail_total_loto_current"))
     created.append(_dump_table(pair_current, out_dir=out.data_dir, name="reverse_pair_frequency_current"))
     created.append(_dump_table(sg_current, out_dir=out.data_dir, name="special_group_frequency_current"))
-
-    if not pair_current.empty:
-        pair_month = pair_current[pair_current["period_kind"] == "month"]
-        if not pair_month.empty:
-            save_ranked_bar(
-                pair_month,
-                x="pair",
-                y="freq",
-                title="Top cặp lộn theo tần suất — tháng hiện tại",
-                out_path=out.images_dir / "reverse_pair_current_month_top.jpg",
-                top_n=20,
-                cmap="YlGnBu",
-                ylabel="Số lần",
-            )
 
     # 4) Special prize boards and first prize.
     week_board, month_board, special_year_freq, special_month_freq = _special_boards(raw)
@@ -898,21 +820,6 @@ def generate_statistics(
     )
     created.append(_dump_table(signal_loto, out_dir=out.data_dir, name="ai_ml_signal_loto"))
     created.append(_dump_table(signal_de, out_dir=out.data_dir, name="ai_ml_signal_de"))
-
-    save_heatmap(
-        _to_10x10_from_number_metric(signal_loto, metric="ai_ml_signal_score"),
-        title="AI/ML signal loto — score tổng hợp",
-        out_path=out.images_dir / "ai_ml_signal_loto_heatmap.jpg",
-        cmap="YlGnBu",
-        cbar_label="Signal score",
-    )
-    save_heatmap(
-        _to_10x10_from_number_metric(signal_de, metric="ai_ml_signal_score"),
-        title="AI/ML signal Đặc Biệt — score tổng hợp",
-        out_path=out.images_dir / "ai_ml_signal_de_heatmap.jpg",
-        cmap="YlOrRd",
-        cbar_label="Signal score",
-    )
 
     # 7) Excel-safe workbook for analysts.
     _write_excel(

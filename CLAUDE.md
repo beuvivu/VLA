@@ -105,7 +105,8 @@ bằng địa chỉ cố định (Worker đọc `xsmb.json`, trang Live đọc `
 hai lệnh `--backfill-from-git`) phải hỏi cả chỗ cũ qua `paths.legacy_data_path` — commit trước ngày gom
 giữ tệp ở đó; `fun_draw_ledger.show_data_at` làm việc ấy. Bảng thống kê ghi MỘT bản CSV: bản JSON ghi kèm (52 tệp,
 64 MB trong `data/stats/advanced`) không ai đọc và đã bỏ 04-11-2026; JSON chỉ dành cho manifest/chẩn đoán
-(`tests/stats/test_no_json_twins.py`).
+(`tests/stats/test_no_json_twins.py`). `images/` nằm ngoài `docs/`, chỉ README nhúng nó: ba ảnh `README.j2` dùng là
+tất cả; 19 ảnh khác vẽ và commit lại mỗi lượt chốt mà không ai xem đã gỡ (`tests/stats/test_images_are_used.py`).
 
 ## Phiên bản Python và workflow — một nguồn (01-11-2026)
 
