@@ -136,9 +136,11 @@ def workflow_pins(paths=WORKFLOWS) -> dict[str, str]:
 def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
     """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim — kể cả cài gói đã ghim theo một khoảng
     (`"pytest>=9.1.1,<10"`) hay không ghim gì (`playwright`): bản khi ấy do ngày cài quyết định, và job kiểm lỗ
-    hổng hằng tuần chấm bản ghim chứ không chấm bản ấy."""
+    hổng hằng tuần chấm bản ghim chứ không chấm bản ấy. Dòng chú thích YAML/shell không phải lệnh cài."""
     out = []
-    for line in re.findall(r"pip install([^\n]*)", run_text):
+    lines = [line for raw in run_text.splitlines() if not raw.strip().startswith("#")
+             for line in re.findall(r"pip install(.*)", raw)]
+    for line in lines:
         for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
             token = token.strip("\"'")
             match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token)
@@ -170,3 +172,6 @@ def test_versions_pinned_inline_in_workflows_match_the_requirement_files():
     # Gói đã ghim mà cài trần thì cũng lệch; công cụ đóng gói không ghim (pip, wheel) thì không.
     assert inline_pin_drift("python -m pip install --upgrade pip wheel && pip install --no-cache-dir playwright",
                             {"playwright": "1.55.0"}) == ["playwright (không ghim; bản ghim: 1.55.0)"]
+    # Chú thích nhắc lệnh cài không phải lệnh cài.
+    assert inline_pin_drift("# lệnh `pip install` trần như playwright\n  # cũ: pip install numpy==2.2.6\n",
+                            {"playwright": "1.55.0", "numpy": "2.5.4"}) == []

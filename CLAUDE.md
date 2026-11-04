@@ -115,7 +115,8 @@ Docker engine `python:3.15-slim`; ma trận `vlm-ci.yml` kiểm 3.11 (sàn `requ
 `tests/repo/test_python_version.py` canh. Gói trực tiếp trong `requirements*.txt` ghim ĐÚNG bản (joblib của
 mô hình phụ thuộc scikit-learn), kể cả `requirements-ml-engine.txt`/`-dev.txt` và lệnh `pip install` viết thẳng trong
 workflow (khoảng `>=` cũng bị bắt). Dependabot không cập nhật pip cho Python 3.15 (`tool_version_not_supported`), nên
-`dependency-audit.yml` chạy `pip-audit` mỗi thứ Hai trên đúng các bản đã ghim của VLA và engine: có lỗ hổng là đỏ. Đổi phiên bản thì chạy lại phép so đầu ra pipeline cũ/mới
+`dependency-audit.yml` chạy `pip-audit` mỗi thứ Hai trên đúng các bản đã ghim của VLA và engine, cộng mọi gói và mọi phần tuỳ
+chọn engine mà workflow cài thẳng (`scripts/ops/audit_install_set.py` đọc từ chính các workflow): có lỗ hổng là đỏ. Đổi phiên bản thì chạy lại phép so đầu ra pipeline cũ/mới
 (`documentation/qa/2026-11-01-python-3-15-va-dong-bo-keno.md`): đợt này xác suất công bố trùng từng bit.
 Bộ đọc CSV mặc định của pandas ≥ 3.1 đúng từng bit nên không còn `float_precision`
 (`tests/core/test_csv_float_round_trip.py`).

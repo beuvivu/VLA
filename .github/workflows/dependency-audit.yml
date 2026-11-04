@@ -15,7 +15,9 @@ on:
     paths:
       - "requirements*.txt"
       - "vietlott/pyproject.toml"
-      - ".github/workflows/dependency-audit.yml"
+      - "scripts/ops/audit_install_set.py"
+      # Workflow nào thêm hay đổi lệnh `pip install` thì tập gói bị chấm cũng đổi.
+      - ".github/workflows/*.yml"
 
 permissions:
   contents: read
@@ -42,33 +44,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --no-cache-dir -r requirements-dev.txt -r requirements-live.txt
           python -m pip install --no-cache-dir pip-audit==2.10.1
-      - name: Cài thêm gói mà workflow ghim thẳng trong lệnh cài
-        # Gói `gói==bản` viết thẳng trong `pip install` của một workflow mà requirements không có — như
-        # playwright của job Chromium trong ci.yml — cũng chạy trên runner, nên cũng phải bị chấm. Đọc từ
-        # chính các workflow để gói thêm sau này không lọt.
+      - name: Cài thêm gói mà workflow cài thẳng trong lệnh cài
+        # Gói viết thẳng trong `pip install` của một workflow mà requirements không có — playwright của job
+        # Chromium, build của vlm-release.yml — cũng chạy trên runner, nên cũng phải bị chấm: bản ghim nếu
+        # workflow ghim, bản mới nhất nếu không (đúng thứ workflow ấy sẽ cài). Đọc từ chính các workflow
+        # (scripts/ops/audit_install_set.py) để gói thêm sau này không lọt.
         run: |
-          python - > inline-pins.txt <<'PY'
-          import pathlib
-          import re
-
-          pinned = set()
-          for name in pathlib.Path(".").glob("requirements*.txt"):
-              for line in name.read_text(encoding="utf-8").splitlines():
-                  match = re.match(r"\s*([A-Za-z0-9_.-]+)==", line)
-                  if match:
-                      pinned.add(match.group(1).lower())
-          extra = set()
-          for path in sorted(pathlib.Path(".github/workflows").glob("*.yml")):
-              for line in re.findall(r"pip install([^\n]*)", path.read_text(encoding="utf-8")):
-                  for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
-                      token = token.strip("\"'")
-                      match = re.fullmatch(r"([A-Za-z0-9_.-]+)==[^\s,;]+", token)
-                      if match and match.group(1).lower() not in pinned:
-                          extra.add(token)
-          print("\n".join(sorted(extra)))
-          PY
-          cat inline-pins.txt
-          python -m pip install --no-cache-dir -r inline-pins.txt
+          python scripts/ops/audit_install_set.py > audit-extra.txt
+          cat audit-extra.txt
+          python -m pip install --no-cache-dir -r audit-extra.txt
       - name: Đối chiếu với cơ sở lỗ hổng
         run: |
           status=0
@@ -90,10 +74,15 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version-file: .python-version
-      - name: Cài engine như các workflow vlm-*
+      - name: Cài engine với mọi phần tuỳ chọn mà các workflow vlm-* cài
+        # Phần tuỳ chọn đọc từ chính các workflow (job ML của vlm-ci.yml cài `.[dev,ml]`: xgboost, lightgbm),
+        # nên phần thêm sau này cũng bị chấm. `.[dev]` trước để có pyyaml cho kịch bản đọc workflow.
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --no-cache-dir -e ".[dev,crawler]"
+          python -m pip install --no-cache-dir -e ".[dev]"
+          extras=$(python ../scripts/ops/audit_install_set.py --engine-extras)
+          echo "Phần tuỳ chọn: $extras"
+          python -m pip install --no-cache-dir -e ".[$extras]"
           python -m pip install --no-cache-dir pip-audit==2.10.1
       - name: Đối chiếu với cơ sở lỗ hổng
         # Bỏ chính engine (cài -e, không có trên PyPI); mọi gói nó kéo theo vẫn bị chấm.
