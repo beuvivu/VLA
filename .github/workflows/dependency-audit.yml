@@ -42,6 +42,33 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --no-cache-dir -r requirements-dev.txt -r requirements-live.txt
           python -m pip install --no-cache-dir pip-audit==2.10.1
+      - name: Cài thêm gói mà workflow ghim thẳng trong lệnh cài
+        # Gói `gói==bản` viết thẳng trong `pip install` của một workflow mà requirements không có — như
+        # playwright của job Chromium trong ci.yml — cũng chạy trên runner, nên cũng phải bị chấm. Đọc từ
+        # chính các workflow để gói thêm sau này không lọt.
+        run: |
+          python - > inline-pins.txt <<'PY'
+          import pathlib
+          import re
+
+          pinned = set()
+          for name in pathlib.Path(".").glob("requirements*.txt"):
+              for line in name.read_text(encoding="utf-8").splitlines():
+                  match = re.match(r"\s*([A-Za-z0-9_.-]+)==", line)
+                  if match:
+                      pinned.add(match.group(1).lower())
+          extra = set()
+          for path in sorted(pathlib.Path(".github/workflows").glob("*.yml")):
+              for line in re.findall(r"pip install([^\n]*)", path.read_text(encoding="utf-8")):
+                  for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
+                      token = token.strip("\"'")
+                      match = re.fullmatch(r"([A-Za-z0-9_.-]+)==[^\s,;]+", token)
+                      if match and match.group(1).lower() not in pinned:
+                          extra.add(token)
+          print("\n".join(sorted(extra)))
+          PY
+          cat inline-pins.txt
+          python -m pip install --no-cache-dir -r inline-pins.txt
       - name: Đối chiếu với cơ sở lỗ hổng
         run: |
           status=0
