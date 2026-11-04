@@ -11,7 +11,7 @@ Important: The outputs are *statistics only* derived from historical results.
 No betting/prediction logic is included.
 
 Outputs are written under:
-  - data/stats/advanced/*.csv + *.json
+  - data/stats/advanced/*.csv
   - images/advanced_*.jpg
 """
 
@@ -69,9 +69,9 @@ def _flatten_2d_values(two_digit_df: pd.DataFrame) -> np.ndarray:
 
 
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> None:
+    """Chỉ ghi CSV (như ``statistical_matrices._dump_table``): bản JSON kèm theo không ai đọc."""
     _ensure_dir(out_dir)
     write_code_csv(df, out_dir / f"{name}.csv", index=False)
-    df.to_json(out_dir / f"{name}.json", orient="records", indent=2)
 
 
 def _save_heatmap(matrix: pd.DataFrame, *, title: str, out_path: Path, cmap: str = "YlOrRd", cbar_label: str = "Giá trị") -> None:

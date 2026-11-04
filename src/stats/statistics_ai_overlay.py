@@ -360,16 +360,10 @@ def write_overlays() -> list[Path]:
             data_dir=paths.data_dir,
             expected_target=expected_target,
         )
+        # Chỉ CSV (trang và kiểm toán sản xuất đọc CSV); bản JSON kèm theo không ai đọc.
         csv_path = out_dir / f"ai_ml_signal_{mode}.csv"
-        json_path = out_dir / f"ai_ml_signal_{mode}.json"
         write_code_csv(table, csv_path, index=False)
-        table.to_json(
-            json_path,
-            orient="records",
-            indent=2,
-            force_ascii=False,
-        )
-        created.extend([csv_path, json_path])
+        created.append(csv_path)
         diagnostics["modes"][mode] = diag  # type: ignore[index]
 
     diag_path = out_dir / "ai_ml_signal_diagnostics.json"

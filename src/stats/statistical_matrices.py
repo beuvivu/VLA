@@ -626,10 +626,13 @@ def _to_10x10_from_number_metric(df: pd.DataFrame, *, metric: str) -> pd.DataFra
 
 
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> Path:
+    """Chỉ ghi CSV. Bản JSON ``orient=records, indent=2`` từng được ghi kèm mọi bảng (52 tệp, 64 MB, riêng
+    ``period_frequency_loto_week.json`` 18,5 MB) mà không trang, Worker hay mã nào đọc; mỗi lượt chốt
+    viết lại chúng vào git. Trang và manifest đọc CSV.
+    """
     _ensure_dir(out_dir)
     path = out_dir / f"{name}.csv"
     write_code_csv(df, path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-    df.to_json(out_dir / f"{name}.json", orient="records", indent=2, force_ascii=False)
     return path
 
 
