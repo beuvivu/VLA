@@ -683,6 +683,9 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                     "từ 2 kỳ) ghép ra đúng số ấy.",
                     "Khi kỳ trước đã quay xong, bảng có hai nút: kỳ đã quay (đối chiếu) và kỳ sắp quay. Mặc "
                     "định là kỳ đã quay, trùng bảng kết quả đầu trang, nên dấu về/trượt giữ tới phiên kế tiếp.",
+                    "Khối «Thành tích qua các kỳ đã quay» cộng mọi kỳ đã có đủ 27 giải: mỗi danh sách trúng bao "
+                    "nhiêu mục so với chọn bừa, chấm theo kỳ trên 20.000 kỳ quay công bằng mô phỏng, p hai phía "
+                    "hiệu chỉnh Holm trên mọi danh sách.",
                     "Tỉ lệ trúng của một kỳ là một mẫu rất nhỏ; so sánh có ý nghĩa cần nhiều kỳ, như trang "
                     "Chất lượng mô hình đã làm.",
                 ],

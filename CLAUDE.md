@@ -425,6 +425,12 @@ CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `d
 thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang
 mã `path`), và `bridge_pages.js` chọn sẵn đúng số và đúng cầu ấy rồi tô trên bảng 27 giải của trang. Bảng Đặc Biệt
 tuần/tháng/năm KHÔNG hiện được vị trí cầu: sổ 04-11 có 2/1 503 cầu nằm trọn trong 5 chữ số ĐB.
+Thành tích nhiều kỳ (04-11-2026): `src/evaluation/board_record.py` (bước pipeline ngay sau `prediction_board`) cộng mọi
+kỳ có đủ 27 giải vào `data/evaluation/board_record/record.json`; trang Live hiện nó trong khối «Thành tích qua các kỳ đã
+quay» (chỉ tải khi mở). Chấm theo KỲ trên 20 000 kỳ quay công bằng MÔ PHỎNG — các mục trong một danh sách không độc lập,
+nên đừng dùng nhị thức —, p hai phía, Holm trên mọi danh sách; phép kiểm chung cộng mọi danh sách của cùng một kỳ trên
+cùng một kỳ mô phỏng. Luật trúng trùng `judge` của trang Live; trung bình mô phỏng phải khớp `base` của sổ
+(`tests/evaluation/test_board_record.py`). Hạt giống cố định: tệp chỉ đổi khi có kỳ mới. Câu kết luận in TỪ p của tệp.
 
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 
