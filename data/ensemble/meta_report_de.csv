@@ -1,2 +1,2 @@
 mode,component_tier,components,candidate,history_days,validation_days,meta_logloss,linear_logloss,logloss_skill,meta_brier,linear_brier,brier_skill,quality_pass,tier_trust_cap,meta_trust
-de,core_three,p_ml+p_active+p_stable,meta_shallow,240,30,4.6024639245010865,4.604936103759087,0.0005368541934778204,0.9899436276912658,0.9899963265558881,5.323137390389476e-05,False,0.15,0.0
+de,core_three,p_ml+p_active+p_stable,meta_shallow,240,30,4.602463924501088,4.604936103759087,0.0005368541934774873,0.9899436276912658,0.9899963265558881,5.323137390389476e-05,False,0.15,0.0
