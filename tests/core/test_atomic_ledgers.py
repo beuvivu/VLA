@@ -18,6 +18,7 @@ import pytest
 from core import atomic_io
 from research import digit_sum_hypothesis
 from evaluation import fun_draw_ledger
+from evaluation import record_pred_history
 from research import hot_tail_test
 from evaluation import skill_monitor
 
@@ -33,7 +34,7 @@ def _crash_half_way_to_csv(monkeypatch: pytest.MonkeyPatch) -> None:
         half = text[: len(text) // 2]
         if hasattr(path_or_buf, "write"):
             path_or_buf.write(half)
-        else:
+        elif path_or_buf is not None:
             Path(path_or_buf).write_text(half, encoding="utf-8")
         raise OSError("đĩa đầy")
 
@@ -146,3 +147,16 @@ def test_published_skill_ledger_survives_a_crash_mid_write(tmp_path: Path, monke
     with pytest.raises(OSError):
         skill_monitor.update_ledger(tmp_path)
     assert ledger.read_bytes() == before
+
+
+def test_prediction_history_survives_a_crash_mid_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Sổ ``pred_<mode>.csv`` đọc lại rồi ghi lại toàn bộ ở hai bước mỗi lượt pipeline."""
+    ledger = tmp_path / "pred_de.csv"
+    shutil.copy(DATA / "evaluation" / "history" / "pred_de.csv", ledger)
+    before = ledger.read_bytes()
+    frame = pd.read_csv(ledger)
+    _crash_half_way_to_csv(monkeypatch)
+    with pytest.raises(OSError):
+        record_pred_history.write_history(frame, ledger)
+    assert ledger.read_bytes() == before
+    assert list(tmp_path.iterdir()) == [ledger]

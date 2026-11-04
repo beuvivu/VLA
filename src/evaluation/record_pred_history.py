@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from core.atomic_io import atomic_write_text
 from core.lottery_codes import write_code_csv
 
 import argparse
@@ -106,6 +107,23 @@ def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def write_history(df: pd.DataFrame, out: Path) -> None:
+    """Ghi sổ ``pred_<mode>.csv``: nhãn ``y`` luôn là số nguyên có ô trống, ghi nguyên tử.
+
+    Sổ đọc lại rồi ghi lại toàn bộ ở hai bước của cùng một lượt (ghi dự báo kỳ tới, rồi điền
+    nhãn). Dòng của kỳ chưa quay có ``y`` trống nên pandas đọc cả cột thành số thực; trước
+    03-11-2026 bước này ghi ``0.0`` còn bước điền nhãn ép ``Int64`` và ghi ``0``, nên mỗi lượt
+    viết lại cả 27 800 dòng mà không giá trị nào đổi — diff của một sổ chỉ ghi thêm thành
+    không đọc được, và một giá trị lịch sử bị sửa sẽ lẫn trong đó. Cùng một kiểu ở mọi chỗ ghi
+    thì dòng cũ giữ nguyên từng byte. Ghi qua tệp tạm + ``os.replace`` (``core.atomic_io``):
+    chết giữa chừng không để lại sổ cụt.
+    """
+    frame = df.copy()
+    if "y" in frame.columns:
+        frame["y"] = frame["y"].astype("Int64")
+    atomic_write_text(out, write_code_csv(frame, index=False))
+
+
 def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_date") -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and out.stat().st_size > 0:
@@ -116,7 +134,7 @@ def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_
         df_all = df_new
     df_all = _sanitize_history(df_all)
     df_all = df_all.sort_values([key_col, "number"])
-    write_code_csv(df_all, out, index=False)
+    write_history(df_all, out)
 
 
 def main() -> None:

@@ -357,7 +357,9 @@ ngưỡng.
 
 Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atomic_io.py` (tệp tạm + `os.replace`).
 Đừng quay lại `open("w")`/`to_csv(path)`: chết giữa chừng để lại sổ cụt và lần sau mất dòng cũ
-(`tests/core/test_atomic_ledgers.py`).
+(`tests/core/test_atomic_ledgers.py`). Sổ `data/evaluation/history/pred_<mode>.csv` ghi CHỈ qua
+`record_pred_history.write_history` (nhãn `y` kiểu `Int64`): trước 04-11-2026 hai bước của mỗi lượt ghi `0.0` rồi `0`, viết
+lại cả 27 800 dòng mà không giá trị nào đổi (`tests/evaluation/test_pred_history_ledger.py` đòi dòng cũ giữ từng byte).
 
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/evaluation/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
