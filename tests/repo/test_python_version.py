@@ -129,12 +129,15 @@ def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
         for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
             token = token.strip("\"'")
             match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token)
-            if match and match.group(1).lower() in pins and pins[match.group(1).lower()] != match.group(2):
-                out.append(f"{match.group(1)}=={match.group(2)} (requirements: {pins[match.group(1).lower()]})")
+            if match:
+                if match.group(1).lower() in pins and pins[match.group(1).lower()] != match.group(2):
+                    out.append(f"{match.group(1)}=={match.group(2)} (requirements: {pins[match.group(1).lower()]})")
                 continue
-            ranged = re.fullmatch(r"([A-Za-z0-9_.-]+)\s*(?:>=|<=|~=|>|<|!=)[^\s]*", token)
-            if ranged and ranged.group(1).lower() in pins:
-                out.append(f"{token} (requirements: {pins[ranged.group(1).lower()]})")
+            # Gói đã ghim mà theo sau là toán tử khác (>=, <, ~=, !=…): bản do ngày cài quyết định.
+            name = re.match(r"[A-Za-z0-9_.-]+", token)
+            rest = token[name.end():].lstrip() if name else ""
+            if name and name.group(0).lower() in pins and rest and rest[0] in "<>=!~":
+                out.append(f"{token} (requirements: {pins[name.group(0).lower()]})")
     return out
 
 
