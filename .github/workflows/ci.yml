@@ -87,7 +87,7 @@ jobs:
         with:
           python-version-file: .python-version
 
-      - run: python -m pip install playwright==1.55.0 'pytest>=9.1.1,<10'
+      - run: python -m pip install playwright==1.55.0 pytest==9.2.0
       - run: python -m playwright install --with-deps chromium
       - name: Kiểm menu dài bằng thao tác cuộn trên điện thoại
         env:

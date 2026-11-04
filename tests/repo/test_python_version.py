@@ -100,14 +100,41 @@ def requirement_pins(root: Path = ROOT) -> dict[str, str]:
     return pins
 
 
+def unpinned_requirements(text: str) -> list[str]:
+    """Dòng gói trực tiếp KHÔNG ghim đúng một bản (`gói==bản`), bỏ chú thích và `-r`."""
+    out = []
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line or line.startswith("-"):
+            continue
+        if not re.fullmatch(r"[A-Za-z0-9_.\[\],-]+==[^\s;,<>=!~]+(\s*;.*)?", line):
+            out.append(line)
+    return out
+
+
+def test_every_direct_requirement_is_pinned_to_one_version():
+    """04-11-2026: `requirements-ml-engine.txt` và `requirements-dev.txt` còn ghim khoảng (`lightgbm>=4.7.0,<5.0`…).
+    Khoảng thì bản cài trôi theo ngày cài, và `pip-audit` (job kiểm lỗ hổng hằng tuần) từ chối chấm dòng ấy."""
+    found = {name: unpinned_requirements((ROOT / name).read_text(encoding="utf-8")) for name in REQUIREMENT_FILES}
+    assert {name: lines for name, lines in found.items() if lines} == {}
+    assert unpinned_requirements("-r requirements.txt\n# chú thích\nnumpy==2.5.4  # ghim\nlightgbm>=4.7.0,<5.0\npytest\n") == [
+        "lightgbm>=4.7.0,<5.0", "pytest"]
+
+
 def inline_pin_drift(run_text: str, pins: dict[str, str]) -> list[str]:
-    """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim của requirements."""
+    """`pip install gói==bản` viết thẳng trong workflow mà lệch bản ghim của requirements — kể cả cài gói đã ghim
+    theo một khoảng (`"pytest>=9.1.1,<10"`), tức bản do ngày cài quyết định."""
     out = []
     for line in re.findall(r"pip install([^\n]*)", run_text):
-        for token in line.split():
-            match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token.strip("\"'"))
+        for token in re.findall(r"\"[^\"]*\"|'[^']*'|\S+", line):
+            token = token.strip("\"'")
+            match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s,;]+)", token)
             if match and match.group(1).lower() in pins and pins[match.group(1).lower()] != match.group(2):
                 out.append(f"{match.group(1)}=={match.group(2)} (requirements: {pins[match.group(1).lower()]})")
+                continue
+            ranged = re.fullmatch(r"([A-Za-z0-9_.-]+)\s*(?:>=|<=|~=|>|<|!=)[^\s]*", token)
+            if ranged and ranged.group(1).lower() in pins:
+                out.append(f"{token} (requirements: {pins[ranged.group(1).lower()]})")
     return out
 
 
@@ -120,3 +147,5 @@ def test_versions_pinned_inline_in_workflows_match_the_requirement_files():
     assert {name: found for name, found in drift.items() if found} == {}
     assert inline_pin_drift('python -m pip install "numpy==2.2.6" pandas==3.1.0', {"numpy": "2.5.4", "pandas": "3.1.0"}) == [
         "numpy==2.2.6 (requirements: 2.5.4)"]
+    assert inline_pin_drift("""python -m pip install "pytest>=9.1.1,<10" 'numpy==2.5.4' playwright==1.55.0""",
+                            {"numpy": "2.5.4", "pytest": "9.2.0"}) == ["pytest>=9.1.1,<10 (requirements: 9.2.0)"]
