@@ -54,10 +54,18 @@ jobs:
           cat audit-extra.txt
           python -m pip install --no-cache-dir -r audit-extra.txt
       - name: Đối chiếu với cơ sở lỗ hổng
+        # pip-audit chỉ ghi `--output` khi có gì để báo (lỗ hổng, gói bị bỏ qua): lượt sạch không có tệp, và
+        # `cat` thẳng tệp ấy từng biến lượt sạch đầu tiên (04-11-2026) thành đỏ.
         run: |
           status=0
           python -m pip_audit --strict --progress-spinner off --desc on --format markdown --output audit.md || status=$?
-          { echo "## Gói của pipeline và bộ kiểm"; cat audit.md; } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Gói của pipeline và bộ kiểm"
+            if [ -s audit.md ]; then cat audit.md
+            elif [ "$status" -eq 0 ]; then echo "Không có lỗ hổng đã biết."
+            else echo "pip-audit dừng với mã $status mà không ghi bảng: xem nhật ký của bước này."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
           exit "$status"
 
   vietlott:
@@ -85,9 +93,18 @@ jobs:
           python -m pip install --no-cache-dir -e ".[$extras]"
           python -m pip install --no-cache-dir pip-audit==2.10.1
       - name: Đối chiếu với cơ sở lỗ hổng
-        # Bỏ chính engine (cài -e, không có trên PyPI); mọi gói nó kéo theo vẫn bị chấm.
+        # Chính engine cài -e và không có trên PyPI. `--strict` coi gói bị `--skip-editable` bỏ qua là lỗi
+        # chí mạng (lượt đầu 04-11-2026 đỏ vì thế), nên chấm danh sách ĐÃ CÀI trừ gói editable, đúng từng bản
+        # (`--no-deps`: không giải lại phụ thuộc); mọi gói engine kéo theo vẫn bị chấm, `--strict` vẫn giữ.
         run: |
+          python -m pip freeze --all --exclude-editable > installed.txt
           status=0
-          python -m pip_audit --strict --skip-editable --progress-spinner off --desc on --format markdown --output audit.md || status=$?
-          { echo "## Gói của engine Vietlott"; cat audit.md; } >> "$GITHUB_STEP_SUMMARY"
+          python -m pip_audit --strict --no-deps -r installed.txt --progress-spinner off --desc on --format markdown --output audit.md || status=$?
+          {
+            echo "## Gói của engine Vietlott"
+            if [ -s audit.md ]; then cat audit.md
+            elif [ "$status" -eq 0 ]; then echo "Không có lỗ hổng đã biết."
+            else echo "pip-audit dừng với mã $status mà không ghi bảng: xem nhật ký của bước này."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
           exit "$status"

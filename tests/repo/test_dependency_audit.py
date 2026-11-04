@@ -10,6 +10,10 @@ thật canh rằng các gói đã biết vẫn nằm trong tập.
 from __future__ import annotations
 
 import importlib.util
+import os
+import shutil
+import stat
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -116,3 +120,70 @@ def test_the_script_prints_what_the_workflow_reads(argv: list[str], expected: st
                                                    capsys: pytest.CaptureFixture[str]) -> None:
     assert audit.main(argv) == 0
     assert expected in capsys.readouterr().out
+
+
+# --- Bước đối chiếu, chạy thật bằng bash -e như GitHub ---------------------------------------------------
+# Lượt đầu trên main (04-11-2026) đỏ cả hai job dù không có lỗ hổng nào: pip-audit KHÔNG ghi `--output` khi
+# không có gì để báo nên `cat audit.md` hỏng dưới `bash -e`, và `--strict` coi gói editable bị
+# `--skip-editable` bỏ qua là lỗi chí mạng. `python` giả dưới đây mô phỏng đúng hai hành vi đã đo ấy của
+# pip-audit 2.10.1; mọi lệnh khác làm nó dừng với mã 97.
+FAKE_PYTHON = r"""#!/usr/bin/env bash
+echo "$*" >> "$STUB_LOG"
+if [ "$1 $2 $3" = "-m pip freeze" ]; then
+  echo "numpy==2.5.4"
+  case " $* " in *" --exclude-editable "*) ;; *) echo "-e /work/vietlott" ;; esac
+  exit 0
+fi
+if [ "$1 $2" = "-m pip_audit" ]; then
+  out=""; req=""; prev=""
+  for a in "$@"; do
+    [ "$prev" = "--output" ] && out="$a"
+    [ "$prev" = "-r" ] && req="$a"
+    prev="$a"
+  done
+  case " $* " in
+    *" --strict "*)
+      if [ -n "$req" ] && grep -q "^-e " "$req"; then echo "ERROR: editable" >&2; exit 1; fi
+      if [ -z "$req" ] && [ "$STUB_EDITABLE" = 1 ]; then echo "ERROR: distribution marked as editable" >&2; exit 1; fi ;;
+  esac
+  case "$STUB_OUTCOME" in
+    clean) echo "No known vulnerabilities found" >&2; exit 0 ;;
+    vulns) printf "Name | Version | ID\n--- | --- | ---\nurllib3 | 1.26.0 | PYSEC-2021-108\n" > "$out"; exit 1 ;;
+    broken) echo "network error" >&2; exit 2 ;;
+  esac
+fi
+echo "lệnh python không lường trước: $*" >&2
+exit 97
+"""
+HEADINGS = {"vla": "## Gói của pipeline và bộ kiểm", "vietlott": "## Gói của engine Vietlott"}
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="cần bash")
+@pytest.mark.parametrize("job", ["vla", "vietlott"])
+@pytest.mark.parametrize(("outcome", "code", "line"), [
+    ("clean", 0, "Không có lỗ hổng đã biết."),
+    ("vulns", 1, "urllib3 | 1.26.0 | PYSEC-2021-108"),
+    ("broken", 2, "pip-audit dừng với mã 2 mà không ghi bảng"),
+])
+def test_the_audit_step_turns_red_only_on_findings_and_always_reports(
+        tmp_path: Path, job: str, outcome: str, code: int, line: str) -> None:
+    step = next(step for step in _steps(job) if "pip_audit" in str(step.get("run", "")))
+    assert "shell" not in step, "khối chạy bằng shell mặc định của GitHub: bash -e"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "python"
+    fake.write_text(FAKE_PYTHON, encoding="utf-8")
+    fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+    script = tmp_path / "step.sh"
+    script.write_text(step["run"], encoding="utf-8")
+    summary = tmp_path / "summary.md"
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}", "GITHUB_STEP_SUMMARY": str(summary),
+           "STUB_OUTCOME": outcome, "STUB_EDITABLE": "1" if job == "vietlott" else "0",
+           "STUB_LOG": str(tmp_path / "calls.log")}
+    work = tmp_path / "work"
+    work.mkdir()
+    result = subprocess.run(["bash", "-e", str(script)], check=False, cwd=work, env=env, capture_output=True, text=True)
+    assert result.returncode == code, result.stderr
+    text = summary.read_text(encoding="utf-8")
+    assert text.startswith(HEADINGS[job]) and line in text, text
+    assert "--strict" in (tmp_path / "calls.log").read_text(encoding="utf-8")
