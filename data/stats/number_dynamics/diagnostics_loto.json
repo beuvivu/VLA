@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4255,
+  "history_days": 4256,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-11-03",
-  "active_numbers_last_draw": 21,
+  "calendar_end": "2026-11-04",
+  "active_numbers_last_draw": 23,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 40.8921557207715,
+    "hazard": 40.90108940919668,
     "lag_median": 1000000.0,
-    "regime_recent": 262.8896681042246,
-    "regime_long": 1000000.0
+    "regime_recent": 180.240365290213,
+    "regime_long": 5171.710102060107
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 5.8776529062229175,
+    "t_statistic": 5.801847605278303,
     "holdout_days": 1064,
-    "brier_arithmetic": 0.1813130840149132,
-    "brier_logodds": 0.18146157860190096
+    "brier_arithmetic": 0.18129825759440846,
+    "brier_logodds": 0.18144446695432662
   },
-  "transition_active_mean_trials": 1006.2857142857143,
-  "regime_js_divergence_30_vs_180": 0.010748727091741048,
-  "entropy_recent": 4.553841935775351,
-  "entropy_long": 4.5965017333702916,
-  "global_dynamics_reliability": 0.759403128538211,
+  "transition_active_mean_trials": 1022.7826086956521,
+  "regime_js_divergence_30_vs_180": 0.011103815443661312,
+  "entropy_recent": 4.551018460479035,
+  "entropy_long": 4.596061315808733,
+  "global_dynamics_reliability": 0.758106158929803,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-11-04T10:37:58Z",
+  "generated_at_utc": "2026-11-04T11:37:38Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-11-03"
+  "anchor_date": "2026-11-04"
 }
