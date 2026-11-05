@@ -410,6 +410,10 @@ quay» của kỳ vừa quay (trùng bảng kết quả đầu trang, giữ dấ
 quay, mọi số thành «chờ» và chủ dự án báo mất dấu. Sổ hai kỳ tải độc lập; sổ còn được ghi lại tới giờ khoá (sổ 05-11 ghi bốn
 lần) nên được tải lại mỗi 10 phút tới khi lần tải đã cách `locks_at` quá 1 giờ, và tải lại hỏng vẫn giữ bản đang hiện. Kỳ sắp
 quay bỏ ngày nghỉ của `data/non_draw_days.json` (cùng luật `next_draw_date`); lệnh mở số mang kỳ của nó, kỳ rời bảng thì bỏ.
+Chưa có sổ kỳ sắp quay (pipeline tính xong ~18:40, sau kỳ vừa quay) thì hàng ấy là KHUNG CHỜ, không mượn số kỳ nào khác; quá
+giờ khoá kỳ ấy mà vẫn không có sổ thì nói là không có. Có sổ thì hàng «Trước giờ quay» ghi giờ ghi sổ (`generated_at`, giờ VN) và
+hàng kỳ sắp quay ghi số mục trùng danh sách kỳ vừa quay: tổ hợp gần như phẳng nên Top 10 hai kỳ liền nhau thường trùng 10/10 (sổ
+06-11 ghi lúc 18:38 sau kỳ 05-11, cả 100 xác suất Đặc Biệt đều đổi mà Top 10 giữ nguyên) và chủ dự án đã tưởng số bị chép sang.
 Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ số nguồn được tô trên bảng `#results` đầu trang Live
 CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi
 thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang

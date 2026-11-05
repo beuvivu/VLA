@@ -280,19 +280,67 @@
   }
 
   // Ô "Thời điểm" của một hàng: lúc (trước / sau giờ quay) và kỳ của hàng ấy.
-  function whenCell(text, date) {
+  function whenCell(text, date, board) {
     var cell = el('td', 'live-scorecard-when', text);
     cell.appendChild(el('small', 'live-scorecard-day', drawLabel(date)));
+    var saved = board ? savedAt(board.generated_at) : '';
+    if (saved) cell.appendChild(el('small', 'live-scorecard-saved', 'ghi sổ ' + saved));
     return cell;
   }
 
-  function beforeRow(list, board, o, className) {
+  // Giờ ghi sổ theo giờ VN, "18:38 · 05/11": cho thấy danh sách kỳ sắp quay là lần tính SAU kỳ vừa quay, không
+  // phải số của kỳ trước. Sổ dựng lại từ git mang giờ của commit nguồn.
+  function savedAt(value) {
+    var at = Date.parse(value || '');
+    if (isNaN(at)) return '';
+    var vn = new Date(at + 7 * 3600000).toISOString();
+    return vn.slice(11, 16) + ' · ' + vn.slice(8, 10) + '/' + vn.slice(5, 7);
+  }
+
+  function beforeRow(list, board, o, className, previous) {
     var row = el('tr', className);
     row.dataset.draw = board.target_date;
     var nums = el('td', '');
     nums.appendChild(chips(list, board, o, false));
-    row.append(whenCell('Trước giờ quay', board.target_date), nums, el('td', 'live-scorecard-stat', beforeText(tally(list, o))));
+    var stat = el('td', 'live-scorecard-stat', beforeText(tally(list, o)));
+    if (previous) {
+      // Mô hình đổi rất ít giữa hai kỳ liền nhau nên danh sách thường trùng nhiều: nói thẳng con số, kèm giờ ghi sổ
+      // ở cột kỳ, để người đọc không tưởng là số của kỳ trước bị chép sang.
+      var before = previous.items.map(function (x) { return x.label; });
+      var same = list.items.filter(function (x) { return before.indexOf(x.label) >= 0; }).length;
+      stat.appendChild(el('small', 'live-scorecard-overlap', 'Trùng ' + same + '/' + list.items.length +
+        ' mục với danh sách ' + drawLabel(previous.date)));
+    }
+    row.append(whenCell('Trước giờ quay', board.target_date, board), nums, stat);
     return row;
+  }
+
+  // Kỳ sắp quay chưa có sổ (hệ thống chưa tính xong sau kỳ vừa quay, hay đang tải): khung chờ, KHÔNG mượn số của
+  // kỳ nào khác. `size` là số mục của danh sách kỳ vừa quay, để khung giữ đúng chỗ.
+  function pendingRow(date, size) {
+    var entry = state.boards[date];
+    var status = entry ? entry.status : 'loading';
+    var row = el('tr', 'is-next is-pending');
+    row.dataset.draw = date;
+    row.dataset.status = status;
+    var cell = el('td', 'live-scorecard-pending');
+    cell.colSpan = 2;
+    var late = status === 'missing' && !(Date.now() < lockTime(date));
+    if (status === 'loading' || (status === 'missing' && !late)) {
+      row.setAttribute('aria-busy', 'true');
+      var ghosts = el('ul', 'live-scorecard-chips live-scorecard-ghosts');
+      ghosts.setAttribute('aria-hidden', 'true');
+      for (var i = 0; i < size; i++) ghosts.appendChild(el('li', 'live-scorecard-ghost'));
+      cell.appendChild(ghosts);
+    }
+    cell.appendChild(el('p', 'live-scorecard-pending-text', late ? 'Không có sổ phỏng đoán cho kỳ này.' : statusText(date)));
+    row.append(whenCell('Trước giờ quay', date), cell);
+    return row;
+  }
+
+  // Giờ khoá sổ của một kỳ: 18:10 giờ VN ngày quay (fun_draw_ledger.cutoff_utc).
+  function lockTime(date) {
+    return Date.parse(date + 'T18:10:00+07:00');
   }
 
   // Kỳ có sổ nhưng sổ ấy không có danh sách này (nguồn không khai đúng kỳ, ghi vào `missing` của sổ).
@@ -301,13 +349,14 @@
     row.dataset.draw = board.target_date;
     var cell = el('td', 'live-scorecard-absent', 'Sổ phỏng đoán của kỳ này không có danh sách này.');
     cell.colSpan = 2;
-    row.append(whenCell('Trước giờ quay', board.target_date), cell);
+    row.append(whenCell('Trước giờ quay', board.target_date, board), cell);
     return row;
   }
 
   // Một danh sách là một <tbody>: kỳ sắp quay ("Trước giờ quay"), rồi kỳ vừa quay ("Trước giờ quay", "Sau
   // giờ quay"). `listNext` / `listDrawn` là danh sách cùng mã trong sổ của từng kỳ (thiếu thì null).
   function groupRows(id, listNext, listDrawn, next, drawn, o) {
+    var nextDate = state.next;
     var tbody = el('tbody', 'live-scorecard-group');
     tbody.dataset.listId = id;
     var main = listDrawn || listNext;
@@ -317,7 +366,12 @@
     link.href = main.page;
     head.append(link, el('span', 'live-scorecard-group-name', main.group));
     var rows = [];
-    if (next) rows.push(listNext ? beforeRow(listNext, next, outcome(null), 'is-next') : absentRow(next, 'is-next'));
+    if (next) {
+      rows.push(listNext ? beforeRow(listNext, next, outcome(null), 'is-next',
+        listDrawn && drawn ? { items: listDrawn.items, date: drawn.target_date } : null) : absentRow(next, 'is-next'));
+    } else if (nextDate) {
+      rows.push(pendingRow(nextDate, Math.max(3, Math.min(10, (listDrawn || listNext).items.length))));
+    }
     var t = null;
     if (drawn && listDrawn) {
       t = tally(listDrawn, o);
@@ -700,6 +754,9 @@
   function statusText(date) {
     var entry = state.boards[date];
     var status = entry ? entry.status : 'loading';
+    if (status === 'missing' && date === state.next && Date.now() < lockTime(date)) {
+      return 'Đang chờ tính danh sách cho kỳ này. Số sẽ tự hiện khi tính xong.';
+    }
     return status === 'missing' ? 'Chưa có sổ phỏng đoán đóng băng cho kỳ này.'
       : status === 'mismatch' ? 'Sổ phỏng đoán không khớp kỳ quay này.'
         : status === 'error' ? 'Chưa tải được sổ phỏng đoán. Sẽ thử lại.' : 'Đang tải sổ phỏng đoán…';
