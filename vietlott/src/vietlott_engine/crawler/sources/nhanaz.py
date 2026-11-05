@@ -37,6 +37,7 @@ from urllib.parse import urlsplit
 from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.products import FOUR_DIGIT_LAYOUT, THREE_DIGIT_LAYOUT, ProductCode
 from vietlott_engine.crawler.official_data import fold
+from vietlott_engine.forecast.schedule import now_vn
 
 NHANAZ_REPO = "NhanAZ-Data/vietlott-research"
 NHANAZ_RAW_BASE = f"https://raw.githubusercontent.com/{NHANAZ_REPO}/main/datasets"
@@ -282,7 +283,9 @@ class NhanAZArchive:
             files = sorted(p.stem for p in (self.root / "draws" / product.value).glob("*.csv"))
             return [m for m in files if since is None or m >= f"{since.year:04d}-{since.month:02d}"]
         y, m = (since.year, since.month) if since else FIRST_MONTH[product]
-        today = date.today()
+        # Tháng theo giờ VN, không theo đồng hồ máy: runner chạy UTC, nên 06:00–07:00 sáng ngày 1 (kỳ Keno/
+        # Bingo18 đầu tiên của tháng) nó còn ở tháng trước và bỏ sót tệp tháng mới (05-11-2026).
+        today = now_vn().date()
         out = []
         while (y, m) <= (today.year, today.month):
             out.append(f"{y:04d}-{m:02d}")

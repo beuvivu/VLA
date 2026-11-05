@@ -662,8 +662,9 @@ def analysis_markup(analysis: dict | None) -> str:
              else '<span class="vl-badge">Chưa hơn ngẫu nhiên</span>')
     board = analysis.get("board") or {}
     if board.get("scored"):
+        expected = f'{float(board["expected"]):.1f}'.replace(".", ",")
         ledger = (f'{vn_int(board["recorded"])} dự báo ghi trước kỳ, {vn_int(board["scored"])} đã chấm: trùng '
-                  f'{board["hits"]:.0f} so với kỳ vọng ngẫu nhiên {board["expected"]:.1f}.')
+                  f'{board["hits"]:.0f} so với kỳ vọng ngẫu nhiên {expected}.')
     elif board:
         ledger = f'{vn_int(board.get("recorded", 0))} dự báo đã ghi, chưa kỳ nào được chấm.'
     else:
@@ -827,7 +828,7 @@ def multi_agent_markup(data: dict | None, *, section_id: str = "app-multi-agent"
             '<caption>Trọng số bên trong nhóm đa thuật toán</caption><thead><tr><th scope="col">Lớp phân tích</th>'
             f'<th scope="col">Trọng số nội bộ</th></tr></thead><tbody>{rows}</tbody></table></div>'
             f'<div><p>Bối cảnh: <strong>{context}</strong> · Nhiệt độ xác suất: '
-            f'<strong>{float(main["temperature"]):g}</strong>.</p>'
+            f'<strong>{format(float(main["temperature"]), "g").replace(".", ",")}</strong>.</p>'
             f'<p>Bộ nhớ gần: {int(main["short_window"])} kỳ · Lịch sử giữ lại: '
             f'{vn_int(int(main["retained_observations"]))} kỳ.</p>'
             f'<p>Truy hồi {len(matches)} ngữ cảnh tương tự, có {vn_int(support)} quan sát hỗ trợ. '

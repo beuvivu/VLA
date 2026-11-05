@@ -48,6 +48,7 @@ from vietlott_engine.core.products import (
     parse_product_rows,
     read_jsonl,
     write_jsonl,
+    write_text_atomic,
 )
 from vietlott_engine.crawler.http import AsyncHttpClient
 from vietlott_engine.crawler.product_integrity import contiguous_results, finish_store_write, identities, parse_fast_rows
@@ -151,8 +152,9 @@ class ProductStore:
         known = {(e["product"], int(e["draw_id"])) for e in current} | {(p, i) for p, ids in load_exclusions(self.seed_dir).items() for i in ids}
         added = [e for e in items if (e["product"], int(e["draw_id"])) not in known]
         if added:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(current + added, ensure_ascii=False, indent=1), encoding="utf-8")
+            # Nguyên tử: mọi lần nạp sản phẩm đều đọc tệp này (``load_exclusions``), nên một tệp cụt
+            # do chết giữa lúc ghi làm hỏng việc nạp của MỌI sản phẩm cho tới khi có người sửa tay.
+            write_text_atomic(path, json.dumps(current + added, ensure_ascii=False, indent=1))
         return len(added)
 
     def coverage(self) -> list[dict]:
@@ -356,6 +358,8 @@ class ProductSyncPipeline:
         used = None
         best_rows, best_source, best_id, best_parsed = [], None, -1, None
         known_max = self._since_id or 0
+        known = await asyncio.to_thread(identities, history)
+        conflicts: set[int] = set()
         for s in self.chain(product) if source == "auto" else [source]:
             try:
                 budget = self.archive_timeout_s if s == 'nhanaz' else self.source_timeout_s
@@ -367,6 +371,22 @@ class ProductSyncPipeline:
                 continue
             attempts.append({"source": s, "ok": True, "rows": len(rows), "error": None})
             parsed, _ = await asyncio.to_thread(parse_product_rows, product, rows, s)
+            # Cùng luật với Keno/Bingo18 (`_run_fast`) và Mega/Power/Lotto (`SyncPipeline`): nguồn không
+            # được sửa kỳ đã lưu. Bản sao và kho canonical trả CẢ lịch sử, nên trước 05-11-2026 mọi kỳ
+            # trùng mã bị `store.upsert` ghi đè lặng lẽ bằng bản của nguồn. Chỉ `--full` từ vietlott.vn
+            # chính thức được sửa. `auto` bỏ cả nguồn mâu thuẫn (một kỳ cũ sai là dấu nguồn không đáng
+            # tin); chọn đích danh một nguồn thì chỉ bỏ kỳ mâu thuẫn.
+            bad = [] if (full and s == 'vietlott') else sorted(
+                did for did, value in identities(parsed).items() if did in known and known[did] != value)
+            if bad:
+                conflicts.update(bad)
+                attempts[-1].update(ok=False, conflicting_ids=bad[:20], conflicting_count=len(bad),
+                                    error='source rows conflict with stored draws')
+                log.warning("%s: source %s conflicts with %d stored draws, e.g. %s", product.value, s, len(bad), bad[:5])
+                if source == "auto":
+                    continue
+                parsed = drop_ids(parsed, set(bad))
+                rows = history_to_rows(parsed)
             source_max = int(parsed.draw_ids.max()) if len(parsed) else -1
             if source_max > best_id:
                 best_rows, best_source, best_id, best_parsed = rows, s, source_max, parsed
@@ -375,10 +395,13 @@ class ProductSyncPipeline:
                 continue
             used = s
             break
-        if used is None and best_source is not None:
-            rows, used = best_rows, best_source
-            parsed = best_parsed
+        if used is None:
+            # Chỉ ghi dòng của nguồn đã chọn: ``rows`` có thể còn giữ dòng của nguồn vừa bị bỏ vì mâu thuẫn.
+            rows, used, parsed = (best_rows, best_source, best_parsed) if best_source is not None else ([], None, None)
         error = None if used else "; ".join(f"{a['source']}: {a['error']}" for a in attempts)
+        if conflicts:
+            note = 'conflicting source results kept out: ' + str(sorted(conflicts)[:20])
+            error = f"{error}; {note}" if error else note
         if rows and before_upsert is not None:
             # Hook nhận đúng dòng đã xác thực, bỏ cả thông báo loại kỳ mới tải.
             excluded = self.store.exclusions().get(product.value, set()) | {
