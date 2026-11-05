@@ -26,6 +26,7 @@ from core.path_models import PathParams
 from soi_cau.path_prob import (
     STREAK_BUCKETS,
     PathStats,
+    _select_rule_indices,
     _streak_walk,
     fit_paths_with_evidence,
     paths_to_dataframe,
@@ -454,3 +455,29 @@ def test_the_benchmark_identity_covers_every_module_it_runs(tmp_path, monkeypatc
         assert bench.run_identity(raw, last=2, parts=1) != base, path
         path.write_text(before, encoding="utf-8")
     assert bench.run_identity(raw, last=2, parts=1) == base
+
+
+def test_the_top_rules_per_lag_break_ties_by_position_not_by_the_cpu() -> None:
+    """Cầu hoà điểm ở ranh giới top giữ theo chỉ số tăng dần, cùng một kết quả trên mọi máy.
+
+    Ngày 05-11-2026 hai lượt pipeline trên CÙNG dữ liệu giữ hai tập top khác nhau 13 cầu, vì
+    ``argpartition``/``argsort`` mặc định xếp phần tử hoà theo lệnh vector của CPU runner; xác suất
+    soi đường ổn định công bố lệch tới 4,5·10⁻⁷ và sổ dự báo bị ghi lại 35 dòng.
+    """
+    params = PathParams(lag_max=1, window_days=300, min_trials=60, min_max_streak=3,
+                        min_current_streak=3, top_rules_per_lag=4)
+    n = 40
+    p_mean = np.full(n, 0.25)
+    hits = np.full(n, 50)
+    max_streak = np.full(n, 3)
+    current_streak = np.zeros(n, dtype=int)
+    # Hai cầu điểm cao hơn hẳn; 38 cầu còn lại hoà điểm tuyệt đối, tranh nhau hai chỗ cuối.
+    p_mean[[30, 7]] = [0.40, 0.35]
+    kept = _select_rule_indices(p_mean=p_mean, hits=hits, max_streak=max_streak,
+                                current_streak=current_streak, params=params, mode="loto")
+    assert kept.tolist() == [30, 7, 0, 1]
+    # Thứ tự đầu vào là thứ tự chỉ số: cùng dữ liệu thì cùng kết quả, lặp lại bao nhiêu lần cũng vậy.
+    again = _select_rule_indices(p_mean=p_mean.copy(), hits=hits.copy(), max_streak=max_streak.copy(),
+                                 current_streak=current_streak.copy(), params=params, mode="loto")
+    assert again.tolist() == kept.tolist()
+

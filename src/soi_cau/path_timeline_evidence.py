@@ -55,7 +55,7 @@ def build_timeline_table(
             view[col] = pd.to_numeric(view[col], errors="coerce").fillna(0)
     sort_cols = [c for c in ("rule_score", "p_mean", "current_streak", "max_streak") if c in view.columns]
     if sort_cols:
-        view = view.sort_values(sort_cols, ascending=[False] * len(sort_cols))
+        view = view.sort_values(sort_cols, ascending=[False] * len(sort_cols), kind="stable")
 
     dedupe_cols = [c for c in ("lag_days", "pos_i_index", "pos_j_index", "rule_kind") if c in view.columns]
     if dedupe_cols:

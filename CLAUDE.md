@@ -611,6 +611,9 @@ cầu). `fit_paths_with_evidence` học `BridgeEvidence` từ MỌI cầu của 
 riêng THÔ của từng cầu bỏ ra chuỗi đang chạy. Đừng quay lại độ co đặt tay, đừng in `p_mean` như xác suất; trang in câu kết
 luận TỪ `bridge_evidence_<mode>.json` (`tests/soi_cau/test_bridge_inference.py`). Số đo hiện tại: mọi cầu co về nền, kỹ năng
 đã công bố không phân biệt được với 0 (`scripts/research/audit_forecast_ceiling.py`). Chi tiết: `documentation/architecture/claude-md-chi-tiet.md`, mục «Cầu theo đường».
+Top cầu mỗi độ trễ (`path_prob._select_rule_indices`) chọn bằng `argsort(..., kind="stable")`, hoà điểm theo chỉ số: `argpartition`
+và quicksort xếp phần tử hoà theo lệnh vector của CPU runner, nên 05-11-2026 hai lượt trên CÙNG dữ liệu giữ hai tập top lệch 13 cầu
+và xác suất soi đường ổn định lệch 4,5·10⁻⁷. Mọi phép chọn top hay xếp hạng có thể hoà điểm phải dùng sắp xếp ổn định.
 
 ### Bảy kiểu cầu của trang tham chiếu thứ hai + phôi tuần
 

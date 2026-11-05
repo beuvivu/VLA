@@ -70,6 +70,7 @@ def _build_path_lines(
         stats_df.sort_values(
             ["p_mean", "current_streak", "max_streak", "hits"],
             ascending=[False, False, False, False],
+            kind="stable",
         )
         .head(top_paths)
         .copy()
