@@ -80,7 +80,10 @@ jobs:
     # Cùng một bộ trang, job mất 11,7 phút lúc 17:01 UTC ngày 12-10-2026 và ~15 phút ở ba
     # lượt 21:24–22:25 UTC: mọi bước chậm đều tay 25–35% theo runner. Trần 15 phút chỉ còn
     # ~3 phút dư, và hai lượt bị cắt ở bước cuối dù mọi phép kiểm trước đó đều xanh.
-    timeout-minutes: 25
+    # Đến 04-11-2026 bộ trang dày lên và job mất 23 phút (PR #206) và 23 phút 40 giây (main,
+    # 15:44 UTC), bước Vietlott một mình 13–15 phút; ngày 05-11 một lượt bị cắt ở mốc 25 phút
+    # đúng bước cuối, mọi phép kiểm trước đó xanh. Trần giữ tỉ lệ ~1,7 lần thời lượng đo được.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
