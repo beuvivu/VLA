@@ -6,7 +6,7 @@
   var root = document.getElementById('live-predictions');
   if (!root) return;
   var dateLabel = document.getElementById('live-prediction-date');
-  var currentDate = '', revision = 0, pending = null;
+  var currentDate = '', revision = 0, pending = null, upcoming = false, drawRequest = 0;
   var ready = new Set();
   var modes = ['de', 'loto'];
   var predictionRoot = root.dataset.predictionRoot || 'https://raw.githubusercontent.com/beuvivu/VLA/main/data/ai_ml/daily/';
@@ -77,7 +77,9 @@
         ready.add(mode);
         column(mode, 'ready', '', values);
       } else {
-        column(mode, 'missing', 'Chưa có dự đoán cho ngày này.');
+        // Kỳ sắp quay chưa có số: hệ thống chưa tính xong sau kỳ vừa quay (như khung chờ của bảng đối chiếu).
+        column(mode, 'missing', upcoming ? 'Đang chờ tính dự đoán cho kỳ này. Số sẽ tự hiện khi tính xong.'
+          : 'Chưa có dự đoán cho ngày này.');
       }
     } catch (_error) {
       if (version === revision) column(mode, 'error', 'Chưa tải được dự đoán. Sẽ thử lại.');
@@ -86,7 +88,8 @@
     }
   }
 
-  function load(date) {
+  function load(date, isUpcoming) {
+    upcoming = !!isUpcoming;
     if (!validDate(date)) {
       currentDate = ''; revision++; pending = null; ready.clear();
       dateLabel.dateTime = '';
@@ -123,9 +126,24 @@
     return day.toISOString().slice(0, 10);
   }
 
+  // Kỳ kế tiếp bỏ các ngày nghỉ quay (Tết…), cùng luật và cùng lịch với bảng đối chiếu
+  // (LiveScorecard.closedDays, forecast.multi_hit_forecast.next_draw_date). Không có bảng đối chiếu
+  // hay không đọc được lịch thì coi như không có ngày nghỉ nào.
+  function nextDraw(date, skip) {
+    var day = nextDay(date);
+    for (var i = 0; i < 366 && skip.has(day); i++) day = nextDay(day);
+    return day;
+  }
+
   function loadForDraw(drawDate, status) {
-    if (validDate(drawDate) && finished(status)) return load(nextDay(drawDate));
-    return load(drawDate);
+    var token = ++drawRequest;
+    if (!(validDate(drawDate) && finished(status))) return load(drawDate);
+    var scorecard = window.LiveScorecard;
+    var days = scorecard && typeof scorecard.closedDays === 'function' ? scorecard.closedDays() : null;
+    return Promise.resolve(days).catch(function () { return null; }).then(function (skip) {
+      if (token !== drawRequest) return undefined;  // live.json đã sang lượt khác trong lúc đọc lịch
+      return load(nextDraw(drawDate, skip && typeof skip.has === 'function' ? skip : new Set()), true);
+    });
   }
   window.LivePredictions = { load: load, loadForDraw: loadForDraw };
 })();

@@ -64,7 +64,7 @@ RETROSPECTIVE = {
 
 def scored_draws(raw: pd.DataFrame) -> list[dict]:
     """Mọi cặp (kỳ, quy tắc) từ ``FIRST_TARGET``, mỗi kỳ chấm bằng kỳ ngay trước nó."""
-    raw = raw.sort_values("date").reset_index(drop=True)
+    raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     rows = []
     for t in range(1, len(raw)):
         day = str(raw["date"].iloc[t])[:10]

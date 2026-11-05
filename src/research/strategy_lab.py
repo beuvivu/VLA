@@ -474,8 +474,9 @@ def evaluate_lab(
                     "phi_correlation": corr,
                 }
             )
+    # Cặp chiến lược hoà tương quan giữ thứ tự dựng (sắp xếp ổn định), không theo lệnh vector của CPU.
     diversity = pd.DataFrame(div_rows).sort_values(
-        "phi_correlation", ascending=False, ignore_index=True
+        "phi_correlation", ascending=False, ignore_index=True, kind="stable"
     )
     return table, agreement, diversity
 
@@ -491,8 +492,8 @@ def main() -> None:
 
     lot = Lottery()
     lot.load()
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
-    sparse = lot.get_sparse_data().sort_values("date").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
+    sparse = lot.get_sparse_data().sort_values("date", kind="stable").reset_index(drop=True)
     if two.empty or sparse.empty:
         raise SystemExit("No data loaded")
     out = Path(args.out_dir)

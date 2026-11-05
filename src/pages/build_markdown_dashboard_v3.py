@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
+import re
 from calendar import monthrange
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ from collections.abc import Iterable, Sequence
 import numpy as np
 import pandas as pd
 
+from core.atomic_io import write_text_unless_only_stamps
 from core.safe_io import read_csv_or_empty, read_json_or_empty
 
 from web.ui_locale import strategy_label, value_label
@@ -221,7 +223,7 @@ def _balanced_rank(
         return "_Chưa có dữ liệu._"
     view = df.copy()
     view["__score"] = pd.to_numeric(view[score_col], errors="coerce")
-    view = view.sort_values("__score", ascending=not descending).head(top_n)
+    view = view.sort_values("__score", ascending=not descending, kind="stable").head(top_n)
     max_v = float(view["__score"].abs().max()) if not view.empty else 1.0
     rows = []
     for i, (_, r) in enumerate(view.iterrows(), 1):
@@ -293,7 +295,7 @@ def _forecast_table(df: pd.DataFrame, mode: str, top_n: int = 15) -> str:
         return "_Chưa có dự báo._"
     view = df.copy()
     view["__p"] = pd.to_numeric(view["prob"], errors="coerce").fillna(0)
-    view = view.sort_values("__p", ascending=False).head(top_n)
+    view = view.sort_values("__p", ascending=False, kind="stable").head(top_n)
     max_p = float(view["__p"].max()) if not view.empty else 1.0
     rows = []
     for i, (_, r) in enumerate(view.iterrows(), 1):
@@ -329,7 +331,7 @@ def _gap_table(df: pd.DataFrame, top_n: int = 15) -> str:
         return "_Chưa có dữ liệu._"
     view = df.copy()
     view["__gap"] = pd.to_numeric(view["current_gap"], errors="coerce").fillna(0)
-    view = view.sort_values("__gap", ascending=False).head(top_n)
+    view = view.sort_values("__gap", ascending=False, kind="stable").head(top_n)
     max_g = float(view["__gap"].max()) if not view.empty else 1.0
     rows = []
     for i, (_, r) in enumerate(view.iterrows(), 1):
@@ -363,7 +365,7 @@ def _group_table(df: pd.DataFrame, kind: str, group: str, top_n: int) -> str:
     if view.empty:
         return "_Chưa có dữ liệu._"
     view["__f"] = pd.to_numeric(view.get("freq"), errors="coerce").fillna(0)
-    view = view.sort_values("__f", ascending=False).head(top_n)
+    view = view.sort_values("__f", ascending=False, kind="stable").head(top_n)
     max_f = float(view["__f"].max()) if not view.empty else 1.0
     rows = []
     for i, (_, r) in enumerate(view.iterrows(),1):
@@ -383,7 +385,7 @@ def _special_group_table(df: pd.DataFrame, kind: str = "month") -> str:
         if g.empty:
             continue
         g["__f"] = pd.to_numeric(g["freq"], errors="coerce").fillna(0)
-        g = g.sort_values("__f", ascending=False).head(5)
+        g = g.sort_values("__f", ascending=False, kind="stable").head(5)
         top = " · ".join(f"**{r['group_value']}** ({int(r['__f'])})" for _,r in g.iterrows())
         rows.append([label, top, "5 nhóm đầu", "Nhìn cấu trúc phân bố thay vì một số đơn lẻ"])
     return _md_table(["Nhóm", "Phân bố nổi bật", "Phạm vi", "Ý nghĩa"], rows)
@@ -436,7 +438,7 @@ def _lag_dependency(path: Path, top_n: int=20) -> str:
     if df.empty or "lift_vs_baseline" not in df.columns:
         return "_Chưa có dữ liệu._"
     df["__lift"]=pd.to_numeric(df["lift_vs_baseline"],errors="coerce").fillna(0)
-    df=df.sort_values("__lift",ascending=False).head(top_n)
+    df=df.sort_values("__lift",ascending=False, kind="stable").head(top_n)
     max_v=float(df["__lift"].abs().max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
@@ -512,7 +514,7 @@ def _significance(path: Path, top_n: int=15) -> str:
     if df.empty:
         return "_Chưa có dữ liệu._"
     df["__e"]=pd.to_numeric(df.get("evidence_score",df.get("z_score")),errors="coerce").abs().fillna(0)
-    df=df.sort_values("__e",ascending=False).head(top_n)
+    df=df.sort_values("__e",ascending=False, kind="stable").head(top_n)
     max_v=float(df["__e"].max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
@@ -529,7 +531,7 @@ def _strategy(path: Path, top_n: int=15) -> str:
     if df.empty or "holdout_lift" not in df.columns:
         return "_Chưa có dữ liệu._"
     df["__l"]=pd.to_numeric(df["holdout_lift"],errors="coerce").fillna(0)
-    df=df.sort_values("__l",ascending=False).head(top_n)
+    df=df.sort_values("__l",ascending=False, kind="stable").head(top_n)
     max_v=float(df["__l"].max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
@@ -544,7 +546,7 @@ def _strategy(path: Path, top_n: int=15) -> str:
 def _dynamics(df: pd.DataFrame, top_n: int=15) -> str:
     if df.empty or "prob" not in df.columns:
         return "_Chưa có dữ liệu._"
-    df=df.copy(); df["__p"]=pd.to_numeric(df["prob"],errors="coerce").fillna(0); df=df.sort_values("__p",ascending=False).head(top_n)
+    df=df.copy(); df["__p"]=pd.to_numeric(df["prob"],errors="coerce").fillna(0); df=df.sort_values("__p",ascending=False, kind="stable").head(top_n)
     max_v=float(df["__p"].max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
@@ -557,7 +559,7 @@ def _dynamics(df: pd.DataFrame, top_n: int=15) -> str:
 def _markov(df: pd.DataFrame, top_n: int=15) -> str:
     if df.empty or "lift" not in df.columns:
         return "_Chưa có dữ liệu._"
-    df=df.copy(); df["__l"]=pd.to_numeric(df["lift"],errors="coerce").fillna(0); df=df.sort_values("__l",ascending=False).head(top_n)
+    df=df.copy(); df["__l"]=pd.to_numeric(df["lift"],errors="coerce").fillna(0); df=df.sort_values("__l",ascending=False, kind="stable").head(top_n)
     max_v=float(df["__l"].max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
@@ -889,7 +891,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 </div>
 '''
-    out_path.write_text(md,encoding="utf-8")
+    # Chỉ khác dòng «Tạo lúc …» thì giữ bản đang có: lượt pipeline chạy lại không commit lại tệp.
+    write_text_unless_only_stamps(out_path, md, (re.compile(r"Tạo lúc \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"),))
     print(f"Đã ghi {out_path} ({out_path.stat().st_size:,} byte)")
 
 

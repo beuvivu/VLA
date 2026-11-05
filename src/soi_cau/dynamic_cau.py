@@ -152,7 +152,7 @@ def normalize_raw_draws(raw_history: pd.DataFrame) -> tuple[NormalizedDraw, ...]
         raise ValueError("raw history must contain date")
     work = raw_history.copy()
     work["date"] = pd.to_datetime(work["date"], errors="raise").dt.normalize()
-    work = work.sort_values("date").reset_index(drop=True)
+    work = work.sort_values("date", kind="stable").reset_index(drop=True)
     normalize_dates(work["date"])
     draws: list[NormalizedDraw] = []
     for _, row in work.iterrows():

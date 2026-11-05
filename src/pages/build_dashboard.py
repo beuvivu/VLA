@@ -114,7 +114,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         frame = read_csv_or_empty(files[-1])
         if "prob" not in frame.columns:
             return pd.DataFrame()
-        return frame.sort_values("prob", ascending=False).head(20)
+        return frame.sort_values("prob", ascending=False, kind="stable").head(20)
 
     pred_loto = load_pred("loto")
     pred_de = load_pred("de")

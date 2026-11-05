@@ -462,8 +462,8 @@ def build(
     """Chạy toàn bộ phòng thí nghiệm và ghi kết quả ra ``data/research/bong_bridge``."""
     lot = Lottery()
     lot.load()
-    raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
+    raw = lot.get_raw_data().sort_values("date", kind="stable").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
     if len(raw) != len(two):
         raise ValueError("bảng thô và bảng hai chữ số lệch số hàng")
 

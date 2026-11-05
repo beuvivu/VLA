@@ -350,7 +350,7 @@ class Lottery:
         self._raw_data = pd.DataFrame(ordered)
         self._raw_data["date"] = pd.to_datetime(self._raw_data["date"])
         self._raw_data.iloc[:, 1:] = self._raw_data.iloc[:, 1:].astype("int64")
-        self._raw_data = self._raw_data.sort_values("date", ignore_index=True)
+        self._raw_data = self._raw_data.sort_values("date", ignore_index=True, kind="stable")
 
         # 2-digit view (LOTO) - vectorised.
         self._2_digits_data = self._raw_data.copy(deep=True)

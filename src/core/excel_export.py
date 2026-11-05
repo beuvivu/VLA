@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from core.atomic_io import save_xlsx
+
 logger = logging.getLogger(__name__)
 
 FIELD_WIDTHS: dict[str, int] = {
@@ -239,7 +241,7 @@ def _save_workbook(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
         ws = wb.create_sheet(title=name[:31])
         _write_df(ws, df)
 
-    wb.save(path)
+    save_xlsx(wb, path)
     for name, df in sheets.items():
         _verify_sheet_roundtrip(path, name[:31], df)
 
@@ -272,7 +274,7 @@ def _export_daily_files(
         return
 
     _require_prize_columns(raw_df, context="daily raw dataframe")
-    view = raw_df.sort_values("date")
+    view = raw_df.sort_values("date", kind="stable")
     if latest_only:
         view = view.tail(1)
 

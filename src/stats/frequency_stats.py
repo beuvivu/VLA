@@ -40,7 +40,7 @@ def prepare_sparse_history(history: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("history must contain a date column")
     work = history.copy()
     work["date"] = pd.to_datetime(work["date"], errors="raise").dt.normalize()
-    work = work.sort_values("date").reset_index(drop=True)
+    work = work.sort_values("date", kind="stable").reset_index(drop=True)
     normalize_dates(work["date"])
 
     rename: dict[object, int] = {}

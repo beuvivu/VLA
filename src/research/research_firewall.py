@@ -281,8 +281,8 @@ def main() -> None:
 
     lot = Lottery()
     lot.load()
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
-    sparse = lot.get_sparse_data().sort_values("date").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
+    sparse = lot.get_sparse_data().sort_values("date", kind="stable").reset_index(drop=True)
     if two.empty or sparse.empty:
         raise SystemExit("No data loaded")
 

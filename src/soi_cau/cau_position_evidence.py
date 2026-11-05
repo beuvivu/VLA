@@ -420,8 +420,8 @@ def run(
 
     lot = Lottery()
     lot.load()
-    df_raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
-    df_2digits = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
+    df_raw = lot.get_raw_data().sort_values("date", kind="stable").reset_index(drop=True)
+    df_2digits = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
     if df_raw.empty or df_2digits.empty:
         raise RuntimeError("No data loaded. Run src/ingest/sync.py first.")
 

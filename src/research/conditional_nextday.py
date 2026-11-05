@@ -60,7 +60,7 @@ def compute_loto_nextday_given_special(
     The table is research/descriptive evidence and is not consumed by the
     production ensemble.
     """
-    df_2d = df_2d.sort_values("date").reset_index(drop=True).copy()
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True).copy()
     dates, loto_targets, de_targets = build_daily_targets(df_2d)
     n = len(dates)
     columns = [
@@ -205,7 +205,7 @@ def main() -> None:
     write_code_csv(top_df, top_path, index=False)
 
     latest = pd.to_datetime(df_2d["date"]).max().date().isoformat()
-    current_special = int(df_2d.sort_values("date").iloc[-1]["special"]) % 100
+    current_special = int(df_2d.sort_values("date", kind="stable").iloc[-1]["special"]) % 100
     current = long_df[long_df["special"] == current_special].sort_values(
         ["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]
     )

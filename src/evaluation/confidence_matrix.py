@@ -504,14 +504,14 @@ def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
                      "rate": float(hit / n) if n else 0.0, "base": base,
                      "z": cluster_z(per_hit, per_n, base), "in_sample": in_sample})
 
-    top = np.argsort(-train["bayes_post"])[:10]
+    top = np.argsort(-train["bayes_post"], kind="stable")[:10]
     add("bayes", "10 con hậu nghiệm Bayes cao nhất", test[:, top].sum(axis=1),
         np.full(len(test), 10), BASE, float(hits[:cut, top].mean()))
-    top = np.argsort(-train["markov_z"])[:10]
+    top = np.argsort(-train["markov_z"], kind="stable")[:10]
     prev, nxt = test[:-1, top], test[1:, top]
     add("markov", "10 con Markov mạnh nhất, sau khi vừa về", (prev * nxt).sum(axis=1),
         prev.sum(axis=1), BASE, float(train["markov_p11"][top].mean()))
-    flat = np.argsort(-train["pair_z"], axis=None)[:50]
+    flat = np.argsort(-train["pair_z"], axis=None, kind="stable")[:50]
     a, b = np.unravel_index(flat, (100, 100))
     add("pairs", "50 cặp bạc nhớ mạnh nhất", (test[:-1, a] * test[1:, b]).sum(axis=1),
         test[:-1, a].sum(axis=1), BASE)
@@ -523,11 +523,11 @@ def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
         ("cau_loto", "20 cầu vị trí LOTO tốt nhất", hits[cut - 1 :], BASE),
         ("cau_de", "20 cầu vị trí Đặc Biệt tốt nhất", special[cut - 1 :], 0.01),
     ):
-        sel = np.argsort(-train[key])[:20]
+        sel = np.argsort(-train[key], kind="stable")[:20]
         per_day = cau_hit_matrix(dig, target)[:, sel].sum(axis=1)
         add(key, label, per_day, np.full(len(dig) - 1, 20), base, float(train[key][sel].mean()))
 
-    flat = np.argsort(-train["de_markov_z"], axis=None)[:20]
+    flat = np.argsort(-train["de_markov_z"], axis=None, kind="stable")[:20]
     r, c = np.unravel_index(flat, (10, 100))
     tens = draws[cut - 1 : -1, 0] // 10
     nxt_de = draws[cut:, 0]

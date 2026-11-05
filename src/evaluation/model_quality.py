@@ -114,7 +114,7 @@ def ensemble_probabilities(history: pd.DataFrame, weights: EnsembleWeights, mode
     days, probs, labels = [], [], []
 
     for day, group in history.groupby("target_date", sort=True):
-        sub = group.sort_values("number")
+        sub = group.sort_values("number", kind="stable")
         if len(sub) != 100 or sub["y"].isna().any():
             continue
         # Cùng MỘT cổng canh với đường dự đoán thật. Trước đây chỗ này chỉ đòi
@@ -260,7 +260,7 @@ def skill_series(history: pd.DataFrame, mode: str) -> dict:
     cảm giác. Dải ±1,96·SE quanh 0 cho biết mức dao động thuần nhiễu trông như
     thế nào, và kỹ năng trung bình nằm trong hay ngoài dải ấy.
     """
-    sub = history[history["mode"].astype(str) == mode].sort_values("target_date")
+    sub = history[history["mode"].astype(str) == mode].sort_values("target_date", kind="stable")
     # Lịch sử cũ chưa mang cột đối chứng. Trang chẩn đoán mà sập vì thiếu một
     # cột thì đúng lúc cần nhất lại là lúc không có gì để đọc, nên thiếu cột
     # phải thành "chưa đủ lịch sử" chứ không thành lỗi.

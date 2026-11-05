@@ -314,6 +314,26 @@ def test_pair_frequency_counts_each_unordered_pair_once_per_draw() -> None:
     assert sum(counts.values()) == 6
 
 
+def test_pairs_tied_on_count_are_listed_by_pair_number() -> None:
+    """Top cặp cắt ở 300 dòng và trang chủ in đầu bảng: cặp hoà số lần phải có thứ tự cố định.
+
+    Ngày 05-11-2026 hai lượt trên cùng dữ liệu in «68-97» rồi «68-76» (cùng 278 lần), vì sắp xếp một
+    khoá mặc định xếp phần tử hoà theo lệnh vector của CPU.
+    """
+    # Cặp lớn xuất hiện TRƯỚC cặp nhỏ: thứ tự gặp ngược với thứ tự cặp số.
+    frame = _two_digit_frame(
+        [
+            ("2026-01-01", [90, 80]),
+            ("2026-01-02", [70, 60]),
+            ("2026-01-03", [50, 40]),
+            ("2026-01-04", [33, 61]),
+            ("2026-01-05", [33, 61]),
+        ]
+    )
+    out = compute_pair_frequency(frame)
+    assert out["pair"].tolist() == ["33-61", "40-50", "60-70", "80-90"]
+
+
 @pytest.mark.parametrize("frame", [pd.DataFrame(), pd.DataFrame(columns=["date"])])
 def test_empty_input_returns_an_empty_table_instead_of_raising(frame: pd.DataFrame) -> None:
     """Kho rỗng là trạng thái hợp lệ lúc dựng lần đầu, không phải lỗi."""

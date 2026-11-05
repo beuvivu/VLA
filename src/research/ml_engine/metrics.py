@@ -158,7 +158,7 @@ def score_day(
     y = outcome.astype(float)
     b = BASELINE_RATE
 
-    order = np.argsort(-p)
+    order = np.argsort(-p, kind="stable")
     return DailyScore(
         logloss=float(-np.mean(y * np.log(p) + (1 - y) * np.log1p(-p))),
         brier=float(np.mean((probabilities - y) ** 2)),

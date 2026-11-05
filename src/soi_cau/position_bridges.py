@@ -82,7 +82,7 @@ def positions() -> list[dict]:
 
 def load_draws(raw: pd.DataFrame) -> tuple[list[str], np.ndarray, np.ndarray]:
     """Ngày, ma trận chữ số (T, 107) và giá trị đầy đủ (T, 27) theo thứ tự kỳ."""
-    raw = raw.sort_values("date").reset_index(drop=True)
+    raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     values = raw[COLUMNS].to_numpy().astype(np.int64)
     digits = np.zeros((len(raw), N_POS), dtype=np.int8)
     col = 0

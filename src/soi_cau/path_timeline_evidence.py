@@ -38,8 +38,8 @@ def build_timeline_table(
     if raw.empty or two.empty or positions.empty:
         return pd.DataFrame()
 
-    raw_sorted = raw.sort_values("date").reset_index(drop=True)
-    two_sorted = two.sort_values("date").reset_index(drop=True)
+    raw_sorted = raw.sort_values("date", kind="stable").reset_index(drop=True)
+    two_sorted = two.sort_values("date", kind="stable").reset_index(drop=True)
     raw_by_date = {
         _as_date(row["date"]): build_rawdata_digits_from_row(row)
         for _, row in raw_sorted.iterrows()
@@ -55,7 +55,7 @@ def build_timeline_table(
             view[col] = pd.to_numeric(view[col], errors="coerce").fillna(0)
     sort_cols = [c for c in ("rule_score", "p_mean", "current_streak", "max_streak") if c in view.columns]
     if sort_cols:
-        view = view.sort_values(sort_cols, ascending=[False] * len(sort_cols))
+        view = view.sort_values(sort_cols, ascending=[False] * len(sort_cols), kind="stable")
 
     dedupe_cols = [c for c in ("lag_days", "pos_i_index", "pos_j_index", "rule_kind") if c in view.columns]
     if dedupe_cols:
@@ -146,8 +146,8 @@ def run(
 
     lot = Lottery()
     lot.load()
-    raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
+    raw = lot.get_raw_data().sort_values("date", kind="stable").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
     if raw.empty or two.empty:
         raise RuntimeError("No data loaded")
 

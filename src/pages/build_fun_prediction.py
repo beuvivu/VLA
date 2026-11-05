@@ -79,7 +79,7 @@ def _prob_frame(path: Path) -> pd.DataFrame:
     df = df[["number", "prob"]].copy()
     df["number"] = pd.to_numeric(df["number"], errors="raise").astype(int)
     df["prob"] = pd.to_numeric(df["prob"], errors="raise").astype(float)
-    df = df.drop_duplicates("number", keep="last").sort_values("number")
+    df = df.drop_duplicates("number", keep="last").sort_values("number", kind="stable")
     if df["number"].tolist() != list(range(100)):
         raise ValueError(f"Tệp dự báo phải chứa đủ đúng miền 00..99: {path}")
     if not np.isfinite(df["prob"].to_numpy()).all():

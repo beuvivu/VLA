@@ -50,7 +50,7 @@ def _load_latest_row(csv_path: Path) -> pd.Series:
     if "date" not in df.columns or df.empty:
         raise ValueError(f"Tệp dữ liệu không hợp lệ: {csv_path}")
     df["date"] = pd.to_datetime(df["date"])
-    df = df.sort_values("date")
+    df = df.sort_values("date", kind="stable")
     return df.iloc[-1]
 
 

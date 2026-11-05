@@ -87,7 +87,7 @@ def save_ranked_bar(
     if df.empty:
         return
 
-    view = df.sort_values(y, ascending=False).head(top_n).copy()
+    view = df.sort_values(y, ascending=False, kind="stable").head(top_n).copy()
     vals = view[y].astype(float).to_numpy()
     vmin = float(np.nanmin(vals)) if vals.size else 0.0
     vmax = float(np.nanmax(vals)) if vals.size else 1.0

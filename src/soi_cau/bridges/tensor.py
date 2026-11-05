@@ -86,7 +86,7 @@ class DigitTensor:
         """Dựng từ bảng kết quả thô, sau khi bắt buộc chuỗi ngày liền mạch."""
         if "date" not in df_raw.columns:
             raise ValueError("bảng kết quả thô thiếu cột 'date'")
-        frame = df_raw.sort_values("date").reset_index(drop=True)
+        frame = df_raw.sort_values("date", kind="stable").reset_index(drop=True)
         dates = require_daily_contiguous(frame["date"], context="quét cầu ghép chéo ngày")
 
         values = raw_digit_matrix(frame)

@@ -397,6 +397,10 @@ def _cooccurrence_phi(hit: np.ndarray, shrink_strength: float = 60.0) -> np.ndar
 POOL_HOLDOUT: Final[float] = 0.25
 MIN_POOL_SELECTION_DAYS: Final[int] = 400
 POOL_KINDS: Final[tuple[str, ...]] = ("arithmetic", "logodds")
+#: Khi mỗi kỳ chỉ MỘT hàng nguồn hoạt động (Đặc Biệt), hai phép hợp trùng nhau về toán học và sai số
+#: từng ngày chỉ khác nhau ở nhiễu làm tròn (~10⁻¹⁸). Không gom nhiễu ấy về 0 thì t là t của nhiễu: ngày
+#: 05-11-2026 hai lượt trên CÙNG dữ liệu in 0,69 rồi 1,51, và đủ xui là vượt ngưỡng, đổi phép hợp vô cớ.
+POOL_TIE_TOLERANCE: Final[float] = 1e-12
 
 
 def _pool_active_rows(
@@ -471,6 +475,8 @@ def select_transition_pool(
     incumbent = np.asarray(errors["arithmetic"])
     challenger = np.asarray(errors["logodds"])
     delta = challenger - incumbent
+    if np.all(np.abs(delta) <= POOL_TIE_TOLERANCE):
+        delta = np.zeros_like(delta)  # hai phép hợp hoà nhau: t = 0, giữ phép số học
     standard_error = float(np.std(delta, ddof=1) / np.sqrt(delta.size))
     t_statistic = float(delta.mean() / standard_error) if standard_error else 0.0
     diagnostics = {
@@ -601,7 +607,7 @@ def build_dynamics_signal(
             "regime_log_ratio": regime_log_ratio,
             "dynamics_reliability": global_rel,
         }
-    ).sort_values("prob", ascending=False, ignore_index=True)
+    ).sort_values("prob", ascending=False, ignore_index=True, kind="stable")
 
     columns = [f"{x:02d}" for x in range(100)]
     trans_df = pd.DataFrame(trans, columns=columns)

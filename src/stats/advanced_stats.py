@@ -108,7 +108,7 @@ def compute_overdue(sparse_df: pd.DataFrame) -> pd.DataFrame:
     )[["value", "last_seen", "days_since_last", "value_str"]]
     out.loc[out["last_seen"].isna(), "days_since_last"] = pd.NA
     out["days_since_last"] = out["days_since_last"].astype("Int64")
-    return out.sort_values("days_since_last", ascending=False, na_position="last").reset_index(drop=True)
+    return out.sort_values("days_since_last", ascending=False, na_position="last", kind="stable").reset_index(drop=True)
 
 
 def compute_cycle_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) -> pd.DataFrame:
@@ -227,7 +227,7 @@ def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, p
             total_rows.append({"total": t, "last_seen": last_seen.date(), "days_since_last": days})
         else:
             total_rows.append({"total": t, "last_seen": None, "days_since_last": None})
-    total_df = pd.DataFrame(total_rows).sort_values("days_since_last", ascending=False, na_position="last")
+    total_df = pd.DataFrame(total_rows).sort_values("days_since_last", ascending=False, na_position="last", kind="stable")
 
     # cham overdue (digit presence in last-2-digits)
     cham_rows: list[dict[str, object]] = []
@@ -239,7 +239,7 @@ def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, p
             cham_rows.append({"digit": d, "last_seen": last_seen.date(), "days_since_last": days})
         else:
             cham_rows.append({"digit": d, "last_seen": None, "days_since_last": None})
-    cham_df = pd.DataFrame(cham_rows).sort_values("days_since_last", ascending=False, na_position="last")
+    cham_df = pd.DataFrame(cham_rows).sort_values("days_since_last", ascending=False, na_position="last", kind="stable")
 
     return total_df.reset_index(drop=True), cham_df.reset_index(drop=True)
 
@@ -253,7 +253,7 @@ def compute_lo_roi(two_digit_df: pd.DataFrame, *, window_draws: int = 7) -> pd.D
     if two_digit_df.empty:
         return pd.DataFrame(columns=["value", "count_in_window", "days_in_window"])
 
-    df = two_digit_df.sort_values("date").tail(window_draws)
+    df = two_digit_df.sort_values("date", kind="stable").tail(window_draws)
     flat = _flatten_2d_values(df)
     if flat.size == 0:
         return pd.DataFrame(columns=["value", "count_in_window", "days_in_window"])

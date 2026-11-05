@@ -163,7 +163,7 @@ def build_table(raw: pd.DataFrame, two: pd.DataFrame, cfg: ForecastConfig | None
     """
     cfg = cfg or ForecastConfig()
     ck_cfg = ck.CauKeoConfig(min_history_days=cfg.min_history_days, window_days=10**7)
-    two_sorted = two.assign(date=pd.to_datetime(two["date"]).dt.strftime("%Y-%m-%d")).sort_values("date")
+    two_sorted = two.assign(date=pd.to_datetime(two["date"]).dt.strftime("%Y-%m-%d")).sort_values("date", kind="stable")
     draws, dates = draws_from_frame(two_sorted.reset_index(drop=True))
     target = next_draw_date(dates[-1], closed)
     hist, _ = ck.build_cau_keo_feature_frame("loto", include_target=True, config=ck_cfg, raw=raw, two=two)
@@ -372,7 +372,7 @@ def reason(name: str, value: float, number: int, special: int) -> str | None:
 def reasons(model: Model, x: np.ndarray, number: int, special: int, limit: int = 2) -> list[str]:
     """Các đặc trưng đẩy con này lên nhiều nhất (đóng góp dương lớn nhất, có mặt ở con ấy)."""
     out = []
-    for j in np.argsort(-model.contributions(x)):
+    for j in np.argsort(-model.contributions(x), kind="stable"):
         if model.contributions(x)[j] <= 0 or len(out) >= limit:
             break
         text = reason(FEATURES[j], x[j], number, special)

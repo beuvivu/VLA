@@ -153,6 +153,46 @@ def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> 
     assert kept.set_index(["mode", "target_date"])["brier_unit"][("de", "2026-08-03")] == "ghi_tay"
 
 
+def test_a_rerun_with_the_same_metrics_leaves_the_ledger_byte_identical(tmp_path: Path, monkeypatch) -> None:
+    """Pipeline chạy lại trong ngày ra đúng số đo cũ: sổ không đổi byte nào, giờ ghi đầu được giữ.
+
+    Trước 06-11-2026 mỗi lượt chạy lại ghi lại dòng của kỳ chỉ để đổi ``updated_at_utc``. Số đo đổi
+    thật thì dòng vẫn được ghi lại, kèm giờ mới.
+    """
+    from datetime import UTC
+    from datetime import datetime as real_datetime
+
+    from evaluation import prob_eval_history
+
+    clock = iter(["2026-11-05T11:37:49", "2026-11-05T12:31:23", "2026-11-05T13:00:00"])
+
+    class Clock:
+        @staticmethod
+        def now(tz=None):
+            return real_datetime.fromisoformat(next(clock)).replace(tzinfo=UTC)
+
+    monkeypatch.setattr(prob_eval_history, "datetime", Clock)
+    out = tmp_path / "ensemble_history.csv"
+    _emit(tmp_path, "2026-09-10", "loto")
+    argv = ["prob_eval_history.py", "--mode", "loto", "--history-dir", str(tmp_path / "evaluation" / "history"),
+            "--predict-dir", str(tmp_path / "forecast" / "predict"), "--out", str(out)]
+    monkeypatch.setattr(sys, "argv", argv)
+    prob_eval_history.main()
+    first = out.read_bytes()
+    prob_eval_history.main()
+    assert out.read_bytes() == first
+    assert "2026-11-05T11:37:49Z" in first.decode()
+
+    # Số đo đổi (dự báo công bố khác): dòng được ghi lại với giờ mới.
+    predict = tmp_path / "forecast" / "predict" / "predict_next_loto_all_2026-09-10.csv"
+    frame = pd.read_csv(predict)
+    frame["prob"] = frame["prob"] * 0.9
+    frame.to_csv(predict, index=False)
+    prob_eval_history.main()
+    changed = out.read_text()
+    assert "2026-11-05T13:00:00Z" in changed and "2026-11-05T11:37:49Z" not in changed
+
+
 def test_the_repository_ledger_labels_every_brier_with_a_consistent_unit() -> None:
     """Sổ thật: mỗi dòng có nhãn, và nhãn khớp độ lớn của chính con số.
 

@@ -88,7 +88,7 @@ def score_draw(history: np.ndarray, today: np.ndarray) -> dict:
 
 def scored_draws(frame: pd.DataFrame) -> list[dict]:
     """Mọi kỳ từ ``FIRST_TARGET`` trở đi, mỗi kỳ chấm bằng 7 kỳ ngay trước nó."""
-    frame = frame.sort_values("date").reset_index(drop=True)
+    frame = frame.sort_values("date", kind="stable").reset_index(drop=True)
     draws = frame[PRIZES].to_numpy().astype(int)
     rows = []
     for t in range(WINDOW, len(frame)):

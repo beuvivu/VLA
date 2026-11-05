@@ -1112,5 +1112,5 @@
       .then(renderRecord);
   });
 
-  window.LiveScorecard = { update: update, reveal: reveal, judge: judge, outcome: outcome };
+  window.LiveScorecard = { update: update, reveal: reveal, judge: judge, outcome: outcome, closedDays: closedDays };
 })();

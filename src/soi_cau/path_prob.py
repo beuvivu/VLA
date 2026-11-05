@@ -214,8 +214,11 @@ def _select_rule_indices(
         + 0.025 * np.minimum(max_streak[idx], 20)
         + 0.08 * np.sqrt(np.clip(hits_vs_best, 0.0, 1.0))
     )
-    keep_local = np.argpartition(score, -cap)[-cap:]
-    return idx[keep_local[np.argsort(score[keep_local])[::-1]]]
+    # Sắp xếp ỔN ĐỊNH, cầu hoà điểm giữ thứ tự chỉ số. ``argpartition``/``argsort`` mặc định dùng lệnh
+    # vector của CPU nên xếp các cầu hoà điểm khác nhau tuỳ máy: ngày 05-11-2026 hai lượt chạy trên CÙNG
+    # dữ liệu giữ hai tập top khác nhau 13 cầu, và xác suất soi đường ổn định công bố lệch tới 4,5·10⁻⁷.
+    order = np.argsort(-score, kind="stable")[:cap]
+    return idx[order]
 
 
 @dataclass
@@ -255,8 +258,8 @@ class PreparedPathHistory:
 def prepare_path_history(
     df_raw: pd.DataFrame, df_2digits: pd.DataFrame
 ) -> PreparedPathHistory:
-    df_raw = df_raw.sort_values("date").reset_index(drop=True)
-    df_2digits = df_2digits.sort_values("date").reset_index(drop=True)
+    df_raw = df_raw.sort_values("date", kind="stable").reset_index(drop=True)
+    df_2digits = df_2digits.sort_values("date", kind="stable").reset_index(drop=True)
     dates, targets_loto, targets_de = build_daily_targets(df_2digits)
     if not dates:
         return PreparedPathHistory(
@@ -762,7 +765,7 @@ def predict_from_fitted_paths(
         bias_special_both=bias_special_both,
     )
     out = out[out["support_paths_count"] > 0].sort_values(
-        ["prob", "evidence_weight", "support_paths_count"], ascending=[False, False, False]
+        ["prob", "evidence_weight", "support_paths_count"], ascending=[False, False, False], kind="stable"
     )
     return out.head(top_numbers).reset_index(drop=True)
 

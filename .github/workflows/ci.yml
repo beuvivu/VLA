@@ -72,18 +72,28 @@ jobs:
   browser:
     needs: route
     if: needs.route.outputs.run_checks == 'true'
-    name: Giao diện Chromium sáng/tối và mobile
+    name: Chromium · ${{ matrix.shard.name }}
     # Ghim 24.04: từ 23-10-2026 `ubuntu-latest` là 26.04 và Playwright 1.55 từ chối cài
     # Chromium ở đó ("does not support chromium on ubuntu26.04-x64"), nên job chết ngay
     # bước cài, trước mọi phép kiểm. Bỏ ghim cùng lúc nâng Playwright lên bản hỗ trợ 26.04.
     runs-on: ubuntu-24.04
-    # Cùng một bộ trang, job mất 11,7 phút lúc 17:01 UTC ngày 12-10-2026 và ~15 phút ở ba
-    # lượt 21:24–22:25 UTC: mọi bước chậm đều tay 25–35% theo runner. Trần 15 phút chỉ còn
-    # ~3 phút dư, và hai lượt bị cắt ở bước cuối dù mọi phép kiểm trước đó đều xanh.
-    # Đến 04-11-2026 bộ trang dày lên và job mất 23 phút (PR #206) và 23 phút 40 giây (main,
-    # 15:44 UTC), bước Vietlott một mình 13–15 phút; ngày 05-11 một lượt bị cắt ở mốc 25 phút
-    # đúng bước cuối, mọi phép kiểm trước đó xanh. Trần giữ tỉ lệ ~1,7 lần thời lượng đo được.
-    timeout-minutes: 40
+    # Một job duy nhất từng mất 22 phút (PR #210) tới 29 phút (PR #211, có 10 phút apt chậm) ngày
+    # 05-11-2026, trần 40 phút; riêng bước Vietlott UI 12 phút 17 giây. Ba nhóm chạy song song, đo
+    # trên lượt PR #210: khung + bảng + cầu ≈ 8,6 phút, mỗi nửa Vietlott (UI_SHARD theo giao diện
+    # sáng/tối) ≈ 6–7 phút. Trần giữ ~3 lần thời lượng đo được của nhóm dài nhất.
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - id: khung
+            name: khung, bảng thống kê và cầu
+          - id: vietlott-1
+            name: Vietlott sáng
+            ui_shard: "1/2"
+          - id: vietlott-2
+            name: Vietlott tối
+            ui_shard: "2/2"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -93,22 +103,47 @@ jobs:
       - run: python -m pip install playwright==1.55.0 pytest==9.2.0
       - run: python -m playwright install --with-deps chromium
       - name: Kiểm menu dài bằng thao tác cuộn trên điện thoại
+        if: matrix.shard.id == 'khung'
         env:
           UI_BROWSER_REQUIRED: "1"
         run: python -m pytest tests/web/test_app_shell.py::test_touch_can_reach_every_navigation_link_on_a_phone -q
-      - run: python scripts/browser/check_ui_browser.py
-      - run: python scripts/browser/check_dashboard_browser.py
-      - run: python scripts/browser/check_vietlott_navigation_browser.py
-      - run: python scripts/browser/check_vietlott_ui_browser.py
-      - run: python scripts/browser/check_stat_tables_browser.py
-      - run: python scripts/browser/check_bridge_workspace_browser.py
+      - if: matrix.shard.id == 'khung'
+        run: python scripts/browser/check_ui_browser.py
+      - if: matrix.shard.id == 'khung'
+        run: python scripts/browser/check_dashboard_browser.py
+      - if: matrix.shard.id == 'khung'
+        run: python scripts/browser/check_stat_tables_browser.py
+      - if: matrix.shard.id == 'khung'
+        run: python scripts/browser/check_bridge_workspace_browser.py
+      - if: matrix.shard.id == 'vietlott-1'
+        run: python scripts/browser/check_vietlott_navigation_browser.py
+      - name: Kiểm giao diện Vietlott (một nửa số trạng thái)
+        if: startsWith(matrix.shard.id, 'vietlott-')
+        env:
+          UI_SHARD: ${{ matrix.shard.ui_shard }}
+        run: python scripts/browser/check_vietlott_ui_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ui-browser-review
+          name: ui-browser-review-${{ matrix.shard.id }}
           path: ui-browser-artifacts/
           retention-days: 7
+  browser-gate:
+    # Giữ đúng TÊN kiểm cũ của job trình duyệt một khối: nhánh được bảo vệ có thể đang đòi tên ấy.
+    # Xanh khi và chỉ khi cả ba nhóm Chromium xanh.
+    needs: [route, browser]
+    if: always() && needs.route.outputs.run_checks == 'true'
+    name: Giao diện Chromium sáng/tối và mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Mọi nhóm Chromium đều xanh
+        env:
+          RESULT: ${{ needs.browser.result }}
+        run: |
+          echo "Kết quả các nhóm Chromium: ${RESULT}"
+          test "${RESULT}" = "success"
   test:
     needs: route
     if: needs.route.outputs.run_checks == 'true'

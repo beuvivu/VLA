@@ -186,7 +186,7 @@ def probability_component(
     if not np.isfinite(p).all() or np.any((p < 0.0) | (p > 1.0)):
         return ComponentVector(missing, False, "probability_out_of_range_or_nonfinite")
 
-    p = p[np.argsort(n)]
+    p = p[np.argsort(n, kind="stable")]
     total = float(np.sum(p))
     if total <= 0.0:
         return ComponentVector(missing, False, "all_zero_probability_vector")

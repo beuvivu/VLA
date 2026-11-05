@@ -108,7 +108,7 @@ def read_ledger(data_dir: Path) -> pd.DataFrame:
 def write_ledger(frame: pd.DataFrame, data_dir: Path) -> Path:
     path = data_dir / LEDGER
     path.parent.mkdir(parents=True, exist_ok=True)
-    frame = frame[COLUMNS].sort_values("target_date").reset_index(drop=True)
+    frame = frame[COLUMNS].sort_values("target_date", kind="stable").reset_index(drop=True)
     atomic_to_csv(frame, path, index=False)
     return path
 
@@ -184,7 +184,7 @@ def summarize(frame: pd.DataFrame) -> dict[str, Any]:
 
 def recent(frame: pd.DataFrame, limit: int = 10) -> list[dict[str, str]]:
     """Các kỳ mới nhất trước (kể cả kỳ chưa quay)."""
-    rows = frame.sort_values("target_date", ascending=False).head(limit)
+    rows = frame.sort_values("target_date", ascending=False, kind="stable").head(limit)
     return [{c: str(r[c]) for c in COLUMNS} for _, r in rows.iterrows()]
 
 

@@ -376,7 +376,7 @@ def main() -> None:
         "high",
         np.where(disagreement <= q67, "medium", "low"),
     )
-    df_all = df_all.sort_values("prob", ascending=False).reset_index(drop=True)
+    df_all = df_all.sort_values("prob", ascending=False, kind="stable").reset_index(drop=True)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

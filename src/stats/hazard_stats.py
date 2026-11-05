@@ -24,7 +24,7 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
     the previous hit. Missing rows therefore increase the elapsed gap rather than
     being silently treated as one day.
     """
-    df_2d = df_2d.sort_values("date").reset_index(drop=True)
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
     ordinals = _calendar_ordinals(df_2d)
     n = len(loto_targets)
@@ -84,7 +84,7 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
 
 def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
     """Aggregate De hazard by real calendar-day absence gap."""
-    df_2d = df_2d.sort_values("date").reset_index(drop=True)
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     dates, _, de_targets = build_daily_targets(df_2d)
     ordinals = _calendar_ordinals(df_2d)
     n = len(dates)

@@ -156,7 +156,7 @@ class ObservationMatrix:
             duplicated = working.loc[working["date"].duplicated(), "date"].iloc[0]
             raise SchemaError(f"ngày bị lặp: {duplicated.date()}")
 
-        working = working.sort_values("date").reset_index(drop=True)
+        working = working.sort_values("date", kind="stable").reset_index(drop=True)
         n_days = len(working)
         counts = np.zeros((n_days, NUMBER_SPACE), dtype=np.int16)
         for field in PRIZE_FIELDS:

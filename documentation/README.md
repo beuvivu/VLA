@@ -33,6 +33,7 @@ nhầm trong `architecture/` về `plans/`.
 
 | Document | Scope |
 | --- | --- |
+| [`plans/2026-11-05-dung-luong-kho.md`](plans/2026-11-05-dung-luong-kho.md) | Số đo tăng trưởng dung lượng kho (gói mỏng ≈ 3 MB/ngày sau đợt dọn 04-11), nguồn tăng chính và năm phương án xếp theo lợi ích/rủi ro; chờ chủ dự án duyệt. |
 | [`architecture/claude-md-chi-tiet.md`](architecture/claude-md-chi-tiet.md) | Nguyên văn bốn mục dài của `CLAUDE.md` (độ tin thành phần ML, engine Vietlott, phòng thử thách và Lô VIP, cầu theo đường) với số đo và lịch sử; `CLAUDE.md` giữ bản tóm tắt luật (04-11-2026). |
 | [`plans/2026-10-25-readable-stat-pages.md`](plans/2026-10-25-readable-stat-pages.md) | Sửa lịch sử Đặc Biệt hôm sau, làm rõ bảng ML/cầu vị trí và tô ba mức số đường cầu LOTO. |
 | [`qa/2026-11-01-python-3-15-va-dong-bo-keno.md`](qa/2026-11-01-python-3-15-va-dong-bo-keno.md) | Nâng Python 3.11/3.12 → 3.15 với bằng chứng dự đoán không đổi (xác suất công bố trùng từng bit, 1 287 cột số cùng thứ tự); cổng hồ sơ kiểm chứng đưa Keno/Bingo18 đồng bộ lại sau 13 ngày; sổ khoảng hở lịch sử đã kiểm; bỏ commit chỉ đổi giờ dựng; sửa phép kiểm chập chờn; bản đồ workflow. |

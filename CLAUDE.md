@@ -354,6 +354,12 @@ Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atom
 `record_pred_history.write_history` (nhãn `y` kiểu `Int64`): trước 04-11-2026 hai bước của mỗi lượt ghi `0.0` rồi `0`, viết
 lại cả 27 800 dòng mà không giá trị nào đổi (`tests/evaluation/test_pred_history_ledger.py` đòi dòng cũ giữ từng byte).
 
+Chạy lại trên CÙNG dữ liệu phải ra CÙNG tệp (05-11-2026: lượt chạy lại sau khi gộp PR ghi lại 125 tệp). `sort_values` một
+khoá và `argsort` khai `kind="stable"`, `argpartition` bị cấm (`tests/repo/test_stable_sorting.py`): sắp xếp mặc định xếp phần
+tử hoà theo lệnh vector của CPU runner. Trang chỉ khác dấu giờ dựng (`page_output.PAGE_BUILD_STAMPS`) và xlsx chỉ khác giờ lưu
+thì giữ tệp cũ (`atomic_io.write_text_unless_only_stamps`, `atomic_io.save_xlsx`); dấu giờ dựng kiểu mới phải vào
+`PAGE_BUILD_STAMPS` — mỗi mẫu được ghim vào một trang thật. Dòng `ensemble_history.csv` có số đo trùng giữ giờ ghi đầu.
+
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/evaluation/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
@@ -414,6 +420,8 @@ Chưa có sổ kỳ sắp quay (pipeline tính xong ~18:40, sau kỳ vừa quay)
 giờ khoá kỳ ấy mà vẫn không có sổ thì nói là không có. Có sổ thì hàng «Trước giờ quay» ghi giờ ghi sổ (`generated_at`, giờ VN) và
 hàng kỳ sắp quay ghi số mục trùng danh sách kỳ vừa quay: tổ hợp gần như phẳng nên Top 10 hai kỳ liền nhau thường trùng 10/10 (sổ
 06-11 ghi lúc 18:38 sau kỳ 05-11, cả 100 xác suất Đặc Biệt đều đổi mà Top 10 giữ nguyên) và chủ dự án đã tưởng số bị chép sang.
+Khối «Dự đoán trong ngày» (`live-predictions.js`) lấy kỳ sau qua `LiveScorecard.closedDays` (bỏ ngày nghỉ, MỘT lần đọc lịch cho
+cả trang); kỳ sau chưa có số thì nói «đang chờ tính», không «chưa có».
 Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ số nguồn được tô trên bảng `#results` đầu trang Live
 CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi
 thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang
@@ -611,6 +619,9 @@ cầu). `fit_paths_with_evidence` học `BridgeEvidence` từ MỌI cầu của 
 riêng THÔ của từng cầu bỏ ra chuỗi đang chạy. Đừng quay lại độ co đặt tay, đừng in `p_mean` như xác suất; trang in câu kết
 luận TỪ `bridge_evidence_<mode>.json` (`tests/soi_cau/test_bridge_inference.py`). Số đo hiện tại: mọi cầu co về nền, kỹ năng
 đã công bố không phân biệt được với 0 (`scripts/research/audit_forecast_ceiling.py`). Chi tiết: `documentation/architecture/claude-md-chi-tiet.md`, mục «Cầu theo đường».
+Top cầu mỗi độ trễ (`path_prob._select_rule_indices`) chọn bằng `argsort(..., kind="stable")`, hoà điểm theo chỉ số: `argpartition`
+và quicksort xếp phần tử hoà theo lệnh vector của CPU runner, nên 05-11-2026 hai lượt trên CÙNG dữ liệu giữ hai tập top lệch 13 cầu
+và xác suất soi đường ổn định lệch 4,5·10⁻⁷. Mọi phép chọn top hay xếp hạng có thể hoà điểm phải dùng sắp xếp ổn định.
 
 ### Bảy kiểu cầu của trang tham chiếu thứ hai + phôi tuần
 

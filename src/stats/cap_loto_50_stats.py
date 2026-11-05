@@ -28,7 +28,7 @@ from core.number_reference import all_cap_loto_50, cap_loto_50_id, cap_loto_50_k
 def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out["date"] = pd.to_datetime(out["date"]).dt.normalize()
-    return out.sort_values("date").reset_index(drop=True)
+    return out.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _hit_matrices(

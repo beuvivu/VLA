@@ -89,7 +89,7 @@ def facts(data_dir: str) -> dict[str, str]:
     out: dict[str, str] = {}
     draws = base / "xsmb.csv"
     if draws.exists():
-        dates = pd.read_csv(draws, usecols=["date"])["date"].astype(str).sort_values()
+        dates = pd.read_csv(draws, usecols=["date"])["date"].astype(str).sort_values(kind="stable")
         if len(dates):
             out.update(draws=_so(len(dates)), first=_ngay(dates.iloc[0]), last=_ngay(dates.iloc[-1]))
     predicted = sorted((base / "forecast" / "predict").glob("predict_next_loto_all_*.csv"))
