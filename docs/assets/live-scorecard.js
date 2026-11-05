@@ -228,7 +228,7 @@
         host.setAttribute('aria-label', item.label + (src.running ? ': xem cầu đang chạy ghép ra số này'
           : ': xem vị trí đường cầu'));
         host.addEventListener('click', function () {
-          state.open = open ? null : { date: date, list: list.id, item: index, bridge: 0 };
+          state.open = open ? null : { date: date, list: list.id, item: index, label: item.label, bridge: 0, pick: '' };
           state.focus = chipSelector(date, list.id, index);
           render();
         });
@@ -600,7 +600,8 @@
         button.dataset.bridgePick = String(i);
         button.setAttribute('aria-pressed', i === pick ? 'true' : 'false');
         button.addEventListener('click', function () {
-          state.open = { date: opened.date, list: list.id, item: opened.item, bridge: i };
+          state.open = { date: opened.date, list: list.id, item: opened.item, label: opened.label, bridge: i,
+            pick: b.a + 'x' + b.b };
           state.focus = '#live-bridge-' + list.id + ' [data-bridge-pick="' + i + '"]';
           render();
         });
@@ -821,6 +822,7 @@
           entry.board = board;
           entry.status = 'ok';
           entry.fetchedAt = started;
+          reconcileOpen(date, board);
           applyReveal();
         }
       }
@@ -832,6 +834,28 @@
       entry.pending = false;
     }
     if (state.boards[date] === entry && (date === state.draw || date === state.next)) render();
+  }
+
+  // Sổ vừa tải lại có thể đã đổi mục (sổ còn được ghi tới giờ khoá): số đang mở giữ đúng NHÃN của nó và cầu
+  // đang chọn giữ đúng cặp vị trí, không theo chỉ số cũ — chỉ số cũ có thể đã trỏ sang số khác. Số không còn
+  // trong bản mới thì đóng bảng cầu; cầu không còn thì về cầu đầu.
+  function reconcileOpen(date, board) {
+    var open = state.open;
+    if (!open || open.date !== date) return;
+    var list = board.lists.filter(function (l) { return l.id === open.list; })[0];
+    var index = -1;
+    if (list) {
+      for (var i = 0; i < list.items.length; i++) if (list.items[i].label === open.label) { index = i; break; }
+    }
+    if (index < 0) { state.open = null; return; }
+    var src = source(list, list.items[index], board);
+    if (!src) { state.open = null; return; }
+    var pick = 0;
+    for (var k = 0; k < src.bridges.length; k++) {
+      if (src.bridges[k].a + 'x' + src.bridges[k].b === open.pick) { pick = k; break; }
+    }
+    state.open = { date: date, list: open.list, item: index, label: open.label, bridge: open.pick ? pick : 0,
+      pick: open.pick && pick < src.bridges.length && src.bridges[pick].a + 'x' + src.bridges[pick].b === open.pick ? open.pick : '' };
   }
 
   // Mọi trạng thái "complete*" đều nghĩa là kỳ đã quay đủ 27 giải (như live-predictions.js).
@@ -908,7 +932,7 @@
         var item = lists[i].items[j], rule = item.rule || {};
         if (rule.on !== want.on || !Array.isArray(rule.numbers) || rule.numbers.length !== 1 ||
             rule.numbers[0] !== want.number || !source(lists[i], item, board)) continue;
-        state.open = { date: want.date, list: lists[i].id, item: j, bridge: 0 };
+        state.open = { date: want.date, list: lists[i].id, item: j, label: item.label, bridge: 0, pick: '' };
         state.focus = chipSelector(want.date, lists[i].id, j);
         return;
       }

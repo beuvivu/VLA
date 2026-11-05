@@ -563,6 +563,35 @@ test('Bấm số trước khi bảng biết có kỳ sắp quay (lịch nghỉ �
   assert.equal(d.querySelector('.live-bridge'), null, 'lệnh mở cũ không áp vào kỳ 24/10');
 });
 
+test('Sổ tải lại đổi chỗ các mục: bảng cầu đang mở giữ đúng số, số không còn thì đóng', async (t) => {
+  let order = ['78', '87', '99'];
+  const make = (date) => {
+    const made = runningBoard(date);
+    if (date === '2026-10-23') made.lists.find((l) => l.id === 'cau-keo-loto').items = order.map((n) => loto(n, 0.24));
+    return made;
+  };
+  const { api, d, w } = setup(t, forDate(make));
+  let clock = Date.parse(EVENING);
+  w.Date.now = () => clock;
+  const done = { draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) };
+  await api.update(done);
+  nextItem(d, 'cau-keo-loto', 0).click();
+  assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/);
+  // Bản ghi lại trước giờ khoá: 87 lên đầu, 78 xuống thứ hai.
+  order = ['87', '78', '99'];
+  clock += 11 * 60000;
+  await api.update(done);
+  assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/,
+    'không lặng lẽ chuyển sang số 87 ở chỉ số cũ');
+  assert.equal(nextItem(d, 'cau-keo-loto', 1).getAttribute('aria-expanded'), 'true');
+  assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
+  // Bản sau bỏ hẳn 78: bảng cầu đóng.
+  order = ['87', '99', '12'];
+  clock += 11 * 60000;
+  await api.update(done);
+  assert.equal(d.querySelector('.live-bridge'), null);
+});
+
 test('Sổ còn có thể được ghi lại tới giờ khoá: tải lại mỗi 10 phút, thôi khi đã là bản đóng băng cuối', async (t) => {
   const urls = [];
   let version = 1;
