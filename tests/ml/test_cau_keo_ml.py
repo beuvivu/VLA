@@ -125,6 +125,18 @@ def _pack(**overrides: object) -> dict[str, object]:
     return {k: v for k, v in pack.items() if v is not None}
 
 
+# Số đo thẩm định mà gói mang theo để lượt dùng lại in được bảng kiểm định đủ cột.
+VALIDATION_FIELDS: dict[str, object] = {
+    "val_brier": 0.1809,
+    "val_logloss": 0.5477,
+    "logloss_skill": 0.0001,
+    "brier_skill": 0.0001,
+    "calib_start": "2020-01-10 00:00:00",
+    "val_start": "2020-01-20 00:00:00",
+    "neg_ratio": 8,
+}
+
+
 def test_trust_from_pack_has_no_default_for_a_pack_saved_before_the_policy() -> None:
     assert trust_from_pack(_pack()) == (0.2, 0.238)
     for bad in (
@@ -245,10 +257,39 @@ def test_a_cached_pack_without_the_trust_policy_is_retrained(
     pack, _, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
     assert calls == ["loto"] and pack == {"retrained": True}
 
-    # Đối chứng: cùng gói nhưng mang luật tin hiện hành thì dùng lại, không học lại.
-    joblib.dump({**stale, **_pack()}, tmp_path / "cau_keo_loto.joblib")
-    pack, _, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
+    # Đối chứng: cùng gói nhưng mang luật tin hiện hành và đủ số đo thẩm định thì dùng lại, không học lại.
+    joblib.dump({**stale, **_pack(), **VALIDATION_FIELDS}, tmp_path / "cau_keo_loto.joblib")
+    pack, report, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
     assert calls == ["loto"] and trust_from_pack(pack) == (0.2, 0.238)
+    assert float(report["val_brier"].iloc[0]) == VALIDATION_FIELDS["val_brier"]
+
+    # Gói có luật tin nhưng thiếu số đo thẩm định (không in được bảng kiểm định đủ cột): học lại.
+    partial = {k: v for k, v in VALIDATION_FIELDS.items() if k != "val_logloss"}
+    joblib.dump({**stale, **_pack(), **partial}, tmp_path / "cau_keo_loto.joblib")
+    pack, _, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
+    assert calls == ["loto", "loto"] and pack == {"retrained": True}
+
+
+def test_reusing_the_cached_pack_reports_exactly_what_training_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pipeline chạy lại trong ngày (sau khi gộp PR) dùng lại gói: bảng kiểm định phải trùng lượt học.
+
+    Trước 06-11-2026 lượt dùng lại chỉ ghi tỉ lệ top-K, nên trang Thống kê và trang chủ mất cột Brier,
+    LogLoss và mốc kiểm định ở 6/11 phiên bản báo cáo trong 30 ngày.
+    """
+    monkeypatch.setattr(cau_keo_ml, "HistGradientBoostingClassifier", _fast_classifier)
+    X, y = _synthetic_training(120, signal=0.0, seed=7)
+    monkeypatch.setattr(cau_keo_ml, "build_cau_keo_feature_frame", lambda *a, **k: (X, y))
+    _, trained, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
+    assert {"val_brier", "val_logloss", "model_trust", "val_start"} <= set(trained.columns)
+
+    def no_training(*args, **kwargs):
+        raise AssertionError("lượt thứ hai phải dùng lại gói, không học lại")
+
+    monkeypatch.setattr(cau_keo_ml, "_train_model", no_training)
+    _, reused, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
+    pd.testing.assert_frame_equal(reused, trained)
 
 
 @pytest.mark.parametrize("anchor_t,weekday", [(0, 3), (5, 0), (200, 6), (499, 2), (499, 4)])

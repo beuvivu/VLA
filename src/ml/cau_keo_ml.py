@@ -29,7 +29,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from numbers import Integral
 from pathlib import Path
-from typing import Literal
+from collections.abc import Mapping
+from typing import Any, Literal
 
 import joblib
 import numpy as np
@@ -566,6 +567,29 @@ def build_cau_keo_feature_frame(
     return X, y
 
 
+def _validation_report(val_df: pd.DataFrame, mode: Mode, pack: Mapping[str, Any]) -> pd.DataFrame:
+    """Bảng kiểm định top-K kèm số đo thẩm định của gói (Brier, LogLoss, kỹ năng, trust, mốc chia khối).
+
+    Lượt học và lượt dùng lại gói đều đi qua đây, với số đo đọc từ CHÍNH gói: trước 06-11-2026 lượt
+    dùng lại (pipeline chạy lại trong ngày, ví dụ sau khi gộp một PR) chỉ ghi tỉ lệ top-K, nên trang
+    Thống kê và trang chủ mất ba cột kiểm định ở 6/11 phiên bản báo cáo trong 30 ngày. Gói thiếu
+    trường nào thì ``KeyError`` — nơi gọi coi là gói cũ và học lại.
+    """
+    report = _topk_backtest(val_df, mode=mode)
+    report.insert(0, "mode", mode)
+    report["val_brier"] = round(float(pack["val_brier"]), 10)
+    report["val_logloss"] = round(float(pack["val_logloss"]), 10)
+    report["base_rate"] = float(pack["base_rate"])
+    report["logloss_skill"] = float(pack["logloss_skill"])
+    report["brier_skill"] = float(pack["brier_skill"])
+    report["model_trust"] = float(pack["model_trust"])
+    report["calib_start"] = str(pd.to_datetime(pack["calib_start"]).date())
+    report["val_start"] = str(pd.to_datetime(pack["val_start"]).date())
+    report["neg_ratio"] = int(pack["neg_ratio"])
+    report["features"] = len(FEATURE_COLS)
+    return report
+
+
 def _train_model(
     mode: Mode, X: pd.DataFrame, y: pd.Series, models_dir: Path
 ) -> tuple[dict, pd.DataFrame, pd.DataFrame]:
@@ -629,19 +653,6 @@ def _train_model(
     val_df["target"] = y_val
     val_df["prob"] = p_val
 
-    report = _topk_backtest(val_df, mode=mode)
-    report.insert(0, "mode", mode)
-    report["val_brier"] = round(float(brier), 10)
-    report["val_logloss"] = round(float(ll), 10)
-    report["base_rate"] = base_rate
-    report["logloss_skill"] = logloss_skill
-    report["brier_skill"] = brier_skill
-    report["model_trust"] = trust
-    report["calib_start"] = str(pd.to_datetime(calib_start).date())
-    report["val_start"] = str(pd.to_datetime(val_start).date())
-    report["neg_ratio"] = int(neg_ratio)
-    report["features"] = len(FEATURE_COLS)
-
     pack = {
         "model_type": "cau_keo_platt_hgb",
         "model": clf,
@@ -666,6 +677,7 @@ def _train_model(
         "model_trust": trust,
         "trust_policy_version": TRUST_POLICY_VERSION,
     }
+    report = _validation_report(val_df, mode, pack)
 
     models_dir.mkdir(parents=True, exist_ok=True)
     atomic_joblib_dump(pack, models_dir / f"cau_keo_{mode}.joblib")
@@ -802,9 +814,12 @@ def _load_or_train(
                     y_train.loc[val_mask.to_numpy()].to_numpy().astype(int)
                 )
                 val_df["prob"] = p
-                report = _topk_backtest(val_df, mode=mode)
-                report.insert(0, "mode", mode)
-                return pack, report, val_df
+                try:
+                    report = _validation_report(val_df, mode, pack)
+                except KeyError as exc:
+                    logger.info("Pack %s lacks validation field %s; retraining.", model_path.name, exc)
+                else:
+                    return pack, report, val_df
             if same_schema and not up_to_date:
                 logger.info(
                     "New draw detected for %s (%s -> %s); retraining cầu-kèo model.",
