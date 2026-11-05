@@ -9,11 +9,11 @@
    Bấm một số ở hàng "Trước giờ quay" mở hàng chi tiết: các cầu và đường cầu qua từng kỳ, tô hai
    chữ số ghép thành số và ô về ở kỳ sau.
 
-   live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau. Khi kỳ ấy đã quay xong, bảng có hai
-   nút: kỳ đã quay (đối chiếu) và kỳ sắp quay (sổ đang mở). Mặc định LUÔN là kỳ đã quay — kỳ mà bảng
-   kết quả đầu trang đang hiện —, để hàng "Sau giờ quay" giữ dấu về/trượt cho tới phiên kế tiếp; kỳ sắp
-   quay chưa có giải nào nên mọi số chỉ là "chờ". Kỳ sắp quay mở bằng nút hoặc bằng số ở khối «Dự đoán
-   trong ngày». */
+   live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau. Khi kỳ ấy đã quay xong, mỗi danh sách có
+   BA hàng để tra trong một chỗ (yêu cầu 05-11-2026): "Trước giờ quay" của kỳ sắp quay (sổ đang mở), rồi
+   "Trước giờ quay" và "Sau giờ quay" của kỳ vừa quay — kỳ mà bảng kết quả đầu trang đang hiện —, nên dấu
+   về/trượt giữ tới phiên kế tiếp. Trong lúc đang quay chưa có kỳ sắp quay: hai hàng của kỳ đang quay.
+   Mỗi hàng ghi rõ kỳ (kèm hôm nay / hôm qua / ngày mai theo giờ VN); sổ của hai kỳ tải độc lập. */
 (function () {
   'use strict';
   var root = document.getElementById('live-scorecard');
@@ -24,6 +24,11 @@
   var LOTO_BASE = 1 - Math.pow(0.99, TOTAL);
   var RETRY_MISSING_MS = 300000;
   var RETRY_ERROR_MS = 60000;
+  // Sổ còn được pipeline ghi lại tới giờ khoá (sổ 05-11-2026 ghi bốn lần: 18:43, 20:17, 22:53 hôm trước
+  // và 15:39), và commit cuối trước giờ khoá có thể lên muộn vài phút. Nên một sổ được tải lại mỗi
+  // REFRESH_MS, cho tới khi lần tải đã cách giờ khoá quá SETTLE_MS: khi ấy nó là bản đóng băng cuối cùng.
+  var REFRESH_MS = 600000;
+  var SETTLE_MS = 3600000;
   // Tên miền và đường dẫn dữ liệu không được viết thẳng ra trang (luật riêng tư của kho).
   var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9ldmFsdWF0aW9uL3ByZWRpY3Rpb25fYm9hcmQv',
     c: 'ZGF0YS9ub25fZHJhd19kYXlzLmpzb24=', r: 'ZGF0YS9ldmFsdWF0aW9uL2JvYXJkX3JlY29yZC9yZWNvcmQuanNvbg==' };
@@ -32,16 +37,11 @@
   var title = document.getElementById('live-scorecard-date');
   var summary = document.getElementById('live-scorecard-summary');
   var table = document.getElementById('live-scorecard-table');
-  var state = { draw: '', views: [], chosen: '', date: '', board: null, revision: 0, pending: false, retryAt: 0,
-    last: null, open: null, focus: null, reveal: null };
+  // `draw`: kỳ của live.json (vừa quay hoặc đang quay); `next`: kỳ sắp quay, chỉ có khi `draw` đã quay xong.
+  // `boards[ngày]`: sổ của đúng ngày ấy và trạng thái tải; chỉ giữ hai ngày đang hiện, nên phản hồi trễ của
+  // ngày cũ không còn chỗ để rơi vào. `open`: số đang mở đường cầu {date, list, item, bridge}.
+  var state = { draw: '', next: '', boards: {}, last: null, open: null, focus: null, reveal: null, mark: null };
   var BRIDGES_SHOWN = 12;
-
-  // Hai nút chọn kỳ, đặt ngay trên dòng tóm tắt; chỉ hiện khi kỳ của live.json đã quay xong.
-  var viewBar = el('div', 'live-scorecard-views');
-  viewBar.setAttribute('role', 'group');
-  viewBar.setAttribute('aria-label', 'Chọn kỳ quay');
-  viewBar.hidden = true;
-  summary.parentNode.insertBefore(viewBar, summary);
 
   // 107 vị trí chữ số của bảng kết quả, cùng cách đánh số với src/soi_cau/position_bridges.py:
   // (nhãn ngắn, tên giải, số giải, số chữ số).
@@ -173,7 +173,7 @@
 
   // Cầu của một mục: của chính danh sách (cầu đẹp nhất, soi cầu, soi đường), hoặc tra bảng cầu đang chạy
   // của sổ cho danh sách không sinh từ cặp vị trí. null = mục không mở được (sổ cũ, luật nhiều chữ số).
-  function source(list, item) {
+  function source(list, item, board) {
     if (list.bridge || POSITIONAL.test(list.id)) {
       if (!list.bridge) return null;
       if (!Array.isArray(item.bridges) || !item.bridges.length) return null;
@@ -182,7 +182,7 @@
     }
     var rule = item.rule || {};
     var mode = rule.on === 'loto' ? 'loto' : rule.on === 'special' ? 'de' : '';
-    var table = mode && state.board && state.board.running && state.board.running[mode];
+    var table = mode && board && board.running && board.running[mode];
     if (!table || !table.groups || !Array.isArray(rule.numbers) || !rule.numbers.length) return null;
     var keys = [], bridges = [], total = 0;
     rule.numbers.forEach(function (text) {
@@ -199,16 +199,28 @@
       total: total, page: table.page, title: table.title, running: true, count: table.count, keys: keys };
   }
 
-  function chips(list, o, after) {
+  // Bộ chọn đúng một nút số: cùng danh sách và cùng mục có ở cả hai hàng "Trước giờ quay" (hai kỳ).
+  function chipSelector(date, listId, index) {
+    return '[data-bridge-date="' + date + '"][data-bridge-list="' + listId + '"][data-bridge-item="' + index + '"]';
+  }
+
+  function isOpen(date, listId, index) {
+    return !!state.open && state.open.date === date && state.open.list === listId &&
+      (index === undefined || state.open.item === index);
+  }
+
+  function chips(list, board, o, after) {
     var wrap = el('ul', 'live-scorecard-chips');
+    var date = board.target_date;
     list.items.forEach(function (item, index) {
       var chip = el('li', 'live-scorecard-chip');
       var host = chip;
-      var src = after ? null : source(list, item);
+      var src = after ? null : source(list, item, board);
       if (src) {
-        var open = state.open && state.open.list === list.id && state.open.item === index;
+        var open = isOpen(date, list.id, index);
         host = el('button', 'live-scorecard-chip-btn');
         host.type = 'button';
+        host.dataset.bridgeDate = date;
         host.dataset.bridgeList = list.id;
         host.dataset.bridgeItem = String(index);
         host.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -216,8 +228,8 @@
         host.setAttribute('aria-label', item.label + (src.running ? ': xem cầu đang chạy ghép ra số này'
           : ': xem vị trí đường cầu'));
         host.addEventListener('click', function () {
-          state.open = open ? null : { list: list.id, item: index, bridge: 0 };
-          state.focus = '[data-bridge-list="' + list.id + '"][data-bridge-item="' + index + '"]';
+          state.open = open ? null : { date: date, list: list.id, item: index, label: item.label, bridge: 0, pick: '' };
+          state.focus = chipSelector(date, list.id, index);
           render();
         });
         chip.classList.add('has-bridge');
@@ -267,36 +279,73 @@
     return text + ' = ' + pct(t.hits / t.k, 1) + ' · kỳ vọng ' + pct(t.exp / t.k, t.exp / t.k < 0.05 ? 2 : 1);
   }
 
-  function groupRows(list, o) {
+  // Ô "Thời điểm" của một hàng: lúc (trước / sau giờ quay) và kỳ của hàng ấy.
+  function whenCell(text, date) {
+    var cell = el('td', 'live-scorecard-when', text);
+    cell.appendChild(el('small', 'live-scorecard-day', drawLabel(date)));
+    return cell;
+  }
+
+  function beforeRow(list, board, o, className) {
+    var row = el('tr', className);
+    row.dataset.draw = board.target_date;
+    var nums = el('td', '');
+    nums.appendChild(chips(list, board, o, false));
+    row.append(whenCell('Trước giờ quay', board.target_date), nums, el('td', 'live-scorecard-stat', beforeText(tally(list, o))));
+    return row;
+  }
+
+  // Kỳ có sổ nhưng sổ ấy không có danh sách này (nguồn không khai đúng kỳ, ghi vào `missing` của sổ).
+  function absentRow(board, className) {
+    var row = el('tr', className + ' is-absent');
+    row.dataset.draw = board.target_date;
+    var cell = el('td', 'live-scorecard-absent', 'Sổ phỏng đoán của kỳ này không có danh sách này.');
+    cell.colSpan = 2;
+    row.append(whenCell('Trước giờ quay', board.target_date), cell);
+    return row;
+  }
+
+  // Một danh sách là một <tbody>: kỳ sắp quay ("Trước giờ quay"), rồi kỳ vừa quay ("Trước giờ quay", "Sau
+  // giờ quay"). `listNext` / `listDrawn` là danh sách cùng mã trong sổ của từng kỳ (thiếu thì null).
+  function groupRows(id, listNext, listDrawn, next, drawn, o) {
     var tbody = el('tbody', 'live-scorecard-group');
-    tbody.dataset.listId = list.id;
-    var t = tally(list, o);
-    var before = el('tr', 'is-before');
+    tbody.dataset.listId = id;
+    var main = listDrawn || listNext;
     var head = el('th', 'live-scorecard-name');
     head.scope = 'rowgroup';
-    head.rowSpan = 2;
-    var link = el('a', '', list.title);
-    link.href = list.page;
-    head.append(link, el('span', 'live-scorecard-group-name', list.group));
-    var when = el('td', 'live-scorecard-when', 'Trước giờ quay');
-    var nums = el('td', '');
-    nums.appendChild(chips(list, o, false));
-    before.append(head, when, nums, el('td', 'live-scorecard-stat', beforeText(t)));
-    var after = el('tr', 'is-after');
-    after.dataset.done = t.wait === 0 ? 'true' : 'false';
-    var numsAfter = el('td', '');
-    numsAfter.appendChild(chips(list, o, true));
-    var stat = el('td', 'live-scorecard-stat', afterText(t));
-    if (t.wait === 0) stat.dataset.verdict = t.hits > t.exp ? 'above' : t.hits < t.exp ? 'below' : 'equal';
-    after.append(el('td', 'live-scorecard-when', 'Sau giờ quay'), numsAfter, stat);
-    tbody.append(before, after);
-    var openItem = state.open && state.open.list === list.id ? list.items[state.open.item] : null;
-    var openSource = openItem ? source(list, openItem) : null;
+    var link = el('a', '', main.title);
+    link.href = main.page;
+    head.append(link, el('span', 'live-scorecard-group-name', main.group));
+    var rows = [];
+    if (next) rows.push(listNext ? beforeRow(listNext, next, outcome(null), 'is-next') : absentRow(next, 'is-next'));
+    var t = null;
+    if (drawn && listDrawn) {
+      t = tally(listDrawn, o);
+      rows.push(beforeRow(listDrawn, drawn, o, 'is-before'));
+      var after = el('tr', 'is-after');
+      after.dataset.draw = drawn.target_date;
+      after.dataset.done = t.wait === 0 ? 'true' : 'false';
+      var numsAfter = el('td', '');
+      numsAfter.appendChild(chips(listDrawn, drawn, o, true));
+      var stat = el('td', 'live-scorecard-stat', afterText(t));
+      if (t.wait === 0) stat.dataset.verdict = t.hits > t.exp ? 'above' : t.hits < t.exp ? 'below' : 'equal';
+      after.append(whenCell('Sau giờ quay', drawn.target_date), numsAfter, stat);
+      rows.push(after);
+    } else if (drawn) {
+      rows.push(absentRow(drawn, 'is-before'));
+    }
+    head.rowSpan = rows.length;
+    rows[0].insertBefore(head, rows[0].firstChild);
+    rows.forEach(function (row) { tbody.appendChild(row); });
+    var openBoard = state.open && state.open.list === id ? boardFor(state.open.date) : null;
+    var openList = openBoard === next ? listNext : openBoard === drawn ? listDrawn : null;
+    var openItem = openList ? openList.items[state.open.item] : null;
+    var openSource = openItem ? source(openList, openItem, openBoard) : null;
     if (openSource) {
       var detail = el('tr', 'is-bridge');
       var cell = el('td', 'live-bridge-cell');
       cell.colSpan = 4;
-      cell.appendChild(bridgePanel(list, openItem, openSource));
+      cell.appendChild(bridgePanel(openList, openItem, openSource, openBoard));
       detail.appendChild(cell);
       tbody.appendChild(detail);
     }
@@ -404,7 +453,7 @@
   // soi cầu vị trí (`vt` + tham số chế độ), soi đường (`number` + mã đường `L<trễ>-[a,b]`), bảy trang soi cầu
   // và hai trang tra cầu đang chạy (`ngay` = kỳ cuối của đường cầu, `so` = số ghép ở kỳ ấy, `vt`; trang theo
   // thứ thêm `thu`, cùng cách đánh số 0 = Thứ Hai của bridge_pages.js).
-  function bridgeLink(list, src, item, bridge) {
+  function bridgeLink(list, src, item, bridge, board) {
     var cfg = src.cfg;
     var q = new URLSearchParams();
     if (!bridge) return src.page;
@@ -420,7 +469,7 @@
     }
     var series = cfg.series || [];
     var last = series[series.length - 1];
-    var values = last && state.board.draws ? state.board.draws[last] : null;
+    var values = last && board.draws ? board.draws[last] : null;
     if (last) q.set('ngay', last);
     if (Array.isArray(values)) q.set('so', two(formed(values, bridge.a, bridge.b)));
     q.set('vt', bridge.a + 'x' + bridge.b);
@@ -435,9 +484,8 @@
   // MỌI ô trùng kết quả đã nhúng của kỳ ấy (bảng đang hiện kỳ khác, hay giải chưa hiện hết, thì không tô).
   var MARK = 'data-bridge-mark';
 
-  function boardSlots(date) {
+  function boardSlots(values) {
     var host = document.getElementById('results');
-    var values = date && state.board && state.board.draws ? state.board.draws[date] : null;
     if (!host || !Array.isArray(values)) return null;
     var slots = host.querySelectorAll('.slot');
     if (slots.length !== VALUE_FIRST.length) return null;
@@ -454,7 +502,7 @@
       slot.textContent = slot.textContent;
       slot.removeAttribute(MARK);
     });
-    var shown = mark && boardSlots(mark.date);
+    var shown = mark && boardSlots(mark.values);
     if (!shown) return;
     var marks = {};
     [['a', mark.a], ['b', mark.b]].forEach(function (pair) {
@@ -476,9 +524,9 @@
     });
   }
 
-  function bridgePath(src, bridge) {
+  function bridgePath(src, bridge, board) {
     var cfg = src.cfg;
-    var draws = state.board.draws || {};
+    var draws = board.draws || {};
     var wrap = el('div', 'live-bridge-days');
     if (cfg.type === 'path') {
       var base = draws[bridge.base];
@@ -501,7 +549,7 @@
       var step = prev === null ? '' : cfg.mark === 'bo' ? ' · cùng bộ với số ghép kỳ trước (' + two(prev) + ')'
         : ' · kỳ trước báo ' + toldText(prev, cfg.mark) + ': trúng';
       var caption = 'Ghép ' + two(nHere) + ' → báo ' + toldText(nHere, cfg.mark) +
-        (t === shown.length - 1 ? ' cho kỳ ' + dayLabel(state.board.target_date) : '') + step;
+        (t === shown.length - 1 ? ' cho kỳ ' + dayLabel(board.target_date) : '') + step;
       wrap.appendChild(dayCard(shown[t], values, bridge, cfg.mark, found, caption));
     }
     return wrap;
@@ -511,7 +559,7 @@
     return keys.map(function (key) { return key.split(',').join(' · '); }).join(', ');
   }
 
-  function bridgePanel(list, item, src) {
+  function bridgePanel(list, item, src, board) {
     var cfg = src.cfg;
     var panel = el('div', 'live-bridge');
     panel.id = 'live-bridge-' + list.id;
@@ -525,12 +573,12 @@
         : item.label + ': chưa có cầu nào đang chạy trên trang ' + src.title + ' ghép ra ' + keysText(src.keys);
     var close = el('button', 'live-bridge-close', 'Đóng');
     close.type = 'button';
+    var opened = state.open;
     close.addEventListener('click', function () {
       state.open = null;
-      state.focus = '[data-bridge-list="' + list.id + '"][data-bridge-item="' + state.lastItem + '"]';
+      state.focus = chipSelector(opened.date, list.id, opened.item);
       render();
     });
-    state.lastItem = state.open.item;
     head.append(el('h3', '', text), close);
     panel.appendChild(head);
     if (src.running) {
@@ -552,7 +600,8 @@
         button.dataset.bridgePick = String(i);
         button.setAttribute('aria-pressed', i === pick ? 'true' : 'false');
         button.addEventListener('click', function () {
-          state.open = { list: list.id, item: state.open.item, bridge: i };
+          state.open = { date: opened.date, list: list.id, item: opened.item, label: opened.label, bridge: i,
+            pick: bridgeKey(b) };
           state.focus = '#live-bridge-' + list.id + ' [data-bridge-pick="' + i + '"]';
           render();
         });
@@ -568,13 +617,14 @@
         where.appendChild(document.createTextNode(' · cầu chạy ' + bridge.streak + ' kỳ, vẽ ' + (cfg.series || []).length + ' kỳ cuối'));
       }
       panel.appendChild(where);
-      panel.appendChild(bridgePath(src, bridge));
+      panel.appendChild(bridgePath(src, bridge, board));
     }
     if (bridge) {
       // Kỳ ghép số của cầu: kỳ cuối của chuỗi; soi đường thì kỳ gốc của chính đường ấy.
       var source = cfg.type === 'path' ? bridge.base : (cfg.series || [])[(cfg.series || []).length - 1];
-      state.mark = { date: source, a: bridge.a, b: bridge.b };
-      if (boardSlots(source)) {
+      var sourceValues = board.draws ? board.draws[source] : null;
+      state.mark = { date: source, a: bridge.a, b: bridge.b, values: sourceValues };
+      if (boardSlots(sourceValues)) {
         var onBoard = el('p', 'live-bridge-onboard');
         onBoard.appendChild(document.createTextNode('Hai vị trí này đang được tô trên bảng kết quả kỳ ' +
           dayLabel(source) + ' ở đầu trang. '));
@@ -585,7 +635,7 @@
       }
     }
     var link = el('a', 'live-bridge-link', 'Xem trên trang ' + src.title + ' →');
-    link.href = bridgeLink(list, src, item, bridge);
+    link.href = bridgeLink(list, src, item, bridge, board);
     panel.appendChild(link);
     if (bridge && validDate(source)) {
       // Sổ kết quả truyền thống mở đúng kỳ ghép số và tô hai vị trí (traditional_results.js, `vt`).
@@ -620,16 +670,76 @@
     return lines;
   }
 
+  // ---- Hai kỳ trên một bảng ----------------------------------------------------------
+
+  // Ngày hôm nay theo giờ Việt Nam (UTC+7, không có giờ mùa hè).
+  function todayVN() {
+    return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+  }
+
+  function previousDay(value) {
+    var day = new Date(value + 'T00:00:00Z');
+    day.setUTCDate(day.getUTCDate() - 1);
+    return day.toISOString().slice(0, 10);
+  }
+
+  // "kỳ 05/11 · hôm nay": ngày của kỳ, kèm hôm nay / hôm qua / ngày mai khi đúng như thế theo giờ VN.
+  function drawLabel(date) {
+    var today = todayVN();
+    var near = date === today ? 'hôm nay' : date === previousDay(today) ? 'hôm qua'
+      : date === nextDay(today) ? 'ngày mai' : '';
+    return 'kỳ ' + date.slice(8, 10) + '/' + date.slice(5, 7) + (near ? ' · ' + near : '');
+  }
+
+  function boardFor(date) {
+    var entry = date ? state.boards[date] : null;
+    return entry && entry.board ? entry.board : null;
+  }
+
+  // Câu trạng thái của một kỳ chưa có sổ để đặt lên bảng.
+  function statusText(date) {
+    var entry = state.boards[date];
+    var status = entry ? entry.status : 'loading';
+    return status === 'missing' ? 'Chưa có sổ phỏng đoán đóng băng cho kỳ này.'
+      : status === 'mismatch' ? 'Sổ phỏng đoán không khớp kỳ quay này.'
+        : status === 'error' ? 'Chưa tải được sổ phỏng đoán. Sẽ thử lại.' : 'Đang tải sổ phỏng đoán…';
+  }
+
+  function nextLine(board) {
+    var t = { k: 0, exp: 0, base: 0 };
+    board.lists.forEach(function (list) {
+      var one = tally(list, outcome(null));
+      t.k += one.k; t.exp += one.exp; t.base += one.base;
+    });
+    // Trước giờ khoá sổ còn có thể được ghi lại: nói "khoá lúc", chỉ sau đó mới là "đã đóng băng".
+    var at = String(board.locks_at || '').slice(11, 16);
+    var locked = !(Date.now() < Date.parse(board.locks_at));
+    return board.lists.length + ' danh sách, ' + t.k + ' mục' + (locked ? ' đã đóng băng lúc ' : ', khoá lúc ') + at +
+      ' · kỳ vọng trúng ' + number(t.exp, 2) +
+      ' mục theo xác suất công bố (' + number(t.base, 2) + ' nếu chọn bừa).';
+  }
+
   function render() {
-    var board = state.board;
-    // Kỳ sắp quay chưa có giải nào: kết quả trong live.json là của kỳ đã quay.
-    var o = outcome(state.date === state.draw ? state.last && state.last.prizes : null);
+    var drawn = boardFor(state.draw);
+    var next = state.next ? boardFor(state.next) : null;
+    if (!drawn && !next) { message(statusText(state.draw)); return; }
+    // Kết quả trong live.json là của kỳ `draw`; kỳ sắp quay chưa có giải nào.
+    var o = outcome(state.last && state.last.prizes);
+    var ids = [], byId = {};
+    [drawn, next].forEach(function (board, which) {
+      if (!board) return;
+      board.lists.forEach(function (list) {
+        if (!byId[list.id]) { byId[list.id] = [null, null]; ids.push(list.id); }
+        byId[list.id][which] = list;
+      });
+    });
     var frag = document.createDocumentFragment();
     var total = { hits: 0, exp: 0, base: 0, k: 0, wait: 0 };
     state.mark = null;
-    board.lists.forEach(function (list) {
-      var g = groupRows(list, o);
+    ids.forEach(function (id) {
+      var g = groupRows(id, byId[id][1], byId[id][0], next, drawn, o);
       frag.appendChild(g.body);
+      if (!g.tally) return;
       total.hits += g.tally.hits; total.exp += g.tally.exp; total.base += g.tally.base;
       total.k += g.tally.k; total.wait += g.tally.wait;
     });
@@ -641,19 +751,24 @@
       state.focus = null;
       if (target) target.focus();
     }
+    // Tóm tắt theo đúng thứ tự các hàng: kỳ sắp quay trước, rồi kỳ vừa quay.
     var lines = [];
-    if (total.wait === total.k) {
-      lines.push(board.lists.length + ' danh sách, ' + total.k + ' mục đã đóng băng lúc ' +
-        String(board.locks_at || '').slice(11, 16) + ' · kỳ vọng trúng ' + number(total.exp, 2) +
-        ' mục theo xác suất công bố (' + number(total.base, 2) + ' nếu chọn bừa).');
+    if (state.next) {
+      lines.push('Kỳ sắp quay (' + drawLabel(state.next) + '): ' + (next ? nextLine(next) : statusText(state.next)));
+    }
+    var head = (state.next ? 'Kỳ vừa quay' : 'Kỳ đang quay') + ' (' + drawLabel(state.draw) + '): ';
+    if (!drawn) {
+      lines.push(head + statusText(state.draw));
+    } else if (total.wait === total.k) {
+      lines.push(head + nextLine(drawn));
     } else {
-      lines.push('Đã trúng ' + total.hits + '/' + total.k + ' mục' + (total.wait ? ' · còn chờ ' + total.wait : '') +
+      lines.push(head + 'đã trúng ' + total.hits + '/' + total.k + ' mục' + (total.wait ? ' · còn chờ ' + total.wait : '') +
         ' · kỳ vọng ' + number(total.exp, 2) + ' theo xác suất công bố, ' + number(total.base, 2) + ' nếu chọn bừa.');
     }
-    lines = lines.concat(vectorLines(board, o));
+    if (drawn) lines = lines.concat(vectorLines(drawn, o));
     summary.replaceChildren();
     lines.forEach(function (line) { summary.appendChild(el('p', '', line)); });
-    root.dataset.state = o.complete ? 'complete' : (o.filled ? 'partial' : 'waiting');
+    root.dataset.state = drawn ? (o.complete ? 'complete' : (o.filled ? 'partial' : 'waiting')) : 'waiting';
   }
 
   // Mỗi danh sách là một <tbody> riêng gắn thẳng vào bảng, sau <thead>: lồng <tbody> vào
@@ -669,34 +784,84 @@
     root.dataset.state = 'empty';
   }
 
-  async function fetchBoard(date, version) {
-    state.pending = true;
+  // Tải sổ của một ngày, một lần; 404 hay lỗi thì chờ rồi mới hỏi lại. Kết quả chỉ được dùng khi ngày ấy
+  // vẫn còn trên bảng (`entry` vẫn là chỗ của nó): phản hồi trễ của kỳ cũ bị bỏ.
+  function ensure(date) {
+    if (!date) return Promise.resolve();
+    var entry = state.boards[date];
+    if (!entry) entry = state.boards[date] = { board: null, status: 'loading', pending: false, retryAt: 0, fetchedAt: 0 };
+    if (entry.pending || Date.now() < entry.retryAt || (entry.board && settled(entry))) return Promise.resolve();
+    return fetchBoard(date, entry);
+  }
+
+  // Sổ đã tải đủ mới: vừa tải chưa tới REFRESH_MS, hoặc lần tải đã cách giờ khoá quá SETTLE_MS (bản cuối).
+  function settled(entry) {
+    var locks = Date.parse(entry.board.locks_at);
+    return Date.now() - entry.fetchedAt < REFRESH_MS || (!isNaN(locks) && entry.fetchedAt >= locks + SETTLE_MS);
+  }
+
+  // Tải lại hỏng thì giữ bản đang hiện (status vẫn 'ok'), chỉ hẹn lần thử sau.
+  async function fetchBoard(date, entry) {
+    entry.pending = true;
+    if (!entry.board) entry.status = 'loading';
+    var started = Date.now();
     try {
       var response = await fetch(boardUrl(date), { cache: 'no-store' });
-      if (version !== state.revision) return;
+      if (state.boards[date] !== entry) return;
       if (response.status === 404) {
-        state.retryAt = Date.now() + RETRY_MISSING_MS;
-        message('Chưa có sổ phỏng đoán đóng băng cho kỳ này.');
-        return;
+        if (!entry.board) entry.status = 'missing';
+        entry.retryAt = Date.now() + RETRY_MISSING_MS;
+      } else {
+        if (!response.ok) throw new Error(String(response.status));
+        var board = await response.json();
+        if (state.boards[date] !== entry) return;
+        if (!board || board.target_date !== date || !Array.isArray(board.lists)) {
+          if (!entry.board) entry.status = 'mismatch';
+          entry.retryAt = Date.now() + RETRY_MISSING_MS;
+        } else {
+          entry.board = board;
+          entry.status = 'ok';
+          entry.fetchedAt = started;
+          reconcileOpen(date, board);
+          applyReveal();
+        }
       }
-      if (!response.ok) throw new Error(String(response.status));
-      var board = await response.json();
-      if (version !== state.revision) return;
-      if (!board || board.target_date !== date || !Array.isArray(board.lists)) {
-        state.retryAt = Date.now() + RETRY_MISSING_MS;
-        message('Sổ phỏng đoán không khớp kỳ quay này.');
-        return;
-      }
-      state.board = board;
-      applyReveal();
-      render();
     } catch (_error) {
-      if (version !== state.revision) return;
-      state.retryAt = Date.now() + RETRY_ERROR_MS;
-      message('Chưa tải được sổ phỏng đoán. Sẽ thử lại.');
+      if (state.boards[date] !== entry) return;
+      if (!entry.board) entry.status = 'error';
+      entry.retryAt = Date.now() + RETRY_ERROR_MS;
     } finally {
-      if (version === state.revision) state.pending = false;
+      entry.pending = false;
     }
+    if (state.boards[date] === entry && (date === state.draw || date === state.next)) render();
+  }
+
+  // Danh tính một cầu trong danh sách của một số: cặp vị trí, cộng độ trễ với soi đường — hai đường cầu có thể
+  // chung cặp vị trí mà khác độ trễ (sổ 05-11-2026: số 34 của path-loto-active có 14×39 ở trễ 6 và trễ 9).
+  function bridgeKey(b) {
+    return b.a + 'x' + b.b + (b.lag === undefined || b.lag === null ? '' : '@' + b.lag);
+  }
+
+  // Sổ vừa tải lại có thể đã đổi mục (sổ còn được ghi tới giờ khoá): số đang mở giữ đúng NHÃN của nó và cầu
+  // đang chọn giữ đúng danh tính (bridgeKey), không theo chỉ số cũ — chỉ số cũ có thể đã trỏ sang số khác. Số
+  // không còn trong bản mới thì đóng bảng cầu; cầu không còn thì về cầu đầu.
+  function reconcileOpen(date, board) {
+    var open = state.open;
+    if (!open || open.date !== date) return;
+    var list = board.lists.filter(function (l) { return l.id === open.list; })[0];
+    var index = -1;
+    if (list) {
+      for (var i = 0; i < list.items.length; i++) if (list.items[i].label === open.label) { index = i; break; }
+    }
+    if (index < 0) { state.open = null; return; }
+    var src = source(list, list.items[index], board);
+    if (!src) { state.open = null; return; }
+    var pick = -1;
+    for (var k = 0; open.pick && k < src.bridges.length; k++) {
+      if (bridgeKey(src.bridges[k]) === open.pick) { pick = k; break; }
+    }
+    state.open = { date: date, list: open.list, item: index, label: open.label, bridge: pick < 0 ? 0 : pick,
+      pick: pick < 0 ? '' : open.pick };
   }
 
   // Mọi trạng thái "complete*" đều nghĩa là kỳ đã quay đủ 27 giải (như live-predictions.js).
@@ -716,92 +881,65 @@
     return day;
   }
 
-  function renderViews() {
-    viewBar.replaceChildren();
-    viewBar.hidden = state.views.length < 2;
-    if (viewBar.hidden) return;
-    state.views.forEach(function (date, i) {
-      var button = el('button', 'live-scorecard-view', 'Kỳ ' + dayLabel(date) + (i === 0 ? ' · đã quay' : ' · sắp quay'));
-      button.type = 'button';
-      button.dataset.view = date;
-      button.setAttribute('aria-pressed', date === state.date ? 'true' : 'false');
-      button.addEventListener('click', function () {
-        state.chosen = date;
-        state.focus = null;
-        show(date);
-        var again = viewBar.querySelector('[data-view="' + date + '"]');
-        if (again) again.focus();
-      });
-      viewBar.appendChild(button);
+  // Đặt hai kỳ của bảng; chỉ giữ sổ của đúng hai ngày ấy.
+  function setDraws(draw, next) {
+    if (draw !== state.draw) state.open = null;
+    state.draw = draw;
+    state.next = next;
+    Object.keys(state.boards).forEach(function (date) {
+      if (date !== draw && date !== next) delete state.boards[date];
     });
+    if (state.open && state.open.date !== draw && state.open.date !== next) state.open = null;
+    // Lệnh mở số cho kỳ không còn trên bảng bị bỏ, không treo mãi.
+    if (state.reveal && state.reveal.date !== draw && state.reveal.date !== next) state.reveal = null;
+    title.dateTime = draw;
+    title.textContent = draw ? dayLabel(draw) : 'Đang chờ ngày quay';
   }
 
-  function show(date) {
-    if (date !== state.date) {
-      state.date = date; state.board = null; state.revision += 1; state.pending = false; state.retryAt = 0;
-      state.open = null;
-      title.dateTime = date;
-      title.textContent = date.split('-').reverse().join('/');
-      message('Đang tải sổ phỏng đoán…');
-    }
-    renderViews();
-    if (state.board) { applyReveal(); render(); return Promise.resolve(); }
-    if (state.pending || Date.now() < state.retryAt) return Promise.resolve();
-    return fetchBoard(date, state.revision);
+  function refresh() {
+    applyReveal();
+    render();
+    return Promise.all([ensure(state.draw), ensure(state.next)]).then(function () { return undefined; });
   }
 
   function update(snapshot) {
     state.last = snapshot || null;
     var date = snapshot && snapshot.draw_date;
     if (!validDate(date)) {
-      state.draw = ''; state.views = []; state.chosen = '';
-      state.date = ''; state.board = null; state.revision += 1; state.pending = false;
-      renderViews();
-      title.dateTime = '';
-      title.textContent = 'Đang chờ ngày quay';
+      setDraws('', '');
       message('Đang chờ ngày quay.');
       return Promise.resolve();
     }
-    if (date !== state.draw) { state.draw = date; state.chosen = ''; }
     if (!finished(snapshot.status)) {
-      state.views = [date];
-      return choose();
+      setDraws(date, '');
+      return refresh();
     }
+    // Giữ kỳ sắp quay đã biết trong lúc đọc lịch nghỉ, để bảng không chớp mất hàng của nó.
+    if (date !== state.draw) setDraws(date, '');
     return closedDays().then(function (skip) {
       if (state.last !== snapshot) return undefined;
-      state.views = [date, nextDraw(date, skip)];
-      return choose();
+      setDraws(date, nextDraw(date, skip));
+      return refresh();
     });
   }
 
-  function choose() {
-    // Lệnh mở số đang chờ (bấm trước khi biết có những kỳ nào): kỳ của nó có thì chọn kỳ ấy, không thì bỏ.
-    if (state.reveal) {
-      if (state.views.indexOf(state.reveal.date) >= 0) state.chosen = state.reveal.date;
-      else state.reveal = null;
-    }
-    var target = state.views.indexOf(state.chosen) >= 0 ? state.chosen : state.views[0];
-    return show(target);
-  }
-
   // Mở đúng số ấy trong bảng (bấm từ khối "Dự đoán trong ngày"): mục của danh sách Cầu Kèo cùng
-  // kiểu, không có thì mục đầu tiên nào chỉ gồm số ấy.
+  // kiểu, không có thì mục đầu tiên nào chỉ gồm số ấy — trong sổ của đúng kỳ đã bấm.
   function applyReveal() {
     var want = state.reveal;
-    if (!want || !state.board) return;
+    var board = want ? boardFor(want.date) : null;
+    if (!board) return;
     state.reveal = null;
-    // Lệnh mở gắn với kỳ đã bấm: live.json sang kỳ khác trong lúc sổ đang tải thì bỏ.
-    if (want.date !== state.board.target_date) return;
-    var lists = state.board.lists.slice().sort(function (u, v) {
+    var lists = board.lists.slice().sort(function (u, v) {
       return (u.id === want.list ? 0 : 1) - (v.id === want.list ? 0 : 1);
     });
     for (var i = 0; i < lists.length; i++) {
       for (var j = 0; j < lists[i].items.length; j++) {
         var item = lists[i].items[j], rule = item.rule || {};
         if (rule.on !== want.on || !Array.isArray(rule.numbers) || rule.numbers.length !== 1 ||
-            rule.numbers[0] !== want.number || !source(lists[i], item)) continue;
-        state.open = { list: lists[i].id, item: j, bridge: 0 };
-        state.focus = '[data-bridge-list="' + lists[i].id + '"][data-bridge-item="' + j + '"]';
+            rule.numbers[0] !== want.number || !source(lists[i], item, board)) continue;
+        state.open = { date: want.date, list: lists[i].id, item: j, label: item.label, bridge: 0, pick: '' };
+        state.focus = chipSelector(want.date, lists[i].id, j);
         return;
       }
     }
@@ -811,9 +949,8 @@
     if (!validDate(date) || (mode !== 'de' && mode !== 'loto')) return Promise.resolve();
     state.reveal = { date: date, list: 'cau-keo-' + mode, on: mode === 'de' ? 'special' : 'loto', number: two(Number(value)) };
     // Chưa biết kỳ ấy có trên bảng không (live.json chưa về, lịch nghỉ đang tải): giữ lệnh, update() xử lý.
-    if (state.views.indexOf(date) < 0) return Promise.resolve();
-    state.chosen = date;
-    return show(date);
+    if (date !== state.draw && date !== state.next) return Promise.resolve();
+    return refresh();
   }
 
   // Thành tích qua các kỳ đã quay (src/evaluation/board_record.py): mỗi danh sách trúng bao nhiêu so với chọn

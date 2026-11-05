@@ -403,11 +403,13 @@ của MỌI danh sách khác (tổ hợp, Cầu Kèo, ML, tác tử, Lô VIP, xi
 chạy của trang Cầu LOTO (≥ 3 kỳ, cho số LOTO) và Cầu Đặc Biệt (chạm, ≥ 2 kỳ, cho số Đặc Biệt), theo cặp `{n, lộn n}`;
 hai trang in ĐỦ mọi nhóm, và MỌI nhóm tính lại phải trùng số trang in (`prediction_board.running_bridges`). Đó là phép TRA,
 không phải lý do danh sách chọn số; khung chi tiết nói đúng như thế. Số ở khối «Dự đoán trong ngày» là nút mở đúng số ấy
-trong bảng (`LiveScorecard.reveal`). live.json giữ ngày kỳ vừa quay tới phiên hôm sau, nên khi kỳ ấy đã quay xong bảng có
-hai nút «đã quay» / «sắp quay». Mặc định LUÔN là kỳ đã quay (trùng bảng kết quả đầu trang): 03 → 04-11-2026 bảng tự sang kỳ
-sắp quay sau nửa đêm giờ VN, mọi số thành «chờ» và chủ dự án báo mất dấu, mất màu về/trượt. Kỳ sắp quay mở bằng nút hoặc số ở
-khối «Dự đoán trong ngày»; từ sổ 04-11 (schema 3) kỳ đã quay cũng có cầu cho mọi số. Kỳ sắp quay bỏ ngày nghỉ của `data/non_draw_days.json`
-(cùng luật `next_draw_date`), và lệnh mở số mang kỳ của nó: sổ tải xong là kỳ khác thì bỏ.
+trong bảng (`LiveScorecard.reveal`). live.json giữ ngày kỳ vừa quay tới phiên hôm sau, nên khi kỳ ấy đã quay xong mỗi danh
+sách có BA hàng theo yêu cầu 05-11-2026 «để tiện tra cứu»: «Trước giờ quay» của kỳ sắp quay, rồi «Trước giờ quay» và «Sau giờ
+quay» của kỳ vừa quay (trùng bảng kết quả đầu trang, giữ dấu về/trượt); đang quay thì hai hàng của kỳ ấy. Mỗi hàng ghi kỳ
+(«kỳ 05/11 · hôm nay», hôm qua / ngày mai theo giờ VN). Đừng quay lại hai nút chuyển kỳ: 03 → 04-11-2026 bảng tự sang kỳ sắp
+quay, mọi số thành «chờ» và chủ dự án báo mất dấu. Sổ hai kỳ tải độc lập; sổ còn được ghi lại tới giờ khoá (sổ 05-11 ghi bốn
+lần) nên được tải lại mỗi 10 phút tới khi lần tải đã cách `locks_at` quá 1 giờ, và tải lại hỏng vẫn giữ bản đang hiện. Kỳ sắp
+quay bỏ ngày nghỉ của `data/non_draw_days.json` (cùng luật `next_draw_date`); lệnh mở số mang kỳ của nó, kỳ rời bảng thì bỏ.
 Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ số nguồn được tô trên bảng `#results` đầu trang Live
 CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi
 thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang
