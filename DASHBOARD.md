@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-11-05T11:38:47Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-11-05T12:32:43Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -47,18 +47,18 @@
 | Giải sáu | 434 · 594 · 167 | 34 · 94 · 67 | Kết quả chuẩn đã xác minh |
 | Giải bảy | 63 · 53 · 03 · 16 | 63 · 53 · 03 · 16 | Kết quả chuẩn đã xác minh |
 
-### Dự đoán vui · 2026-11-05
+### Dự đoán vui · 2026-11-06
 
 | Giải | Mô phỏng | Hai số cuối · xác suất | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc Biệt | 34128 | `28` 1.01% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 37662 | `62` 23.81% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 82537 · 47014 | `37` 23.88% · `14` 23.83% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải ba | 73777 · 63811 · 61497 · 96566 · 39478 · 65193 | `77` 23.78% · `11` 23.80% · `97` 23.77% · `66` 23.80% · `78` 23.68% · `93` 23.72% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải tư | 5513 · 5096 · 4564 · 5370 | `13` 23.77% · `96` 23.81% · `64` 23.84% · `70` 23.82% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải năm | 2345 · 1463 · 1680 · 3882 · 4102 · 8380 | `45` 23.79% · `63` 23.80% · `80` 23.68% · `82` 23.73% · `02` 23.73% · `80` 23.68% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 794 · 782 · 496 | `94` 23.81% · `82` 23.73% · `96` 23.81% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 43 · 54 · 42 · 12 | `43` 23.78% · `54` 23.73% · `42` 23.74% · `12` 23.70% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Đặc Biệt | 17818 | `18` 1.00% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 16834 | `34` 23.96% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 80565 · 75358 | `65` 23.72% · `58` 23.63% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải ba | 71789 · 99811 · 50217 · 23394 · 89988 · 50580 | `89` 23.75% · `11` 23.81% · `17` 23.83% · `94` 23.83% · `88` 23.83% · `80` 23.66% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải tư | 3824 · 0141 · 0517 · 6955 | `24` 23.88% · `41` 23.71% · `17` 23.83% · `55` 23.74% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải năm | 0445 · 8954 · 5346 · 1946 · 7766 · 1442 | `45` 23.79% · `54` 23.73% · `46` 23.81% · `46` 23.81% · `66` 23.80% · `42` 23.73% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 153 · 090 · 501 | `53` 23.86% · `90` 23.82% · `01` 23.70% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 54 · 97 · 62 · 84 | `54` 23.73% · `97` 23.77% · `62` 23.81% · `84` 23.76% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
@@ -918,14 +918,14 @@
 | 10 | **80** | 2.031 | trễ 28.0 · trước=trượt · mẫu=46 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 11 | **19** | 1.990 | trễ 28.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 12 | **68** | 1.926 | trễ 28.0 · trước=trượt · mẫu=54 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | **33** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **87** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 13 | **87** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | **33** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **83** | 1.876 | trễ 7.0 · trước=trượt · mẫu=43 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 16 | **97** | 1.855 | trễ 7.0 · trước=trượt · mẫu=45 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 17 | **48** | 1.815 | trễ 7.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 18 | **79** | 1.653 | trễ 14.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
-| 19 | **58** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
-| 20 | **07** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
+| 19 | **07** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
+| 20 | **84** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 
