@@ -38,8 +38,8 @@ def build_timeline_table(
     if raw.empty or two.empty or positions.empty:
         return pd.DataFrame()
 
-    raw_sorted = raw.sort_values("date").reset_index(drop=True)
-    two_sorted = two.sort_values("date").reset_index(drop=True)
+    raw_sorted = raw.sort_values("date", kind="stable").reset_index(drop=True)
+    two_sorted = two.sort_values("date", kind="stable").reset_index(drop=True)
     raw_by_date = {
         _as_date(row["date"]): build_rawdata_digits_from_row(row)
         for _, row in raw_sorted.iterrows()
@@ -146,8 +146,8 @@ def run(
 
     lot = Lottery()
     lot.load()
-    raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
+    raw = lot.get_raw_data().sort_values("date", kind="stable").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
     if raw.empty or two.empty:
         raise RuntimeError("No data loaded")
 

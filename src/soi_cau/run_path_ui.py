@@ -225,8 +225,8 @@ def main() -> None:
     if df_raw.empty or df_2d.empty:
         raise SystemExit("No data loaded. Run src/ingest/sync.py first.")
 
-    df_raw = df_raw.sort_values("date").reset_index(drop=True)
-    df_2d = df_2d.sort_values("date").reset_index(drop=True)
+    df_raw = df_raw.sort_values("date", kind="stable").reset_index(drop=True)
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     raw_calendar = require_daily_contiguous(
         df_raw["date"], context="path UI raw history"
     )

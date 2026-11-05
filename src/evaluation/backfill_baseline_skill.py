@@ -68,7 +68,7 @@ def load_labels(history_path: Path) -> dict[str, np.ndarray]:
             continue
         if set(numbers.astype(int).tolist()) != set(range(100)):
             continue
-        ordered = sub.assign(_n=numbers.astype(int)).sort_values("_n")
+        ordered = sub.assign(_n=numbers.astype(int)).sort_values("_n", kind="stable")
         yi = pd.to_numeric(ordered["y"]).to_numpy(dtype=float)
         if not np.all(np.isin(yi, [0.0, 1.0])):
             continue

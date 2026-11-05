@@ -187,8 +187,8 @@ def run(
     max_lag: int = 15,
     coverage_windows: tuple[int, ...] = (3, 7, 14, 30),
 ) -> dict[str, object]:
-    raw = raw.sort_values("date").reset_index(drop=True)
-    sparse = sparse.sort_values("date").reset_index(drop=True)
+    raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
+    sparse = sparse.sort_values("date", kind="stable").reset_index(drop=True)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -237,8 +237,8 @@ def main() -> None:
 
     lot = Lottery()
     lot.load()
-    raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
-    sparse = lot.get_sparse_data().sort_values("date").reset_index(drop=True)
+    raw = lot.get_raw_data().sort_values("date", kind="stable").reset_index(drop=True)
+    sparse = lot.get_sparse_data().sort_values("date", kind="stable").reset_index(drop=True)
     if raw.empty or sparse.empty:
         raise SystemExit("No data loaded")
     manifest = run(

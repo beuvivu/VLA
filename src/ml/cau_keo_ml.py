@@ -135,7 +135,7 @@ def _fmt2(n: int | float | str) -> str:
 def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"]).dt.normalize()
-    return df.sort_values("date").reset_index(drop=True)
+    return df.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _build_hit_matrices(

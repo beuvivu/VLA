@@ -109,7 +109,7 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
         raise FileNotFoundError(f"thiếu {path}")
 
     frame = pd.read_csv(path, dtype=str).fillna("")
-    frame = frame.sort_values("date").reset_index(drop=True)
+    frame = frame.sort_values("date", kind="stable").reset_index(drop=True)
 
     prize_cols = [c for c in frame.columns if c != "date"]
     draws: list[dict[str, object]] = []

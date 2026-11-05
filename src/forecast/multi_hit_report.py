@@ -170,7 +170,7 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
     if len(table.anchors) <= cfg.warmup + 1:
         raise ValueError(f"cần hơn {cfg.warmup + 1} kỳ có đặc trưng để chấm mô hình")
     wf = forecast.walk_forward(table, cfg)
-    ordered = two.assign(date=pd.to_datetime(two["date"]).dt.strftime("%Y-%m-%d")).sort_values("date")
+    ordered = two.assign(date=pd.to_datetime(two["date"]).dt.strftime("%Y-%m-%d")).sort_values("date", kind="stable")
     draws, labels = draws_from_frame(ordered.reset_index(drop=True))
     counts = table.counts
     k = cfg.top_k

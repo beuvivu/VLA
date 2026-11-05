@@ -607,7 +607,7 @@ def build_dynamics_signal(
             "regime_log_ratio": regime_log_ratio,
             "dynamics_reliability": global_rel,
         }
-    ).sort_values("prob", ascending=False, ignore_index=True)
+    ).sort_values("prob", ascending=False, ignore_index=True, kind="stable")
 
     columns = [f"{x:02d}" for x in range(100)]
     trans_df = pd.DataFrame(trans, columns=columns)

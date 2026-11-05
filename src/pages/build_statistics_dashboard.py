@@ -458,7 +458,7 @@ def _bar_chart(
         </article>
         """
     view["_value_numeric"] = pd.to_numeric(view[value_col], errors="coerce").fillna(0.0)
-    view = view.sort_values("_value_numeric", ascending=ascending).head(top_n).copy()
+    view = view.sort_values("_value_numeric", ascending=ascending, kind="stable").head(top_n).copy()
     max_v = float(view["_value_numeric"].max()) if not view.empty else 0.0
     min_v = 0.0 if not ascending else float(view["_value_numeric"].min())
     if max_v <= 0:
@@ -657,7 +657,7 @@ def _full_special_boards(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
     view["date"] = pd.to_datetime(view["date"], format="%Y-%m-%d", errors="coerce")
     view["special"] = view["special"].map(_full_special_value)
     view = view.loc[view["date"].notna() & view["special"].ne("")]
-    view = view.drop_duplicates("date", keep="last").sort_values("date")
+    view = view.drop_duplicates("date", keep="last").sort_values("date", kind="stable")
     if view.empty:
         return empty_week, empty_month
     iso = view["date"].dt.isocalendar()

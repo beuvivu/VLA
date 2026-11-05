@@ -239,7 +239,7 @@ def backtest(raw: pd.DataFrame) -> list[dict]:
     ``expected`` cộng xác suất trúng chính xác của một bộ ngẫu nhiên cùng cỡ ở
     từng kỳ (bộ đổi cỡ khi có số kép), nên z và p so đúng với "chọn bừa".
     """
-    raw = raw.sort_values("date").reset_index(drop=True)
+    raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     rows = [raw.iloc[i] for i in range(len(raw))]
     out = []
     for rule in RULES:
@@ -277,7 +277,7 @@ def frame_backtest(raw: pd.DataFrame) -> list[dict]:
     Đặc Biệt trong 7 kỳ "nổ" với xác suất 1 − 0,8⁷ ≈ 79%. ``expected_rate`` là
     xác suất ấy của một bộ ngẫu nhiên cùng cỡ, tính kỳ theo kỳ.
     """
-    raw = raw.sort_values("date").reset_index(drop=True)
+    raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     dates = pd.to_datetime(raw["date"])
     rows = [raw.iloc[i] for i in range(len(raw))]
     by_key = {rule.key: rule for rule in RULES}
@@ -315,7 +315,7 @@ def frame_backtest(raw: pd.DataFrame) -> list[dict]:
 
 def next_picks(raw: pd.DataFrame) -> dict:
     """Bộ số mỗi quy tắc báo cho kỳ kế tiếp, từ kỳ cuối của lịch sử."""
-    last = raw.sort_values("date").iloc[-1]
+    last = raw.sort_values("date", kind="stable").iloc[-1]
     return {
         "base_date": str(last["date"])[:10],
         "tong_hop": tong_hop_ky(last),

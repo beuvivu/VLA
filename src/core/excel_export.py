@@ -272,7 +272,7 @@ def _export_daily_files(
         return
 
     _require_prize_columns(raw_df, context="daily raw dataframe")
-    view = raw_df.sort_values("date")
+    view = raw_df.sort_values("date", kind="stable")
     if latest_only:
         view = view.tail(1)
 

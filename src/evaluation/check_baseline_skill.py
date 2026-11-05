@@ -67,7 +67,7 @@ def evaluate_history(
 
     checks: list[SkillCheck] = []
     for mode, group in frame.groupby("mode"):
-        rows = group.sort_values("target_date").tail(window)
+        rows = group.sort_values("target_date", kind="stable").tail(window)
         rows = rows[
             pd.to_numeric(rows["logloss"], errors="coerce").notna()
             & pd.to_numeric(rows["baseline_logloss"], errors="coerce").notna()

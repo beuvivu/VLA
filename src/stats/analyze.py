@@ -84,7 +84,7 @@ def main() -> None:
     detail = counts.reset_index()
     detail.columns = ["value", "freq"]
     detail = detail.astype({"value": int})
-    detail = detail.sort_values("freq", ascending=False)
+    detail = detail.sort_values("freq", ascending=False, kind="stable")
 
     heatmap_data = detail.copy()
     heatmap_data["tens"] = heatmap_data["value"] // 10

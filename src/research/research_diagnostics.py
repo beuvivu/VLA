@@ -164,8 +164,8 @@ def _coverage_summary(hit: np.ndarray, windows: tuple[int, ...] = (7, 14, 30)) -
 
 
 def build_report(two: pd.DataFrame, sparse: pd.DataFrame, *, permutations: int = 127, seed: int = 20260901, max_lag: int = 14) -> tuple[dict, pd.DataFrame]:
-    two = two.sort_values("date").reset_index(drop=True).copy()
-    sparse = sparse.sort_values("date").reset_index(drop=True).copy()
+    two = two.sort_values("date", kind="stable").reset_index(drop=True).copy()
+    sparse = sparse.sort_values("date", kind="stable").reset_index(drop=True).copy()
     if len(two) != len(sparse):
         raise ValueError("2-digit and sparse data must have identical draw counts")
 

@@ -341,8 +341,8 @@ def evaluate_lab(
     train_fraction: float = 0.60,
     validation_fraction: float = 0.20,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
-    two = two.sort_values("date").reset_index(drop=True).copy()
-    sparse = sparse.sort_values("date").reset_index(drop=True).copy()
+    two = two.sort_values("date", kind="stable").reset_index(drop=True).copy()
+    sparse = sparse.sort_values("date", kind="stable").reset_index(drop=True).copy()
     if len(two) != len(sparse):
         raise ValueError("two-digit and sparse history must have identical row counts")
     if len(two) < 60:
@@ -468,8 +468,8 @@ def run(
 ) -> tuple[Path, Path]:
     lot = Lottery()
     lot.load()
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
-    sparse = lot.get_sparse_data().sort_values("date").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
+    sparse = lot.get_sparse_data().sort_values("date", kind="stable").reset_index(drop=True)
     if two.empty or sparse.empty:
         raise RuntimeError("No data loaded")
     table, report = evaluate_lab(two, sparse, lag_pairs=lag_pairs, ops=ops, warmup=warmup)

@@ -441,7 +441,7 @@ class ContinuousLearningPipeline:
         assert self._forecast_mixture is not None
         outcome = (self.observations.counts[day] > 0).astype(float)
 
-        top_k = np.argsort(-probabilities)[: self.config.top_k]
+        top_k = np.argsort(-probabilities, kind="stable")[: self.config.top_k]
         hits_in_top_k = int(outcome[top_k].sum())
 
         # Log-loss là quy tắc chấm chặt: phạt cả sai mức xác suất khi thứ hạng
@@ -552,7 +552,7 @@ class ContinuousLearningPipeline:
 
         day = self.observations.n_days
         probabilities, weights, per_arm = self.predict_day(day)
-        order = np.argsort(-probabilities)[: request.top_k]
+        order = np.argsort(-probabilities, kind="stable")[: request.top_k]
         return {
             "anchor_date": str(request.anchor_date.date()),
             "target_date": str(request.target_date.date()),

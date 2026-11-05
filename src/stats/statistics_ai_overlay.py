@@ -96,7 +96,7 @@ def _validated_probability_frame(
     if declared != expected_target:
         return None, f"stale_target:{declared}"
 
-    order = np.argsort(ints)
+    order = np.argsort(ints, kind="stable")
     out = pd.DataFrame(
         {
             "number": ints[order],

@@ -352,6 +352,6 @@ def augment_domain_features(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
     return (
-        ordered.sort_values(_ORDER_COLUMN)
+        ordered.sort_values(_ORDER_COLUMN, kind="stable")
         .drop(columns=[_ORDER_COLUMN, _ANCHOR_COLUMN])
     )

@@ -77,7 +77,7 @@ def _prepare_raw(raw_df: pd.DataFrame) -> pd.DataFrame:
     out = raw_df[["date", "special"]].copy()
     out["date"] = pd.to_datetime(out["date"]).dt.normalize()
     out["special"] = pd.to_numeric(out["special"], errors="raise").astype(int)
-    return out.sort_values("date").reset_index(drop=True)
+    return out.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _prepare_sparse(sparse_df: pd.DataFrame) -> pd.DataFrame:
@@ -105,7 +105,7 @@ def _prepare_sparse(sparse_df: pd.DataFrame) -> pd.DataFrame:
     out[NUMBER_COLS] = out[NUMBER_COLS].apply(
         pd.to_numeric, errors="raise"
     ).astype(int)
-    return out.sort_values("date").reset_index(drop=True)
+    return out.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _matrix_evidence(

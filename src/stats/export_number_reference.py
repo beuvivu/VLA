@@ -100,7 +100,7 @@ def build_cap_loto_50_catalog() -> pd.DataFrame:
                 "members": json.dumps(members, ensure_ascii=False),
             }
         )
-    return pd.DataFrame(rows).sort_values("pair_id").reset_index(drop=True)
+    return pd.DataFrame(rows).sort_values("pair_id", kind="stable").reset_index(drop=True)
 
 
 def export_reference(out_dir: Path) -> None:

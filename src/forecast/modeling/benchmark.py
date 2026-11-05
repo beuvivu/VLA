@@ -606,7 +606,7 @@ def walk_forward(counts: np.ndarray, model: SequenceModel, *, warmup: int = 120)
         daily_baseline.append(-float(np.mean(outcome * np.log(b) + (1 - outcome) * np.log1p(-b))))
         rows.append((p, outcome))
         # Xếp hạng: chọn 27 con có xác suất cao nhất, đếm số trúng.
-        top = np.argsort(-p)[:LOTO_DRAWS_PER_DAY]
+        top = np.argsort(-p, kind="stable")[:LOTO_DRAWS_PER_DAY]
         hit_at_27.append(float(outcome[top].sum()))
         baseline_hit.append(float(outcome.sum()) * LOTO_DRAWS_PER_DAY / NUMBER_SPACE)
 

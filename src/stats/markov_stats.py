@@ -108,7 +108,7 @@ def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float
         raise ValueError("alpha and beta must be finite and >= 0")
     if alpha + beta <= 0.0:
         raise ValueError("alpha + beta must be > 0")
-    df_2d = df_2d.sort_values("date").reset_index(drop=True)
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     dates, loto_targets, _ = build_daily_targets(df_2d)
     n = len(loto_targets)
     if n < 2:

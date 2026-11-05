@@ -258,8 +258,8 @@ class PreparedPathHistory:
 def prepare_path_history(
     df_raw: pd.DataFrame, df_2digits: pd.DataFrame
 ) -> PreparedPathHistory:
-    df_raw = df_raw.sort_values("date").reset_index(drop=True)
-    df_2digits = df_2digits.sort_values("date").reset_index(drop=True)
+    df_raw = df_raw.sort_values("date", kind="stable").reset_index(drop=True)
+    df_2digits = df_2digits.sort_values("date", kind="stable").reset_index(drop=True)
     dates, targets_loto, targets_de = build_daily_targets(df_2digits)
     if not dates:
         return PreparedPathHistory(

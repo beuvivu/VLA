@@ -139,7 +139,7 @@ def evaluate_latest_emitted(
 
     sub = df[df["target_date"].astype(str) == tdate].copy()
     sub["number"] = pd.to_numeric(sub["number"], errors="raise").astype(int)
-    sub = sub.sort_values("number")
+    sub = sub.sort_values("number", kind="stable")
     y = pd.to_numeric(sub["y"], errors="raise").astype(int).to_numpy()
 
     # Đường cơ sở không thông tin, chấm bằng ĐÚNG các hàm đo dùng cho mô hình

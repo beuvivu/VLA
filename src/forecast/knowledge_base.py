@@ -144,8 +144,9 @@ class ContextMemory:
             return pool, np.zeros(0, dtype=np.float32)
         sims = self.ctx[pool] @ self.ctx[t]
         k = min(k, pool.size)
-        top = np.argpartition(-sims, k - 1)[:k]
-        order = top[np.lexsort((pool[top], -sims[top]))]
+        # Sắp đủ rồi cắt k, hoà điểm theo chỉ số kỳ: ``argpartition`` chọn phần tử hoà ở ranh giới theo
+        # lệnh vector của CPU, nên hai máy có thể lấy hai tập láng giềng khác nhau.
+        order = np.lexsort((pool, -sims))[:k]
         return pool[order], sims[order]
 
     def predict(self, t: int, k: int = NEIGHBOURS, prior: float = PRIOR) -> tuple[np.ndarray, np.ndarray]:

@@ -46,7 +46,7 @@ def _gap_series_calendar(
 def build_cycle_tables(out_dir: str = "data/stats/cycle") -> None:
     lot = Lottery()
     lot.load()
-    df2 = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
+    df2 = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
     if df2.empty:
         raise SystemExit("No data available. Run src/ingest/sync.py first.")
 

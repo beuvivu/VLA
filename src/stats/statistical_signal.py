@@ -592,7 +592,7 @@ def build_statistical_signal(
     df["number_str"] = df["number"].map(lambda x: f"{int(x):02d}")
     df["anchor_date"] = anchor.isoformat()
     df["target_date"] = target.isoformat()
-    df = df.sort_values("prob", ascending=False, ignore_index=True)
+    df = df.sort_values("prob", ascending=False, ignore_index=True, kind="stable")
 
     diagnostics = {
         "schema_version": 3,

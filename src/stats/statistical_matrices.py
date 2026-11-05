@@ -93,7 +93,7 @@ def _prepare_sparse(sparse_df: pd.DataFrame) -> pd.DataFrame:
 
     out = df[["date", *NUMBER_COLS]].copy()
     out[NUMBER_COLS] = out[NUMBER_COLS].apply(pd.to_numeric, errors="coerce").fillna(0).astype(int)
-    return out.sort_values("date").reset_index(drop=True)
+    return out.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _prepare_two_digits(two_digit_df: pd.DataFrame) -> pd.DataFrame:
@@ -104,7 +104,7 @@ def _prepare_two_digits(two_digit_df: pd.DataFrame) -> pd.DataFrame:
     df["date"] = pd.to_datetime(df["date"]).dt.normalize()
     value_cols = [c for c in df.columns if c != "date"]
     df[value_cols] = df[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).astype(int) % 100
-    return df.sort_values("date").reset_index(drop=True)
+    return df.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _prepare_raw(raw_df: pd.DataFrame) -> pd.DataFrame:
@@ -115,7 +115,7 @@ def _prepare_raw(raw_df: pd.DataFrame) -> pd.DataFrame:
     for c in df.columns:
         if c != "date":
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0).astype(int)
-    return df.sort_values("date").reset_index(drop=True)
+    return df.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _de_sparse_from_raw(raw_df: pd.DataFrame) -> pd.DataFrame:
@@ -486,7 +486,7 @@ def _first_prize_stats(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame
     freq = _period_frequency_from_sparse(sparse, period="year", mode="prize1")
     rhythm = _rhythm_from_sparse(sparse, mode="prize1")
     overdue = rhythm[["mode", "number", "number_str", "last_seen", "current_gap", "hit_count", "mean_gap", "max_gap"]].copy()
-    return freq, overdue.sort_values("current_gap", ascending=False)
+    return freq, overdue.sort_values("current_gap", ascending=False, kind="stable")
 
 
 def _conditional_tables(raw_df: pd.DataFrame, sparse_df: pd.DataFrame, *, top: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:

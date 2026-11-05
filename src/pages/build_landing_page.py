@@ -235,7 +235,7 @@ def _latest_draw(repo_root: Path) -> dict[str, Any]:
     df = _read_csv(repo_root / "data" / "xsmb.csv", dtype=str)
     if df.empty:
         return {"date": "", "groups": [], "numbers": [], "counts": {}}
-    df = df.sort_values("date")
+    df = df.sort_values("date", kind="stable")
     row = df.iloc[-1].to_dict()
     draw_date = row.get("date", "")
     metadata = load_draw_metadata(repo_root).get(draw_date, {"station": station_for_date(draw_date)})

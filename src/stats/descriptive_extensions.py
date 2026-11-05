@@ -137,13 +137,13 @@ def _group_gap_rows(
 
     return (
         pd.DataFrame(sum_rows).sort_values(
-            "gap_days", ascending=False, ignore_index=True
+            "gap_days", ascending=False, ignore_index=True, kind="stable"
         ),
         pd.DataFrame(mod_rows).sort_values(
-            "gap_days", ascending=False, ignore_index=True
+            "gap_days", ascending=False, ignore_index=True, kind="stable"
         ),
         pd.DataFrame(touch_rows).sort_values(
-            "gap_days", ascending=False, ignore_index=True
+            "gap_days", ascending=False, ignore_index=True, kind="stable"
         ),
     )
 
@@ -278,7 +278,7 @@ def main() -> None:
 
     lot = Lottery()
     lot.load()
-    two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
+    two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
     if two.empty:
         raise SystemExit("No data loaded")
 

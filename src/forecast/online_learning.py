@@ -708,7 +708,7 @@ def _prediction_frame(path: Path, mode: str) -> tuple[pd.DataFrame, np.ndarray]:
     if not np.array_equal(np.sort(numbers), np.arange(100)):
         raise ValueError("Tệp dự báo cần mỗi số 00..99 đúng một lần")
     frame["number"] = numbers.astype(int)
-    vector = frame.sort_values("number")["prob"].to_numpy(dtype=float)
+    vector = frame.sort_values("number", kind="stable")["prob"].to_numpy(dtype=float)
     return frame, _prob(mode, vector)
 
 

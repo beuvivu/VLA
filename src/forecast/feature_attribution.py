@@ -56,7 +56,7 @@ def _usable_days(history: pd.DataFrame, mode: str) -> list[tuple[str, pd.DataFra
     """Các kỳ có đủ 100 con, có nhãn, và qua cổng canh thành phần."""
     out: list[tuple[str, pd.DataFrame]] = []
     for day, group in history.groupby("target_date", sort=True):
-        sub = group.sort_values("number")
+        sub = group.sort_values("number", kind="stable")
         if len(sub) != 100 or sub["y"].isna().any():
             continue
         out.append((str(day), sub))
@@ -247,7 +247,7 @@ def per_number_attribution(
     """Với các con được xếp cao nhất của MỘT kỳ, thành phần nào đẩy chúng lên."""
     effective = _effective_weights(raw, masks[day_position])
     contribution = effective[:, None] * (vectors[day_position] - base_rate)
-    ranking = np.argsort(-contribution.sum(axis=0))[:top]
+    ranking = np.argsort(-contribution.sum(axis=0), kind="stable")[:top]
 
     out: list[dict[str, object]] = []
     for number in ranking:

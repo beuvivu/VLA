@@ -47,7 +47,7 @@ def _validate_mode(mode: str) -> None:
 def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"])
-    return df.sort_values("date").reset_index(drop=True)
+    return df.sort_values("date", kind="stable").reset_index(drop=True)
 
 
 def _validate_aligned_histories(

@@ -58,7 +58,7 @@ def load_daily_forecast(data_dir: Path, anchor_date: str) -> dict | None:
             # Bộ kiểm chuẩn hoá Đặc Biệt cho các thành phần; thẻ chỉ dùng nó
             # để kiểm rồi giữ nguyên xác suất thực sự đã công bố trong CSV.
             numbers = pd.to_numeric(frame["number"]).to_numpy(dtype=int)
-            probabilities = pd.to_numeric(frame["prob"]).to_numpy(dtype=float)[np.argsort(numbers)]
+            probabilities = pd.to_numeric(frame["prob"]).to_numpy(dtype=float)[np.argsort(numbers, kind="stable")]
             if mode == "de" and not np.isclose(probabilities.sum(), 1.0, rtol=0, atol=1e-8):
                 return None
             order = (

@@ -17,7 +17,7 @@ from core.path_models import build_daily_targets
 def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
     """Count same-day co-occurrence for the 45 non-double reverse pairs."""
 
-    df_2d = df_2d.sort_values("date").reset_index(drop=True)
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
 
     counts = np.zeros(100, dtype=np.int32)
@@ -62,7 +62,7 @@ def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
 def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
     """Count unordered same-day pair frequency for all distinct loto numbers."""
 
-    df_2d = df_2d.sort_values("date").reset_index(drop=True)
+    df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
 
     from collections import Counter
