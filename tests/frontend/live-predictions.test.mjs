@@ -98,3 +98,33 @@ test('Each number is a button that opens that number in the scorecard of the sam
   d.querySelector('[data-prediction-number="07"]').click();
   assert.deepEqual(errors, []);
 });
+test('Kỳ kế tiếp bỏ ngày nghỉ quay của bảng đối chiếu, và chưa có số thì nói là đang chờ tính', async t => {
+  const urls = [];
+  const {d} = setup(t, async url => { urls.push(url); return url.includes('2026-10-10') ? {ok: false, status: 404} : csv('number\n31'); });
+  const w = d.defaultView;
+  w.LiveScorecard = {closedDays: () => Promise.resolve(new Set(['2026-10-08', '2026-10-09']))};
+  await w.LivePredictions.loadForDraw('2026-10-07', 'complete_verified');
+  assert.equal(d.querySelector('time').dateTime, '2026-10-10', 'Tết: 08 và 09/10 không quay');
+  assert.ok(urls.every(u => u.endsWith('_top10_2026-10-10.csv')), urls.join(' '));
+  assert.match(d.querySelector('[data-prediction-mode="de"] p').textContent, /Đang chờ tính dự đoán cho kỳ này/);
+  // Đang quay: chính kỳ ấy, thiếu số thì vẫn là «Chưa có».
+  await w.LivePredictions.loadForDraw('2026-10-10', 'partial');
+  assert.match(d.querySelector('[data-prediction-mode="de"] p').textContent, /^Chưa có dự đoán/);
+  // Lịch đọc hỏng: coi như không có ngày nghỉ.
+  w.LiveScorecard = {closedDays: () => Promise.reject(new Error('mạng'))};
+  await w.LivePredictions.loadForDraw('2026-10-07', 'complete_verified');
+  assert.equal(d.querySelector('time').dateTime, '2026-10-08');
+});
+test('Lịch nghỉ đọc chậm: lượt live.json mới hơn thắng, lượt cũ không đè ngày', async t => {
+  const {d} = setup(t, async () => csv('number\n31'));
+  const w = d.defaultView;
+  let release;
+  w.LiveScorecard = {closedDays: () => new Promise(resolve => { release = () => resolve(new Set()); })};
+  const old = w.LivePredictions.loadForDraw('2026-10-07', 'complete_verified');
+  // Trong lúc chờ lịch, live.json sang kỳ 09/10 đang quay; lượt cũ (sẽ ra 08/10) không được đè.
+  await w.LivePredictions.loadForDraw('2026-10-09', 'partial');
+  release();
+  await old;
+  assert.equal(d.querySelector('time').dateTime, '2026-10-09');
+});
+

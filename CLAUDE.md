@@ -420,6 +420,8 @@ Chưa có sổ kỳ sắp quay (pipeline tính xong ~18:40, sau kỳ vừa quay)
 giờ khoá kỳ ấy mà vẫn không có sổ thì nói là không có. Có sổ thì hàng «Trước giờ quay» ghi giờ ghi sổ (`generated_at`, giờ VN) và
 hàng kỳ sắp quay ghi số mục trùng danh sách kỳ vừa quay: tổ hợp gần như phẳng nên Top 10 hai kỳ liền nhau thường trùng 10/10 (sổ
 06-11 ghi lúc 18:38 sau kỳ 05-11, cả 100 xác suất Đặc Biệt đều đổi mà Top 10 giữ nguyên) và chủ dự án đã tưởng số bị chép sang.
+Khối «Dự đoán trong ngày» (`live-predictions.js`) lấy kỳ sau qua `LiveScorecard.closedDays` (bỏ ngày nghỉ, MỘT lần đọc lịch cho
+cả trang); kỳ sau chưa có số thì nói «đang chờ tính», không «chưa có».
 Vị trí trên bảng kết quả (03-11-2026): mở một cầu thì hai chữ số nguồn được tô trên bảng `#results` đầu trang Live
 CHỈ khi bảng ấy đang hiện đúng kỳ nguồn và đủ 27 ô trùng `draws` của sổ (`boardSlots`); đóng khung, đổi kỳ hay báo lỗi
 thì gỡ dấu. Liên kết sang trang soi cầu mang `ngay`, `so`, `vt=AxB` (thêm `thu` cho danh sách theo thứ; soi đường mang
