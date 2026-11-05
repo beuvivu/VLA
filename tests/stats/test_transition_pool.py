@@ -102,6 +102,23 @@ def test_a_weak_injected_relationship_does_not_switch_the_pool(real) -> None:
     assert kind == "arithmetic"
 
 
+def test_when_the_two_pools_coincide_the_test_reports_no_difference_not_rounding_noise() -> None:
+    """Đặc Biệt: mỗi kỳ đúng một số về, nên mỗi ngày chỉ một hàng nguồn hoạt động và hai phép hợp
+    trùng nhau về toán học. t phải là 0 (không khác biệt), không phải t của nhiễu làm tròn.
+
+    Ngày 05-11-2026 hai lượt pipeline trên CÙNG dữ liệu in t = 0,69 rồi 1,51 cho Đặc Biệt.
+    """
+    rng = np.random.default_rng(5)
+    days = 1200
+    h = np.zeros((days, 100), dtype=np.int8)
+    h[np.arange(days), rng.integers(0, 100, size=days)] = 1
+    kind, diagnostics = nd.select_transition_pool(h)
+    assert kind == "arithmetic"
+    assert diagnostics["holdout_days"] > 0
+    assert diagnostics["t_statistic"] == 0.0
+    assert diagnostics["brier_arithmetic"] == pytest.approx(diagnostics["brier_logodds"], abs=1e-15)
+
+
 def test_short_history_falls_back_without_crashing() -> None:
     rng = np.random.default_rng(0)
     h = (rng.random((50, 100)) < 0.2378).astype(np.int8)
