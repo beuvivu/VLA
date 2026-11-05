@@ -19,9 +19,10 @@ import tempfile
 import zipfile
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import pandas as pd
+if TYPE_CHECKING:  # pandas chỉ cần cho atomic_to_csv: job Chromium của CI không cài pandas, mà
+    import pandas as pd  # web.page_output (qua write_text_unless_only_stamps) lại nằm trong chuỗi import của nó.
 
 
 def atomic_write_bytes(
