@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.atomic_io import atomic_to_csv
 from evaluation.backfill_baseline_skill import brier_is_comparable
 from ensemble.ensemble_components import probability_component
 from ensemble.ensemble_utils import (
@@ -180,6 +181,25 @@ def evaluate_latest_emitted(
     }
 
 
+def _same_metrics(previous: pd.Series, row: dict) -> bool:
+    """Dòng đã ghi trùng mọi số đo của dòng mới (bỏ qua giờ ghi). Số so đúng bằng nhau sau khi đọc lại CSV."""
+    for key, value in row.items():
+        if key == "updated_at_utc":
+            continue
+        if key not in previous.index:
+            return False
+        before = previous[key]
+        if isinstance(value, float):
+            try:
+                if float(before) != value:
+                    return False
+            except (TypeError, ValueError):
+                return False
+        elif str(before) != str(value):
+            return False
+    return True
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Append honest metrics for the latest retained emitted ensemble prediction."
@@ -212,19 +232,21 @@ def main() -> None:
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    new_row = pd.DataFrame([row])
     if out.exists() and out.stat().st_size > 0:
         old = pd.read_csv(out)
-        old = old[
-            (old["mode"].astype(str) != str(row["mode"]))
-            | (old["target_date"].astype(str) != str(row["target_date"]))
-        ]
-        result = pd.concat([old, new_row], ignore_index=True)
+        same = (old["mode"].astype(str) == str(row["mode"])) & (
+            old["target_date"].astype(str) == str(row["target_date"])
+        )
+        if same.any() and "updated_at_utc" in old.columns and _same_metrics(old[same].iloc[-1], row):
+            # Chạy lại trên cùng dữ liệu (pipeline chạy lại trong ngày) ra đúng số đo cũ: giữ giờ ghi
+            # đầu để sổ không đổi byte nào. Trước 06-11-2026 mỗi lượt chạy lại ghi lại dòng chỉ để đổi giờ.
+            row["updated_at_utc"] = old[same].iloc[-1]["updated_at_utc"]
+        result = pd.concat([old[~same], pd.DataFrame([row])], ignore_index=True)
     else:
-        result = new_row
+        result = pd.DataFrame([row])
     result = label_brier_units(result)
-    result = result.sort_values(["mode", "target_date"])
-    result.to_csv(out, index=False)
+    result = result.sort_values(["mode", "target_date"], kind="stable")
+    atomic_to_csv(result, out, index=False)
     print(
         f"[OK] exact emitted ensemble metrics {row['mode']} {row['target_date']}: "
         f"logloss={row['logloss']:.6f} brier={row['brier']:.6f} -> {out}"

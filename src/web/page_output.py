@@ -13,6 +13,7 @@ from pathlib import Path
 
 from web.css_links import CRITICAL_CSS
 from web.ui_page_refinements import refine_page
+from core.atomic_io import write_text_unless_only_stamps
 from core.paths import ASSETS, TEMPLATES
 
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
@@ -208,6 +209,18 @@ def _inject_source_detail_style(path: Path, html: str) -> str:
     return html.replace("</head>", f"{style}\n</head>", 1)
 
 
+#: Dấu giờ DỰNG trên trang: trang chỉ khác bản đang có ở các mẩu này thì giữ bản cũ
+#: (``core.atomic_io.write_text_unless_only_stamps``). Ngày 05-11-2026 lượt pipeline chạy lại
+#: trên cùng dữ liệu ghi lại 15 trang chỉ vì chúng.
+PAGE_BUILD_STAMPS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"Dựng lúc \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"),
+    re.compile(r"Bản dựng: \d\d/\d\d/\d{4} \d\d:\d\d UTC\+7"),
+    re.compile(r"Bản dữ liệu được dựng lúc \d\d:\d\d \d\d/\d\d/\d{4}"),
+    re.compile(r'<time id="footerBuilt" datetime="[^"]*">[^<]*</time>'),
+    re.compile(r'"generated_at(?:_utc)?":\s*"[^"]*"'),
+)
+
+
 def write_page(path: Path, html: str) -> None:
     from web.site_assets import rewrite_assets
 
@@ -224,7 +237,7 @@ def write_page(path: Path, html: str) -> None:
     refined = attach_crafto_design(path, refined)
     refined = _attach_theme_bootstrap(path, refined)
     refined = _attach_evidence(path, refined)
-    path.write_text(rewrite_assets(path, strip_comments(refined)), encoding="utf-8")
+    write_text_unless_only_stamps(path, rewrite_assets(path, strip_comments(refined)), PAGE_BUILD_STAMPS)
 
 
 def _attach_theme_bootstrap(path: Path, html: str) -> str:

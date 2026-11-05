@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
+import re
 from calendar import monthrange
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ from collections.abc import Iterable, Sequence
 import numpy as np
 import pandas as pd
 
+from core.atomic_io import write_text_unless_only_stamps
 from core.safe_io import read_csv_or_empty, read_json_or_empty
 
 from web.ui_locale import strategy_label, value_label
@@ -889,7 +891,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 </div>
 '''
-    out_path.write_text(md,encoding="utf-8")
+    # Chỉ khác dòng «Tạo lúc …» thì giữ bản đang có: lượt pipeline chạy lại không commit lại tệp.
+    write_text_unless_only_stamps(out_path, md, (re.compile(r"Tạo lúc \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"),))
     print(f"Đã ghi {out_path} ({out_path.stat().st_size:,} byte)")
 
 

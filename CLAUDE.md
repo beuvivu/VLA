@@ -354,6 +354,12 @@ Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atom
 `record_pred_history.write_history` (nhãn `y` kiểu `Int64`): trước 04-11-2026 hai bước của mỗi lượt ghi `0.0` rồi `0`, viết
 lại cả 27 800 dòng mà không giá trị nào đổi (`tests/evaluation/test_pred_history_ledger.py` đòi dòng cũ giữ từng byte).
 
+Chạy lại trên CÙNG dữ liệu phải ra CÙNG tệp (05-11-2026: lượt chạy lại sau khi gộp PR ghi lại 125 tệp). `sort_values` một
+khoá và `argsort` khai `kind="stable"`, `argpartition` bị cấm (`tests/repo/test_stable_sorting.py`): sắp xếp mặc định xếp phần
+tử hoà theo lệnh vector của CPU runner. Trang chỉ khác dấu giờ dựng (`page_output.PAGE_BUILD_STAMPS`) và xlsx chỉ khác giờ lưu
+thì giữ tệp cũ (`atomic_io.write_text_unless_only_stamps`, `atomic_io.save_xlsx`); dấu giờ dựng kiểu mới phải vào
+`PAGE_BUILD_STAMPS` — mỗi mẫu được ghim vào một trang thật. Dòng `ensemble_history.csv` có số đo trùng giữ giờ ghi đầu.
+
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/evaluation/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài

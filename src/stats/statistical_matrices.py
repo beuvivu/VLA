@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from ingest.lottery import Lottery, RepoPaths
+from core.atomic_io import save_xlsx
 from core.number_reference import all_cap_loto_50
 from stats.conditional_matrices import build_conditional_tables
 
@@ -677,7 +678,7 @@ def _write_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
             width = min(max(10, max([len(str(col)), *lengths]) + 2), 28)
             ws.column_dimensions[get_column_letter(col_idx)].width = width
 
-    wb.save(path)
+    save_xlsx(wb, path)
 
 
 def _manifest(*, out_dir: Path, as_of: str, files: list[str]) -> None:
