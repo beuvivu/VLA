@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at": "2026-11-05T19:34:43Z",
+  "generated_at": "2026-11-05T20:19:54Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -87,7 +87,7 @@
   "screen_summary": {
     "partner": {
       "mean_brier_skill": 0.00021118509992274208,
-      "mean_logloss_skill": 0.0016934193038646908
+      "mean_logloss_skill": 0.001693419303864567
     },
     "cap_50": {
       "mean_brier_skill": 2.0165709700486686e-06,
@@ -95,14 +95,14 @@
     },
     "bo": {
       "mean_brier_skill": 0.00011910932272180657,
-      "mean_logloss_skill": 0.0009171254488096533
+      "mean_logloss_skill": 0.0009171254488097772
     },
     "bong": {
       "mean_brier_skill": 0.00018091679400631912,
       "mean_logloss_skill": 0.0014723852215960326
     },
     "cham": {
-      "mean_brier_skill": 0.0002037694057819276,
+      "mean_brier_skill": 0.00020376940578184,
       "mean_logloss_skill": 0.0016588152023417199
     },
     "tong": {
@@ -119,27 +119,27 @@
   ],
   "confirmation": {
     "partner": {
-      "brier_skill": -6.480534840980551e-05,
+      "brier_skill": -6.480534840998074e-05,
       "logloss_skill": -0.0005846781287262899,
       "confirmed": false
     },
     "bo": {
-      "brier_skill": 2.3020099763204452e-05,
+      "brier_skill": 2.3020099763029228e-05,
       "logloss_skill": 0.00023542527905721317,
       "confirmed": false
     },
     "bong": {
-      "brier_skill": -2.526495750835841e-05,
-      "logloss_skill": -0.0002403504748347933,
+      "brier_skill": -2.5264957508533643e-05,
+      "logloss_skill": -0.00024035047483491722,
       "confirmed": false
     },
     "cham": {
-      "brier_skill": -3.0085673141385335e-05,
+      "brier_skill": -3.00856731417358e-05,
       "logloss_skill": -0.00026575712792411334,
       "confirmed": false
     },
     "tong": {
-      "brier_skill": -8.075803019905674e-06,
+      "brier_skill": -8.075803019905675e-06,
       "logloss_skill": -6.76840230579537e-05,
       "confirmed": false
     }
@@ -353,7 +353,7 @@
   },
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
-  "all_groups_confirmation_brier_skill": 1.2034657013663001e-05,
+  "all_groups_confirmation_brier_skill": 1.2034657013487774e-05,
   "all_groups_confirmation_logloss_skill": 0.0001051921979666142,
   "domain_active": false,
   "domain_trust": 0.0,
