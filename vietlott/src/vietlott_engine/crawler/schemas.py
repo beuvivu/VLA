@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -30,9 +30,11 @@ class MirrorRecord(BaseModel):
     @field_validator("date", mode="before")
     @classmethod
     def _parse_date(cls, v: object) -> object:
-        # the mirror occasionally stores epoch milliseconds
+        # the mirror occasionally stores epoch milliseconds: pandas' ``to_json`` writes a naive date as
+        # midnight UTC, so read it in UTC — the machine's own time zone shifted it to the previous day
+        # west of Greenwich (05-11-2026).
         if isinstance(v, (int, float)) or (isinstance(v, str) and v.isdigit()):
-            return datetime.fromtimestamp(int(v) / 1000).date()
+            return datetime.fromtimestamp(int(v) / 1000, tz=timezone.utc).date()
         return v
 
     def to_draw(self, spec: GameSpec, source: str = "github_mirror") -> Draw:

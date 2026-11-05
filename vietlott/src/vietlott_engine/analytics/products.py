@@ -42,7 +42,8 @@ def _g_test(observed: np.ndarray, expected_p: np.ndarray, min_expected: float = 
     n = observed.sum()
     exp = expected_p * n
     obs = observed.astype(float)
-    # pool from both ends towards the centre
+    # pool consecutive cells left to right until each pooled cell expects ≥ min_expected; a short
+    # remainder joins the last pooled cell (totals are kept, so G = 2 Σ o log(o/e) stays valid)
     o_c, e_c = [], []
     acc_o = acc_e = 0.0
     for o, e in zip(obs, exp):

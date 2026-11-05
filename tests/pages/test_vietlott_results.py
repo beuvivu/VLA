@@ -703,3 +703,18 @@ def test_the_summary_counts_draws_where_some_published_ticket_hit_two_numbers() 
     plain = BeautifulSoup(b._comparison_summary("mega645", [{**matched([2]), "components": [{"name": "main"}]}]),
                           "html.parser")
     assert "Kỳ có vé trúng từ 2 số" not in plain.get_text()
+
+
+def test_decimals_on_the_page_use_a_comma() -> None:
+    """Trang in số thập phân kiểu Việt: «9,2», không phải «9.2» (05-11-2026: sổ dự báo và nhiệt độ từng in dấu chấm)."""
+    entry = {"draws": 1419, "last_id": 1419, "last_date": "2026-11-03", "verdict": "Chưa có tín hiệu.",
+             "evidence": {"found": False, "text": "Chưa có bằng chứng."},
+             "board": {"recorded": 15, "scored": 14, "hits": 13, "expected": 9.2}}
+    card = b.analysis_markup(entry)
+    assert "trùng 13 so với kỳ vọng ngẫu nhiên 9,2." in card and "9.2" not in card
+    main = {"weights": {"statistical": 0.236, "bayesian_markov_graph": 0.233, "temporal_neural": 0.259, "uniform": 0.271},
+            "context": "shift", "memory_matches": [], "observations": 1008, "temperature": 0.75,
+            "short_window": 30, "retained_observations": 512}
+    agents = b.multi_agent_markup({"components": {"main": main}, "confidence": {"scored_live": 1},
+                                   "last_id": 1419, "last_date": "2026-11-03"})
+    assert "Nhiệt độ xác suất: <strong>0,75</strong>." in agents and "0.75" not in agents

@@ -172,25 +172,36 @@ def read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in fh if line.strip()]
 
 
-def write_jsonl(path: Path, rows: list[dict]) -> None:
-    """Replace a complete history atomically; a failed write preserves the old file."""
+def write_text_atomic(path: Path, text: str) -> None:
+    """Thay cả tệp bằng ``text`` (nén gzip nếu tên kết thúc ``.gz``): ghi tệp tạm cùng thư mục, ``fsync``
+    rồi ``os.replace``. Chết giữa chừng thì tệp cũ còn nguyên, không bao giờ là tệp cụt.
+
+    Nén thì tất định: ``mtime=0`` và tên bên trong là tên thật (``keno.jsonl``). Trước 05-11-2026
+    ``GzipFile`` lấy tên từ tệp tạm, nên header mang một tên ngẫu nhiên (``tmp4novzukb.tmp``) và hai
+    lần ghi cùng nội dung ra hai tệp khác nhau.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = "\n".join(json.dumps(r, ensure_ascii=False, separators=(",", ":")) for r in rows) + "\n"
+    data = text.encode("utf-8")
     name = None
     try:
         with tempfile.NamedTemporaryFile('wb', dir=path.parent, suffix='.tmp', delete=False) as fh:
             name = fh.name
             if str(path).endswith('.gz'):
-                with gzip.GzipFile(fileobj=fh, mode='wb', compresslevel=9, mtime=0) as compressed:
-                    compressed.write(text.encode('utf-8'))
+                with gzip.GzipFile(filename=path.name, fileobj=fh, mode='wb', compresslevel=9, mtime=0) as compressed:
+                    compressed.write(data)
             else:
-                fh.write(text.encode('utf-8'))
+                fh.write(data)
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(name, path)
     finally:
         if name and os.path.exists(name):
             os.unlink(name)
+
+
+def write_jsonl(path: Path, rows: list[dict]) -> None:
+    """Replace a complete history atomically; a failed write preserves the old file."""
+    write_text_atomic(path, "\n".join(json.dumps(r, ensure_ascii=False, separators=(",", ":")) for r in rows) + "\n")
 
 
 def history_to_rows(h: ProductHistory) -> list[dict]:
