@@ -83,7 +83,13 @@ def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
         }
         for pair, count in ctr.items()
     ]
-    return pd.DataFrame(rows).sort_values("count", ascending=False).reset_index(drop=True)
+    # Cặp hoà số lần xếp theo chính cặp số: sắp xếp một khoá mặc định (quicksort) xếp phần tử hoà theo
+    # lệnh vector của CPU, nên ngày 05-11-2026 hai lượt trên cùng dữ liệu in «68-97» rồi «68-76» ở trang chủ.
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["count", "x", "y"], ascending=[False, True, True], kind="stable")
+        .reset_index(drop=True)
+    )
 
 
 def _write_cap_loto_50_stats(*, data_dir: Path, out_dir: Path) -> None:

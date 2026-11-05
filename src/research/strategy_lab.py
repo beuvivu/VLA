@@ -474,8 +474,9 @@ def evaluate_lab(
                     "phi_correlation": corr,
                 }
             )
+    # Cặp chiến lược hoà tương quan giữ thứ tự dựng (sắp xếp ổn định), không theo lệnh vector của CPU.
     diversity = pd.DataFrame(div_rows).sort_values(
-        "phi_correlation", ascending=False, ignore_index=True
+        "phi_correlation", ascending=False, ignore_index=True, kind="stable"
     )
     return table, agreement, diversity
 
