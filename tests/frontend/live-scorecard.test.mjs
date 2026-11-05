@@ -592,6 +592,39 @@ test('Sổ tải lại đổi chỗ các mục: bảng cầu đang mở giữ đ
   assert.equal(d.querySelector('.live-bridge'), null);
 });
 
+test('Sổ tải lại: soi đường giữ đúng cầu đã chọn khi hai đường chung cặp vị trí mà khác độ trễ', async (t) => {
+  // Như số 34 của path-loto-active trong sổ 05-11-2026: 14×39 ở trễ 6 và ở trễ 9.
+  let paths = [{ a: 0, b: 1, streak: 3, lag: 1, base: '2026-10-21' }, { a: 0, b: 1, streak: 2, lag: 2, base: '2026-10-20' }];
+  const make = () => board('2026-10-22', {
+    schema: 2, draws: DRAWS,
+    lists: [{ id: 'path-de-stable', group: 'Soi cầu theo đường', title: 'Đường cầu', page: 'soi-path-de-stable.html',
+      kind: 'de', bridge: { type: 'path', mark: 'special', next: '2026-10-22' },
+      items: [{ label: '78', rule: { on: 'special', numbers: ['78'] }, prob: 0.011, base: 0.01,
+        bridges: paths, bridge_total: 2 }] }],
+  });
+  // 18:00 giờ VN, trước giờ khoá 18:10: hai lần tải lại sau (18:11, 18:22) đều chưa cách giờ khoá 1 giờ.
+  const start = '2026-10-22T11:00:00Z';
+  const { api, d, w } = setup(t, forDate(make), start);
+  let clock = Date.parse(start);
+  w.Date.now = () => clock;
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  chip(d, 'path-de-stable').click();
+  d.querySelector('[data-bridge-pick="1"]').click();
+  const pressed = () => [...d.getElementById('live-bridge-path-de-stable').querySelectorAll('[data-bridge-pick]')]
+    .filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.textContent);
+  assert.deepEqual(pressed(), ['0×1 · trễ 2 ngày · chuỗi 2']);
+  // Bản ghi lại y hệt: cầu trễ 2 vẫn được chọn, không về cầu trễ 1 chung cặp 0×1.
+  clock += 11 * 60000;
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  assert.deepEqual(pressed(), ['0×1 · trễ 2 ngày · chuỗi 2']);
+  // Bản sau đảo thứ tự hai đường: lựa chọn đi theo cầu trễ 2 lên đầu.
+  paths = [paths[1], paths[0]];
+  clock += 11 * 60000;
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  assert.deepEqual(pressed(), ['0×1 · trễ 2 ngày · chuỗi 2']);
+  assert.equal(d.querySelector('[data-bridge-pick="0"]').getAttribute('aria-pressed'), 'true');
+});
+
 test('Sổ còn có thể được ghi lại tới giờ khoá: tải lại mỗi 10 phút, thôi khi đã là bản đóng băng cuối', async (t) => {
   const urls = [];
   let version = 1;

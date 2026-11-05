@@ -601,7 +601,7 @@
         button.setAttribute('aria-pressed', i === pick ? 'true' : 'false');
         button.addEventListener('click', function () {
           state.open = { date: opened.date, list: list.id, item: opened.item, label: opened.label, bridge: i,
-            pick: b.a + 'x' + b.b };
+            pick: bridgeKey(b) };
           state.focus = '#live-bridge-' + list.id + ' [data-bridge-pick="' + i + '"]';
           render();
         });
@@ -836,9 +836,15 @@
     if (state.boards[date] === entry && (date === state.draw || date === state.next)) render();
   }
 
+  // Danh tính một cầu trong danh sách của một số: cặp vị trí, cộng độ trễ với soi đường — hai đường cầu có thể
+  // chung cặp vị trí mà khác độ trễ (sổ 05-11-2026: số 34 của path-loto-active có 14×39 ở trễ 6 và trễ 9).
+  function bridgeKey(b) {
+    return b.a + 'x' + b.b + (b.lag === undefined || b.lag === null ? '' : '@' + b.lag);
+  }
+
   // Sổ vừa tải lại có thể đã đổi mục (sổ còn được ghi tới giờ khoá): số đang mở giữ đúng NHÃN của nó và cầu
-  // đang chọn giữ đúng cặp vị trí, không theo chỉ số cũ — chỉ số cũ có thể đã trỏ sang số khác. Số không còn
-  // trong bản mới thì đóng bảng cầu; cầu không còn thì về cầu đầu.
+  // đang chọn giữ đúng danh tính (bridgeKey), không theo chỉ số cũ — chỉ số cũ có thể đã trỏ sang số khác. Số
+  // không còn trong bản mới thì đóng bảng cầu; cầu không còn thì về cầu đầu.
   function reconcileOpen(date, board) {
     var open = state.open;
     if (!open || open.date !== date) return;
@@ -850,12 +856,12 @@
     if (index < 0) { state.open = null; return; }
     var src = source(list, list.items[index], board);
     if (!src) { state.open = null; return; }
-    var pick = 0;
-    for (var k = 0; k < src.bridges.length; k++) {
-      if (src.bridges[k].a + 'x' + src.bridges[k].b === open.pick) { pick = k; break; }
+    var pick = -1;
+    for (var k = 0; open.pick && k < src.bridges.length; k++) {
+      if (bridgeKey(src.bridges[k]) === open.pick) { pick = k; break; }
     }
-    state.open = { date: date, list: open.list, item: index, label: open.label, bridge: open.pick ? pick : 0,
-      pick: open.pick && pick < src.bridges.length && src.bridges[pick].a + 'x' + src.bridges[pick].b === open.pick ? open.pick : '' };
+    state.open = { date: date, list: open.list, item: index, label: open.label, bridge: pick < 0 ? 0 : pick,
+      pick: pick < 0 ? '' : open.pick };
   }
 
   // Mọi trạng thái "complete*" đều nghĩa là kỳ đã quay đủ 27 giải (như live-predictions.js).
