@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-11-05T19:37:17Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-11-05T20:16:04Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -918,14 +918,14 @@
 | 10 | **80** | 2.031 | trễ 28.0 · trước=trượt · mẫu=46 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 11 | **19** | 1.990 | trễ 28.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 12 | **68** | 1.926 | trễ 28.0 · trước=trượt · mẫu=54 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | **87** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **33** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 13 | **33** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | **87** | 1.887 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **83** | 1.876 | trễ 7.0 · trước=trượt · mẫu=43 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 16 | **97** | 1.855 | trễ 7.0 · trước=trượt · mẫu=45 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 17 | **48** | 1.815 | trễ 7.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 18 | **79** | 1.653 | trễ 14.0 · trước=trượt · mẫu=49 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 19 | **07** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
-| 20 | **84** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
+| 20 | **58** | 1.492 | trễ 28.0 · trước=trượt · mẫu=33 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 
@@ -979,7 +979,7 @@
 | --- | --- | --- | --- |
 | Đầu Đặc Biệt | **4** (2) · **0** (1) · **1** (1) · **2** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
 | Đuôi Đặc Biệt | **6** (2) · **2** (1) · **7** (1) · **9** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Chạm Đặc Biệt | **2** (2) · **6** (2) · **4** (2) · **1** (1) · **0** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Chạm Đặc Biệt | **2** (2) · **4** (2) · **6** (2) · **0** (1) · **1** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
 | Tổng Đặc Biệt | **0** (2) · **1** (1) · **2** (1) · **8** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
 
 ### Cặp lộn · tháng
@@ -1141,9 +1141,9 @@
 | 2 | **24** | 1.801 | p 0.0185 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▱ |
 | 3 | **53** | 1.801 | p 0.0185 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▱ |
 | 4 | **75** | 1.801 | p 0.0185 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | **80** | 0.277 | p 0.0298 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | **15** | 0.277 | p 0.0298 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | **29** | 0.277 | p 0.0298 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | **15** | 0.277 | p 0.0298 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | **29** | 0.277 | p 0.0298 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | **80** | 0.277 | p 0.0298 · q 0.4263 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▱▱ |
 | 8 | **37** | 1.662 | p 0.0528 · q 0.5872 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 | 9 | **59** | 1.662 | p 0.0528 · q 0.5872 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 | 10 | **36** | 0.416 | p 0.0863 · q 0.7835 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▱▱▱▱▱▱▱▱ |
@@ -1151,7 +1151,7 @@
 | 12 | **16** | 1.524 | p 0.1321 · q 0.7835 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▱▱▱▱▱▱▱▱ |
 | 13 | **63** | 1.524 | p 0.1321 · q 0.7835 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▱▱▱▱▱▱▱▱ |
 | 14 | **81** | 1.524 | p 0.1321 · q 0.7835 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▱▱▱▱▱▱▱▱ |
-| 15 | **54** | 0.554 | p 0.2037 · q 0.7835 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▱▱▱▱▱▱▱▱▱ |
+| 15 | **07** | 0.554 | p 0.2037 · q 0.7835 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▱▱▱▱▱▱▱▱▱ |
 
 ### LOTO · mức ý nghĩa 90 ngày
 | # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
@@ -1160,17 +1160,17 @@
 | 2 | **58** | 0.514 | p 0.0089 · q 0.4438 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▱▱▱▱▱▱▱▱ |
 | 3 | **15** | 0.607 | p 0.0355 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
 | 4 | **25** | 0.607 | p 0.0355 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 5 | **48** | 1.355 | p 0.0638 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 6 | **37** | 1.355 | p 0.0638 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 5 | **37** | 1.355 | p 0.0638 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 6 | **48** | 1.355 | p 0.0638 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
 | 7 | **64** | 1.355 | p 0.0638 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 8 | **05** | 0.654 | p 0.0819 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 9 | **01** | 0.654 | p 0.0819 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 8 | **01** | 0.654 | p 0.0819 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 9 | **05** | 0.654 | p 0.0819 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
 | 10 | **30** | 0.654 | p 0.0819 · q 0.8195 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
 | 11 | **35** | 1.308 | p 0.1079 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
 | 12 | **70** | 1.308 | p 0.1079 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 13 | **60** | 0.701 | p 0.1366 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 14 | **23** | 0.701 | p 0.1366 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
-| 15 | **80** | 0.701 | p 0.1366 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 13 | **23** | 0.701 | p 0.1366 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 14 | **60** | 0.701 | p 0.1366 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
+| 15 | **78** | 0.701 | p 0.1366 · q 0.8535 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▱▱▱▱▱▱▱▱▱▱ |
 
 ### Đặc Biệt · mức ý nghĩa 30 ngày
 | # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
