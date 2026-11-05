@@ -61,11 +61,11 @@
 .live-bridge-link{display:inline-block;margin-top:10px;font-size:12px;font-weight:650;color:var(--ui-brand-ink)}
 .live-bridge-book{margin-left:16px}
 @media(max-width:700px){.live-bridge-days{grid-template-columns:1fr}.is-bridge td.live-bridge-cell{padding:4px 8px 12px}}
-.live-scorecard-views{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.live-scorecard-views[hidden]{display:none}
-.live-scorecard-view{min-height:32px;padding:4px 12px;border:1px solid var(--ui-border);border-radius:999px;background:var(--ui-surface-2);color:var(--ui-ink);font:inherit;font-size:12px;font-variant-numeric:tabular-nums;cursor:pointer}
-.live-scorecard-view[aria-pressed="true"]{border-color:var(--ui-brand-border);background:var(--ui-brand-soft);color:var(--ui-brand-ink);font-weight:700}
-.live-scorecard-view:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}
+.live-scorecard-day{display:block;margin-top:2px;font-size:11px;font-weight:500;color:var(--ui-ink-soft);font-variant-numeric:tabular-nums}
+.is-next td{background:var(--ui-brand-soft)}
+.is-next .live-scorecard-when{color:var(--ui-brand-ink);font-weight:650}
+.is-next+.is-before td{border-top:1px dashed var(--ui-border)}
+.live-scorecard-absent{font-size:12px;font-style:italic;color:var(--ui-ink-soft)}
 .live-bridge-note{margin:0 0 8px;font-size:12px;line-height:1.6;color:var(--ui-ink-2)}
 .live-bridge-onboard{margin:8px 0 0;font-size:12px;line-height:1.6;color:var(--ui-ink-2)}
 .live-bridge-onboard a{font-weight:650;color:var(--ui-brand-ink)}

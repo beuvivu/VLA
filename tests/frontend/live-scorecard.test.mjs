@@ -20,7 +20,7 @@ function setup(t, fetcher, now = EVENING, before = '') {
   const fixed = Date.parse(now);
   dom.window.Date.now = () => fixed;
   dom.window.eval(script);
-  return { api: dom.window.LiveScorecard, d: dom.window.document };
+  return { api: dom.window.LiveScorecard, d: dom.window.document, w: dom.window };
 }
 
 const loto = (n, prob = null, need = 1) => ({ label: n, rule: { on: 'loto', numbers: [n], need }, prob, base: 0.2377 });
@@ -70,6 +70,8 @@ test('Mỗi danh sách là hai hàng song song, mỗi nhóm một tbody gắn th
   assert.deepEqual(states(d, 'top', 'is-before'), ['25,0%', '24,0%', '23,0%']);
   assert.deepEqual(states(d, 'top', 'is-after'), ['wait', 'wait', 'wait']);
   assert.equal(d.querySelector('time').dateTime, '2026-10-22');
+  assert.match(d.getElementById('live-scorecard-summary').textContent, /3 danh sách, 7 mục đã đóng băng lúc 18:10/,
+    '19:00 đã qua giờ khoá 18:10');
 });
 
 test('Đang quay: số đã về chốt ngay, số chưa về là "chờ" chứ không "trượt"', async (t) => {
@@ -96,7 +98,7 @@ test('Đủ 27 giải: mục chưa về thành "trượt", Đặc Biệt và ch�
   const stat = d.querySelector('tbody[data-list-id="top"] .is-after .live-scorecard-stat');
   assert.match(stat.textContent, /Trúng 1\/3 = 33,3% · kỳ vọng 24,0%/);
   assert.equal(stat.dataset.verdict, 'above');
-  assert.match(d.getElementById('live-scorecard-summary').textContent, /Đã trúng 4\/7 mục/);
+  assert.match(d.getElementById('live-scorecard-summary').textContent, /Kỳ vừa quay \(kỳ 22\/10 · hôm nay\): đã trúng 4\/7 mục/);
 });
 
 test('Luật hai nháy cần đủ nháy; một nháy là chờ rồi trượt', async (t) => {
@@ -394,62 +396,112 @@ test('Danh sách cầu bị bỏ vị trí (tính lại lệch) không rơi xu�
   assert.ok(item(d, 'cau-keo-loto', 0), 'danh sách không vị trí vẫn tra được');
 });
 
-test('Kỳ đã quay xong: tối hôm ấy mặc định đối chiếu, có nút sang kỳ sắp quay', async (t) => {
+// Hàng của một danh sách: lớp, chữ ô "Thời điểm" (lúc · kỳ) và kỳ của hàng.
+const rows = (d, id) => [...d.querySelectorAll(`tbody[data-list-id="${id}"] tr:not(.is-bridge)`)].map((r) => [
+  r.className, r.querySelector('.live-scorecard-when').firstChild.textContent,
+  r.querySelector('.live-scorecard-day').textContent, r.dataset.draw]);
+const nextItem = (d, id, index) => d.querySelector(`tbody[data-list-id="${id}"] .is-next [data-bridge-item="${index}"]`);
+
+test('Kỳ đã quay xong: mỗi danh sách ba hàng — trước giờ quay kỳ sắp quay, rồi trước và sau giờ quay kỳ vừa quay', async (t) => {
   const urls = [];
   const { api, d } = setup(t, async (url) => { urls.push(url); return forDate(runningBoard)(url); });
   const done = { draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) };
   await api.update(done);
-  const views = [...d.querySelectorAll('.live-scorecard-view')];
-  assert.deepEqual(views.map((b) => b.textContent), ['Kỳ 22/10/2026 · đã quay', 'Kỳ 23/10/2026 · sắp quay']);
-  assert.deepEqual(views.map((b) => b.getAttribute('aria-pressed')), ['true', 'false']);
-  assert.equal(d.querySelector('time').dateTime, '2026-10-22');
-  assert.ok(states(d, 'top', 'is-after').every((s) => s !== 'wait'), 'kỳ đã quay được chấm');
-  views[1].click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
-  assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json']);
-  assert.ok(states(d, 'top', 'is-after').every((s) => s === 'wait'), 'kỳ sắp quay chưa có giải nào');
-  assert.ok(item(d, 'cau-keo-loto', 0), 'số trước giờ quay của kỳ sắp quay bấm được');
-  // live.json cập nhật lại cùng kỳ: lựa chọn của người đọc được giữ.
+  assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json'], 'sổ của hai kỳ, tải độc lập');
+  // 19:00 giờ VN ngày 22/10: kỳ vừa quay là hôm nay, kỳ sắp quay là ngày mai.
+  assert.deepEqual(rows(d, 'top'), [
+    ['is-next', 'Trước giờ quay', 'kỳ 23/10 · ngày mai', '2026-10-23'],
+    ['is-before', 'Trước giờ quay', 'kỳ 22/10 · hôm nay', '2026-10-22'],
+    ['is-after', 'Sau giờ quay', 'kỳ 22/10 · hôm nay', '2026-10-22'],
+  ]);
+  assert.equal(d.querySelector('tbody[data-list-id="top"] th').rowSpan, 3);
+  assert.ok(states(d, 'top', 'is-after').every((s) => s !== 'wait'), 'kỳ vừa quay được chấm');
+  assert.deepEqual(states(d, 'top', 'is-next'), ['25,0%', '24,0%', '23,0%'], 'kỳ sắp quay in xác suất, không chấm');
+  assert.equal(d.querySelector('.live-scorecard-view'), null, 'không còn nút chuyển kỳ');
+  assert.equal(d.querySelector('time').dateTime, '2026-10-22', 'đầu bảng là kỳ của bảng kết quả');
+  const lines = [...d.getElementById('live-scorecard-summary').children].map((p) => p.textContent);
+  assert.match(lines[0], /^Kỳ sắp quay \(kỳ 23\/10 · ngày mai\): 5 danh sách, 11 mục, khoá lúc 18:10 · /,
+    'sổ kỳ sắp quay chưa tới giờ khoá: chưa phải «đã đóng băng»');
+  assert.match(lines[1], /^Kỳ vừa quay \(kỳ 22\/10 · hôm nay\): đã trúng/);
+  // Cùng một số ở hai hàng "Trước giờ quay" là hai nút riêng, mỗi nút mở cầu trong sổ của chính kỳ ấy.
+  nextItem(d, 'cau-keo-loto', 0).click();
+  assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
+  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
+  assert.equal(d.activeElement, nextItem(d, 'cau-keo-loto', 0));
+  assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/);
+  item(d, 'cau-keo-loto', 0).click();
+  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
+  assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
+  assert.equal(d.querySelectorAll('.live-bridge').length, 1, 'mỗi lúc một bảng cầu');
+  // live.json cập nhật lại cùng kỳ: bảng cầu đang mở được giữ, không tải lại sổ.
   await api.update(done);
-  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
-  assert.equal(d.querySelector('.live-scorecard-view[aria-pressed="true"]').dataset.view, '2026-10-23');
+  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
+  assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json']);
 });
 
-test('Sang ngày mới (giờ VN) vẫn mặc định kỳ đã quay, giữ dấu về/trượt; kỳ đang quay thì không có nút chọn', async (t) => {
-  // Bảng kết quả đầu trang còn hiện kỳ 22/10 tới phiên 23/10: bảng đối chiếu phải chấm đúng kỳ ấy,
-  // không tự sang kỳ sắp quay (mọi số "chờ", mất màu về/trượt).
+test('Sáng hôm sau (giờ VN): hôm nay là kỳ sắp quay, hôm qua giữ dấu về/trượt; đang quay thì hai hàng của kỳ ấy', async (t) => {
   for (const now of ['2026-10-22T17:30:00Z', '2026-10-23T09:00:00Z']) {
-    const urls = [];
-    const morning = setup(t, async (url) => { urls.push(url); return forDate(runningBoard)(url); }, now);
+    const morning = setup(t, forDate(runningBoard), now);
     await morning.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
-    assert.equal(morning.d.querySelector('time').dateTime, '2026-10-22', now);
-    assert.deepEqual(boards(urls), ['2026-10-22.json']);
-    assert.ok(states(morning.d, 'top', 'is-after').every((s) => s !== 'wait'), 'kỳ đã quay được chấm lúc ' + now);
+    assert.deepEqual(rows(morning.d, 'top').map((r) => r[0] + ' ' + r[2]),
+      ['is-next kỳ 23/10 · hôm nay', 'is-before kỳ 22/10 · hôm qua', 'is-after kỳ 22/10 · hôm qua'], now);
     assert.ok(states(morning.d, 'top', 'is-after').includes('hit'), 'có số về được tô lúc ' + now);
-    assert.deepEqual([...morning.d.querySelectorAll('.live-scorecard-view')].map((b) => b.getAttribute('aria-pressed')),
-      ['true', 'false']);
+    assert.equal(morning.d.querySelector('time').dateTime, '2026-10-22', now);
   }
+  // 18:20 giờ VN ngày 23/10: kỳ 23/10 đang quay, chưa có kỳ sắp quay.
   const live = setup(t, forDate(runningBoard), '2026-10-23T11:20:00Z');
   await live.api.update({ draw_date: '2026-10-23', status: 'partial', prizes: prizes(FULL, 3) });
-  assert.equal(live.d.querySelector('.live-scorecard-views').hidden, true);
-  assert.equal(live.d.querySelector('time').dateTime, '2026-10-23');
+  assert.deepEqual(rows(live.d, 'top').map((r) => r[0] + ' ' + r[2]),
+    ['is-before kỳ 23/10 · hôm nay', 'is-after kỳ 23/10 · hôm nay']);
+  assert.equal(live.d.querySelector('tbody[data-list-id="top"] th').rowSpan, 2);
+  assert.match(live.d.getElementById('live-scorecard-summary').textContent, /^Kỳ đang quay \(kỳ 23\/10 · hôm nay\)/);
 });
 
-test('Bấm số ở khối Dự đoán trong ngày: mở đúng số ấy trong bảng của kỳ sắp quay', async (t) => {
+test('Sang phiên mới: sổ của kỳ sắp quay được dùng lại, sổ kỳ cũ bỏ', async (t) => {
+  const urls = [];
+  const { api, d } = setup(t, async (url) => { urls.push(url); return forDate(runningBoard)(url); }, '2026-10-23T11:20:00Z');
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  await api.update({ draw_date: '2026-10-23', status: 'partial', prizes: prizes(FULL, 3) });
+  assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json'], 'không tải lại sổ 23/10');
+  assert.ok(rows(d, 'top').every((r) => r[3] === '2026-10-23'));
+});
+
+test('Một kỳ thiếu danh sách hay chưa có sổ: hàng ấy nói rõ, hai hàng kia vẫn đủ', async (t) => {
+  const fetcher = forDate((date) => {
+    const made = runningBoard(date);
+    if (date === '2026-10-23') made.lists = made.lists.filter((list) => list.id !== 'de');
+    return made;
+  });
+  const { api, d } = setup(t, fetcher);
+  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  const de = d.querySelector('tbody[data-list-id="de"] .is-next');
+  assert.ok(de.classList.contains('is-absent'));
+  assert.match(de.textContent, /không có danh sách này/);
+  assert.deepEqual(rows(d, 'de').map((r) => r[0]), ['is-next is-absent', 'is-before', 'is-after']);
+  // Sổ kỳ sắp quay chưa có (404): không có hàng của nó, dòng tóm tắt báo rõ.
+  const missing = setup(t, (url) => (url.endsWith('2026-10-23.json') ? Promise.resolve({ ok: false, status: 404 })
+    : forDate(runningBoard)(url)));
+  await missing.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  assert.deepEqual(rows(missing.d, 'top').map((r) => r[0]), ['is-before', 'is-after']);
+  assert.match(missing.d.getElementById('live-scorecard-summary').children[0].textContent,
+    /^Kỳ sắp quay \(kỳ 23\/10 · ngày mai\): Chưa có sổ phỏng đoán/);
+});
+
+test('Bấm số ở khối Dự đoán trong ngày: mở đúng số ấy trong hàng của kỳ đã bấm', async (t) => {
   const { api, d } = setup(t, forDate(runningBoard));
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   await api.reveal('2026-10-23', 'loto', '87');
-  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
-  const button = item(d, 'cau-keo-loto', 1);
+  const button = nextItem(d, 'cau-keo-loto', 1);
   assert.equal(button.getAttribute('aria-expanded'), 'true');
   assert.equal(d.activeElement, button);
   assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^87:/);
+  await api.reveal('2026-10-22', 'loto', '78');
+  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true', 'kỳ vừa quay mở ở hàng của nó');
   await api.reveal('2026-10-23', 'de', '65');
   assert.ok(d.getElementById('live-bridge-cau-keo-de'));
   // Kỳ không có trên bảng: không làm gì.
   await api.reveal('2026-10-30', 'loto', '78');
-  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+  assert.ok(d.getElementById('live-bridge-cau-keo-de'));
 });
 
 test('Kỳ sắp quay bỏ qua ngày nghỉ quay đã khai (Tết), như next_draw_date của sổ', async (t) => {
@@ -457,11 +509,7 @@ test('Kỳ sắp quay bỏ qua ngày nghỉ quay đã khai (Tết), như next_dr
   const fetcher = forDate(runningBoard, ['2026-10-23', '2026-10-24']);
   const { api, d } = setup(t, async (url) => { urls.push(url); return fetcher(url); }, '2026-10-23T03:00:00Z');
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
-  assert.deepEqual([...d.querySelectorAll('.live-scorecard-view')].map((b) => b.textContent),
-    ['Kỳ 22/10/2026 · đã quay', 'Kỳ 25/10/2026 · sắp quay']);
-  d.querySelectorAll('.live-scorecard-view')[1].click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(d.querySelector('time').dateTime, '2026-10-25');
+  assert.equal(rows(d, 'top')[0][2], 'kỳ 25/10');
   assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-25.json'], 'không hỏi sổ của ngày nghỉ');
   assert.equal(urls.filter((u) => u.endsWith('/closed.json')).length, 1);
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
@@ -469,7 +517,7 @@ test('Kỳ sắp quay bỏ qua ngày nghỉ quay đã khai (Tết), như next_dr
   // Không đọc được lịch nghỉ: ngày lịch kế tiếp.
   const plain = setup(t, forDate(runningBoard), '2026-10-23T03:00:00Z');
   await plain.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
-  assert.equal(plain.d.querySelectorAll('.live-scorecard-view')[1].dataset.view, '2026-10-23');
+  assert.equal(rows(plain.d, 'top')[0][3], '2026-10-23');
 });
 
 test('Lệnh mở số gắn với kỳ đã bấm: sổ tải xong là kỳ khác thì không mở', async (t) => {
@@ -478,15 +526,18 @@ test('Lệnh mở số gắn với kỳ đã bấm: sổ tải xong là kỳ kh�
   const { api, d } = setup(t, (url) => (url.endsWith('2026-10-23.json')
     ? new Promise((resolve) => { release = () => resolve(ok(runningBoard('2026-10-23'))); })
     : fetcher(url)));
-  await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  const first = api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
+  await new Promise((resolve) => setTimeout(resolve, 0));
   const pending = api.reveal('2026-10-23', 'loto', '78');
   // live.json sang kỳ 24/10 trước khi sổ 23/10 tải xong.
   await api.update({ draw_date: '2026-10-24', status: 'partial', prizes: {} });
   release();
   await pending;
+  await first;
   assert.equal(d.querySelector('time').dateTime, '2026-10-24');
-  assert.equal(d.querySelector('.live-bridge'), null, 'không mở số 78 của kỳ 24/10');
+  assert.equal(d.querySelector('.live-bridge'), null, 'không mở số 78 của kỳ 23/10');
   assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
+  assert.ok(rows(d, 'top').every((r) => r[3] === '2026-10-24'), 'sổ 23/10 tải trễ không được đặt lên bảng');
 });
 
 test('Bấm số trước khi bảng biết có kỳ sắp quay (lịch nghỉ đang tải): lệnh mở chờ rồi mở đúng số', async (t) => {
@@ -500,13 +551,55 @@ test('Bấm số trước khi bảng biết có kỳ sắp quay (lịch nghỉ �
   release();
   await first;
   await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
-  assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
+  assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
   assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/);
-  // Lệnh cho kỳ không có trên bảng bị bỏ ở lần cập nhật sau, không treo mãi.
-  await api.reveal('2026-10-30', 'loto', '78');
+  // Lệnh cho kỳ không có trên bảng bị bỏ ở lần cập nhật sau, không treo mãi: khi kỳ 24/10 về tới bảng
+  // (hôm sau), số 78 không tự mở ra.
+  await api.reveal('2026-10-24', 'loto', '78');
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
-  assert.equal(d.querySelector('time').dateTime, '2026-10-23');
+  assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
+  await api.update({ draw_date: '2026-10-23', status: 'complete_verified', prizes: prizes(FULL) });
+  assert.equal(rows(d, 'cau-keo-loto')[0][3], '2026-10-24');
+  assert.equal(d.querySelector('.live-bridge'), null, 'lệnh mở cũ không áp vào kỳ 24/10');
+});
+
+test('Sổ còn có thể được ghi lại tới giờ khoá: tải lại mỗi 10 phút, thôi khi đã là bản đóng băng cuối', async (t) => {
+  const urls = [];
+  let version = 1;
+  const make = (date) => {
+    const made = runningBoard(date);
+    if (date === '2026-10-23') made.lists[0].items[0] = loto(version === 1 ? '12' : '90', 0.25);
+    return made;
+  };
+  // 19:00 giờ VN 22/10: sổ 22/10 đã khoá lúc 18:10 (chưa đủ 1 giờ), sổ 23/10 còn mở tới 18:10 hôm sau.
+  const { api, d, w } = setup(t, async (url) => { urls.push(url); return forDate(make)(url); });
+  let clock = Date.parse(EVENING);
+  w.Date.now = () => clock;
+  const done = { draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) };
+  await api.update(done);
+  const label = () => d.querySelector('tbody[data-list-id="top"] .is-next .live-scorecard-num').textContent;
+  assert.equal(label(), '12');
+  clock += 5 * 60000;
+  await api.update(done);
+  assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json'], 'chưa tới 10 phút: không tải lại');
+  version = 2;
+  clock += 6 * 60000;
+  await api.update(done);
+  assert.deepEqual(boards(urls).slice(2).sort(), ['2026-10-22.json', '2026-10-23.json'], 'đủ 10 phút: tải lại cả hai');
+  assert.equal(label(), '90', 'bản ghi lại của sổ kỳ sắp quay được hiện');
+  // Lần tải 19:11 đã cách giờ khoá của sổ 22/10 hơn 1 giờ: bản cuối, không tải nữa; sổ 23/10 vẫn tải lại.
+  clock += 11 * 60000;
+  await api.update(done);
+  assert.deepEqual(boards(urls).slice(4), ['2026-10-23.json']);
+  // Tải lại hỏng: giữ bản đang hiện.
+  const failing = setup(t, async (url) => (urls.length > 1000 ? null : forDate(make)(url)));
+  let clock2 = Date.parse(EVENING);
+  failing.w.Date.now = () => clock2;
+  await failing.api.update(done);
+  failing.w.fetch = async () => { throw new Error('mạng hỏng'); };
+  clock2 += 11 * 60000;
+  await failing.api.update(done);
+  assert.deepEqual(rows(failing.d, 'top').map((r) => r[0]), ['is-next', 'is-before', 'is-after']);
 });
 
 // Bảng kết quả đầu trang Live: 27 ô theo thứ tự giải (docs/live.html, #results).
