@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4256,
+  "history_days": 4257,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-11-04",
-  "active_numbers_last_draw": 23,
+  "calendar_end": "2026-11-05",
+  "active_numbers_last_draw": 24,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 40.90108940919668,
+    "hazard": 40.898270207457514,
     "lag_median": 1000000.0,
-    "regime_recent": 180.240365290213,
-    "regime_long": 5171.710102060107
+    "regime_recent": 141.09921258431592,
+    "regime_long": 1000000.0
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 5.801847605278294,
-    "holdout_days": 1064,
-    "brier_arithmetic": 0.18129825759440846,
-    "brier_logodds": 0.18144446695432662
+    "t_statistic": 5.715749811915627,
+    "holdout_days": 1065,
+    "brier_arithmetic": 0.18129920572638172,
+    "brier_logodds": 0.18144351800926603
   },
-  "transition_active_mean_trials": 1022.7826086956521,
-  "regime_js_divergence_30_vs_180": 0.011103815443661312,
-  "entropy_recent": 4.551018460479035,
-  "entropy_long": 4.596061315808733,
-  "global_dynamics_reliability": 0.758106158929803,
+  "transition_active_mean_trials": 1019.625,
+  "regime_js_divergence_30_vs_180": 0.01149619340206088,
+  "entropy_recent": 4.549237633887005,
+  "entropy_long": 4.5963767282046835,
+  "global_dynamics_reliability": 0.7566761981267902,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-11-05T11:16:54Z",
+  "generated_at_utc": "2026-11-05T11:35:23Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-11-04"
+  "anchor_date": "2026-11-05"
 }
