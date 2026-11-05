@@ -87,3 +87,10 @@
 .live-record-verdict[data-verdict="above"]{color:var(--ui-ok);font-weight:650}
 .live-record-verdict[data-verdict="below"]{color:var(--ui-bad);font-weight:650}
 @media(max-width:700px){.live-record-table{min-width:0;font-size:12px}.live-record-table thead{display:none}.live-record-table caption{display:block;width:auto}.live-record-name{min-width:0}.live-record-table,.live-record-table tbody,.live-record-table tr,.live-record-table th,.live-record-table td{display:block;width:auto}.live-record-table tr{padding:8px 0;border-top:1px solid var(--ui-border)}.live-record-table th,.live-record-table td{border-top:0;padding:2px 12px}.live-record-num::before{content:attr(data-label);color:var(--ui-ink-2);margin-right:6px}}
+.live-scorecard-saved{display:block;margin-top:2px;font-size:11px;font-weight:500;color:var(--ui-ink-soft);font-variant-numeric:tabular-nums}
+.live-scorecard-overlap{display:block;margin-top:4px;color:var(--ui-ink-soft)}
+.live-scorecard-ghosts{margin-bottom:6px}
+.live-scorecard-ghost{width:76px;height:30px;border:1px dashed var(--ui-brand-border);border-radius:8px;background:linear-gradient(90deg,var(--ui-surface) 0%,var(--ui-brand-soft) 50%,var(--ui-surface) 100%);background-size:200% 100%;animation:live-scorecard-wait 1.4s linear infinite}
+@keyframes live-scorecard-wait{from{background-position:100% 0}to{background-position:-100% 0}}
+@media(prefers-reduced-motion:reduce){.live-scorecard-ghost{animation:none}}
+.live-scorecard-pending-text{margin:0;font-size:12px;line-height:1.5;color:var(--ui-ink-2)}

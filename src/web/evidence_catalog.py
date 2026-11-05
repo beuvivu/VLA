@@ -684,6 +684,10 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                     "Khi kỳ trước đã quay xong, mỗi danh sách có ba hàng để tra trong một chỗ: trước giờ quay của "
                     "kỳ sắp quay, rồi trước và sau giờ quay của kỳ vừa quay (trùng bảng kết quả đầu trang), nên "
                     "dấu về/trượt giữ tới phiên kế tiếp. Mỗi hàng ghi rõ kỳ của nó.",
+                    "Danh sách của kỳ sắp quay chỉ hiện khi đã được tính sau kết quả kỳ vừa quay; trước đó hàng ấy "
+                    "là khung chờ, không dùng lại số của kỳ trước. Hàng trước giờ quay ghi giờ ghi sổ, và hàng kỳ "
+                    "sắp quay ghi số mục trùng với danh sách kỳ vừa quay: mô hình đổi rất ít giữa hai kỳ liền nhau "
+                    "nên hai danh sách có thể trùng nhiều dù đã tính lại.",
                     "Khối «Thành tích qua các kỳ đã quay» cộng mọi kỳ đã có đủ 27 giải: mỗi danh sách trúng bao "
                     "nhiêu mục so với chọn bừa, chấm theo kỳ trên 20.000 kỳ quay công bằng mô phỏng, p hai phía "
                     "hiệu chỉnh Holm trên mọi danh sách.",
