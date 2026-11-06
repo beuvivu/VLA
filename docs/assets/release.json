@@ -21,7 +21,7 @@
     "assets/ui.css": "fe862e1b6b31242297a15e8d30f69b19d7c88e451a742f863118b0e0948f3daf",
     "assets/vietlott-comparison.js": "d35885145861cf14a6dbf783f7081987b476d209b8b3f31b32eb02c5519876a4",
     "assets/vietlott-picks.js": "6d7ee06519f3c338e348359bcd556d584f4fe0964ea73b84c4010991940a2b40",
-    "assets/xsmb-agents.json": "daa6ab07b97566f5630e82d56390a258fc16948d571109ace5c0c408bcfb6a05"
+    "assets/xsmb-agents.json": "4f7416ac8d9da6dee3c758a341d06f98afaef4834834bd7e0d6600f772cc25c6"
   },
   "pages": {
     "bang-dac-biet-nam.html": "f14c51d7c0b5a35e1ea8be670ac1f89f8950d01126a20d7af20115c38d691bea",
@@ -31,22 +31,22 @@
     "cau-dac-biet-theo-bo-so.html": "94358b1c813ff13387112603057e9548389d139e6cc335a9d8e9725b1bbce765",
     "cau-giai-dac-biet.html": "e7336fd55b2dcecdb1faab27b81220f562175bee93cabca5a735b57cb356bb6d",
     "chu-ky-dac-biet.html": "860256226dd801ad98d50c0e9f4d213476b31d38f00fd94344e80a4cfe9e7613",
-    "dashboard.html": "f2360cc899bf556d859d79546ac9787a918103086238f6432d56fa310c2fb76f",
+    "dashboard.html": "475fe966fcd661c4c754dffe9eef22c5bdbe5f6f3e480064ad2d9b3ab33f310d",
     "dau-duoi-loto.html": "e2fe7499a9c30ffe37f12305d98b313eb097aaefd20af70a6a933186ce4a3d85",
-    "do-tin-cay.html": "48e5970b1c884e09a89605bf524a5f17fd62541dbdb5c99a21b0589eb6c877db",
+    "do-tin-cay.html": "d6aec9a527450731af039e6fed7d257224ff2b5e1793be3fb3e9ee5f905e6b67",
     "giai-dac-biet-theo-tong.html": "31705d315522faf3208d2c10c7dffb7f5ea659f9c197f748802daca663ecf24f",
     "giai-db-ngay-mai.html": "0772648744ee60ec5d27952873be93948736676f87721ed2f791889f04f43014",
-    "index.html": "b1496ffb69a0c4a56fe57a2063ea3d71e62d26b4756c65eb1fc8401933c2b7b2",
+    "index.html": "d0e5ebd826eba0fb923b6e17aeb1af9a72eb547a70e58c5af479066c0f15bf52",
     "ket-qua-mien-nam.html": "b8b1f4912bcaf043e4ce69105e3e6f010c1c3e01cb041402457163cf9a23407c",
     "ket-qua-mien-trung.html": "8b30e3d6ab5de672fedbd460decd01182fe0f3d079d4e632b2688ed97d5eaa27",
-    "landing.html": "b1496ffb69a0c4a56fe57a2063ea3d71e62d26b4756c65eb1fc8401933c2b7b2",
-    "landing_desktop.html": "839a7750aa7f1977ee0e3a8314e0b2a91295ec4701ad257e063e40e1c1ef5a71",
+    "landing.html": "d0e5ebd826eba0fb923b6e17aeb1af9a72eb547a70e58c5af479066c0f15bf52",
+    "landing_desktop.html": "15b754ebf9206fbf35cea3f0491946d233d23f6ffba89b988b23b4d47bdf02e0",
     "live.html": "ab23c5fd5d0f7f2635a01712c8bb582853c9522dc9d82c8e7ab33290e71af7bd",
     "lo-gan.html": "00b835b68cbdff35459aab12c2c4a58d9cd10ccba1fcc7fcfa598467d86d22fb",
     "lo-vip-nhieu-nhay.html": "ff9be37525af3fe512a2e8cd814fab037dbb672124234ba7017a2aeab982c7ec",
     "ml_top10_de.html": "f5310d4054fa9bb3b26f9ba2dbd92dd2eb8ad9c420517c2b1ac1b11f8577adeb",
     "ml_top10_loto.html": "b6821c7d8b2c00c7fa3c25fcad2a9e729765ef1618fd7ddc03a1024f297b2324",
-    "model-quality.html": "c9d3a3f1641452d8a0ec3385d76da44ec92594df2e00b7fe415461f061972149",
+    "model-quality.html": "c3b073e9d79076b47aa07405cc2445a629c93a465a035125e2c113e432a83e0d",
     "research-lab.html": "0a23223bc12e78ead8b6aaa24cb20905cf69513568f2438431025817c03e3520",
     "so-ket-qua-truyen-thong.html": "eabe733c6c603d5018743539226dcee0f65057eac73a8f7af1328a7032c6c28e",
     "soi-cau-bach-thu.html": "2ec7f93810b5db56c8ce1eda7737f27cfff5e57234c2907d824d3acfcf71cd50",
@@ -75,6 +75,6 @@
     "vietlott-power-655.html": "ae1222c1d3e3f805c2a7adfb2dd3f0ad3a8b50572475b0808a63b6113b730718",
     "vietlott.html": "f9f6620342858719a984ef8ccf8466bb6aed52924f7b9add0bec441bcbfd294f"
   },
-  "release_id": "dfc90e5efc006e2a065e83033ff452b94aa82854248f8bb7c4dc0d83348b7325",
+  "release_id": "9e725c8046ac6005f9f5bdae0c79066903cde1ec5e1463104aa8064216ead24d",
   "schema_version": 1
 }

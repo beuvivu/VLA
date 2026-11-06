@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-11-06T11:40:03Z",
+  "generated_at": "2026-11-06T15:55:06Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -86,7 +86,7 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": 7.510680395370444e-05,
+      "mean_brier_skill": 7.510680395355052e-05,
       "mean_logloss_skill": 6.830986636938194e-05
     },
     "cap_50": {
@@ -94,7 +94,7 @@
       "mean_logloss_skill": 0.00016946308495565028
     },
     "bo": {
-      "mean_brier_skill": 3.6429803027030213e-05,
+      "mean_brier_skill": 3.642980302710658e-05,
       "mean_logloss_skill": 3.383642418605593e-05
     },
     "bong": {
@@ -318,17 +318,17 @@
       "brier_skill": 0.00014758201196279875,
       "brier_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -1.1477618565483737e-06,
-        "upper": 5.203226250275557e-05
+        "lower": -1.1477618565853222e-06,
+        "upper": 5.203226250264473e-05
       },
       "baseline_logloss": 0.5516428081325071,
-      "challenger_logloss": 0.5515673796822207,
-      "logloss_improvement": 7.542845028640777e-05,
-      "logloss_skill": 0.00013673422217133212,
+      "challenger_logloss": 0.5515673796822208,
+      "logloss_improvement": 7.542845028629674e-05,
+      "logloss_skill": 0.00013673422217113087,
       "logloss_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -3.186052585899309e-06,
-        "upper": 0.00014541637622745985
+        "lower": -3.1860525858254126e-06,
+        "upper": 0.00014541637622761145
       },
       "bootstrap_replicates": 1000,
       "bootstrap_seed": 20260902,
@@ -349,24 +349,24 @@
     "brier_skill": 0.00014758201196279875,
     "brier_improvement_ci": {
       "confidence_level": 0.95,
-      "lower": -1.1477618565483737e-06,
-      "upper": 5.203226250275557e-05
+      "lower": -1.1477618565853222e-06,
+      "upper": 5.203226250264473e-05
     },
     "baseline_logloss": 0.5516428081325071,
-    "challenger_logloss": 0.5515673796822207,
-    "logloss_improvement": 7.542845028640777e-05,
-    "logloss_skill": 0.00013673422217133212,
+    "challenger_logloss": 0.5515673796822208,
+    "logloss_improvement": 7.542845028629674e-05,
+    "logloss_skill": 0.00013673422217113087,
     "logloss_improvement_ci": {
       "confidence_level": 0.95,
-      "lower": -3.186052585899309e-06,
-      "upper": 0.00014541637622745985
+      "lower": -3.1860525858254126e-06,
+      "upper": 0.00014541637622761145
     },
     "bootstrap_replicates": 1000,
     "bootstrap_seed": 20260902,
     "holdout_consumed": true
   },
   "final_brier_skill": 0.00014758201196279875,
-  "final_logloss_skill": 0.00013673422217133212,
+  "final_logloss_skill": 0.00013673422217113087,
   "all_groups_confirmation_brier_skill": -5.622040533561219e-05,
   "all_groups_confirmation_logloss_skill": -5.0727527221362275e-05,
   "domain_active": false,
