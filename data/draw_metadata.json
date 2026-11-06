@@ -578,6 +578,20 @@
       "special": "24502",
       "source_url": "https://xoso.com.vn/xsmb-05-11-2026.html",
       "checked_at": "2026-11-06T03:20:46+07:00"
+    },
+    "2026-11-06": {
+      "station": "Hải Phòng",
+      "special_codes": [
+        "3KV",
+        "4KV",
+        "7KV",
+        "8KV",
+        "12KV",
+        "15KV"
+      ],
+      "special": "62477",
+      "source_url": "https://xoso.com.vn/xsmb-06-11-2026.html",
+      "checked_at": "2026-11-06T18:41:31+07:00"
     }
   }
 }

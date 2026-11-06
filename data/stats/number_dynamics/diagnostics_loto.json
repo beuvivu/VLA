@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4257,
+  "history_days": 4258,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-11-05",
-  "active_numbers_last_draw": 24,
+  "calendar_end": "2026-11-06",
+  "active_numbers_last_draw": 22,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 40.898270207457514,
+    "hazard": 40.89047990029959,
     "lag_median": 1000000.0,
-    "regime_recent": 141.09921258431592,
-    "regime_long": 1000000.0
+    "regime_recent": 186.0146062379148,
+    "regime_long": 13962.172762928352
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 5.715749811915627,
+    "t_statistic": 5.627289818551764,
     "holdout_days": 1065,
-    "brier_arithmetic": 0.18129920572638172,
-    "brier_logodds": 0.18144351800926603
+    "brier_arithmetic": 0.18127947519128398,
+    "brier_logodds": 0.18142084650209955
   },
-  "transition_active_mean_trials": 1019.625,
-  "regime_js_divergence_30_vs_180": 0.01149619340206088,
-  "entropy_recent": 4.549237633887005,
-  "entropy_long": 4.5963767282046835,
-  "global_dynamics_reliability": 0.7566761981267902,
+  "transition_active_mean_trials": 1011.2727272727273,
+  "regime_js_divergence_30_vs_180": 0.01139711329801724,
+  "entropy_recent": 4.550460973179765,
+  "entropy_long": 4.596251091103259,
+  "global_dynamics_reliability": 0.7570369625948958,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-11-05T20:18:18Z",
+  "generated_at_utc": "2026-11-06T11:37:32Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-11-05"
+  "anchor_date": "2026-11-06"
 }
