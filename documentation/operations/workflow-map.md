@@ -123,6 +123,7 @@ flowchart LR
 | `pages.yml` | Triển khai GitHub Pages | push (2 bộ lọc đường dẫn); workflow_dispatch | — | — | có |
 | `post-finalization.yml` | Kiểm toán sau hoàn tất và đối soát trực tiếp | workflow_dispatch | — | có | — |
 | `regional-results.yml` | Đồng bộ XSMT và XSMN | cron `25 13 * * *`; push (4 bộ lọc đường dẫn); workflow_dispatch | — | có | có |
+| `repo-growth.yml` | Theo dõi dung lượng kho | cron `41 3 * * 1`; workflow_dispatch | — | — | — |
 | `update-data.yml` | Hoàn tất XSMB, thống kê và AI/ML | cron `33 11 * * *`, `41 11 * * *`, `53 11 * * *`, `7 12 * * *`, `19 12 * * *`, `27 12 * * *`, `39 12 * * *`, `51 12 * * *`, `9 13 * * *`; hẹn giờ ngoài `daily-finalize`; push (7 bộ lọc đường dẫn); workflow_dispatch | `post-finalization.yml` (API), `daily_prediction.yml` (workflow_run), `vlm-results.yml` (workflow_run) | có | có |
 | `vietlott-results.yml` | Trang Vietlott (dựng từ engine) | cron `25 6 * * *`, `40 11 * * *`, `30 12 * * *`, `25 14 * * *`, `20 15 * * *`; sau «VLM · Tự cập nhật kết quả từng sản phẩm Vietlott», «VLM · Cập nhật dữ liệu, dự báo và trang Vietlott»; push (12 bộ lọc đường dẫn); workflow_dispatch | — | có | có |
 | `vlm-ci.yml` | VLM · Kiểm thử engine Vietlott | push (6 bộ lọc đường dẫn); pull_request; workflow_dispatch | — | — | — |

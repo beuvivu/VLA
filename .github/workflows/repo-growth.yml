@@ -1,0 +1,36 @@
+name: Theo dõi dung lượng kho
+
+# Phương án 1 của documentation/plans/2026-11-05-dung-luong-kho.md, chủ dự án duyệt 06-11-2026.
+# Mỗi tuần, workflow đo kho git lớn thêm bao nhiêu (gói mỏng 7 ngày, scripts/ops/repo_growth.py) và
+# ghi bảng vào trang tóm tắt của lượt chạy. Tăng quá ngưỡng thì lượt chạy đỏ, để GitHub báo cho chủ dự án.
+# Workflow chỉ đọc, không sửa tệp nào.
+on:
+  schedule:
+    # Thứ Hai 10:41 giờ VN: sau lượt kiểm lỗ hổng (10:17), ngoài khung quay số.
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-growth
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    name: Đo tốc độ tăng của kho
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Phải lấy đủ lịch sử. Trên bản clone nông, mốc 7 ngày trước rơi vào commit nhánh phụ hoặc
+          # không có, và kích thước gói là của bản nông. Ngày 05-11-2026 cả hai số đã bị báo sai như thế.
+          # Kịch bản cũng tự từ chối bản nông (thoát 2).
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+      - name: Đo gói mỏng 7 ngày, đỏ khi quá 40 MB/tuần
+        run: python scripts/ops/repo_growth.py --days 7 --limit-mb 40

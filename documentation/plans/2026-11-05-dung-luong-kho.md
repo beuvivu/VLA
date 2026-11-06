@@ -1,75 +1,126 @@
-# Kế hoạch giữ dung lượng kho trong ngưỡng an toàn (05-11-2026)
+# Kế hoạch giữ dung lượng kho trong ngưỡng an toàn (05-11-2026, đo lại 06-11-2026)
 
-**Trạng thái:** CHỜ CHỦ DỰ ÁN DUYỆT. Không bước nào dưới đây đã được thực hiện, trừ mục «Đã làm».
+**Trạng thái:**
+- Phương án 1 (theo dõi hằng tuần) đã làm ngày 06-11-2026, theo duyệt của chủ dự án.
+- Phương án 2–5 CHỜ CHỦ DỰ ÁN DUYỆT.
 
-**Mục tiêu:** giữ gói git của kho dưới 1 GB. Mỗi runner Actions và mỗi bản clone đều tải toàn bộ lịch sử.
-GitHub khuyên giữ kho dưới 1 GB, và rất nên dưới 5 GB.
+**Mục tiêu:** giữ gói git của kho dưới 1 GB. GitHub khuyên giữ kho dưới 1 GB, và rất nên dưới 5 GB.
+
+Mọi bản clone đầy đủ đều tải toàn bộ lịch sử. Trên Actions, ba job làm việc ấy mỗi lượt:
+- `canonical` và `update` của `update-data.yml`;
+- `dashboard-refresh.yml`.
+
+Mọi job khác chỉ lấy commit cuối (`fetch-depth` mặc định là 1). Bản đầu của tài liệu này viết «mỗi runner
+đều tải toàn bộ lịch sử»: sai.
 
 ## Số đo
 
-Đo trên bản clone đầy đủ ngày 05-11-2026. Lệnh đo nằm ở cuối tài liệu.
+Đo ngày 06-11-2026 bằng `scripts/ops/repo_growth.py`, trên bản clone đầy đủ của `main`: 2 890 commit,
+tới `791f40baf` lúc 21:26 giờ VN. Lệnh đo nằm ở cuối tài liệu.
 
 | Số đo | Giá trị |
 |---|---|
-| Gói git hiện tại | 642 MB |
-| Tăng 7 ngày (29-10 → 05-11), tính theo gói mỏng (đúng lượng git phải lưu thêm) | 41 MB |
-| Tăng sau đợt dọn 04-11 (PR #206 gỡ 64 MB bảng JSON bản sao và 19 ảnh không dùng) | ≈ 4 MB trong 1,2 ngày, tức ≈ 3 MB/ngày ≈ 23 MB/tuần |
-| Dự báo ở tốc độ sau dọn | chạm 1 GB sau ≈ 4 tháng, ≈ 1,8 GB sau một năm |
+| Gói git | 608 MB (580 MiB) |
+| Tăng 7 ngày (30-10 → 06-11), tính theo gói mỏng (đúng lượng git phải lưu thêm) | 50,1 MB |
+| Tăng mỗi ngày từ 25-10 tới 04-11 (trước và trong ngày dọn) | 7–10 MB (riêng 24-10: 16 MB) |
+| Tăng ngày 05-11, ngày đủ đầu tiên sau đợt dọn | 4,4 MB |
+| Tăng ngày 06-11 (có PR #212 và một lượt chạy lại) | 5,5 MB |
+| Dự báo | ở 4,4 MB/ngày, chạm 1 GB sau ≈ 89 ngày (≈ 3 tháng); ở tốc độ tuần qua (7,2 MB/ngày), sau ≈ 55 ngày |
 
-Bản rà soát ngày 05-11 từng báo «74 MB/tuần, chạm 1 GB sau 5 tuần». Số ấy cộng kích thước nén của từng
-blob riêng lẻ, nên bỏ qua delta giữa các phiên bản. Cửa sổ đo cũng còn chứa các tệp đã gỡ ngày 04-11. Số
-đúng là số gói mỏng ở bảng trên.
+Đợt dọn ngày 04-11 là PR #206: gỡ 64 MB bảng JSON bản sao và 19 ảnh không dùng.
 
-Phần tăng chủ yếu sau đợt dọn, tính theo kích thước nén của blob mới:
+### Đính chính số đo ngày 05-11
 
-| Nhóm | Ước tính / ngày | Vì sao lớn |
+Bản đầu của tài liệu này đo trên bản clone NÔNG của phiên làm việc, nên ba số sai:
+
+- **«Gói 642 MB»** là gói của bản nông (642 MiB, dồn qua nhiều lần fetch). Bản đầy đủ là 580 MiB, tức
+  608 MB.
+- **«41 MB trong 7 ngày»**: chuỗi cha thứ nhất của bản nông chỉ còn tới 01-11. Vì thế mốc «7 ngày trước» rơi
+  vào một commit nhánh phụ ngày 24-10.
+- **«≈ 3 MB/ngày sau đợt dọn»** đo trên 1,2 ngày, trước lượt chạy lại và PR #212. Ngày đủ đầu tiên sau đợt
+  dọn là 4,4 MB.
+
+Số «74 MB/tuần» của bản rà soát trước đó cũng sai, vì nó cộng `%(objectsize:disk)` của từng blob. Phép cộng
+ấy bỏ qua delta. Nó còn nặng thêm vì gói của máy chủ giữ bản MỚI nhất nguyên vẹn và lưu bản cũ thành delta.
+
+Kịch bản đo nay từ chối bản nông (thoát 2) và chọn mốc theo chuỗi cha thứ nhất. Hai luật này được ghim trong
+`tests/repo/test_repo_growth.py`.
+
+## Nguồn tăng
+
+Bảng chia CHÍNH gói mỏng. Chỉ mục của gói cho biết mỗi đối tượng chiếm bao nhiêu byte, đã tính delta, nên
+các dòng cộng lại đúng bằng phần tăng. «Sau dọn» là 1,9 ngày, từ 05-11 0:00 tới 06-11 21:26 giờ VN, tổng
+10,2 MB.
+
+| Nhóm | 7 ngày (30-10 → 06-11) | Sau dọn |
 |---|---|---|
-| `docs/` | ≈ 10 MB | ~40 trang dựng lại mỗi lượt chốt. Năm trang Đặc Biệt tuần/tháng/năm và hai trang cặp lớn mỗi trang ~2,4 MB thô. |
-| `data/excel/` | ≈ 1,6 MB | xlsx là zip đã nén, nên git gần như không lấy được delta giữa hai phiên bản. Ba tệp chính ≈ 5 MB thô mỗi phiên bản. |
-| `data/stats/`, `data/research/` | ≈ 1,1 MB mỗi nhóm | Hai bảng lớn nhất: `research/crosslag_positional/crosslag_rules.csv` (3,5 MB/tuần) và `stats/conditional/loto_nextday_given_special_long.csv` (2,8 MB/tuần). |
-| `vietlott/data/` | ≈ 1,2 MB | Sổ kết quả và trạng thái engine. |
+| `data/stats` | 12,7 MB (25%) | 2,8 MB (27%) |
+| `data/research` | 9,1 MB (18%) | 2,8 MB (28%) |
+| `images` | 8,4 MB (17%) | 0,4 MB (4%) |
+| `docs` | 7,6 MB (15%) | 1,4 MB (14%) |
+| `data/excel` | 4,2 MB (8%) | 1,4 MB (14%) |
+| `data/evaluation` | 2,4 MB (5%) | 0,1 MB (1%) |
+| `data/soi_cau` | 1,6 MB (3%) | 0,4 MB (4%) |
 
-Hai cột không cùng thước: «≈ 3 MB/ngày» là gói mỏng, đã tính delta, còn bảng này cộng blob nén từng cái
-một. Bảng chỉ dùng để xếp hạng nguồn tăng, không cộng lại thành tốc độ tăng.
+Tệp lớn nhất sau dọn:
 
-## Đã làm (PR #212)
+| Tệp | MB | Tỉ phần |
+|---|---|---|
+| `data/research/crosslag_positional/crosslag_rules.csv` | 1,5 | 15% |
+| `data/stats/conditional/loto_nextday_given_special_long.csv` | 0,9 | 9% |
+| `data/excel/xsmb.xlsx` | 0,7 | 7% |
+| `data/excel/xsmb-2-digits.xlsx` | 0,5 | 5% |
+| `data/research/legacy_extensions/pair_recency_loto.csv` | 0,4 | 4% |
+| `data/soi_cau/path_ui/paths_loto_stable.csv` | 0,3 | 3% |
+
+Bản đầu của tài liệu xếp `docs/` đầu bảng (≈ 10 MB/ngày, «khoảng 2/3 phần tăng»). Số ấy cũng cộng blob nén
+từng cái. Theo gói mỏng, `docs/` chỉ chiếm khoảng 15%.
+
+## Đã làm
+
+### PR #212
 
 - Lượt pipeline chạy lại trên cùng dữ liệu không còn ghi lại tệp chỉ đổi giờ. Lượt 19:33 ngày 05-11 từng
   ghi lại 125 tệp. Phần này chủ yếu bớt commit rác; dung lượng tiết kiệm không lớn, vì git lưu delta rất
   tốt cho các bản gần giống nhau.
 - Sắp xếp ổn định toàn `src`, nên hàng hoà điểm không còn đảo qua lại giữa các lượt chạy.
 
-## Các phương án (chưa làm)
+### Phương án 1 (06-11-2026)
 
-Xếp theo tỉ lệ lợi ích trên rủi ro.
+- **Workflow:** `.github/workflows/repo-growth.yml`, chạy thứ Hai 10:41 giờ VN và chạy tay được. Nó lấy bản
+  clone đầy đủ rồi gọi `scripts/ops/repo_growth.py --days 7 --limit-mb 40`.
+- **Trang tóm tắt** của lượt chạy có: gói, phần tăng 7 ngày, số ngày tới 1 GB, và phần tăng theo thư mục.
+- **Đỏ** khi kho tăng quá 40 MB/tuần.
+- **Lượt đầu (thứ Hai 09-11) nhiều khả năng đỏ.** Cửa sổ bắt đầu 10:41 ngày 02-11, nên còn chứa phần lớn ba
+  ngày 02–04-11, trước và trong ngày dọn (tối đa ≈ 26 MB). Lượt 16-11 là tuần đầu tiên nằm trọn sau đợt dọn
+  và PR #212.
 
-### 1. Theo dõi tốc độ tăng: nhỏ, nên làm trước
+## Các phương án còn lại (chưa làm)
 
-Thêm một bước hằng tuần, đặt cạnh `dependency-audit.yml`, đo gói mỏng của 7 ngày (lệnh ở cuối) và ghi vào
-tóm tắt job. Đỏ khi vượt ngưỡng, ví dụ 40 MB/tuần. Không đổi gì trong kho; chỉ báo sớm khi một thay đổi
-làm kho phình.
+Xếp theo tỉ lệ lợi ích trên rủi ro. Phần lợi là tỉ phần của phần tăng sau dọn ở bảng trên.
 
-### 2. xlsx: chỉ ghi khi dữ liệu đổi: đã có; cân nhắc thôi theo dõi trong git
-
-`save_xlsx` đã giữ tệp khi dữ liệu không đổi. Bước tiếp theo là thôi lưu xlsx trong git và dựng chúng trong
-artifact Pages, để vẫn tải được từ trang.
-
-- Phải kiểm: ai đọc `data/excel/*.xlsx` từ git (`ingest.validate_excel_integrity`,
-  `number_integrity_check.sh`, liên kết tải trên trang).
-- Lợi: ≈ 1,6 MB/ngày.
-
-### 3. Hai bảng nghiên cứu/thống kê lớn: vừa
+### 3. Hai bảng nghiên cứu/thống kê lớn: vừa, lợi ≈ 24% (≈ 1,3 MB/ngày)
 
 Kiểm `crosslag_rules.csv` và `loto_nextday_given_special_long.csv` có trang nào đọc toàn bảng không.
 
 - Nếu chỉ phục vụ chẩn đoán: ghi bản cắt (top-N theo q) vào git, bản đầy đủ đưa sang artifact của workflow.
 - Nếu trang cần đủ: giữ nguyên.
-- Lợi: ≈ 0,9 MB/ngày.
 
-### 4. Thôi theo dõi trang dựng sẵn trong `docs/`: lớn, cần quyết định kiến trúc
+### 2. xlsx: thôi theo dõi trong git: vừa, lợi ≈ 13% (≈ 0,7 MB/ngày)
 
-Đây là đòn bẩy chính, khoảng 2/3 phần tăng. Trang được dựng trong CI và triển khai thẳng từ artifact;
-`pages.yml` đã tải `docs/` lên bằng `upload-pages-artifact`. Phải giải quyết:
+`save_xlsx` đã giữ tệp khi dữ liệu không đổi. xlsx là zip đã nén, nên git gần như không lấy được delta giữa
+hai phiên bản. Bước tiếp theo là thôi lưu xlsx trong git và dựng chúng trong artifact Pages, để vẫn tải
+được từ trang.
+
+Phải kiểm ai đọc `data/excel/*.xlsx` từ git:
+- `ingest.validate_excel_integrity`;
+- `number_integrity_check.sh`;
+- liên kết tải trên trang.
+
+### 4. Thôi theo dõi trang dựng sẵn trong `docs/`: lớn, lợi ≈ 15% (≈ 0,8 MB/ngày)
+
+Trang được dựng trong CI và triển khai thẳng từ artifact: `pages.yml` đã tải `docs/` lên bằng
+`upload-pages-artifact`. Bỏ theo dõi `docs/` thì phải giải quyết bốn việc:
 
 - `docs/live.html` là trang viết tay, phải tiếp tục được theo dõi; `refresh_live_page` bọc lại khung cho nó.
 - Bộ kiểm `tests/site` và job `verify-published-pages` đọc `docs/` từ kho. Chúng phải chạy trên bản vừa
@@ -77,8 +128,8 @@ Kiểm `crosslag_rules.csv` và `loto_nextday_given_special_long.csv` có trang 
 - `vietlott-results.yml` dựng tám trang Vietlott từ cache engine, không gọi mạng, rồi commit. Cần một chỗ
   ghép hai nguồn trang trước khi triển khai, giữ luật «`pages.yml` là workflow triển khai duy nhất».
 - Bộ kiểm PR khi ấy không còn thấy trang đã xuất bản. Cần dựng trang trong CI của PR, thêm vài phút.
-- Lợi: ≈ 10 MB/ngày nén từng blob, tức phần lớn tốc độ tăng.
-- Rủi ro: cao. Nên làm theo từng chặng, mỗi chặng một PR, và giữ đường lùi (theo dõi lại `docs/`).
+
+Rủi ro cao mà lợi chỉ ≈ 15%, nên phương án này không còn là đòn bẩy chính như bản đầu viết.
 
 ### 5. Viết lại lịch sử để gỡ blob cũ: chỉ khi thật cần
 
@@ -88,21 +139,25 @@ phương án 2–4, và khi chủ dự án đồng ý rõ ràng.
 
 ## Đề xuất
 
-1. Làm phương án 1 ngay. Đo lại sau hai tuần, khi PR #212 đã chạy: số đo sau dọn mới chỉ có 1,2 ngày.
-2. Nếu tốc độ còn trên ~20 MB/tuần: làm phương án 3, rồi 2.
-3. Phương án 4 chỉ làm khi kho tiến gần 1 GB. Viết thiết kế riêng trước (`documentation/architecture/`).
+1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn.
+2. Làm phương án 3, rồi 2. Hai phương án cộng lại ≈ 37% phần tăng sau dọn. Ước tính tốc độ giảm từ ≈ 4,4
+   xuống ≈ 2,8 MB/ngày, và kho chạm 1 GB sau ≈ 140 ngày thay vì ≈ 89.
+3. Phương án 4 chỉ làm khi 2 và 3 chưa đủ. Viết thiết kế riêng trước (`documentation/architecture/`).
 4. Phương án 5 không làm, trừ khi chủ dự án yêu cầu.
 
 ## Lệnh đo
 
-```bash
-# Gói mỏng: lượng git thật sự phải lưu thêm từ một mốc thời gian.
-base=$(git rev-list -1 --before="2026-10-29T19:37:48Z" origin/main)
-printf 'origin/main\n^%s\n' "$base" | git pack-objects --stdout --thin --revs -q | wc -c
+Chạy trên bản clone ĐẦY ĐỦ. Bản nông bị từ chối, vì nó cho số sai mà trông hợp lý.
 
-# Xếp hạng nguồn tăng (cộng blob nén từng cái, không cộng delta).
-git rev-list --objects origin/main ^"$base" \
-  | git cat-file --batch-check='%(objecttype) %(objectsize:disk) %(rest)' \
-  | awk '$1=="blob"{split($3,p,"/"); d[p[1]"/"p[2]]+=$2} END{for(k in d) printf "%8.1f MB %s\n", d[k]/1e6, k}' \
-  | sort -rn | head
+```bash
+git clone --bare --single-branch --branch main https://github.com/beuvivu/VLA vla.git
+
+# Phần tăng 7 ngày gần nhất, chia theo thư mục.
+python3 scripts/ops/repo_growth.py --repo vla.git --ref main --days 7 --summary /dev/null
+
+# Đúng các số của tài liệu này: ghim commit đỉnh 06-11 21:26 giờ VN.
+python3 scripts/ops/repo_growth.py --repo vla.git --ref 791f40baf --now 2026-11-06T14:26:32+00:00 \
+  --days 7 --summary /dev/null
+python3 scripts/ops/repo_growth.py --repo vla.git --ref 791f40baf --now 2026-11-06T14:26:32+00:00 \
+  --days 1.8934 --by-file --top 15 --summary /dev/null
 ```
