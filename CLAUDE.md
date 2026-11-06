@@ -107,6 +107,11 @@ giữ tệp ở đó; `fun_draw_ledger.show_data_at` làm việc ấy. Bảng th
 64 MB trong `data/stats/advanced`) không ai đọc và đã bỏ 04-11-2026; JSON chỉ dành cho manifest/chẩn đoán
 (`tests/stats/test_no_json_twins.py`). `images/` nằm ngoài `docs/`, chỉ README nhúng nó: ba ảnh `README.j2` dùng là
 tất cả; 19 ảnh khác vẽ và commit lại mỗi lượt chốt mà không ai xem đã gỡ (`tests/stats/test_images_are_used.py`).
+Dung lượng kho (06-11-2026): `repo-growth.yml` chạy mỗi thứ Hai, đo gói mỏng 7 ngày bằng `scripts/ops/repo_growth.py`,
+đỏ khi quá 40 MB/tuần. Bảng nguồn tăng chia CHÍNH gói ấy, theo chỉ mục của gói, chứ không cộng `objectsize:disk`
+của từng blob. Chỉ đo trên bản clone ĐẦY ĐỦ; kịch bản từ chối bản nông. Ngày 05-11-2026, số đo trên bản nông của phiên
+làm việc báo gói 642 MB (đúng: 608 MB) và tăng 3 MB/ngày (đúng: 4–9 MB/ngày). Số đo và các phương án:
+`documentation/plans/2026-11-05-dung-luong-kho.md`.
 
 ## Phiên bản Python và workflow — một nguồn (01-11-2026)
 
