@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "mode": "de",
-  "learned_at_utc": "2026-11-07T01:34:26Z",
+  "learned_at_utc": "2026-11-07T11:40:38Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -37,37 +37,38 @@
     "2026-11-03",
     "2026-11-04",
     "2026-11-05",
-    "2026-11-06"
+    "2026-11-06",
+    "2026-11-07"
   ],
   "component_availability_required": true,
   "metric": {
-    "logloss": 4.605883887476305,
-    "brier": 0.9900151823446172
+    "logloss": 4.605773244454747,
+    "brier": 0.9900129434124656
   },
   "promotion": {
     "promoted": false,
-    "reason": "biên thắng +0.0031% chưa đạt sàn 0.20%",
+    "reason": "biên thắng -0.0502% chưa đạt sàn 0.20%",
     "baseline": "mac_dinh",
-    "train_days": 11,
+    "train_days": 12,
     "validation_days": 8,
-    "train_last_day": "2026-10-15",
-    "validation_first_day": "2026-10-16",
+    "train_last_day": "2026-10-16",
+    "validation_first_day": "2026-10-17",
     "validation_logloss": {
-      "mac_dinh": 4.601878917204915,
-      "dang_hieu_luc": 4.601878917204915,
-      "ung_vien": 4.601736614134104
+      "mac_dinh": 4.59837848792257,
+      "dang_hieu_luc": 4.59837848792257,
+      "ung_vien": 4.600685454102354
     },
-    "relative_gain": 3.092281943327755e-05,
-    "delta_ci95_low": -0.00045933280312762946,
-    "delta_ci95_high": 0.00013082633344539384
+    "relative_gain": -0.0005016912343869124,
+    "delta_ci95_low": 0.00037211450023760253,
+    "delta_ci95_high": 0.004045989411348201
   },
   "chronological_split": {
-    "weight_days": 19,
+    "weight_days": 20,
     "calibration_days": 14,
     "weight_first_day": "2026-10-05",
-    "weight_last_day": "2026-10-23",
-    "calibration_first_day": "2026-10-24",
-    "calibration_last_day": "2026-11-06",
+    "weight_last_day": "2026-10-24",
+    "calibration_first_day": "2026-10-25",
+    "calibration_last_day": "2026-11-07",
     "disjoint": true
   },
   "weights": {
