@@ -151,6 +151,11 @@ assert conditional["p_eb"].between(0, 1).all()
 assert conditional["baseline"].between(0, 1).all()
 assert conditional["p_value"].between(0, 1).all()
 assert conditional["q_value_fdr"].between(0, 1).all()
+# Bảng dài không vào git; trang đọc bản cắt của trạng thái hiện tại, phải trùng phần đầu bảng dài.
+from research.conditional_nextday import current_special_rows
+current_cut = pd.read_csv(conditional_dir / "current_special_next_loto.csv")
+expected_cut = current_special_rows(conditional, int(conditional_manifest["current_special_2d"]), 20)
+assert current_cut["number"].tolist() == expected_cut["number"].tolist()
 
 cross = root / "crosslag_positional"
 cross_report = json.loads((cross / "report.json").read_text(encoding="utf-8"))
@@ -165,6 +170,12 @@ assert cross_table["train_q_value_fdr"].between(0, 1).all()
 assert cross_table["train_bonferroni_p"].between(0, 1).all()
 assert (~cross_table["production_eligible"].astype(bool)).all()
 assert set(cross_table["operator"]) == {"concat", "lon", "bo", "cham", "tong"}
+# Bảng đầy đủ không vào git; trang đọc bản cắt, phải chứa đúng các dòng đầu của bảng đầy đủ.
+from research.crosslag_positional_lab import CUT_ROWS, cut_table
+cross_cut = pd.read_csv(cross / "crosslag_rules_top.csv")
+assert int(cross_report["cut_rows"]) == len(cross_cut) >= CUT_ROWS
+assert cross_cut["rule"].tolist() == cut_table(cross_table)["rule"].tolist()
+assert cross_cut["rule"].head(10).tolist() == cross_table["rule"].head(10).tolist()
 
 path_manifest = json.loads((root / "path_timelines" / "manifest.json").read_text(encoding="utf-8"))
 assert path_manifest["research_only"] is True

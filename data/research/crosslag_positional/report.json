@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-11-06T15:53:23Z",
+  "generated_at_utc": "2026-11-07T00:57:19Z",
   "anchor_date": "2026-11-06",
   "research_only": true,
   "production_wired": false,
@@ -30,5 +30,7 @@
   "train_fdr_05_count": 0,
   "train_bonferroni_05_count": 0,
   "research_gate_pass_count": 0,
-  "note": "Cross-day positional rules remain research-only even when research_gate_pass is true. A separate preregistered validation/promotion process is required before any production use."
+  "note": "Cross-day positional rules remain research-only even when research_gate_pass is true. A separate preregistered validation/promotion process is required before any production use.",
+  "cut_rows": 199,
+  "cut_rule": "Mọi quy tắc qua cổng nghiên cứu, cộng 100 dòng đầu theo thứ tự của bảng, cộng 100 quy tắc có p huấn luyện nhỏ nhất. Bảng đầy đủ chỉ nằm trong artifact của workflow, không nằm trong git."
 }

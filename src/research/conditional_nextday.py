@@ -164,6 +164,78 @@ def compute_loto_nextday_given_special(
     return out[columns]
 
 
+def current_special_rows(long_df: pd.DataFrame, current_special: int, top: int) -> pd.DataFrame:
+    """`top` con LOTO kỳ sau của trạng thái Đặc Biệt hiện tại, theo thứ tự của trang Phòng nghiên cứu.
+
+    Trang đọc tệp `current_special_next_loto.csv` do hàm này tạo, không đọc bảng dài 10 000 dòng
+    (`loto_nextday_given_special_long.csv`). Bảng dài vẫn được ghi ra đĩa và lên artifact, nhưng không
+    vào git (07-11-2026): mọi số trong nó đổi mỗi kỳ, nên đo ngày 06-11-2026 nó chiếm 9% phần tăng của
+    kho. Thứ tự phải trùng `build_research_lab._conditional_table`, để 10 dòng trang hiện là 10 dòng
+    đầu của tệp này.
+    """
+    rows = long_df[long_df["special"] == current_special]
+    return rows.sort_values(["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]).head(
+        max(1, int(top))
+    )
+
+
+#: Bảng đầy đủ 10 000 dòng: ra đĩa và lên artifact, nằm trong `.gitignore`.
+LONG_TABLE = "loto_nextday_given_special_long.csv"
+#: Bản cắt của trạng thái Đặc Biệt hiện tại (`current_special_rows`): git theo dõi, trang đọc.
+CURRENT_TABLE = "current_special_next_loto.csv"
+
+
+def write_tables(
+    long_df: pd.DataFrame,
+    *,
+    out_dir: Path,
+    anchor_date: str,
+    current_special: int,
+    top: int,
+    prior_learned: bool,
+) -> list[Path]:
+    """Ghi bảng dài, top-N mỗi trạng thái, bản cắt của trạng thái hiện tại và manifest."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    long_path = out_dir / LONG_TABLE
+    write_code_csv(long_df, long_path, index=False)
+
+    top_n = max(1, int(top))
+    top_df = (
+        long_df.sort_values(
+            ["special", "p_eb", "q_value_fdr", "hits"],
+            ascending=[True, False, True, False],
+        )
+        .groupby("special", sort=True)
+        .head(top_n)
+        .reset_index(drop=True)
+    )
+    top_path = out_dir / f"loto_nextday_given_special_top{top_n}.csv"
+    write_code_csv(top_df, top_path, index=False)
+
+    current_path = out_dir / CURRENT_TABLE
+    write_code_csv(current_special_rows(long_df, current_special, top_n), current_path, index=False)
+
+    manifest = {
+        "schema_version": 2,
+        "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "anchor_date": anchor_date,
+        "current_special_2d": f"{current_special:02d}",
+        "research_only": True,
+        "rows": int(len(long_df)),
+        "observed_special_states": int(long_df["special"].nunique()) if not long_df.empty else 0,
+        "fdr_05_count": int(long_df["fdr_05"].sum()) if not long_df.empty else 0,
+        "prior_strength_learned": prior_learned,
+        "prior_strength_median": (
+            float(long_df["prior_strength"].median()) if not long_df.empty else None
+        ),
+        "note": "Conditional historical matrix only; it does not alter production prediction weights.",
+    }
+    manifest_path = out_dir / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return [long_path, top_path, current_path, manifest_path]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--top", type=int, default=20, help="Top numbers per special to export")
@@ -189,51 +261,12 @@ def main() -> None:
         None if args.prior_strength is None else max(0.0, float(args.prior_strength))
     )
     long_df = compute_loto_nextday_given_special(df_2d, prior_strength=forced_prior)
-    long_path = out_dir / "loto_nextday_given_special_long.csv"
-    write_code_csv(long_df, long_path, index=False)
-
-    top_df = (
-        long_df.sort_values(
-            ["special", "p_eb", "q_value_fdr", "hits"],
-            ascending=[True, False, True, False],
-        )
-        .groupby("special", sort=True)
-        .head(max(1, int(args.top)))
-        .reset_index(drop=True)
-    )
-    top_path = out_dir / f"loto_nextday_given_special_top{max(1, int(args.top))}.csv"
-    write_code_csv(top_df, top_path, index=False)
-
     latest = pd.to_datetime(df_2d["date"]).max().date().isoformat()
     current_special = int(df_2d.sort_values("date", kind="stable").iloc[-1]["special"]) % 100
-    current = long_df[long_df["special"] == current_special].sort_values(
-        ["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]
-    )
-    current_path = out_dir / "current_special_next_loto.csv"
-    write_code_csv(current.head(max(1, int(args.top))), current_path, index=False)
-
-    manifest = {
-        "schema_version": 2,
-        "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-        "anchor_date": latest,
-        "current_special_2d": f"{current_special:02d}",
-        "research_only": True,
-        "rows": int(len(long_df)),
-        "observed_special_states": int(long_df["special"].nunique()) if not long_df.empty else 0,
-        "fdr_05_count": int(long_df["fdr_05"].sum()) if not long_df.empty else 0,
-        "prior_strength_learned": forced_prior is None,
-        "prior_strength_median": (
-            float(long_df["prior_strength"].median()) if not long_df.empty else None
-        ),
-        "note": "Conditional historical matrix only; it does not alter production prediction weights.",
-    }
-    (out_dir / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-
-    print(f"Saved {long_path}")
-    print(f"Saved {top_path}")
-    print(f"Saved {current_path}")
+    for path in write_tables(long_df, out_dir=out_dir, anchor_date=latest,
+                             current_special=current_special, top=args.top,
+                             prior_learned=forced_prior is None):
+        print(f"Saved {path}")
 
 
 if __name__ == "__main__":

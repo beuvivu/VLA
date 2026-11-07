@@ -391,6 +391,20 @@ jobs:
             --fill-missing-days-back 365 \
             --strict
 
+      - name: Lưu hai bảng nghiên cứu đầy đủ
+        # Hai bảng này không vào git (.gitignore; phương án 3 của documentation/plans/2026-11-05-dung-luong-kho.md).
+        # Git chỉ giữ bản cắt mà trang đọc. Ai cần bảng đầy đủ thì tải artifact của lượt chạy.
+        # Bước pipeline của chúng được phép hỏng (allow_fail), nên thiếu tệp không làm đỏ lượt chạy.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: research-full-tables-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/research/crosslag_positional/crosslag_rules.csv
+            data/stats/conditional/loto_nextday_given_special_long.csv
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
         run: |
           python src/evaluation/monitor_health.py \

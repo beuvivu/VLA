@@ -39,6 +39,19 @@ from research.research_diagnostics import bh_fdr
 
 Operator = Literal["concat", "lon", "bo", "cham", "tong"]
 
+#: Thứ tự của bảng quy tắc: qua cổng nghiên cứu trước, rồi độ nâng trên tập giữ lại, trên tập kiểm
+#: định, rồi q huấn luyện. Trang Phòng nghiên cứu hiện 10 dòng đầu theo đúng thứ tự này.
+LAB_ORDER: tuple[list[str], list[bool]] = (
+    ["research_gate_pass", "holdout_lift", "validation_lift", "train_q_value_fdr"],
+    [False, False, False, True],
+)
+#: Số dòng mỗi tiêu chí giữ lại trong bản cắt ghi vào git (phương án 3, 07-11-2026).
+CUT_ROWS = 100
+CUT_RULE = (
+    f"Mọi quy tắc qua cổng nghiên cứu, cộng {CUT_ROWS} dòng đầu theo thứ tự của bảng, cộng {CUT_ROWS} "
+    "quy tắc có p huấn luyện nhỏ nhất. Bảng đầy đủ chỉ nằm trong artifact của workflow, không nằm trong git."
+)
+
 
 @dataclass(frozen=True)
 class RuleSpec:
@@ -428,11 +441,7 @@ def evaluate_lab(
         & (pd.to_numeric(table["holdout_effect"], errors="coerce") > 0.0)
     )
     table["production_eligible"] = False
-    table = table.sort_values(
-        ["research_gate_pass", "holdout_lift", "validation_lift", "train_q_value_fdr"],
-        ascending=[False, False, False, True],
-        ignore_index=True,
-    )
+    table = table.sort_values(LAB_ORDER[0], ascending=LAB_ORDER[1], ignore_index=True, kind="stable")
 
     report = {
         "schema_version": 1,
@@ -459,13 +468,63 @@ def evaluate_lab(
     return table, report
 
 
+def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
+    """Bản cắt của bảng quy tắc để ghi vào git, theo thứ tự `LAB_ORDER`.
+
+    Bản cắt giữ ba loại dòng:
+    - mọi quy tắc qua cổng nghiên cứu, dù nhiều tới đâu;
+    - `rows` dòng đầu theo thứ tự của bảng, tức đúng những dòng trang hiện;
+    - `rows` quy tắc có p huấn luyện nhỏ nhất, tức những dòng FDR xét trước tiên.
+
+    Bảng đầy đủ (5 832 dòng) vẫn được ghi ra đĩa và lên artifact, nhưng không vào git. Lý do: ranh giới
+    huấn luyện/kiểm định/giữ lại trượt theo lịch sử, nên gần như mọi số trong bảng đổi mỗi kỳ. Git
+    không lấy được delta, và đo ngày 06-11-2026 thì tệp ấy chiếm 15% phần tăng của kho.
+    """
+    if table.empty:
+        return table.copy()
+    ordered = table.sort_values(LAB_ORDER[0], ascending=LAB_ORDER[1], ignore_index=True,
+                                kind="stable")
+    keep = np.zeros(len(ordered), dtype=bool)
+    keep[:rows] = True
+    keep |= ordered["research_gate_pass"].astype(bool).to_numpy()
+    train_p = pd.to_numeric(ordered["train_p_value"], errors="coerce")
+    keep[train_p.sort_values(kind="stable").index[:rows]] = True
+    return ordered[keep].reset_index(drop=True)
+
+
+#: Bảng đầy đủ: ra đĩa và lên artifact, nằm trong `.gitignore`.
+FULL_TABLE = "crosslag_rules.csv"
+#: Bản cắt (`cut_table`): git theo dõi, trang Phòng nghiên cứu đọc.
+CUT_TABLE = "crosslag_rules_top.csv"
+
+
+def write_outputs(table: pd.DataFrame, report: dict, out_dir: Path | str) -> tuple[Path, Path, Path]:
+    """Ghi bảng đầy đủ, bản cắt và báo cáo; báo cáo ghi thêm số dòng và luật của bản cắt."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    csv_path = out / FULL_TABLE
+    cut_path = out / CUT_TABLE
+    report_path = out / "report.json"
+    cut = cut_table(table)
+    report = {**report, "cut_rows": int(len(cut)), "cut_rule": CUT_RULE}
+    table.to_csv(csv_path, index=False)
+    cut.to_csv(cut_path, index=False)
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return csv_path, cut_path, report_path
+
+
 def run(
     *,
     out_dir: Path | str = "data/research/crosslag_positional",
     lag_pairs: tuple[tuple[int, int], ...] = ((1, 1), (1, 2)),
     ops: tuple[Operator, ...] = ("concat", "lon", "bo", "cham", "tong"),
     warmup: int = 180,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path, Path]:
+    """Chạy phòng thí nghiệm và ghi ba tệp (`write_outputs`): bảng đầy đủ, bản cắt và báo cáo.
+
+    Bảng đầy đủ (`FULL_TABLE`) nằm trong `.gitignore`, và `update-data.yml` tải nó lên artifact. Bản
+    cắt (`CUT_TABLE`) là tệp git theo dõi và trang đọc.
+    """
     lot = Lottery()
     lot.load()
     two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)
@@ -473,13 +532,7 @@ def run(
     if two.empty or sparse.empty:
         raise RuntimeError("No data loaded")
     table, report = evaluate_lab(two, sparse, lag_pairs=lag_pairs, ops=ops, warmup=warmup)
-    out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    csv_path = out / "crosslag_rules.csv"
-    report_path = out / "report.json"
-    table.to_csv(csv_path, index=False)
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return csv_path, report_path
+    return write_outputs(table, report, out_dir)
 
 
 def main() -> None:
@@ -489,13 +542,13 @@ def main() -> None:
     ap.add_argument("--operators", default="concat,lon,bo,cham,tong")
     ap.add_argument("--warmup", type=int, default=180)
     args = ap.parse_args()
-    csv_path, report_path = run(
+    csv_path, cut_path, report_path = run(
         out_dir=args.out_dir,
         lag_pairs=_parse_lag_pairs(args.lag_pairs),
         ops=_parse_ops(args.operators),
         warmup=max(30, int(args.warmup)),
     )
-    print("[OK] cross-lag positional lab ->", csv_path, report_path)
+    print("[OK] cross-lag positional lab ->", csv_path, cut_path, report_path)
 
 
 if __name__ == "__main__":

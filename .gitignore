@@ -46,6 +46,15 @@ logs/
 data/stats/advanced/*_day.json
 data/stats/advanced/*_day.csv
 
+# Hai bảng nghiên cứu ĐẦY ĐỦ: sinh mỗi lượt, tải lên artifact của update-data.yml, không vào git
+# (phương án 3 của documentation/plans/2026-11-05-dung-luong-kho.md, 07-11-2026).
+#
+# Gần như mọi số trong hai bảng đổi mỗi kỳ, nên git không lấy được delta. Đo ngày 06-11-2026, chúng
+# chiếm 24% phần tăng của kho. Trang Phòng nghiên cứu đọc hai bản cắt mà git vẫn theo dõi:
+# crosslag_rules_top.csv và current_special_next_loto.csv.
+data/research/crosslag_positional/crosslag_rules.csv
+data/stats/conditional/loto_nextday_given_special_long.csv
+
 # Thư viện chỉ dùng cho kiểm thử tương tác giao diện.
 tests/frontend/node_modules/
 
