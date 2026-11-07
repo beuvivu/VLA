@@ -1,0 +1,106 @@
+{
+  "schema_version": 2,
+  "draw_date": "2026-11-07",
+  "checked_at_utc": "2026-11-07T13:15:56Z",
+  "checked_at_local": "2026-11-07T20:15:56+07:00",
+  "status": "complete_verified",
+  "complete": true,
+  "verified_complete": true,
+  "received_values": 27,
+  "expected_values": 27,
+  "verified_values": 27,
+  "progress_percent": 100.0,
+  "verification_percent": 100.0,
+  "prizes": {
+    "special": [
+      "95014"
+    ],
+    "prize1": [
+      "68396"
+    ],
+    "prize2": [
+      "89608",
+      "87511"
+    ],
+    "prize3": [
+      "76577",
+      "44956",
+      "40190",
+      "88362",
+      "52004",
+      "77514"
+    ],
+    "prize4": [
+      "5999",
+      "0863",
+      "3360",
+      "3300"
+    ],
+    "prize5": [
+      "3357",
+      "7371",
+      "3434",
+      "4723",
+      "7726",
+      "9273"
+    ],
+    "prize6": [
+      "363",
+      "153",
+      "462"
+    ],
+    "prize7": [
+      "86",
+      "16",
+      "12",
+      "43"
+    ]
+  },
+  "conflicts": [],
+  "source_status": [
+    {
+      "priority": 1,
+      "tier": "primary",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "source_code": "P1",
+      "provider_code": "G1",
+      "failed": false
+    },
+    {
+      "priority": 2,
+      "tier": "fallback",
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": null,
+      "source_code": "F1",
+      "provider_code": "G2",
+      "failed": false
+    },
+    {
+      "priority": 3,
+      "tier": "fallback",
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": null,
+      "source_code": "F2",
+      "provider_code": "G3",
+      "failed": false
+    }
+  ],
+  "source_priority": [
+    "P1",
+    "F1",
+    "F2"
+  ],
+  "slot_meta": {},
+  "canonical_reconciled": true,
+  "consensus": {
+    "agreement": 1,
+    "source_agreement": 1,
+    "independent_groups": [
+      "G1"
+    ]
+  }
+}
