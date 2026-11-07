@@ -2,7 +2,8 @@
 
 **Trạng thái:**
 - Phương án 1 (theo dõi hằng tuần) đã làm ngày 06-11-2026, theo duyệt của chủ dự án.
-- Phương án 2–5 CHỜ CHỦ DỰ ÁN DUYỆT.
+- Phương án 3 (hai bảng nghiên cứu lớn) đã làm ngày 07-11-2026, theo duyệt của chủ dự án.
+- Phương án 2, 4 và 5 CHỜ CHỦ DỰ ÁN DUYỆT.
 
 **Mục tiêu:** giữ gói git của kho dưới 1 GB. GitHub khuyên giữ kho dưới 1 GB, và rất nên dưới 5 GB.
 
@@ -95,16 +96,33 @@ từng cái. Theo gói mỏng, `docs/` chỉ chiếm khoảng 15%.
   ngày 02–04-11, trước và trong ngày dọn (tối đa ≈ 26 MB). Lượt 16-11 là tuần đầu tiên nằm trọn sau đợt dọn
   và PR #212.
 
+### Phương án 3 (07-11-2026): hai bảng nghiên cứu lớn, lợi ước tính ≈ 24% (≈ 1,3 MB/ngày)
+
+Hai bảng chỉ có trang Phòng nghiên cứu đọc, và trang chỉ hiện 10 dòng của mỗi bảng. Ngoài trang, chỉ
+`research_release_check.sh` đọc chúng; kịch bản ấy tự chạy hai phòng thí nghiệm trước khi kiểm.
+
+| Bảng đầy đủ (ra khỏi git) | Bản cắt (git theo dõi, trang đọc) |
+|---|---|
+| `crosslag_rules.csv`, 5 832 quy tắc, 3,2 MB | `crosslag_rules_top.csv`, 199 dòng, 107 KB (`crosslag_positional_lab.cut_table`) |
+| `loto_nextday_given_special_long.csv`, 10 000 ô, 1,8 MB | `current_special_next_loto.csv`, 20 dòng, 4 KB (`conditional_nextday.current_special_rows`) |
+
+- **Bản cắt của bảng vị trí chéo** giữ ba loại dòng: mọi quy tắc qua cổng nghiên cứu, 100 dòng đầu theo thứ tự
+  của trang, và 100 quy tắc có p huấn luyện nhỏ nhất.
+- **Bản cắt của bảng có điều kiện** là 20 con LOTO của trạng thái Đặc Biệt hiện tại. Tệp này đã có sẵn từ
+  trước; trang chuyển sang đọc nó.
+- **Bảng đầy đủ** vẫn được sinh mỗi lượt. Nó nằm trong `.gitignore`, và `update-data.yml` tải nó lên artifact
+  `research-full-tables-*`, giữ 30 ngày.
+- **Kiểm chứng:**
+  - trang dựng từ hai bản cắt trùng từng byte với trang đã xuất bản;
+  - chạy lại hai phòng thí nghiệm trên dữ liệu thật ra tệp trùng từng byte với tệp pipeline đã ghi;
+  - `tests/research/test_research_table_cuts.py` buộc trang dựng chỉ từ tệp git theo dõi phải trùng trang
+    dựng từ bảng đầy đủ.
+- **Đo lại** ở lượt theo dõi thứ Hai 16-11. Ước tính tốc độ giảm từ ≈ 4,4 xuống ≈ 3,4 MB/ngày, và kho chạm
+  1 GB sau ≈ 115 ngày thay vì ≈ 89.
+
 ## Các phương án còn lại (chưa làm)
 
 Xếp theo tỉ lệ lợi ích trên rủi ro. Phần lợi là tỉ phần của phần tăng sau dọn ở bảng trên.
-
-### 3. Hai bảng nghiên cứu/thống kê lớn: vừa, lợi ≈ 24% (≈ 1,3 MB/ngày)
-
-Kiểm `crosslag_rules.csv` và `loto_nextday_given_special_long.csv` có trang nào đọc toàn bảng không.
-
-- Nếu chỉ phục vụ chẩn đoán: ghi bản cắt (top-N theo q) vào git, bản đầy đủ đưa sang artifact của workflow.
-- Nếu trang cần đủ: giữ nguyên.
 
 ### 2. xlsx: thôi theo dõi trong git: vừa, lợi ≈ 13% (≈ 0,7 MB/ngày)
 
@@ -139,9 +157,9 @@ phương án 2–4, và khi chủ dự án đồng ý rõ ràng.
 
 ## Đề xuất
 
-1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn.
-2. Làm phương án 3, rồi 2. Hai phương án cộng lại ≈ 37% phần tăng sau dọn. Ước tính tốc độ giảm từ ≈ 4,4
-   xuống ≈ 2,8 MB/ngày, và kho chạm 1 GB sau ≈ 140 ngày thay vì ≈ 89.
+1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn và sau phương án 3.
+2. Làm phương án 2. Cộng với phương án 3, hai phương án là ≈ 37% phần tăng sau dọn. Ước tính tốc độ giảm từ
+   ≈ 4,4 xuống ≈ 2,8 MB/ngày, và kho chạm 1 GB sau ≈ 140 ngày thay vì ≈ 89.
 3. Phương án 4 chỉ làm khi 2 và 3 chưa đủ. Viết thiết kế riêng trước (`documentation/architecture/`).
 4. Phương án 5 không làm, trừ khi chủ dự án yêu cầu.
 

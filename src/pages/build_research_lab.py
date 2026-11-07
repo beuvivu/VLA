@@ -309,11 +309,13 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
     advanced = _read_json(research / "legacy_advanced" / "manifest.json")
     cross_report = _read_json(research / "crosslag_positional" / "report.json")
-    cross_rules = _read_csv(research / "crosslag_positional" / "crosslag_rules.csv")
+    # Hai bảng đầy đủ không nằm trong git (phương án 3 của kế hoạch dung lượng kho, 07-11-2026):
+    # trang đọc bản cắt. Bản cắt chứa đúng những dòng hai bảng của trang hiện ra.
+    cross_rules = _read_csv(research / "crosslag_positional" / "crosslag_rules_top.csv")
     bong_report = _read_json(research / "bong_bridge" / "report.json")
     bong_rules = _read_csv(research / "bong_bridge" / "top_rules_loto.csv")
     conditional_manifest = _read_json(data_dir / "stats" / "conditional" / "manifest.json")
-    conditional = _read_csv(data_dir / "stats" / "conditional" / "loto_nextday_given_special_long.csv")
+    conditional = _read_csv(data_dir / "stats" / "conditional" / "current_special_next_loto.csv")
     current_special = str(conditional_manifest.get("current_special_2d", ""))
 
     table_index = 0

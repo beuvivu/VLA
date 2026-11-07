@@ -111,7 +111,12 @@ Dung lượng kho (06-11-2026): `repo-growth.yml` chạy mỗi thứ Hai, đo g�
 đỏ khi quá 40 MB/tuần. Bảng nguồn tăng chia CHÍNH gói ấy, theo chỉ mục của gói, chứ không cộng `objectsize:disk`
 của từng blob. Chỉ đo trên bản clone ĐẦY ĐỦ; kịch bản từ chối bản nông. Ngày 05-11-2026, số đo trên bản nông của phiên
 làm việc báo gói 642 MB (đúng: 608 MB) và tăng 3 MB/ngày (đúng: 4–9 MB/ngày). Số đo và các phương án:
-`documentation/plans/2026-11-05-dung-luong-kho.md`.
+`documentation/plans/2026-11-05-dung-luong-kho.md`. Từ 07-11-2026, hai bảng nghiên cứu ĐẦY ĐỦ không vào git:
+`crosslag_rules.csv` và `loto_nextday_given_special_long.csv` (`.gitignore`). Chúng vẫn sinh mỗi lượt và lên
+artifact `research-full-tables-*` của `update-data.yml`. Trang Phòng nghiên cứu đọc hai bản cắt mà git theo dõi:
+`crosslag_rules_top.csv` (`crosslag_positional_lab.cut_table`) và `current_special_next_loto.csv`
+(`conditional_nextday.current_special_rows`). Trang dựng chỉ từ tệp git theo dõi phải trùng trang dựng từ bảng
+đầy đủ (`tests/research/test_research_table_cuts.py`).
 
 ## Phiên bản Python và workflow — một nguồn (01-11-2026)
 
