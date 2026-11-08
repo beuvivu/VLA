@@ -3,7 +3,7 @@
 # Gói trực tiếp ghim đúng bản: gói mô hình lưu bằng joblib phụ thuộc phiên bản scikit-learn,
 # và một bản mới lọt vào qua khoảng `>=` có thể làm bước dự báo coi gói là hỏng mà không báo.
 tzdata==2026.4
-pydantic==2.14.2
+pydantic==2.14.3
 requests==2.34.2
 beautifulsoup4==4.15.0
 lxml==6.1.3
