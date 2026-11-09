@@ -405,6 +405,19 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Lưu bản xuất Excel
+        # XLSX không vào git (.gitignore; phương án 2 của documentation/plans/2026-11-05-dung-luong-kho.md).
+        # Mỗi lượt dựng lại chúng từ CSV, và validate_excel_integrity đối chiếu từng ô.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: excel-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/excel/*.xlsx
+            data/excel/daily/xsmb_*.xlsx
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
         run: |
           python src/evaluation/monitor_health.py \

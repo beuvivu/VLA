@@ -126,11 +126,13 @@ def test_the_pipeline_run_uploads_both_full_tables() -> None:
     workflow = yaml.safe_load((ROOT / ".github/workflows/update-data.yml").read_text(encoding="utf-8"))
     steps = workflow["jobs"]["update"]["steps"]
     pipeline = next(i for i, step in enumerate(steps) if "src/pipeline.py" in step.get("run", ""))
+    full = {str(path) for path in FULL_TABLES}
     uploads = [step for step in steps[pipeline + 1:]
-               if str(step.get("uses", "")).startswith("actions/upload-artifact@")]
+               if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+               and full & set(step["with"]["path"].split())]
     assert len(uploads) == 1
     (upload,) = uploads
     assert upload.get("if") == "always()"
-    assert set(upload["with"]["path"].split()) == {str(path) for path in FULL_TABLES}
+    assert set(upload["with"]["path"].split()) == full
     # Bước nghiên cứu được phép hỏng: thiếu tệp không được làm đỏ lượt chốt kết quả.
     assert upload["with"]["if-no-files-found"] == "ignore"
