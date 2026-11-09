@@ -28,6 +28,11 @@ data/cache/
 data/http_cache/
 data/tmp/
 data/excel/daily/
+# Bản xuất XLSX của sổ chuẩn: sinh mỗi lượt từ CSV, tải lên artifact của update-data.yml, không vào git
+# (phương án 2 của documentation/plans/2026-11-05-dung-luong-kho.md, 09-11-2026). XLSX là zip đã nén nên git
+# không lấy được delta giữa hai phiên bản; đo ngày 06-11-2026 chúng chiếm 13% phần tăng của kho. Dữ liệu
+# không mất: validate_excel_integrity buộc chúng trùng từng ô với data/xsmb*.csv, mà CSV vẫn nằm trong git.
+data/excel/*.xlsx
 logs/
 *.log
 

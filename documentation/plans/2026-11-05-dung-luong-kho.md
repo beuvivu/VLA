@@ -3,7 +3,8 @@
 **Trạng thái:**
 - Phương án 1 (theo dõi hằng tuần) đã làm ngày 06-11-2026, theo duyệt của chủ dự án.
 - Phương án 3 (hai bảng nghiên cứu lớn) đã làm ngày 07-11-2026, theo duyệt của chủ dự án.
-- Phương án 2, 4 và 5 CHỜ CHỦ DỰ ÁN DUYỆT.
+- Phương án 2 (xlsx) đã làm ngày 09-11-2026, theo duyệt của chủ dự án.
+- Phương án 4 và 5 CHỜ CHỦ DỰ ÁN DUYỆT.
 
 **Mục tiêu:** giữ gói git của kho dưới 1 GB. GitHub khuyên giữ kho dưới 1 GB, và rất nên dưới 5 GB.
 
@@ -120,20 +121,39 @@ Hai bảng chỉ có trang Phòng nghiên cứu đọc, và trang chỉ hiện 1
 - **Đo lại** ở lượt theo dõi thứ Hai 16-11. Ước tính tốc độ giảm từ ≈ 4,4 xuống ≈ 3,4 MB/ngày, và kho chạm
   1 GB sau ≈ 115 ngày thay vì ≈ 89.
 
+### Phương án 2 (09-11-2026): xlsx ra khỏi git, lợi ước tính ≈ 13% (≈ 0,7 MB/ngày)
+
+xlsx là zip đã nén, nên git gần như không lấy được delta giữa hai phiên bản. Bốn tệp trong `data/excel/`
+(`xsmb.xlsx`, `xsmb-2-digits.xlsx`, `xsmb-sparse.xlsx`, `statistics_matrices.xlsx`, cộng ≈ 2,5 MB) nay nằm trong
+`.gitignore`. Dữ liệu không mất: `validate_excel_integrity` buộc xlsx trùng từng ô với `data/xsmb*.csv`, mà CSV vẫn
+nằm trong git.
+
+Kiểm ai đọc xlsx từ git:
+- **`validate_excel_integrity`** (bước pipeline không được hỏng): mọi lượt đã dựng lại xlsx trước bước này.
+  `sync.py` gọi `Lottery.dump()` cả khi không có kỳ mới. Bản xlsx theo ngày vốn đã không nằm trong git mà bước
+  này vẫn đòi nó.
+- **`number_integrity_check.sh`**: tự dựng lại xlsx bằng `Lottery.dump()` trước khi đối chiếu.
+- **Liên kết tải trên trang: không có.** Không trang nào trỏ tới `data/excel/*.xlsx`. Trang Sổ kết quả tự dựng
+  xlsx ngay trong trình duyệt.
+
+**Khác bản kế hoạch: xlsx lên artifact của workflow, không lên Pages.** Bản kế hoạch định dựng xlsx trong
+artifact Pages «để vẫn tải được từ trang». Hai lý do đổi:
+- Trang hiện không có liên kết tải nào, nên không có gì phải giữ.
+- Có năm chỗ triển khai Pages, mỗi chỗ tải nguyên `docs/` lên: `pages.yml`, hai job của `update-data.yml`,
+  `vietlott-results.yml`, `regional-results.yml`. Chỗ nào không tự dựng xlsx thì lượt triển khai của nó xoá xlsx
+  khỏi trang. Hai trong năm chỗ còn không cài thư viện Python nào.
+
+Nay lượt «Hoàn tất XSMB, thống kê và AI/ML» tải xlsx lên artifact `excel-<run>-<attempt>`, giữ 30 ngày.
+README ghi rõ điều đó. Nếu cần tải công khai từ trang, đó là một việc riêng: dựng xlsx ở cả năm chỗ triển khai.
+
+Phép kiểm: `tests/repo/test_excel_outputs_out_of_git.py` buộc ba điều:
+- mọi xlsx bước xuất sinh ra đều nằm ngoài git;
+- workflow lưu chúng lên artifact;
+- pipeline dựng lại chúng trước bước đối chiếu.
+
 ## Các phương án còn lại (chưa làm)
 
 Xếp theo tỉ lệ lợi ích trên rủi ro. Phần lợi là tỉ phần của phần tăng sau dọn ở bảng trên.
-
-### 2. xlsx: thôi theo dõi trong git: vừa, lợi ≈ 13% (≈ 0,7 MB/ngày)
-
-`save_xlsx` đã giữ tệp khi dữ liệu không đổi. xlsx là zip đã nén, nên git gần như không lấy được delta giữa
-hai phiên bản. Bước tiếp theo là thôi lưu xlsx trong git và dựng chúng trong artifact Pages, để vẫn tải
-được từ trang.
-
-Phải kiểm ai đọc `data/excel/*.xlsx` từ git:
-- `ingest.validate_excel_integrity`;
-- `number_integrity_check.sh`;
-- liên kết tải trên trang.
 
 ### 4. Thôi theo dõi trang dựng sẵn trong `docs/`: lớn, lợi ≈ 15% (≈ 0,8 MB/ngày)
 
@@ -157,11 +177,11 @@ phương án 2–4, và khi chủ dự án đồng ý rõ ràng.
 
 ## Đề xuất
 
-1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn và sau phương án 3.
-2. Làm phương án 2. Cộng với phương án 3, hai phương án là ≈ 37% phần tăng sau dọn. Ước tính tốc độ giảm từ
-   ≈ 4,4 xuống ≈ 2,8 MB/ngày, và kho chạm 1 GB sau ≈ 140 ngày thay vì ≈ 89.
-3. Phương án 4 chỉ làm khi 2 và 3 chưa đủ. Viết thiết kế riêng trước (`documentation/architecture/`).
-4. Phương án 5 không làm, trừ khi chủ dự án yêu cầu.
+1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn và sau phương án 2 và 3. Hai phương án cộng
+   lại ≈ 37% phần tăng sau dọn. Ước tính tốc độ giảm từ ≈ 4,4 xuống ≈ 2,8 MB/ngày, và kho chạm 1 GB sau ≈ 140
+   ngày thay vì ≈ 89.
+2. Phương án 4 chỉ làm khi 2 và 3 chưa đủ. Viết thiết kế riêng trước (`documentation/architecture/`).
+3. Phương án 5 không làm, trừ khi chủ dự án yêu cầu.
 
 ## Lệnh đo
 

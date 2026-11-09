@@ -143,9 +143,13 @@ Bộ gác kiểm tra ngày dữ liệu chuẩn trước khi chạy; nếu kỳ h
 
 | Bộ dữ liệu | CSV | JSON | XLSX an toàn cho Excel |
 |---|---|---|---|
-| Kết quả gốc | `data/xsmb.csv` | `data/xsmb.json` | `data/excel/xsmb.xlsx` |
-| Hai chữ số | `data/xsmb-2-digits.csv` | `data/xsmb-2-digits.json` | `data/excel/xsmb-2-digits.xlsx` |
-| Thưa 00–99 | `data/xsmb-sparse.csv` | `data/xsmb-sparse.json` | `data/excel/xsmb-sparse.xlsx` |
+| Kết quả gốc | `data/xsmb.csv` | `data/xsmb.json` | `xsmb.xlsx` |
+| Hai chữ số | `data/xsmb-2-digits.csv` | `data/xsmb-2-digits.json` | `xsmb-2-digits.xlsx` |
+| Thưa 00–99 | `data/xsmb-sparse.csv` | `data/xsmb-sparse.json` | `xsmb-sparse.xlsx` |
+
+Bản XLSX chứa đúng dữ liệu của bản CSV: `validate_excel_integrity` đối chiếu từng ô. Từ 09-11-2026 chúng không nằm
+trong git. Mỗi lượt chạy dựng lại chúng vào `data/excel/`, và lượt «Hoàn tất XSMB, thống kê và AI/ML» lưu chúng thành
+artifact `excel-*` trong 30 ngày. Trang Sổ kết quả cũng xuất XLSX ngay trên trình duyệt.
 
 Dữ liệu dẫn xuất:
 
