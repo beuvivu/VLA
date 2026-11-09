@@ -1,6 +1,6 @@
 {
   "version": 10,
-  "generated_at": "2026-11-09T11:41:34Z",
+  "generated_at": "2026-11-09T14:48:14Z",
   "source_date": "2026-11-09",
   "target_date": "2026-11-10",
   "draws": 4261,
@@ -21,7 +21,7 @@
   },
   "model": {
     "C": 0.001,
-    "inner_gain": 2.943001487071273e-05,
+    "inner_gain": 2.9430014870740484e-05,
     "blocks": [
       {
         "start_date": "2016-03-10",
@@ -76,7 +76,7 @@
       {
         "start_date": "2023-03-04",
         "C": 0.0001,
-        "inner_gain": -2.981945014066123e-05
+        "inner_gain": -2.9819450140633474e-05
       },
       {
         "start_date": "2023-11-09",
@@ -101,7 +101,7 @@
       {
         "start_date": "2026-08-17",
         "C": 0.001,
-        "inner_gain": 2.943001487071273e-05
+        "inner_gain": 2.9430014870740484e-05
       }
     ]
   },
@@ -165,8 +165,8 @@
   "picks": [
     {
       "number": "27",
-      "probability": 0.03365409731415902,
-      "x_base": 1.1313961144129026,
+      "probability": 0.03365409731415903,
+      "x_base": 1.131396114412903,
       "confidence": "Low",
       "reasons": [
         "bóng của Đặc Biệt 72",
@@ -185,8 +185,8 @@
     },
     {
       "number": "96",
-      "probability": 0.031088298592558638,
-      "x_base": 1.0451381269564113,
+      "probability": 0.031088298592558652,
+      "x_base": 1.0451381269564117,
       "confidence": "Low",
       "reasons": [
         "về ≥ 2 nháy ở kỳ mới nhất",
@@ -195,8 +195,8 @@
     },
     {
       "number": "88",
-      "probability": 0.03087742700518221,
-      "x_base": 1.0380489665379742,
+      "probability": 0.030877427005182218,
+      "x_base": 1.0380489665379744,
       "confidence": "Low",
       "reasons": [
         "về ≥ 2 nháy ở kỳ mới nhất",
@@ -205,8 +205,8 @@
     },
     {
       "number": "79",
-      "probability": 0.03087251321168135,
-      "x_base": 1.0378837727779988,
+      "probability": 0.030872513211681364,
+      "x_base": 1.0378837727779993,
       "confidence": "Low",
       "reasons": [
         "cùng đầu với Đặc Biệt 72",

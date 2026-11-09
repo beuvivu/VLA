@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "mode": "de",
-  "learned_at_utc": "2026-11-09T11:40:44Z",
+  "learned_at_utc": "2026-11-09T14:47:20Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -61,8 +61,8 @@
       "ung_vien": 4.5987846123089735
     },
     "relative_gain": 0.00019658153915413305,
-    "delta_ci95_low": -0.0020169707878064853,
-    "delta_ci95_high": 5.6917421811935875e-05
+    "delta_ci95_low": -0.002016970787806488,
+    "delta_ci95_high": 5.691742181161113e-05
   },
   "chronological_split": {
     "weight_days": 21,
