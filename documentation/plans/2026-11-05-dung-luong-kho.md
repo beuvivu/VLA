@@ -151,6 +151,42 @@ Phép kiểm: `tests/repo/test_excel_outputs_out_of_git.py` buộc ba điều:
 - workflow lưu chúng lên artifact;
 - pipeline dựng lại chúng trước bước đối chiếu.
 
+## Đo lại ngày 10-11-2026: ước tính của hai phương án lệch
+
+Đo trên bản clone đầy đủ tới `018e76f9a` (10-11 07:23 giờ VN), theo NGÀY TRỌN (17:00 UTC → 17:00 UTC), gói mỏng:
+
+| Ngày | Tổng | `data/excel` | `data/stats` | `docs` | `data/research` |
+|---|---|---|---|---|---|
+| 06-11, trước phương án 3 | 5,7 MB | 1,2 | 1,6 | 0,8 | 1,1 |
+| 08-11, sau phương án 3 | 5,2 MB | 1,5 | 1,1 | 1,0 | 0,8 |
+| 09-11, sau phương án 3 | 5,1 MB | 1,6 | 1,1 | 0,9 | 0,8 |
+
+Các ước tính ở trên dựa vào một cửa sổ 1,9 ngày, quá ngắn, nên lệch:
+
+- **Mức nền** trước hai phương án là ≈ 5,7 MB/ngày, không phải 4,4. Ngày 05-11 thấp hơn các ngày khác.
+- **Phương án 3** bớt ≈ 0,8 MB/ngày (`data/stats` −0,5; `data/research` −0,3), không phải 1,3.
+- **xlsx** tăng ≈ 1,5 MB/ngày, tức ≈ 30% chứ không phải 13%. Mỗi kỳ ghi một bản mới của cả ba tệp sổ chuẩn, và git
+  lưu nguyên từng bản. Phương án 2 vì thế là khoản lớn nhất.
+- **Sau cả hai phương án**, ước tính còn ≈ 3,6 MB/ngày: kho chạm 1 GB sau ≈ 100 ngày, không phải ≈ 140.
+
+Kích thước bản clone dao động theo lần đóng gói của máy chủ: 608 MB (06-11), 631 MB (09-11), 633 MB (10-11), trong
+khi gói mỏng của quãng ấy chỉ ≈ 17 MB. Đọc xu hướng qua nhiều tuần ở lượt theo dõi, đừng đọc một điểm.
+
+Nguồn lớn nhất còn lại ngoài xlsx, theo tệp, trong 2,95 ngày từ 07-11 08:30 tới 10-11 07:23 giờ VN:
+
+| Tệp | MB |
+|---|---|
+| `data/research/legacy_extensions/pair_recency_loto.csv` | 0,7 |
+| `data/stats/advanced/period_frequency_de_week.csv` | 0,4 |
+| `data/research/research_firewall_loto.csv` | 0,4 |
+| `data/research/research_firewall_de.csv` | 0,4 |
+| `data/research/path_timelines/path_timeline_loto.csv` | 0,4 |
+| `docs/statistics.html` | 0,4 |
+| `images/heatmap.jpg` | 0,3 |
+
+Bốn bảng `data/research` ở trên cộng lại ≈ 0,6 MB/ngày. Nếu trang chỉ đọc vài dòng của chúng, cách làm của phương
+án 3 (bản cắt vào git, bảng đầy đủ lên artifact) áp dụng được. Chưa kiểm ai đọc chúng; chưa làm.
+
 ## Các phương án còn lại (chưa làm)
 
 Xếp theo tỉ lệ lợi ích trên rủi ro. Phần lợi là tỉ phần của phần tăng sau dọn ở bảng trên.
@@ -177,9 +213,8 @@ phương án 2–4, và khi chủ dự án đồng ý rõ ràng.
 
 ## Đề xuất
 
-1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn và sau phương án 2 và 3. Hai phương án cộng
-   lại ≈ 37% phần tăng sau dọn. Ước tính tốc độ giảm từ ≈ 4,4 xuống ≈ 2,8 MB/ngày, và kho chạm 1 GB sau ≈ 140
-   ngày thay vì ≈ 89.
+1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn và sau phương án 2 và 3. Theo số đo lại
+   ngày 10-11, ước tính tốc độ giảm từ ≈ 5,7 xuống ≈ 3,6 MB/ngày, và kho chạm 1 GB sau ≈ 100 ngày.
 2. Phương án 4 chỉ làm khi 2 và 3 chưa đủ. Viết thiết kế riêng trước (`documentation/architecture/`).
 3. Phương án 5 không làm, trừ khi chủ dự án yêu cầu.
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import gzip
 import json
+import math
 import os
 import threading
 import tempfile
@@ -114,6 +115,33 @@ def _event(directory: Path, entry: dict) -> dict:
     return entry
 
 
+#: Hai số thực lệch nhau dưới mức này (tương đối, hoặc tuyệt đối khi gần 0) là CÙNG một số đo.
+#:
+#: `np.exp` và `np.dot` chọn nhân tính theo CPU (AVX2, AVX-512), và các nhân ấy lệch nhau ở bit cuối.
+#: Runner của GitHub không cùng một loại CPU. Vì thế, làm mới trên CÙNG dữ liệu ở hai runner cho trọng số
+#: như 0,29001380630159374 và 0,2900138063015937. Tuần 03 → 10-11-2026 có 40/64 commit chạm tệp tóm tắt
+#: chỉ mang kiểu lệch ấy (lớn nhất 2,5·10⁻¹⁴) cùng một `generated_at` mới. Ngưỡng 10⁻⁹ cao hơn nhiễu năm
+#: bậc và thấp hơn mọi thay đổi có nghĩa: một kỳ mới đổi trọng số ở chữ số thứ hai.
+SUMMARY_FLOAT_RELATIVE_NOISE = 1e-9
+SUMMARY_FLOAT_ABSOLUTE_NOISE = 1e-12
+
+
+def _same_up_to_float_noise(new: object, old: object) -> bool:
+    """Hai cây JSON trùng nhau khi mọi thứ bằng nhau, riêng số thực chỉ cần lệch dưới mức nhiễu.
+
+    Chỉ số thực được nới. Số nguyên, chuỗi, khoá, độ dài danh sách và kiểu phải trùng tuyệt đối: một kỳ
+    mới luôn đổi `last_id` hoặc `observations`, nên không bao giờ bị coi là «không đổi».
+    """
+    if isinstance(new, dict) and isinstance(old, dict):
+        return new.keys() == old.keys() and all(_same_up_to_float_noise(new[k], old[k]) for k in new)
+    if isinstance(new, list) and isinstance(old, list):
+        return len(new) == len(old) and all(map(_same_up_to_float_noise, new, old))
+    if isinstance(new, float) and isinstance(old, float):
+        return math.isclose(new, old, rel_tol=SUMMARY_FLOAT_RELATIVE_NOISE,
+                            abs_tol=SUMMARY_FLOAT_ABSOLUTE_NOISE)
+    return type(new) is type(old) and new == old
+
+
 def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
     """Lưu bản tóm tắt nguyên tử để trang public đọc được ngay cả khi mất cache."""
     components = {name: comp.multi_agent.report() for name, comp in model.components.items()
@@ -130,10 +158,12 @@ def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
         }
         # Cùng nội dung thì giữ nguyên tệp và dấu giờ của lần đổi thật: tệp này được commit, và 32/113
         # commit tuần 25-10 → 01-11-2026 chỉ mang mỗi `generated_at` mới. So sau một vòng JSON để
-        # số thực, tuple… ở cùng dạng với bản đọc từ đĩa.
+        # số thực, tuple… ở cùng dạng với bản đọc từ đĩa. «Cùng nội dung» tính cả nhiễu dấu phẩy động
+        # giữa các CPU (`_same_up_to_float_noise`): tệp giữ số của lần đổi thật gần nhất.
         unchanged = json.loads(json.dumps(entry, ensure_ascii=False, allow_nan=False))
         old = document['products'].get(model.product.value)
-        if old is not None and {**unchanged, 'generated_at': old.get('generated_at')} == old:
+        if old is not None and _same_up_to_float_noise(
+                {**unchanged, 'generated_at': old.get('generated_at')}, old):
             return
         document['products'][model.product.value] = entry
     else:
