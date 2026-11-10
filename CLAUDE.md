@@ -512,6 +512,10 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   `--full` từ vietlott.vn chính thức được sửa; `auto` bỏ nguồn mâu thuẫn. Đến 05-11-2026 đường Max 3D ghi đè lặng
   lẽ (`tests/test_product_sync_conflicts.py`). Tệp trạng thái ghi qua `core.products.write_text_atomic`.
 - Crawler cũ `src/vietlott_results.py` đã nghỉ; `data/vietlott/vietlott.sqlite3` chỉ còn là lưu trữ, không được ghi.
+- `multi-agent-summary.json` được commit, nên làm mới trên CÙNG dữ liệu phải giữ nguyên tệp. Phép so ở
+  `service._publish_multi_agent_summary` bỏ qua `generated_at` và nhiễu dấu phẩy động (`_same_up_to_float_noise`,
+  ngưỡng 10⁻⁹): `np.exp`/`np.dot` lệch bit cuối giữa các CPU của runner, và tuần 03 → 10-11-2026 có 40/64 commit chạm
+  tệp chỉ mang kiểu lệch ấy. Chỉ số thực được nới; số nguyên, khoá, độ dài danh sách phải trùng tuyệt đối.
 
 Số đo, lý do và lịch sử từng điểm: `documentation/architecture/claude-md-chi-tiet.md`, mục «Engine Vietlott».
 
