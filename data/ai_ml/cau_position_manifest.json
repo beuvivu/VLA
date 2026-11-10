@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-09T14:46:42Z",
+  "generated_at": "2026-11-10T11:38:54Z",
   "scope": "all",
   "lag_max": 30,
   "window_days": 2000,
@@ -17,7 +17,7 @@
     "de": {
       "positions": "cau_position_evidence_de.csv",
       "summary": "cau_number_explain_de.csv",
-      "rows_positions": "317",
+      "rows_positions": "318",
       "rows_summary": "100"
     }
   },
