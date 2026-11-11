@@ -35,6 +35,7 @@ from scipy import stats
 
 from ingest.lottery import Lottery
 from core.number_reference import bo
+from core.table_cuts import cut_ranked
 from research.research_diagnostics import bh_fdr
 
 Operator = Literal["concat", "lon", "bo", "cham", "tong"]
@@ -484,12 +485,7 @@ def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
         return table.copy()
     ordered = table.sort_values(LAB_ORDER[0], ascending=LAB_ORDER[1], ignore_index=True,
                                 kind="stable")
-    keep = np.zeros(len(ordered), dtype=bool)
-    keep[:rows] = True
-    keep |= ordered["research_gate_pass"].astype(bool).to_numpy()
-    train_p = pd.to_numeric(ordered["train_p_value"], errors="coerce")
-    keep[train_p.sort_values(kind="stable").index[:rows]] = True
-    return ordered[keep].reset_index(drop=True)
+    return cut_ranked(ordered, rows=rows, keep="research_gate_pass", smallest="train_p_value")
 
 
 #: Bảng đầy đủ: ra đĩa và lên artifact, nằm trong `.gitignore`.

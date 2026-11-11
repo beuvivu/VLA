@@ -19,6 +19,7 @@ import pandas as pd
 
 from ingest.lottery import Lottery
 from core.path_models import build_daily_targets, build_rawdata_digits_from_row
+from core.table_cuts import cut_ranked
 
 Mode = Literal["loto", "de"]
 
@@ -132,6 +133,32 @@ def build_timeline_table(
     return pd.DataFrame(rows)
 
 
+#: Bảng đầy đủ (mỗi dòng mang cả chuỗi trúng/trượt gần đây): ra đĩa và lên artifact, trong `.gitignore`.
+FULL_TABLE = "path_timeline_{mode}.csv"
+#: Bản cắt (`cut_table`): git theo dõi.
+CUT_TABLE = "path_timeline_{mode}_top.csv"
+CUT_ROWS = 50
+
+
+def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
+    """Bản cắt để ghi vào git (11-11-2026): `rows` đường cầu đầu bảng, tức điểm quy tắc cao nhất.
+
+    Không trang nào đọc bảng này. Chuỗi trúng/trượt của mọi dòng trượt đi một kỳ mỗi ngày, nên git
+    không lấy được delta của bảng đầy đủ.
+    """
+    return cut_ranked(table, rows=rows)
+
+
+def write_timeline(table: pd.DataFrame, out: Path, mode: str) -> tuple[Path, Path, int]:
+    """Ghi bảng đầy đủ và bản cắt của một chế độ; trả hai đường dẫn và số dòng của bản cắt."""
+    full_path = out / FULL_TABLE.format(mode=mode)
+    cut_path = out / CUT_TABLE.format(mode=mode)
+    cut = cut_table(table)
+    table.to_csv(full_path, index=False)
+    cut.to_csv(cut_path, index=False)
+    return full_path, cut_path, len(cut)
+
+
 def run(
     *,
     data_dir: Path | str = "data",
@@ -166,14 +193,15 @@ def run(
             continue
         positions = pd.read_csv(source, keep_default_na=False)
         table = build_timeline_table(raw, two, positions, mode=mode, recent=recent)  # type: ignore[arg-type]
-        target = out / f"path_timeline_{mode}.csv"
-        table.to_csv(target, index=False)
-        created.append(target)
+        target, cut_target, cut_rows = write_timeline(table, out, mode)
+        created += [target, cut_target]
         manifest["modes"][mode] = {  # type: ignore[index]
             "status": "ok",
             "rows": int(len(table)),
             "source": source.name,
             "output": target.name,
+            "cut_output": cut_target.name,
+            "cut_rows": cut_rows,
         }
 
     manifest_path = out / "manifest.json"

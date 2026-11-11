@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-11-10T11:36:34Z",
+  "generated_at_utc": "2026-11-10T13:55:45Z",
   "anchor_date": "2026-11-10",
   "modes": {
     "loto": {
@@ -23,7 +23,8 @@
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
-      "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented."
+      "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented.",
+      "cut_rows": 189
     },
     "de": {
       "mode": "de",
@@ -45,7 +46,8 @@
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
-      "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented."
+      "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented.",
+      "cut_rows": 191
     }
   }
 }

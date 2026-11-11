@@ -28,6 +28,7 @@ import pandas as pd
 from scipy import stats
 
 from core.calendar_alignment import require_daily_contiguous
+from core.table_cuts import cut_ranked
 from ingest.lottery import Lottery
 from research.research_diagnostics import bh_fdr
 
@@ -270,6 +271,34 @@ def evaluate_mode(
     return table, report
 
 
+#: Bảng đầy đủ 1 458 giả thuyết mỗi chế độ: ra đĩa và lên artifact, nằm trong `.gitignore`.
+FULL_TABLE = "research_firewall_{mode}.csv"
+#: Bản cắt (`cut_table`): git theo dõi.
+CUT_TABLE = "research_firewall_{mode}_top.csv"
+CUT_ROWS = 100
+
+
+def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
+    """Bản cắt của bảng tường lửa để ghi vào git (11-11-2026), theo thứ tự của chính bảng.
+
+    Giữ mọi giả thuyết đủ điều kiện vận hành, `rows` dòng đầu (độ nâng trên tập giữ lại cao nhất) và
+    `rows` giả thuyết có p huấn luyện nhỏ nhất. Không trang nào đọc bảng đầy đủ: trang Phòng nghiên cứu
+    chỉ đọc `research_firewall_report.json`. Gần như mọi số trong bảng đổi mỗi kỳ, nên git không lấy
+    được delta.
+    """
+    return cut_ranked(table, rows=rows, keep="production_eligible", smallest="train_p_value")
+
+
+def write_mode_tables(table: pd.DataFrame, out: Path, mode: str) -> tuple[Path, Path, int]:
+    """Ghi bảng đầy đủ và bản cắt của một chế độ; trả hai đường dẫn và số dòng của bản cắt."""
+    full_path = out / FULL_TABLE.format(mode=mode)
+    cut_path = out / CUT_TABLE.format(mode=mode)
+    cut = cut_table(table)
+    table.to_csv(full_path, index=False)
+    cut.to_csv(cut_path, index=False)
+    return full_path, cut_path, len(cut)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Chronological multiple-testing/data-snooping firewall.")
     ap.add_argument("--out-dir", default="data/research")
@@ -304,8 +333,8 @@ def main() -> None:
             seed=args.seed + offset,
             max_reality_days=max(120, args.max_reality_days),
         )
-        table.to_csv(out / f"research_firewall_{mode}.csv", index=False)
-        reports["modes"][mode] = report  # type: ignore[index]
+        _, _, cut_rows = write_mode_tables(table, out, mode)
+        reports["modes"][mode] = {**report, "cut_rows": cut_rows}  # type: ignore[index]
 
     (out / "research_firewall_report.json").write_text(
         json.dumps(reports, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

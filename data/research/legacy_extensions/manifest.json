@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-11-10T11:36:30Z",
+  "generated_at_utc": "2026-11-10T13:55:43Z",
   "anchor_date": "2026-11-10",
   "research_only": true,
   "rows": {
@@ -11,6 +11,7 @@
     "loto_transition_independence.csv": 100,
     "loto_acf_bartlett.csv": 600
   },
+  "pair_recency_cut_rows": 300,
   "transition_fdr_05_count": 0,
   "acf_fdr_05_count": 0,
   "acf_bartlett_exceed_count": 29,

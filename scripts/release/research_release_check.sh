@@ -77,6 +77,13 @@ for mode in ("loto", "de"):
     table = pd.read_csv(root / f"research_firewall_{mode}.csv")
     assert len(table) == 27 * 27 * 2
     assert table["train_q_value_fdr"].between(0, 1).all()
+    # Bảng đầy đủ không vào git; bản cắt git theo dõi phải là đúng các dòng `cut_table` chọn từ nó.
+    from research import research_firewall
+    firewall_cut = pd.read_csv(root / research_firewall.CUT_TABLE.format(mode=mode))
+    assert int(item["cut_rows"]) == len(firewall_cut) >= research_firewall.CUT_ROWS
+    firewall_key = ["rule", "position_i", "position_j"]
+    assert not table.duplicated(firewall_key).any()
+    assert firewall_cut[firewall_key].values.tolist() == research_firewall.cut_table(table)[firewall_key].values.tolist()
 
     strategy = pd.read_csv(root / f"strategy_lab_{mode}.csv")
     assert len(strategy) == 20
@@ -116,6 +123,12 @@ for name in (
 ):
     table = pd.read_csv(ext / name)
     assert not table.empty, name
+# Bảng cặp đầy đủ không vào git; bản cắt git theo dõi phải là đúng phần đầu của nó.
+from research import research_legacy_extensions as legacy_extensions
+pair_full = pd.read_csv(ext / legacy_extensions.PAIR_FULL_TABLE)
+pair_cut = pd.read_csv(ext / legacy_extensions.PAIR_CUT_TABLE)
+assert int(manifest["pair_recency_cut_rows"]) == len(pair_cut) == legacy_extensions.PAIR_CUT_ROWS
+assert pair_cut.equals(pair_full.head(len(pair_cut)))
 for name in ("loto_transition_independence.csv", "loto_acf_bartlett.csv"):
     table = pd.read_csv(ext / name)
     assert table["p_value"].between(0, 1).all(), name
@@ -187,6 +200,12 @@ for mode in ("loto", "de"):
     assert not timeline.empty
     assert timeline["timeline_trials"].gt(0).all()
     assert timeline["recent_hit_rate"].dropna().between(0, 1).all()
+    # Bảng đầy đủ không vào git; bản cắt git theo dõi phải là đúng phần đầu của nó.
+    from soi_cau import path_timeline_evidence
+    timeline_cut = pd.read_csv(root / "path_timelines" / item["cut_output"])
+    assert item["cut_output"] == path_timeline_evidence.CUT_TABLE.format(mode=mode)
+    assert int(item["cut_rows"]) == len(timeline_cut) == min(len(timeline), path_timeline_evidence.CUT_ROWS)
+    assert timeline_cut.equals(timeline.head(len(timeline_cut)))
 print("OK research artifacts")
 PYRESEARCH
 
