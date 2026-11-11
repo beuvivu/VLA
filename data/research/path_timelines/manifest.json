@@ -8,13 +8,17 @@
       "status": "ok",
       "rows": 800,
       "source": "cau_position_evidence_loto.csv",
-      "output": "path_timeline_loto.csv"
+      "output": "path_timeline_loto.csv",
+      "cut_output": "path_timeline_loto_top.csv",
+      "cut_rows": 50
     },
     "de": {
       "status": "ok",
       "rows": 318,
       "source": "cau_position_evidence_de.csv",
-      "output": "path_timeline_de.csv"
+      "output": "path_timeline_de.csv",
+      "cut_output": "path_timeline_de_top.csv",
+      "cut_rows": 50
     }
   }
 }

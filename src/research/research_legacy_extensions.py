@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
+from core.table_cuts import cut_ranked
 
 """Research-only extensions preserved from the final legacy repository audit.
 
@@ -420,6 +421,31 @@ def ljung_box_even_tail_count(two: pd.DataFrame, *, lags: int = 10) -> dict[str,
     }
 
 
+#: Bảng đầy đủ 4 950 cặp: ra đĩa và lên artifact, nằm trong `.gitignore`.
+PAIR_FULL_TABLE = "pair_recency_loto.csv"
+#: Bản cắt (`cut_pair_recency`): git theo dõi.
+PAIR_CUT_TABLE = "pair_recency_loto_top.csv"
+PAIR_CUT_ROWS = 300
+
+
+def cut_pair_recency(pair: pd.DataFrame, rows: int = PAIR_CUT_ROWS) -> pd.DataFrame:
+    """Bản cắt để ghi vào git (11-11-2026): `rows` cặp đầu bảng, tức độ nâng đồng xuất hiện cao nhất.
+
+    Không trang nào đọc bảng này (trang cặp đọc `data/stats/descriptive_ext/pair_recency_loto.csv`, một
+    bảng khác). Mỗi kỳ đổi số ngày vắng của gần như mọi cặp, nên git không lấy được delta của bảng đầy đủ.
+    """
+    return cut_ranked(pair, rows=rows)
+
+
+def write_pair_recency(pair: pd.DataFrame, out: Path) -> tuple[Path, Path, int]:
+    """Ghi bảng cặp đầy đủ và bản cắt; trả hai đường dẫn và số dòng của bản cắt."""
+    full_path, cut_path = out / PAIR_FULL_TABLE, out / PAIR_CUT_TABLE
+    cut = cut_pair_recency(pair)
+    write_code_csv(pair, full_path, index=False)
+    write_code_csv(cut, cut_path, index=False)
+    return full_path, cut_path, len(cut)
+
+
 def run_extensions(
     raw: pd.DataFrame,
     two: pd.DataFrame,
@@ -443,13 +469,15 @@ def run_extensions(
     tables = {
         "number_recency_loto.csv": rec_loto,
         "number_recency_de.csv": rec_de,
-        "pair_recency_loto.csv": pair,
+        PAIR_FULL_TABLE: pair,
         "de_weekday_profile.csv": weekday,
         "loto_transition_independence.csv": transition,
         "loto_acf_bartlett.csv": acf,
     }
     for name, table in tables.items():
-        write_code_csv(table, out / name, index=False)
+        if name != PAIR_FULL_TABLE:
+            write_code_csv(table, out / name, index=False)
+    _, _, pair_cut_rows = write_pair_recency(pair, out)
 
     randomness = {"ks_full_special": ks, "ljung_box_even_tail_count": ljung}
     (out / "randomness_extensions.json").write_text(
@@ -465,6 +493,7 @@ def run_extensions(
         "anchor_date": pd.to_datetime(two["date"]).max().date().isoformat(),
         "research_only": True,
         "rows": {name: int(len(table)) for name, table in tables.items()},
+        "pair_recency_cut_rows": pair_cut_rows,
         "transition_fdr_05_count": int(transition["fdr_05"].sum()) if not transition.empty else 0,
         "acf_fdr_05_count": int(acf["fdr_05"].sum()) if not acf.empty else 0,
         "acf_bartlett_exceed_count": int(acf["exceeds_bartlett"].sum()) if not acf.empty else 0,

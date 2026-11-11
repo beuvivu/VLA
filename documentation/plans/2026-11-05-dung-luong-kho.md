@@ -4,6 +4,7 @@
 - Phương án 1 (theo dõi hằng tuần) đã làm ngày 06-11-2026, theo duyệt của chủ dự án.
 - Phương án 3 (hai bảng nghiên cứu lớn) đã làm ngày 07-11-2026, theo duyệt của chủ dự án.
 - Phương án 2 (xlsx) đã làm ngày 09-11-2026, theo duyệt của chủ dự án.
+- Phương án 3 mở rộng (năm bảng chẩn đoán nữa) đã làm ngày 11-11-2026, theo duyệt của chủ dự án.
 - Phương án 4 và 5 CHỜ CHỦ DỰ ÁN DUYỆT.
 
 **Mục tiêu:** giữ gói git của kho dưới 1 GB. GitHub khuyên giữ kho dưới 1 GB, và rất nên dưới 5 GB.
@@ -184,8 +185,40 @@ Nguồn lớn nhất còn lại ngoài xlsx, theo tệp, trong 2,95 ngày từ 0
 | `docs/statistics.html` | 0,4 |
 | `images/heatmap.jpg` | 0,3 |
 
-Bốn bảng `data/research` ở trên cộng lại ≈ 0,6 MB/ngày. Nếu trang chỉ đọc vài dòng của chúng, cách làm của phương
-án 3 (bản cắt vào git, bảng đầy đủ lên artifact) áp dụng được. Chưa kiểm ai đọc chúng; chưa làm.
+Bốn bảng `data/research` ở trên cộng lại ≈ 0,6 MB/ngày. Chúng đã ra khỏi git ngày 11-11-2026; xem mục kế tiếp.
+
+## Phương án 3 mở rộng (11-11-2026): năm bảng chẩn đoán nữa, lợi ước tính ≈ 0,6 MB/ngày
+
+Năm bảng: bốn bảng ở trên và `path_timeline_de.csv` (0,1 MB trong cùng 2,95 ngày), do cùng một trình ghi với
+bảng LOTO. Cộng lại ≈ 2,0 MB trong 2,95 ngày, tức ≈ 0,7 MB/ngày.
+
+**Ai đọc chúng:** không trang nào và không bước pipeline nào. Trang Phòng nghiên cứu chỉ đọc
+`research_firewall_report.json`. Ngoài trình ghi, chỉ `research_release_check.sh` đọc năm bảng, sau khi tự chạy
+lại các trình ghi. `data/stats/descriptive_ext/pair_recency_loto.csv` là một bảng KHÁC (300 cặp, trang cặp đọc),
+không đổi.
+
+| Bảng đầy đủ (ra khỏi git) | Bản cắt (git theo dõi) |
+|---|---|
+| `research_firewall_loto.csv`, 1 458 giả thuyết, 487 KB | `research_firewall_loto_top.csv`, 189 dòng, 63 KB |
+| `research_firewall_de.csv`, 1 458 giả thuyết, 497 KB | `research_firewall_de_top.csv`, 191 dòng, 65 KB |
+| `path_timelines/path_timeline_loto.csv`, 800 đường cầu, 1 956 KB | `path_timeline_loto_top.csv`, 50 dòng, 122 KB |
+| `path_timelines/path_timeline_de.csv`, 318 đường cầu, 778 KB | `path_timeline_de_top.csv`, 50 dòng, 123 KB |
+| `legacy_extensions/pair_recency_loto.csv`, 4 950 cặp, 1 080 KB | `pair_recency_loto_top.csv`, 300 dòng, 65 KB |
+
+- **Bản cắt của bảng tường lửa** (`research_firewall.cut_table`) giữ mọi giả thuyết đủ điều kiện vận hành, 100 dòng
+  đầu bảng và 100 giả thuyết có p huấn luyện nhỏ nhất. Hai bản cắt còn lại là phần đầu của bảng, theo đúng thứ tự
+  trình ghi đã xếp: 50 đường cầu điểm cao nhất, 300 cặp có độ nâng đồng xuất hiện cao nhất.
+- **Một phép cắt chung:** `core.table_cuts.cut_ranked`. Bản cắt của bảng vị trí chéo (đợt 07-11) cũng gọi nó;
+  trên bảng thật nó cho đúng 199 dòng như trước.
+- **Một danh sách:** `core.table_cuts.FULL_TABLE_CUTS` khai cả bảy cặp bảng đầy đủ → bản cắt.
+  `tests/research/test_research_table_cuts.py` buộc ba nơi khớp với nó: `.gitignore` (cả hai chiều), bước lưu
+  artifact `research-full-tables-*` của `update-data.yml`, và tệp mà từng trình ghi thật sự ghi.
+- **Kiểm chứng:** chạy ba trình ghi đã sửa trên dữ liệu thật ngày 10-11: cả năm bảng đầy đủ trùng từng byte với
+  tệp pipeline đã ghi; manifest và báo cáo chỉ thêm trường số dòng của bản cắt. `research_release_check.sh` so từng
+  bản cắt với bảng đầy đủ nó vừa sinh.
+- **Ước tính, chưa đo:** năm bản cắt cộng 439 KB, bằng ≈ 9% của năm bảng đầy đủ (4,8 MB). Nếu bản cắt đổi mỗi kỳ
+  theo cùng tỉ lệ, phần tăng giảm ≈ 0,6 MB/ngày: từ ≈ 3,6 xuống ≈ 3,0 MB/ngày, và kho chạm 1 GB sau ≈ 130 ngày.
+  Số thật đọc ở lượt theo dõi hằng tuần.
 
 ## Các phương án còn lại (chưa làm)
 
@@ -214,7 +247,8 @@ phương án 2–4, và khi chủ dự án đồng ý rõ ràng.
 ## Đề xuất
 
 1. Đọc lượt theo dõi thứ Hai 16-11, tuần đầu nằm trọn sau đợt dọn và sau phương án 2 và 3. Theo số đo lại
-   ngày 10-11, ước tính tốc độ giảm từ ≈ 5,7 xuống ≈ 3,6 MB/ngày, và kho chạm 1 GB sau ≈ 100 ngày.
+   ngày 10-11, ước tính tốc độ giảm từ ≈ 5,7 xuống ≈ 3,6 MB/ngày, và kho chạm 1 GB sau ≈ 100 ngày. Năm bảng
+   chẩn đoán ra khỏi git ngày 11-11 nên tuần ấy chỉ mang 5 ngày của thay đổi này; ước tính sau nó là ≈ 3,0 MB/ngày.
 2. Phương án 4 chỉ làm khi 2 và 3 chưa đủ. Viết thiết kế riêng trước (`documentation/architecture/`).
 3. Phương án 5 không làm, trừ khi chủ dự án yêu cầu.
 

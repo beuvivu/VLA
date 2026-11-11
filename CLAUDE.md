@@ -116,7 +116,10 @@ làm việc báo gói 642 MB (đúng: 608 MB) và tăng 3 MB/ngày (đúng: 4–
 artifact `research-full-tables-*` của `update-data.yml`. Trang Phòng nghiên cứu đọc hai bản cắt mà git theo dõi:
 `crosslag_rules_top.csv` (`crosslag_positional_lab.cut_table`) và `current_special_next_loto.csv`
 (`conditional_nextday.current_special_rows`). Trang dựng chỉ từ tệp git theo dõi phải trùng trang dựng từ bảng
-đầy đủ (`tests/research/test_research_table_cuts.py`). Từ 09-11-2026, `data/excel/*.xlsx` cũng không vào git. Chúng là
+đầy đủ (`tests/research/test_research_table_cuts.py`). Từ 11-11-2026 thêm năm bảng chẩn đoán không trang nào đọc:
+`research_firewall_<mode>.csv`, `path_timelines/path_timeline_<mode>.csv`, `legacy_extensions/pair_recency_loto.csv`; git giữ
+`*_top.csv` của chúng. Cặp bảng đầy đủ → bản cắt khai MỘT lần ở `core.table_cuts.FULL_TABLE_CUTS`: `.gitignore`, bước artifact
+và từng trình ghi bị buộc khớp với nó. Bảng lớn mới thì thêm vào đó và cắt bằng `core.table_cuts.cut_ranked`. Từ 09-11-2026, `data/excel/*.xlsx` cũng không vào git. Chúng là
 bản sao từng ô của `data/xsmb*.csv`. `sync.py` dựng lại chúng mỗi lượt, trước `validate_excel_integrity`, và
 `update-data.yml` lưu chúng lên artifact `excel-*` (`tests/repo/test_excel_outputs_out_of_git.py`). Không trang nào
 liên kết tới chúng. Nếu cần phục vụ xlsx trên Pages thì phải dựng ở CẢ năm chỗ triển khai, vì mỗi chỗ tải nguyên `docs/`.

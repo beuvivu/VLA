@@ -1,34 +1,47 @@
-"""Hai bảng nghiên cứu đầy đủ ra khỏi git; trang đọc bản cắt (phương án 3, 07-11-2026).
+"""Bảng nghiên cứu đầy đủ ra khỏi git; git giữ bản cắt (phương án 3, 07 → 11-11-2026).
 
-Hai bảng đầy đủ là `crosslag_rules.csv` (5 832 quy tắc) và `loto_nextday_given_special_long.csv`
-(10 000 ô). Gần như mọi số trong chúng đổi mỗi kỳ, nên đo ngày 06-11-2026 chúng chiếm 24% phần tăng
-của kho (`documentation/plans/2026-11-05-dung-luong-kho.md`).
+Đợt đầu (07-11) là `crosslag_rules.csv` (5 832 quy tắc) và `loto_nextday_given_special_long.csv`
+(10 000 ô): đo ngày 06-11-2026 chúng chiếm 24% phần tăng của kho. Đợt hai (11-11) là năm bảng chẩn đoán
+không trang nào đọc: tường lửa nghiên cứu (hai chế độ), dòng thời gian đường cầu (hai chế độ) và bảng cặp
+của `legacy_extensions` (`documentation/plans/2026-11-05-dung-luong-kho.md`). Gần như mọi số trong các
+bảng ấy đổi mỗi kỳ, nên git không lấy được delta.
 
-Nay chúng vẫn được ghi ra đĩa và lên artifact của `update-data.yml`, nhưng nằm trong `.gitignore`.
-Trang Phòng nghiên cứu đọc hai bản cắt mà git theo dõi. Các phép dưới đây buộc bốn điều:
+Chúng vẫn được ghi ra đĩa và lên artifact của `update-data.yml`, nhưng nằm trong `.gitignore`. Danh sách
+khai MỘT lần ở `core.table_cuts.FULL_TABLE_CUTS`. Các phép dưới đây buộc:
 - trang dựng từ bản cắt trùng trang dựng từ bảng đầy đủ;
-- bản cắt giữ mọi dòng đáng xem;
-- bảng đầy đủ không vào git;
-- workflow vẫn lưu bảng đầy đủ.
+- bản cắt giữ mọi dòng đáng xem và là một phần của đúng bảng đầy đủ;
+- mỗi trình ghi ghi đúng cặp tệp đã khai, qua chính lối vào mà pipeline gọi;
+- `.gitignore` bỏ qua đúng các bảng đầy đủ đã khai, không hơn không kém;
+- workflow lưu đúng các bảng đầy đủ đã khai.
 """
 from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import yaml
 
+from core.path_models import FIELD_WIDTHS
+from core.table_cuts import FULL_TABLE_CUTS
 from pages.build_research_lab import _conditional_table, _crosslag_table, build
-from research import conditional_nextday, crosslag_positional_lab as crosslag
+from research import (
+    conditional_nextday,
+    crosslag_positional_lab as crosslag,
+    research_firewall,
+    research_legacy_extensions as legacy_extensions,
+)
+from soi_cau import path_timeline_evidence
 
 ROOT = Path(__file__).resolve().parents[2]
 CROSS_DIR = Path("data/research/crosslag_positional")
 CONDITIONAL_DIR = Path("data/stats/conditional")
-FULL_TABLES = (CROSS_DIR / crosslag.FULL_TABLE, CONDITIONAL_DIR / conditional_nextday.LONG_TABLE)
-CUT_TABLES = (CROSS_DIR / crosslag.CUT_TABLE, CONDITIONAL_DIR / conditional_nextday.CURRENT_TABLE)
+FULL_TABLES = tuple(Path("data") / full for full in FULL_TABLE_CUTS)
+CUT_TABLES = tuple(Path("data") / cut for cut in FULL_TABLE_CUTS.values())
 
 
 def _rules(n: int, seed: int, gate: int = 0) -> pd.DataFrame:
@@ -110,19 +123,158 @@ def test_the_conditional_page_reads_the_same_rows_from_the_current_cut(tmp_path:
     assert _conditional_table(long_df, "77") in page
 
 
+class _History:
+    """Sổ kết quả giả, đủ ba dạng mà các trình ghi hỏi `Lottery`; ngày liền nhau, 27 giải mỗi kỳ."""
+
+    def __init__(self, days: int, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        dates = pd.date_range("2025-01-01", periods=days, freq="D")
+        fields = [field for field, _width in FIELD_WIDTHS]
+        self.raw = pd.DataFrame({"date": dates} | {
+            field: rng.integers(0, 10 ** width, days) for field, width in FIELD_WIDTHS})
+        self.two = self.raw.copy()
+        self.two[fields] = self.two[fields] % 100
+        counts = np.zeros((days, 100), dtype=int)
+        np.add.at(counts, (np.repeat(np.arange(days), len(fields)), self.two[fields].to_numpy().ravel()), 1)
+        self.sparse = pd.DataFrame(counts, columns=[str(i) for i in range(100)])
+        self.sparse.insert(0, "date", dates)
+
+    def load(self) -> None:
+        return None
+
+    def get_raw_data(self) -> pd.DataFrame:
+        return self.raw.copy()
+
+    def get_2_digits_data(self) -> pd.DataFrame:
+        return self.two.copy()
+
+    def get_sparse_data(self) -> pd.DataFrame:
+        return self.sparse.copy()
+
+
+def _position_evidence(n: int, seed: int) -> pd.DataFrame:
+    """Bảng đường cầu giả cho `path_timeline_evidence`: `n` cặp vị trí khác nhau, điểm quy tắc có dòng hoà."""
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame({
+        "rule_kind": "active", "lag_days": 1,
+        "pos_i_index": np.arange(n) % 107, "pos_j_index": (np.arange(n) * 7 + 3) % 107,
+        "path_line": [f"L{i}" for i in range(n)],
+        "rule_score": rng.integers(0, 12, n), "p_mean": rng.uniform(0.2, 0.3, n).round(2),
+        "current_streak": rng.integers(0, 5, n), "max_streak": rng.integers(5, 9, n),
+    })
+
+
+@pytest.fixture(scope="module")
+def written(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Thư mục `data/` tạm mà MỌI trình ghi đã ghi vào, qua chính lối vào mà pipeline gọi.
+
+    Ba trình ghi của đợt 11-11 chạy cả lượt (`main`, `run`, `run_extensions`) trên sổ giả: phép kiểm phải đỏ
+    khi lối vào thôi gọi hàm ghi cặp tệp, không chỉ khi hàm ghi sai tên.
+    """
+    data = tmp_path_factory.mktemp("written") / "data"
+    history = _History(days=240, seed=5)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(research_firewall, "Lottery", lambda: history)
+        patch.setattr(sys, "argv", ["research_firewall.py", "--out-dir", str(data / "research"),
+                                    "--permutations", "15", "--max-reality-days", "120"])
+        research_firewall.main()
+
+        patch.setattr(path_timeline_evidence, "Lottery", lambda: history)
+        evidence = data / "ai_ml"
+        evidence.mkdir(parents=True)
+        for seed, mode in enumerate(("loto", "de")):
+            rows = path_timeline_evidence.CUT_ROWS + 30
+            _position_evidence(rows, seed).to_csv(evidence / f"cau_position_evidence_{mode}.csv", index=False)
+        path_timeline_evidence.run(evidence_dir=evidence, out_dir=data / "research" / "path_timelines")
+
+    legacy_extensions.run_extensions(history.raw, history.two, history.sparse,
+                                     out_dir=data / "research" / "legacy_extensions")
+    rules = _rules(800, seed=3)
+    crosslag.write_outputs(rules, {"hypotheses": len(rules)}, data / CROSS_DIR.relative_to("data"))
+    conditional_nextday.write_tables(_long(seed=11), out_dir=data / CONDITIONAL_DIR.relative_to("data"),
+                                     anchor_date="2026-11-06", current_special=77, top=20, prior_learned=False)
+    return data
+
+
+def test_every_writer_writes_the_full_table_and_the_cut_the_registry_declares(written: Path) -> None:
+    """Bảng khai là nguồn duy nhất: trình ghi đổi tên tệp, hay bảng khai thêm một cặp không ai ghi, đều đỏ."""
+    assert len(FULL_TABLE_CUTS) >= 7
+    assert not set(FULL_TABLE_CUTS) & set(FULL_TABLE_CUTS.values())
+    for full, cut in FULL_TABLE_CUTS.items():
+        assert (written / full).is_file(), f"không trình ghi nào ghi bảng đầy đủ {full}"
+        assert (written / cut).is_file(), f"không trình ghi nào ghi bản cắt {cut}"
+        assert 0 < (written / cut).stat().st_size < (written / full).stat().st_size, (full, cut)
+    # Mọi tệp `*_top.csv` các trình ghi sinh ra đều là bản cắt ĐÃ KHAI: bản cắt chưa khai thì bảng đầy đủ
+    # của nó không được `.gitignore` bỏ qua và cũng không lên artifact.
+    cuts = {path.relative_to(written).as_posix() for path in written.rglob("*_top.csv")}
+    assert cuts <= set(FULL_TABLE_CUTS.values()), cuts - set(FULL_TABLE_CUTS.values())
+
+
+def test_the_firewall_cut_keeps_every_eligible_rule_and_the_strongest_training_rules(written: Path) -> None:
+    key = ["rule", "position_i", "position_j"]
+    for mode in ("loto", "de"):
+        full = pd.read_csv(written / "research" / research_firewall.FULL_TABLE.format(mode=mode))
+        cut = pd.read_csv(written / "research" / research_firewall.CUT_TABLE.format(mode=mode))
+        assert len(full) == 27 * 27 * 2
+        assert cut[key].values.tolist() == research_firewall.cut_table(full)[key].values.tolist()
+        assert cut[key].values.tolist()[:10] == full[key].values.tolist()[:10]
+        strongest = full.sort_values("train_p_value", kind="stable").head(research_firewall.CUT_ROWS)
+        assert set(map(tuple, strongest[key].values)) <= set(map(tuple, cut[key].values))
+        report = json.loads((written / "research" / "research_firewall_report.json").read_text(encoding="utf-8"))
+        assert report["modes"][mode]["cut_rows"] == len(cut) < len(full)
+    # Giả thuyết đủ điều kiện vận hành giữ hết, kể cả khi nhiều hơn `CUT_ROWS` (sổ giả không có dòng nào).
+    eligible = research_firewall.CUT_ROWS + 40
+    table = full.assign(production_eligible=np.arange(len(full))[::-1] < eligible)
+    kept = research_firewall.cut_table(table)
+    assert int(kept["production_eligible"].sum()) == eligible
+
+
+def test_the_timeline_and_pair_cuts_are_the_head_of_the_full_table(written: Path) -> None:
+    timelines = written / "research" / "path_timelines"
+    manifest = json.loads((timelines / "manifest.json").read_text(encoding="utf-8"))
+    for mode in ("loto", "de"):
+        full = pd.read_csv(timelines / path_timeline_evidence.FULL_TABLE.format(mode=mode))
+        cut = pd.read_csv(timelines / path_timeline_evidence.CUT_TABLE.format(mode=mode))
+        assert len(cut) == path_timeline_evidence.CUT_ROWS < len(full)
+        assert cut.equals(full.head(len(cut)))
+        assert manifest["modes"][mode]["cut_output"] == path_timeline_evidence.CUT_TABLE.format(mode=mode)
+        assert manifest["modes"][mode]["cut_rows"] == len(cut)
+        assert manifest["modes"][mode]["rows"] == len(full)
+
+    legacy = written / "research" / "legacy_extensions"
+    full = pd.read_csv(legacy / legacy_extensions.PAIR_FULL_TABLE)
+    cut = pd.read_csv(legacy / legacy_extensions.PAIR_CUT_TABLE)
+    assert len(cut) == legacy_extensions.PAIR_CUT_ROWS < len(full)
+    assert cut.equals(full.head(len(cut)))
+    manifest = json.loads((legacy / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["pair_recency_cut_rows"] == len(cut)
+    assert manifest["rows"][legacy_extensions.PAIR_FULL_TABLE] == len(full)
+
+
+def _ignored_tables() -> set[str]:
+    """Các dòng `.gitignore` gọi đích danh một CSV trong `data/` (không ký tự đại diện)."""
+    lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+    return {line.strip() for line in lines
+            if line.startswith("data/") and line.strip().endswith(".csv") and "*" not in line}
+
+
 def test_the_full_tables_stay_out_of_git_and_the_cuts_stay_in() -> None:
     def git(*args: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=False)
 
+    assert len(FULL_TABLES) == len(CUT_TABLES) >= 7
     for path in FULL_TABLES:
         assert git("check-ignore", "-q", str(path)).returncode == 0, f"{path} phải nằm trong .gitignore"
         assert git("ls-files", "--error-unmatch", str(path)).returncode != 0, f"{path} vẫn được git theo dõi"
     for path in CUT_TABLES:
         assert git("check-ignore", "-q", str(path)).returncode != 0, f"{path} không được bị bỏ qua"
         assert git("ls-files", "--error-unmatch", str(path)).returncode == 0, f"{path} phải được git theo dõi"
+    # Chiều ngược lại: bảng bị bỏ qua mà không khai thì không trình ghi nào bị buộc ghi bản cắt cho nó
+    # và workflow không lưu nó — dữ liệu biến mất lặng lẽ.
+    assert _ignored_tables() == {str(path) for path in FULL_TABLES}
 
 
-def test_the_pipeline_run_uploads_both_full_tables() -> None:
+def test_the_pipeline_run_uploads_every_full_table() -> None:
     workflow = yaml.safe_load((ROOT / ".github/workflows/update-data.yml").read_text(encoding="utf-8"))
     steps = workflow["jobs"]["update"]["steps"]
     pipeline = next(i for i, step in enumerate(steps) if "src/pipeline.py" in step.get("run", ""))

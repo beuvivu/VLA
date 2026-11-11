@@ -60,6 +60,15 @@ data/stats/advanced/*_day.csv
 data/research/crosslag_positional/crosslag_rules.csv
 data/stats/conditional/loto_nextday_given_special_long.csv
 
+# Năm bảng chẩn đoán nữa theo cùng cách (11-11-2026). Không trang nào đọc chúng; git giữ bản cắt *_top.csv.
+# Danh sách cặp bảng đầy đủ → bản cắt khai một lần ở src/core/table_cuts.py (FULL_TABLE_CUTS);
+# tests/research/test_research_table_cuts.py buộc tệp này khớp danh sách ấy.
+data/research/research_firewall_loto.csv
+data/research/research_firewall_de.csv
+data/research/path_timelines/path_timeline_loto.csv
+data/research/path_timelines/path_timeline_de.csv
+data/research/legacy_extensions/pair_recency_loto.csv
+
 # Thư viện chỉ dùng cho kiểm thử tương tác giao diện.
 tests/frontend/node_modules/
 
