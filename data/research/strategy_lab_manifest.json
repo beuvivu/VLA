@@ -1,16 +1,16 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-11-11T11:37:44Z",
-  "anchor_date": "2026-11-11",
+  "generated_at_utc": "2026-11-12T11:38:07Z",
+  "anchor_date": "2026-11-12",
   "strategy_count": 20,
   "modes": {
     "loto": {
       "research_gate_pass_count": 0,
-      "best_holdout_lift": 1.034396072457952
+      "best_holdout_lift": 1.0335548146738138
     },
     "de": {
       "research_gate_pass_count": 2,
-      "best_holdout_lift": 1.5935153176779109
+      "best_holdout_lift": 1.5937388264272339
     }
   },
   "production_integration": false,
