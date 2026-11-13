@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-11-12T11:38:00Z",
-  "anchor_date": "2026-11-12",
+  "generated_at_utc": "2026-11-13T11:36:26Z",
+  "anchor_date": "2026-11-13",
   "research_only": true,
   "rows": {
     "number_recency_loto.csv": 100,
@@ -17,20 +17,20 @@
   "acf_bartlett_exceed_count": 29,
   "ks_full_special": {
     "name": "ks_full_special_uniformity",
-    "statistic": 0.02153116322701687,
-    "p_value": 0.03781987131744302,
+    "statistic": 0.021630140679953114,
+    "p_value": 0.03643013495687175,
     "note": "H0: full five-digit special prize is Uniform[0,1) after scaling."
   },
   "ljung_box_even_tail_count": {
     "name": "ljung_box_even_tail_count",
-    "statistic": 7.734917136043039,
-    "p_value": 0.6547118714032611,
+    "statistic": 7.590093152953779,
+    "p_value": 0.6688062151944101,
     "lags": 10,
     "note": "H0: aggregate count of even-ending Loto entries has no serial autocorrelation through the tested lags."
   },
   "coverage": {
-    "draw_days": 4264,
-    "average_distinct_loto_per_day": 23.829268292682926,
+    "draw_days": 4265,
+    "average_distinct_loto_per_day": 23.829308323563893,
     "all_time_distinct_numbers": 100,
     "unseen_numbers": [],
     "first_full_coverage_day_from_start": 23,
@@ -42,7 +42,7 @@
       "99": 20,
       "100": 23
     },
-    "coupon_collector_expected_days_approx": 21.768933287945185,
+    "coupon_collector_expected_days_approx": 21.768896718290478,
     "coupon_note": "Heuristic context only: 100*H_100/average distinct numbers per draw assumes simplified independent coupon sampling and is not a prediction model."
   },
   "note": "Recovered legacy descriptive/falsification capabilities. These artifacts do not alter production ML, path, statistical or ensemble weights."
