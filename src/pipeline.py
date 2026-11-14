@@ -8,7 +8,10 @@ import sys
 import time
 
 from core.paths import REPO_ROOT, SRC
-from core.stamp_only_json import keep_committed_when_only_stamps_changed
+from core.stamp_only_json import (
+    keep_committed_tables_when_only_noise_changed,
+    keep_committed_when_only_stamps_changed,
+)
 from core.time_policy import DEFAULT_DRAW_CUTOFF
 from web.page_output import keep_committed_pages_when_only_stamps_changed
 
@@ -28,19 +31,22 @@ def _child_env() -> dict[str, str]:
 
 
 def _keep_stamp_only_json() -> None:
-    """Sau mỗi bước: JSON trong `data/` chỉ đổi dấu giờ ghi, và trang `docs/*.html` chỉ đổi dấu giờ dựng,
-    thì trả về bản đã commit (`core.stamp_only_json`, `page_output.keep_committed_pages_when_only_stamps_changed`).
+    """Sau mỗi bước: JSON trong `data/` chỉ đổi dấu giờ ghi hay nhiễu số thực, bảng CSV trong `data/` chỉ
+    đổi nhiễu số thực, và trang `docs/*.html` chỉ đổi dấu giờ dựng, thì trả về bản đã commit
+    (`core.stamp_only_json`, `core.float_noise`, `page_output.keep_committed_pages_when_only_stamps_changed`).
 
     Làm NGAY sau bước vừa ghi, không đợi cuối lượt: bước sau đọc dấu giờ ấy (mã thí nghiệm, trang bảng
     điều khiển) và sẽ mang nó vào tệp của mình. Lỗi ở đây không được làm hỏng lượt chạy.
     """
     try:
-        restored = keep_committed_when_only_stamps_changed(ROOT) + keep_committed_pages_when_only_stamps_changed(ROOT)
+        restored = (keep_committed_when_only_stamps_changed(ROOT) + keep_committed_tables_when_only_noise_changed(ROOT)
+                    + keep_committed_pages_when_only_stamps_changed(ROOT))
     except Exception as exc:  # noqa: BLE001 - giữ sạch commit là việc phụ, không phải cổng
-        logging.warning("Không so được dấu giờ với bản đã commit: %s", exc)
+        logging.warning("Không so được dấu giờ và nhiễu số thực với bản đã commit: %s", exc)
         return
     if restored:
-        logging.info("Giữ bản đã commit của %d tệp chỉ đổi dấu giờ: %s", len(restored), ", ".join(restored))
+        logging.info("Giữ bản đã commit của %d tệp chỉ đổi dấu giờ hay nhiễu số thực: %s",
+                     len(restored), ", ".join(restored))
 
 
 def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> None:

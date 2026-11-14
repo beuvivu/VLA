@@ -45,14 +45,17 @@ def test_only_write_stamps_are_ignored_at_every_depth() -> None:
     later["generated_at_utc"] = "2026-11-11T02:01:41Z"
     later["modes"]["de"]["learned_at_utc"] = "2026-11-11T02:01:45Z"
     later["records"][0]["checked_at"] = "2026-11-11T09:02:00+07:00"   # dấu giờ trong danh sách
-    assert S.same_but_for_stamps(REPORT, later)
-    assert S.same_but_for_stamps(REPORT, dict(reversed(list(later.items()))))   # thứ tự khoá không tính
-    for key, value in (("anchor_date", "2026-11-11"), ("skill", 0.1 + 2 ** -55), ("days", [1, 2, 3])):
+    assert S.same_but_for_stamps_and_noise(REPORT, later)
+    assert S.same_but_for_stamps_and_noise(REPORT, dict(reversed(list(later.items()))))   # thứ tự khoá không tính
+    noisy = json.loads(json.dumps(later))
+    noisy["modes"]["de"]["skill"] = 0.1 + 2 ** -55                 # bit cuối lệch giữa hai CPU runner
+    assert S.same_but_for_stamps_and_noise(REPORT, noisy)
+    for key, value in (("anchor_date", "2026-11-11"), ("skill", 0.1 * (1 + 1e-6)), ("days", [1, 2, 3])):
         changed = json.loads(json.dumps(later))
         target = changed if key == "anchor_date" else changed["modes"]["de"]
         target[key] = value
-        assert not S.same_but_for_stamps(REPORT, changed), key   # số thực so TỪNG BIT
-    assert S.same_but_for_stamps({"p": float("nan")}, {"p": float("nan")})
+        assert not S.same_but_for_stamps_and_noise(REPORT, changed), key   # số thực: chỉ nới mức nhiễu
+    assert S.same_but_for_stamps_and_noise({"p": float("nan")}, {"p": float("nan")})
 
 
 def test_a_tracked_json_that_only_changed_its_stamps_gets_the_committed_bytes_back(tmp_path: Path) -> None:
@@ -119,12 +122,14 @@ def test_the_pipeline_restores_stamp_only_files_right_after_each_successful_step
     restored: list[tuple[str, Path]] = []
     monkeypatch.setattr(pipeline, "keep_committed_when_only_stamps_changed",
                         lambda root: restored.append(("json", root)) or [])
+    monkeypatch.setattr(pipeline, "keep_committed_tables_when_only_noise_changed",
+                        lambda root: restored.append(("csv", root)) or [])
     monkeypatch.setattr(pipeline, "keep_committed_pages_when_only_stamps_changed",
                         lambda root: restored.append(("html", root)) or [])
     pipeline._run([sys.executable, "-c", "pass"])
-    assert restored == [("json", pipeline.ROOT), ("html", pipeline.ROOT)]
+    assert restored == [("json", pipeline.ROOT), ("csv", pipeline.ROOT), ("html", pipeline.ROOT)]
     pipeline._run([sys.executable, "-c", "raise SystemExit(3)"], allow_fail=True)
-    assert len(restored) == 2   # bước hỏng không có gì để giữ
+    assert len(restored) == 3   # bước hỏng không có gì để giữ
 
 
 def test_a_failure_while_comparing_never_fails_the_pipeline_step(monkeypatch) -> None:
@@ -132,5 +137,6 @@ def test_a_failure_while_comparing_never_fails_the_pipeline_step(monkeypatch) ->
         raise RuntimeError("git hỏng")
 
     monkeypatch.setattr(pipeline, "keep_committed_when_only_stamps_changed", broken)
+    monkeypatch.setattr(pipeline, "keep_committed_tables_when_only_noise_changed", lambda root: [])
     monkeypatch.setattr(pipeline, "keep_committed_pages_when_only_stamps_changed", lambda root: [])
     pipeline._run([sys.executable, "-c", "pass"])
