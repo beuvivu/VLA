@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-from core.model_io import atomic_joblib_dump
+from core.model_io import dump_pack_unless_equivalent
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
@@ -80,6 +80,10 @@ class MetaMetrics:
     #
     # NaN khi không tính được (một lớp vắng mặt hoàn toàn trong đoạn đánh giá).
     auc_roc: float = float("nan")
+
+
+#: Khoá ghi giờ học/đánh giá của pack: lượt chạy lại học ra đúng pack cũ thì giữ tệp cũ (kể cả giờ cũ).
+PACK_STAMP_KEYS = frozenset({"trained_at_utc", "evaluated_at_utc"})
 
 
 def meta_feature_columns(component_cols: list[str]) -> list[str]:
@@ -730,7 +734,7 @@ def train_meta(
         # đang bật khi bằng chứng hiện tại không còn đủ điều kiện.
         models_dir.mkdir(parents=True, exist_ok=True)
         report_dir.mkdir(parents=True, exist_ok=True)
-        atomic_joblib_dump(pack, models_dir / f"meta_{mode}.joblib")
+        dump_pack_unless_equivalent(pack, models_dir / f"meta_{mode}.joblib", stamp_keys=PACK_STAMP_KEYS)
         report = {key: value for key, value in pack.items() if key != "model"}
         (report_dir / f"meta_report_{mode}.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
@@ -858,7 +862,7 @@ def train_meta(
     }
     models_dir.mkdir(parents=True, exist_ok=True)
     model_path = models_dir / f"meta_{mode}.joblib"
-    atomic_joblib_dump(pack, model_path)
+    dump_pack_unless_equivalent(pack, model_path, stamp_keys=PACK_STAMP_KEYS)
 
     report_dir.mkdir(parents=True, exist_ok=True)
     report = {

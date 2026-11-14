@@ -194,8 +194,11 @@ class PredictiveEngine:
         report = {"schema_version": 1, "anchor_date": anchor, "target_date": target,
                   "generated_at": min(item["generated_at"] for item in modes.values()),
                   "status": "shadow", "modes": modes}
+        # Khoá XẾP THEO TÊN. Kỳ đã có trong sổ được nạp lại từ sổ (ghi bằng `sort_keys`), kỳ mới thì dựng
+        # tại chỗ theo thứ tự chèn: không xếp thì lượt chạy lại ghi cùng nội dung với thứ tự khoá khác
+        # (11-11-2026: 271 dòng của báo cáo và cả tệp `xsmb-agents.json` đổi mà không giá trị nào đổi).
         atomic_write_text(data_dir / "forecast" / "agents" / "report.json",
-                          json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
+                          json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False, sort_keys=True) + "\n")
         return report
 
     @staticmethod

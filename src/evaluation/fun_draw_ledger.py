@@ -121,9 +121,15 @@ def record(frame: pd.DataFrame, row: dict[str, Any], now: datetime) -> pd.DataFr
     """
     if now >= cutoff_utc(row["target_date"]):
         return frame
+    fresh_row = {**{c: "" for c in COLUMNS}, **{k: str(v) for k, v in row.items()}}
+    current = frame[frame["target_date"] == row["target_date"]]
+    board = [c for c in SIM_COLUMNS if c != "recorded_at_utc"]
+    # CÙNG bảng thì giữ nguyên dòng, kể cả giờ ghi đầu: bảng ấy có từ lúc đó. Lượt pipeline chạy lại
+    # trên cùng dữ liệu (11-11-2026) ghi lại dòng chỉ để đổi `recorded_at_utc`.
+    if len(current) == 1 and all(str(current.iloc[0][c]) == fresh_row[c] for c in board):
+        return frame
     kept = frame[frame["target_date"] != row["target_date"]]
-    fresh = pd.DataFrame([{**{c: "" for c in COLUMNS}, **{k: str(v) for k, v in row.items()}}])
-    return pd.concat([kept, fresh], ignore_index=True)[COLUMNS]
+    return pd.concat([kept, pd.DataFrame([fresh_row])], ignore_index=True)[COLUMNS]
 
 
 def load_results(xsmb_csv: Path) -> dict[str, list[str]]:

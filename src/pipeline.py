@@ -8,7 +8,9 @@ import sys
 import time
 
 from core.paths import REPO_ROOT, SRC
+from core.stamp_only_json import keep_committed_when_only_stamps_changed
 from core.time_policy import DEFAULT_DRAW_CUTOFF
+from web.page_output import keep_committed_pages_when_only_stamps_changed
 
 ROOT = REPO_ROOT
 
@@ -23,6 +25,22 @@ def _child_env() -> dict[str, str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join(p for p in (str(SRC), env.get("PYTHONPATH", "")) if p)
     return env
+
+
+def _keep_stamp_only_json() -> None:
+    """Sau mỗi bước: JSON trong `data/` chỉ đổi dấu giờ ghi, và trang `docs/*.html` chỉ đổi dấu giờ dựng,
+    thì trả về bản đã commit (`core.stamp_only_json`, `page_output.keep_committed_pages_when_only_stamps_changed`).
+
+    Làm NGAY sau bước vừa ghi, không đợi cuối lượt: bước sau đọc dấu giờ ấy (mã thí nghiệm, trang bảng
+    điều khiển) và sẽ mang nó vào tệp của mình. Lỗi ở đây không được làm hỏng lượt chạy.
+    """
+    try:
+        restored = keep_committed_when_only_stamps_changed(ROOT) + keep_committed_pages_when_only_stamps_changed(ROOT)
+    except Exception as exc:  # noqa: BLE001 - giữ sạch commit là việc phụ, không phải cổng
+        logging.warning("Không so được dấu giờ với bản đã commit: %s", exc)
+        return
+    if restored:
+        logging.info("Giữ bản đã commit của %d tệp chỉ đổi dấu giờ: %s", len(restored), ", ".join(restored))
 
 
 def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> None:
@@ -45,6 +63,7 @@ def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> N
     elapsed = time.perf_counter() - started
     if proc.returncode == 0:
         logging.info("OK %.2fs: %s", elapsed, " ".join(cmd))
+        _keep_stamp_only_json()
         return
     if allow_fail:
         logging.warning(
@@ -324,6 +343,10 @@ def main() -> None:
         _run(_py("src/stats/statistical_matrices.py"), allow_fail=soft_fail)
         _run(_py("src/stats/conditional_matrices.py", "--top", "500"), allow_fail=soft_fail)
         _run(_py("src/stats/statistics_ai_overlay.py"), allow_fail=soft_fail)
+        # Bảng 50 cặp LOTO đặt điểm Cầu Kèo của CÙNG ngày neo cạnh từng cặp. `pair_stats.py` ở đầu
+        # lượt chạy TRƯỚC Cầu Kèo, nên ngày có kỳ mới nó chỉ thấy điểm của hôm trước và bỏ các cột
+        # ấy (`current_cau_scores_aligned: false`); chỉ lượt chạy lại mới ghi đủ. Dựng lại ở đây.
+        _run(_py("src/stats/cap_loto_50_stats.py"), allow_fail=soft_fail)
         _run(_py("src/evaluation/record_pred_history.py"), allow_fail=soft_fail)
         _run(_py("src/evaluation/update_pred_labels.py"), allow_fail=soft_fail)
 
@@ -388,6 +411,15 @@ def main() -> None:
     # Cổng cứng: không xuất bản tệp có mã sai miền hoặc mất số 0 đầu.
     _run(_py("src/core/lottery_codes.py"), allow_fail=False)
 
+    # Dọn artifact quá hạn TRƯỚC các bước chấm dự báo đã công bố. Đặt ở cuối lượt như trước 11-11-2026
+    # thì báo cáo chất lượng và mức tin chấm cả kỳ cũ nhất (47 kỳ), rồi chính lượt ấy xoá tệp của kỳ đó:
+    # lượt chạy lại chỉ còn 46 kỳ và ghi lại cả hai báo cáo cùng hai trang của chúng. Bước dọn tự ghi
+    # kỹ năng mọi kỳ vào sổ cái trước khi xoá (`skill_monitor.update_ledger`).
+    _run(
+        _py("src/evaluation/cleanup_artifacts.py", "--retention-days", "45"),
+        allow_fail=soft_fail,
+    )
+
     # Chẩn đoán và kho tri thức là dữ liệu đầu vào của tác tử, không phải
     # tác dụng phụ của dựng HTML. Kể cả --skip-docs cũng phải truy xuất luật
     # và mức tin của CÙNG lượt chạy, sau chấm dự báo thật và trước snapshot.
@@ -429,13 +461,15 @@ def main() -> None:
         # Bảy kiểu cầu vị trí và công cụ phôi tuần: cùng dữ liệu vừa chốt.
         _run(_py("src/soi_cau/bridge_rules.py"), allow_fail=soft_fail)
         _run(_py("src/pages/build_bridge_pages.py"), allow_fail=soft_fail)
-        _run(_py("src/pages/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/pages/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/pages/build_landing_page.py"), allow_fail=soft_fail)
         # This is a user-visible, date-bound snapshot.  Swallowing a builder
         # error here leaves yesterday's simulation in place and makes the UI
         # appear frozen, so it is a hard step even in non-strict research runs.
         _run(_py("src/pages/build_fun_prediction.py"), allow_fail=False)
+        # DASHBOARD.md in bảng mô phỏng (`fun_draw_next.json`) nên phải đứng SAU bước vừa ghi nó. Đứng
+        # trước như tới 11-11-2026 thì bản hằng ngày in bảng của kỳ ĐÃ QUAY; chỉ lượt chạy lại mới đúng.
+        _run(_py("src/pages/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         # Sổ phỏng đoán trong ngày: chụp MỌI danh sách vừa công bố cho kỳ tới để trang Live
         # đặt cạnh kết quả đang về. Đọc bảng mô phỏng, cầu đẹp nhất và bảy trang soi cầu nên
         # đứng sau chúng; khoá 18:10 giờ VN của kỳ đích, sau đó sổ đóng băng.
@@ -449,11 +483,6 @@ def main() -> None:
         _run(_py("src/pages/build_stat_pages.py"), allow_fail=soft_fail)
         _run(_py("src/pages/build_traditional_results.py"), allow_fail=soft_fail)
         _run(_py("src/pages/update_readme.py"), allow_fail=soft_fail)
-
-    _run(
-        _py("src/evaluation/cleanup_artifacts.py", "--retention-days", "45"),
-        allow_fail=soft_fail,
-    )
 
     if not args.skip_docs:
         # Chốt mọi URL sau trình dựng cuối: không cho xuất bản tham chiếu cũ/thiếu.
