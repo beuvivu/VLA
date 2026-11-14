@@ -379,7 +379,11 @@ Lượt chạy lại 11-11-2026 (không có kỳ mới) vẫn commit 57 tệp; �
 ghi lại 42 tệp, sau bản sửa 0. Năm nhóm: (1) Sau mỗi bước, `pipeline._run` trả mọi JSON trong `data/` chỉ khác bản HEAD ở khoá
 dấu giờ ghi (`core.stamp_only_json`, `WRITE_STAMP_KEYS`) và mọi trang `docs/*.html` chỉ khác ở `PAGE_BUILD_STAMPS` về đúng bản
 HEAD, NGAY sau bước ấy vì bước sau đọc dấu giờ (mã thí nghiệm `EXP-…-<ngày>` lấy ngày từ cổng Cầu Kèo). So với HEAD chứ không
-với tệp trên đĩa: trang chủ ghi hai bước (khung rồi bảng mô phỏng) nên `write_page` một mình không giữ được. Số thực so từng bit.
+với tệp trên đĩa: trang chủ ghi hai bước (khung rồi bảng mô phỏng) nên `write_page` một mình không giữ được. Từ 14-11-2026 phép so
+JSON và mọi bảng CSV trong `data/` còn bỏ qua NHIỄU SỐ THỰC giữa các CPU runner (`core.float_noise`, ≤ 10⁻⁹ tương đối, cùng ngưỡng
+Vietlott; bảng không tính thứ tự dòng vì nhiễu đổi chỗ được hai dòng gần hoà): `np.corrcoef`, `np.dot`, hàm đặc biệt scipy lệch bit
+cuối theo lệnh SIMD. Đo trên lịch sử: bắt 3/3 tệp nhiễu của lượt chạy lại sau PR #223 và 21 bảng + 10 JSON của lượt 09-11, không
+bắt nhầm tệp nào của hai lượt hằng ngày 10-11 và 14-11. Số nguyên, chuỗi, mã có số 0 đầu, cờ đúng/sai vẫn so tuyệt đối.
 (2) Pack xếp chồng ghi qua `model_io.dump_pack_unless_equivalent` (so `joblib.hash` sau khi tuần tự hoá lại, vì numpy đặt bước
 nhảy tuỳ ý cho chiều dài 1). (3) Báo cáo ba tác tử ghi `sort_keys`; sổ bảng mô phỏng giữ dòng cũ khi bảng trùng. (4) `write_page`
 là điểm bất động: khối `ui-source-detail-layout` bóc rồi chèn lại; trước đó `regional-results.yml` và pipeline đổi chỗ nó qua lại

@@ -1,4 +1,4 @@
-"""Tệp JSON chỉ đổi DẤU GIỜ GHI thì trả về bản đã commit (11-11-2026).
+"""Tệp chỉ đổi DẤU GIỜ GHI hay NHIỄU SỐ THỰC thì trả về bản đã commit (11 → 14-11-2026).
 
 Pipeline chạy lại trên cùng dữ liệu (ví dụ lượt chạy theo push khi gộp một PR) ghi lại mọi manifest và
 báo cáo. Ngày 11-11-2026 lượt chạy lại không có kỳ quay mới vẫn commit 57 tệp; 31 tệp trong đó là JSON
@@ -11,26 +11,26 @@ Sửa ở MỘT chỗ thay vì ở từng trình ghi: sau mỗi bước, `pipeli
 dấu giờ thì được ghi lại đúng từng byte của bản HEAD, TRƯỚC khi bước sau kịp đọc dấu giờ mới. Dấu giờ cũ
 vẫn đúng: nội dung này có từ lúc ấy.
 
-Chỉ khoá dấu giờ GHI được bỏ qua. Mọi khoá khác, kể cả ngày neo, ngày đích và mọi con số, phải trùng
-tuyệt đối; số thực so từng bit (nhiễu dấu phẩy động là thay đổi, không phải dấu giờ).
+Chỉ khoá dấu giờ GHI được bỏ qua. Mọi khoá khác, kể cả ngày neo và ngày đích, phải trùng tuyệt đối;
+số thực được nới đúng mức nhiễu dấu phẩy động giữa các CPU runner (`core.float_noise`, ≤ 10⁻⁹ tương đối).
+Bảng CSV trong `data/` theo cùng luật nhiễu (`keep_committed_tables_when_only_noise_changed`): lượt chạy
+lại sau PR #223 ghi lại ba bảng chỉ vì bit cuối, lượt 09-11 hai mươi mốt bảng.
 """
 from __future__ import annotations
 
 import json
-import math
 import subprocess
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from core.atomic_io import atomic_write_bytes
+from core.float_noise import same_table_up_to_float_noise, same_tree_up_to_float_noise
 
 #: Khoá ghi «tệp này được ghi lúc nào». Thêm khoá mới thì thêm phép kiểm ghim nó vào một tệp thật.
 WRITE_STAMP_KEYS = frozenset({
     "generated_at", "generated_at_utc", "learned_at_utc", "trained_at_utc", "evaluated_at_utc",
     "checked_at",
 })
-
-_NAN = ("<NaN>",)   # NaN khác chính nó; hai tệp cùng mang NaN ở cùng chỗ vẫn là cùng nội dung
 
 #: Tệp đã so và thấy đổi THẬT, theo (đường dẫn, mtime_ns, cỡ) lúc so. Pipeline gọi phép so sau mỗi bước
 #: (~110 lần), và tệp đã đổi thật vẫn hiện trong `git status` tới cuối lượt: không nhớ thì mỗi lần gọi đọc
@@ -45,15 +45,13 @@ def without_stamps(node: object, stamp_keys: frozenset[str] = WRITE_STAMP_KEYS) 
                 if key not in stamp_keys}
     if isinstance(node, list):
         return [without_stamps(value, stamp_keys) for value in node]
-    if isinstance(node, float) and math.isnan(node):
-        return _NAN
     return node
 
 
-def same_but_for_stamps(old: object, new: object,
-                        stamp_keys: frozenset[str] = WRITE_STAMP_KEYS) -> bool:
-    """Hai cây JSON chỉ khác nhau ở khoá dấu giờ (hoặc không khác gì ngoài thứ tự khoá)."""
-    return without_stamps(old, stamp_keys) == without_stamps(new, stamp_keys)
+def same_but_for_stamps_and_noise(old: object, new: object,
+                                  stamp_keys: frozenset[str] = WRITE_STAMP_KEYS) -> bool:
+    """Hai cây JSON chỉ khác nhau ở khoá dấu giờ và nhiễu số thực (thứ tự khoá không tính)."""
+    return same_tree_up_to_float_noise(without_stamps(old, stamp_keys), without_stamps(new, stamp_keys))
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
@@ -61,7 +59,7 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
 
 
 def _same_json_but_for_stamps(committed: bytes, current: bytes) -> bool:
-    return same_but_for_stamps(json.loads(committed), json.loads(current))
+    return same_but_for_stamps_and_noise(json.loads(committed), json.loads(current))
 
 
 def keep_committed_when(
@@ -108,5 +106,10 @@ def keep_committed_when(
 
 
 def keep_committed_when_only_stamps_changed(repo: Path, scope: Iterable[str] = ("data",)) -> list[str]:
-    """Trả mọi tệp JSON chỉ khác bản HEAD ở dấu giờ ghi về đúng bản HEAD; trả danh sách tệp đã trả về."""
+    """Trả mọi tệp JSON chỉ khác bản HEAD ở dấu giờ ghi và nhiễu số thực về đúng bản HEAD."""
     return keep_committed_when(repo, scope=scope, suffix=".json", same=_same_json_but_for_stamps)
+
+
+def keep_committed_tables_when_only_noise_changed(repo: Path, scope: Iterable[str] = ("data",)) -> list[str]:
+    """Trả mọi bảng CSV chỉ khác bản HEAD ở nhiễu số thực (kể cả thứ tự dòng gần hoà) về đúng bản HEAD."""
+    return keep_committed_when(repo, scope=scope, suffix=".csv", same=same_table_up_to_float_noise)
