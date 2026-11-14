@@ -95,8 +95,12 @@ def test_engine_is_idempotent_preserves_public_vector_and_explains_mixture(tmp_p
         snapshots[path] = path.read_bytes()
     engine = PredictiveEngine()
     report = engine.run(tmp_path, now=clock(frame))
+    written = (tmp_path / "forecast" / "agents" / "report.json").read_bytes()
     again = engine.run(tmp_path, now=clock(frame))
     assert report == again
+    # Lượt đầu dựng kỳ tại chỗ, lượt sau nạp kỳ ấy từ sổ: báo cáo phải trùng TỪNG BYTE, không chỉ trùng
+    # giá trị. Tới 11-11-2026 hai lượt ghi cùng nội dung theo hai thứ tự khoá (271 dòng mỗi lần chạy lại).
+    assert (tmp_path / "forecast" / "agents" / "report.json").read_bytes() == written
     assert engine.run(tmp_path, now=clock(frame).replace(hour=19)) == report
     for path, content in snapshots.items():
         assert path.read_bytes() == content

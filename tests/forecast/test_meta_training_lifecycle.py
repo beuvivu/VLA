@@ -68,6 +68,23 @@ def test_short_valid_history_replaces_stale_model_with_disabled_artifacts(tmp_pa
     assert "validation_logloss" not in table or table["validation_logloss"].isna().all()
 
 
+def test_a_rerun_on_the_same_short_history_keeps_the_disabled_pack(tmp_path, monkeypatch):
+    """Lượt chạy lại (11-11-2026) ghi lại `meta_loto.joblib` chỉ để đổi `evaluated_at_utc`."""
+    frame = _history("loto", 120, valid_days=28)
+    _train(tmp_path, "loto", frame)
+    path = tmp_path / "models" / "meta_loto.joblib"
+    before = path.read_bytes()
+
+    class Later(meta.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return meta.datetime(2099, 1, 1, tzinfo=tz)
+
+    monkeypatch.setattr(meta, "datetime", Later)
+    assert _train(tmp_path, "loto", frame)["evaluated_at_utc"].startswith("2099")
+    assert path.read_bytes() == before
+
+
 def test_disabled_model_returns_exact_linear_vector_and_shortage_reason(tmp_path):
     """Bắt nhầm trạng thái thiếu lịch sử thành thiếu component hoặc model hoạt động."""
     pack = {"schema_version": meta.META_SCHEMA_VERSION, "mode": "de", "model": None,
@@ -98,6 +115,13 @@ def test_mature_history_trains_real_model_and_keeps_chronological_validation(tmp
     assert all(max(left) < min(right) for left, right in zip(blocks[:-1], blocks[1:], strict=True))
     assert len(pack["validation_days"]) >= 20
     assert np.isfinite(pack["validation_logloss"])
+    # Lượt chạy lại học ra đúng pack này (chỉ khác giờ học) thì giữ nguyên tệp. Pack trong bộ nhớ vừa học
+    # phải được coi là trùng bản đọc từ tệp: numpy đặt bước nhảy tuỳ ý cho chiều dài 1.
+    path = tmp_path / "models" / f"meta_{mode}.joblib"
+    before = path.read_bytes()
+    relearned = {**pack, "trained_at_utc": "2099-01-01T00:00:00Z"}
+    assert meta.dump_pack_unless_equivalent(relearned, path, stamp_keys=meta.PACK_STAMP_KEYS) is False
+    assert path.read_bytes() == before
     p = np.full(100, 0.01 if mode == "de" else 0.23)
     prediction = meta.predict_meta(pack, mode, "2026-01-01", *([p] * 5))
     assert prediction.shape == (100,)

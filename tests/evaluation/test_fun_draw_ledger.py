@@ -101,6 +101,22 @@ def test_a_board_is_recorded_before_the_cutoff_and_the_last_one_before_it_wins()
     assert frame["special"].tolist() == ["22222"]
 
 
+def test_the_same_board_recorded_again_keeps_the_first_recording_time() -> None:
+    """Lượt pipeline chạy lại trên cùng dữ liệu (11-11-2026) ghi lại dòng chỉ để đổi `recorded_at_utc`.
+    Cùng bảng thì giữ nguyên dòng; bảng khác vẫn thay bảng cũ, và mang giờ của chính nó."""
+    first = _row("2026-10-01", "11111", "2026-09-30T20:00+07:00")
+    frame = L.record(L.empty_ledger(), first, _utc("2026-09-30T20:00+07:00"))
+    again = L.record(frame, _row("2026-10-01", "11111", "2026-10-01T09:02+07:00"), _utc("2026-10-01T09:02+07:00"))
+    assert again.equals(frame)
+    assert again["recorded_at_utc"].tolist() == ["2026-09-30T13:00:00Z"]
+    other_loto = L.record(frame, _row("2026-10-01", "11111", "2026-10-01T09:02+07:00", loto=["12"] * 26),
+                          _utc("2026-10-01T09:02+07:00"))
+    assert other_loto["recorded_at_utc"].tolist() == ["2026-10-01T02:02:00Z"]
+    other_special = L.record(frame, _row("2026-10-01", "22211", "2026-10-01T09:02+07:00"),   # cùng đuôi
+                             _utc("2026-10-01T09:02+07:00"))
+    assert other_special["special"].tolist() == ["22211"]
+
+
 def test_a_board_written_after_the_cutoff_never_replaces_the_one_shown_at_draw_time() -> None:
     frame = L.empty_ledger()
     frame = L.record(

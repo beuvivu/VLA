@@ -375,6 +375,17 @@ khoá và `argsort` khai `kind="stable"`, `argpartition` bị cấm (`tests/repo
 tử hoà theo lệnh vector của CPU runner. Trang chỉ khác dấu giờ dựng (`page_output.PAGE_BUILD_STAMPS`) và xlsx chỉ khác giờ lưu
 thì giữ tệp cũ (`atomic_io.write_text_unless_only_stamps`, `atomic_io.save_xlsx`); dấu giờ dựng kiểu mới phải vào
 `PAGE_BUILD_STAMPS` — mỗi mẫu được ghim vào một trang thật. Dòng `ensemble_history.csv` có số đo trùng giữ giờ ghi đầu.
+Lượt chạy lại 11-11-2026 (không có kỳ mới) vẫn commit 57 tệp; đo lại 14-11 trên máy phiên làm việc, lượt chạy lại thứ hai
+ghi lại 42 tệp, sau bản sửa 0. Năm nhóm: (1) Sau mỗi bước, `pipeline._run` trả mọi JSON trong `data/` chỉ khác bản HEAD ở khoá
+dấu giờ ghi (`core.stamp_only_json`, `WRITE_STAMP_KEYS`) và mọi trang `docs/*.html` chỉ khác ở `PAGE_BUILD_STAMPS` về đúng bản
+HEAD, NGAY sau bước ấy vì bước sau đọc dấu giờ (mã thí nghiệm `EXP-…-<ngày>` lấy ngày từ cổng Cầu Kèo). So với HEAD chứ không
+với tệp trên đĩa: trang chủ ghi hai bước (khung rồi bảng mô phỏng) nên `write_page` một mình không giữ được. Số thực so từng bit.
+(2) Pack xếp chồng ghi qua `model_io.dump_pack_unless_equivalent` (so `joblib.hash` sau khi tuần tự hoá lại, vì numpy đặt bước
+nhảy tuỳ ý cho chiều dài 1). (3) Báo cáo ba tác tử ghi `sort_keys`; sổ bảng mô phỏng giữ dòng cũ khi bảng trùng. (4) `write_page`
+là điểm bất động: khối `ui-source-detail-layout` bóc rồi chèn lại; trước đó `regional-results.yml` và pipeline đổi chỗ nó qua lại
+trên sáu trang chi tiết mỗi ngày (`tests/web/test_write_page_fixed_point.py`). (5) Thứ tự bước: `DASHBOARD.md` sau bảng mô phỏng,
+bảng 50 cặp dựng lại sau Cầu Kèo, dọn artifact TRƯỚC khi chấm (`tests/pipeline/test_rerun_stable_order.py`): ba chỗ này làm bản
+HẰNG NGÀY sai, chỉ lượt chạy lại mới đúng.
 
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/evaluation/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu

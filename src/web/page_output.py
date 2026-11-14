@@ -13,7 +13,8 @@ from pathlib import Path
 
 from web.css_links import CRITICAL_CSS
 from web.ui_page_refinements import refine_page
-from core.atomic_io import write_text_unless_only_stamps
+from core.atomic_io import _without_stamps, write_text_unless_only_stamps
+from core.stamp_only_json import keep_committed_when
 from core.paths import ASSETS, TEMPLATES
 
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
@@ -200,13 +201,30 @@ def strip_css(css: str) -> str:
     return _tidy(_strip_css(css))
 
 
+_SOURCE_DETAIL_STYLE_CU = re.compile(
+    rf'<style id="{_SOURCE_DETAIL_STYLE_ID}">.*?</style>\n?', re.S
+)
+
+
 def _inject_source_detail_style(path: Path, html: str) -> str:
-    if path.name not in _DETAIL_STAT_PAGES or f'id="{_SOURCE_DETAIL_STYLE_ID}"' in html:
+    """Chèn CSS của các trang thống kê chi tiết: BÓC bản đang có rồi chèn lại, ở đúng bước này.
+
+    Trước 11-11-2026 hàm bỏ qua trang đã mang khối này. Ghi lại một trang đã ghi vì thế cho ra tệp
+    KHÁC: `refine_page` bóc khối CSS của nó rồi chèn lại ở cuối `<head>`, tức SAU khối này, còn bản
+    dựng mới đặt khối này sau. Hai workflow giằng co trên sáu trang mỗi ngày: `regional-results.yml`
+    (ghi lại mọi trang qua `refresh_navigation.py`) đẩy khối lên trước, pipeline dựng mới đẩy nó về
+    sau. Bỏ qua trang đã có khối cũng giữ luôn CSS cũ khi `stat_detail_pages.css` đổi.
+    """
+    if path.name not in _DETAIL_STAT_PAGES:
         return html
     css_path = TEMPLATES / "stat_detail_pages.css"
     css = css_path.read_text(encoding="utf-8")
     style = f'<style id="{_SOURCE_DETAIL_STYLE_ID}">{css}</style>'
-    return html.replace("</head>", f"{style}\n</head>", 1)
+    head, separator, rest = html.partition("</head>")
+    if not separator:
+        return html
+    head = _SOURCE_DETAIL_STYLE_CU.sub("", head)
+    return f"{head}{style}\n</head>{rest}"
 
 
 #: Dấu giờ DỰNG trên trang: trang chỉ khác bản đang có ở các mẩu này thì giữ bản cũ
@@ -218,7 +236,24 @@ PAGE_BUILD_STAMPS: tuple[re.Pattern[str], ...] = (
     re.compile(r"Bản dữ liệu được dựng lúc \d\d:\d\d \d\d/\d\d/\d{4}"),
     re.compile(r'<time id="footerBuilt" datetime="[^"]*">[^<]*</time>'),
     re.compile(r'"generated_at(?:_utc)?":\s*"[^"]*"'),
+    re.compile(r"Sinh lúc \d{4}-\d\d-\d\d \d\d:\d\d UTC"),   # trang chủ và hai bản landing
 )
+
+
+def _same_page_but_for_stamps(committed: bytes, current: bytes) -> bool:
+    return (_without_stamps(committed.decode("utf-8"), PAGE_BUILD_STAMPS)
+            == _without_stamps(current.decode("utf-8"), PAGE_BUILD_STAMPS))
+
+
+def keep_committed_pages_when_only_stamps_changed(repo: Path) -> list[str]:
+    """Trả mọi trang `docs/*.html` chỉ khác bản HEAD ở dấu giờ dựng về đúng bản HEAD.
+
+    `write_page` đã giữ trang cũ khi bản mới chỉ khác dấu giờ, nhưng nó so với tệp ĐANG CÓ trên đĩa, và
+    trang chủ được ghi hai bước: `build_landing_page` ghi bản chưa có bảng mô phỏng (khác bản trên đĩa ở
+    cả bảng, nên được ghi kèm dấu giờ mới), rồi `build_fun_prediction` chèn bảng. Lượt chạy lại vì thế
+    vẫn ghi lại ba trang chủ (14-11-2026). So với bản HEAD sau mỗi bước thì thấy được kết quả cuối.
+    """
+    return keep_committed_when(repo, scope=("docs",), suffix=".html", same=_same_page_but_for_stamps)
 
 
 def write_page(path: Path, html: str) -> None:

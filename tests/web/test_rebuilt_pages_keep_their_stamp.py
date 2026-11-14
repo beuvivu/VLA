@@ -30,8 +30,8 @@ def test_a_page_rebuilt_on_the_same_data_is_left_untouched(tmp_path: Path) -> No
 @pytest.mark.parametrize(
     "pattern,page",
     list(zip(PAGE_BUILD_STAMPS, ["cap-lon-loto.html", "dashboard.html", "vietlott.html",
-                                 "statistics.html", "so-ket-qua-truyen-thong.html"], strict=True)),
-    ids=["dung-luc", "ban-dung", "vietlott", "footer-built", "generated-at"],
+                                 "statistics.html", "so-ket-qua-truyen-thong.html", "index.html"], strict=True)),
+    ids=["dung-luc", "ban-dung", "vietlott", "footer-built", "generated-at", "sinh-luc"],
 )
 def test_every_build_stamp_pattern_matches_a_published_page(pattern, page) -> None:
     text = (ROOT / "docs" / page).read_text(encoding="utf-8")
