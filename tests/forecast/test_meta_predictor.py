@@ -203,3 +203,16 @@ def test_the_constant_opponent_never_looks_at_the_validation_days() -> None:
     assert loto.shape == (4, 100)
     assert np.allclose(loto, 0.25)
     assert np.allclose(de, 0.01)
+
+
+def test_the_stacker_and_the_weight_learner_read_one_component_list() -> None:
+    """``COMPONENT_COLS`` từng viết tay ở đây trong khi bộ học trọng số suy nó từ ``COMPONENT_KEYS``."""
+    from ensemble import learn_ensemble_weights
+    from ensemble.ensemble_components import COMPONENT_KEYS
+    from forecast import meta_predictor
+
+    expected = [f"p_{key}" for key in COMPONENT_KEYS]
+    assert meta_predictor.COMPONENT_COLS == learn_ensemble_weights.COMPONENT_COLS == expected
+    tiers = {name: columns for name, columns, _ in meta_predictor.COMPONENT_TIERS}
+    assert tiers["five_component"] == expected, "thêm thành phần thì phải cập nhật bảng tầng có chủ ý"
+    assert all(set(columns) <= set(expected) for columns in tiers.values())

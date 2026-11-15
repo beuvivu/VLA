@@ -112,6 +112,9 @@ test('Luật hai nháy cần đủ nháy; một nháy là chờ rồi trượt',
   const tens = api.outcome(prizes(['31', ...FULL.slice(1)]));
   assert.equal(api.judge({ on: 'special_digit', digits: [3] }, tens), 'hit', 'chạm cả hàng chục');
   assert.equal(api.judge({ on: 'special_digit', digits: [7] }, tens), 'miss');
+  // Cùng nghĩa với `board_record.item_hits` (Python đổi int): chữ số dạng chuỗi vẫn phải chấm đúng.
+  assert.equal(api.judge({ on: 'special_digit', digits: ['3'] }, tens), 'hit', 'chữ số dạng chuỗi');
+  assert.equal(api.judge({ on: 'special_digit', digits: ['7'] }, tens), 'miss');
 });
 
 test('Sổ của kỳ khác hoặc phản hồi trễ của ngày cũ không được đặt cạnh kết quả', async (t) => {

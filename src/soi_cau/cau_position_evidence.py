@@ -123,16 +123,6 @@ def _pretty_position_label(code: str) -> str:
         return code
 
 
-def _to_date(value: object) -> date:
-    if hasattr(value, "to_pydatetime"):
-        value = value.to_pydatetime()
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    return date.fromisoformat(str(value)[:10])
-
-
 def _read_csv(path: Path, *, dtype: dict[str, object] | str | None = None) -> pd.DataFrame:
     return read_csv_or_empty(path, dtype=dtype, keep_default_na=False)
 

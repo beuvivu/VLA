@@ -42,7 +42,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from soi_cau.position_bridges import SHADOW, WIDTHS, WINDOW, load_draws, pair_index, run_lengths, streak_backtest
+from soi_cau.position_bridges import (
+    SHADOW, WIDTHS, WINDOW, bridge_numbers, load_draws, pair_index, run_lengths, streak_backtest,
+)
 
 #: Thứ tự và tham số mặc định của các trang (số ngày cầu chạy như trang tham chiếu).
 RULES = {
@@ -91,12 +93,6 @@ def bo_members(n: int) -> list[str]:
     return [f"{m:02d}" for m in np.flatnonzero(BO_MEMBERS[n])]
 
 
-def _numbers(digits: np.ndarray, pa: np.ndarray, pb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    x = digits[:, pa].astype(np.int16)
-    y = digits[:, pb].astype(np.int16)
-    return 10 * x + y, 10 * y + x
-
-
 def _loto_counts(values: np.ndarray) -> np.ndarray:
     two = values % 100
     counts = np.zeros((len(values), 100), dtype=np.int16)
@@ -107,7 +103,7 @@ def _loto_counts(values: np.ndarray) -> np.ndarray:
 def step_matrix(kind: str, digits: np.ndarray, values: np.ndarray, *, both: bool = False) -> np.ndarray:
     """(T-1, P): bước từ kỳ t sang kỳ t+1 của cặp vị trí p có "trúng" không."""
     pa, pb = pair_index(True)
-    n1, n2 = _numbers(digits, pa, pb)
+    n1, n2 = bridge_numbers(digits, pa, pb)
     if kind == "bo-so":
         return BO_ID[n1[:-1]] == BO_ID[n1[1:]]
     src1, src2 = n1[:-1], n2[:-1]
@@ -140,7 +136,7 @@ def outcome_matrix(kind: str, digits: np.ndarray, values: np.ndarray, *, both: b
     if kind != "bo-so":
         return step_matrix(kind, digits, values, both=both)
     pa, pb = pair_index(True)
-    n1, _ = _numbers(digits[:-1], pa, pb)
+    n1, _ = bridge_numbers(digits[:-1], pa, pb)
     special = (values[1:, 0] % 100)[:, None]
     return BO_MEMBERS[n1, special]
 

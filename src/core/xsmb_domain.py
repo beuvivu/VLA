@@ -10,6 +10,12 @@ silently desynchronised the ML feature space from the path engine.
 
 Everything that depends on "how an XSMB draw is shaped" now derives from
 ``FIELD_WIDTHS`` here.
+
+Đến 15-11-2026 vẫn còn mười bản chép tay (độ rộng từng giải, danh sách 27 cột, độ rộng theo nhóm) trong các
+module đã có pandas. Nay chúng import từ đây (``PRIZE_FIELDS``, ``FIELD_WIDTH_MAP``, ``PRIZE_GROUP_WIDTHS``,
+``PRIZE_GROUP_FIELDS``). Hai bản nhẹ còn lại có lý do: ``core.dtos`` và ``ingest.sources`` chạy trong job live chỉ
+cài pydantic/requests/bs4, nên không import được module này (numpy, pandas).
+``tests/core/test_xsmb_domain_parity.py`` buộc hai bản ấy khớp, và cấm khai lại bố cục bằng chữ ở mọi nơi khác.
 """
 
 from typing import Final
@@ -50,6 +56,16 @@ FIELD_WIDTHS: Final[tuple[tuple[str, int], ...]] = (
 
 FIELD_WIDTH_MAP: Final[dict[str, int]] = dict(FIELD_WIDTHS)
 PRIZE_FIELDS: Final[tuple[str, ...]] = tuple(name for name, _ in FIELD_WIDTHS)
+
+#: Nhóm giải (``special``, ``prize1`` … ``prize7``) → các trường của nhóm, theo thứ tự hiển thị.
+PRIZE_GROUP_FIELDS: Final[dict[str, tuple[str, ...]]] = {
+    group: tuple(name for name in PRIZE_FIELDS if name.split("_")[0] == group)
+    for group in dict.fromkeys(name.split("_")[0] for name in PRIZE_FIELDS)
+}
+#: Nhóm giải → số chữ số của mỗi giải trong nhóm.
+PRIZE_GROUP_WIDTHS: Final[dict[str, int]] = {
+    group: FIELD_WIDTH_MAP[fields[0]] for group, fields in PRIZE_GROUP_FIELDS.items()
+}
 
 #: Number of two-digit LOTO values produced by one draw (one per prize field).
 LOTO_DRAWS_PER_DAY: Final[int] = len(FIELD_WIDTHS)

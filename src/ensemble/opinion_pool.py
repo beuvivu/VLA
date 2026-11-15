@@ -136,10 +136,6 @@ def apply_pool(mode: Mode, components: np.ndarray, params: PoolParams) -> np.nda
     return normalize_distribution(pooled) if mode == "de" else pooled
 
 
-def _brier(y: np.ndarray, p: np.ndarray) -> float:
-    return float(np.mean((np.asarray(p, dtype=float) - np.asarray(y, dtype=float)) ** 2))
-
-
 @dataclass(frozen=True)
 class PoolAudit:
     """Vì sao phép hợp này được chọn, và các ứng viên khác đạt bao nhiêu."""

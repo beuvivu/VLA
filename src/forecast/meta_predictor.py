@@ -42,7 +42,10 @@ from ensemble.ensemble_utils import (
 from ml.ml_models import PlattCalibratedClassifier
 
 META_SCHEMA_VERSION = 3
-COMPONENT_COLS = ["p_ml", "p_cau", "p_stat", "p_active", "p_stable"]
+#: Cột xác suất của năm thành phần, SUY từ ``ensemble_components.COMPONENT_KEYS`` như bộ học trọng số
+#: (``learn_ensemble_weights.COMPONENT_COLS``): thêm thành phần mà quên bản viết tay ở đây thì tầng xếp chồng
+#: lặng lẽ bỏ sót nó.
+COMPONENT_COLS = [f"p_{key}" for key in COMPONENT_KEYS]
 
 # Richer tiers are preferred, but only when every selected component has genuine
 # labeled walk-forward history. Smaller tiers have lower production trust caps.

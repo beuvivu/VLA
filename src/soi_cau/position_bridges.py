@@ -100,7 +100,11 @@ def pair_index(lon: bool) -> tuple[np.ndarray, np.ndarray]:
     return a[mask], b[mask]
 
 
-def _numbers(digits: np.ndarray, pa: np.ndarray, pb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def bridge_numbers(digits: np.ndarray, pa: np.ndarray, pb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Số cầu ``10·d[a] + d[b]`` và số lộn ``10·d[b] + d[a]`` của mọi cặp vị trí, trên từng kỳ.
+
+    Dùng chung cho cầu vị trí và bảy kiểu cầu (``bridge_rules``): hai trang phải ghép số theo cùng một cách.
+    """
     x = digits[:, pa].astype(np.int16)
     y = digits[:, pb].astype(np.int16)
     return 10 * x + y, 10 * y + x
@@ -110,7 +114,7 @@ def hit_matrix(digits: np.ndarray, values: np.ndarray, *, nhay: int, db: bool,
                lon: bool) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """(T-1, P): cầu p dựng từ kỳ t có trúng ở kỳ t+1 không. Kèm chỉ số cặp."""
     pa, pb = pair_index(lon)
-    n1, n2 = _numbers(digits[:-1], pa, pb)
+    n1, n2 = bridge_numbers(digits[:-1], pa, pb)
     two = values[1:] % 100
     if db:
         special = two[:, :1]
@@ -224,7 +228,7 @@ def history(digits: np.ndarray, values: np.ndarray, *, nhay: int, db: bool, lon:
     hai phép kiểm lịch sử."""
     hits, pa, pb = hit_matrix(digits, values, nhay=nhay, db=db, lon=lon)
     runs = run_lengths(hits)
-    n1, n2 = _numbers(digits[1:-1], pa, pb)
+    n1, n2 = bridge_numbers(digits[1:-1], pa, pb)
     kep = n1 == n2
     key = np.minimum(n1, n2) * 100 + np.maximum(n1, n2) if lon else n1.astype(np.int32)
     return runs[:-1], hits[1:], kep, key
