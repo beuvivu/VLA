@@ -318,6 +318,12 @@ trang quay về đúng hành vi hôm nay, không mất gì.
 Gói Workers Free: 100 000 lượt gọi/ngày. Cron gọi tối đa ~64 lượt/ngày, và thường ít hơn nhiều vì dừng ngay khi kỳ đã xác minh xong. KV free:
 1 000 lượt ghi/ngày (ta dùng ~85) và 100 000 lượt đọc/ngày.
 
+Hạn mức ghi KV tính cho CẢ tài khoản, nên mọi đường ghi phải có trần không phụ thuộc khách. Trước 15-11-2026
+API Sổ kết quả đệm mỗi khoảng ngày khách gửi thành một khoá KV: ~900 yêu cầu khác khoảng ngày là cạn hạn mức, và
+`kv.put` của cron trang Live hỏng đúng giờ quay. Nay API ghi tối đa ~90 lượt/ngày (bản tươi của lịch sử chuẩn,
+bản last-good chỉ khi đổi), bất kể lưu lượng (`documentation/architecture/traditional-results.md` mục «Thứ tự dữ
+liệu và cache»).
+
 Lượt đọc là chỗ duy nhất có thể chạm trần: mỗi người xem thăm dò 5 giây/lần
 trong 40 phút là ~480 lượt. Worker đặt `Cache-Control` theo trạng thái (3 giây
 khi đang về số, 60 giây khi đã xác minh) nên biên Cloudflare đỡ phần lớn.

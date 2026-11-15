@@ -3,6 +3,7 @@ import {
   buildTraditionalResults,
   parseTraditionalQuery,
   parseXsktLedger,
+  primaryFreshTtlSeconds,
   refreshFallbackOverlay,
 } from "../src/traditional_results.js";
 
@@ -11,9 +12,10 @@ import {
 const hostOf = (url) => new URL(String(url)).hostname;
 
 class FakeKV {
-  constructor() { this.store = new Map(); }
+  constructor() { this.store = new Map(); this.puts = []; }
   async get(key) { return this.store.get(key) ?? null; }
   async put(key, value, options = {}) {
+    this.puts.push(key);
     // Như Cloudflare KV: TTL dưới 60 giây bị từ chối.
     if (options.expirationTtl !== undefined && options.expirationTtl < 60) {
       throw new Error(`Invalid expiration_ttl of ${options.expirationTtl}. Expiration TTL must be at least 60.`);
@@ -77,6 +79,62 @@ const query = {
 };
 
 const scenarios = {
+  // Khoảng ngày do KHÁCH chọn: không được thành khoá KV. Trước 15-11-2026 mỗi cặp from:to là một lượt
+  // ghi, nên ~900 yêu cầu làm cạn hạn mức ghi KV (gói Free 1 000/ngày, dùng chung với cron trang Live).
+  async distinct_ranges_write_kv_bounded() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    const statuses = new Set();
+    for (let i = 0; i < 60; i++) {
+      const from = new Date(Date.UTC(2026, 6, 1) + i * 86_400_000).toISOString().slice(0, 10);
+      const reply = await worker.fetch(new Request(
+        `https://worker/api/v1/traditional-results?from=${from}&to=2026-09-13`), env, ctxOf());
+      statuses.add(reply.status);
+    }
+    return { statuses: [...statuses], puts: kv.puts, keys: [...kv.store.keys()], counter };
+  },
+
+  // Lịch sử chuẩn không đổi thì bản tốt cuối cùng không bị ghi lại; đổi thì ghi.
+  async unchanged_history_keeps_last_good() {
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    let primary = [primaryRow];
+    const counter = { primary: 0, xskt: 0 };
+    const fetchImpl = async (url) => {
+      counter.primary += 1;
+      return new Response(JSON.stringify(primary), { status: 200 });
+    };
+    const q = { ...query, to: "2026-09-12" };
+    const loads = [];
+    let now = NOW;
+    const load = async () => {
+      const payload = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: now });
+      loads.push(payload.meta.primary_cache);
+    };
+    await load();                                   // tải lần đầu: ghi bản tươi và bản tốt cuối cùng
+    await load();                                   // trong một phút: lấy từ bộ nhớ isolate
+    now += 2 * MINUTE; kv.store.delete("traditional:primary:fresh:v1");
+    await load();                                   // bản tươi hết hạn, nội dung y hệt
+    now += 2 * MINUTE; kv.store.delete("traditional:primary:fresh:v1");
+    primary = [primaryRow, { ...primaryRow, date: "2026-09-13T00:00:00.000" }];
+    await load();                                   // có kỳ mới
+    const lastGood = kv.puts.filter((key) => key === "traditional:primary:last-good:v1").length;
+    const fresh = kv.puts.filter((key) => key === "traditional:primary:fresh:v1").length;
+    return { loads, last_good_writes: lastGood, fresh_writes: fresh, fetches: counter.primary };
+  },
+
+  // Bản tươi sống 5 phút từ 18:00 giờ VN (kỳ mới vào kho), ngoài khung sống tới 18:00, trong [60, 3600] giây.
+  async fresh_ttl_policy() {
+    const at = (hour, minute, second = 0) =>
+      primaryFreshTtlSeconds(Date.UTC(2026, 10, 15, hour - 7, minute, second));
+    return {
+      "03:00": at(3, 0), "17:30": at(17, 30), "17:59:30": at(17, 59, 30),
+      "18:00": at(18, 0), "18:40": at(18, 40), "23:59": at(23, 59),
+    };
+  },
+
   async primary_first() {
     const counter = { primary: 0, xskt: 0 };
     const payload = await buildTraditionalResults(
@@ -119,7 +177,7 @@ const scenarios = {
       sources: first.data.map((row) => row.source.kind),
       fallback_requested: first.meta.fallback_requested,
       fallback_network_fetch: first.meta.fallback_network_fetch,
-      second_cache: second.meta.response_cache,
+      second_cache: second.meta.primary_cache,
       xskt_special: first.data[0].prizes[0].values[0],
     };
   },

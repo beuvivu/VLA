@@ -62,7 +62,12 @@ def read_parquet(path: Path) -> list[dict]:
     if cli:
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "rows.json"
-            sql = f"COPY (SELECT * FROM read_parquet('{path.as_posix()}')) TO '{out.as_posix()}' (FORMAT json)"
+            # Chuỗi SQL: đường dẫn có dấu nháy đơn (thư mục người dùng đặt tên tuỳ ý) sẽ cắt câu lệnh, nên thoát
+            # nó theo đúng cú pháp SQL như `storage.export_parquet`.
+            def quote(value: Path) -> str:
+                return "'" + value.as_posix().replace("'", "''") + "'"
+
+            sql = f"COPY (SELECT * FROM read_parquet({quote(path)})) TO {quote(out)} (FORMAT json)"
             proc = subprocess.run([cli, "-c", sql], capture_output=True, text=True)
             if proc.returncode == 0 and out.exists():
                 with out.open(encoding="utf-8") as fh:

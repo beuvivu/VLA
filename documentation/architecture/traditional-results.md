@@ -175,8 +175,7 @@ GET /api/v1/traditional-results?region=north&province=hanoi&from=2026-08-01&to=2
     "fallback_requested": true,
     "fallback_network_fetch": false,
     "unresolved_dates": [],
-    "primary_cache": "hit",
-    "response_cache": "miss",
+    "primary_cache": "memory",
     "warning": null
   },
   "data": [
@@ -215,8 +214,10 @@ dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết 
 
 ## Thứ tự dữ liệu và cache
 
-1. Worker đọc `data/xsmb.json` từ nhánh `main` và chuẩn hóa vào cache 5 phút.
-2. Nếu nguồn GitHub tạm lỗi, Worker dùng bản `last-good` tối đa 36 giờ.
+1. Worker đọc `data/xsmb.json` từ nhánh `main`, chuẩn hóa, lưu bản "tươi" trong KV — 5 phút trong khung
+   18:00–24:00 giờ VN (kỳ mới vào kho), ngoài khung tới 18:00 (tối đa 1 giờ) — và giữ bản đã phân tích
+   trong bộ nhớ isolate 60 giây (`primary_cache`: `memory` / `hit` / `miss` / `stale`).
+2. Nếu nguồn GitHub tạm lỗi, Worker dùng bản `last-good`: không hết hạn, chỉ ghi lại khi nội dung đổi.
 3. Với từng ngày trong query, bản ghi VLA luôn thắng.
 4. Ngày còn thiếu lấy từ **lớp bù trong KV**. Yêu cầu của khách KHÔNG BAO GIỜ
    gọi nguồn dự phòng; ngày chưa có trong lớp bù nằm trong `unresolved_dates`.
@@ -235,7 +236,12 @@ dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết 
    khoảng ngày kéo 20 lượt tải. Một khoá KV chỉ chặn được trong từng isolate (KV nhất quán
    sau, không có đọc-ghi nguyên tử). Dời việc gọi nguồn sang cron thì lưu lượng khách không
    còn đường nào chạm tới nguồn ngoài.
-6. Lớp bù lưu KV 30 ngày. Response đã gộp được cache 5 phút.
+6. Lớp bù lưu KV 30 ngày. Response đã gộp KHÔNG được đệm trong KV, chỉ ở biên Cloudflare
+   (`Cache-Control: public, max-age=60, s-maxage=300`). Trước 15-11-2026 mỗi cặp `from:to` của khách là một
+   khoá KV: hạn mức ghi KV gói Free (1 000 lượt/ngày, dùng chung với cron trang Live) cạn sau ~900 yêu cầu khác
+   khoảng ngày, và lượt cron ghi kết quả đang quay hỏng theo. Nay lượng ghi KV của API không phụ thuộc yêu cầu
+   của khách (≤ ~90 lượt/ngày); phần tốn CPU — phân tích ~1,2 MB lịch sử chuẩn, ~17 ms — do bộ nhớ isolate
+   gánh, nên khoảng 30–100 ngày dựng trong 1–3 ms (`tests/worker/test_traditional_results_api.py`).
 7. `XsktVnSource` của Python nằm cuối danh mục nguồn. Quy trình canonical hằng
    ngày có thể dùng nó để bù dữ liệu rồi vẫn đi qua validation/consensus trước
    khi ghi `data/xsmb.json` và `data/xsmb.csv`.

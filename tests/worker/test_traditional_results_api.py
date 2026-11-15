@@ -60,7 +60,7 @@ def test_the_cron_fills_the_missing_date_and_requests_only_read_it() -> None:
     assert result["sources"] == ["fallback", "canonical"]
     assert result["fallback_requested"] is True
     assert result["fallback_network_fetch"] is False
-    assert result["second_cache"] == "hit"
+    assert result["second_cache"] == "memory", "lượt thứ hai dùng lịch sử đã phân tích trong bộ nhớ isolate"
     assert result["xskt_special"] == "83799"
 
 
@@ -179,3 +179,31 @@ def test_a_table_with_incomplete_prizes_is_retried_instead_of_becoming_a_holiday
     assert result["second"] == {"fetched": True, "missing": 1, "filled": 1, "absent": 0}
     assert result["calls"] == 2
     assert result["after"] == {"total": 1, "unresolved": [], "special": "83799"}
+
+
+def test_client_chosen_date_ranges_never_become_kv_writes() -> None:
+    """Khoảng ngày do khách chọn không được thành khoá KV (lỗ hổng cạn hạn mức ghi, 15-11-2026).
+
+    Gói KV Free có 1 000 lượt ghi/ngày cho cả tài khoản, dùng chung với cron ghi kết quả trực tiếp. Trước bản
+    vá mỗi cặp ``from:to`` là một lượt ghi đệm phản hồi: ~900 yêu cầu khác khoảng ngày là cạn hạn mức và
+    trang Live đứng hình đúng giờ quay. Nay 60 khoảng ngày khác nhau chỉ gây đúng hai lượt ghi của lần tải
+    lịch sử chuẩn đầu tiên.
+    """
+    result = _scenario("distinct_ranges_write_kv_bounded")
+    assert result["statuses"] == [200]
+    assert sorted(result["puts"]) == ["traditional:primary:fresh:v1", "traditional:primary:last-good:v1"]
+    assert not [key for key in result["keys"] if key.startswith("traditional:response")]
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+
+
+def test_an_unchanged_history_is_not_rewritten_as_the_last_good_copy() -> None:
+    result = _scenario("unchanged_history_keeps_last_good")
+    assert result["loads"] == ["miss", "memory", "miss", "miss"]
+    assert result["last_good_writes"] == 2, "chỉ lần đầu và lần có kỳ mới"
+    assert result["fresh_writes"] == 3
+    assert result["fetches"] == 3
+
+
+def test_the_fresh_copy_lives_five_minutes_only_while_new_draws_can_arrive() -> None:
+    ttl = _scenario("fresh_ttl_policy")
+    assert ttl == {"03:00": 3600, "17:30": 1800, "17:59:30": 60, "18:00": 300, "18:40": 300, "23:59": 300}

@@ -23,7 +23,6 @@ const DEFAULT_XSKT_URL = "https://xskt.vn/xsmb-500-ngay/";
 const PRIMARY_FRESH_KEY = "traditional:primary:fresh:v1";
 const PRIMARY_LAST_GOOD_KEY = "traditional:primary:last-good:v1";
 const OVERLAY_KEY = "traditional:xskt-overlay:v1";
-const RESPONSE_PREFIX = "traditional:response:v2:";
 const ALLOWED_DAYS = new Set([30, 60, 90, 100]);
 const MAX_RANGE_DAYS = 500;
 
@@ -202,12 +201,47 @@ async function readJson(kv, key) {
   try { return JSON.parse(raw); } catch { return null; }
 }
 
-async function loadPrimary(env, fetchImpl) {
-  const kv = cacheStore(env);
-  const fresh = await readJson(kv, PRIMARY_FRESH_KEY);
-  if (fresh) return { rows: fresh, cache: "hit" };
+// Hạn mức ghi KV (gói Free: 1 000 lượt/ngày cho cả tài khoản) dùng chung với cron ghi kết quả trực tiếp.
+// Trước 15-11-2026 API này ghi KV theo mỗi cặp `from:to` mà khách gửi (không gian khoá không có trần):
+// ~900 yêu cầu với khoảng ngày khác nhau là cạn hạn mức trong ngày, và lượt cron ghi kết quả đang quay
+// hỏng theo. Nay lượng ghi KV của API KHÔNG phụ thuộc yêu cầu của khách:
+// * không còn đệm phản hồi trong KV — phản hồi dựng lại từ lịch sử chuẩn đã phân tích sẵn trong bộ nhớ
+//   của isolate (`primaryMemo`), nên phần tốn CPU (phân tích ~1,2 MB JSON, ~17 ms) chỉ chạy mỗi phút một lần;
+// * bản "tươi" của lịch sử chuẩn sống 5 phút trong khung 18:00–24:00 giờ VN (kỳ mới vào kho), ngoài khung
+//   sống tới 18:00 (tối đa 1 giờ): ≤ ~90 lượt ghi/ngày;
+// * bản tốt cuối cùng chỉ ghi khi nội dung đổi, và không hết hạn (dịp Tết không có kỳ mới vẫn còn nó).
+const PRIMARY_MEMO_MS = 60_000;
+const primaryMemo = new WeakMap();
 
+/** Thời hạn (giây) của bản "tươi" lịch sử chuẩn trong KV tại thời điểm `nowUtcMs`. */
+export function primaryFreshTtlSeconds(nowUtcMs) {
+  const t = vietnamParts(nowUtcMs);
+  const secondOfDay = (t.hour * 60 + t.minute) * 60 + t.second;
+  const windowStart = 18 * 3600;
+  if (secondOfDay >= windowStart) return 300;
+  return Math.max(60, Math.min(3600, windowStart - secondOfDay));
+}
+
+function rememberPrimary(holder, historyUrl, rows, nowUtcMs) {
+  if (holder && typeof holder === "object") {
+    primaryMemo.set(holder, { historyUrl, rows, expiresAtMs: nowUtcMs + PRIMARY_MEMO_MS });
+  }
+}
+
+async function loadPrimary(env, fetchImpl, nowUtcMs = Date.now()) {
+  const kv = cacheStore(env);
   const historyUrl = env?.VLA_HISTORY_URL || DEFAULT_HISTORY_URL;
+  const holder = kv ?? env;
+  const memo = holder && typeof holder === "object" ? primaryMemo.get(holder) : undefined;
+  if (memo && memo.historyUrl === historyUrl && memo.expiresAtMs > nowUtcMs) {
+    return { rows: memo.rows, cache: "memory" };
+  }
+  const fresh = await readJson(kv, PRIMARY_FRESH_KEY);
+  if (fresh) {
+    rememberPrimary(holder, historyUrl, fresh, nowUtcMs);
+    return { rows: fresh, cache: "hit" };
+  }
+
   try {
     const fetched = await fetchImpl(historyUrl, {
       headers: {
@@ -219,9 +253,11 @@ async function loadPrimary(env, fetchImpl) {
     if (!fetched.ok) throw new Error(`HTTP ${fetched.status}`);
     const rows = normalizePrimary(await fetched.json());
     if (kv) {
-      await kv.put(PRIMARY_FRESH_KEY, JSON.stringify(rows), { expirationTtl: 300 });
-      await kv.put(PRIMARY_LAST_GOOD_KEY, JSON.stringify(rows), { expirationTtl: 129_600 });
+      const text = JSON.stringify(rows);
+      await kv.put(PRIMARY_FRESH_KEY, text, { expirationTtl: primaryFreshTtlSeconds(nowUtcMs) });
+      if ((await kv.get(PRIMARY_LAST_GOOD_KEY)) !== text) await kv.put(PRIMARY_LAST_GOOD_KEY, text);
     }
+    rememberPrimary(holder, historyUrl, rows, nowUtcMs);
     return { rows, cache: "miss" };
   } catch (error) {
     const stale = await readJson(kv, PRIMARY_LAST_GOOD_KEY);
@@ -235,9 +271,9 @@ async function loadPrimary(env, fetchImpl) {
  * hoặc `null` khi không đọc được. Trang live dùng nó làm "kỳ trước" lúc KV còn trống: trước giờ
  * quay, trang nguồn vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
  */
-export async function latestCanonicalDrawBefore(env, beforeIso, { fetchImpl = fetch } = {}) {
+export async function latestCanonicalDrawBefore(env, beforeIso, { fetchImpl = fetch, nowUtcMs = Date.now() } = {}) {
   try {
-    const { rows } = await loadPrimary(env, fetchImpl);
+    const { rows } = await loadPrimary(env, fetchImpl, nowUtcMs);
     const dates = Object.keys(rows).filter((day) => day < beforeIso).sort();
     if (dates.length === 0) return null;
     const last = dates[dates.length - 1];
@@ -303,7 +339,7 @@ async function readOverlay(env, missingDates, nowUtcMs) {
 export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs = Date.now() } = {}) {
   const kv = cacheStore(env);
   if (!kv) return { fetched: false, missing: 0 };
-  const primary = await loadPrimary(env, fetchImpl);
+  const primary = await loadPrimary(env, fetchImpl, nowUtcMs);
   const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
   const latest = latestEligibleDate(nowUtcMs);
   const missing = dateRange(isoDate(addDays(latest, -(FALLBACK_WINDOW_DAYS - 1))), isoDate(latest))
@@ -394,7 +430,7 @@ export async function buildTraditionalResults(
   env,
   { fetchImpl = fetch, nowUtcMs = Date.now() } = {},
 ) {
-  const primary = await loadPrimary(env, fetchImpl);
+  const primary = await loadPrimary(env, fetchImpl, nowUtcMs);
   const requestedDates = dateRange(query.from, query.to);
   const missing = requestedDates.filter((day) => !completePrizeMap(primary.rows[day]));
   const fallback = missing.length
@@ -459,21 +495,11 @@ export async function handleTraditionalResults(request, env, ctx) {
     return response({ error: "invalid_query", message: String(error?.message || error) }, { status: 400 });
   }
 
-  const kv = cacheStore(env);
-  const cacheKey = RESPONSE_PREFIX + [query.region, query.province, query.from, query.to].join(":");
-  const cached = await readJson(kv, cacheKey);
-  if (cached) {
-    cached.meta ??= {};
-    cached.meta.response_cache = "hit";
-    return response(cached, { cacheControl: "public, max-age=60, s-maxage=300" });
-  }
 
   try {
+    // Không đệm phản hồi trong KV (khoá theo khoảng ngày của khách là không gian không có trần): biên
+    // Cloudflare đệm theo `Cache-Control`, còn phần tốn CPU đã được `primaryMemo` gánh.
     const payload = await buildTraditionalResults(query, env);
-    payload.meta.response_cache = "miss";
-    const write = kv?.put(cacheKey, JSON.stringify(payload), { expirationTtl: 300 });
-    if (write && ctx?.waitUntil) ctx.waitUntil(write);
-    else if (write) await write;
     return response(payload, { cacheControl: "public, max-age=60, s-maxage=300" });
   } catch (error) {
     return response({
