@@ -1,14 +1,15 @@
-from __future__ import annotations
-
-from core.lottery_codes import write_code_csv
-
 """Multiple-testing-aware statistical diagnostics for XSMB.
 
 This module deliberately separates *descriptive statistical anomaly* from
 prediction.  It uses exact binomial tests, Benjamini-Hochberg FDR control and a
 Beta-Binomial shrinkage posterior so that random extremes across 100 numbers are
 less likely to be mislabeled as meaningful signals.
+
+Mỗi bảng ghi MỘT bản CSV (luật kho 04-11-2026, ``tests/stats/test_no_json_twins.py``): trang tổng
+quan đọc CSV; bản JSON chép kèm không ai đọc mà mỗi lượt chốt vẫn viết lại vào git.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -20,6 +21,7 @@ import pandas as pd
 from scipy.stats import beta as beta_dist
 from scipy.stats import binomtest, chisquare
 
+from core.lottery_codes import write_code_csv
 from ingest.lottery import Lottery
 from stats.statistical_corrections import benjamini_hochberg
 
@@ -181,18 +183,26 @@ def main() -> None:
         raise SystemExit("No data loaded. Run src/ingest/sync.py first.")
 
     out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
     windows = sorted({max(7, int(x.strip())) for x in args.windows.split(",") if x.strip()})
+    write_outputs(two, sparse, out_dir, windows)
+    print(f"[OK] significance diagnostics -> {out_dir}")
 
+
+def write_outputs(two: pd.DataFrame, sparse: pd.DataFrame, out_dir: Path, windows: list[int]) -> list[Path]:
+    """Ghi bảng từng số (một CSV mỗi chế độ × cửa sổ) và tệp chẩn đoán chung; trả về các tệp đã ghi."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
     for mode in ("loto", "de"):
         for window in windows:
             table = number_significance(mode, two, sparse, window_days=window)
-            write_code_csv(table, out_dir / f"number_significance_{mode}_{window}d.csv", index=False)
-            table.to_json(out_dir / f"number_significance_{mode}_{window}d.json", orient="records", indent=2)
-
+            path = out_dir / f"number_significance_{mode}_{window}d.csv"
+            write_code_csv(table, path, index=False)
+            written.append(path)
     diag = global_diagnostics(two, sparse, window_days=max(windows))
-    (out_dir / "global_diagnostics.json").write_text(json.dumps(diag, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[OK] significance diagnostics -> {out_dir}")
+    path = out_dir / "global_diagnostics.json"
+    path.write_text(json.dumps(diag, ensure_ascii=False, indent=2), encoding="utf-8")
+    written.append(path)
+    return written
 
 
 if __name__ == "__main__":

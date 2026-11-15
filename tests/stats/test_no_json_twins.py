@@ -5,6 +5,10 @@
 64 MB trong ``data/stats/advanced`` (riêng ``period_frequency_loto_week.json`` 18,5 MB) mà không trang,
 Worker, workflow hay mã nào đọc — trang và manifest đọc CSV — trong khi mỗi lượt chốt viết lại chúng vào
 git. Tệp JSON thật (manifest, chẩn đoán) không có CSV cùng tên nên không bị luật này bắt.
+
+Đến 15-11-2026 phép kiểm chỉ quét ``data/stats/advanced``, nên ``significance_stats`` vẫn ghi sáu bản
+``number_significance_*.json`` (348 KB mỗi lượt) mà trang tổng quan chỉ đọc bản CSV. Nay quét MỌI thư mục
+có bảng CSV dưới ``data/stats``.
 """
 from __future__ import annotations
 
@@ -12,9 +16,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from stats import advanced_stats, statistical_matrices
+from stats import advanced_stats, significance_stats, statistical_matrices
 
-ADVANCED = Path(__file__).resolve().parents[2] / "data" / "stats" / "advanced"
+ROOT = Path(__file__).resolve().parents[2]
+STATS = ROOT / "data" / "stats"
+ADVANCED = ROOT / "data" / "stats" / "advanced"
+SIGNIFICANCE = ROOT / "data" / "stats" / "significance"
 
 
 def json_twins(folder: Path) -> list[str]:
@@ -44,3 +51,27 @@ def test_each_table_writer_writes_only_the_csv(tmp_path: Path) -> None:
     assert sorted(p.name for p in (tmp_path / "a").iterdir()) == ["bang.csv"]
     assert sorted(p.name for p in (tmp_path / "b").iterdir()) == ["bang.csv"]
     assert pd.read_csv(tmp_path / "a" / "bang.csv", dtype=str)["number"].tolist() == ["00", "07", "42"]
+
+
+def test_no_committed_stats_table_anywhere_has_a_json_twin() -> None:
+    folders = sorted({path.parent for path in STATS.rglob("*.csv")})
+    assert SIGNIFICANCE in folders, "thư mục bảng ý nghĩa thống kê vắng — luật đang quét thiếu"
+    assert {str(folder.relative_to(STATS)): json_twins(folder) for folder in folders if json_twins(folder)} == {}
+
+
+def test_the_significance_writer_writes_only_csv_tables(tmp_path: Path) -> None:
+    days = pd.date_range("2026-01-01", periods=40, freq="D")
+    rng = pd.Series(range(40 * 27)).mul(37).mod(100).to_numpy().reshape(40, 27)
+    two = pd.DataFrame(rng, columns=[f"c{i}" for i in range(27)])
+    two.insert(0, "date", days)
+    two = two.rename(columns={"c0": "special"})
+    sparse = pd.DataFrame(0, index=range(40), columns=list(range(100)))
+    for row, values in enumerate(rng):
+        for value in values:
+            sparse.loc[row, int(value)] += 1
+    sparse.insert(0, "date", days)
+    written = significance_stats.write_outputs(two, sparse, tmp_path, [30])
+    names = sorted(path.name for path in tmp_path.iterdir())
+    assert names == sorted(path.name for path in written)
+    assert json_twins(tmp_path) == []
+    assert "number_significance_loto_30d.csv" in names and "global_diagnostics.json" in names

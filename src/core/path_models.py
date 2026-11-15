@@ -7,39 +7,14 @@ from numbers import Integral, Real
 import numpy as np
 import pandas as pd
 
+from core.xsmb_domain import FIELD_WIDTHS as XSMB_FIELD_WIDTHS
+
 # Build a stable "rawdata digit stream" from ALL prizes each day.
 # We reconstruct each field with zero-fill to keep positions stable.
 # This makes "paths" reproducible even when source stores numbers as int.
 
-FIELD_WIDTHS: list[tuple[str, int]] = [
-    ("special", 5),
-    ("prize1", 5),
-    ("prize2_1", 5),
-    ("prize2_2", 5),
-    ("prize3_1", 5),
-    ("prize3_2", 5),
-    ("prize3_3", 5),
-    ("prize3_4", 5),
-    ("prize3_5", 5),
-    ("prize3_6", 5),
-    ("prize4_1", 4),
-    ("prize4_2", 4),
-    ("prize4_3", 4),
-    ("prize4_4", 4),
-    ("prize5_1", 4),
-    ("prize5_2", 4),
-    ("prize5_3", 4),
-    ("prize5_4", 4),
-    ("prize5_5", 4),
-    ("prize5_6", 4),
-    ("prize6_1", 3),
-    ("prize6_2", 3),
-    ("prize6_3", 3),
-    ("prize7_1", 2),
-    ("prize7_2", 2),
-    ("prize7_3", 2),
-    ("prize7_4", 2),
-]
+#: Bố cục 27 giải: lấy từ ``core.xsmb_domain``, không khai lại.
+FIELD_WIDTHS = XSMB_FIELD_WIDTHS
 
 # Precompute position metadata: index -> (field, digit_index_in_field)
 _POSITION_LABELS: list[str] | None = None

@@ -9,21 +9,14 @@ from typing import Any
 
 import pandas as pd
 
+from core.xsmb_domain import PRIZE_GROUP_WIDTHS
+
 DATA_DIR = Path("data")
 README = Path("README.md")
 FUN_PREDICTION = DATA_DIR / "forecast" / "predict" / "fun_draw_next.json"
 logger = logging.getLogger(__name__)
 
-WIDTHS = {
-    "special": 5,
-    "prize1": 5,
-    "prize2": 5,
-    "prize3": 5,
-    "prize4": 4,
-    "prize5": 4,
-    "prize6": 3,
-    "prize7": 2,
-}
+WIDTHS = PRIZE_GROUP_WIDTHS
 
 GROUPS: list[tuple[str, list[str]]] = [
     ("Giải Đặc Biệt", ["special"]),

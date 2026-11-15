@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 
 from ingest.sources import (
+    EXPECTED_COUNTS,
+    EXPECTED_WIDTHS,
     FALLBACK_SOURCE_NAMES,
     PRIMARY_SOURCE_NAMES,
     anonymise_snapshot,
@@ -16,17 +18,14 @@ from ingest.sources import (
 from core.time_policy import VIETNAM_TZ, iso_local, iso_utc
 
 TZ = VIETNAM_TZ
+#: Nhóm giải → các trường trong sổ chuẩn, và độ rộng mỗi giải: SUY từ ``sources`` (module nhẹ như module
+#: này, không cần pandas) chứ không chép tay; ``tests/core/test_xsmb_domain_parity.py`` buộc ``sources``
+#: khớp ``core.xsmb_domain``.
 FIELDS = {
-    "special": ["special"],
-    "prize1": ["prize1"],
-    "prize2": ["prize2_1", "prize2_2"],
-    "prize3": ["prize3_1", "prize3_2", "prize3_3", "prize3_4", "prize3_5", "prize3_6"],
-    "prize4": ["prize4_1", "prize4_2", "prize4_3", "prize4_4"],
-    "prize5": ["prize5_1", "prize5_2", "prize5_3", "prize5_4", "prize5_5", "prize5_6"],
-    "prize6": ["prize6_1", "prize6_2", "prize6_3"],
-    "prize7": ["prize7_1", "prize7_2", "prize7_3", "prize7_4"],
+    group: [group] if count == 1 else [f"{group}_{index}" for index in range(1, count + 1)]
+    for group, count in EXPECTED_COUNTS.items()
 }
-WIDTHS = {"special": 5, "prize1": 5, "prize2": 5, "prize3": 5, "prize4": 4, "prize5": 4, "prize6": 3, "prize7": 2}
+WIDTHS = EXPECTED_WIDTHS
 #: Lấy từ ``sources`` chứ KHÔNG chép lại.
 #:
 #: Bản trước chép tay danh sách này. Một bản chép tay thì không bao giờ sai ở

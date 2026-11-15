@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 
 from core.atomic_io import atomic_write_text
+from core.xsmb_domain import PRIZE_FIELDS
 from evaluation.prediction_board import OUT as BOARD_DIR
 from stats.statistical_corrections import holm
 
@@ -45,14 +46,7 @@ REPLICATES = 20_000
 SEED = 20261104
 ALPHA = 0.05
 DRAWS_PER_DAY = 27
-PRIZE_COLUMNS = [
-    "special", "prize1", "prize2_1", "prize2_2",
-    "prize3_1", "prize3_2", "prize3_3", "prize3_4", "prize3_5", "prize3_6",
-    "prize4_1", "prize4_2", "prize4_3", "prize4_4",
-    "prize5_1", "prize5_2", "prize5_3", "prize5_4", "prize5_5", "prize5_6",
-    "prize6_1", "prize6_2", "prize6_3",
-    "prize7_1", "prize7_2", "prize7_3", "prize7_4",
-]
+PRIZE_COLUMNS = list(PRIZE_FIELDS)
 
 
 # --- Luật trúng: cùng nghĩa với ``judge`` của src/web/assets/live-scorecard.js ------------------------

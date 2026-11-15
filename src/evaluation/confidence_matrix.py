@@ -43,7 +43,7 @@ import numpy as np
 import pandas as pd
 
 from core.atomic_io import atomic_write_text
-from core.xsmb_domain import LOTO_BASELINE_RATE
+from core.xsmb_domain import LOTO_BASELINE_RATE, PRIZE_FIELDS, PRIZE_GROUP_WIDTHS
 
 #: Xác suất một con về ít nhất một lần trong 27 giải của một kỳ công bằng — hằng số chung của
 #: ``core.xsmb_domain`` (cùng giá trị với bản viết tay cũ, nên phân vị null đã lưu vẫn hợp lệ).
@@ -91,15 +91,9 @@ FAMILIES = [
     ("distinct_cusum", "Đứt gãy cấu trúc: số con khác nhau mỗi kỳ", 1),
 ]
 
-PRIZE_COLUMNS = [
-    "special", "prize1", "prize2_1", "prize2_2", "prize3_1", "prize3_2", "prize3_3",
-    "prize3_4", "prize3_5", "prize3_6", "prize4_1", "prize4_2", "prize4_3", "prize4_4",
-    "prize5_1", "prize5_2", "prize5_3", "prize5_4", "prize5_5", "prize5_6", "prize6_1",
-    "prize6_2", "prize6_3", "prize7_1", "prize7_2", "prize7_3", "prize7_4",
-]
+PRIZE_COLUMNS = list(PRIZE_FIELDS)
 #: Số chữ số của từng giải trong bảng kết quả đầy đủ (107 vị trí).
-PRIZE_WIDTH = {"special": 5, "prize1": 5, "prize2": 5, "prize3": 5,
-               "prize4": 4, "prize5": 4, "prize6": 3, "prize7": 2}
+PRIZE_WIDTH = PRIZE_GROUP_WIDTHS
 
 
 # ---------------------------------------------------------------------------

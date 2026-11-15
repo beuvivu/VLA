@@ -2,6 +2,39 @@ from datetime import date
 
 from pydantic import BaseModel, RootModel, model_validator
 
+#: Độ rộng từng giải. Bản NHẸ: ``ingest.sources`` import module này trong job live chỉ cài pydantic, nên
+#: không lấy được từ ``core.xsmb_domain`` (numpy, pandas). ``tests/core/test_xsmb_domain_parity.py`` buộc hai
+#: bên khớp nhau.
+FIELD_WIDTHS: dict[str, int] = {
+    "special": 5,
+    "prize1": 5,
+    "prize2_1": 5,
+    "prize2_2": 5,
+    "prize3_1": 5,
+    "prize3_2": 5,
+    "prize3_3": 5,
+    "prize3_4": 5,
+    "prize3_5": 5,
+    "prize3_6": 5,
+    "prize4_1": 4,
+    "prize4_2": 4,
+    "prize4_3": 4,
+    "prize4_4": 4,
+    "prize5_1": 4,
+    "prize5_2": 4,
+    "prize5_3": 4,
+    "prize5_4": 4,
+    "prize5_5": 4,
+    "prize5_6": 4,
+    "prize6_1": 3,
+    "prize6_2": 3,
+    "prize6_3": 3,
+    "prize7_1": 2,
+    "prize7_2": 2,
+    "prize7_3": 2,
+    "prize7_4": 2,
+}
+
 
 class Result(BaseModel):
     """A single XSMB draw result.
@@ -50,35 +83,7 @@ class Result(BaseModel):
 
     @model_validator(mode="after")
     def validate_prize_ranges(self) -> "Result":
-        widths = {
-            "special": 5,
-            "prize1": 5,
-            "prize2_1": 5,
-            "prize2_2": 5,
-            "prize3_1": 5,
-            "prize3_2": 5,
-            "prize3_3": 5,
-            "prize3_4": 5,
-            "prize3_5": 5,
-            "prize3_6": 5,
-            "prize4_1": 4,
-            "prize4_2": 4,
-            "prize4_3": 4,
-            "prize4_4": 4,
-            "prize5_1": 4,
-            "prize5_2": 4,
-            "prize5_3": 4,
-            "prize5_4": 4,
-            "prize5_5": 4,
-            "prize5_6": 4,
-            "prize6_1": 3,
-            "prize6_2": 3,
-            "prize6_3": 3,
-            "prize7_1": 2,
-            "prize7_2": 2,
-            "prize7_3": 2,
-            "prize7_4": 2,
-        }
+        widths = FIELD_WIDTHS
         for field, width in widths.items():
             value = getattr(self, field)
             if not 0 <= int(value) < 10**width:

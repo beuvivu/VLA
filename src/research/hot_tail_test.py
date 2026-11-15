@@ -35,6 +35,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.xsmb_domain import PRIZE_FIELDS
+
 from core.atomic_io import atomic_write_text
 
 #: Tham số ĐÃ ĐĂNG KÝ. Không sửa — xem docstring.
@@ -58,12 +60,7 @@ RETROSPECTIVE = {
     "control_head_p": 0.475,
 }
 
-PRIZES = [
-    "special", "prize1", "prize2_1", "prize2_2", "prize3_1", "prize3_2", "prize3_3",
-    "prize3_4", "prize3_5", "prize3_6", "prize4_1", "prize4_2", "prize4_3", "prize4_4",
-    "prize5_1", "prize5_2", "prize5_3", "prize5_4", "prize5_5", "prize5_6", "prize6_1",
-    "prize6_2", "prize6_3", "prize7_1", "prize7_2", "prize7_3", "prize7_4",
-]
+PRIZES = list(PRIZE_FIELDS)
 
 
 def _hits(draws: np.ndarray) -> np.ndarray:

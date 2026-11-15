@@ -40,6 +40,7 @@ from web.ui_theme import app_shell_close, app_shell_open, stylesheet_link
 from core.xsmb_domain import (
     LOTO_BASELINE_RATE,
     PAIR_COOCCURRENCE_RATE,
+    PRIZE_GROUP_WIDTHS,
     pair_chance_maximum,
 )
 from web.web_security import json_for_html_script, security_meta_tags
@@ -64,10 +65,7 @@ DEFAULT_RANGE_DRAWS = 90
 #: Độ rộng chữ số của từng giải. CSV lưu kiểu số nguyên nên mất số 0 ở đầu;
 #: đo được 10,3% số ô ngắn hơn độ rộng đúng. Thiếu bảng này thì mọi phép cắt
 #: chữ số theo vị trí đều lệch.
-PRIZE_WIDTH: dict[str, int] = {
-    "special": 5, "prize1": 5, "prize2": 5, "prize3": 5,
-    "prize4": 4, "prize5": 4, "prize6": 3, "prize7": 2,
-}
+PRIZE_WIDTH: dict[str, int] = PRIZE_GROUP_WIDTHS
 
 
 @dataclass(frozen=True)

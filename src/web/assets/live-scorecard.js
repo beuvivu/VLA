@@ -151,8 +151,10 @@
       return rule.numbers.map(Number).indexOf(o.special) >= 0 ? 'hit' : 'miss';
     }
     if (rule.on === 'special_digit') {
+      // Đổi kiểu như hai nhánh trên và như `board_record.item_hits` (int(g)): so nghiêm ngặt chữ số "3" với 3
+      // là trượt, nên một sổ ghi chữ số dạng chuỗi sẽ bị chấm trượt toàn bộ ở đây mà Python vẫn chấm trúng.
       var tens = Math.floor(o.special / 10), units = o.special % 10;
-      return rule.digits.some(function (g) { return g === tens || g === units; }) ? 'hit' : 'miss';
+      return rule.digits.map(Number).some(function (g) { return g === tens || g === units; }) ? 'hit' : 'miss';
     }
     return 'wait';
   }
