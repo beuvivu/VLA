@@ -5,6 +5,7 @@ import {
   parseXsktLedger,
   primaryFreshTtlSeconds,
   refreshFallbackOverlay,
+  rememberedRangeCount,
 } from "../src/traditional_results.js";
 
 // So đúng TÊN HOST, không so chuỗi con: "raw.githubusercontent.com" có thể nằm ở bất kỳ đâu
@@ -12,8 +13,8 @@ import {
 const hostOf = (url) => new URL(String(url)).hostname;
 
 class FakeKV {
-  constructor() { this.store = new Map(); this.puts = []; }
-  async get(key) { return this.store.get(key) ?? null; }
+  constructor() { this.store = new Map(); this.puts = []; this.gets = 0; }
+  async get(key) { this.gets += 1; return this.store.get(key) ?? null; }
   async put(key, value, options = {}) {
     this.puts.push(key);
     // Như Cloudflare KV: TTL dưới 60 giây bị từ chối.
@@ -94,6 +95,35 @@ const scenarios = {
       statuses.add(reply.status);
     }
     return { statuses: [...statuses], puts: kv.puts, keys: [...kv.store.keys()], counter };
+  },
+
+  // Gọi lại cùng khoảng ngày: lấy từ đệm trong bộ nhớ isolate, không đọc KV, cùng nội dung; đệm có trần.
+  async repeat_range_from_memory() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    const url = "https://worker/api/v1/traditional-results?from=2026-07-01&to=2026-09-13";
+    const first = await (await worker.fetch(new Request(url), env, ctxOf())).text();
+    const getsBefore = kv.gets;
+    const second = await (await worker.fetch(new Request(url), env, ctxOf())).text();
+    const getsOnRepeat = kv.gets - getsBefore;
+    for (let i = 0; i < 80; i++) {
+      const from = new Date(Date.UTC(2026, 5, 1) + i * 86_400_000).toISOString().slice(0, 10);
+      await worker.fetch(new Request(`https://worker/api/v1/traditional-results?from=${from}&to=2026-09-13`), env, ctxOf());
+    }
+    return { same_body: first === second, gets_on_repeat: getsOnRepeat, remembered: rememberedRangeCount(env) };
+  },
+
+  // Bản tươi trong KV không đổi qua lần nạp lại: dùng lại đúng đối tượng hàng và các kỳ đã dựng sẵn.
+  async unchanged_fresh_reuses_built_draws() {
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    const fetchImpl = async () => new Response(JSON.stringify([primaryRow]), { status: 200 });
+    const q = { ...query, to: "2026-09-12" };
+    const first = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: NOW });
+    const again = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: NOW + 2 * MINUTE });
+    return { cache: again.meta.primary_cache, same_draw_object: first.data[0] === again.data[0] };
   },
 
   // Lịch sử chuẩn không đổi thì bản tốt cuối cùng không bị ghi lại; đổi thì ghi.

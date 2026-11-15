@@ -207,3 +207,18 @@ def test_an_unchanged_history_is_not_rewritten_as_the_last_good_copy() -> None:
 def test_the_fresh_copy_lives_five_minutes_only_while_new_draws_can_arrive() -> None:
     ttl = _scenario("fresh_ttl_policy")
     assert ttl == {"03:00": 3600, "17:30": 1800, "17:59:30": 60, "18:00": 300, "18:40": 300, "23:59": 300}
+
+
+def test_a_repeated_range_is_served_from_isolate_memory_within_a_bounded_shelf() -> None:
+    """Không đệm trong KV nữa thì gọi lại cùng khoảng ngày phải rẻ: khoảng tối đa 500 ngày tốn ~14 ms CPU khi dựng
+    mới, quá trần 10 ms của gói Free. Đệm trong bộ nhớ isolate có trần, để khoảng ngày của khách không phình bộ nhớ."""
+    result = _scenario("repeat_range_from_memory")
+    assert result["same_body"] is True
+    assert result["gets_on_repeat"] == 0
+    assert result["remembered"] == 64
+
+
+def test_an_unchanged_fresh_copy_reuses_the_draws_built_for_it() -> None:
+    result = _scenario("unchanged_fresh_reuses_built_draws")
+    assert result["cache"] == "hit"
+    assert result["same_draw_object"] is True

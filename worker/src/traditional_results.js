@@ -66,7 +66,7 @@ const INTERNAL_FIELDS = {
 };
 
 function response(body, { status = 200, cacheControl = "no-store" } = {}) {
-  return new Response(JSON.stringify(body), {
+  return new Response(typeof body === "string" ? body : JSON.stringify(body), {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
@@ -222,9 +222,9 @@ export function primaryFreshTtlSeconds(nowUtcMs) {
   return Math.max(60, Math.min(3600, windowStart - secondOfDay));
 }
 
-function rememberPrimary(holder, historyUrl, rows, nowUtcMs) {
+function rememberPrimary(holder, historyUrl, rows, text, nowUtcMs) {
   if (holder && typeof holder === "object") {
-    primaryMemo.set(holder, { historyUrl, rows, expiresAtMs: nowUtcMs + PRIMARY_MEMO_MS });
+    primaryMemo.set(holder, { historyUrl, rows, text, expiresAtMs: nowUtcMs + PRIMARY_MEMO_MS });
   }
 }
 
@@ -236,10 +236,19 @@ async function loadPrimary(env, fetchImpl, nowUtcMs = Date.now()) {
   if (memo && memo.historyUrl === historyUrl && memo.expiresAtMs > nowUtcMs) {
     return { rows: memo.rows, cache: "memory" };
   }
-  const fresh = await readJson(kv, PRIMARY_FRESH_KEY);
-  if (fresh) {
-    rememberPrimary(holder, historyUrl, fresh, nowUtcMs);
-    return { rows: fresh, cache: "hit" };
+  const freshText = kv ? await kv.get(PRIMARY_FRESH_KEY) : null;
+  if (freshText) {
+    // Nội dung y hệt bản đang nhớ (thường gặp: lịch sử chỉ đổi mỗi ngày một lần): giữ ĐÚNG đối tượng hàng cũ,
+    // bỏ qua bước phân tích ~17 ms, và các kỳ đã dựng sẵn (`canonicalDraws`) vẫn dùng được.
+    const sameAsMemo = memo && memo.historyUrl === historyUrl && memo.text === freshText;
+    let rows = sameAsMemo ? memo.rows : null;
+    if (!rows) {
+      try { rows = JSON.parse(freshText); } catch { rows = null; }
+    }
+    if (rows) {
+      rememberPrimary(holder, historyUrl, rows, freshText, nowUtcMs);
+      return { rows, cache: "hit" };
+    }
   }
 
   try {
@@ -252,12 +261,12 @@ async function loadPrimary(env, fetchImpl, nowUtcMs = Date.now()) {
     });
     if (!fetched.ok) throw new Error(`HTTP ${fetched.status}`);
     const rows = normalizePrimary(await fetched.json());
+    const text = kv ? JSON.stringify(rows) : null;
     if (kv) {
-      const text = JSON.stringify(rows);
       await kv.put(PRIMARY_FRESH_KEY, text, { expirationTtl: primaryFreshTtlSeconds(nowUtcMs) });
       if ((await kv.get(PRIMARY_LAST_GOOD_KEY)) !== text) await kv.put(PRIMARY_LAST_GOOD_KEY, text);
     }
-    rememberPrimary(holder, historyUrl, rows, nowUtcMs);
+    rememberPrimary(holder, historyUrl, rows, text, nowUtcMs);
     return { rows, cache: "miss" };
   } catch (error) {
     const stale = await readJson(kv, PRIMARY_LAST_GOOD_KEY);
@@ -419,6 +428,25 @@ function apiDraw(drawDate, prizes, source) {
   };
 }
 
+// Kỳ đã dựng sẵn (`apiDraw`) cho đúng bộ hàng lịch sử chuẩn đang nhớ: kiểm 27 giải và tính đầu–đuôi MỘT lần
+// mỗi kỳ trong đời của bản nhớ, không phải mỗi yêu cầu (`validPrizeToken` và `headTail` chiếm ~40% thời gian dựng
+// khoảng 500 ngày). Khoá là chính đối tượng hàng, nên bản nhớ mới (kỳ mới vào kho) tự bỏ bản dựng cũ.
+const canonicalDraws = new WeakMap();
+
+function canonicalDraw(rows, day) {
+  let built = canonicalDraws.get(rows);
+  if (!built) {
+    built = new Map();
+    canonicalDraws.set(rows, built);
+  }
+  if (!built.has(day)) {
+    built.set(day, completePrizeMap(rows[day])
+      ? apiDraw(day, rows[day], { kind: "canonical", canonical: true })
+      : null);
+  }
+  return built.get(day);
+}
+
 function sourceCounts(data) {
   const counts = { canonical: 0, fallback: 0 };
   for (const draw of data) counts[draw.source.kind] += 1;
@@ -432,15 +460,17 @@ export async function buildTraditionalResults(
 ) {
   const primary = await loadPrimary(env, fetchImpl, nowUtcMs);
   const requestedDates = dateRange(query.from, query.to);
-  const missing = requestedDates.filter((day) => !completePrizeMap(primary.rows[day]));
+  const canonical = new Map(requestedDates.map((day) => [day, canonicalDraw(primary.rows, day)]));
+  const missing = requestedDates.filter((day) => !canonical.get(day));
   const fallback = missing.length
     ? await readOverlay(env, missing, nowUtcMs)
     : { overlay: {}, unresolved: [], warning: null };
 
   const data = [];
   for (const day of requestedDates) {
-    if (completePrizeMap(primary.rows[day])) {
-      data.push(apiDraw(day, primary.rows[day], { kind: "canonical", canonical: true }));
+    const draw = canonical.get(day);
+    if (draw) {
+      data.push(draw);
     } else if (completePrizeMap(fallback.overlay[day]?.prizes)) {
       data.push(apiDraw(day, fallback.overlay[day].prizes, {
         kind: "fallback",
@@ -475,6 +505,39 @@ export async function buildTraditionalResults(
   };
 }
 
+const RESPONSE_MEMO_MS = 60_000;
+const RESPONSE_MEMO_ENTRIES = 64;
+const responseMemo = new WeakMap();
+
+function responseShelf(env) {
+  const holder = cacheStore(env) ?? env;
+  if (!holder || typeof holder !== "object") return null;
+  let shelf = responseMemo.get(holder);
+  if (!shelf) {
+    shelf = new Map();
+    responseMemo.set(holder, shelf);
+  }
+  return shelf;
+}
+
+/** Số khoảng ngày đang được đệm trong bộ nhớ isolate (chẩn đoán; phép kiểm buộc nó không vượt trần). */
+export function rememberedRangeCount(env) {
+  return responseShelf(env)?.size ?? 0;
+}
+
+function rememberedResponse(env, key, nowUtcMs = Date.now()) {
+  const entry = responseShelf(env)?.get(key);
+  return entry && entry.expiresAtMs > nowUtcMs ? entry.body : null;
+}
+
+function rememberResponse(env, key, body, nowUtcMs = Date.now()) {
+  const shelf = responseShelf(env);
+  if (!shelf) return;
+  shelf.delete(key);
+  shelf.set(key, { body, expiresAtMs: nowUtcMs + RESPONSE_MEMO_MS });
+  while (shelf.size > RESPONSE_MEMO_ENTRIES) shelf.delete(shelf.keys().next().value);
+}
+
 export async function handleTraditionalResults(request, env, ctx) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -497,10 +560,16 @@ export async function handleTraditionalResults(request, env, ctx) {
 
 
   try {
-    // Không đệm phản hồi trong KV (khoá theo khoảng ngày của khách là không gian không có trần): biên
-    // Cloudflare đệm theo `Cache-Control`, còn phần tốn CPU đã được `primaryMemo` gánh.
-    const payload = await buildTraditionalResults(query, env);
-    return response(payload, { cacheControl: "public, max-age=60, s-maxage=300" });
+    // Không đệm phản hồi trong KV (khoá theo khoảng ngày của khách là không gian không có trần). Đệm trong bộ
+    // nhớ isolate có trần (`RESPONSE_MEMO_ENTRIES` khoảng ngày, `RESPONSE_MEMO_MS`): gọi lại cùng khoảng — kể cả
+    // khoảng tối đa 500 ngày, ~14 ms khi dựng mới — không tốn CPU, mà không tốn lượt ghi KV nào.
+    const cacheControl = "public, max-age=60, s-maxage=300";
+    const key = `${query.from}:${query.to}`;
+    const hit = rememberedResponse(env, key);
+    if (hit !== null) return response(hit, { cacheControl });
+    const body = JSON.stringify(await buildTraditionalResults(query, env));
+    rememberResponse(env, key, body);
+    return response(body, { cacheControl });
   } catch (error) {
     return response({
       error: "results_unavailable",

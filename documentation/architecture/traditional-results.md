@@ -236,12 +236,17 @@ dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết 
    khoảng ngày kéo 20 lượt tải. Một khoá KV chỉ chặn được trong từng isolate (KV nhất quán
    sau, không có đọc-ghi nguyên tử). Dời việc gọi nguồn sang cron thì lưu lượng khách không
    còn đường nào chạm tới nguồn ngoài.
-6. Lớp bù lưu KV 30 ngày. Response đã gộp KHÔNG được đệm trong KV, chỉ ở biên Cloudflare
-   (`Cache-Control: public, max-age=60, s-maxage=300`). Trước 15-11-2026 mỗi cặp `from:to` của khách là một
-   khoá KV: hạn mức ghi KV gói Free (1 000 lượt/ngày, dùng chung với cron trang Live) cạn sau ~900 yêu cầu khác
-   khoảng ngày, và lượt cron ghi kết quả đang quay hỏng theo. Nay lượng ghi KV của API không phụ thuộc yêu cầu
-   của khách (≤ ~90 lượt/ngày); phần tốn CPU — phân tích ~1,2 MB lịch sử chuẩn, ~17 ms — do bộ nhớ isolate
-   gánh, nên khoảng 30–100 ngày dựng trong 1–3 ms (`tests/worker/test_traditional_results_api.py`).
+6. Lớp bù lưu KV 30 ngày. Response đã gộp KHÔNG được đệm trong KV. Trước 15-11-2026 mỗi cặp `from:to` của khách
+   là một khoá KV: hạn mức ghi KV gói Free (1 000 lượt/ngày, dùng chung với cron trang Live) cạn sau ~900 yêu cầu
+   khác khoảng ngày, và lượt cron ghi kết quả đang quay hỏng theo. Nay lượng ghi KV của API không phụ thuộc yêu
+   cầu của khách (≤ ~90 lượt/ngày). Phần tốn CPU nằm trong bộ nhớ isolate, có trần, không tốn lượt ghi nào:
+   - lịch sử chuẩn đã phân tích (~1,2 MB, ~17 ms) giữ 60 giây; bản tươi trong KV không đổi thì giữ nguyên đối
+     tượng cũ, không phân tích lại;
+   - mỗi kỳ được kiểm 27 giải và tính đầu–đuôi MỘT lần cho bộ hàng ấy (`canonicalDraws`);
+   - tối đa 64 khoảng ngày đã tuần tự hoá, sống 60 giây (`RESPONSE_MEMO_ENTRIES`).
+   Đo trên lịch sử thật: khoảng tối đa 500 ngày dựng ~0,4 ms + ~3,5 ms tuần tự hoá ở lần đầu (trước: ~33 ms mỗi
+   lần trượt đệm KV), gọi lại gần 0 ms; biên Cloudflare vẫn đệm theo `Cache-Control: public, max-age=60,
+   s-maxage=300` (`tests/worker/test_traditional_results_api.py`).
 7. `XsktVnSource` của Python nằm cuối danh mục nguồn. Quy trình canonical hằng
    ngày có thể dùng nó để bù dữ liệu rồi vẫn đi qua validation/consensus trước
    khi ghi `data/xsmb.json` và `data/xsmb.csv`.

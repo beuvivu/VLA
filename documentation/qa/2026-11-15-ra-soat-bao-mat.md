@@ -34,13 +34,17 @@ còn gì là rủi ro được chấp nhận.
    cầu khác khoảng ngày là cạn hạn mức, và `kv.put` của cron hỏng đúng giờ quay: trang Live đứng hình. Thêm nữa, bản
    last-good 36 giờ bị ghi lại mỗi 5 phút có khách dù nội dung không đổi (tối đa ~576 lượt/ngày).
    - Bỏ đệm phản hồi trong KV; biên Cloudflare vẫn đệm theo `Cache-Control`.
-   - Phần tốn CPU (phân tích ~1,2 MB lịch sử chuẩn, ~17 ms, quá trần 10 ms của gói Free) nay do bộ nhớ isolate gánh
-     60 giây: khoảng 30–100 ngày dựng trong 1–3 ms (trước 16–24 ms mỗi lần trượt đệm).
+   - Phần tốn CPU (phân tích ~1,2 MB lịch sử chuẩn ~17 ms, kiểm token và tính đầu–đuôi ~40% thời gian dựng; quá trần
+     10 ms của gói Free) nay nằm trong bộ nhớ isolate, có trần và không tốn lượt ghi: lịch sử đã phân tích (giữ
+     nguyên đối tượng khi bản tươi không đổi), từng kỳ dựng sẵn một lần, và tối đa 64 khoảng ngày đã tuần tự hoá
+     trong 60 giây (theo góp ý review: khoảng 500 ngày không còn ~14 ms mỗi lần gọi lại). Đo: khoảng 500 ngày lần
+     đầu ~4 ms, gọi lại gần 0 ms (trước: ~33 ms mỗi lần trượt đệm KV).
    - Bản tươi sống 5 phút trong khung 18:00–24:00 giờ VN, ngoài khung tới 18:00 (tối đa 1 giờ); bản last-good chỉ ghi
      khi nội dung đổi và không hết hạn (dịp Tết không có kỳ mới vẫn còn nó).
-   - Lượng ghi KV của API nay ≤ ~90 lượt/ngày, không phụ thuộc lưu lượng. Ba phép kiểm mới trong
-     `tests/worker/test_traditional_results_api.py`; bốn đột biến (khôi phục đệm, luôn ghi last-good, đổi thời hạn, tắt
-     bộ nhớ isolate) đều làm chúng đỏ.
+   - Lượng ghi KV của API nay ≤ ~90 lượt/ngày, không phụ thuộc lưu lượng. Năm phép kiểm mới trong
+     `tests/worker/test_traditional_results_api.py`; chín đột biến (khôi phục đệm KV, luôn ghi last-good, đổi thời hạn, tắt
+     bộ nhớ isolate, bỏ đệm phản hồi trong bộ nhớ, bỏ trần đệm, luôn phân tích lại, không giữ kỳ dựng sẵn) đều làm
+     chúng đỏ.
 2. **Engine Vietlott: đường dẫn ghép thẳng vào câu SQL của DuckDB CLI** (`crawler/sources/vqe130.py`) không thoát dấu
    nháy đơn; thư mục tên `it's here` cắt câu lệnh. Nay thoát như `storage.export_parquet`, có phép kiểm (đỏ với bản cũ).
 3. **Hai bản chép của quy tắc thoát JSON-trong-script** trong `evidence_catalog` nay dùng chung
