@@ -17,6 +17,8 @@ from vietlott_engine.crawler.storage import DuckDBRepository, InMemoryRepository
 from vlm.database.schema import DrawRecord
 from vlm.updates import service
 
+from tests.conftest import official_matrix_source
+
 
 def canonical(draw_id=2, day='2026-10-07', numbers=None, *, prizes=True):
     row = {'draw_id': draw_id, 'draw_date': day,
@@ -245,7 +247,8 @@ def test_sync_result_correction_discards_old_numbers_finance_before_journaling(t
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(200, text=response))) as http:
             yield http
     monkeypatch.setattr(service, 'build_http_client', client)
-    asyncio.run(service.sync_matrix(state, MEGA_645, source='github_mirror', full_refresh=True, learn=False))
+    official_matrix_source(monkeypatch, service)  # chỉ --full chính thức được sửa số của kỳ đã lưu
+    asyncio.run(service.sync_matrix(state, MEGA_645, source='vietlott', full_refresh=True, learn=False))
     assert repo.load_prizes('mega645') == []
     latest = json.loads(service.journal_path(state).read_text().splitlines()[-1])
     assert latest['winning_numbers'] == [1, 2, 3, 4, 5, 6]
@@ -330,14 +333,17 @@ def test_pending_result_correction_recovers_after_upsert_before_old_finance_is_r
             name = 'validated-source'
             async def fetch(self, *_args, **_kwargs):
                 return FetchResult(draws=[Draw(game='mega645', draw_id=2, draw_date='2026-10-07',
-                    numbers=(1,2,3,4,5,6), jackpot1_value=999, tier_winners={'jackpot1':7, 'second':999})])
+                    numbers=(1,2,3,4,5,6), jackpot1_value=999, tier_winners={'jackpot1':7, 'second':999},
+                    source='vietlott')])
         monkeypatch.setattr(service, 'build_source', lambda *_args:Source())
+    else:
+        official_matrix_source(monkeypatch, service)  # chỉ --full chính thức được sửa số của kỳ đã lưu
     with monkeypatch.context() as crash:
         def interrupt(*args, **kwargs):
             raise RuntimeError('crash before finance invalidation')
         crash.setattr(repo, 'invalidate_finance', interrupt)
         with pytest.raises(RuntimeError, match='crash before finance invalidation'):
-            asyncio.run(service.sync_matrix(state, MEGA_645, source='github_mirror', full_refresh=True, learn=False))
+            asyncio.run(service.sync_matrix(state, MEGA_645, source='vietlott', full_refresh=True, learn=False))
     restarted = AppState(settings, repo)
     service.replay_results(restarted)
     assert restarted.replay_conflicts == []

@@ -214,6 +214,38 @@ def test_gap_repair_preserves_leading_gap_and_full_refresh_contracts(full_refres
     assert repo.load("mega645")[0].source == ("github_mirror" if full_refresh else "canonical")
 
 
+@pytest.mark.parametrize(("source_name", "full_refresh", "corrects"), [
+    ("github_mirror", True, False),   # bản sao tải lại toàn bộ: không được sửa
+    ("vietlott", True, True),         # chỉ --full từ vietlott.vn chính thức được sửa
+    ("vietlott", False, False),       # lượt thường: kỳ cũ lọt qua cursor không phải quyền sửa
+])
+def test_only_a_full_official_refresh_may_rewrite_a_stored_draw(source_name: str, full_refresh: bool,
+                                                                corrects: bool) -> None:
+    """Nguồn không được sửa kỳ đã lưu (cùng luật với Keno/Bingo18 và Max 3D/3D Pro/4D)."""
+    def row(i: int, result: list[int]) -> str:
+        return json.dumps({"date": f"2026-10-{i:02d}", "id": i, "result": result})
+
+    good, wrong = [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 7]
+    repo = InMemoryRepository(parse_jsonl("\n".join(row(i, good) for i in (1, 2, 3)), MEGA_645, None, "canonical").draws)
+    served = "\n".join([row(1, good), row(2, wrong), row(3, good), row(4, good)])
+
+    class Source(GithubMirrorSource):
+        name = source_name
+
+        async def fetch(self, spec, since_id=None):
+            return await super().fetch(spec, None)  # trả cả lịch sử, như bản sao/kho lưu trữ
+
+    async def run():
+        async with _client(lambda request: httpx.Response(200, text=served)) as client:
+            return await SyncPipeline(Source(client, "https://mirror.test/data"), repo).run(MEGA_645, full_refresh=full_refresh)
+
+    report = asyncio.run(run())
+    draws = {draw.draw_id: draw for draw in repo.load("mega645")}
+    assert list(draws[2].numbers) == (wrong if corrects else good)
+    assert report.conflicting_ids == ([] if corrects else [2])
+    assert sorted(draws) == [1, 2, 3, 4]  # kỳ mới vẫn vào, kỳ cũ trùng kết quả vẫn được làm mới
+
+
 def test_duckdb_repository_roundtrip(tmp_path: Path) -> None:
     pytest.importorskip("duckdb")
     from vietlott_engine.crawler.storage import DuckDBRepository

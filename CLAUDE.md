@@ -541,8 +541,10 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
 - Keno/Bingo18: bản sao chỉ nhập qua cổng hồ sơ `product_store._vet_fast_mirror` (lệch một kỳ là loại cả lượt); khoảng hở
   lịch sử đã biết ở `vietlott/data/seed/known_gaps.json` chỉ đổi báo cáo, khoảng hở mới vẫn đỏ.
 - Nguồn KHÔNG được sửa kỳ đã lưu, ở cả ba đường đồng bộ (Mega/Power/Lotto, Keno/Bingo18, Max 3D/3D Pro/4D): chỉ
-  `--full` từ vietlott.vn chính thức được sửa; `auto` bỏ nguồn mâu thuẫn. Đến 05-11-2026 đường Max 3D ghi đè lặng
-  lẽ (`tests/test_product_sync_conflicts.py`). Tệp trạng thái ghi qua `core.products.write_text_atomic`.
+  `--full` từ vietlott.vn chính thức được sửa; `auto` bỏ nguồn mâu thuẫn (Mega/Power/Lotto bỏ KỲ mâu thuẫn, vì `auto`
+  ghép kỳ của nhiều nguồn vào một lô; quyền sửa xét theo nhãn `source` của từng kỳ, `pipeline.conflicting_draws`). Đến
+  05-11-2026 đường Max 3D ghi đè lặng lẽ (`tests/test_product_sync_conflicts.py`), đến 15-11-2026 `--full` từ nguồn khác
+  ở đường Mega/Power/Lotto cũng vậy (`tests/test_crawler.py`). Tệp trạng thái ghi qua `core.products.write_text_atomic`.
 - Crawler cũ `src/vietlott_results.py` đã nghỉ; `data/vietlott/vietlott.sqlite3` chỉ còn là lưu trữ, không được ghi.
 - `multi-agent-summary.json` được commit, nên làm mới trên CÙNG dữ liệu phải giữ nguyên tệp. Phép so ở
   `service._publish_multi_agent_summary` bỏ qua `generated_at` và nhiễu dấu phẩy động (`_same_up_to_float_noise`,

@@ -1,5 +1,17 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — nguồn không được sửa kỳ đã lưu (05 → 15-11-2026)
+
+- **Max 3D / 3D Pro / 4D (05-11-2026).** Bản sao và kho canonical trả cả lịch sử, và `ProductSyncPipeline.run`
+  ghi đè lặng lẽ mọi kỳ trùng mã. Nay `auto` bỏ nguồn mâu thuẫn và hỏi nguồn kế tiếp; chọn đích danh một nguồn thì
+  chỉ bỏ kỳ mâu thuẫn (`tests/test_product_sync_conflicts.py`).
+- **Mega / Power / Lotto (15-11-2026).** `SyncPipeline.run` với `--full` (CLI) hay `full_refresh` (API) đưa cả
+  lịch sử của BẤT KỲ nguồn nào vào upsert, nên bản sao hay kho lưu trữ đăng sai một kỳ cũ là ghi đè kỳ ấy, và
+  `sync_matrix` ghi bản sai vào journal như một bản sửa. Nay kỳ có kết quả (ngày, bộ số, số đặc biệt) khác bản đã
+  lưu bị giữ lại, trừ khi tải lại toàn bộ từ vietlott.vn chính thức; mã kỳ ghi vào `SyncReport.conflicting_ids`.
+  Quyền sửa xét theo nhãn `source` của từng kỳ, vì `auto` ghép kỳ của nhiều nguồn vào một lô. Lượt thường cũng được
+  canh: nguồn trả kỳ không mới hơn cursor là trái hợp đồng `since_id`, không phải quyền sửa.
+
 ## Chưa phát hành — Keno/Bingo18 đồng bộ lại, Python 3.15 (01-11-2026)
 
 - **Cổng hồ sơ kiểm chứng cho bản sao Keno/Bingo18 (`ProductSyncPipeline._vet_fast_mirror`).**
