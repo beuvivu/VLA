@@ -240,13 +240,22 @@ dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết 
    là một khoá KV: hạn mức ghi KV gói Free (1 000 lượt/ngày, dùng chung với cron trang Live) cạn sau ~900 yêu cầu
    khác khoảng ngày, và lượt cron ghi kết quả đang quay hỏng theo. Nay lượng ghi KV của API không phụ thuộc yêu
    cầu của khách (≤ ~90 lượt/ngày). Phần tốn CPU nằm trong bộ nhớ isolate, có trần, không tốn lượt ghi nào:
-   - lịch sử chuẩn đã phân tích (~1,2 MB, ~17 ms) giữ 60 giây; bản tươi trong KV không đổi thì giữ nguyên đối
-     tượng cũ, không phân tích lại;
-   - mỗi kỳ được kiểm 27 giải và tính đầu–đuôi MỘT lần cho bộ hàng ấy (`canonicalDraws`);
-   - tối đa 64 khoảng ngày đã tuần tự hoá, sống 60 giây (`RESPONSE_MEMO_ENTRIES`).
-   Đo trên lịch sử thật: khoảng tối đa 500 ngày dựng ~0,4 ms + ~3,5 ms tuần tự hoá ở lần đầu (trước: ~33 ms mỗi
-   lần trượt đệm KV), gọi lại gần 0 ms; biên Cloudflare vẫn đệm theo `Cache-Control: public, max-age=60,
-   s-maxage=300` (`tests/worker/test_traditional_results_api.py`).
+   - lịch sử chuẩn lưu trong KV (khoá `traditional:primary:fresh:v2`, `…:last-good:v2`) dạng bản ghi ĐỘ RỘNG CỐ
+     ĐỊNH, tăng dần theo ngày: `YYYY-MM-DD` + 107 chữ số của 27 giải theo thứ tự `PRIZE_ORDER` + `\n`, 118 ký tự
+     mỗi kỳ (~0,5 MB cho 4 267 kỳ). Mở bản lưu chỉ kiểm hình dạng (độ dài, ngày, xuống dòng, tăng NGHIÊM NGẶT —
+     sai thì tải lại lịch sử); tìm một kỳ là tìm nhị phân, và chỉ kỳ được hỏi mới được giải mã. Trước đó bản lưu
+     là JSON ~1,25 MB và isolate lạnh phải phân tích trọn nó (~20 ms, quá trần CPU 10 ms của gói Free), kể cả
+     trang Live khi hỏi kỳ chuẩn trước (`latestCanonicalDrawBefore`). Khoá `…:v1` cũ không còn ai đọc; bản
+     last-good v1 không hết hạn nên nằm lại trong KV cho tới khi xoá tay (`wrangler kv key delete`);
+   - bản lưu đã mở giữ 60 giây; bản tươi trong KV không đổi thì giữ nguyên đối tượng cũ;
+   - mỗi kỳ được kiểm 27 giải và tính đầu–đuôi MỘT lần cho bản ấy (`canonicalDraws`);
+   - tối đa 64 khoảng ngày đã tuần tự hoá, sống 60 giây (`RESPONSE_MEMO_ENTRIES`); khoá gồm `preset_days`, vì
+     `days=30` và khoảng tự chọn trùng ngày trả cùng dữ liệu nhưng khác `query`.
+   Đo trên lịch sử thật: yêu cầu `days=30` ở isolate có bộ nhớ rỗng ~2 ms (trước: ~23 ms); khoảng tối đa 500 ngày
+   dựng ~0,4 ms + ~3,5 ms tuần tự hoá ở lần đầu, gọi lại gần 0 ms. Lượt làm mới bản tươi (tải và phân tích trọn
+   `data/xsmb.json` ~2,6 MB) vẫn tốn CPU như trước; nó chạy mỗi lần bản tươi hết hạn, không theo lưu lượng.
+   Biên Cloudflare vẫn đệm theo `Cache-Control: public, max-age=60, s-maxage=300`
+   (`tests/worker/test_traditional_results_api.py`).
 7. `XsktVnSource` của Python nằm cuối danh mục nguồn. Quy trình canonical hằng
    ngày có thể dùng nó để bù dữ liệu rồi vẫn đi qua validation/consensus trước
    khi ghi `data/xsmb.json` và `data/xsmb.csv`.
