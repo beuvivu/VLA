@@ -244,7 +244,7 @@ passed, the core release gate passed, and the research-plane release gate passed
 | Cross-lag positional laboratory | `src/research/crosslag_positional_lab.py` | Legacy positional hypothesis family consolidated with chronology, holdout and multiple-testing controls | `test_crosslag_positional_lab.py`, research release check | MIGRATED / RESEARCH-ONLY |
 | Research Lab UI | `src/pages/build_research_lab.py` | Source-backed research outputs rendered without automatic production promotion | research release check | MIGRATED / RESEARCH-ONLY |
 | Markdown dashboard | `src/pages/build_markdown_dashboard_v3.py` | V3 is sole canonical renderer | release static-builder smoke | RETAINED |
-| Legacy Markdown dashboard command | `src/pages/build_markdown_dashboard.py` -> v3 | Independent ~34KB old renderer removed; command delegates to v3 | release check invokes legacy command and validates output downstream | SUPERSEDED |
+| Legacy Markdown dashboard command | `src/pages/build_markdown_dashboard.py` (removed 2026-11-15) | Independent ~34KB old renderer removed; the wrapper itself was deleted on 2026-11-15 | release check calls v3 directly | REMOVED |
 | End-to-end release gate | `scripts/release/release_check.sh` | Unit suite + real data integrity + canonical conditionals + date-safe overlay + dynamics + fresh ML + stacked ML + cầu-kèo + builders + production consistency | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
 | Research release gate | `scripts/release/research_release_check.sh` | Real-history research diagnostics, conditional, cross-lag, strategy and UI integrity | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
 | Runtime production audit | `src/evaluation/production_audit.py` | Canonical gaps, consensus, prediction target dates, conditional pair counts, overlay target, dynamics calendar, cầu manifest target, docs | release check + post-finalization workflow | HARDENED / VERIFIED |
@@ -288,7 +288,7 @@ passed, the core release gate passed, and the research-plane release gate passed
 | `src/research/strategy_lab.py` | Calendar-safe holdout geometry; HARDENED / RESEARCH-ONLY. |
 | `src/ingest/validate_data.py` | Strict data-domain/continuity gate; HARDENED. |
 | ~~`src/vip_stats.py`~~ | Wrapper deleted 2026-10-06; use `src/stats/descriptive_extensions.py`. REMOVED. |
-| `src/pages/build_markdown_dashboard.py` | Compatibility wrapper over v3; SUPERSEDED. |
+| `src/pages/build_markdown_dashboard.py` | Compatibility wrapper over v3; removed 2026-11-15. |
 | `src/pages/build_research_lab.py` | Research evidence presentation; MIGRATED. |
 
 ## Promotion and safety policy

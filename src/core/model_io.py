@@ -13,8 +13,7 @@ from typing import Any
 import joblib
 import numpy as np
 
-from core.atomic_io import atomic_write_bytes
-from core.float_noise import FLOAT_NOISE_ABSOLUTE, FLOAT_NOISE_RELATIVE, close
+from core.atomic_io import FLOAT_NOISE_ABSOLUTE, FLOAT_NOISE_RELATIVE, atomic_write_bytes, floats_close
 
 # Joblib hỗ trợ cả pickle thuần và các codec nén. Chỉ bắt lỗi đọc pack;
 # lỗi huấn luyện/lập trình bên ngoài thao tác load vẫn phải nổi lên.
@@ -27,7 +26,7 @@ Predict = Callable[[Any], Any]
 
 
 def _close_arrays(old: np.ndarray, new: np.ndarray) -> bool:
-    """Mọi phần tử của hai mảng số thực chỉ khác nhau ở nhiễu (cùng luật `core.float_noise.close`)."""
+    """Mọi phần tử của hai mảng số thực chỉ khác nhau ở nhiễu (cùng luật `core.atomic_io.floats_close`)."""
     old, new = np.asarray(old, dtype=float), np.asarray(new, dtype=float)
     if old.shape != new.shape:
         return False
@@ -48,7 +47,7 @@ def _same_value(old: Any, new: Any) -> bool:
             return False
         return _close_arrays(old, new) if old.dtype.kind == "f" else bool(np.array_equal(old, new))
     if isinstance(old, (float, np.floating)) and isinstance(new, (float, np.floating)):
-        return type(old) is type(new) and close(float(old), float(new))
+        return type(old) is type(new) and floats_close(float(old), float(new))
     if isinstance(old, (str, bytes, bool, int, np.integer, np.bool_)) or old is None:
         return type(old) is type(new) and old == new
     return joblib.hash(old) == joblib.hash(new)
@@ -79,7 +78,7 @@ def dump_pack_unless_equivalent(pack: dict[str, Any], path: Path, *, stamp_keys:
     """Ghi pack, TRỪ khi pack đang có trên đĩa tương đương nó: khi ấy giữ tệp cũ. Trả về ``True`` khi đã ghi.
 
     Tương đương nghĩa là cùng khoá, và mọi khoá ngoài ``stamp_keys`` trùng nhau: số thực tới mức nhiễu
-    dấu phẩy động (``core.float_noise``, ≤ 10⁻⁹ tương đối), mảng số thực từng phần tử như thế, còn lại
+    dấu phẩy động (``core.atomic_io``, ≤ 10⁻⁹ tương đối), mảng số thực từng phần tử như thế, còn lại
     tuyệt đối. Mô hình ở khoá có trong ``predictions`` ({khoá: hàm(mô hình) → mảng dự báo}) trùng khi hai
     bản cho cùng dự báo tới mức nhiễu trên đúng dữ liệu hàm ấy dùng; mô hình không có hàm dự báo thì so
     ``joblib.hash``.

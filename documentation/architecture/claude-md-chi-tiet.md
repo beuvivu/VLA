@@ -131,7 +131,7 @@ bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Bộ lọc "lô
 (08-10-2026) cũng là khung thách đấu: top-5 trúng 2,91% trên 4 228 kỳ, đúng bằng chọn bừa trên chính các kỳ ấy, nên không
 vào tổ hợp xác suất; mọi xác suất/Confidence nó in ra đều suy từ walk-forward, đừng viết cứng
 (`documentation/research/2026-10-08-lo-nhieu-nhay.md`). Lượt thử thứ hai (12-10-2026,
-`src/forecast/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/research/benchmark_multi_hit.py`): 22 chiến lược kể cả
+`src/forecast/multi_hit_benchmark.py`): 22 chiến lược kể cả
 logistic/GBM, chọn trên giai đoạn phát triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa
 hai giai đoạn tương quan −0,02. Trang `docs/lo-vip-nhieu-nhay.html` (13-10-2026) in cả hai TỪ số đo:
 `multi_hit_report.py` ghi `data/forecast/multi_hit/vip.json` mỗi ngày; `benchmark.json` là phép kiểm MỘT

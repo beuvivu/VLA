@@ -295,7 +295,7 @@ def main() -> None:
     two = lottery.get_2_digits_data()
     sparse = lottery.get_sparse_data()
     if raw.empty or sparse.empty:
-        logger.warning("No data found. Run src/ingest/fetch.py first.")
+        logger.warning("No data found. Run src/ingest/sync.py first.")
         return
 
     paths = RepoPaths.from_module()

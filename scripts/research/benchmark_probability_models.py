@@ -7,7 +7,7 @@ TRƯỚC khối):
 
 * ``hang_so``        — tỉ lệ nền (LOTO) / 1/100 (Đặc Biệt). Mốc kỹ năng 0.
 * ``ml_production``  — thành phần ML đang chạy production, tái dựng nguyên quy
-  trình huấn luyện (xem ``research.vla.backtest.production_ml``).
+  trình huấn luyện (xem ``research.vla.models``).
 * ``tien_nghiem``    — tầng 1 (Dirichlet/Beta) + hiệu chỉnh Platt.
 * ``bayes_lgb``      — tầng 1 + LightGBM phần dư + Platt (mô hình mới).
 * ``bayes_lgb_focal_iso`` — như trên nhưng focal loss + isotonic.
@@ -36,11 +36,11 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla.backtest import evaluator, walk_forward  # noqa: E402
-from research.vla.backtest.production_ml import ProductionMLModel  # noqa: E402
-from research.vla.backtest.synthetic import POWER_SEED, power_history  # noqa: E402
-from research.vla.features.engineer import History, build_features, load_history  # noqa: E402
-from research.vla.models.bayesian_lgb import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
+from research.vla import backtest  # noqa: E402
+from research.vla.models import ProductionMLModel  # noqa: E402
+from research.vla.features import POWER_SEED, power_history  # noqa: E402
+from research.vla.features import History, build_features, load_history  # noqa: E402
+from research.vla.models import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul"
 
@@ -80,7 +80,7 @@ def run_mode(
     # hình đều được chấm trên CÙNG tập kỳ còn lại.
     dates = pd.to_datetime(list(history.dates))
     consecutive = np.asarray((dates[targets] - dates[targets - 1]).days == 1)
-    reference = evaluator.cumulative_reference(mode, hit, targets)
+    reference = backtest.cumulative_reference(mode, hit, targets)
 
     results, daily = {}, []
     for name, factory in factories(mode, history, include_production).items():
@@ -88,16 +88,16 @@ def run_mode(
         # Production học lại MỖI kỳ (``ml_predict`` coi mô hình cũ là hết hạn);
         # ``--production-refit-every 1`` tái dựng đúng điều đó, giá ~7 giây/kỳ.
         every = (production_refit_every or refit_every) if name == "ml_production" else refit_every
-        res = walk_forward.run(factory, feats.X, hit, first, final, refit_every=every)
+        res = backtest.run(factory, feats.X, hit, first, final, refit_every=every)
         m = consecutive
-        summary = evaluator.evaluate(mode, res.probs[m], counts[m], special[m], reference[m])
+        summary = backtest.evaluate(mode, res.probs[m], counts[m], special[m], reference[m])
         summary["seconds"] = round(time.perf_counter() - t0, 1)
         summary["refit_every"] = every
         summary["refits"] = res.refits
         results[name] = summary
         hits = (counts > 0).astype(float) if mode == "loto" else np.eye(100)[special]
-        ll = evaluator.daily_logloss(mode, res.probs, hits)
-        br = evaluator.daily_brier(mode, res.probs, hits)
+        ll = backtest.daily_logloss(mode, res.probs, hits)
+        br = backtest.daily_brier(mode, res.probs, hits)
         for k in np.flatnonzero(m):
             daily.append({"mode": mode, "model": name, "target_date": history.dates[targets[k]],
                           "logloss": float(ll[k]), "brier": float(br[k])})
@@ -117,7 +117,7 @@ def pairwise(frame: pd.DataFrame, mode: str) -> dict:
     for new in ("bayes_lgb", "bayes_lgb_focal_iso"):
         for old in ("ml_production", "tien_nghiem", "hang_so"):
             if new in wide and old in wide:
-                out[f"{new}_vs_{old}"] = evaluator.paired(wide[new].to_numpy(), wide[old].to_numpy())
+                out[f"{new}_vs_{old}"] = backtest.paired(wide[new].to_numpy(), wide[old].to_numpy())
     return out
 
 
@@ -131,7 +131,7 @@ def _against_book(wide: pd.DataFrame, rec: pd.Series, dates: pd.Index) -> dict:
     for name in wide.columns:
         block[f"{name}_logloss"] = float(wide.loc[common, name].mean()) if len(common) else None
         if len(common) > 1:
-            block[f"{name}_vs_production"] = evaluator.paired(wide.loc[common, name].to_numpy(), rec[common].to_numpy())
+            block[f"{name}_vs_production"] = backtest.paired(wide.loc[common, name].to_numpy(), rec[common].to_numpy())
     return block
 
 
@@ -172,9 +172,9 @@ def power_check(refit_every: int) -> dict:
         hit = hist.hits(mode)
         T = len(hist)
         targets = np.arange(T - 600, T)
-        ref = evaluator.cumulative_reference(mode, hit, targets)
-        res = walk_forward.run(lambda m=mode: BayesianLGBModel(m), feats.X, hit, T - 600, T - 1, refit_every=refit_every * 3)
-        summary = evaluator.evaluate(mode, res.probs, hist.counts[targets], hist.special[targets], ref)
+        ref = backtest.cumulative_reference(mode, hit, targets)
+        res = backtest.run(lambda m=mode: BayesianLGBModel(m), feats.X, hit, T - 600, T - 1, refit_every=refit_every * 3)
+        summary = backtest.evaluate(mode, res.probs, hist.counts[targets], hist.special[targets], ref)
         out[mode] = {"logloss_skill": summary["logloss_skill"], "vs_reference": summary["vs_reference"],
                      "top_k": summary["top_k"]}
         print(f"[kiểm độ nhạy {mode}] skill={summary['logloss_skill']:+.4f} z={summary['vs_reference']['z']:+.1f}", flush=True)
@@ -201,15 +201,15 @@ def production_refit_check(history: History, last: int, refit_every: int) -> dic
         hits = (history.counts[targets] > 0).astype(float) if mode == "loto" else np.eye(100)[history.special[targets]]
         losses = {}
         for every in (1, refit_every):
-            res = walk_forward.run(lambda p=pack: p, feats.X, hit, T - last, T - 1, refit_every=every)
-            losses[every] = evaluator.daily_logloss(mode, res.probs, hits)[keep]
-        const = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit, targets), hits)[keep]
+            res = backtest.run(lambda p=pack: p, feats.X, hit, T - last, T - 1, refit_every=every)
+            losses[every] = backtest.daily_logloss(mode, res.probs, hits)[keep]
+        const = backtest.daily_logloss(mode, backtest.cumulative_reference(mode, hit, targets), hits)[keep]
         out[mode] = {
             "days": int(keep.sum()),
             "logloss_refit_1": float(losses[1].mean()),
             f"logloss_refit_{refit_every}": float(losses[refit_every].mean()),
-            "refit_1_vs_block": evaluator.paired(losses[1], losses[refit_every]),
-            "refit_1_vs_constant": evaluator.paired(losses[1], const),
+            "refit_1_vs_block": backtest.paired(losses[1], losses[refit_every]),
+            "refit_1_vs_constant": backtest.paired(losses[1], const),
             "max_abs_daily_gap": float(np.abs(losses[1] - losses[refit_every]).max()),
         }
         print(f"[học lại mỗi kỳ {mode}] {out[mode]['logloss_refit_1']:.6f} vs khối "
@@ -235,7 +235,7 @@ def main() -> None:
     history = load_history(Path(args.data_dir))
     report = {"generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "history_draws": len(history), "last": args.last, "refit_every": args.refit_every,
-              "payout": evaluator.Payout().__dict__, "modes": {}}
+              "payout": backtest.Payout().__dict__, "modes": {}}
     frames = []
     for mode in args.modes.split(","):
         report["modes"][mode], frame = run_mode(

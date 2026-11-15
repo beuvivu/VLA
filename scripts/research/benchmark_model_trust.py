@@ -25,9 +25,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla.backtest import evaluator, walk_forward  # noqa: E402
-from research.vla.backtest.production_ml import ProductionMLModel  # noqa: E402
-from research.vla.features.engineer import History, load_history  # noqa: E402
+from research.vla import backtest  # noqa: E402
+from research.vla.models import ProductionMLModel  # noqa: E402
+from research.vla.features import History, load_history  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "trust_floor.json"
 
@@ -73,18 +73,18 @@ def run_mode(mode: str, history: History, last: int, refit_every: int) -> dict:
     keep = np.asarray((dates[targets] - dates[targets - 1]).days == 1)
     hit = history.hits(mode)
     model = RawRecorder(mode, history)
-    res = walk_forward.run(lambda: model, np.zeros((T, 100, 1), dtype=np.float32), hit, first, final,
+    res = backtest.run(lambda: model, np.zeros((T, 100, 1), dtype=np.float32), hit, first, final,
                            refit_every=refit_every)
     base = np.concatenate([np.full(n, b) for n, b, _, _ in model.blocks])
     skill = np.concatenate([np.full(n, min(ll, br)) for n, _, ll, br in model.blocks])
     hits = (history.counts[targets] > 0).astype(float) if mode == "loto" else np.eye(100)[history.special[targets]]
-    ref = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit, targets), hits)[keep]
+    ref = backtest.daily_logloss(mode, backtest.cumulative_reference(mode, hit, targets), hits)[keep]
 
     losses, rules = {}, {}
     for name, rule in RULES.items():
-        losses[name] = evaluator.daily_logloss(mode, shrink(mode, res.probs, base, rule(skill)), hits)[keep]
+        losses[name] = backtest.daily_logloss(mode, shrink(mode, res.probs, base, rule(skill)), hits)[keep]
         rules[name] = {"mean_trust": float(rule(skill).mean()), "logloss": float(losses[name].mean()),
-                       "vs_constant": evaluator.paired(losses[name], ref)}
+                       "vs_constant": backtest.paired(losses[name], ref)}
     half = int(keep.sum()) // 2
     cand, cur = losses[CANDIDATE], losses[CURRENT]
     return {
@@ -95,9 +95,9 @@ def run_mode(mode: str, history: History, last: int, refit_every: int) -> dict:
         "validation_skill": {"min": float(skill.min()), "max": float(skill.max()),
                              "refits_with_skill": int(sum(min(ll, br) > 0 for _, _, ll, br in model.blocks))},
         "rules": rules,
-        "candidate_vs_current": evaluator.paired(cand, cur),
-        "candidate_vs_current_halves": [evaluator.paired(cand[:half], cur[:half]),
-                                        evaluator.paired(cand[half:], cur[half:])],
+        "candidate_vs_current": backtest.paired(cand, cur),
+        "candidate_vs_current_halves": [backtest.paired(cand[:half], cur[:half]),
+                                        backtest.paired(cand[half:], cur[half:])],
     }
 
 

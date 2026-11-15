@@ -62,7 +62,7 @@ from soi_cau.path_prob import (  # noqa: E402
     predict_from_fitted_paths_full,
     prepare_path_history,
 )
-from research.vla.backtest import evaluator  # noqa: E402
+from research.vla import backtest  # noqa: E402
 from core.xsmb_domain import TOTAL_DIGITS, baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "bridge_inference.json"
@@ -162,9 +162,9 @@ def _day(anchor) -> dict:
 
 def _paired(new: np.ndarray, old: np.ndarray) -> dict:
     half = len(new) // 2
-    return {**evaluator.paired(new, old),
-            "halves_z": [evaluator.paired(new[:half], old[:half])["z"],
-                         evaluator.paired(new[half:], old[half:])["z"]]}
+    return {**backtest.paired(new, old),
+            "halves_z": [backtest.paired(new[:half], old[:half])["z"],
+                         backtest.paired(new[half:], old[half:])["z"]]}
 
 
 def decide(report: dict) -> dict:
@@ -202,7 +202,7 @@ def _code_digest(root: Path, script: Path) -> str:
     """Băm MỌI mã có thể chạy trong phép đo: toàn bộ ``src/**/*.py`` và chính kịch bản này.
 
     Không liệt kê tay vài module: phép đo còn chạy ``ensemble_utils``,
-    ``research.vla.backtest.evaluator``, ``xsmb_domain``… và một danh sách tay sẽ sót
+    ``research.vla.backtest``, ``xsmb_domain``… và một danh sách tay sẽ sót
     module mới. Băm rộng hơn cần thiết chỉ làm bước gộp từ chối thừa, không
     bao giờ để lọt hai phần tính bằng hai logic khác nhau.
     """
@@ -259,15 +259,15 @@ def run_part(last: int, workers: int, part: int, parts: int) -> dict:
                  "last_target": str(dates[target[-1]].date())}
     for mode in MODES:
         hits = hit[mode][target]
-        ref = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit[mode], target), hits)
+        ref = backtest.daily_logloss(mode, backtest.cumulative_reference(mode, hit[mode], target), hits)
         base = baseline_rate(mode)
         vec = {(k, v): np.vstack([d[(mode, k, v)] for d in days]) for k in KINDS for v in ("old", "new")}
         flat = (weights.w_ml + weights.w_stat + weights.w_cau) * base
         ens = {v: np.vstack([finalize_blend(r, mode) for r in
                              flat + weights.w_active * vec[("active", v)] + weights.w_stable * vec[("stable", v)]])
                for v in ("old", "new")}
-        ll = {f"{k}_{v}": evaluator.daily_logloss(mode, p, hits) for (k, v), p in vec.items()}
-        ll.update({f"ensemble_{v}": evaluator.daily_logloss(mode, p, hits) for v, p in ens.items()})
+        ll = {f"{k}_{v}": backtest.daily_logloss(mode, p, hits) for (k, v), p in vec.items()}
+        ll.update({f"ensemble_{v}": backtest.daily_logloss(mode, p, hits) for v, p in ens.items()})
         sums = {f"{k}_{v}": p.sum(axis=1) for (k, v), p in vec.items()}
         sums.update({f"ensemble_{v}": p.sum(axis=1) for v, p in ens.items()})
         out[mode] = {

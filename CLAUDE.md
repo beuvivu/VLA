@@ -21,7 +21,7 @@ và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
     ensemble    neo mức, trọng số, thành phần, hiệu chỉnh, gộp ý kiến, co ngót, đa dạng đuôi
     stats       thống kê mô tả/kiểm định, ma trận, tín hiệu thống kê, động học số
     soi_cau     cầu vị trí, bảy kiểu cầu, cầu theo đường, tổng – bóng – chạm;
-                gói con bridges (quét cầu ghép chéo, cổng kiểm định), features (đặc trưng cầu)
+                gói con bridges (quét cầu ghép chéo, cổng kiểm định); module features (đặc trưng cầu)
     ml          ML thành phần và Cầu Kèo: đặc trưng, huấn luyện, dự báo, thách đấu miền
     forecast    xếp chồng, dự báo đầy đủ, học trực tuyến, kho tri thức, Lô VIP (multi_hit_*);
                 gói con modeling (dự đoán hằng ngày predictions_today.json), xsmb_agents (hệ ba tác tử)
@@ -33,9 +33,15 @@ và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
     pages       trình dựng từng trang trong docs/ (build_*), README
 
 Gói cũ đã gom (24-10-2026), không còn gì đứng riêng: `crawler` → `ingest`, `utils` → `core`;
-`bridges`, `features` → gói con của `soi_cau`; `modeling`, `xsmb_agents` → gói con của `forecast`;
+`bridges` → gói con của `soi_cau`, `features` → module `soi_cau/features.py`; `modeling`, `xsmb_agents` → gói con của `forecast`;
 `ml_engine`, `vla` → gói con của `research`; `templates`, `assets` → `web/templates`, `web/assets`.
-Gói cũ giữ làm GÓI CON vì tên module bên trong chung chung (`base`, `spec`, `risk`, `engine`).
+Gói cũ giữ làm GÓI CON vì tên module bên trong chung chung (`engine`, `scanner`, `models`, `backtest`).
+Gộp module nhỏ (15-11-2026, 212 → 187 tệp `.py` dưới `src/`): `core.float_noise` và `core.stamp_only_json` vào
+`core.atomic_io`; `web.crafto_design` vào `web.page_output`; `soi_cau/features/` (7 tệp) thành một module;
+`bridges/{tensor,spec,shadow}` vào `bridges/scanner`; `xsmb_agents/{knowledge,benchmark}` vào `xsmb_agents/engine`;
+`modeling/{bundle,explain,risk}` vào `modeling/stacking`; `research/vla/` còn `features`, `models`, `backtest`; Holm
+một bản ở `stats.statistical_corrections.holm` (trước có ba bản chép); gỡ `ingest/fetch.py` (việc của `ingest/sync.py`)
+và lớp tương thích `pages/build_markdown_dashboard.py`. Module mới chỉ tách khi nó có người dùng riêng.
 Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridge_scan.py`,
 `forecast/modeling/run_daily_prediction.py`, `forecast/xsmb_agents/run_xsmb_agents.py`.
 
@@ -379,10 +385,10 @@ thì giữ tệp cũ (`atomic_io.write_text_unless_only_stamps`, `atomic_io.save
 `PAGE_BUILD_STAMPS` — mỗi mẫu được ghim vào một trang thật. Dòng `ensemble_history.csv` có số đo trùng giữ giờ ghi đầu.
 Lượt chạy lại 11-11-2026 (không có kỳ mới) vẫn commit 57 tệp; đo lại 14-11 trên máy phiên làm việc, lượt chạy lại thứ hai
 ghi lại 42 tệp, sau bản sửa 0. Năm nhóm: (1) Sau mỗi bước, `pipeline._run` trả mọi JSON trong `data/` chỉ khác bản HEAD ở khoá
-dấu giờ ghi (`core.stamp_only_json`, `WRITE_STAMP_KEYS`) và mọi trang `docs/*.html` chỉ khác ở `PAGE_BUILD_STAMPS` về đúng bản
+dấu giờ ghi (`core.atomic_io.WRITE_STAMP_KEYS`) và mọi trang `docs/*.html` chỉ khác ở `PAGE_BUILD_STAMPS` về đúng bản
 HEAD, NGAY sau bước ấy vì bước sau đọc dấu giờ (mã thí nghiệm `EXP-…-<ngày>` lấy ngày từ cổng Cầu Kèo). So với HEAD chứ không
 với tệp trên đĩa: trang chủ ghi hai bước (khung rồi bảng mô phỏng) nên `write_page` một mình không giữ được. Từ 14-11-2026 phép so
-JSON và mọi bảng CSV trong `data/` còn bỏ qua NHIỄU SỐ THỰC giữa các CPU runner (`core.float_noise`, ≤ 10⁻⁹ tương đối, cùng ngưỡng
+JSON và mọi bảng CSV trong `data/` còn bỏ qua NHIỄU SỐ THỰC giữa các CPU runner (`core.atomic_io.same_tree_up_to_float_noise`, ≤ 10⁻⁹ tương đối, cùng ngưỡng
 Vietlott; bảng không tính thứ tự dòng vì nhiễu đổi chỗ được hai dòng gần hoà): `np.corrcoef`, `np.dot`, hàm đặc biệt scipy lệch bit
 cuối theo lệnh SIMD. Đo trên lịch sử: bắt 3/3 tệp nhiễu của lượt chạy lại sau PR #223 và 21 bảng + 10 JSON của lượt 09-11, không
 bắt nhầm tệp nào của hai lượt hằng ngày 10-11 và 14-11. Số nguyên, chuỗi, mã có số 0 đầu, cờ đúng/sai vẫn so tuyệt đối.

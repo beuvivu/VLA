@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 from soi_cau.bridges.scanner import BridgeScanner, BridgeScanResult
-from soi_cau.bridges.tensor import DigitTensor
+from soi_cau.bridges.scanner import DigitTensor
 from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 DEFAULT_Q_VALUE: Final[float] = 0.05

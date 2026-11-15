@@ -31,7 +31,7 @@ import pandas as pd
 from scipy import stats
 
 from ingest.lottery import Lottery
-from research.research_diagnostics import bh_fdr
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 Mode = Literal["loto", "de"]
 

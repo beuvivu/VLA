@@ -41,7 +41,7 @@ import numpy as np
 import pandas as pd
 
 from core.atomic_io import atomic_write_text
-from soi_cau.digit_sum_rules import holm
+from stats.statistical_corrections import holm
 from forecast.multi_hit_vip import counts_matrix, draws_from_frame
 from core.xsmb_domain import baseline_rate
 

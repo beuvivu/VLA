@@ -22,11 +22,11 @@ Giao thức, cố định TRƯỚC khi chạy trên dữ liệu thật (đổi g
 6. Độ nhạy: cùng giao thức trên lịch sử giả định có cài tín hiệu nhẹ phải tìm ra và qua được
    giai đoạn kiểm (``--power-check``).
 
-Chạy (``scripts/research/benchmark_multi_hit.py`` là lớp vỏ dòng lệnh của module này):
+Chạy thẳng module (lớp vỏ dòng lệnh cũ trong thư mục kịch bản nghiên cứu đã gỡ ngày 15-11-2026):
 
-    python3 scripts/research/benchmark_multi_hit.py --until 2026-10-12                 # dữ liệu thật, ~2 phút
-    python3 scripts/research/benchmark_multi_hit.py --until 2026-10-12 --power-check   # thêm kiểm độ nhạy
-    python3 scripts/research/benchmark_multi_hit.py --json /tmp/multi.json
+    PYTHONPATH=src python3 src/forecast/multi_hit_benchmark.py --until 2026-10-12                 # dữ liệu thật, ~2 phút
+    PYTHONPATH=src python3 src/forecast/multi_hit_benchmark.py --until 2026-10-12 --power-check   # thêm kiểm độ nhạy
+    PYTHONPATH=src python3 src/forecast/multi_hit_benchmark.py --json /tmp/multi.json
 
 Trang «Lô VIP nhiều nháy» in kết quả của giao thức này qua ``multi_hit_report.py``.
 """
@@ -60,6 +60,7 @@ from forecast.multi_hit_vip import (
     until,
 )
 from core.paths import REPO_ROOT
+from stats.statistical_corrections import holm as holm_list
 
 ROOT = REPO_ROOT
 
@@ -276,13 +277,8 @@ def evaluate(scores: np.ndarray, multi: np.ndarray, rows: range, k: int = TOP_K)
 
 
 def holm(p_values: dict[str, float]) -> dict[str, float]:
-    """p đã hiệu chỉnh Holm–Bonferroni (đơn điệu, chặn ở 1)."""
-    ordered = sorted(p_values.items(), key=lambda kv: kv[1])
-    m, running, out = len(ordered), 0.0, {}
-    for rank, (name, p) in enumerate(ordered):
-        running = max(running, min(1.0, (m - rank) * p))
-        out[name] = running
-    return out
+    """p đã hiệu chỉnh Holm–Bonferroni theo tên (`stats.statistical_corrections.holm`)."""
+    return dict(zip(p_values, holm_list(list(p_values.values())), strict=True))
 
 
 def any_hit_rates(scores: np.ndarray, counts: np.ndarray, rows: range,

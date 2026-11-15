@@ -32,7 +32,7 @@ def main() -> None:
     paths = RepoPaths.from_module()
 
     if results.empty:
-        logger.warning("No data found. Run src/ingest/fetch.py first.")
+        logger.warning("No data found. Run src/ingest/sync.py first.")
         return
 
     last_date = results["date"].max()

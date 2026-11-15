@@ -36,7 +36,7 @@ from scipy import stats
 from ingest.lottery import Lottery
 from core.number_reference import bo
 from core.table_cuts import cut_ranked
-from research.research_diagnostics import bh_fdr
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 Operator = Literal["concat", "lon", "bo", "cham", "tong"]
 

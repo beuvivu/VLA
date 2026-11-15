@@ -8,16 +8,16 @@ import numpy as np
 import pytest
 
 from soi_cau import bridge_rules
-from research.vla.backtest import evaluator, walk_forward
-from research.vla.backtest.synthetic import synthetic_history
-from research.vla.features.engineer import (
+from research.vla import backtest
+from research.vla.features import synthetic_history
+from research.vla.features import (
     FeatureParams,
     History,
     build_features,
     gap_zscore,
     targets,
 )
-from research.vla.models.bayesian_lgb import (
+from research.vla.models import (
     BayesianLGBModel,
     Calibrator,
     ConstantModel,
@@ -130,7 +130,7 @@ class _Spy:
 def test_walk_forward_never_trains_on_a_draw_it_scores() -> None:
     _Spy.calls = []
     hit = np.zeros((300, 100), dtype=bool)
-    walk_forward.run(_Spy, np.zeros((300, 100, 1)), hit, 100, 299, refit_every=40)
+    backtest.run(_Spy, np.zeros((300, 100, 1)), hit, 100, 299, refit_every=40)
     assert len(_Spy.calls) == 5
     for last_label, first_scored in _Spy.calls:
         assert last_label == first_scored - 1
@@ -143,8 +143,8 @@ def test_the_model_finds_a_planted_special_prize_signal() -> None:
     hit = history.hits("de")
     T = len(history)
     model = lambda: BayesianLGBModel("de", replace(ModelConfig(), threads=2))  # noqa: E731
-    res = walk_forward.run(model, feats.X, hit, T - 300, T - 1, refit_every=150)
-    report = evaluator.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
+    res = backtest.run(model, feats.X, hit, T - 300, T - 1, refit_every=150)
+    report = backtest.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
                                 np.full(res.probs.shape, 0.01))
     assert report["logloss_skill"] > 0.02
     assert report["vs_reference"]["z"] > 3
@@ -155,9 +155,9 @@ def test_on_pure_noise_the_model_does_not_invent_skill() -> None:
     feats = build_features(history, "de", FeatureParams())
     hit = history.hits("de")
     T = len(history)
-    res = walk_forward.run(lambda: BayesianLGBModel("de"), feats.X, hit, T - 200, T - 1, refit_every=100)
+    res = backtest.run(lambda: BayesianLGBModel("de"), feats.X, hit, T - 200, T - 1, refit_every=100)
     assert np.allclose(res.probs.sum(axis=1), 1.0)
-    report = evaluator.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
+    report = backtest.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
                                 np.full(res.probs.shape, 0.01))
     # Không "phát hiện" kỹ năng giả, và dừng sớm + hiệu chỉnh giữ thiệt hại nhỏ.
     assert report["vs_reference"]["z"] < 2
@@ -170,44 +170,44 @@ def test_scoring_rules_match_hand_computation() -> None:
     hits = np.zeros((1, 100))
     hits[0, 3] = 1
     q = p / p.sum()
-    assert evaluator.daily_logloss("de", p, hits)[0] == pytest.approx(-np.log(q[0, 3]))
-    assert evaluator.daily_brier("de", p, hits)[0] == pytest.approx(((q - hits) ** 2).sum())
+    assert backtest.daily_logloss("de", p, hits)[0] == pytest.approx(-np.log(q[0, 3]))
+    assert backtest.daily_brier("de", p, hits)[0] == pytest.approx(((q - hits) ** 2).sum())
     pl = np.full((1, 100), 0.25)
-    assert evaluator.daily_logloss("loto", pl, hits)[0] == pytest.approx(
+    assert backtest.daily_logloss("loto", pl, hits)[0] == pytest.approx(
         -(np.log(0.25) + 99 * np.log(0.75)) / 100
     )
 
 
 def test_top_k_breaks_ties_by_the_smaller_number() -> None:
     p = np.array([[0.1, 0.3, 0.3, 0.2]])
-    assert evaluator.top_k(p, 3).tolist() == [[1, 2, 3]]
+    assert backtest.top_k(p, 3).tolist() == [[1, 2, 3]]
 
 
 def test_roi_follows_the_payout_rules() -> None:
-    pay = evaluator.Payout()
+    pay = backtest.Payout()
     p = np.zeros((2, 100))
     p[:, 7] = 0.9
     p[:, 8] = 0.8
     counts = np.zeros((2, 100), dtype=int)
     counts[0, 7] = 2  # hai nháy
     special = np.array([8, 1])
-    lo = evaluator.roi_top_k("loto", p, counts, special, 2, pay)
+    lo = backtest.roi_top_k("loto", p, counts, special, 2, pay)
     assert lo["stake"] == 2 * 2 * 23 and lo["return"] == 2 * 80
-    de = evaluator.roi_top_k("de", p, counts, special, 2, pay)
+    de = backtest.roi_top_k("de", p, counts, special, 2, pay)
     assert de["stake"] == 4 and de["return"] == 70
 
 
 def test_a_calibrated_base_rate_never_places_a_positive_ev_bet() -> None:
     """Ở đúng tỉ lệ nền, lô hoàn 0,94 và Đặc Biệt 0,70: không con nào đáng đánh."""
-    pay = evaluator.Payout()
+    pay = backtest.Payout()
     counts = np.zeros((5, 100), dtype=int)
     special = np.zeros(5, dtype=int)
-    lo = evaluator.roi_positive_ev("loto", np.full((5, 100), 0.2365), counts, special, pay)
-    de = evaluator.roi_positive_ev("de", np.full((5, 100), 0.01), counts, special, pay)
+    lo = backtest.roi_positive_ev("loto", np.full((5, 100), 0.2365), counts, special, pay)
+    de = backtest.roi_positive_ev("de", np.full((5, 100), 0.01), counts, special, pay)
     assert lo["bets"] == 0 and de["bets"] == 0
     hot = np.full((5, 100), 0.2365)
     hot[:, 4] = 0.30  # vượt ngưỡng 80·E[nháy] > 23
-    assert evaluator.roi_positive_ev("loto", hot, counts, special, pay)["bets"] == 5
+    assert backtest.roi_positive_ev("loto", hot, counts, special, pay)["bets"] == 5
 
 
 def test_constant_model_is_the_skill_zero_reference() -> None:
@@ -217,7 +217,7 @@ def test_constant_model_is_the_skill_zero_reference() -> None:
     hit[5:, :40] = True
     rows = np.arange(2, 9)
     model = ConstantModel("loto").fit(None, hit, np.arange(2))
-    assert np.allclose(model.predict(None, hit, rows), evaluator.cumulative_reference("loto", hit, rows + 1))
+    assert np.allclose(model.predict(None, hit, rows), backtest.cumulative_reference("loto", hit, rows + 1))
 
 
 def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> None:
@@ -243,7 +243,7 @@ def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> Non
 
 def test_pmi_treats_missing_evidence_as_no_association() -> None:
     """Cặp chưa từng gặp (và con chưa từng về) phải ra PMI ≈ 0, không phải log N."""
-    from research.vla.features.engineer import _pmi
+    from research.vla.features import _pmi
 
     left = np.array([0.0, 500.0, 500.0])
     right = np.array([0.0, 500.0, 500.0])
@@ -257,7 +257,7 @@ def test_pmi_treats_missing_evidence_as_no_association() -> None:
 
 def test_target_weekday_follows_the_next_recorded_draw_across_a_break() -> None:
     """Qua quãng nghỉ, thứ của kỳ đích là thứ của kỳ quay kế tiếp thật."""
-    from research.vla.features.engineer import weekday_features
+    from research.vla.features import weekday_features
 
     dates = ("2026-02-15", "2026-02-21", "2026-02-22")  # CN → (nghỉ Tết) → T7 → CN
     sin, cos = weekday_features(dates)
@@ -271,10 +271,10 @@ def test_the_constant_reference_is_updated_through_each_target_draw() -> None:
     hit = np.zeros((6, 100), dtype=bool)
     hit[:3, :10] = True  # kỳ 0..2: 10% con về
     hit[3:, :30] = True  # kỳ 3..5: 30% con về
-    ref = evaluator.cumulative_reference("loto", hit, np.array([3, 5]))
+    ref = backtest.cumulative_reference("loto", hit, np.array([3, 5]))
     assert ref[0] == pytest.approx(np.full(100, 0.10))
     assert ref[1] == pytest.approx(np.full(100, (0.1 * 3 + 0.3 * 2) / 5))
-    assert np.allclose(evaluator.cumulative_reference("de", hit, np.array([4])), 0.01)
+    assert np.allclose(backtest.cumulative_reference("de", hit, np.array([4])), 0.01)
 
 
 def _planted_rates(history: History) -> tuple[float, float]:
@@ -289,7 +289,7 @@ def _planted_rates(history: History) -> tuple[float, float]:
 
 
 def test_each_power_check_history_plants_only_its_own_signal() -> None:
-    from research.vla.backtest.synthetic import power_history
+    from research.vla.features import power_history
 
     loto_73, loto_plus = _planted_rates(power_history("loto", 3000, seed=21))
     de_73, de_plus = _planted_rates(power_history("de", 3000, seed=21))
@@ -336,16 +336,16 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
 
     monkeypatch.setattr(bench, "power_history", fake_history)
     monkeypatch.setattr(bench, "build_features", fake_features)
-    monkeypatch.setattr(bench.walk_forward, "run", lambda *a, **k: SimpleNamespace(probs=None))
-    monkeypatch.setattr(bench.evaluator, "cumulative_reference", lambda *a, **k: None)
+    monkeypatch.setattr(bench.backtest, "run", lambda *a, **k: SimpleNamespace(probs=None))
+    monkeypatch.setattr(bench.backtest, "cumulative_reference", lambda *a, **k: None)
     monkeypatch.setattr(
-        bench.evaluator, "evaluate", lambda *a, **k: {"logloss_skill": 0.0, "vs_reference": {"z": 0.0}, "top_k": {}}
+        bench.backtest, "evaluate", lambda *a, **k: {"logloss_skill": 0.0, "vs_reference": {"z": 0.0}, "top_k": {}}
     )
     bench.power_check(50)
     assert sorted(made) == ["de", "loto"]
     assert used == [("loto", "loto"), ("de", "de")]
     # Độ nhạy công bố đo trên lịch sử CHƯA dùng để chọn siêu tham số.
-    from research.vla.backtest.synthetic import TUNING_SEED
+    from research.vla.features import TUNING_SEED
 
     assert TUNING_SEED not in seeds
 

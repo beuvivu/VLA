@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 from sklearn.exceptions import ConvergenceWarning
@@ -15,7 +16,8 @@ from ml.ml_train import model_trust
 from forecast.online_learning import _posterior, _prob, proper_losses
 from core.xsmb_domain import baseline_rate
 
-from .knowledge import KnowledgeBaseManager
+if TYPE_CHECKING:   # chỉ để chú thích kiểu: engine nhập module này, nhập ngược lúc chạy là vòng
+    from .engine import KnowledgeBaseManager
 
 LAYERS = ("statistical", "probabilistic", "pattern")
 LABELS = {"statistical": "Tần suất · n-gram · nhịp",

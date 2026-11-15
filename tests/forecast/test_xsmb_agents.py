@@ -355,7 +355,7 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
 
 
 def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observations():
-    from forecast.xsmb_agents.benchmark import walk_forward
+    from forecast.xsmb_agents.engine import walk_forward
     frame = history(40)
     original = frame.copy(deep=True)
     result = walk_forward(frame, last=4)

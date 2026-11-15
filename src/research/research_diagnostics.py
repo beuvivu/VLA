@@ -18,12 +18,7 @@ import pandas as pd
 from scipy import stats
 
 from ingest.lottery import Lottery
-from stats.statistical_corrections import benjamini_hochberg
-
-
-def bh_fdr(values: list[float] | np.ndarray) -> np.ndarray:
-    """Wrapper tương thích cho helper BH dùng chung."""
-    return benjamini_hochberg(values)
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 
 def _runs_test(values: np.ndarray) -> tuple[float, float]:

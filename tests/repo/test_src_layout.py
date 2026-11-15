@@ -44,8 +44,9 @@ FILE_RELATIVE_ALLOWED = {"core/paths.py", "web/templates/__init__.py"}
 #: mục tĩnh ``assets``) -> ``web``.
 RETIRED_PACKAGES = {"crawler", "utils", "bridges", "features", "modeling", "ml_engine", "vla", "xsmb_agents",
                     "templates"}
-#: Gói cũ giữ nguyên làm GÓI CON (tên module bên trong chung chung: ``base``, ``spec``, ``engine``).
-NESTED_PACKAGES = ("soi_cau/bridges", "soi_cau/features", "forecast/modeling", "forecast/xsmb_agents",
+#: Gói cũ giữ nguyên làm GÓI CON (tên module bên trong chung chung: ``engine``, ``risk``…). ``features``
+#: (15-11-2026) đã thành một module ``soi_cau/features.py``: không còn tên module chung chung nào bên trong.
+NESTED_PACKAGES = ("soi_cau/bridges", "forecast/modeling", "forecast/xsmb_agents",
                    "research/ml_engine", "research/vla", "web/templates")
 #: Phép ghép đường dẫn lên ``src/``: chỉ ``core/paths.py`` được làm, nơi khác đi qua
 #: ``TEMPLATES`` / ``ASSETS`` / ``SRC`` của nó mà không tự nối thêm tầng.

@@ -51,7 +51,7 @@ from ensemble.ensemble_utils import (  # noqa: E402
 from ingest.lottery import Lottery  # noqa: E402
 from core.path_models import PathParams, build_daily_targets  # noqa: E402
 from soi_cau.path_prob import fit_paths, predict_from_fitted_paths_full, prepare_path_history  # noqa: E402
-from research.vla.backtest import evaluator  # noqa: E402
+from research.vla import backtest  # noqa: E402
 from core.xsmb_domain import baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "component_trust.json"
@@ -120,9 +120,9 @@ def _path_day(anchor) -> dict[tuple[str, str], np.ndarray]:
 
 def _paired(new: np.ndarray, old: np.ndarray) -> dict:
     half = len(new) // 2
-    return {**evaluator.paired(new, old),
-            "halves_z": [evaluator.paired(new[:half], old[:half])["z"],
-                         evaluator.paired(new[half:], old[half:])["z"]]}
+    return {**backtest.paired(new, old),
+            "halves_z": [backtest.paired(new[:half], old[:half])["z"],
+                         backtest.paired(new[half:], old[half:])["z"]]}
 
 
 def run(last: int, refit_every: int, workers: int) -> dict:
@@ -152,7 +152,7 @@ def run(last: int, refit_every: int, workers: int) -> dict:
         keep = [k for k, a in enumerate(anchors) if str(a) in cau]
         tgt = target[keep]
         hits = (hit_loto if mode == "loto" else hit_de)[tgt]
-        ref = evaluator.daily_logloss(mode, evaluator.cumulative_reference(
+        ref = backtest.daily_logloss(mode, backtest.cumulative_reference(
             mode, hit_loto if mode == "loto" else hit_de, tgt), hits)
         base = baseline_rate(mode)
         c = [cau[str(anchors[k])] for k in keep]
@@ -172,7 +172,7 @@ def run(last: int, refit_every: int, workers: int) -> dict:
                else clip01(mix_old, eps=1e-6))
         new = np.vstack([finalize_blend(r, mode) for r in mix_new])
 
-        ll = {name: evaluator.daily_logloss(mode, p, hits) for name, p in {
+        ll = {name: backtest.daily_logloss(mode, p, hits) for name, p in {
             "cau_raw": cau_raw, "cau_trusted": cau_new, "path_active": active, "path_stable": stable,
             "path_active_anchored": np.vstack([finalize_blend(r, mode) for r in active]),
             "path_stable_anchored": np.vstack([finalize_blend(r, mode) for r in stable]),
