@@ -250,3 +250,58 @@ def test_watchdog_and_post_finalization_workflows_are_wired():
     live = Path(".github/workflows/live-results.yml").read_text(encoding="utf-8")
     assert "/tmp/live.json" not in live
     assert "mktemp" in live
+
+
+def test_a_learner_that_stops_following_new_draws_turns_the_audit_red(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tự điều chỉnh chỉ có nghĩa khi mọi bộ tự học học tới kỳ mới nhất (15-11-2026).
+
+    Bộ học thoát mã 0 mà bỏ qua kỳ mới (sổ trạng thái không ghi, dữ liệu đầu vào cũ) thì lượt `--strict`
+    vẫn xanh; phép canh này là chỗ duy nhất thấy nó.
+    """
+    from datetime import date
+
+    from evaluation import production_audit
+
+    latest = date(2026, 11, 14)
+    fresh = {
+        "data/forecast/online/loto.json": {"history": {"last_date": "2026-11-14"}},
+        "data/forecast/online/de.json": {"history": {"last_date": "2026-11-14"}},
+        "data/forecast/online/agents_loto.json": {"history": {"last_date": "2026-11-14"}},
+        "data/forecast/online/agents_de.json": {"history": {"last_date": "2026-11-14"}},
+        "data/forecast/agents/report.json": {"anchor_date": "2026-11-14"},
+        "data/forecast/knowledge/kb.json": {"source_date": "2026-11-14"},
+        "data/ensemble/meta_report_loto.json": {"status": "insufficient_history", "trained_through_target_date": None},
+        "data/ensemble/meta_report_de.json": {"status": "trained", "trained_through_target_date": "2026-11-14"},
+    }
+    files = dict(fresh)
+    monkeypatch.setattr(production_audit, "_json", lambda path: files[path])
+    assert production_audit.stale_learners(latest) == []   # xếp chồng chưa đủ lịch sử thì được đứng yên
+    for path, stale in (("data/forecast/online/de.json", {"history": {"last_date": "2026-11-13"}}),
+                        ("data/forecast/knowledge/kb.json", {"source_date": "2026-11-13"}),
+                        ("data/forecast/agents/report.json", {}),
+                        ("data/ensemble/meta_report_de.json", {"status": "trained", "trained_through_target_date": "2026-11-13"})):
+        files = {**fresh, path: stale}
+        found = production_audit.stale_learners(latest)
+        assert len(found) == 1 and found[0].startswith("learner_stale:"), (path, found)
+    files = {k: v for k, v in fresh.items() if k != "data/forecast/online/loto.json"}
+
+    def missing(path: str) -> dict:
+        if path not in files:
+            raise FileNotFoundError(path)
+        return files[path]
+
+    monkeypatch.setattr(production_audit, "_json", missing)
+    assert production_audit.stale_learners(latest) == ["learner_unreadable:online_loto=FileNotFoundError"]
+    assert {path for _, path, _ in production_audit.ADAPTIVE_LEARNERS} <= set(production_audit.REQUIRED_PATHS)
+
+
+def test_the_full_audit_reports_stale_learners_and_the_consistency_audit_does_not(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Kiểm toán đầy đủ sau khi chốt phải đỏ; `--consistency-only` (release_check trên mọi commit của PR) thì không:
+    giữa commit kết quả chuẩn và commit phân tích, bộ học ở kỳ trước là hợp lệ, và release_check không dựng lại bộ học."""
+    from evaluation import production_audit
+
+    monkeypatch.setattr(production_audit, "stale_learners", lambda latest: [f"learner_stale:kiem_thu expected={latest}"])
+    full = audit(check_freshness=True, check_docs=False)["critical"]
+    assert any(item.startswith("learner_stale:kiem_thu") for item in full), full
+    consistency = audit(check_freshness=False, check_docs=False)["critical"]
+    assert not any(item.startswith("learner_stale:") for item in consistency), consistency

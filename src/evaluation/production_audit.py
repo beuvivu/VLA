@@ -40,6 +40,14 @@ REQUIRED_PATHS = [
     "models/cau_keo_de.joblib",
     "models/meta_loto.joblib",
     "models/meta_de.joblib",
+    "data/forecast/online/loto.json",
+    "data/forecast/online/de.json",
+    "data/forecast/online/agents_loto.json",
+    "data/forecast/online/agents_de.json",
+    "data/forecast/knowledge/kb.json",
+    "data/forecast/agents/report.json",
+    "data/ensemble/meta_report_loto.json",
+    "data/ensemble/meta_report_de.json",
     "docs/index.html",
     "docs/live.html",
     "docs/statistics.html",
@@ -104,6 +112,53 @@ def _single_csv_value(path: str, column: str) -> str | None:
             if value:
                 values.add(value[:10] if "date" in column else value)
     return next(iter(values)) if len(values) == 1 else None
+
+
+def _field(obj: dict, *keys: str) -> str:
+    for key in keys:
+        obj = obj.get(key) if isinstance(obj, dict) else None
+    return str(obj or "")[:10]
+
+
+#: Bộ TỰ HỌC của chuỗi dự báo và ngày dữ liệu cuối cùng mỗi bộ ghi lại: (tên, tệp, khoá lồng nhau).
+#: Mỗi bộ học lại trên MỌI kỳ quay mới (15-11-2026: trên 33 commit chốt từ 06-10, không bộ nào trễ
+#: một kỳ). Trọng số tổ hợp không có ở đây: nó CỐ Ý đứng yên khi sổ đủ năm thành phần chưa đủ ngày
+#: (đổi `COMPONENT_POLICY` thì sổ bắt đầu lại), và bước học hỏng thì lượt `--strict` đã đỏ.
+ADAPTIVE_LEARNERS = (
+    ("online_loto", "data/forecast/online/loto.json", ("history", "last_date")),
+    ("online_de", "data/forecast/online/de.json", ("history", "last_date")),
+    ("agents_online_loto", "data/forecast/online/agents_loto.json", ("history", "last_date")),
+    ("agents_online_de", "data/forecast/online/agents_de.json", ("history", "last_date")),
+    ("agents_report", "data/forecast/agents/report.json", ("anchor_date",)),
+    ("knowledge_base", "data/forecast/knowledge/kb.json", ("source_date",)),
+)
+
+
+def stale_learners(latest: date) -> list[str]:
+    """Bộ tự học nào chưa học tới kỳ ``latest``: thoát mã 0 mà bỏ qua kỳ mới là tự điều chỉnh đã dừng.
+
+    Hedge, sổ ba tác tử và kho tri thức phải ghi đúng ngày kỳ mới nhất. Mô hình xếp chồng chỉ bị đòi
+    khi nó đang ở trạng thái đã học (`status = trained`); lúc lịch sử chưa đủ, nó ghi lý do và đứng yên.
+    """
+    expected = latest.isoformat()
+    found: list[str] = []
+    for name, path, keys in ADAPTIVE_LEARNERS:
+        try:
+            seen = _field(_json(path), *keys)
+        except (OSError, ValueError) as exc:
+            found.append(f"learner_unreadable:{name}={type(exc).__name__}")
+            continue
+        if seen != expected:
+            found.append(f"learner_stale:{name}={seen or 'none'} expected={expected}")
+    for mode in ("loto", "de"):
+        try:
+            meta = _json(f"data/ensemble/meta_report_{mode}.json")
+        except (OSError, ValueError) as exc:
+            found.append(f"learner_unreadable:meta_{mode}={type(exc).__name__}")
+            continue
+        if meta.get("status") == "trained" and _field(meta, "trained_through_target_date") != expected:
+            found.append(f"learner_stale:meta_{mode}={meta.get('trained_through_target_date')} expected={expected}")
+    return found
 
 
 def audit(
@@ -228,6 +283,12 @@ def audit(
                 critical.append(
                     f"ai_overlay_{mode}_target={overlay_target} expected={target}"
                 )
+
+        # Chỉ ở kiểm toán đầy đủ sau khi chốt (post-finalization, watchdog). `--consistency-only` chạy trên mọi
+        # commit của PR (release_check.sh), kể cả lúc kết quả chuẩn đã commit mà phân tích chưa: bộ học còn ở
+        # kỳ trước là trạng thái hợp lệ ở khoảng ấy, và release_check không dựng lại bộ học.
+        if check_freshness:
+            critical.extend(stale_learners(latest))
 
         try:
             cond = _json("data/stats/advanced/conditional_matrices_diagnostics.json")

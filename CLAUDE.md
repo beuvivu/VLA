@@ -372,6 +372,12 @@ VẬY (z=3, cửa sổ 60 kỳ). Kỳ quay đã kiểm là ngẫu nhiên: tệ h
 tốt hơn thì phải kiểm lại trước khi tin. Đừng "sửa" báo động ấy bằng cách nới
 ngưỡng.
 
+Bộ tự học (Hedge hai chế độ, sổ ba tác tử, kho tri thức, xếp chồng đã học) phải học tới kỳ mới nhất:
+`production_audit.stale_learners` làm đỏ kiểm toán ĐẦY ĐỦ (post-finalization, watchdog; không phải `--consistency-only`
+của release_check, chạy cả lúc kết quả chuẩn đã commit mà phân tích chưa) khi một bộ thoát mã 0 mà bỏ qua kỳ mới. Trọng số tổ hợp không bị
+đòi vì nó cố ý đứng yên khi sổ đủ năm thành phần chưa đủ ngày. Trạng thái và ngày tự bật của từng bước:
+`documentation/qa/2026-11-15-tu-hieu-chinh.md`.
+
 Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atomic_io.py` (tệp tạm + `os.replace`).
 Đừng quay lại `open("w")`/`to_csv(path)`: chết giữa chừng để lại sổ cụt và lần sau mất dòng cũ
 (`tests/core/test_atomic_ledgers.py`). Sổ `data/evaluation/history/pred_<mode>.csv` ghi CHỈ qua
