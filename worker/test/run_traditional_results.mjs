@@ -1,9 +1,13 @@
 import worker from "../src/index.js";
 import {
   buildTraditionalResults,
+  encodePrimaryLedger,
+  latestCanonicalDrawBefore,
   parseTraditionalQuery,
   parseXsktLedger,
+  primaryFreshTtlSeconds,
   refreshFallbackOverlay,
+  rememberedRangeCount,
 } from "../src/traditional_results.js";
 
 // So đúng TÊN HOST, không so chuỗi con: "raw.githubusercontent.com" có thể nằm ở bất kỳ đâu
@@ -11,9 +15,10 @@ import {
 const hostOf = (url) => new URL(String(url)).hostname;
 
 class FakeKV {
-  constructor() { this.store = new Map(); }
-  async get(key) { return this.store.get(key) ?? null; }
+  constructor() { this.store = new Map(); this.puts = []; this.gets = 0; }
+  async get(key) { this.gets += 1; return this.store.get(key) ?? null; }
   async put(key, value, options = {}) {
+    this.puts.push(key);
     // Như Cloudflare KV: TTL dưới 60 giây bị từ chối.
     if (options.expirationTtl !== undefined && options.expirationTtl < 60) {
       throw new Error(`Invalid expiration_ttl of ${options.expirationTtl}. Expiration TTL must be at least 60.`);
@@ -77,6 +82,227 @@ const query = {
 };
 
 const scenarios = {
+  // Khoảng ngày do KHÁCH chọn: không được thành khoá KV. Trước 15-11-2026 mỗi cặp from:to là một lượt
+  // ghi, nên ~900 yêu cầu làm cạn hạn mức ghi KV (gói Free 1 000/ngày, dùng chung với cron trang Live).
+  async distinct_ranges_write_kv_bounded() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    const statuses = new Set();
+    for (let i = 0; i < 60; i++) {
+      const from = new Date(Date.UTC(2026, 6, 1) + i * 86_400_000).toISOString().slice(0, 10);
+      const reply = await worker.fetch(new Request(
+        `https://worker/api/v1/traditional-results?from=${from}&to=2026-09-13`), env, ctxOf());
+      statuses.add(reply.status);
+    }
+    return { statuses: [...statuses], puts: kv.puts, keys: [...kv.store.keys()], counter };
+  },
+
+  // Lỗi bất ngờ (KV hỏng…) không được đưa chi tiết nội bộ ra khách; thông báo tự soạn thì vẫn trả.
+  async internal_errors_stay_internal() {
+    const secret = "kv-internal-host.example:8443 token=abc";
+    const broken = { async get() { throw new TypeError(secret); }, async put() { throw new TypeError(secret); } };
+    const failed = await worker.fetch(new Request(
+      "https://worker/api/v1/traditional-results?from=2026-09-12&to=2026-09-12"), { LIVE: broken }, ctxOf());
+    const invalid = await worker.fetch(new Request(
+      "https://worker/api/v1/traditional-results?days=7"), { LIVE: new FakeKV() }, ctxOf());
+    return {
+      failed: { status: failed.status, body: await failed.text() },
+      invalid: { status: invalid.status, body: await invalid.json() },
+      secret,
+    };
+  },
+
+  // Isolate lạnh, KV đã có bản tươi của ~4 000 kỳ: trả kết quả và "kỳ chuẩn trước" của trang Live mà KHÔNG
+  // `JSON.parse` trọn lịch sử (~20 ms, quá trần CPU 10 ms của gói Free).
+  async cold_isolate_skips_full_parse() {
+    const rows = [];
+    for (let i = 0; i < 4000; i++) {
+      const day = new Date(Date.UTC(2015, 0, 1) + i * 86_400_000).toISOString().slice(0, 10);
+      rows.push({ ...primaryRow, date: `${day}T00:00:00.000`, special: 10000 + i });
+    }
+    const warm = new FakeKV();
+    const fetchImpl = async () => new Response(JSON.stringify(rows), { status: 200 });
+    const last = rows.at(-1).date.slice(0, 10);
+    const q = { ...query, from: last, to: last };
+    await buildTraditionalResults(q, { LIVE: warm }, { fetchImpl, nowUtcMs: NOW });
+    const cold = new FakeKV();
+    for (const [key, value] of warm.store) cold.store.set(key, value);
+    const parse = JSON.parse;
+    let bigParses = 0;
+    JSON.parse = (text, ...rest) => {
+      if (typeof text === "string" && text.length > 100_000) bigParses += 1;
+      return parse(text, ...rest);
+    };
+    let payload;
+    let previous;
+    try {
+      payload = await buildTraditionalResults(q, { LIVE: cold }, { fetchImpl, nowUtcMs: NOW });
+      // Một isolate lạnh khác: trang Live hỏi kỳ chuẩn trước ngày cuối.
+      const live = new FakeKV();
+      for (const [key, value] of warm.store) live.store.set(key, value);
+      previous = await latestCanonicalDrawBefore({ LIVE: live }, last, { fetchImpl, nowUtcMs: NOW });
+    } finally {
+      JSON.parse = parse;
+    }
+    return {
+      big_parses: bigParses,
+      stored_bytes: cold.store.get("traditional:primary:fresh:v2").length,
+      cache: payload.meta.primary_cache,
+      special: payload.data[0]?.prizes[0].values[0],
+      previous: { date: previous?.draw_date, special: previous?.prizes.special[0] },
+    };
+  },
+
+  // Tìm theo ngày đúng qua khoảng nghỉ quay (Tết) và ở hai đầu lịch sử.
+  async ledger_lookup_across_gaps() {
+    const rows = [];
+    const gap = new Set(["2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20"]);
+    for (let i = 0; ; i++) {
+      const day = new Date(Date.UTC(2025, 0, 1) + i * 86_400_000).toISOString().slice(0, 10);
+      if (day > "2026-09-13") break;
+      if (!gap.has(day)) rows.push({ ...primaryRow, date: `${day}T00:00:00.000`, special: 20000 + i });
+    }
+    const env = { LIVE: new FakeKV() };
+    const fetchImpl = async () => new Response(JSON.stringify(rows), { status: 200 });
+    const opts = { fetchImpl, nowUtcMs: NOW };
+    const around = await buildTraditionalResults({ ...query, from: "2026-02-14", to: "2026-02-22" }, env, opts);
+    const before = async (day) => (await latestCanonicalDrawBefore(env, day, opts))?.draw_date ?? null;
+    const expected = Object.fromEntries(rows.map((row) => [row.date.slice(0, 10), String(row.special)]));
+    return {
+      dates: around.data.map((draw) => draw.draw_date),
+      specials_match: around.data.every((draw) => draw.prizes[0].values[0] === expected[draw.draw_date]),
+      after_gap: await before("2026-02-21"),
+      inside_gap: await before("2026-02-18"),
+      first: await before("2025-01-01"),
+      second: await before("2025-01-02"),
+      future: await before("2030-01-01"),
+    };
+  },
+
+  // Bản tươi sai hình dạng (hai kỳ đổi chỗ, cụt một ký tự, khuôn JSON cũ) không được dùng: tải lại lịch sử.
+  async malformed_fresh_is_refetched() {
+    const good = encodePrimaryLedger({
+      "2026-09-11": parseXsktLedger(xsktHtml)["2026-09-13"],
+      "2026-09-12": parseXsktLedger(xsktHtml)["2026-09-13"],
+    });
+    const half = good.length / 2;
+    const variants = {
+      swapped: good.slice(half) + good.slice(0, half),
+      truncated: good.slice(0, -1),
+      legacy_json: JSON.stringify({ "2026-09-12": parseXsktLedger(xsktHtml)["2026-09-13"] }),
+    };
+    const out = {};
+    for (const [name, text] of Object.entries(variants)) {
+      const kv = new FakeKV();
+      await kv.put("traditional:primary:fresh:v2", text);
+      const counter = { primary: 0, xskt: 0 };
+      const payload = await buildTraditionalResults({ ...query, to: "2026-09-12" }, { LIVE: kv },
+        { fetchImpl: makeFetch(counter), nowUtcMs: NOW });
+      out[name] = { cache: payload.meta.primary_cache, fetches: counter.primary,
+        special: payload.data.at(-1)?.prizes[0].values[0] };
+    }
+    const kv = new FakeKV();
+    await kv.put("traditional:primary:fresh:v2", good);
+    const counter = { primary: 0, xskt: 0 };
+    const payload = await buildTraditionalResults({ ...query, from: "2026-09-11", to: "2026-09-12" },
+      { LIVE: kv }, { fetchImpl: makeFetch(counter), nowUtcMs: NOW });
+    out.well_formed = { cache: payload.meta.primary_cache, fetches: counter.primary,
+      dates: payload.data.map((draw) => draw.draw_date) };
+    return out;
+  },
+
+  // `days=30` và khoảng tự chọn trùng ngày: mỗi yêu cầu nhận đúng `query` của nó, theo cả hai thứ tự.
+  async preset_and_range_keep_their_query() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const preset = parseTraditionalQuery(new URL("https://worker/a?days=30"));
+    const urls = {
+      preset: "https://worker/api/v1/traditional-results?days=30",
+      range: `https://worker/api/v1/traditional-results?from=${preset.from}&to=${preset.to}`,
+    };
+    const out = {};
+    for (const order of [["range", "preset"], ["preset", "range"]]) {
+      const env = { LIVE: new FakeKV() };
+      const seen = {};
+      for (const name of order) {
+        const body = await (await worker.fetch(new Request(urls[name]), env, ctxOf())).json();
+        seen[name] = { preset_days: body.query.preset_days, from: body.query.from, to: body.query.to };
+      }
+      out[order.join("_then_")] = seen;
+    }
+    return { ...out, preset_range: [preset.from, preset.to] };
+  },
+
+  // Gọi lại cùng khoảng ngày: lấy từ đệm trong bộ nhớ isolate, không đọc KV, cùng nội dung; đệm có trần.
+  async repeat_range_from_memory() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    const url = "https://worker/api/v1/traditional-results?from=2026-07-01&to=2026-09-13";
+    const first = await (await worker.fetch(new Request(url), env, ctxOf())).text();
+    const getsBefore = kv.gets;
+    const second = await (await worker.fetch(new Request(url), env, ctxOf())).text();
+    const getsOnRepeat = kv.gets - getsBefore;
+    for (let i = 0; i < 80; i++) {
+      const from = new Date(Date.UTC(2026, 5, 1) + i * 86_400_000).toISOString().slice(0, 10);
+      await worker.fetch(new Request(`https://worker/api/v1/traditional-results?from=${from}&to=2026-09-13`), env, ctxOf());
+    }
+    return { same_body: first === second, gets_on_repeat: getsOnRepeat, remembered: rememberedRangeCount(env) };
+  },
+
+  // Bản tươi trong KV không đổi qua lần nạp lại: dùng lại đúng đối tượng hàng và các kỳ đã dựng sẵn.
+  async unchanged_fresh_reuses_built_draws() {
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    const fetchImpl = async () => new Response(JSON.stringify([primaryRow]), { status: 200 });
+    const q = { ...query, to: "2026-09-12" };
+    const first = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: NOW });
+    const again = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: NOW + 2 * MINUTE });
+    return { cache: again.meta.primary_cache, same_draw_object: first.data[0] === again.data[0] };
+  },
+
+  // Lịch sử chuẩn không đổi thì bản tốt cuối cùng không bị ghi lại; đổi thì ghi.
+  async unchanged_history_keeps_last_good() {
+    const kv = new FakeKV();
+    const env = { LIVE: kv };
+    let primary = [primaryRow];
+    const counter = { primary: 0, xskt: 0 };
+    const fetchImpl = async (url) => {
+      counter.primary += 1;
+      return new Response(JSON.stringify(primary), { status: 200 });
+    };
+    const q = { ...query, to: "2026-09-12" };
+    const loads = [];
+    let now = NOW;
+    const load = async () => {
+      const payload = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: now });
+      loads.push(payload.meta.primary_cache);
+    };
+    await load();                                   // tải lần đầu: ghi bản tươi và bản tốt cuối cùng
+    await load();                                   // trong một phút: lấy từ bộ nhớ isolate
+    now += 2 * MINUTE; kv.store.delete("traditional:primary:fresh:v2");
+    await load();                                   // bản tươi hết hạn, nội dung y hệt
+    now += 2 * MINUTE; kv.store.delete("traditional:primary:fresh:v2");
+    primary = [primaryRow, { ...primaryRow, date: "2026-09-13T00:00:00.000" }];
+    await load();                                   // có kỳ mới
+    const lastGood = kv.puts.filter((key) => key === "traditional:primary:last-good:v2").length;
+    const fresh = kv.puts.filter((key) => key === "traditional:primary:fresh:v2").length;
+    return { loads, last_good_writes: lastGood, fresh_writes: fresh, fetches: counter.primary };
+  },
+
+  // Bản tươi sống 5 phút từ 18:00 giờ VN (kỳ mới vào kho), ngoài khung sống tới 18:00, trong [60, 3600] giây.
+  async fresh_ttl_policy() {
+    const at = (hour, minute, second = 0) =>
+      primaryFreshTtlSeconds(Date.UTC(2026, 10, 15, hour - 7, minute, second));
+    return {
+      "03:00": at(3, 0), "17:30": at(17, 30), "17:59:30": at(17, 59, 30),
+      "18:00": at(18, 0), "18:40": at(18, 40), "23:59": at(23, 59),
+    };
+  },
+
   async primary_first() {
     const counter = { primary: 0, xskt: 0 };
     const payload = await buildTraditionalResults(
@@ -119,7 +345,7 @@ const scenarios = {
       sources: first.data.map((row) => row.source.kind),
       fallback_requested: first.meta.fallback_requested,
       fallback_network_fetch: first.meta.fallback_network_fetch,
-      second_cache: second.meta.response_cache,
+      second_cache: second.meta.primary_cache,
       xskt_special: first.data[0].prizes[0].values[0],
     };
   },
@@ -320,7 +546,7 @@ const scenarios = {
       const day = new Date(Date.UTC(2026, 8, 13) - i * 86_400_000).toISOString().slice(0, 10);
       if (day !== "2026-09-11") rows[day] = prizes;
     }
-    await kv.put("traditional:primary:fresh:v1", JSON.stringify(rows));
+    await kv.put("traditional:primary:fresh:v2", encodePrimaryLedger(rows));
     const broken = pageWith("11-09-2026").replace("21 88 40 27", "21 88 40");
     let page = pageWith("10-09-2026") + broken + pageWith("13-09-2026");
     let calls = 0;

@@ -175,8 +175,7 @@ GET /api/v1/traditional-results?region=north&province=hanoi&from=2026-08-01&to=2
     "fallback_requested": true,
     "fallback_network_fetch": false,
     "unresolved_dates": [],
-    "primary_cache": "hit",
-    "response_cache": "miss",
+    "primary_cache": "memory",
     "warning": null
   },
   "data": [
@@ -215,8 +214,10 @@ dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết 
 
 ## Thứ tự dữ liệu và cache
 
-1. Worker đọc `data/xsmb.json` từ nhánh `main` và chuẩn hóa vào cache 5 phút.
-2. Nếu nguồn GitHub tạm lỗi, Worker dùng bản `last-good` tối đa 36 giờ.
+1. Worker đọc `data/xsmb.json` từ nhánh `main`, chuẩn hóa, lưu bản "tươi" trong KV — 5 phút trong khung
+   18:00–24:00 giờ VN (kỳ mới vào kho), ngoài khung tới 18:00 (tối đa 1 giờ) — và giữ bản đã phân tích
+   trong bộ nhớ isolate 60 giây (`primary_cache`: `memory` / `hit` / `miss` / `stale`).
+2. Nếu nguồn GitHub tạm lỗi, Worker dùng bản `last-good`: không hết hạn, chỉ ghi lại khi nội dung đổi.
 3. Với từng ngày trong query, bản ghi VLA luôn thắng.
 4. Ngày còn thiếu lấy từ **lớp bù trong KV**. Yêu cầu của khách KHÔNG BAO GIỜ
    gọi nguồn dự phòng; ngày chưa có trong lớp bù nằm trong `unresolved_dates`.
@@ -235,7 +236,26 @@ dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết 
    khoảng ngày kéo 20 lượt tải. Một khoá KV chỉ chặn được trong từng isolate (KV nhất quán
    sau, không có đọc-ghi nguyên tử). Dời việc gọi nguồn sang cron thì lưu lượng khách không
    còn đường nào chạm tới nguồn ngoài.
-6. Lớp bù lưu KV 30 ngày. Response đã gộp được cache 5 phút.
+6. Lớp bù lưu KV 30 ngày. Response đã gộp KHÔNG được đệm trong KV. Trước 15-11-2026 mỗi cặp `from:to` của khách
+   là một khoá KV: hạn mức ghi KV gói Free (1 000 lượt/ngày, dùng chung với cron trang Live) cạn sau ~900 yêu cầu
+   khác khoảng ngày, và lượt cron ghi kết quả đang quay hỏng theo. Nay lượng ghi KV của API không phụ thuộc yêu
+   cầu của khách (≤ ~90 lượt/ngày). Phần tốn CPU nằm trong bộ nhớ isolate, có trần, không tốn lượt ghi nào:
+   - lịch sử chuẩn lưu trong KV (khoá `traditional:primary:fresh:v2`, `…:last-good:v2`) dạng bản ghi ĐỘ RỘNG CỐ
+     ĐỊNH, tăng dần theo ngày: `YYYY-MM-DD` + 107 chữ số của 27 giải theo thứ tự `PRIZE_ORDER` + `\n`, 118 ký tự
+     mỗi kỳ (~0,5 MB cho 4 267 kỳ). Mở bản lưu chỉ kiểm hình dạng (độ dài, ngày, xuống dòng, tăng NGHIÊM NGẶT —
+     sai thì tải lại lịch sử); tìm một kỳ là tìm nhị phân, và chỉ kỳ được hỏi mới được giải mã. Trước đó bản lưu
+     là JSON ~1,25 MB và isolate lạnh phải phân tích trọn nó (~20 ms, quá trần CPU 10 ms của gói Free), kể cả
+     trang Live khi hỏi kỳ chuẩn trước (`latestCanonicalDrawBefore`). Khoá `…:v1` cũ không còn ai đọc; bản
+     last-good v1 không hết hạn nên nằm lại trong KV cho tới khi xoá tay (`wrangler kv key delete`);
+   - bản lưu đã mở giữ 60 giây; bản tươi trong KV không đổi thì giữ nguyên đối tượng cũ;
+   - mỗi kỳ được kiểm 27 giải và tính đầu–đuôi MỘT lần cho bản ấy (`canonicalDraws`);
+   - tối đa 64 khoảng ngày đã tuần tự hoá, sống 60 giây (`RESPONSE_MEMO_ENTRIES`); khoá gồm `preset_days`, vì
+     `days=30` và khoảng tự chọn trùng ngày trả cùng dữ liệu nhưng khác `query`.
+   Đo trên lịch sử thật: yêu cầu `days=30` ở isolate có bộ nhớ rỗng ~2 ms (trước: ~23 ms); khoảng tối đa 500 ngày
+   dựng ~0,4 ms + ~3,5 ms tuần tự hoá ở lần đầu, gọi lại gần 0 ms. Lượt làm mới bản tươi (tải và phân tích trọn
+   `data/xsmb.json` ~2,6 MB) vẫn tốn CPU như trước; nó chạy mỗi lần bản tươi hết hạn, không theo lưu lượng.
+   Biên Cloudflare vẫn đệm theo `Cache-Control: public, max-age=60, s-maxage=300`
+   (`tests/worker/test_traditional_results_api.py`).
 7. `XsktVnSource` của Python nằm cuối danh mục nguồn. Quy trình canonical hằng
    ngày có thể dùng nó để bù dữ liệu rồi vẫn đi qua validation/consensus trước
    khi ghi `data/xsmb.json` và `data/xsmb.csv`.

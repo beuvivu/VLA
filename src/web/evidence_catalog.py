@@ -36,6 +36,7 @@ from typing import NotRequired, TypedDict
 import pandas as pd
 
 from core.paths import REPO_ROOT
+from web.web_security import json_for_html_script
 
 ROOT = REPO_ROOT
 SCHEMA_VERSION = 1
@@ -924,8 +925,7 @@ def registry_json(page_name: str, data_dir: Path | None = None) -> str:
     ``<`` được thoát thành ``\\u003c`` để không chuỗi nào đóng được thẻ
     script sớm, và ``&`` thành ``\\u0026`` cho lượt chuẩn hoá HTML phía sau.
     """
-    text = json.dumps(registry(page_name, data_dir), ensure_ascii=False, separators=(",", ":"))
-    return text.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    return json_for_html_script(registry(page_name, data_dir))
 
 
 # --- Bằng chứng theo từng giá trị ----------------------------------------
@@ -1053,6 +1053,4 @@ def values_block(entries: list[tuple[str, dict]]) -> str:
     """Khối JSON ``[data-app-evidence-values]`` mà ``app-evidence.js`` gộp vào danh mục."""
     if not entries:
         return ""
-    text = json.dumps(dict(entries), ensure_ascii=False, separators=(",", ":"))
-    text = text.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-    return f'<script type="application/json" data-app-evidence-values>{text}</script>'
+    return f'<script type="application/json" data-app-evidence-values>{json_for_html_script(dict(entries))}</script>'

@@ -313,3 +313,32 @@ def test_api_max4d(tmp_path: Path) -> None:
         d = c.get("/products/max4d/draws", params={"limit": 2}).json()
         assert all(len(x) == 4 for x in d["draws"][0]["result"])
         assert c.get("/products/max4d/randomness").json()["draws"] == 722
+
+
+def test_duckdb_cli_fallback_escapes_quotes_in_paths(tmp_path, monkeypatch):
+    """Đường dẫn có dấu nháy đơn không được cắt câu SQL gửi cho DuckDB CLI (thoát như ``storage``)."""
+    import subprocess
+    import sys
+
+    from vietlott_engine.core.exceptions import SourceError
+    from vietlott_engine.crawler.sources import vqe130
+
+    folder = tmp_path / "it's here"
+    folder.mkdir()
+    parquet = folder / "draws.parquet"
+    parquet.write_bytes(b"PAR1")
+    monkeypatch.setitem(sys.modules, "duckdb", None)          # import duckdb → ImportError
+    monkeypatch.setitem(sys.modules, "pyarrow.parquet", None)
+    monkeypatch.setenv("VQE_DUCKDB_CLI", "/fake/duckdb")
+    seen = []
+
+    def fake_run(args, **kwargs):
+        seen.append(args)
+        return subprocess.CompletedProcess(args, 1, "", "no rows")
+
+    monkeypatch.setattr(vqe130.subprocess, "run", fake_run)
+    with pytest.raises(SourceError):
+        vqe130.read_parquet(parquet)
+    (sql,) = [args[2] for args in seen]
+    assert "read_parquet('" + parquet.as_posix().replace("'", "''") + "')" in sql
+    assert sql.count("'") % 2 == 0
