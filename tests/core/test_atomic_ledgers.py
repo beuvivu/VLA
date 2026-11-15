@@ -160,3 +160,49 @@ def test_prediction_history_survives_a_crash_mid_write(tmp_path: Path, monkeypat
         record_pred_history.write_history(frame, ledger)
     assert ledger.read_bytes() == before
     assert list(tmp_path.iterdir()) == [ledger]
+
+
+def test_merging_into_the_canonical_store_survives_a_crash_mid_write(tmp_path: Path,
+                                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    """``backfill_history --merge-store`` và ``--drop-repeats`` ghi đè chính ``data/xsmb.json``."""
+    from ingest import backfill_history
+
+    canonical, mine = tmp_path / "xsmb.json", tmp_path / "backfill.json"
+    canonical.write_text('[{"date": "2026-11-14", "special": "12345"}]', encoding="utf-8")
+    mine.write_text('[{"date": "2026-11-13", "special": "54321"}]', encoding="utf-8")
+    before = canonical.read_bytes()
+    original = Path.write_text
+
+    def crashing(self, data, *args, **kwargs):
+        original(self, data[: len(data) // 2], *args, **kwargs)
+        raise OSError("đĩa đầy")
+
+    def failing_replace(*_args):
+        raise OSError("đĩa đầy")
+
+    monkeypatch.setattr(Path, "write_text", crashing)
+    monkeypatch.setattr(atomic_io.os, "replace", failing_replace)
+    with pytest.raises(OSError):
+        backfill_history.merge_stores(mine, canonical, canonical)
+    assert canonical.read_bytes() == before
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["backfill.json", "xsmb.json"]
+
+
+def rewrites_without_atomic_write(source: str) -> list[str]:
+    """Biến đường dẫn được ĐỌC (``read_json_or_empty(x)``, ``json.loads(x.read_text…)``) rồi ghi lại bằng
+    ``x.write_text(``: ghi dở thì lần đọc sau ra sổ cụt hay ``{}``."""
+    import re
+    read = set(re.findall(r"read_json_or_empty\(\s*(\w+)", source)) | set(
+        re.findall(r"json\.loads\(\s*(\w+)\.read_text", source))
+    return sorted(read & set(re.findall(r"(\w+)\.write_text\(", source)))
+
+
+def test_no_module_rewrites_a_file_it_read_without_an_atomic_write() -> None:
+    """15-11-2026: manifest Cầu Kèo, bộ nhớ đệm phân vị null và hai lệnh ghi sổ chuẩn còn ghi thẳng."""
+    root = Path(__file__).resolve().parents[2] / "src"
+    found = {path.relative_to(root).as_posix(): names for path in root.rglob("*.py")
+             if (names := rewrites_without_atomic_write(path.read_text(encoding="utf-8")))}
+    assert found == {}
+    assert rewrites_without_atomic_write("m = read_json_or_empty(p)\np.write_text(x)") == ["p"]
+    assert rewrites_without_atomic_write("r = json.loads(c.read_text())\nc.write_text(y)") == ["c"]
+    assert rewrites_without_atomic_write("m = read_json_or_empty(p)\natomic_write_text(p, x)") == []

@@ -32,6 +32,7 @@ from typing import Literal
 import joblib
 import numpy as np
 import pandas as pd
+from core.atomic_io import atomic_write_text
 from core.safe_io import read_json_or_empty
 from sklearn.ensemble import HistGradientBoostingClassifier
 
@@ -725,10 +726,8 @@ def run_mode(
         "final_logloss_skill": float(gate["final_logloss_skill"]),
         "policy": gate["policy"],
     }
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    # Đọc rồi ghi lại cả tệp: ghi dở thì lần sau `read_json_or_empty` trả {} và mất phần của mô hình nền.
+    atomic_write_text(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     created.append(manifest_path)
 
     logger.info(

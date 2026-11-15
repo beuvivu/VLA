@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -139,6 +140,30 @@ def test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink() -> N
         for path in scanned
     }
     assert {ten: xs for ten, xs in ban.items() if xs} == {}
+
+
+LOCAL_CLOCK_GETTERS = re.compile(r"\.(?:getDay|getDate|getMonth|getFullYear|getHours|getMinutes)\(\)")
+
+
+def local_clock_reads_in(source: str) -> list[str]:
+    """Các lời gọi đọc lịch theo đồng hồ MÁY NGƯỜI XEM, bỏ qua chú thích ``//`` và ``/* … */``."""
+    code = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+    code = "\n".join(line.split("//", 1)[0] if "://" not in line else line for line in code.splitlines())
+    return LOCAL_CLOCK_GETTERS.findall(code)
+
+
+def test_no_browser_script_reads_the_calendar_from_the_viewer_clock() -> None:
+    """Lịch quay theo giờ Việt Nam. `getDay()`, `getMonth()`… đọc theo múi giờ máy người xem: bộ lọc «Thứ hai»
+    từng trả toàn kỳ Chủ nhật ở `America/Los_Angeles`, và bảng «Đặc Biệt theo năm» chọn sẵn tháng trước
+    vào tối 31 ở bờ Tây nước Mỹ (15-11-2026). Dùng `Date.UTC`/`getUTC*` hoặc `Intl` với `Asia/Ho_Chi_Minh`."""
+    scanned = sorted({*(ROOT / "src").rglob("*.js"), *(ROOT / "docs").rglob("*.js"),
+                      *(ROOT / "worker").rglob("*.js")} - set((ROOT / "worker").rglob("node_modules/**/*.js")))
+    assert {"stat_pages.js", "live-scorecard.js", "shared_results.js"} <= {path.name for path in scanned}
+    found = {path.relative_to(ROOT).as_posix(): calls for path in scanned
+             if (calls := local_clock_reads_in(path.read_text(encoding="utf-8")))}
+    assert found == {}
+    assert local_clock_reads_in("const m = new Date().getMonth();") == [".getMonth()"]
+    assert local_clock_reads_in("// new Date().getMonth()\n/* d.getDay() */ d.getUTCDay();") == []
 
 
 def test_the_live_page_declares_its_content_security_policy() -> None:

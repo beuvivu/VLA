@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import time
-from datetime import datetime, time as dtime, timedelta
+from datetime import date, datetime, time as dtime, timedelta
 from collections.abc import Iterable
 from zoneinfo import ZoneInfo
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def latest_complete_draw_date(
     *, now: datetime, cutoff: dtime = DEFAULT_DRAW_CUTOFF
-) -> datetime.date:
+) -> date:
     """Return the latest draw date that should have complete results.
 
     XSMB is typically announced in the evening. If running before the cutoff time

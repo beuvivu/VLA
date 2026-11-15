@@ -42,6 +42,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.atomic_io import atomic_write_text
 from core.xsmb_domain import LOTO_BASELINE_RATE
 
 #: Xác suất một con về ít nhất một lần trong 27 giải của một kỳ công bằng — hằng số chung của
@@ -296,8 +297,7 @@ def load_null(data_dir: Path, rows: int, *, sims: int = DEFAULT_SIMS, workers: i
             cached = None
     if force or needs_refresh(cached, rows, sims):
         cached = null_quantiles(simulate_null(rows, sims, workers=workers), rows)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(cached, ensure_ascii=False) + "\n", encoding="utf-8")
+        atomic_write_text(path, json.dumps(cached, ensure_ascii=False) + "\n")
     return cached
 
 
@@ -770,7 +770,7 @@ def run(data_dir: Path, *, sims: int = DEFAULT_SIMS, workers: int = 4, force: bo
     report = build_report(data_dir, null)
     path = data_dir / OUT / REPORT_FILE
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(report, ensure_ascii=False, indent=1) + "\n")
     return path
 
 
