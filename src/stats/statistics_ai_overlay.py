@@ -107,6 +107,18 @@ def _validated_probability_frame(
     return out, "ok"
 
 
+def _shown_path(path: Path, data_dir: Path) -> str:
+    """Đường dẫn ghi vào chẩn đoán, tính từ thư mục cha của `data/` («data/ai_ml/…»).
+
+    Tệp chẩn đoán được commit: ghi đường dẫn tuyệt đối thì nó mang thư mục làm việc của runner
+    (`/home/runner/work/…`) và đổi theo máy chạy dù nội dung không đổi.
+    """
+    try:
+        return (Path(data_dir.name) / Path(path).relative_to(data_dir)).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
 def _load_current_ml(
     data_dir: Path,
     *,
@@ -132,6 +144,7 @@ def _load_current_ml(
 
     attempts: list[dict[str, str]] = []
     for source, path, filename_target in candidates:
+        shown = _shown_path(path, data_dir)
         frame, reason = _validated_probability_frame(
             path,
             expected_target=expected_target,
@@ -140,7 +153,7 @@ def _load_current_ml(
         attempts.append(
             {
                 "source": source,
-                "path": str(path),
+                "path": shown,
                 "status": reason,
             }
         )
@@ -148,7 +161,7 @@ def _load_current_ml(
             return frame, {
                 "available": True,
                 "source": source,
-                "path": str(path),
+                "path": shown,
                 "attempts": attempts,
             }
 

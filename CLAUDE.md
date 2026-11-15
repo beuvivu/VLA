@@ -109,7 +109,9 @@ giữ tệp ở đó; `fun_draw_ledger.show_data_at` làm việc ấy. Bảng th
 tất cả; 19 ảnh khác vẽ và commit lại mỗi lượt chốt mà không ai xem đã gỡ (`tests/stats/test_images_are_used.py`).
 Dung lượng kho (06-11-2026): `repo-growth.yml` chạy mỗi thứ Hai, đo gói mỏng 7 ngày bằng `scripts/ops/repo_growth.py`,
 đỏ khi quá 40 MB/tuần. Bảng nguồn tăng chia CHÍNH gói ấy, theo chỉ mục của gói, chứ không cộng `objectsize:disk`
-của từng blob. Chỉ đo trên bản clone ĐẦY ĐỦ; kịch bản từ chối bản nông. Ngày 05-11-2026, số đo trên bản nông của phiên
+của từng blob, và tìm delta LẠI từ đầu (`--no-reuse-delta`): dùng lại cặp delta gói clone kế thừa từ máy chủ
+thì trang Miền Trung là delta với trang Miền Nam, và tuần 15-11 báo 24,5 thay vì 18,5 MB. Chỉ đo trên bản clone
+ĐẦY ĐỦ; kịch bản từ chối bản nông. Ngày 05-11-2026, số đo trên bản nông của phiên
 làm việc báo gói 642 MB (đúng: 608 MB) và tăng 3 MB/ngày (đúng: 4–9 MB/ngày). Số đo và các phương án:
 `documentation/plans/2026-11-05-dung-luong-kho.md`. Từ 07-11-2026, hai bảng nghiên cứu ĐẦY ĐỦ không vào git:
 `crosslag_rules.csv` và `loto_nextday_given_special_long.csv` (`.gitignore`). Chúng vẫn sinh mỗi lượt và lên

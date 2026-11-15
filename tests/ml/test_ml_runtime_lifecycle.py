@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from core import model_io
+from core import atomic_io, model_io
 from forecast import meta_predictor
 from ml import ml_predict
 from ml import ml_train
@@ -132,16 +132,16 @@ def test_atomic_model_write_failure_preserves_incumbent_and_removes_temp(
     if stage == "dump":
         monkeypatch.setattr(joblib, "dump", fail_dump)
     else:
-        monkeypatch.setattr(model_io.os, "replace", fail_replace)
+        monkeypatch.setattr(atomic_io.os, "replace", fail_replace)
     with pytest.raises(OSError):
-        model_io.atomic_joblib_dump({"candidate": True}, path)
+        model_io.dump_pack_unless_equivalent({"candidate": True}, path)
     assert path.read_bytes() == before
     assert list(tmp_path.iterdir()) == [path]
 
 
 def test_atomic_model_write_roundtrips(tmp_path):
     path = tmp_path / "model.joblib"
-    model_io.atomic_joblib_dump({"weights": np.arange(5)}, path)
+    assert model_io.dump_pack_unless_equivalent({"weights": np.arange(5)}, path) is True
     np.testing.assert_array_equal(joblib.load(path)["weights"], np.arange(5))
 
 
@@ -204,3 +204,32 @@ def test_distribution_with_large_finite_values_remains_normalized():
     assert np.isfinite(actual).all()
     assert actual.sum() == pytest.approx(1.0)
     np.testing.assert_allclose(actual, 0.01)
+
+
+def test_retraining_on_another_cpu_keeps_the_committed_model(tmp_path, monkeypatch):
+    """Lượt chạy lại 06-11 và 09-11-2026 trên runner khác CPU ghi lại cả hai `ml_<mode>.joblib`: `log1p` float32
+    lệch một ULP, ngưỡng bin lệch 10⁻⁸, mà dự báo trùng. Bước học phải so DỰ BÁO và giữ tệp cũ."""
+    rng = np.random.default_rng(11)
+    days = pd.date_range("2024-01-01", periods=300)
+    rows = len(days) * 6
+    gaps = rng.integers(0, 40, size=rows).astype(np.float32)
+    frame = pd.DataFrame(rng.random((rows, len(ml_train.FEATURE_COLUMNS))).astype(np.float32),
+                         columns=ml_train.FEATURE_COLUMNS)
+    frame["log_gap"] = np.log1p(gaps)
+    frame["date"] = np.repeat(days, 6)
+    labels = pd.Series((rng.random(rows) < 0.15 + 0.01 * gaps).astype(int))
+    shifted = frame.copy()
+    shifted["log_gap"] = np.where(frame["log_gap"] > 0, np.nextafter(frame["log_gap"].to_numpy(), np.float32(np.inf)),
+                                  frame["log_gap"])
+    first = ml_train._candidate_configs()[:1]
+    monkeypatch.setattr(ml_train, "_candidate_configs", lambda: first)
+    monkeypatch.setattr(ml_train, "build_ml_table", lambda **kwargs: (frame.copy(), labels))
+    ml_train.train_one("loto", tmp_path, window_days=300)
+    model_path = tmp_path / "ml_loto.joblib"
+    committed = model_path.read_bytes()
+    monkeypatch.setattr(ml_train, "build_ml_table", lambda **kwargs: (shifted.copy(), labels))
+    ml_train.train_one("loto", tmp_path, window_days=300)
+    assert model_path.read_bytes() == committed
+    monkeypatch.setattr(ml_train, "build_ml_table", lambda **kwargs: (frame.copy(), 1 - labels))   # dữ liệu khác
+    ml_train.train_one("loto", tmp_path, window_days=300)
+    assert model_path.read_bytes() != committed

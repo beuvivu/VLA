@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from core.model_io import atomic_joblib_dump
+from core.model_io import dump_pack_unless_equivalent
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
@@ -252,7 +252,8 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     model_path = out_dir / f"ml_{mode}.joblib"
-    atomic_joblib_dump(
+    # Học lại trên cùng dữ liệu ở runner khác CPU: tham số lệch bit cuối mà dự báo trùng, giữ tệp cũ.
+    dump_pack_unless_equivalent(
         {
             "model_type": "platt_temporal_hgb",
             "model": clf,
@@ -282,6 +283,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
             "trained_through_date": source_through_date,
         },
         model_path,
+        predictions={"model": lambda model: model.predict_proba(X_val)[:, 1]},
     )
 
     report = pd.DataFrame(

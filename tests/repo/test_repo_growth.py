@@ -37,7 +37,7 @@ _spec.loader.exec_module(growth)
 T0 = datetime(2026, 1, 1, tzinfo=UTC)
 
 
-def _git(repo: Path, *args: str, when: datetime | None = None) -> str:
+def _git(repo: Path, *args: str, when: datetime | None = None, stdin: str | None = None) -> str:
     env = {
         **os.environ,
         "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
@@ -49,7 +49,7 @@ def _git(repo: Path, *args: str, when: datetime | None = None) -> str:
         env |= {"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp}
     return subprocess.run(
         ["git", "-c", "commit.gpgsign=false", *args],
-        cwd=repo, env=env, check=True, capture_output=True, text=True,
+        cwd=repo, env=env, check=True, capture_output=True, text=True, input=stdin,
     ).stdout
 
 
@@ -113,6 +113,34 @@ def test_the_directory_table_adds_up_to_the_thin_pack(repo: Path) -> None:
     files = dict(growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=9), by_file=True).breakdown)
     assert sum(files.values()) == sum(table.values())
     assert files["data/stats/moi.bin"] > 29_000 and files["docs/trang.bin"] < 1_000
+
+
+def test_a_delta_the_existing_pack_chose_against_another_file_is_searched_again(repo: Path) -> None:
+    """Gói của bản clone kế thừa delta máy chủ đã chọn. Ngày 15-11-2026 năm trong bảy phiên bản
+    `docs/ket-qua-mien-trung.html` của tuần là delta với trang Miền Nam (134 KB mỗi bản) thay vì với bản
+    hôm trước của chính nó (1,7 KB): dùng lại delta ấy, tuần đo ra 24,5 MB; tìm lại từ đầu, 18,5 MB.
+
+    Dựng đúng hình dạng ấy: trong gói của kho, bản mới của trang A là delta với trang B, dù bản cũ của
+    chính A chỉ khác 10 byte.
+    """
+    page = _noise(200_000, seed=20)
+    _commit(repo, 0, {"docs/ket-qua-mien-trung.html": page, "docs/ket-qua-mien-nam.html": _noise(200_000, seed=21)})
+    trung = page[:-10] + b"0123456789"
+    nam = trung[:140_000] + _noise(80_000, seed=22)    # lớn hơn và trùng 70%: git chọn nó làm gốc delta
+    _commit(repo, 8, {"docs/ket-qua-mien-trung.html": trung, "docs/ket-qua-mien-nam.html": nam})
+    new_trung, new_nam = (_git(repo, "rev-parse", f"HEAD:docs/{name}").strip()
+                          for name in ("ket-qua-mien-trung.html", "ket-qua-mien-nam.html"))
+    everything = [line.split(" ", 1)[0] for line in _git(repo, "rev-list", "--objects", "--all").splitlines()]
+    pack_dir = repo / ".git" / "objects" / "pack"
+    _git(repo, "pack-objects", "-q", str(pack_dir / "pack"),
+         stdin="".join(f"{sha}\n" for sha in everything if sha not in {new_trung, new_nam}))
+    _git(repo, "pack-objects", "-q", str(pack_dir / "pack"), stdin=f"{new_nam} trang\n{new_trung} trang\n")
+    _git(repo, "prune-packed")
+    stored = {line.split()[0]: line.split() for line in _git(
+        repo, "verify-pack", "-v", *map(str, pack_dir.glob("*.idx"))).splitlines() if line[:40] in {new_trung}}
+    assert stored[new_trung][-1] == new_nam              # trong gói của kho: A mới là delta với B mới
+    files = dict(growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=9), by_file=True).breakdown)
+    assert files["docs/ket-qua-mien-trung.html"] < 1_000   # tìm lại: delta với bản cũ của chính nó
 
 
 def test_the_window_starts_on_the_main_line_not_on_an_old_side_branch(repo: Path) -> None:

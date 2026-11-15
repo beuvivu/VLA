@@ -35,7 +35,7 @@ from typing import Any, Literal
 import joblib
 import numpy as np
 
-from core.model_io import MODEL_LOAD_ERRORS, atomic_joblib_dump
+from core.model_io import MODEL_LOAD_ERRORS, dump_pack_unless_equivalent
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
@@ -56,6 +56,8 @@ NUMBER_COLS = list(range(100))
 #: cũ, và dùng lại nó là phát xác suất theo công thức đã bỏ — ``_load_or_train``
 #: coi gói khác số là phải học lại, còn sổ lịch sử ghi số này cho từng dòng.
 TRUST_POLICY_VERSION = COMPONENT_POLICY["cau"]
+#: Khoá dấu giờ học của gói: học lại y hệt (cùng dữ liệu, runner khác CPU) thì giữ tệp cũ.
+PACK_STAMP_KEYS = frozenset({"trained_at"})
 
 logger = logging.getLogger(__name__)
 
@@ -680,7 +682,8 @@ def _train_model(
     report = _validation_report(val_df, mode, pack)
 
     models_dir.mkdir(parents=True, exist_ok=True)
-    atomic_joblib_dump(pack, models_dir / f"cau_keo_{mode}.joblib")
+    dump_pack_unless_equivalent(pack, models_dir / f"cau_keo_{mode}.joblib", stamp_keys=PACK_STAMP_KEYS,
+                                predictions={"model": lambda model: model.predict_proba(X_val)[:, 1]})
     return pack, report, val_df
 
 

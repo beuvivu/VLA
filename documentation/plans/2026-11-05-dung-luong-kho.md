@@ -220,6 +220,21 @@ không đổi.
   theo cùng tỉ lệ, phần tăng giảm ≈ 0,6 MB/ngày: từ ≈ 3,6 xuống ≈ 3,0 MB/ngày, và kho chạm 1 GB sau ≈ 130 ngày.
   Số thật đọc ở lượt theo dõi hằng tuần.
 
+## Đo lại ngày 15-11-2026: phép đo dùng lại delta của máy chủ
+
+Phép đo hằng tuần từng dùng lại cặp delta có sẵn trong gói của bản clone, tức cặp máy chủ đã chọn. Tuần 08 → 15-11,
+năm trong bảy phiên bản `docs/ket-qua-mien-trung.html` là delta với trang Miền Nam (134 KB mỗi bản, nén) thay vì
+với bản hôm trước của chính nó (1,7 KB). Đổi `--window` (10, 50 hay 250) không đổi gì, vì delta dùng lại không qua
+bước tìm. Thêm `--no-reuse-delta` thì delta được tìm lại từ đầu:
+
+| Cách đo | Gói mỏng 7 ngày | Trang Miền Trung |
+|---|---|---|
+| Dùng lại delta của gói clone (trước 15-11) | 24,5 MB | 0,7 MB |
+| Tìm lại delta (`--no-reuse-delta`, từ 15-11) | 18,5 MB (≈ 2,6 MB/ngày) | 0,0 MB |
+
+Số mới đo phần tăng do chính các commit gây ra. Máy chủ lưu bao nhiêu còn tuỳ cách nó gói lại, và ta không đo được
+điều ấy từ bản clone. `tests/repo/test_repo_growth.py` dựng đúng hình dạng ấy: một gói có delta chéo giữa hai trang.
+
 ## Các phương án còn lại (chưa làm)
 
 Xếp theo tỉ lệ lợi ích trên rủi ro. Phần lợi là tỉ phần của phần tăng sau dọn ở bảng trên.

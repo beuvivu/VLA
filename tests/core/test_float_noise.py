@@ -97,12 +97,16 @@ def _repo(tmp_path: Path, files: dict[str, str]) -> Path:
 
 
 def test_a_tracked_table_that_only_changed_by_noise_gets_the_committed_bytes_back(tmp_path: Path) -> None:
-    repo = _repo(tmp_path, {"data/a.csv": TABLE, "data/b.csv": TABLE, "data/c.json": json.dumps({"p": 0.1})})
+    repo = _repo(tmp_path, {"data/a.csv": TABLE, "data/b.csv": TABLE, "data/c.json": json.dumps({"p": 0.1}),
+                            "models/train_report_loto.csv": TABLE, "docs/d.csv": TABLE})
     committed = (repo / "data/a.csv").read_bytes()
-    (repo / "data/a.csv").write_text(TABLE.replace("0.12", "0.12000000000000001"), encoding="utf-8")
+    noisy = TABLE.replace("0.12", "0.12000000000000001")
+    for name in ("data/a.csv", "models/train_report_loto.csv", "docs/d.csv"):   # docs/ ngoài phạm vi
+        (repo / name).write_text(noisy, encoding="utf-8")
     (repo / "data/b.csv").write_text(TABLE.replace("0.12", "0.13"), encoding="utf-8")
     (repo / "data/c.json").write_text(json.dumps({"p": 0.1 + 2 ** -55}), encoding="utf-8")
-    assert S.keep_committed_tables_when_only_noise_changed(repo) == ["data/a.csv"]
+    assert S.keep_committed_tables_when_only_noise_changed(repo) == ["data/a.csv", "models/train_report_loto.csv"]
+    assert (repo / "docs/d.csv").read_text(encoding="utf-8") == noisy
     assert (repo / "data/a.csv").read_bytes() == committed
     assert "0.13" in (repo / "data/b.csv").read_text(encoding="utf-8")
     assert S.keep_committed_when_only_stamps_changed(repo) == ["data/c.json"]

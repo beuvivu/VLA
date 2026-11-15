@@ -110,6 +110,9 @@ def keep_committed_when_only_stamps_changed(repo: Path, scope: Iterable[str] = (
     return keep_committed_when(repo, scope=scope, suffix=".json", same=_same_json_but_for_stamps)
 
 
-def keep_committed_tables_when_only_noise_changed(repo: Path, scope: Iterable[str] = ("data",)) -> list[str]:
-    """Trả mọi bảng CSV chỉ khác bản HEAD ở nhiễu số thực (kể cả thứ tự dòng gần hoà) về đúng bản HEAD."""
+def keep_committed_tables_when_only_noise_changed(repo: Path, scope: Iterable[str] = ("data", "models")) -> list[str]:
+    """Trả mọi bảng CSV chỉ khác bản HEAD ở nhiễu số thực (kể cả thứ tự dòng gần hoà) về đúng bản HEAD.
+
+    Gồm `models/train_report_<mode>.csv`: bước học ML ghi lại nó cùng lúc với pack mô hình.
+    """
     return keep_committed_when(repo, scope=scope, suffix=".csv", same=same_table_up_to_float_noise)

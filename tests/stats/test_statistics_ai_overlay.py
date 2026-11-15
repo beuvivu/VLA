@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from stats.statistics_ai_overlay import (
+    _load_current_ml,
     _validated_probability_frame,
     _weighted_score,
 )
@@ -80,3 +81,14 @@ def test_missing_ml_weight_is_renormalized_not_zero_padded() -> None:
     )
     expected = 100.0 * ((0.30 / 0.50) * 0.5 + (0.20 / 0.50) * 0.25)
     assert np.allclose(score, expected)
+
+
+def test_the_committed_diagnostics_never_carry_the_machine_working_directory(tmp_path: Path) -> None:
+    """Chẩn đoán được commit; đường dẫn tuyệt đối (`/home/runner/work/…`) đổi theo máy chạy."""
+    data_dir = tmp_path / "somewhere" / "data"
+    (data_dir / "ai_ml").mkdir(parents=True)
+    _prediction(data_dir / "ai_ml" / "cau_keo_loto_all.csv", target="2026-09-02")
+    _, diag = _load_current_ml(data_dir, mode="loto", expected_target="2026-09-02")
+    assert diag["available"] and diag["path"] == "data/ai_ml/cau_keo_loto_all.csv"
+    assert [a["path"] for a in diag["attempts"]] == ["data/ai_ml/cau_keo_loto_all.csv"]
+    assert str(tmp_path) not in repr(diag)

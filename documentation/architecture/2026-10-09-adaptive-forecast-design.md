@@ -20,7 +20,7 @@ VLA là hệ thống xổ số XSMB và engine Vietlott độc lập, không ph�
 
 ### Vòng đời model XSMB
 
-Dùng chung `model_io.atomic_joblib_dump` cho pack ML, meta và cầu-kèo. Loader không unlink bản cũ trước huấn luyện, nhận diện lỗi pickle/joblib cụ thể. Giữ diversified_order cho top LOTO ngay cả shadow online. Research learners fit theo candidate, từ chối nonfinite trước clip; normalize xác suất bằng scale trước sum để tránh overflow. Research step rollback nếu bước downstream thất bại, không đếm reward/draw hai lần.
+Dùng chung `model_io.dump_pack_unless_equivalent` (ghi nguyên tử; pack học lại tương đương thì giữ tệp cũ, từ 15-11-2026) cho pack ML, meta và cầu-kèo. Loader không unlink bản cũ trước huấn luyện, nhận diện lỗi pickle/joblib cụ thể. Giữ diversified_order cho top LOTO ngay cả shadow online. Research learners fit theo candidate, từ chối nonfinite trước clip; normalize xác suất bằng scale trước sum để tránh overflow. Research step rollback nếu bước downstream thất bại, không đếm reward/draw hai lần.
 
 ### Ngữ cảnh dự báo Vietlott
 
