@@ -65,6 +65,16 @@ const INTERNAL_FIELDS = {
   prize7: ["prize7_1", "prize7_2", "prize7_3", "prize7_4"],
 };
 
+// Thông báo lỗi do chính module soạn, được phép trả cho khách. Mọi lỗi khác (KV hỏng, TypeError…) chỉ trả một câu
+// cố định: chuỗi hoá chính đối tượng lỗi (`String(error)`) có thể đưa chi tiết nội bộ ra ngoài
+// (CodeQL js/stack-trace-exposure, 15-11-2026).
+export class PublicError extends Error {}
+const INTERNAL_ERROR_MESSAGE = "Tạm thời không trả được kết quả; thử lại sau.";
+
+function publicMessage(error, fallback) {
+  return error instanceof PublicError ? error.message : fallback;
+}
+
 function response(body, { status = 200, cacheControl = "no-store" } = {}) {
   return new Response(typeof body === "string" ? body : JSON.stringify(body), {
     status,
@@ -116,7 +126,7 @@ export function parseTraditionalQuery(url, { nowUtcMs = Date.now() } = {}) {
   const region = url.searchParams.get("region") || "north";
   const province = url.searchParams.get("province") || "hanoi";
   if (region !== "north" || province !== "hanoi") {
-    throw new Error("Sổ kết quả chỉ hỗ trợ Miền Bắc / Hà Nội.");
+    throw new PublicError("Sổ kết quả chỉ hỗ trợ Miền Bắc / Hà Nội.");
   }
 
   const fromRaw = url.searchParams.get("from");
@@ -125,28 +135,28 @@ export function parseTraditionalQuery(url, { nowUtcMs = Date.now() } = {}) {
   let to;
   let presetDays = null;
   if (fromRaw !== null || toRaw !== null) {
-    if (!fromRaw || !toRaw) throw new Error("Khoảng tùy chọn phải có đủ từ ngày và đến ngày.");
+    if (!fromRaw || !toRaw) throw new PublicError("Khoảng tùy chọn phải có đủ từ ngày và đến ngày.");
     from = parseDate(fromRaw);
     to = parseDate(toRaw);
-    if (!from || !to) throw new Error("Ngày phải đúng định dạng YYYY-MM-DD.");
+    if (!from || !to) throw new PublicError("Ngày phải đúng định dạng YYYY-MM-DD.");
     // Ngày chưa quay thì không có kết quả ở đâu cả; nhận nó chỉ để kéo một lượt gọi
     // nguồn dự phòng vô ích.
     if (to > latestEligibleDate(nowUtcMs)) {
-      throw new Error("Đến ngày không được sau kỳ gần nhất đã quay.");
+      throw new PublicError("Đến ngày không được sau kỳ gần nhất đã quay.");
     }
   } else {
     const days = Number(url.searchParams.get("days") || 30);
     if (!Number.isInteger(days) || !ALLOWED_DAYS.has(days)) {
-      throw new Error("Số ngày chỉ nhận 30, 60, 90 hoặc 100.");
+      throw new PublicError("Số ngày chỉ nhận 30, 60, 90 hoặc 100.");
     }
     presetDays = days;
     to = latestEligibleDate(nowUtcMs);
     from = addDays(to, -(days - 1));
   }
 
-  if (from > to) throw new Error("Từ ngày không được sau đến ngày.");
+  if (from > to) throw new PublicError("Từ ngày không được sau đến ngày.");
   if (daysInclusive(from, to) > MAX_RANGE_DAYS) {
-    throw new Error(`Khoảng tùy chọn tối đa ${MAX_RANGE_DAYS} ngày.`);
+    throw new PublicError(`Khoảng tùy chọn tối đa ${MAX_RANGE_DAYS} ngày.`);
   }
   return {
     region,
@@ -182,7 +192,7 @@ function completePrizeMap(prizes) {
 }
 
 function normalizePrimary(payload) {
-  if (!Array.isArray(payload)) throw new Error("Lịch sử chuẩn không phải một danh sách.");
+  if (!Array.isArray(payload)) throw new PublicError("Lịch sử chuẩn không phải một danh sách.");
   const byDate = {};
   for (const row of payload) {
     const drawDate = String(row?.date || "").slice(0, 10);
@@ -190,7 +200,7 @@ function normalizePrimary(payload) {
     const prizes = prizeMapFromInternal(row);
     if (prizes && completePrizeMap(prizes)) byDate[drawDate] = prizes;
   }
-  if (Object.keys(byDate).length === 0) throw new Error("Lịch sử chuẩn không có kỳ hợp lệ.");
+  if (Object.keys(byDate).length === 0) throw new PublicError("Lịch sử chuẩn không có kỳ hợp lệ.");
   return byDate;
 }
 
@@ -271,7 +281,7 @@ async function loadPrimary(env, fetchImpl, nowUtcMs = Date.now()) {
   } catch (error) {
     const stale = await readJson(kv, PRIMARY_LAST_GOOD_KEY);
     if (stale) return { rows: stale, cache: "stale", warning: "Lịch sử chuẩn tạm không khả dụng; đang dùng bản lưu gần nhất." };
-    throw new Error("Không đọc được lịch sử chuẩn.");
+    throw new PublicError("Không đọc được lịch sử chuẩn.");
   }
 }
 
@@ -555,7 +565,7 @@ export async function handleTraditionalResults(request, env, ctx) {
   try {
     query = parseTraditionalQuery(new URL(request.url));
   } catch (error) {
-    return response({ error: "invalid_query", message: String(error?.message || error) }, { status: 400 });
+    return response({ error: "invalid_query", message: publicMessage(error, "Truy vấn không hợp lệ.") }, { status: 400 });
   }
 
 
@@ -573,7 +583,7 @@ export async function handleTraditionalResults(request, env, ctx) {
   } catch (error) {
     return response({
       error: "results_unavailable",
-      message: String(error?.message || error),
+      message: publicMessage(error, INTERNAL_ERROR_MESSAGE),
     }, { status: 502 });
   }
 }

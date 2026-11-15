@@ -47,7 +47,11 @@ còn gì là rủi ro được chấp nhận.
      chúng đỏ.
 2. **Engine Vietlott: đường dẫn ghép thẳng vào câu SQL của DuckDB CLI** (`crawler/sources/vqe130.py`) không thoát dấu
    nháy đơn; thư mục tên `it's here` cắt câu lệnh. Nay thoát như `storage.export_parquet`, có phép kiểm (đỏ với bản cũ).
-3. **Hai bản chép của quy tắc thoát JSON-trong-script** trong `evidence_catalog` nay dùng chung
+3. **Worker trả nguyên lỗi bất ngờ cho khách** (CodeQL `js/stack-trace-exposure` trên PR): hai nhánh lỗi của API
+   trả `String(error?.message || error)`, nên lỗi KV hay `TypeError` lọt chi tiết nội bộ ra ngoài. Nay chỉ thông báo tự
+   soạn (`PublicError`: kiểm truy vấn, lịch sử chuẩn hỏng) được trả; lỗi khác chỉ còn một câu cố định. Phép kiểm mới;
+   ba đột biến đỏ.
+4. **Hai bản chép của quy tắc thoát JSON-trong-script** trong `evidence_catalog` nay dùng chung
    `web_security.json_for_html_script` (bản này thoát thêm U+2028/U+2029); hai phép kiểm sẵn có vẫn canh.
 
 ## Rủi ro được chấp nhận, kiến nghị

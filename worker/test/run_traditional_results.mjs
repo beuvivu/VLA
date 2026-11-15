@@ -97,6 +97,21 @@ const scenarios = {
     return { statuses: [...statuses], puts: kv.puts, keys: [...kv.store.keys()], counter };
   },
 
+  // Lỗi bất ngờ (KV hỏng…) không được đưa chi tiết nội bộ ra khách; thông báo tự soạn thì vẫn trả.
+  async internal_errors_stay_internal() {
+    const secret = "kv-internal-host.example:8443 token=abc";
+    const broken = { async get() { throw new TypeError(secret); }, async put() { throw new TypeError(secret); } };
+    const failed = await worker.fetch(new Request(
+      "https://worker/api/v1/traditional-results?from=2026-09-12&to=2026-09-12"), { LIVE: broken }, ctxOf());
+    const invalid = await worker.fetch(new Request(
+      "https://worker/api/v1/traditional-results?days=7"), { LIVE: new FakeKV() }, ctxOf());
+    return {
+      failed: { status: failed.status, body: await failed.text() },
+      invalid: { status: invalid.status, body: await invalid.json() },
+      secret,
+    };
+  },
+
   // Gọi lại cùng khoảng ngày: lấy từ đệm trong bộ nhớ isolate, không đọc KV, cùng nội dung; đệm có trần.
   async repeat_range_from_memory() {
     const counter = { primary: 0, xskt: 0 };

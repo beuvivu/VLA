@@ -222,3 +222,16 @@ def test_an_unchanged_fresh_copy_reuses_the_draws_built_for_it() -> None:
     result = _scenario("unchanged_fresh_reuses_built_draws")
     assert result["cache"] == "hit"
     assert result["same_draw_object"] is True
+
+
+def test_unexpected_errors_never_reach_the_client_but_curated_messages_do() -> None:
+    """CodeQL js/stack-trace-exposure (15-11-2026): ``String(error?.message || error)`` đưa nguyên lỗi bất ngờ ra khách.
+    Nay chỉ thông báo tự soạn (``PublicError``) được trả; lỗi khác chỉ còn một câu cố định."""
+    result = _scenario("internal_errors_stay_internal")
+    assert result["failed"]["status"] == 502
+    assert result["secret"] not in result["failed"]["body"]
+    assert "TypeError" not in result["failed"]["body"]
+    assert json.loads(result["failed"]["body"]) == {
+        "error": "results_unavailable", "message": "Tạm thời không trả được kết quả; thử lại sau."}
+    assert result["invalid"] == {"status": 400, "body": {
+        "error": "invalid_query", "message": "Số ngày chỉ nhận 30, 60, 90 hoặc 100."}}
