@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-11-14T11:40:26Z",
+  "generated_at_utc": "2026-11-15T06:07:24Z",
   "anchor_date": "2026-11-14",
   "target_date": "2026-11-15",
   "modes": {
@@ -11,11 +11,11 @@
       "ml": {
         "available": true,
         "source": "cau_keo",
-        "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_loto_all.csv",
+        "path": "data/ai_ml/cau_keo_loto_all.csv",
         "attempts": [
           {
             "source": "cau_keo",
-            "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_loto_all.csv",
+            "path": "data/ai_ml/cau_keo_loto_all.csv",
             "status": "ok"
           }
         ]
@@ -40,11 +40,11 @@
       "ml": {
         "available": true,
         "source": "cau_keo",
-        "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_de_all.csv",
+        "path": "data/ai_ml/cau_keo_de_all.csv",
         "attempts": [
           {
             "source": "cau_keo",
-            "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_de_all.csv",
+            "path": "data/ai_ml/cau_keo_de_all.csv",
             "status": "ok"
           }
         ]
