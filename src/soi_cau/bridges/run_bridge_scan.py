@@ -18,7 +18,7 @@ import pandas as pd
 from soi_cau.bridges import BridgeScanner, DigitTensor
 from soi_cau.bridges.firewall import DEFAULT_PERMUTATIONS, DEFAULT_Q_VALUE, FirewallGate
 from soi_cau.bridges.replication import DEFAULT_HOLDOUT_FRACTION, ReplicationGate
-from soi_cau.bridges.spec import TARGET_TYPES
+from soi_cau.bridges.scanner import TARGET_TYPES
 
 DEFAULT_STREAK = 5
 

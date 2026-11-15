@@ -24,7 +24,7 @@
 
 ### Task 1: Ranh giới xuất bản và hero
 
-Files: `src/web/page_output.py`, `src/web/crafto_design.py`, `src/pages/build_landing_page.py`, `tests/web/test_crafto_design.py`.
+Files: `src/web/page_output.py`, `src/web/crafto_design.py` (gộp vào `page_output.py` ngày 15-11-2026), `src/pages/build_landing_page.py`, `tests/web/test_crafto_design.py`.
 
 - [ ] Kiểm thử xuất bản CSS/JS, lũy đẳng hai lần, giữ JSON và nội dung số.
 - [ ] Thêm helper `attach_crafto_design(path: Path, html: str) -> str` sau shell.

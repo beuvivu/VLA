@@ -24,11 +24,6 @@ from ingest.lottery import Lottery
 from stats.statistical_corrections import benjamini_hochberg
 
 
-def _bh_fdr(p_values: np.ndarray) -> np.ndarray:
-    """Wrapper tương thích; p-value thiếu không làm mất các kết quả hợp lệ."""
-    return benjamini_hochberg(p_values)
-
-
 def _window_hit_matrix(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, window_days: int) -> tuple[np.ndarray, float, pd.Timestamp, pd.Timestamp]:
     two = two.copy()
     sparse = sparse.copy()
@@ -76,7 +71,7 @@ def number_significance(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, *, w
                 binomtest(count, n, baseline, alternative="two-sided").pvalue
             )
         p_values[i] = cache[count]
-    q_values = _bh_fdr(p_values)
+    q_values = benjamini_hochberg(p_values)
 
     a0 = max(1e-6, baseline * prior_strength)
     b0 = max(1e-6, (1.0 - baseline) * prior_strength)

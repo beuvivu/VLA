@@ -1,24 +1,89 @@
-"""Pipeline ba tác tử: cùng sổ học, căn cứ XAI và công bố shadow minh bạch."""
+"""Pipeline ba tác tử: cùng sổ học, căn cứ XAI và công bố shadow minh bạch.
+
+Từ 15-11-2026 module này mang luôn bộ nhớ (`knowledge.py`) và kiểm hồi cứu (`benchmark.py`) cũ.
+"""
+
 from __future__ import annotations
 
 import json
 import os
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from forecast import online_learning as online
 from core.atomic_io import atomic_write_text
-from ensemble.pick_diversity import diversified_order
-from core.time_policy import now_vietnam
+from core.calendar_alignment import known_non_draw_days, missing_calendar_dates
+from core.time_policy import VIETNAM_TZ, now_vietnam
 from core.xsmb_domain import baseline_rate
+from ensemble.pick_diversity import diversified_order
+from forecast import online_learning as online
+from forecast.knowledge_base import ContextMemory
+from forecast.online_learning import _history, _outcomes
 
-from .algorithms import AGENT_POLICY, AlgorithmEnsemble, EnsembleResult, LABELS
-from .knowledge import KnowledgeBaseManager
+from .algorithms import AGENT_POLICY, LABELS, AlgorithmEnsemble, EnsembleResult
 
+
+# --- Bộ nhớ (trước 15-11-2026: xsmb_agents/knowledge.py) ------------------------------------------
+#
+# Adapter bộ nhớ: tiền tố lịch sử, ngữ cảnh và luật của kho hiện hữu.
+
+class KnowledgeBaseManager:
+    """Chuẩn hóa một tiền tố duy nhất cho mọi tác tử; không nhìn nhãn đích."""
+
+    def __init__(self, frame: pd.DataFrame, *, target_date: str | None = None) -> None:
+        if target_date is not None:
+            # Lọc TRƯỚC khi chuẩn hóa để cả dữ liệu tương lai hỏng cũng không
+            # thay đổi kết quả hoặc làm lộ thông tin cho dự báo quá khứ.
+            frame = frame.loc[frame["date"].astype(str) < target_date]
+        self.frame = _history(frame)
+        gaps = set(missing_calendar_dates(self.frame["date"])) - known_non_draw_days()
+        if gaps:
+            raise ValueError(f"Thiếu kết quả trong lịch sử (gap): {sorted(gaps)[:3]}")
+
+    @cached_property
+    def outcomes(self) -> dict[str, np.ndarray]:
+        """Chỉ báo theo kỳ: một lớp Đặc Biệt, tối đa 27 con LOTO."""
+        return {mode: _outcomes(mode, self.frame) for mode in ("de", "loto")}
+
+    @cached_property
+    def memories(self) -> dict[str, ContextMemory]:
+        """Vectơ 300 chiều dùng lại bộ truy xuất và khoảng bỏ chồng cửa sổ."""
+        return {mode: ContextMemory(y) for mode, y in self.outcomes.items()}
+
+    def retrieve(self, mode: str, *, at: int | None = None, k: int = 20) -> list[dict]:
+        """K ngữ cảnh quá khứ đã biết kết quả, trước khoảng cách 30 kỳ."""
+        t = len(self.frame) if at is None else at
+        idx, similarities = self.memories[mode].neighbours(t, k)
+        return [{"date": str(self.frame.iloc[int(i)]["date"]), "index": int(i),
+                 "similarity": float(s)} for i, s in zip(idx, similarities, strict=True)]
+
+    def analog_probability(self, mode: str, t: int) -> np.ndarray:
+        """Đặc trưng truy xuất có co về nền; chưa là xác suất công bố."""
+        idx, _ = self.memories[mode].neighbours(t, 20)
+        y = self.outcomes[mode]
+        return (y[idx].sum(axis=0) + 100 * baseline_rate(mode)) / (len(idx) + 100)
+
+    def short_memory(self, mode: str) -> dict:
+        """Tần suất hai cửa sổ gần nhất; số kỳ thực được ghi cùng mẫu số."""
+        y = self.outcomes[mode]
+        return {str(w): {"draws": min(w, len(y)), "rates": y[-w:].mean(axis=0).tolist()}
+                for w in (10, 30)}
+
+    def matching_rules(self, document: dict) -> list[dict]:
+        """Chỉ truy xuất luật đã đăng ký; ảnh chụp cũ không thành bằng chứng mới."""
+        current = self.outcomes["loto"][-1]
+        return [{"id": r["id"], "text": r["text"], "status": r["status"],
+                 "then": int(r["then"])} for r in document.get("rules", [])
+                if r.get("status") != "het-han" and current[int(r["if"])]]
+
+
+# --- Bộ máy dự báo (trước 15-11-2026: xsmb_agents/engine.py) --------------------------------------
+#
+# Pipeline ba tác tử: cùng sổ học, căn cứ XAI và công bố shadow minh bạch.
 
 def retire_superseded_ledgers(online_dir: Path) -> list[Path]:
     """Cất nguyên sổ ba tác tử của định nghĩa đã nghỉ; sổ của định nghĩa đang chạy bắt đầu rỗng.
@@ -252,3 +317,67 @@ class PredictiveEngine:
                 "knowledge": record["knowledge_snapshot"], "confidence_matrix": matrix,
                 "top5": [items[i] for i in top],
                 "candidate_top5": [items[i] for i in candidate_top], "items": items}
+
+
+# --- Kiểm hồi cứu (trước 15-11-2026: xsmb_agents/benchmark.py) ------------------------------------
+#
+# Kiểm hồi cứu theo tiền tố; không ghi vào bất kỳ sổ tiến cứu nào.
+
+def walk_forward(frame: pd.DataFrame, *, last: int = 60,
+                 prediction_dir: Path | None = None) -> dict:
+    """Dựng từng kỳ từ đúng tiền tố, học loss kỳ trước rồi chấm kỳ hiện tại.
+
+    Đồng hồ lịch sử chỉ tồn tại trong bộ nhớ, không ghi/giả timestamp của
+    dự báo thật. Mô hình đã thiết kế sau khi xem lịch sử: số đo này chỉ chẩn
+    đoán, không phải bằng chứng tiến cứu hoặc giấy phép đề bạt.
+    """
+    knowledge = KnowledgeBaseManager(frame)
+    clean = knowledge.frame
+    if not isinstance(last, int) or isinstance(last, bool) or not 1 <= last <= len(clean) - 3:
+        raise ValueError("Số kỳ kiểm phải từ 1 đến số kỳ lịch sử trừ 3")
+    modes = {}
+    for mode in ("de", "loto"):
+        state = online.new_state(mode, profile="agents")
+        losses = {name: [] for name in (*online.AGENT_EXPERTS, "mixture")}
+        dates, recorded = [], 0
+        for t in range(len(clean) - last, len(clean)):
+            past = clean.iloc[:t]
+            target = str(clean.iloc[t]["date"])
+            if online._date(target) != online._date(str(past.iloc[-1]["date"])) + timedelta(days=1):
+                continue
+            incumbent = np.full(100, baseline_rate(mode))
+            path = (prediction_dir / f"predict_next_{mode}_all_{target}.csv"
+                    if prediction_dir is not None else None)
+            if path is not None and path.exists():
+                published, incumbent = online._prediction_frame(path, mode)
+                for column, expected in (("target_date", target), ("anchor_date", past.iloc[-1]["date"])):
+                    if column in published and set(published[column].astype(str)) != {expected}:
+                        raise ValueError("Artifact đối chứng sai ngày đích/ngày neo")
+                recorded += 1
+            ensemble = AlgorithmEnsemble(KnowledgeBaseManager(past)).predict(mode, incumbent)
+            state, record = online.advance(state, past, incumbent, target,
+                now=datetime.combine(online._date(target), time(0), VIETNAM_TZ),
+                expert_predictions=ensemble.probabilities)
+            actual = knowledge.outcomes[mode][t]
+            for name in losses:
+                probability = record["mixture"] if name == "mixture" else record["experts"][name]
+                losses[name].append(online.proper_losses(mode, probability, actual))
+            dates.append(target)
+        measured = {}
+        for name, scores in losses.items():
+            gain = [a["logloss"] - b["logloss"]
+                    for a, b in zip(losses["constant"], scores, strict=True)]
+            measured[name] = {
+                "brier": float(np.mean([s["brier"] for s in scores])) if scores else None,
+                "logloss": float(np.mean([s["logloss"] for s in scores])) if scores else None,
+                "gain_vs_constant": online._gain_stats(gain),
+            }
+        modes[mode] = {"draws": len(dates), "first_date": dates[0] if dates else None,
+                       "last_date": dates[-1] if dates else None,
+                       "incumbent_recorded_draws": recorded,
+                       "incumbent_missing_uses_constant": len(dates) - recorded,
+                       "agents": measured}
+    return {"schema_version": 1, "evidence_type": "retrospective_diagnostic",
+            "prospective_draws": 0, "promotion_allowed": False,
+            "input_fingerprint": online._fingerprint(clean), "requested_draws": last,
+            "modes": modes}

@@ -25,7 +25,7 @@ import pandas as pd
 from scipy import stats
 
 from ingest.lottery import Lottery
-from research.research_diagnostics import bh_fdr
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 
 def aggregate_transition_independence(sparse: pd.DataFrame) -> dict[str, object]:

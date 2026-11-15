@@ -38,7 +38,7 @@ from core.number_reference import (
     reverse,
     sat_kep,
 )
-from research.research_diagnostics import bh_fdr
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 Mode = Literal["loto", "de"]
 

@@ -9,6 +9,12 @@ cho biết mỗi đối tượng chiếm bao nhiêu byte, nên các dòng cộng
 `%(objectsize:disk)` của từng blob. Gói của máy chủ thường giữ bản MỚI nhất nguyên vẹn và lưu bản cũ
 thành delta, nên phép cộng ấy gần gấp đôi số đúng, và ngày 05-11 nó báo 74 MB/tuần.
 
+Delta được tìm LẠI từ đầu (`--no-reuse-delta`). Mặc định `pack-objects` dùng lại delta có sẵn trong gói
+của bản clone, tức cặp delta máy chủ đã chọn. Ngày 15-11-2026, năm trong bảy phiên bản
+`docs/ket-qua-mien-trung.html` của tuần là delta với trang Miền Nam (134 KB mỗi bản) thay vì với bản
+hôm trước của chính nó (1,7 KB). Dùng lại delta ấy, tuần đo ra 24,5 MB; tìm lại thì ra 18,5 MB. Đổi
+`--window` không đổi gì, vì delta dùng lại không qua bước tìm. Tìm lại chậm hơn vài giây.
+
 Mốc là commit cuối cùng trên chuỗi cha thứ nhất (`--first-parent`) trước `--days` ngày, tức trạng thái
 của nhánh chính lúc ấy. Đi không theo chuỗi ấy thì `rev-list --before` có thể dừng ở commit nhánh phụ
 cũ hơn nhiều, nếu nhánh đó được gộp vào sau mốc.
@@ -144,7 +150,9 @@ def thin_pack(repo: Path, ref: str, base: str | None,
         pack = Path(tmp) / "mong.pack"
         # Gói có thể dài hàng chục MB: ghi thẳng ra đĩa, không giữ trong bộ nhớ.
         with pack.open("wb") as out:
-            subprocess.run(["git", "pack-objects", "--stdout", "--thin", "--revs", "-q"], cwd=repo,
+            # `--no-reuse-delta`: tìm delta lại từ đầu, không kế thừa cặp delta mà gói của bản clone mang
+            # từ máy chủ (xem docstring đầu tệp).
+            subprocess.run(["git", "pack-objects", "--stdout", "--thin", "--revs", "--no-reuse-delta", "-q"], cwd=repo,
                            input="\n".join(revs).encode() + b"\n", stdout=out, check=True)
         size = pack.stat().st_size
         sizes = _object_sizes(repo, pack)

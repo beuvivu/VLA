@@ -8,7 +8,7 @@ import sys
 import time
 
 from core.paths import REPO_ROOT, SRC
-from core.stamp_only_json import (
+from core.atomic_io import (
     keep_committed_tables_when_only_noise_changed,
     keep_committed_when_only_stamps_changed,
 )
@@ -30,10 +30,10 @@ def _child_env() -> dict[str, str]:
     return env
 
 
-def _keep_stamp_only_json() -> None:
+def _keep_committed_when_unchanged() -> None:
     """Sau mỗi bước: JSON trong `data/` chỉ đổi dấu giờ ghi hay nhiễu số thực, bảng CSV trong `data/` chỉ
     đổi nhiễu số thực, và trang `docs/*.html` chỉ đổi dấu giờ dựng, thì trả về bản đã commit
-    (`core.stamp_only_json`, `core.float_noise`, `page_output.keep_committed_pages_when_only_stamps_changed`).
+    (`core.atomic_io`, `page_output.keep_committed_pages_when_only_stamps_changed`).
 
     Làm NGAY sau bước vừa ghi, không đợi cuối lượt: bước sau đọc dấu giờ ấy (mã thí nghiệm, trang bảng
     điều khiển) và sẽ mang nó vào tệp của mình. Lỗi ở đây không được làm hỏng lượt chạy.
@@ -69,7 +69,7 @@ def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> N
     elapsed = time.perf_counter() - started
     if proc.returncode == 0:
         logging.info("OK %.2fs: %s", elapsed, " ".join(cmd))
-        _keep_stamp_only_json()
+        _keep_committed_when_unchanged()
         return
     if allow_fail:
         logging.warning(

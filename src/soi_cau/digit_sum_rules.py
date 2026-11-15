@@ -39,6 +39,7 @@ import numpy as np
 import pandas as pd
 
 from core.xsmb_domain import FIELD_WIDTHS
+from stats.statistical_corrections import holm
 
 #: Thứ tự giải đúng như bảng kết quả, kèm số chữ số của mỗi giải.
 _WIDTH = dict(FIELD_WIDTHS)
@@ -198,17 +199,6 @@ def wilson(hits: int, n: int, z: float = 1.959963984540054) -> tuple[float, floa
     centre = (rate + z * z / (2 * n)) / den
     half = z * sqrt(rate * (1 - rate) / n + z * z / (4 * n * n)) / den
     return max(0.0, centre - half), min(1.0, centre + half)
-
-
-def holm(p_values: list[float]) -> list[float]:
-    """p đã hiệu chỉnh Holm–Bonferroni, giữ thứ tự đầu vào."""
-    order = sorted(range(len(p_values)), key=lambda i: p_values[i])
-    adjusted = [1.0] * len(p_values)
-    running = 0.0
-    for rank, i in enumerate(order):
-        running = max(running, min(1.0, (len(p_values) - rank) * p_values[i]))
-        adjusted[i] = running
-    return adjusted
 
 
 def verdict(n: int, hits: int, chances: list[float]) -> dict:

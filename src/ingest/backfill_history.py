@@ -40,6 +40,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from collections.abc import Callable, Iterable, Sequence
 
+from core.atomic_io import atomic_write_text
 from core.paths import REPO_ROOT
 
 logger = logging.getLogger(__name__)
@@ -319,7 +320,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             logger.info("Không có kỳ trùng khít nào.")
             return 0
         kept = [r for r in records if str(r["date"])[:10] not in drop]
-        canonical.write_text(json.dumps(kept, indent=2), encoding="utf-8")
+        atomic_write_text(canonical, json.dumps(kept, indent=2))   # sổ chuẩn: chết giữa chừng không để lại sổ cụt
         cleaned = Lottery()
         cleaned.load()
         cleaned.generate_dataframes()
@@ -432,8 +433,7 @@ def merge_stores(mine: Path, theirs: Path, out: Path) -> tuple[int, int, int]:
     a, b = _load(mine), _load(theirs)
     merged = {**a, **b}
     ordered = [merged[k] for k in sorted(merged)]
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(ordered, ensure_ascii=False), encoding="utf-8")
+    atomic_write_text(out, json.dumps(ordered, ensure_ascii=False))   # `out` thường chính là sổ chuẩn
     logger.info("hợp nhất: %d + %d -> %d bản ghi", len(a), len(b), len(ordered))
     return len(a), len(b), len(ordered)
 

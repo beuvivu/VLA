@@ -13,8 +13,7 @@ from pathlib import Path
 
 from web.css_links import CRITICAL_CSS
 from web.ui_page_refinements import refine_page
-from core.atomic_io import _without_stamps, write_text_unless_only_stamps
-from core.stamp_only_json import keep_committed_when
+from core.atomic_io import _without_stamps, keep_committed_when, write_text_unless_only_stamps
 from core.paths import ASSETS, TEMPLATES
 
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
@@ -267,12 +266,49 @@ def write_page(path: Path, html: str) -> None:
     # này, nên đây là chỗ duy nhất cần sửa để cả hai mươi chín trang có cùng
     # một khung — thay vì chép khung vào từng trình dựng rồi trôi khỏi nhau.
     refined = _attach_shell(path, refined)
-    from web.crafto_design import attach_crafto_design
-
     refined = attach_crafto_design(path, refined)
     refined = _attach_theme_bootstrap(path, refined)
     refined = _attach_evidence(path, refined)
     write_text_unless_only_stamps(path, rewrite_assets(path, strip_comments(refined)), PAGE_BUILD_STAMPS)
+
+
+_DESIGN_EFFECTS = re.compile(r'<aside\b[^>]*\bdata-app-effects\b[^>]*>.*?</aside>\s*', re.S | re.I)
+_DESIGN_STYLE = re.compile(r'<link\b[^>]*\bdata-app-design-style\b[^>]*>\s*', re.I)
+_DESIGN_SCRIPT = re.compile(r'<script\b[^>]*\bdata-app-motion-script\b[^>]*>\s*</script>\s*', re.I)
+_DESIGN_MAIN = re.compile(r'(<main\b[^>]*\bid="app-main"[^>]*>)', re.I)
+
+
+def attach_crafto_design(path: Path, html: str) -> str:
+    """Lớp trình bày và chuyển động gắn sau khung, không thay dữ liệu trang: xuất tài nguyên nội bộ và chèn
+    một lớp hiệu ứng duy nhất, lũy đẳng. (Gộp từ ``web.crafto_design`` ngày 15-11-2026.)"""
+    if "</head>" not in html or not _DESIGN_MAIN.search(html):
+        return html
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    write_stylesheet_text(assets / "app-design.css", (TEMPLATES / "app_design.css").read_text(encoding="utf-8"))
+    (assets / "app-motion.js").write_text((ASSETS / "app-motion.js").read_text(encoding="utf-8"), encoding="utf-8")
+
+    head, body = html.split("</head>", 1)
+    head = _DESIGN_SCRIPT.sub("", _DESIGN_STYLE.sub("", head))
+    # Script ở head để không phá mẫu đuôi mà bộ gỡ shell dùng khi dựng lại.
+    head = (head.rstrip() + '\n<link rel="stylesheet" href="assets/app-design.css" data-app-design-style>\n'
+            '<script src="assets/app-motion.js" defer data-app-motion-script></script>\n')
+    body = _DESIGN_EFFECTS.sub("", body)
+    body = re.sub(r'(<body\b[^>]*?)\sdata-app-design="[^"]*"', r'\1', body, count=1, flags=re.I)
+    body = re.sub(r'<body\b', '<body data-app-design="crafto"', body, count=1, flags=re.I)
+    particles = "".join(f'<span class="app-particle" style="--app-i:{i}"></span>' for i in range(12))
+    effects = (
+        '<aside data-app-effects aria-label="Tùy chọn hiển thị">'
+        '<div class="app-ambience" aria-hidden="true">'
+        '<span class="app-orb app-orb--one"></span><span class="app-orb app-orb--two"></span>'
+        '<span class="app-orb app-orb--three"></span>' + particles + '</div>'
+        '<span class="app-cursor" aria-hidden="true"></span>'
+        '<button id="app-motion-toggle" type="button" aria-pressed="false" hidden>'
+        'Hiệu ứng: Tắt</button></aside>'
+    )
+    # Đặt cuối vùng nội dung để thứ tự đọc và các điều khiển gốc không đổi.
+    body = re.sub(r'</main\s*>', lambda _: effects + '</main>', body, count=1, flags=re.I)
+    return head + "</head>" + body
 
 
 def _attach_theme_bootstrap(path: Path, html: str) -> str:

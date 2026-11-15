@@ -33,6 +33,7 @@ import pandas as pd
 
 from core.atomic_io import atomic_write_text
 from evaluation.prediction_board import OUT as BOARD_DIR
+from stats.statistical_corrections import holm
 
 LOGGER = logging.getLogger(__name__)
 
@@ -118,17 +119,6 @@ def scored_boards(data_dir: Path, draws: dict[str, list[str]]) -> list[dict]:
 
 
 # --- Thống kê -----------------------------------------------------------------------------------------
-
-
-def holm(p_values: list[float]) -> list[float]:
-    """p sau hiệu chỉnh Holm (bước xuống, đơn điệu, chặn ở 1)."""
-    order = sorted(range(len(p_values)), key=lambda i: p_values[i])
-    adjusted = [0.0] * len(p_values)
-    running = 0.0
-    for rank, index in enumerate(order):
-        running = max(running, min(1.0, (len(p_values) - rank) * p_values[index]))
-        adjusted[index] = running
-    return adjusted
 
 
 def _tail_p(null: np.ndarray, observed: float) -> tuple[float, float]:

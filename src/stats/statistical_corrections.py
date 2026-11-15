@@ -1,5 +1,11 @@
-"""Hiệu chỉnh nhiều kiểm định, giữ nguyên các vị trí thiếu dữ liệu."""
+"""Hiệu chỉnh nhiều kiểm định: Benjamini–Hochberg (giữ nguyên vị trí thiếu dữ liệu) và Holm–Bonferroni.
+
+Bản DUY NHẤT của kho. Trước 15-11-2026 Holm có ba bản chép (`digit_sum_rules`, `board_record`,
+`multi_hit_benchmark`) và BH có hai lớp bọc chỉ gọi lại hàm dưới.
+"""
 from __future__ import annotations
+
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -33,3 +39,18 @@ def benjamini_hochberg(values: list[float] | np.ndarray) -> np.ndarray:
     restored[order] = np.clip(adjusted, 0, 1)
     result[finite] = restored
     return result
+
+
+def holm(p_values: Sequence[float]) -> list[float]:
+    """p sau hiệu chỉnh Holm–Bonferroni (bước xuống, đơn điệu, chặn ở 1), giữ thứ tự đầu vào.
+
+    Hoà p xếp theo vị trí đầu vào (``sorted`` ổn định), nên kết quả không phụ thuộc máy chạy.
+    """
+    values = [float(p) for p in p_values]
+    order = sorted(range(len(values)), key=values.__getitem__)
+    adjusted = [1.0] * len(values)
+    running = 0.0
+    for rank, index in enumerate(order):
+        running = max(running, min(1.0, (len(values) - rank) * values[index]))
+        adjusted[index] = running
+    return adjusted

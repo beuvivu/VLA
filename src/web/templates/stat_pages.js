@@ -1819,7 +1819,10 @@ function renderSpecialYearByDay() {
   // và tên trang thì ngược với nội dung, nên đặt tên theo trục mà bảng trải ra
   // là cách duy nhất để lần sau không lẫn lại.
   const months = Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1));
-  const monthLabel = fillPicker("sp-month", months, months[new Date().getMonth()]);
+  // Tháng chọn sẵn theo giờ Việt Nam, như mọi "hôm nay" khác của trang: `new Date().getMonth()`
+  // đọc đồng hồ máy người xem, nên tối 31 ở bờ Tây nước Mỹ (đã sang ngày 1 ở Việt Nam) chọn tháng trước.
+  const today = todayInVietnam() || (DRAWS.length ? DRAWS[DRAWS.length - 1].d : "");
+  const monthLabel = fillPicker("sp-month", months, months[(+today.slice(5, 7) || 1) - 1]);
   const month = months.indexOf(monthLabel) + 1;
 
   const inMonth = DRAWS.filter((r) => +r.d.slice(5, 7) === month);

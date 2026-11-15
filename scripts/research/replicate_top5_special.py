@@ -20,9 +20,9 @@ from scipy.stats import binom
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla.backtest import evaluator, walk_forward  # noqa: E402
-from research.vla.features.engineer import build_features, load_history  # noqa: E402
-from research.vla.models.bayesian_lgb import BayesianLGBModel  # noqa: E402
+from research.vla import backtest  # noqa: E402
+from research.vla.features import build_features, load_history  # noqa: E402
+from research.vla.models import BayesianLGBModel  # noqa: E402
 
 TESTS_READ = 30  # 5 mô hình × 3 mức K × 2 kiểu, đọc sau khi chạy
 
@@ -35,9 +35,9 @@ def main() -> None:
     dates = pd.to_datetime(list(history.dates))
     blocks = {}
     for label, lo, hi in (("1000_ky_cuoi", T - 1000, T - 1), ("1000_ky_truoc_do", T - 2000, T - 1001)):
-        res = walk_forward.run(lambda: BayesianLGBModel("de"), feats.X, hit, lo, hi, refit_every=50)
+        res = backtest.run(lambda: BayesianLGBModel("de"), feats.X, hit, lo, hi, refit_every=50)
         keep = np.asarray((dates[res.targets] - dates[res.targets - 1]).days == 1)
-        got = (evaluator.top_k(res.probs, 5) == history.special[res.targets][:, None]).any(axis=1)[keep]
+        got = (backtest.top_k(res.probs, 5) == history.special[res.targets][:, None]).any(axis=1)[keep]
         n, x = int(got.size), int(got.sum())
         p = float(binom.sf(x - 1, n, 0.05))
         blocks[label] = {

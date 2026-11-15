@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from soi_cau.bridges.tensor import NUMBER_SPACE
+from soi_cau.bridges.scanner import NUMBER_SPACE
 from forecast.modeling.benchmark import (
     BASELINE_RATE,
     BetaBinomialShrinkage,

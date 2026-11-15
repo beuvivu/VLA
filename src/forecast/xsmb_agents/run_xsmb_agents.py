@@ -17,7 +17,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.benchmark_last is not None:
         import pandas as pd
-        from forecast.xsmb_agents.benchmark import walk_forward
+        from forecast.xsmb_agents.engine import walk_forward
 
         report = walk_forward(pd.read_csv(args.data_dir / "xsmb.csv", dtype=str),
                               last=args.benchmark_last, prediction_dir=args.data_dir / "forecast" / "predict")

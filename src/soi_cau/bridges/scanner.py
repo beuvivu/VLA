@@ -18,6 +18,9 @@ quy mô đó hơn một trăm nghìn đường cầu sẽ "đang chạy 5 nhịp
 nhiên. Việc sàng lọc thuộc về :mod:`bridges.firewall`, và ``scan`` trả về đối
 tượng kết quả thô để chính con số "đã thử bao nhiêu giả thuyết" không bao giờ bị
 đánh rơi trên đường đi.
+
+Từ 15-11-2026 module này mang luôn tensor chữ số, đặc tả mẫu cầu và bảng bóng số (trước là `tensor.py`,
+`spec.py`, `shadow.py`): chỉ bộ quét dùng cả ba.
 """
 
 from __future__ import annotations
@@ -30,22 +33,245 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from soi_cau.bridges.shadow import SHADOW_KINDS, shadow_table
-from soi_cau.bridges.spec import (
-    TARGET_DE,
-    TARGET_LOTO,
-    TARGET_LOTO_2_NHAY,
-    TARGET_TYPES,
-    TRANSFORM_BO,
+from core.calendar_alignment import require_daily_contiguous
+from core.number_reference import BONG_AM, BONG_DUONG, bo
+from core.xsmb_domain import (
+    FIELD_WIDTHS,
+    LOTO_DRAWS_PER_DAY,
+    TOTAL_DIGITS,
+    UNIFORM_TWO_DIGIT_RATE,
+    build_position_labels,
+    raw_digit_matrix,
+)
+
+
+# --- Tensor chữ số (trước 15-11-2026: bridges/tensor.py) ------------------------------------------
+#
+# Ma trận chữ số theo vị trí trên bảng kết quả, dựng một lần cho toàn lịch sử.
+#
+# Mọi phép quét cầu đều đọc từ đây thay vì tự cắt lại DataFrame, nên chi phí dựng
+# trả một lần và phần quét còn lại thuần NumPy.
+#
+# Ràng buộc lịch là bắt buộc chứ không tùy chọn: ghép chéo ngày nói "vị trí A ở
+# ngày T−k", và chỉ số hàng chỉ tương đương ngày lịch khi chuỗi ngày liền mạch.
+# Trên chuỗi có lỗ hổng, ``values[t - k]`` lặng lẽ trỏ sang một ngày khác và mọi
+# đường cầu tìm được đều sai — nên lớp này từ chối dựng thay vì trả kết quả hỏng.
+
+NUMBER_SPACE: Final[int] = 100
+
+#: Chỉ số cột của hai chữ số cuối mỗi giải trong luồng chữ số phẳng.
+#: Hai chữ số cuối của một giải chính là con LOTO mà giải đó sinh ra.
+_LAST_TWO: Final[tuple[tuple[int, int], ...]] = tuple(
+    (offset + width - 2, offset + width - 1)
+    for offset, width in zip(
+        np.cumsum([0, *[w for _, w in FIELD_WIDTHS[:-1]]]).tolist(),
+        [w for _, w in FIELD_WIDTHS],
+        strict=True,
+    )
+)
+
+
+@dataclass(frozen=True)
+class DigitTensor:
+    """Lịch sử đã số hóa: chữ số theo vị trí, số trúng theo ngày.
+
+    ``values`` có dạng ``(số ngày, 107)`` kiểu ``uint8``; ``values[t, p]`` là chữ
+    số ở vị trí ``p`` của ngày ``dates[t]``. ``loto_counts[t, n]`` là số lần con
+    ``n`` xuất hiện trong ngày ``t`` (0, 1 hoặc nhiều hơn — cầu hai nháy cần đếm
+    chứ không chỉ cần có), và ``de_index[t]`` là hai chữ số cuối của giải Đặc Biệt.
+    """
+
+    values: np.ndarray
+    dates: pd.DatetimeIndex
+    position_labels: tuple[str, ...]
+    loto_counts: np.ndarray
+    de_index: np.ndarray
+
+    def __post_init__(self) -> None:
+        if self.values.ndim != 2 or self.values.shape[1] != TOTAL_DIGITS:
+            raise ValueError(f"values phải có dạng (n, {TOTAL_DIGITS})")
+        if len(self.dates) != self.values.shape[0]:
+            raise ValueError("dates và values phải cùng độ dài")
+        if self.loto_counts.shape != (self.values.shape[0], NUMBER_SPACE):
+            raise ValueError(f"loto_counts phải có dạng (n, {NUMBER_SPACE})")
+        if self.de_index.shape != (self.values.shape[0],):
+            raise ValueError("de_index phải có một phần tử mỗi ngày")
+
+    @property
+    def n_days(self) -> int:
+        return int(self.values.shape[0])
+
+    @property
+    def n_positions(self) -> int:
+        return int(self.values.shape[1])
+
+    def loto_hits(self) -> np.ndarray:
+        """Ma trận ``(ngày, 100)`` kiểu bool: con số có về trong ngày hay không."""
+        return self.loto_counts > 0
+
+    def loto_double_hits(self) -> np.ndarray:
+        """Ma trận ``(ngày, 100)`` kiểu bool cho tiêu chí hai nháy."""
+        return self.loto_counts >= 2
+
+    @classmethod
+    def from_raw(cls, df_raw: pd.DataFrame) -> DigitTensor:
+        """Dựng từ bảng kết quả thô, sau khi bắt buộc chuỗi ngày liền mạch."""
+        if "date" not in df_raw.columns:
+            raise ValueError("bảng kết quả thô thiếu cột 'date'")
+        frame = df_raw.sort_values("date", kind="stable").reset_index(drop=True)
+        dates = require_daily_contiguous(frame["date"], context="quét cầu ghép chéo ngày")
+
+        values = raw_digit_matrix(frame)
+        labels = tuple(build_position_labels())
+
+        # Hai chữ số cuối của mỗi giải là con LOTO của giải đó; đếm bằng
+        # bincount theo hàng thay vì vòng lặp Python trên từng ngày.
+        n_days = values.shape[0]
+        pairs = np.empty((n_days, len(_LAST_TWO)), dtype=np.int16)
+        for slot, (hi, lo) in enumerate(_LAST_TWO):
+            pairs[:, slot] = values[:, hi].astype(np.int16) * 10 + values[:, lo]
+
+        counts = np.zeros((n_days, NUMBER_SPACE), dtype=np.uint8)
+        rows = np.repeat(np.arange(n_days), pairs.shape[1])
+        np.add.at(counts, (rows, pairs.ravel()), 1)
+
+        # Giải Đặc Biệt là trường đầu tiên, nên hai chữ số cuối của nó là cột 0.
+        de_index = pairs[:, 0].astype(np.int16)
+
+        return cls(
+            values=values,
+            dates=dates,
+            position_labels=labels,
+            loto_counts=counts,
+            de_index=de_index,
+        )
+
+
+# --- Đặc tả mẫu cầu (trước 15-11-2026: bridges/spec.py) -------------------------------------------
+#
+# Định danh một đường cầu ghép chéo ngày.
+#
+# Khác biệt so với ``dynamic_cau.PatternSpec``: ở đó hai vị trí nguồn luôn lấy từ
+# *cùng một ngày* T−1. Ở đây mỗi vị trí mang độ trễ riêng, nên diễn đạt được đúng
+# thứ đặc tả yêu cầu — vị trí A ở ngày T−k ghép với vị trí B ở ngày T−k+1.
+#
+# Lớp này chỉ *đặt tên* cho một giả thuyết. Việc chấm điểm nằm ở ``scanner``, và
+# việc quyết định giả thuyết nào được phép đi tiếp nằm ở ``firewall``.
+
+TRANSFORM_CONCAT: Final[str] = "concat"
+TRANSFORM_REVERSE_CONCAT: Final[str] = "reverse_concat"
+TRANSFORM_REVERSE_PAIR: Final[str] = "reverse_pair"
+TRANSFORM_BO: Final[str] = "bo"
+
+TRANSFORMATIONS: Final[tuple[str, ...]] = (
     TRANSFORM_CONCAT,
     TRANSFORM_REVERSE_CONCAT,
     TRANSFORM_REVERSE_PAIR,
-    TRANSFORMATIONS,
-    default_lag_pairs,
+    TRANSFORM_BO,
 )
-from soi_cau.bridges.tensor import NUMBER_SPACE, DigitTensor
-from core.number_reference import bo
-from core.xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
+
+TARGET_LOTO: Final[str] = "loto"
+TARGET_LOTO_2_NHAY: Final[str] = "loto_2_nhay"
+TARGET_DE: Final[str] = "de"
+
+TARGET_TYPES: Final[tuple[str, ...]] = (TARGET_LOTO, TARGET_LOTO_2_NHAY, TARGET_DE)
+
+
+@dataclass(frozen=True)
+class CrossDayPatternSpec:
+    """Một giả thuyết cầu: hai vị trí, hai độ trễ, một phép biến đổi, một bóng."""
+
+    position_a: int
+    position_b: int
+    lag_a: int
+    lag_b: int
+    transformation: str = TRANSFORM_CONCAT
+    shadow: str = "thuc"
+
+    def __post_init__(self) -> None:
+        if self.lag_a < 1 or self.lag_b < 1:
+            raise ValueError("độ trễ phải tính bằng số ngày dương")
+        if self.transformation not in TRANSFORMATIONS:
+            raise ValueError(f"phép biến đổi không hợp lệ: {self.transformation!r}")
+
+    @property
+    def span(self) -> int:
+        """Biên độ chạy: số ngày mà đường cầu trải qua."""
+        return abs(self.lag_a - self.lag_b) + 1
+
+    @property
+    def identifier(self) -> str:
+        return (
+            f"{self.transformation}|{self.shadow}|"
+            f"p{self.position_a}@T-{self.lag_a}+p{self.position_b}@T-{self.lag_b}"
+        )
+
+
+def default_lag_pairs(max_span: int = 3) -> tuple[tuple[int, int], ...]:
+    """Cặp độ trễ mặc định: lag-1 cùng ngày, rồi ghép chéo A(T−k) với B(T−k+1).
+
+    ``max_span=1`` cho đúng hành vi lag-1 của ``dynamic_cau``; mỗi nấc tăng thêm
+    một biên độ ``k`` và nhân đôi kích thước họ giả thuyết, nên giá trị này là
+    núm điều khiển trực tiếp của bài toán đa kiểm định.
+    """
+    if max_span < 1:
+        raise ValueError("max_span phải ít nhất bằng 1")
+    pairs = [(1, 1)]
+    pairs.extend((k, k - 1) for k in range(2, max_span + 1))
+    return tuple(pairs)
+
+
+# --- Bóng số (trước 15-11-2026: bridges/shadow.py) ------------------------------------------------
+#
+# Quét song song giá trị thực và giá trị quy đổi theo bóng số.
+#
+# Bóng là một ánh xạ chữ số → chữ số, nên áp nó lên *nguồn* trước khi ghép cặp
+# giữ nguyên toàn bộ hình dạng vector của phép quét: không có nhánh nào rẽ riêng,
+# không có vòng lặp Python nào thêm vào.
+#
+# Hai bảng bóng lấy thẳng từ ``number_reference`` — nơi chúng đã được dùng cho các
+# trang thống kê — thay vì chép lại. Chép lại sẽ tạo ra hai nguồn sự thật có thể
+# trôi khỏi nhau mà không ai phát hiện.
+
+KIND_THUC: Final[str] = "thuc"
+KIND_BONG_DUONG: Final[str] = "bong_duong"
+KIND_BONG_AM: Final[str] = "bong_am"
+
+SHADOW_KINDS: Final[tuple[str, ...]] = (KIND_THUC, KIND_BONG_DUONG, KIND_BONG_AM)
+
+
+def _lookup_table(mapping: dict[int, int]) -> np.ndarray:
+    table = np.arange(10, dtype=np.uint8)
+    for source, target in mapping.items():
+        table[int(source)] = np.uint8(int(target))
+    return table
+
+
+_TABLES: Final[dict[str, np.ndarray]] = {
+    KIND_THUC: np.arange(10, dtype=np.uint8),
+    KIND_BONG_DUONG: _lookup_table(BONG_DUONG),
+    KIND_BONG_AM: _lookup_table(BONG_AM),
+}
+
+
+def shadow_table(kind: str) -> np.ndarray:
+    """Bảng tra cứu 10 phần tử cho một loại bóng."""
+    try:
+        return _TABLES[kind]
+    except KeyError:
+        raise ValueError(
+            f"loại bóng không hợp lệ: {kind!r}; hiện có {list(SHADOW_KINDS)}"
+        ) from None
+
+
+def apply_shadow(kind: str, digits: np.ndarray) -> np.ndarray:
+    """Quy đổi một mảng chữ số bất kỳ theo bóng, giữ nguyên hình dạng."""
+    if digits.size and (digits.min() < 0 or digits.max() > 9):
+        raise ValueError("chữ số phải nằm trong 0..9")
+    return shadow_table(kind)[digits]
+
+
+# --- Bộ quét ---------------------------------------------------------------------------------------
 
 _MAX_BO_MEMBERS: Final[int] = 8
 

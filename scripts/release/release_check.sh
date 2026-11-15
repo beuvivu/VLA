@@ -363,7 +363,7 @@ printf '%s\n' "== Static GitHub Pages builders =="
 python src/pages/build_docs.py
 python src/pages/build_docs_ml.py
 python src/pages/build_dashboard.py
-python src/pages/build_markdown_dashboard.py
+python src/pages/build_markdown_dashboard_v3.py
 python src/pages/build_statistics_dashboard.py
 python src/pages/build_landing_page.py
 python src/pages/build_fun_prediction.py

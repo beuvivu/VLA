@@ -734,7 +734,8 @@ def train_meta(
         # đang bật khi bằng chứng hiện tại không còn đủ điều kiện.
         models_dir.mkdir(parents=True, exist_ok=True)
         report_dir.mkdir(parents=True, exist_ok=True)
-        dump_pack_unless_equivalent(pack, models_dir / f"meta_{mode}.joblib", stamp_keys=PACK_STAMP_KEYS)
+        dump_pack_unless_equivalent(pack, models_dir / f"meta_{mode}.joblib", stamp_keys=PACK_STAMP_KEYS,
+                                    predictions={})   # pack vô hiệu hoá: không có mô hình
         report = {key: value for key, value in pack.items() if key != "model"}
         (report_dir / f"meta_report_{mode}.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
@@ -862,7 +863,8 @@ def train_meta(
     }
     models_dir.mkdir(parents=True, exist_ok=True)
     model_path = models_dir / f"meta_{mode}.joblib"
-    dump_pack_unless_equivalent(pack, model_path, stamp_keys=PACK_STAMP_KEYS)
+    dump_pack_unless_equivalent(pack, model_path, stamp_keys=PACK_STAMP_KEYS,
+                                predictions={"model": lambda model: model.predict_proba(X_val)[:, 1]})
 
     report_dir.mkdir(parents=True, exist_ok=True)
     report = {

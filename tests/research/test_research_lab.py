@@ -16,7 +16,8 @@ from core.number_reference import (
     normalize_two_digit,
     reverse,
 )
-from research.research_diagnostics import bh_fdr, build_report
+from research.research_diagnostics import build_report
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 from research.research_firewall import evaluate_mode
 from research.strategy_lab import evaluate_lab, registry
 

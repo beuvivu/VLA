@@ -166,8 +166,7 @@ def test_poisson_binomial_tail_is_exact() -> None:
     )
 
 
-def test_holm_and_wilson_match_their_textbook_values() -> None:
-    assert r.holm([0.01, 0.04, 0.03, 0.005]) == pytest.approx([0.03, 0.06, 0.06, 0.02])
+def test_wilson_matches_its_textbook_values() -> None:
     assert r.wilson(0, 10) == pytest.approx((0.0, 0.2775), abs=1e-4)
     assert r.wilson(5, 10) == pytest.approx((0.2366, 0.7634), abs=1e-4)
 

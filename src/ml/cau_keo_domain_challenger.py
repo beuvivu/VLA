@@ -32,11 +32,13 @@ from typing import Literal
 import joblib
 import numpy as np
 import pandas as pd
+from core.atomic_io import atomic_write_text
 from core.safe_io import read_json_or_empty
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from ml.cau_keo_ml import (
     FEATURE_COLS,
+    PACK_STAMP_KEYS,
     CauKeoConfig,
     _add_ai_judgement,
     _downsample,
@@ -51,7 +53,7 @@ from ml.cau_keo_feature_groups import (
     augment_domain_features,
 )
 from ml.ml_models import PlattCalibratedClassifier
-from core.model_io import MODEL_LOAD_ERRORS, atomic_joblib_dump
+from core.model_io import MODEL_LOAD_ERRORS, dump_pack_unless_equivalent
 from ml.ml_validation import (
     PredictionEvaluation,
     ValidationConfig,
@@ -702,7 +704,11 @@ def run_mode(
     pack["domain_trained_through_date"] = str(
         pd.to_datetime(X_train["anchor_date"]).max().date()
     )
-    atomic_joblib_dump(pack, model_path)
+    # Thách đấu học lại mỗi lượt; trên runner khác CPU số đo cổng lệch bit cuối mà dự báo trùng: giữ tệp cũ.
+    dump_pack_unless_equivalent(pack, model_path, stamp_keys=PACK_STAMP_KEYS, predictions={
+        "model": lambda model: predict_with_feature_allowlist(model, X_pred, FEATURE_COLS),
+        "domain_challenger_model": lambda model: predict_with_feature_allowlist(model, X_pred, selected_features),
+    })
 
     manifest_path = out_dir / f"cau_keo_manifest_{mode}.json"
     manifest = read_json_or_empty(manifest_path)
@@ -720,10 +726,8 @@ def run_mode(
         "final_logloss_skill": float(gate["final_logloss_skill"]),
         "policy": gate["policy"],
     }
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    # Đọc rồi ghi lại cả tệp: ghi dở thì lần sau `read_json_or_empty` trả {} và mất phần của mô hình nền.
+    atomic_write_text(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     created.append(manifest_path)
 
     logger.info(

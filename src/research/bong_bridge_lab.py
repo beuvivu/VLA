@@ -56,7 +56,7 @@ from scipy import stats
 from soi_cau.dynamic_cau import PRIZE_LAYOUT
 from ingest.lottery import Lottery
 from core.number_reference import BONG_AM, BONG_DUONG
-from research.research_diagnostics import bh_fdr
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 SCHEMA_VERSION = 1
 

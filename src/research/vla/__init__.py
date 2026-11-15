@@ -2,9 +2,9 @@
 
 Gói này là MÔ HÌNH THÁCH ĐẤU, không phải đường dự báo production. Nó gồm:
 
-* ``research.vla.features.engineer`` — ma trận đặc trưng (nhịp/gan, tần suất suy giảm,
+* ``research.vla.features`` — ma trận đặc trưng (nhịp/gan, tần suất suy giảm,
   cầu vị trí, đồng xuất hiện PMI, cộng đồng Louvain, Markov Đặc Biệt);
-* ``research.vla.models.bayesian_lgb`` — ba tầng: tiên nghiệm Dirichlet/Beta,
+* ``research.vla.models`` — ba tầng: tiên nghiệm Dirichlet/Beta,
   LightGBM tăng cường từ tiên nghiệm, hiệu chỉnh Platt/isotonic;
 * ``research.vla.backtest`` — walk-forward cửa sổ mở rộng và bộ chỉ số (logloss,
   Brier, Top-K, ROI theo luật trả thưởng).

@@ -25,7 +25,7 @@ from soi_cau.bridges.replication import (
     slice_tensor,
 )
 from soi_cau.bridges.scanner import BridgeScanner
-from soi_cau.bridges.tensor import DigitTensor
+from soi_cau.bridges.scanner import DigitTensor
 from core.xsmb_domain import FIELD_WIDTHS
 
 #: Bộ quét thu hẹp: một độ trễ, một loại bóng, một phép biến đổi. 11 449 giả

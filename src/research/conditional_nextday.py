@@ -14,7 +14,7 @@ from scipy import stats
 from ensemble.hierarchical_pooling import fit_shrinkage_to_prior_rows
 from ingest.lottery import Lottery
 from core.path_models import build_daily_targets
-from research.research_diagnostics import bh_fdr
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 
 #: ``None`` nghĩa là HỌC độ co ngót theo từng con đề, thay cho hằng số 60.

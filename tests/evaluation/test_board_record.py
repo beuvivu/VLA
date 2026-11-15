@@ -133,11 +133,6 @@ def test_a_list_that_never_hits_is_called_worse() -> None:
     assert row["verdict"] == "trúng ít hơn chọn bừa"
 
 
-def test_holm_steps_down_and_stays_monotone() -> None:
-    assert board_record.holm([0.01, 0.04, 0.03, 0.5]) == pytest.approx([0.04, 0.09, 0.09, 0.5])
-    assert board_record.holm([0.9, 0.9]) == [1.0, 1.0]
-
-
 def test_the_record_of_the_real_boards_adds_up_and_is_deterministic() -> None:
     draws = board_record.complete_draws(DATA)
     boards = board_record.scored_boards(DATA, draws)

@@ -23,8 +23,8 @@ from soi_cau.features import (
     default_registry,
     pascal_reduce,
     touches,
+    validate_block,
 )
-from soi_cau.features.base import validate_block
 from core.xsmb_domain import FIELD_WIDTHS
 
 
