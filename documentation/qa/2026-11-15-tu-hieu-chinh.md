@@ -42,7 +42,8 @@ Mỗi cổng có phép kiểm cài tín hiệu cho CẢ HAI chiều: nhiễu thu
 
 Bộ học hỏng thì lượt `--strict` đỏ. Nhưng bộ học thoát mã 0 mà bỏ qua kỳ mới (sổ trạng thái không ghi,
 đầu vào cũ) thì không gì thấy. `production_audit.stale_learners` (chạy ở `post-finalization` và
-`watchdog`) đòi Hedge hai chế độ, sổ ba tác tử, báo cáo ba tác tử, kho tri thức và mô hình xếp chồng
+`watchdog`; không chạy ở `--consistency-only` của `release_check.sh`, vì nó kiểm cả commit nằm giữa commit kết quả
+chuẩn và commit phân tích, lúc bộ học ở kỳ trước là hợp lệ) đòi Hedge hai chế độ, sổ ba tác tử, báo cáo ba tác tử, kho tri thức và mô hình xếp chồng
 đang ở trạng thái đã học phải ghi đúng ngày kỳ mới nhất. Trên 33 commit chốt từ 06-10-2026, không bộ nào
 trễ một kỳ, nên phép canh không báo nhầm. Trọng số tổ hợp không nằm trong danh sách: nó CỐ Ý đứng yên khi
 sổ đủ năm thành phần chưa đủ ngày (đổi `COMPONENT_POLICY` thì sổ bắt đầu lại).

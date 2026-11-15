@@ -284,7 +284,11 @@ def audit(
                     f"ai_overlay_{mode}_target={overlay_target} expected={target}"
                 )
 
-        critical.extend(stale_learners(latest))
+        # Chỉ ở kiểm toán đầy đủ sau khi chốt (post-finalization, watchdog). `--consistency-only` chạy trên mọi
+        # commit của PR (release_check.sh), kể cả lúc kết quả chuẩn đã commit mà phân tích chưa: bộ học còn ở
+        # kỳ trước là trạng thái hợp lệ ở khoảng ấy, và release_check không dựng lại bộ học.
+        if check_freshness:
+            critical.extend(stale_learners(latest))
 
         try:
             cond = _json("data/stats/advanced/conditional_matrices_diagnostics.json")

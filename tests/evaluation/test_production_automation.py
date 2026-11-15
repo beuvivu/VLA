@@ -295,9 +295,13 @@ def test_a_learner_that_stops_following_new_draws_turns_the_audit_red(monkeypatc
     assert {path for _, path, _ in production_audit.ADAPTIVE_LEARNERS} <= set(production_audit.REQUIRED_PATHS)
 
 
-def test_the_audit_reports_every_stale_learner_as_critical(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_full_audit_reports_stale_learners_and_the_consistency_audit_does_not(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Kiểm toán đầy đủ sau khi chốt phải đỏ; `--consistency-only` (release_check trên mọi commit của PR) thì không:
+    giữa commit kết quả chuẩn và commit phân tích, bộ học ở kỳ trước là hợp lệ, và release_check không dựng lại bộ học."""
     from evaluation import production_audit
 
     monkeypatch.setattr(production_audit, "stale_learners", lambda latest: [f"learner_stale:kiem_thu expected={latest}"])
-    critical = audit(check_freshness=False, check_docs=False)["critical"]
-    assert any(item.startswith("learner_stale:kiem_thu") for item in critical), critical
+    full = audit(check_freshness=True, check_docs=False)["critical"]
+    assert any(item.startswith("learner_stale:kiem_thu") for item in full), full
+    consistency = audit(check_freshness=False, check_docs=False)["critical"]
+    assert not any(item.startswith("learner_stale:") for item in consistency), consistency
