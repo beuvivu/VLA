@@ -71,3 +71,23 @@ def mega_history() -> DrawHistory:
 @pytest.fixture
 def power_history() -> DrawHistory:
     return make_history(POWER_655, 800, seed=2)
+
+
+def official_matrix_source(monkeypatch, service):
+    """Mega: nguồn ``vietlott`` đọc JSONL mẫu và gắn nhãn chính thức như nguồn thật.
+
+    Chỉ ``--full`` từ vietlott.vn được sửa kỳ đã lưu (``pipeline.conflicting_draws``), nên phép kiểm
+    journal của một bản sửa phải đi qua nguồn mang nhãn ấy.
+    """
+    from vietlott_engine.crawler.sources.mirror import GithubMirrorSource
+
+    class Official(GithubMirrorSource):
+        name = 'vietlott'
+
+    real = service.build_source
+
+    def build(settings, client, kind=None, path=None):
+        if kind == 'vietlott':
+            return Official(client, settings.github_mirror_base_url)
+        return real(settings, client, kind, path)
+    monkeypatch.setattr(service, 'build_source', build)

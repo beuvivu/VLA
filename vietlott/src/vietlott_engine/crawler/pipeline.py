@@ -44,9 +44,33 @@ class SyncReport:
     integrity: IntegrityReport
     parquet_path: str | None
     elapsed_s: float
+    conflicting_ids: list[int] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+# Chỉ nguồn chính thức vietlott.vn được sửa kết quả kỳ đã lưu, và chỉ khi tải lại toàn bộ (``--full``).
+OFFICIAL_SOURCE = "vietlott"
+
+
+def _result_identity(draw: Draw) -> tuple:
+    """Kết quả quay của một kỳ; bảng giải và nhãn nguồn không thuộc về nó."""
+    return (draw.draw_date, draw.numbers, draw.bonus)
+
+
+def conflicting_draws(fetched: list[Draw], stored: dict[int, Draw], full_refresh: bool) -> list[int]:
+    """Mã các kỳ nguồn trả về khác kết quả đã lưu mà nguồn không có quyền sửa.
+
+    Cùng luật với Keno/Bingo18 và Max 3D/3D Pro/4D (``product_store``): nguồn không được sửa kỳ đã
+    lưu; chỉ ``--full`` từ vietlott.vn chính thức được sửa. Xét theo nhãn ``source`` của TỪNG kỳ, vì
+    ``auto`` ghép kỳ của nhiều nguồn vào một lô.
+    """
+    return sorted({
+        draw.draw_id for draw in fetched
+        if draw.draw_id in stored and _result_identity(draw) != _result_identity(stored[draw.draw_id])
+        and not (full_refresh and draw.source == OFFICIAL_SOURCE)
+    })
 
 
 def check_integrity(draws: list[Draw], spec: GameSpec) -> IntegrityReport:
@@ -79,7 +103,8 @@ class SyncPipeline:
     async def run(self, spec: GameSpec, full_refresh: bool = False,
                   *, before_upsert: Callable[[list[Draw]], list[Draw] | None] | None = None) -> SyncReport:
         t0 = time.perf_counter()
-        known_ids = sorted({draw.draw_id for draw in self.repository.load(spec.code)}) if not full_refresh else []
+        stored = {draw.draw_id: draw for draw in self.repository.load(spec.code)}
+        known_ids = sorted(stored) if not full_refresh else []
         since = known_ids[-1] if known_ids else None
         repair_gap = next((a for a, b in zip(known_ids, known_ids[1:]) if b > a + 1), None)
         if repair_gap is not None:
@@ -92,6 +117,15 @@ class SyncPipeline:
             # Lùi cursor không cho nguồn dự phòng sửa các kỳ chuẩn đã có.
             known = set(known_ids)
             additions = [draw for draw in additions if draw.draw_id > repair_gap and draw.draw_id not in known]
+        # Tải lại toàn bộ đưa CẢ lịch sử của nguồn vào upsert. Trước 15-11-2026 bản sao hay kho lưu trữ
+        # đăng sai một kỳ cũ là ghi đè lặng lẽ kỳ ấy; nay giữ bản đã lưu và báo mã kỳ. Xét cả lượt thường:
+        # nguồn trả kỳ không mới hơn cursor là trái hợp đồng ``since_id``, không phải quyền sửa.
+        conflicts = conflicting_draws(additions, stored, full_refresh)
+        if conflicts:
+            log.warning("%s: source %s conflicts with %d stored draws, kept stored results, e.g. %s",
+                        spec.code.value, self.source.name, len(conflicts), conflicts[:5])
+            blocked = set(conflicts)
+            additions = [draw for draw in additions if draw.draw_id not in blocked]
         if before_upsert is not None:
             prepared = before_upsert(additions)
             if prepared is not None:
@@ -121,6 +155,7 @@ class SyncPipeline:
             integrity=integrity,
             parquet_path=parquet_path,
             elapsed_s=round(time.perf_counter() - t0, 3),
+            conflicting_ids=conflicts,
         )
 
 

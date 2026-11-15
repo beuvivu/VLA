@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from tests.conftest import official_matrix_source
+
 
 def _sync_response(product,rows,request):
     """Số mẫu từ nguồn chính thức cho kiểm thử journal; matrix giữ JSONL cũ."""
@@ -393,7 +395,8 @@ def test_sync_service_journals_corrections_to_older_existing_draws(tmp_path,monk
         async with httpx.AsyncClient(transport=transport) as c: yield c
     monkeypatch.setattr(service, 'build_http_client', client)
     if product == 'mega645':
-        asyncio.run(service.sync_matrix(state, get_game(product), source='github_mirror', full_refresh=True))
+        official_matrix_source(monkeypatch, service)
+        asyncio.run(service.sync_matrix(state, get_game(product), source='vietlott', full_refresh=True))
     else:
         asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True))
     restored = AppState(settings, InMemoryRepository())
@@ -403,6 +406,40 @@ def test_sync_service_journals_corrections_to_older_existing_draws(tmp_path,monk
     service.replay_results(restored)
     values = list(restored.repository.load(product)[0].numbers) if product == 'mega645' else restored.product_store().load(product).values[0].tolist()
     assert values == corrected['result']
+
+
+def test_a_secondary_full_refresh_neither_rewrites_nor_journals_a_stored_draw(tmp_path, monkeypatch):
+    """Bản sao đăng sai kỳ cũ: cache, journal và lần phát lại journal đều giữ kết quả đã lưu."""
+    from contextlib import asynccontextmanager
+    import httpx
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.core.games import get_game
+    from vietlott_engine.core.models import Draw
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    from vlm.database.schema import DrawRecord
+    import vlm.updates.service as service
+    old = {'id':1, 'date':'2026-09-30', 'result':[1,2,3,4,5,6]}
+    latest = old | {'id':2, 'date':'2026-10-02'}
+    wrong = old | {'result':[1,2,3,4,5,7]}
+    newer = old | {'id':3, 'date':'2026-10-04'}
+    settings = Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed', ml_auto_update_enabled=False)
+    state = AppState(settings, InMemoryRepository())
+    state.repository.upsert([Draw(game='mega645', draw_id=r['id'], draw_date=r['date'], numbers=r['result']) for r in (old, latest)])
+    service._append(state, [DrawRecord.from_legacy('mega645', r) for r in (old, latest)])
+    @asynccontextmanager
+    async def client(_settings):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:_sync_response('mega645', (wrong, latest, newer), request))) as c:
+            yield c
+    monkeypatch.setattr(service, 'build_http_client', client)
+    asyncio.run(service.sync_matrix(state, get_game('mega645'), source='github_mirror', full_refresh=True, learn=False))
+    assert list(state.repository.load('mega645')[0].numbers) == old['result']
+    assert [d.draw_id for d in state.repository.load('mega645')] == [1, 2, 3]
+    journal = [json.loads(line) for line in service.journal_path(state).read_text().splitlines()]
+    assert all(row['winning_numbers'] == old['result'] for row in journal if row['draw_id'] == 1)
+    restored = AppState(settings, InMemoryRepository())
+    service.replay_results(restored)
+    assert list(restored.repository.load('mega645')[0].numbers) == old['result']
 
 
 def test_off_schedule_weekly_result_is_never_certified_fresh():
@@ -606,7 +643,8 @@ def test_seed_only_old_correction_is_durable_before_cache_commit(tmp_path, monke
 
     def sync(target):
         if product == 'mega645':
-            return asyncio.run(service.sync_matrix(target, get_game(product), source='github_mirror', full_refresh=True, learn=False))
+            official_matrix_source(monkeypatch, service)
+            return asyncio.run(service.sync_matrix(target, get_game(product), source='vietlott', full_refresh=True, learn=False))
         return asyncio.run(service.sync_product(target, ProductCode(product), source='vietlott', full=True, learn=False))
 
     def values(target):
@@ -743,7 +781,8 @@ def test_durable_pending_correction_recovers_crash_before_cache_without_overridi
             failed.setattr(ProductStore, 'upsert', crash)
         with pytest.raises(RuntimeError, match='crash before cache commit'):
             if product == 'mega645':
-                asyncio.run(service.sync_matrix(state, get_game(product), source='github_mirror', full_refresh=True, learn=False))
+                official_matrix_source(monkeypatch, service)
+                asyncio.run(service.sync_matrix(state, get_game(product), source='vietlott', full_refresh=True, learn=False))
             else:
                 asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True, learn=False))
     assert values(state) == numbers
