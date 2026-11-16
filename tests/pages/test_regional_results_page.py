@@ -238,3 +238,122 @@ def test_a4_pdf_keeps_every_full_result_from_all_four_stations(tmp_path: Path) -
                     if re.fullmatch(r"\d{2,6}", text):
                         printed.append(text)
     assert Counter(printed) == Counter(row["value"] for row in rows)
+
+
+# --- Khối «Kiểm định ngẫu nhiên và mốc xác suất» ---------------------------------------------
+
+
+def _evidence(root: Path, region: str = "mn") -> dict:
+    from pages.build_regional_results import load_evidence
+
+    evidence = load_evidence(root, region)
+    assert evidence is not None
+    return evidence
+
+
+def test_the_evidence_block_prints_the_sentences_of_the_measurement_files_verbatim() -> None:
+    """Trình dựng không tự viết kết luận: hai câu đọc là câu của tệp số đo, từng chữ."""
+    evidence = _evidence(ROOT)
+    soup = BeautifulSoup(render("mn", sample_rows(), evidence), "html.parser")
+    block = soup.select_one("details#rg-evidence")
+    assert block is not None and block.find("summary") is not None
+    paragraphs = [p.get_text() for p in block.select(".rg-evidence-body > p")]
+    assert evidence["summary"]["reading"] in paragraphs
+    assert evidence["benchmark"]["reading"] in paragraphs
+    listed = [li.get_text() for li in block.select(".rg-evidence-list li")]
+    assert listed == [row["reading"] for row in evidence["registered"]]
+    cards = [c.find("strong").get_text() for c in block.select(".rg-evidence-card")]
+    assert cards[0] == "16,55%" and cards[1] == "1,00%"
+
+
+def test_the_evidence_block_tables_carry_the_numbers_of_the_files() -> None:
+    evidence = _evidence(ROOT)
+    soup = BeautifulSoup(render("mn", sample_rows(), evidence), "html.parser")
+    models = evidence["benchmark"]["modes"]["loto"]["models"]
+    table = soup.select_one('table[aria-labelledby="rg-model-caption"]')
+    names = [th.contents[0].strip() for th in table.select("tbody th")]
+    assert names == [model["name"] for key, model in models.items() if key != "deu"]
+    first = table.select("tbody tr")[0].find_all("td")
+    gain = models["tan_suat"]["mean_gain"]
+    assert first[0].get_text() == f"{gain:.5f}".replace(".", ",")
+    # Mô hình thêm sau khi đã nhìn dữ liệu phải được ghi rõ ngay cạnh tên.
+    late = [row for row in table.select("tbody tr") if "thêm sau khi đã nhìn dữ liệu" in row.get_text()]
+    assert len(late) == sum(1 for m in models.values() if m.get("post_hoc")) >= 1
+    flagged = [b for b in evidence["summary"]["tests"]["per_station"] if b.get("cage_counts")]
+    cage_tables = soup.select("table.rg-cage-table")
+    assert len(cage_tables) == len(flagged)
+    for table, block in zip(cage_tables, flagged, strict=True):
+        body = table.select("tbody tr")
+        assert len(body) == 5  # năm lồng của phép kiểm; lồng trăm nghìn không in
+        assert [int(td.get_text()) for td in body[0].find_all("td")[:10]] == block["cage_counts"][0]
+        assert block["province"] in soup.find(id=table["aria-labelledby"]).get_text()
+
+
+def test_the_evidence_block_never_names_where_the_data_comes_from() -> None:
+    from ingest.sources import REGIONAL_SOURCE_NAMES
+
+    for region in ("mt", "mn"):
+        page = render(region, sample_rows(), _evidence(ROOT, region))
+        assert 'id="rg-evidence"' in page
+        for name in REGIONAL_SOURCE_NAMES:
+            assert name not in page
+        assert "vla" not in page.lower().replace("vietlott", "")
+
+
+def _copy_measurements(target: Path) -> None:
+    for relative in (
+        "data/stats/regional/summary_mn.json",
+        "data/evaluation/regional_benchmark/benchmark.json",
+        "data/research/hypotheses/regional_cage_bias.json",
+    ):
+        (target / relative).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target / relative)
+
+
+def test_half_a_conclusion_is_never_printed(tmp_path: Path) -> None:
+    """Thiếu một tệp, hoặc hai tệp nói về hai ngày dữ liệu khác nhau: trang không in khối kiểm định."""
+    from pages.build_regional_results import load_evidence
+
+    assert load_evidence(tmp_path, "mn") is None
+    assert 'id="rg-evidence"' not in render("mn", sample_rows(), None)
+    _copy_measurements(tmp_path)
+    assert load_evidence(tmp_path, "mn") is not None
+
+    benchmark = tmp_path / "data/evaluation/regional_benchmark/benchmark.json"
+    payload = json.loads(benchmark.read_text(encoding="utf-8"))
+    payload["regions"]["mn"]["data_through"] = "2020-01-01"
+    benchmark.write_text(json.dumps(payload), encoding="utf-8")
+    assert load_evidence(tmp_path, "mn") is None
+
+    _copy_measurements(tmp_path)
+    (tmp_path / "data/stats/regional/summary_mn.json").unlink()
+    assert load_evidence(tmp_path, "mn") is None
+    _copy_measurements(tmp_path)
+    (tmp_path / "data/evaluation/regional_benchmark/benchmark.json").unlink()
+    assert load_evidence(tmp_path, "mn") is None
+
+
+def test_only_the_registrations_of_this_region_are_listed(tmp_path: Path) -> None:
+    from pages.build_regional_results import load_evidence
+
+    _copy_measurements(tmp_path)
+    registry = tmp_path / "data/research/hypotheses/regional_cage_bias.json"
+    payload = json.loads(registry.read_text(encoding="utf-8"))
+    assert payload["status"], "sổ đã commit có đăng ký"
+    payload["status"].append({**payload["status"][0], "region": "mt", "province": "Đài Khác", "reading": "x"})
+    registry.write_text(json.dumps(payload), encoding="utf-8")
+    listed = load_evidence(tmp_path, "mn")["registered"]
+    assert listed and all(row["region"] == "mn" for row in listed)
+    registry.unlink()
+    assert load_evidence(tmp_path, "mn")["registered"] == []
+
+
+@pytest.mark.parametrize(("region", "filename"), [("mt", "ket-qua-mien-trung.html"), ("mn", "ket-qua-mien-nam.html")])
+def test_the_published_page_shows_the_committed_measurements(region: str, filename: str) -> None:
+    """Trang đã xuất bản in đúng câu của số đo đã commit — không phải của một lượt chạy khác."""
+    soup = BeautifulSoup((ROOT / "docs" / filename).read_text(encoding="utf-8"), "html.parser")
+    block = soup.select_one("details#rg-evidence")
+    evidence = _evidence(ROOT, region)
+    assert block is not None
+    paragraphs = [p.get_text() for p in block.select(".rg-evidence-body > p")]
+    assert evidence["summary"]["reading"] in paragraphs and evidence["benchmark"]["reading"] in paragraphs

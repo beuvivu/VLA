@@ -13,6 +13,23 @@
 .rg-btn:focus-visible{outline:3px solid var(--ui-brand-border);outline-offset:2px}
 .rg-meta{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .rg-meta span{padding:7px 12px;border:1px solid var(--ui-border);border-radius:999px;background:var(--ui-surface);font-size:12px}
+.rg-evidence{margin:0 0 16px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface)}
+.rg-evidence>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:16px;cursor:pointer;font-size:14px}
+.rg-evidence>summary:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px;border-radius:16px}
+.rg-evidence>summary span{color:var(--ui-ink-soft);font-size:12px}
+.rg-evidence-body{display:grid;gap:12px;padding:0 16px 16px;min-width:0}
+.rg-evidence-body h3{margin:8px 0 0;font-size:15px}
+.rg-evidence-body p,.rg-evidence-list{margin:0;color:var(--ui-ink-2);font-size:13px;line-height:1.6}
+.rg-evidence-list{padding-left:20px}
+.rg-evidence-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rg-evidence-card{display:grid;gap:4px;padding:12px 16px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface-2)}
+.rg-evidence-card span,.rg-evidence-card small{color:var(--ui-ink-soft);font-size:12px}
+.rg-evidence-card strong{font-size:22px;font-variant-numeric:tabular-nums}
+.rg-evidence-body .rg-evidence-caption{margin:4px 0 -4px;color:var(--ui-ink-soft);font-size:12px}
+.rg-evidence .ui-table small{display:block;color:var(--ui-ink-soft);font-weight:400}
+.rg-evidence .ui-table tbody th{min-width:112px;max-width:240px;white-space:normal}
+.rg-cage-table td,.rg-cage-table th{text-align:center;font-variant-numeric:tabular-nums}
+.rg-evidence-note{padding-top:8px;border-top:1px solid var(--ui-border)}
 .rg-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin-bottom:16px}
 .rg-tools p{flex:1 1 240px;margin:0;color:var(--ui-ink-soft);font-size:12px}
 .rg-tools .tr-btn{min-height:32px;font-size:12px}
@@ -54,6 +71,7 @@
   .rg-guide{margin-top:16px;max-width:none}
   .rg-filter{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .rg-filter .rg-btn{grid-column:1/-1}
+  .rg-evidence-cards{grid-template-columns:minmax(0,1fr)}
   .rg-results{--rg-province-min:152px;--tr-label-w:80px;--tr-label-fs:11px;--tr-num-fs:17px;--tr-num-h:36px;--tr-sp-fs:25px;--tr-sp-h:56px}
   .rg-board-body{padding:8px}
   .rg-draw-head{padding:16px}
@@ -66,7 +84,7 @@
 
 /* Khi in, cuộn không còn là cách xem phần còn lại: mọi đài phải vừa khổ giấy. */
 @media print{
-  .rg-hero,.rg-filter,.rg-meta,.rg-tools,.rg-scroll-hint{display:none!important}
+  .rg-hero,.rg-filter,.rg-meta,.rg-evidence,.rg-tools,.rg-scroll-hint{display:none!important}
   .rg-results{--tr-label-w:72px;--tr-label-fs:10px;--tr-num-fs:13px;--tr-num-h:24px;--tr-sp-fs:20px;--tr-sp-h:32px}
   .rg-results .rg-draw.tr-day{overflow:visible;box-shadow:none}
   .rg-draw-head{padding:8px 12px}

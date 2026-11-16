@@ -528,7 +528,22 @@ def _vung(region: str) -> tuple[Evidence, list[Section]]:
     }], [
         "Đọc sổ kết quả vùng đã lưu, nhóm theo ngày quay rồi theo tỉnh/thành.",
         "Hiển thị nguyên số đã công bố; bộ lọc ngày và tỉnh chỉ ẩn/hiện, không tính lại.",
-    ]), []
+    ]), [_sec(".rg-evidence", f"Kiểm định ngẫu nhiên và mốc xác suất {region}", _ev([{
+        "title": f"Kiểm định từng đài {region}",
+        "snippet": "Tám phép kiểm cho từng đài, phân phối chuẩn lấy bằng mô phỏng đúng cấu trúc 18 giải; "
+                   "hiệu chỉnh đa kiểm trên mọi (đài × phép kiểm) của miền.",
+    }, {
+        "title": f"Phép chấm tiến cứu {region}",
+        "snippet": "Mỗi cách dự báo chỉ đọc các kỳ trước ngày đích rồi được chấm bằng log-loss trên kỳ ấy, "
+                   "so với dự báo đều.",
+    }], [
+        "Mức nền một con lô ở một đài là 1 − 0,99¹⁸ (18 giải mỗi kỳ); đuôi Đặc Biệt là 1/100.",
+        "Mỗi đài được kiểm riêng vì là một bộ lồng cầu riêng; p của phép theo lồng lấy từ đuôi χ², các phép "
+        "còn lại lấy từ mô phỏng.",
+        "Lợi log-loss dương nghĩa là tốt hơn dự báo đều; khoảng 95% lấy mẫu lại theo ngày quay, p hiệu chỉnh Holm.",
+        "Độ lệch thấy trên dữ liệu cũ chỉ được coi là xác nhận khi phép kiểm đã đăng ký vượt ngưỡng trên các kỳ "
+        "quay SAU ngày đăng ký.",
+    ]))]
 
 
 def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tuple[Evidence, list[Section]]:

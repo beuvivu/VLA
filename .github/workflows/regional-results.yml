@@ -6,6 +6,11 @@ on:
     paths:
       - 'src/ingest/regional_lottery.py'
       - 'src/pages/build_regional_results.py'
+      - 'src/core/regional_domain.py'
+      - 'src/stats/regional_stats.py'
+      - 'src/evaluation/regional_benchmark.py'
+      - 'src/evaluation/forecast_metrics.py'
+      - 'src/research/regional_cage_test.py'
       - 'scripts/ops/push_generated_site.py'
       - '.github/workflows/regional-results.yml'
   workflow_dispatch:
@@ -63,6 +68,18 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then MANUAL_DAYS=30; fi
           python src/ingest/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15 --require-latest
 
+      # Thứ tự có ràng buộc: thống kê gắn cờ đài lệch → phép kiểm tiến cứu đăng ký/chấm đúng các đài ấy
+      # → phép chấm walk-forward. Sổ sai cấu trúc làm bước đầu dừng (không thống kê trên dữ liệu hỏng);
+      # khi ấy trang vẫn được dựng nhưng không in khối kiểm định, và lượt chạy đỏ ở bước cuối.
+      - name: Thống kê, kiểm định và chấm tiến cứu từng đài
+        id: analyse
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python src/stats/regional_stats.py
+          python src/research/regional_cage_test.py
+          python src/evaluation/regional_benchmark.py
+
       - name: Dựng trang từ kết quả đã thu thập
         run: |
           python src/pages/build_regional_results.py
@@ -92,6 +109,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/regions/xsmt.csv data/regions/xsmt.json data/regions/xsmn.csv data/regions/xsmn.json \
                   docs/*.html docs/assets
+          # Số đo từng đài của CÙNG lượt chạy. `git add` dừng ở đường dẫn không tồn tại, nên chỉ thêm thứ đã
+          # có: bước thống kê hỏng không được chặn việc ghi kết quả vừa thu thập.
+          for path in data/stats/regional data/evaluation/regional_benchmark \
+                      data/research/hypotheses/regional_cage_bias.json \
+                      data/research/hypotheses/regional_cage_bias.csv; do
+            if [ -e "$path" ]; then git add "$path"; fi
+          done
           if git diff --cached --quiet; then
             echo "Không có dữ liệu vùng mới."
             exit 0
@@ -118,4 +142,10 @@ jobs:
         if: ${{ always() && steps.collect.outcome == 'failure' }}
         run: |
           echo "::error::Đồng bộ vùng chưa hoàn tất; xem bước thu thập để biết miền và ngày còn thiếu."
+          exit 1
+
+      - name: Báo lỗi nếu thống kê hoặc phép chấm từng đài hỏng
+        if: ${{ always() && steps.analyse.outcome == 'failure' }}
+        run: |
+          echo "::error::Thống kê/kiểm định từng đài không chạy xong; trang đã dựng không in khối kiểm định."
           exit 1
