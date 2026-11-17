@@ -65,6 +65,7 @@ MODEL_LOADERS = (
     "ml.cau_keo_ml",
     "ml.validate_cau_keo_domain",
     "ml.cau_keo_domain_challenger",
+    "evaluation.model_registry",
 )
 
 
