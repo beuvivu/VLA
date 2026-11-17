@@ -19,14 +19,18 @@ huấn luyện. Đặc Biệt được chuẩn hoá lại để mỗi kỳ tổn
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, replace
 from typing import Literal
 
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 
 from core.xsmb_domain import PRIZE_FIELDS
 from ml import ml_train
@@ -315,6 +319,112 @@ class ConstantModel:
         from research.vla.backtest import cumulative_reference
 
         return cumulative_reference(self.mode, hit, np.asarray(rows, dtype=np.int64) + 1)
+
+
+class FrequencyModel:
+    """Mốc TẦN SUẤT THÔ của từng con — thứ mà "số nóng / số lạnh" ngầm coi là dự báo.
+
+    Hàng ``t`` dự báo kỳ ``t+1`` bằng tỉ lệ con ấy về trong ``window`` kỳ gần nhất tính tới hết kỳ
+    ``t`` (``window=None``: toàn bộ lịch sử), làm trơn bằng MỘT quan sát giả ở mức nền để log-loss
+    hữu hạn. Không co thêm: đây là mốc so sánh, không phải ứng viên. ``tien_nghiem`` là bản có co
+    của cùng ý tưởng; chênh giữa hai dòng trong bảng chính là giá của việc tin tần suất thô.
+    """
+
+    def __init__(self, mode: Mode, window: int | None = None):
+        if window is not None and window < 1:
+            raise ValueError("window phải ≥ 1")
+        self.mode = mode
+        self.window = window
+
+    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> FrequencyModel:
+        return self
+
+    def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray:
+        rows = np.asarray(rows, dtype=np.int64)
+        total = np.vstack([np.zeros((1, hit.shape[1])), np.cumsum(hit, axis=0, dtype=np.float64)])
+        start = np.zeros_like(rows) if self.window is None else np.maximum(rows + 1 - self.window, 0)
+        seen = total[rows + 1] - total[start]
+        draws = (rows + 1 - start)[:, None].astype(np.float64)
+        if self.mode == "de":
+            return normalize_rows((seen + 1.0 / hit.shape[1]) / (draws + 1.0))
+        base = (np.cumsum(hit.mean(axis=1)) / np.arange(1, len(hit) + 1))[rows][:, None]
+        return np.clip((seen + base) / (draws + 1.0), EPS, 1 - EPS)
+
+
+@dataclass(frozen=True)
+class NeuralConfig:
+    hidden: tuple[int, ...] = (32, 16)
+    weight_decay: float = 1e-3
+    epochs: int = 20
+    batch_size: int = 512
+    #: Số kỳ gần nhất dùng để học (mỗi kỳ 100 dòng). Giới hạn để một lần học tính bằng giây.
+    train_rows: int = 1000
+    calib_rows: int = 300
+    seed: int = 7
+
+
+class NeuralModel:
+    """Ứng viên MẠNG NƠ-RON: perceptron nhiều lớp trên chính ma trận đặc trưng của ``bayes_lgb``.
+
+    Cùng ba tầng với ``BayesianLGBModel`` để phép so sánh công bằng: tiên nghiệm Bayes (chọn trên
+    khối học), mạng học trên đặc trưng + logit tiên nghiệm, rồi hiệu chỉnh Platt trên khối thời
+    gian RIÊNG nằm sau khối học. Đặc trưng đã gồm tóm tắt chuỗi (gan, tần suất suy giảm nhiều
+    nhịp, chuyển Markov, cầu vị trí), nên mạng truyền thẳng thấy cùng thông tin mà một mạng chuỗi
+    phải tự rút ra — với ~4 000 kỳ, một GRU tự rút thì có nhiều tham số hơn số kỳ quan sát
+    (`research.ml_engine.models.TemporalSequenceModel` tính đúng con số ấy).
+
+    Số vòng học cố định, không dừng sớm bằng lát ngẫu nhiên: ``early_stopping`` của scikit-learn
+    xáo trộn dòng, tức trộn các con của cùng một kỳ vào hai phía.
+
+    Cấu hình mặc định KHÔNG chọn trên dữ liệu thật. Kiểm độ nhạy 16-11-2026 trên lịch sử tổng hợp
+    1 600 kỳ của ``TUNING_SEED`` với tín hiệu ``POWER_SIGNALS``: z = +3,9 (Đặc Biệt) và +2,5 (LOTO),
+    so với +5,8 và +1,1 của ``bayes_lgb`` trên cùng lịch sử. Năm cấu hình khác (rộng hơn, nhiều
+    vòng hơn, phạt mạnh hơn) không hơn ở cả hai chế độ.
+    """
+
+    def __init__(self, mode: Mode, config: NeuralConfig | None = None):
+        self.mode = mode
+        self.config = config or NeuralConfig()
+        self.prior: DirichletPrior | None = None
+        self.scaler: StandardScaler | None = None
+        self.network: MLPClassifier | None = None
+        self.calibrator: Calibrator | None = None
+
+    @staticmethod
+    def _design(X: np.ndarray, prior: np.ndarray, rows: np.ndarray) -> np.ndarray:
+        feats = X[rows].reshape(len(rows) * 100, -1)
+        return np.column_stack([feats, logit(prior[rows]).reshape(-1)])
+
+    def _raw(self, X: np.ndarray, prior: np.ndarray, rows: np.ndarray) -> np.ndarray:
+        design = self.scaler.transform(self._design(X, prior, rows))
+        return np.clip(self.network.predict_proba(design)[:, 1], EPS, 1 - EPS).reshape(len(rows), 100)
+
+    def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> NeuralModel:
+        cfg = self.config
+        rows = np.asarray(rows, dtype=np.int64)
+        if rows.size and rows.max() + 1 >= len(hit):
+            raise ValueError("hàng huấn luyện phải đã có nhãn (kỳ t+1 đã quay)")
+        n_cal = min(cfg.calib_rows, max(len(rows) // 5, 1))
+        learn, cal = rows[:-n_cal][-cfg.train_rows:], rows[-n_cal:]
+        self.prior = DirichletPrior.fit(self.mode, hit, learn)
+        prior = self.prior.matrix(hit)
+        design = self._design(X, prior, learn)
+        self.scaler = StandardScaler().fit(design)
+        self.network = MLPClassifier(
+            hidden_layer_sizes=cfg.hidden, alpha=cfg.weight_decay, batch_size=cfg.batch_size,
+            max_iter=cfg.epochs, early_stopping=False, shuffle=True, random_state=cfg.seed,
+        )
+        with warnings.catch_warnings():
+            # Số vòng cố định là chủ ý; cảnh báo "chưa hội tụ" không phải lỗi ở đây.
+            warnings.simplefilter("ignore", category=ConvergenceWarning)
+            self.network.fit(self.scaler.transform(design), hit[learn + 1].reshape(-1).astype(np.int64))
+        self.calibrator = Calibrator("platt").fit(self._raw(X, prior, cal), hit[cal + 1].astype(np.float64))
+        return self
+
+    def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray:
+        rows = np.asarray(rows, dtype=np.int64)
+        p = self.calibrator.transform(self._raw(X, self.prior.matrix(hit), rows))
+        return normalize_rows(p) if self.mode == "de" else p
 
 
 # --- Đối chứng ML production (trước 15-11-2026: backtest/production_ml.py) ------------------------
