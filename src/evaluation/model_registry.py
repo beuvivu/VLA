@@ -48,7 +48,7 @@ import ml.ml_models  # noqa: F401 - đăng ký tên module cũ mà pack joblib g
 from core.atomic_io import atomic_write_text
 from core.paths import REPO_ROOT
 from ensemble.ensemble_components import COMPONENT_KEYS, COMPONENT_POLICY
-from ensemble.ensemble_utils import weights_provenance
+from ensemble.ensemble_utils import load_ensemble_weights, weights_provenance
 from evaluation import regional_benchmark
 from evaluation.skill_monitor import evaluate as evaluate_skill
 from evaluation.skill_monitor import graded_series
@@ -228,20 +228,19 @@ def ensemble_weights(root: Path, mode: str) -> dict:
     path = root / "data" / "ensemble" / f"weights_{mode}.json"
 
     def build() -> dict:
-        # Trọng số và xuất xứ CHỈ đọc qua hàm này (luật của kho): không tự đọc tệp rồi suy ra.
+        # Luật của kho: trọng số CHỈ qua load_ensemble_weights, xuất xứ và siêu dữ liệu học CHỈ qua
+        # weights_provenance. Sổ không tự mở tệp trọng số; tệp chỉ được băm để biết bản nào đang có hiệu lực.
+        weights = load_ensemble_weights(root / "data", mode)
         provenance = weights_provenance(root / "data", mode)
-        stored = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
         origin = provenance["xuat_xu"]
         words = {"da_hoc": "vector đã học và đã qua cổng thẩm định ngoài mẫu",
                  "bi_tu_choi": "cổng đã đo và từ chối đề bạt: đang chạy vector mặc định",
                  "khong_co_ho_so": "không có hồ sơ hợp lệ: đang chạy vector mặc định"}
         return _entry(
             model_id, role, artifact=path, root=root,
-            definition={**_pick(stored, ("schema_version", "window_days", "half_life_days",
-                                         "component_availability_required")),
+            definition={**_pick(provenance, ("window_days", "half_life_days")),
                         "components": list(COMPONENT_KEYS), "component_policy": dict(COMPONENT_POLICY)},
-            training={"weights": _json(provenance["weights"]), "days_used": provenance.get("days_used"),
-                      **_pick(stored, ("chronological_split",))},
+            training={"weights": _json(weights.as_dict()), "days_used": provenance.get("days_used")},
             validation={"origin": origin, "gate_reason": provenance.get("ly_do"),
                         **_json(provenance.get("tham_dinh") or {})},
             # Vector đang hiệu lực (đã học hay mặc định) luôn là vector tạo ra xác suất công bố.

@@ -271,10 +271,8 @@
       "artifact": "data/ensemble/weights_de.json",
       "artifact_sha256": "06e6703e9698d264d00d84e2847790d700f3985f9cb7751c3131dee5cc44574e",
       "definition": {
-        "schema_version": 8,
         "window_days": 180,
         "half_life_days": 45,
-        "component_availability_required": true,
         "components": [
           "ml",
           "cau",
@@ -286,7 +284,7 @@
           "cau": 1
         }
       },
-      "fingerprint": "afdba85c606adfbdc06ec69a3032443f8c11bc1b58e532db854b4ab98e1b3cc3",
+      "fingerprint": "0743cc812ce231be34465ec4609831008b6404f668c05d1681e6cbc91ee49893",
       "training": {
         "weights": {
           "w_ml": 0.25,
@@ -295,16 +293,7 @@
           "w_active": 0.125,
           "w_stable": 0.125
         },
-        "days_used": 43,
-        "chronological_split": {
-          "weight_days": 25,
-          "calibration_days": 18,
-          "weight_first_day": "2026-10-05",
-          "weight_last_day": "2026-10-29",
-          "calibration_first_day": "2026-10-30",
-          "calibration_last_day": "2026-11-16",
-          "disjoint": true
-        }
+        "days_used": 43
       },
       "validation": {
         "origin": "bi_tu_choi",
@@ -330,10 +319,8 @@
       "artifact": "data/ensemble/weights_loto.json",
       "artifact_sha256": "3a80e6c9f117406c4f6689bb8d570acbc579212e3b2746573819436660574ff5",
       "definition": {
-        "schema_version": 8,
         "window_days": 180,
         "half_life_days": 45,
-        "component_availability_required": true,
         "components": [
           "ml",
           "cau",
@@ -345,7 +332,7 @@
           "cau": 1
         }
       },
-      "fingerprint": "afdba85c606adfbdc06ec69a3032443f8c11bc1b58e532db854b4ab98e1b3cc3",
+      "fingerprint": "0743cc812ce231be34465ec4609831008b6404f668c05d1681e6cbc91ee49893",
       "training": {
         "weights": {
           "w_ml": 0.25,
@@ -354,16 +341,7 @@
           "w_active": 0.125,
           "w_stable": 0.125
         },
-        "days_used": 43,
-        "chronological_split": {
-          "weight_days": 25,
-          "calibration_days": 18,
-          "weight_first_day": "2026-10-05",
-          "weight_last_day": "2026-10-29",
-          "calibration_first_day": "2026-10-30",
-          "calibration_last_day": "2026-11-16",
-          "disjoint": true
-        }
+        "days_used": 43
       },
       "validation": {
         "origin": "bi_tu_choi",

@@ -5,8 +5,8 @@ first_seen,model_id,fingerprint,deployment,reason
 2026-11-16,xsmb/calibration/loto,6395e306f85ceffc317a92e762881073d5766406e3f44effcbef5ef4820e46c5,gated,giữ phép đồng nhất: chưa ứng viên hiệu chỉnh nào thắng trên khối giữ riêng
 2026-11-16,xsmb/cau_keo/de,e20aeaca332096d4c3aef56b7c6ebc5b77fcf865fba1448e83673483fd589195,production,"trust 0,0221%: xác suất công bố của Cầu Kèo là 0,0221% xác suất thô cộng phần còn lại ở mức nền"
 2026-11-16,xsmb/cau_keo/loto,df1b003af3656d8aef3966c02b2a9da29f9fe7cc3c5461882d615bec59d29db0,production,"trust 0,387%: xác suất công bố của Cầu Kèo là 0,387% xác suất thô cộng phần còn lại ở mức nền"
-2026-11-16,xsmb/ensemble_weights/de,afdba85c606adfbdc06ec69a3032443f8c11bc1b58e532db854b4ab98e1b3cc3,production,cổng đã đo và từ chối đề bạt: đang chạy vector mặc định
-2026-11-16,xsmb/ensemble_weights/loto,afdba85c606adfbdc06ec69a3032443f8c11bc1b58e532db854b4ab98e1b3cc3,production,cổng đã đo và từ chối đề bạt: đang chạy vector mặc định
+2026-11-16,xsmb/ensemble_weights/de,0743cc812ce231be34465ec4609831008b6404f668c05d1681e6cbc91ee49893,production,cổng đã đo và từ chối đề bạt: đang chạy vector mặc định
+2026-11-16,xsmb/ensemble_weights/loto,0743cc812ce231be34465ec4609831008b6404f668c05d1681e6cbc91ee49893,production,cổng đã đo và từ chối đề bạt: đang chạy vector mặc định
 2026-11-16,xsmb/knowledge_base,66b4381fe59ccbd4257b51b99da6e61a838236df829cf4d97612541113cecc62,shadow,khung mô tả và phép kiểm tiến cứu: không vào tổ hợp xác suất
 2026-11-16,xsmb/ml/de,3dcef5f57d9633f1505e3121055574aa0ed89c2ad165f412159e93f4f2e8a31a,production,"trust 0,326%: xác suất công bố của thành phần ML là 0,326% xác suất thô cộng phần còn lại ở mức nền"
 2026-11-16,xsmb/ml/loto,9cc7e0f0c047e520bd36b4a1182662639477de2de19d5734f4ee0847733b4be2,gated,"trust 0: kỹ năng thẩm định không dương, xác suất công bố của thành phần ML bằng mức nền"

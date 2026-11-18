@@ -138,14 +138,13 @@ jobs:
         with:
           artifact_name: regional-pages-${{ github.run_attempt }}
 
-      - name: Báo lỗi nếu chưa thu thập đủ ngày bắt buộc
-        if: ${{ always() && steps.collect.outcome == 'failure' }}
+      - name: Báo lỗi nếu chưa thu thập đủ ngày bắt buộc hoặc thống kê từng đài hỏng
+        if: ${{ always() && (steps.collect.outcome == 'failure' || steps.analyse.outcome == 'failure') }}
         run: |
-          echo "::error::Đồng bộ vùng chưa hoàn tất; xem bước thu thập để biết miền và ngày còn thiếu."
-          exit 1
-
-      - name: Báo lỗi nếu thống kê hoặc phép chấm từng đài hỏng
-        if: ${{ always() && steps.analyse.outcome == 'failure' }}
-        run: |
-          echo "::error::Thống kê/kiểm định từng đài không chạy xong; trang đã dựng không in khối kiểm định."
+          if [ "${{ steps.collect.outcome }}" = "failure" ]; then
+            echo "::error::Đồng bộ vùng chưa hoàn tất; xem bước thu thập để biết miền và ngày còn thiếu."
+          fi
+          if [ "${{ steps.analyse.outcome }}" = "failure" ]; then
+            echo "::error::Thống kê/kiểm định từng đài không chạy xong; trang đã dựng không in khối kiểm định."
+          fi
           exit 1
