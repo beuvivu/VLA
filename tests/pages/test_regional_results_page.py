@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 from collections import Counter
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -302,6 +303,7 @@ def test_the_evidence_block_never_names_where_the_data_comes_from() -> None:
 
 def _copy_measurements(target: Path) -> None:
     for relative in (
+        "data/regions/xsmn.csv",
         "data/stats/regional/summary_mn.json",
         "data/evaluation/regional_benchmark/benchmark.json",
         "data/research/hypotheses/regional_cage_bias.json",
@@ -331,6 +333,30 @@ def test_half_a_conclusion_is_never_printed(tmp_path: Path) -> None:
     _copy_measurements(tmp_path)
     (tmp_path / "data/evaluation/regional_benchmark/benchmark.json").unlink()
     assert load_evidence(tmp_path, "mn") is None
+
+
+def test_measurements_older_than_the_ledger_are_not_printed(tmp_path: Path) -> None:
+    """Kết quả mới đã về mà bước phân tích hỏng: hai tệp số đo cũ vẫn khớp nhau, nhưng trang không in chúng.
+
+    Đúng tình huống của ``regional-results.yml``: bước phân tích ``continue-on-error``, trang vẫn dựng
+    và triển khai. So hai tệp với nhau thôi thì kết luận của kỳ trước nằm cạnh bảng của kỳ mới.
+    """
+    from pages.build_regional_results import load_evidence, load_rows
+
+    _copy_measurements(tmp_path)
+    rows = load_rows(tmp_path, "mn")
+    assert load_evidence(tmp_path, "mn", rows) is not None
+    latest = max(row["date"] for row in rows)
+    newer = (date.fromisoformat(latest) + timedelta(days=1)).isoformat()
+    fresh = rows + [{**row, "date": newer} for row in rows if row["date"] == latest]
+    assert load_evidence(tmp_path, "mn", fresh) is None
+    # Không truyền sổ thì hàm tự đọc sổ trên đĩa: ghi kỳ mới vào sổ cũng phải tắt khối.
+    ledger = tmp_path / "data/regions/xsmn.csv"
+    with ledger.open("a", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writerows(row for row in fresh if row["date"] == newer)
+    assert load_evidence(tmp_path, "mn") is None
+    assert load_evidence(tmp_path, "mn", []) is None  # sổ rỗng: không có ngày nào để khớp
 
 
 def test_only_the_registrations_of_this_region_are_listed(tmp_path: Path) -> None:

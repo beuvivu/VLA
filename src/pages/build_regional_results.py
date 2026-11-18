@@ -122,20 +122,25 @@ def _vn_date(day: str) -> str:
     return date.fromisoformat(day).strftime("%d/%m/%Y")
 
 
-def load_evidence(root: Path, region: str) -> dict | None:
+def load_evidence(root: Path, region: str, rows: list[dict[str, str]] | None = None) -> dict | None:
     """Số đo của một miền: tóm tắt kiểm định, phép chấm tiến cứu, trạng thái phép kiểm đã đăng ký.
 
     Thiếu bản tóm tắt hoặc phép chấm thì trả ``None`` và trang không in khối này — không in một
-    nửa kết luận. Bản tóm tắt và phép chấm phải cùng nói về một ngày dữ liệu.
+    nửa kết luận. Cả hai phải nói về ĐÚNG ngày cuối của sổ miền đang dựng trang (``rows``, mặc
+    định đọc lại sổ): bước phân tích hỏng sau khi kết quả mới đã về thì hai tệp cũ vẫn khớp nhau,
+    và so riêng chúng với nhau sẽ in kết luận của hôm qua cạnh bảng của hôm nay. Trạng thái phép
+    kiểm đã đăng ký được ghi GIỮA hai tệp ấy trong cùng một bước, nên nó cũ thì phép chấm cũng cũ.
     """
     data = root / "data"
     summary_path = data / "stats" / "regional" / f"summary_{region}.json"
     benchmark_path = data / "evaluation" / "regional_benchmark" / "benchmark.json"
     if not summary_path.exists() or not benchmark_path.exists():
         return None
+    ledger = load_rows(root, region) if rows is None else rows
+    latest = max((row["date"] for row in ledger), default=None)
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))["regions"].get(region)
-    if benchmark is None or benchmark["data_through"] != summary["data_through"]:
+    if latest is None or benchmark is None or not benchmark["data_through"] == summary["data_through"] == latest:
         return None
     registry_path = data / "research" / "hypotheses" / "regional_cage_bias.json"
     registered = []
@@ -288,7 +293,8 @@ def build(root: Path) -> list[Path]:
     outputs = []
     for region, (_, _, filename) in REGION_META.items():
         target = docs / filename
-        write_page(target, render(region, load_rows(root, region), load_evidence(root, region)))
+        rows = load_rows(root, region)
+        write_page(target, render(region, rows, load_evidence(root, region, rows)))
         outputs.append(target)
     return outputs
 

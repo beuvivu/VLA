@@ -12,6 +12,7 @@ from core.regional_domain import LOTO_BASELINE_RATE
 from evaluation import regional_benchmark as rb
 from regional_helpers import biased_law, fair_region, station_rows, write_region
 from stats.regional_stats import build_stations, read_rows
+from stats.statistical_corrections import holm
 
 
 def _states(rows: list[dict[str, str]], mode: str, region: str = "mn") -> list[rb.StationState]:
@@ -189,8 +190,18 @@ def test_a_planted_cage_bias_wins_out_of_sample_at_that_station_only() -> None:
     for name in winners:
         boosted["loto"]["models"][name]["stations_with_edge"] = []
     assert [(e["model"], e["post_hoc"]) for e in rb.station_edges(boosted)] == [("long_bayes", True)]
+    # Holm trên MỌI cặp (đài, mô hình): ``station_edges`` chọn mô hình thắng ở mỗi đài, nên phép chọn
+    # ấy thuộc họ. Hiệu chỉnh riêng từng mô hình (bản 1) cho p nhỏ hơn ở ít nhất một dòng.
+    candidates = [name for name in rb.PROBABILITY_MODELS if name != "deu"]
+    family = [row for name in candidates for row in block[name]["stations"]]
+    assert len(family) == len(candidates) * 7
+    joint = holm([row["p_value"] for row in family])
+    assert [row["p_holm"] for row in family] == joint
+    per_model = [a for name in candidates for a in holm([r["p_value"] for r in block[name]["stations"]])]
+    assert any(alone < together for alone, together in zip(per_model, joint, strict=True))
     text = rb.reading("Miền Nam", modes)
     assert "Riêng từng đài" in text and "Đài Lệch — Chữ số theo lồng cho lô" in text
+    assert "hiệu chỉnh Holm trên mọi cặp đài × mô hình" in text
     assert "chỉ thành lợi thế khi phép kiểm tiến cứu đã đăng ký xác nhận" in text
     # Số in cho người đọc dùng dấu phẩy thập phân.
     assert f"(lợi +{edge['mean_gain']:.4f}".replace(".", ",") in text

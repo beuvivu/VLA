@@ -92,7 +92,7 @@ vào tổ hợp xác suất.
 | XSMB Đặc Biệt — xác suất ĐÃ CÔNG BỐ | 80 kỳ | kỹ năng log-loss | +4,7·10⁻⁶, khoảng 95% ±1,1·10⁻³; MRR 0,054 so với 0,052 ngẫu nhiên (p 0,90); ECE 0,0037 so với 0,0035 (p 0,41) | **NO DEMONSTRATED PREDICTIVE EDGE** |
 | XSMB — walk-forward 9 mô hình | 997 kỳ, 13-02-2024 → 16-11-2026, học lại mỗi 50 kỳ | log-loss so với hằng số | tốt nhất: tiên nghiệm LOTO z +0,19, ML production ĐB z +1,64; mọi z trong ±2 trừ các mô hình kém hằng số | không ứng viên nào được đề bạt |
 | Miền Trung (14 đài) | 704 kỳ-đài ngoài mẫu (17-12-2025 → 15-11-2026) | log-loss so với dự báo đều, p hoán vị theo ngày, Holm | không mô hình nào thắng; 0/112 phép kiểm đài lệch | **NO DEMONSTRATED PREDICTIVE EDGE**; máy quay không phân biệt được với công bằng (phát hiện được lệch từ 21 điểm % mỗi con) |
-| Miền Nam (21 đài) | 853 kỳ-đài ngoài mẫu | như trên | cấp miền không mô hình nào thắng; RIÊNG đài Bến Tre mô hình chữ số theo lồng thắng (+0,0050 log-loss/kỳ trên 38 kỳ, p Holm 0,026) | cấp miền **NO DEMONSTRATED PREDICTIVE EDGE**; hai đài đã đăng ký phép kiểm tiến cứu |
+| Miền Nam (21 đài) | 859 kỳ-đài ngoài mẫu | như trên | cấp miền không mô hình nào thắng; RIÊNG đài Bến Tre mô hình chữ số theo lồng thắng (+0,0054 log-loss/kỳ trên 39 kỳ, p Holm 0,027 trên mọi cặp đài × mô hình) | cấp miền **NO DEMONSTRATED PREDICTIVE EDGE**; hai đài đã đăng ký phép kiểm tiến cứu |
 | Mega 6/45 | 1 569 kỳ | e-value hỗn hợp Bayes; phép đo số khớp H đăng ký 13-10 (test 382 kỳ) | e cao nhất 10^0,20 < 20; mọi nhánh ngang/kém công bằng | **NO DEMONSTRATED PREDICTIVE EDGE** |
 | Power 6/55 | 1 405 kỳ | như trên | e cao nhất 10^0,33 | **NO DEMONSTRATED PREDICTIVE EDGE** |
 | Lotto 5/35 | 920 kỳ | e-value | 10^0,12 | **NO DEMONSTRATED PREDICTIVE EDGE** |
@@ -161,12 +161,47 @@ hai nửa năm. p tiệm cận của χ²(45) là 2,2·10⁻²³; mô hình theo
 Không đọc phát hiện này là "lợi thế". Ba lý do:
 
 - phép kiểm theo lồng được viết SAU khi một phép kiểm khác đã chỉ vào Bến Tre;
-- sổ miền chỉ ghi từ một nơi, nên chưa phân biệt được bộ cầu lệch với kết quả bị ghi sai có hệ thống;
-- máy phiên làm việc không gọi được nguồn khác để đối chiếu.
+- trên một bộ dữ liệu, lệch thống kê chưa phải là dự báo được: chỉ phép kiểm tiến cứu trên kỳ SAU ngày
+  đăng ký mới chấm được điều ấy;
+- một quả ra ít hơn không làm cược con khác có kỳ vọng dương: tỉ lệ trả thưởng vẫn quyết định.
 
 Cả hai đài đã được đăng ký phép kiểm tiến cứu (`data/research/hypotheses/regional_cage_bias.json`), ngưỡng
-`35 đài / 0,01 = 3 500`. Việc nên làm tiếp là đối chiếu 58 kỳ Bến Tre với một nơi ghi độc lập: đó là
-quyết định của chủ dự án, vì cần chọn nguồn.
+`35 đài / 0,01 = 3 500`.
+
+**Đối chiếu với một nơi ghi độc lập (18-11-2026).** Sổ miền lấy từ một nơi (cột `source` của
+`data/regions/xsmn.csv`: `xskt.com.vn`). Bảng kết quả theo ngày của `xoso.com.vn` được đọc trên runner Actions,
+vì máy phiên làm việc không gọi được trang ngoài. Lượt đọc chạy bằng `inspect-reference-pages.yml`, với
+`html_selector` = `table.table-xsmn tbody tr` và `html_count` = 9. Mỗi hàng giải in một dòng HTML, và chữ số
+lấy từ thuộc tính `data-loto` của từng ô. Kết quả so từng ô với sổ:
+
+| Đài | Kỳ | Ô so | Trùng |
+| --- | --- | --- | --- |
+| Bến Tre | 59 (07-10-2025 → 17-11-2026) | 1 062 | 1 062 |
+| Bình Phước | 58 (11-10-2025 → 14-11-2026) | 1 044 | 1 044 |
+
+Đột biến một chữ số trong bản sao sổ thì bộ so báo đúng một ô khác. Vậy độ lệch lồng nằm trong chính kết
+quả được công bố, không phải lỗi của bộ thu thập hay của nơi ghi duy nhất. Hai trang có thể cùng chép từ
+buổi quay trực tiếp, nên phép đối chiếu không loại được một lỗi chung ở thượng nguồn; nhưng một lỗi chép
+lặp lại suốt 59 kỳ, đúng một quả mỗi lồng, ở cả hai nơi, là khó tin.
+
+Hình dạng của độ lệch Bến Tre cũng không giống lỗi ghi. Quả bị thiếu của mỗi lồng ra ít đều suốt năm, không
+dồn vào một giai đoạn. Kỳ 17-11-2026, kỳ đầu sau ngày đăng ký, cho 0/18, 0/18, 1/17, 0/16, 1/12 so với
+kỳ vọng 1,8 / 1,8 / 1,7 / 1,6 / 1,2. Giải thích hợp nhất là một đặc tính vật lý của bộ cầu hay của cách
+quay ở đài ấy, và phép kiểm tiến cứu sẽ chấm nó.
+
+**Hai sửa sau duyệt tự động (18-11-2026).** Bộ duyệt của PR #230 chỉ ra hai lỗ, cả hai đã sửa trong PR #231:
+
+- Lợi thế riêng từng đài trước chỉ hiệu chỉnh Holm trên các đài của từng mô hình. Trong khi đó
+  `station_edges` chọn mô hình thắng ở mỗi đài, nên phép chọn ấy phải nằm trong họ. Nay họ là mọi cặp
+  (đài, mô hình) của cùng miền và cùng chế độ (`BENCHMARK_VERSION` = 2). Bến Tre vẫn qua: p Holm 0,027
+  trên 126 cặp, so với 0,006 trước đó.
+- Khối kiểm định của trang miền chỉ so hai tệp số đo với nhau. Bước phân tích hỏng sau khi kết quả mới đã
+  về thì hai tệp cũ vẫn khớp nhau, và trang in kết luận của kỳ trước cạnh bảng của kỳ mới. Nay cả hai tệp
+  phải trùng ngày cuối của sổ miền, nếu không trang không in khối ấy. Câu báo lỗi của
+  `regional-results.yml` («trang đã dựng không in khối kiểm định») từ nay mới đúng.
+
+Cách lặp lại: `get_job_logs` chỉ trả khoảng 5 000 dòng cuối của log, tức khoảng 78 trang. Vì vậy mỗi lượt
+đọc tối đa 40 trang, và lượt sau chỉ chạy khi lượt trước đã xong: workflow tự huỷ lượt đang chạy.
 
 **XSMB — lệch chữ số tạm thời 2022–2024.** 4/240 ô (quý × lồng) có q < 0,05, lệch nhất 2024Q2 lồng đơn vị
 (p Bonferroni 1,1·10⁻⁴), và p của 240 ô không đều (KS p = 7·10⁻⁶). Nhưng mô hình chữ số trượt
@@ -251,7 +286,5 @@ Mốc đọc nhanh trạng thái: `data/evaluation/model_registry/registry.json`
 
 ## Còn mở — chủ dự án quyết
 
-- Đối chiếu kết quả Bến Tre và Bình Phước với một nơi ghi độc lập. Lệch ở khâu ghi thì phải sửa bộ thu
-  thập, lệch ở bộ cầu thì phép kiểm tiến cứu sẽ tự xác nhận.
 - Sổ đăng ký chưa gồm các mô hình của engine Vietlott: engine giữ sổ riêng, và gộp thì phải đọc trạng
   thái của dự án tự đủ ấy từ VLA.

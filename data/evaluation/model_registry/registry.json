@@ -789,7 +789,7 @@
       "definition": {
         "law": "deu",
         "benchmark": {
-          "benchmark_version": 1,
+          "benchmark_version": 2,
           "warmup_draws": 20,
           "rolling_draws": 20,
           "recent_draws": 10,
@@ -800,7 +800,7 @@
           "alpha": 0.05
         }
       },
-      "fingerprint": "9bf31d0b76ee31f96bac020dfddaa7d8e62dee5a8d8f129c7e1184f4a717ff46",
+      "fingerprint": "c4b9185652de056a216fd85aeff14b626a96ddd9643f98b9d3b96eed06c57f3f",
       "training": {},
       "validation": {
         "regional_edge": {
@@ -830,7 +830,7 @@
       "definition": {
         "law": "deu",
         "benchmark": {
-          "benchmark_version": 1,
+          "benchmark_version": 2,
           "warmup_draws": 20,
           "rolling_draws": 20,
           "recent_draws": 10,
@@ -841,7 +841,7 @@
           "alpha": 0.05
         }
       },
-      "fingerprint": "9bf31d0b76ee31f96bac020dfddaa7d8e62dee5a8d8f129c7e1184f4a717ff46",
+      "fingerprint": "c4b9185652de056a216fd85aeff14b626a96ddd9643f98b9d3b96eed06c57f3f",
       "training": {},
       "validation": {
         "regional_edge": {
