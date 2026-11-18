@@ -699,7 +699,9 @@ Chi tiết và số đo: `documentation/qa/2026-11-16-nang-cap-lottery-intellige
   Đổi hằng số nào trong `CONFIG` thì tăng `BENCHMARK_VERSION`. Mô hình thêm SAU khi nhìn dữ liệu vào `POST_HOC_MODELS`.
   Trang miền in câu kết luận TỪ tệp số đo và KHÔNG công bố con số dự đoán cho đài: luật đang công bố là dự báo đều.
 - `research.regional_cage_test`: đăng ký một lần mỗi đài, luật đối đóng băng, chỉ chấm kỳ sau ngày đăng ký, sổ chỉ nối
-  thêm. Không sửa đăng ký; đổi luật thì tăng `VERSION`.
+  thêm. Không sửa đăng ký; đổi luật thì tăng `VERSION`. Bến Tre và Bình Phước (hai đài đã đăng ký) được đối chiếu từng ô
+  với một nơi ghi thứ hai ngày 18-11-2026: trùng 2 106/2 106 ô của 117 kỳ. Độ lệch lồng nằm trong kết quả công bố, không
+  phải lỗi thu thập, nên đừng "sửa" sổ miền vì nó.
 - `evaluation.model_registry`: trạng thái đọc từ CỔNG của chính mô hình (trust, quality_pass, promotion, gate), không suy
   từ giá trị xác suất; trọng số chỉ qua `weights_provenance`, trust cầu-kèo chỉ qua `trust_from_pack`. `history.csv` chỉ
   nối thêm. Thêm mắt xích mới vào chuỗi dự báo thì thêm mục vào sổ.

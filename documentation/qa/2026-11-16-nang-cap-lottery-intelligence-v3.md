@@ -161,12 +161,36 @@ hai nửa năm. p tiệm cận của χ²(45) là 2,2·10⁻²³; mô hình theo
 Không đọc phát hiện này là "lợi thế". Ba lý do:
 
 - phép kiểm theo lồng được viết SAU khi một phép kiểm khác đã chỉ vào Bến Tre;
-- sổ miền chỉ ghi từ một nơi, nên chưa phân biệt được bộ cầu lệch với kết quả bị ghi sai có hệ thống;
-- máy phiên làm việc không gọi được nguồn khác để đối chiếu.
+- trên một bộ dữ liệu, lệch thống kê chưa phải là dự báo được: chỉ phép kiểm tiến cứu trên kỳ SAU ngày
+  đăng ký mới chấm được điều ấy;
+- một quả ra ít hơn không làm cược con khác có kỳ vọng dương: tỉ lệ trả thưởng vẫn quyết định.
 
 Cả hai đài đã được đăng ký phép kiểm tiến cứu (`data/research/hypotheses/regional_cage_bias.json`), ngưỡng
-`35 đài / 0,01 = 3 500`. Việc nên làm tiếp là đối chiếu 58 kỳ Bến Tre với một nơi ghi độc lập: đó là
-quyết định của chủ dự án, vì cần chọn nguồn.
+`35 đài / 0,01 = 3 500`.
+
+**Đối chiếu với một nơi ghi độc lập (18-11-2026).** Sổ miền lấy từ một nơi (cột `source` của
+`data/regions/xsmn.csv`: `xskt.com.vn`). Bảng kết quả theo ngày của `xoso.com.vn` được đọc trên runner Actions,
+vì máy phiên làm việc không gọi được trang ngoài. Lượt đọc chạy bằng `inspect-reference-pages.yml`, với
+`html_selector` = `table.table-xsmn tbody tr` và `html_count` = 9. Mỗi hàng giải in một dòng HTML, và chữ số
+lấy từ thuộc tính `data-loto` của từng ô. Kết quả so từng ô với sổ:
+
+| Đài | Kỳ | Ô so | Trùng |
+| --- | --- | --- | --- |
+| Bến Tre | 59 (07-10-2025 → 17-11-2026) | 1 062 | 1 062 |
+| Bình Phước | 58 (11-10-2025 → 14-11-2026) | 1 044 | 1 044 |
+
+Đột biến một chữ số trong bản sao sổ thì bộ so báo đúng một ô khác. Vậy độ lệch lồng nằm trong chính kết
+quả được công bố, không phải lỗi của bộ thu thập hay của nơi ghi duy nhất. Hai trang có thể cùng chép từ
+buổi quay trực tiếp, nên phép đối chiếu không loại được một lỗi chung ở thượng nguồn; nhưng một lỗi chép
+lặp lại suốt 59 kỳ, đúng một quả mỗi lồng, ở cả hai nơi, là khó tin.
+
+Hình dạng của độ lệch Bến Tre cũng không giống lỗi ghi. Quả bị thiếu của mỗi lồng ra ít đều suốt năm, không
+dồn vào một giai đoạn. Kỳ 17-11-2026, kỳ đầu sau ngày đăng ký, cho 0/18, 0/18, 1/17, 0/16, 1/12 so với
+kỳ vọng 1,8 / 1,8 / 1,7 / 1,6 / 1,2. Giải thích hợp nhất là một đặc tính vật lý của bộ cầu hay của cách
+quay ở đài ấy, và phép kiểm tiến cứu sẽ chấm nó.
+
+Cách lặp lại: `get_job_logs` chỉ trả khoảng 5 000 dòng cuối của log, tức khoảng 78 trang. Vì vậy mỗi lượt
+đọc tối đa 40 trang, và lượt sau chỉ chạy khi lượt trước đã xong: workflow tự huỷ lượt đang chạy.
 
 **XSMB — lệch chữ số tạm thời 2022–2024.** 4/240 ô (quý × lồng) có q < 0,05, lệch nhất 2024Q2 lồng đơn vị
 (p Bonferroni 1,1·10⁻⁴), và p của 240 ô không đều (KS p = 7·10⁻⁶). Nhưng mô hình chữ số trượt
@@ -251,7 +275,5 @@ Mốc đọc nhanh trạng thái: `data/evaluation/model_registry/registry.json`
 
 ## Còn mở — chủ dự án quyết
 
-- Đối chiếu kết quả Bến Tre và Bình Phước với một nơi ghi độc lập. Lệch ở khâu ghi thì phải sửa bộ thu
-  thập, lệch ở bộ cầu thì phép kiểm tiến cứu sẽ tự xác nhận.
 - Sổ đăng ký chưa gồm các mô hình của engine Vietlott: engine giữ sổ riêng, và gộp thì phải đọc trạng
   thái của dự án tự đủ ấy từ VLA.
