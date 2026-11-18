@@ -2,7 +2,7 @@
   "schema_version": 1,
   "region": "mt",
   "region_name": "Miền Trung",
-  "data_through": "2026-11-15",
+  "data_through": "2026-11-17",
   "game": {
     "prizes_per_station_draw": 18,
     "digits_per_station_draw": 82,
@@ -10,16 +10,16 @@
     "special_baseline": 0.01,
     "pair_cooccurrence": 0.026107808,
     "expected_distinct_numbers": 16.548624,
-    "observed_distinct_numbers": 16.536585,
+    "observed_distinct_numbers": 16.533401,
     "distinct_numbers_sd_exact": 1.076555
   },
   "quality": {
-    "rows": 17712,
-    "station_draws": 984,
+    "rows": 17784,
+    "station_draws": 988,
     "stations": 14,
     "first_date": "2025-10-07",
-    "last_date": "2026-11-15",
-    "draw_dates": 405,
+    "last_date": "2026-11-17",
+    "draw_dates": 407,
     "origins": 1,
     "calendar_gaps": [],
     "off_schedule": [],
@@ -64,17 +64,17 @@
       "Khánh Hòa": 116,
       "Kon Tum": 58,
       "Ninh Thuận": 58,
-      "Phú Yên": 57,
+      "Phú Yên": 58,
       "Quảng Bình": 58,
-      "Quảng Nam": 58,
+      "Quảng Nam": 59,
       "Quảng Ngãi": 58,
       "Quảng Trị": 58,
-      "Thừa Thiên Huế": 115,
+      "Thừa Thiên Huế": 116,
       "Đà Nẵng": 116,
-      "Đắk Lắk": 58,
+      "Đắk Lắk": 59,
       "Đắk Nông": 58
     },
-    "content_sha256": "c151d6c118b8c05553498a67114d18c93e24c80fd010fecd1f34fd4912986a0f"
+    "content_sha256": "e249175adf3a2e72e28c88e784b4d144747db43af0381f6cb6bc0b6f4832d8db"
   },
   "numbers": {
     "tested": 1400,
@@ -112,18 +112,18 @@
         "province": "Phú Yên",
         "number": "81",
         "present": 18,
-        "draws": 57,
-        "expected_present": 9.432716,
-        "p_value": 0.00629654,
+        "draws": 58,
+        "expected_present": 9.598202,
+        "p_value": 0.0068224003,
         "q_value": 1.0
       },
       {
         "province": "Thừa Thiên Huế",
         "number": "54",
         "present": 30,
-        "draws": 115,
-        "expected_present": 19.030917,
-        "p_value": 0.0082776101,
+        "draws": 116,
+        "expected_present": 19.196404,
+        "p_value": 0.0117178802,
         "q_value": 1.0
       },
       {
@@ -145,30 +145,30 @@
         "q_value": 1.0
       },
       {
-        "province": "Đắk Lắk",
-        "number": "45",
-        "present": 17,
-        "draws": 58,
-        "expected_present": 9.598202,
-        "p_value": 0.0130368088,
-        "q_value": 1.0
-      },
-      {
-        "province": "Đắk Lắk",
-        "number": "89",
-        "present": 17,
-        "draws": 58,
-        "expected_present": 9.598202,
-        "p_value": 0.0130368088,
-        "q_value": 1.0
-      },
-      {
         "province": "Đắk Nông",
         "number": "46",
         "present": 17,
         "draws": 58,
         "expected_present": 9.598202,
         "p_value": 0.0130368088,
+        "q_value": 1.0
+      },
+      {
+        "province": "Khánh Hòa",
+        "number": "46",
+        "present": 29,
+        "draws": 116,
+        "expected_present": 19.196404,
+        "p_value": 0.0175934196,
+        "q_value": 1.0
+      },
+      {
+        "province": "Đà Nẵng",
+        "number": "11",
+        "present": 29,
+        "draws": 116,
+        "expected_present": 19.196404,
+        "p_value": 0.0175934196,
         "q_value": 1.0
       }
     ]
@@ -448,7 +448,7 @@
             "p_value": 0.07038592281543692,
             "p_simulated": 0.07038592281543692,
             "p_asymptotic": 0.07131863642852761,
-            "q_value": 0.9645004332
+            "q_value": 0.8759137061
           },
           {
             "test": "special_digits",
@@ -462,7 +462,7 @@
             "p_value": 0.04019196160767846,
             "p_simulated": 0.04019196160767846,
             "p_asymptotic": 0.04203937315603531,
-            "q_value": 0.8830233953
+            "q_value": 0.8759137061
           },
           {
             "test": "loto_uniformity",
@@ -762,20 +762,20 @@
       },
       {
         "province": "Phú Yên",
-        "draws": 57,
+        "draws": 58,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 45.50644995,
-            "null_mean": 44.91974882,
-            "null_sd": 9.38651953,
-            "z": 0.062505,
-            "p_value": 0.45086879990418544,
-            "p_simulated": 0.4477104579084183,
-            "p_asymptotic": 0.45086879990418544,
+            "statistic": 45.91607505,
+            "null_mean": 44.95357288,
+            "null_sd": 9.44047906,
+            "z": 0.101955,
+            "p_value": 0.4340219066545194,
+            "p_simulated": 0.42751449710057987,
+            "p_asymptotic": 0.4340219066545194,
             "q_value": 0.9906964062
           },
           {
@@ -783,13 +783,13 @@
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 741.43859649,
-            "null_mean": 736.64835088,
-            "null_sd": 38.5712065,
-            "z": 0.124192,
-            "p_value": 0.4475104979004199,
-            "p_simulated": 0.4475104979004199,
-            "p_asymptotic": 0.4575089276953807,
+            "statistic": 731.93103448,
+            "null_mean": 737.05855172,
+            "null_sd": 38.58429955,
+            "z": -0.132891,
+            "p_value": 0.5516896620675865,
+            "p_simulated": 0.5516896620675865,
+            "p_asymptotic": 0.5560801503779869,
             "q_value": 0.9906964062
           },
           {
@@ -797,27 +797,27 @@
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 29.50877193,
-            "null_mean": 17.99333333,
-            "null_sd": 6.01414355,
-            "z": 1.914726,
-            "p_value": 0.041991601679664065,
-            "p_simulated": 0.041991601679664065,
-            "p_asymptotic": 0.04250487491831455,
-            "q_value": 0.8830233953
+            "statistic": 28.13793103,
+            "null_mean": 17.84813793,
+            "null_sd": 5.81005429,
+            "z": 1.771032,
+            "p_value": 0.05338932213557288,
+            "p_simulated": 0.05338932213557288,
+            "p_asymptotic": 0.05998697576216789,
+            "q_value": 0.8759137061
           },
           {
             "test": "loto_uniformity",
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 109.0877193,
-            "null_mean": 99.30522417,
-            "null_sd": 14.14695786,
-            "z": 0.691491,
-            "p_value": 0.23695260947810437,
-            "p_simulated": 0.23695260947810437,
-            "p_asymptotic": 0.2293719614930413,
+            "statistic": 105.23371648,
+            "null_mean": 98.75260536,
+            "null_sd": 14.26383234,
+            "z": 0.454374,
+            "p_value": 0.3123375324935013,
+            "p_simulated": 0.3123375324935013,
+            "p_asymptotic": 0.315188142334898,
             "q_value": 0.9906964062
           },
           {
@@ -825,12 +825,12 @@
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.05114316,
-            "null_mean": 0.07004086,
-            "null_sd": 0.01355209,
-            "z": -1.394449,
-            "p_value": 0.15696860627874426,
-            "p_simulated": 0.15696860627874426,
+            "statistic": 0.05089885,
+            "null_mean": 0.0700697,
+            "null_sd": 0.01373116,
+            "z": -1.396156,
+            "p_value": 0.15676864627074585,
+            "p_simulated": 0.15676864627074585,
             "q_value": 0.9906964062
           },
           {
@@ -838,25 +838,25 @@
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": 0.02629368,
-            "null_mean": -4.106e-05,
-            "null_sd": 0.01373237,
-            "z": 1.917713,
-            "p_value": 0.05358928214357129,
-            "p_simulated": 0.05358928214357129,
-            "q_value": 0.8830233953
+            "statistic": 0.02492027,
+            "null_mean": 0.00034751,
+            "null_sd": 0.01344333,
+            "z": 1.827878,
+            "p_value": 0.06978604279144171,
+            "p_simulated": 0.06978604279144171,
+            "q_value": 0.8759137061
           },
           {
             "test": "gap_shape",
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.05543291,
-            "null_mean": 0.04936011,
-            "null_sd": 0.00918415,
-            "z": 0.661226,
-            "p_value": 0.244751049790042,
-            "p_simulated": 0.244751049790042,
+            "statistic": 0.05381454,
+            "null_mean": 0.04858874,
+            "null_sd": 0.00910416,
+            "z": 0.574001,
+            "p_value": 0.27274545090981805,
+            "p_simulated": 0.27274545090981805,
             "q_value": 0.9906964062
           },
           {
@@ -864,13 +864,13 @@
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": 0.1579677,
-            "null_mean": 0.00207162,
-            "null_sd": 0.10135673,
-            "z": 1.538093,
-            "p_value": 0.1271745650869826,
-            "p_simulated": 0.1271745650869826,
-            "q_value": 0.9645004332
+            "statistic": 0.10275778,
+            "null_mean": -0.00298813,
+            "null_sd": 0.1018637,
+            "z": 1.038112,
+            "p_value": 0.3051389722055589,
+            "p_simulated": 0.3051389722055589,
+            "q_value": 0.9906964062
           }
         ]
       },
@@ -971,7 +971,7 @@
             "z": 1.252132,
             "p_value": 0.11897620475904819,
             "p_simulated": 0.11897620475904819,
-            "q_value": 0.9645004332
+            "q_value": 0.9906964062
           },
           {
             "test": "hot_persistence",
@@ -990,20 +990,20 @@
       },
       {
         "province": "Quảng Nam",
-        "draws": 58,
+        "draws": 59,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 53.00645143,
-            "null_mean": 45.21259939,
-            "null_sd": 9.5362681,
-            "z": 0.817285,
-            "p_value": 0.19272661107596364,
-            "p_simulated": 0.2001599680063987,
-            "p_asymptotic": 0.19272661107596364,
+            "statistic": 53.43173258,
+            "null_mean": 44.78046774,
+            "null_sd": 9.43004442,
+            "z": 0.917415,
+            "p_value": 0.18194980475807976,
+            "p_simulated": 0.16956608678264348,
+            "p_asymptotic": 0.18194980475807976,
             "q_value": 0.9906964062
           },
           {
@@ -1011,13 +1011,13 @@
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 763.65517241,
-            "null_mean": 738.53475862,
-            "null_sd": 38.65837471,
-            "z": 0.649805,
-            "p_value": 0.2533493301339732,
-            "p_simulated": 0.2533493301339732,
-            "p_asymptotic": 0.24904542212569336,
+            "statistic": 765.38983051,
+            "null_mean": 738.23498305,
+            "null_sd": 38.48438486,
+            "z": 0.705607,
+            "p_value": 0.2393521295740852,
+            "p_simulated": 0.2393521295740852,
+            "p_asymptotic": 0.23527147759131678,
             "q_value": 0.9906964062
           },
           {
@@ -1025,27 +1025,27 @@
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 25.72413793,
-            "null_mean": 17.86151724,
-            "null_sd": 5.8610995,
-            "z": 1.341492,
-            "p_value": 0.10277944411117776,
-            "p_simulated": 0.10277944411117776,
-            "p_asymptotic": 0.10623477127808764,
-            "q_value": 0.9645004332
+            "statistic": 25.72881356,
+            "null_mean": 17.96528814,
+            "null_sd": 5.99686471,
+            "z": 1.294597,
+            "p_value": 0.10557888422315537,
+            "p_simulated": 0.10557888422315537,
+            "p_asymptotic": 0.10612214009468308,
+            "q_value": 0.9906964062
           },
           {
             "test": "loto_uniformity",
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 76.68965517,
-            "null_mean": 99.3343295,
-            "null_sd": 13.85007879,
-            "z": -1.634985,
-            "p_value": 0.9584083183363328,
-            "p_simulated": 0.9584083183363328,
-            "p_asymptotic": 0.9530227190665683,
+            "statistic": 76.79472693,
+            "null_mean": 98.79536723,
+            "null_sd": 14.0964003,
+            "z": -1.560728,
+            "p_value": 0.9540091981603679,
+            "p_simulated": 0.9540091981603679,
+            "p_asymptotic": 0.9521469139534942,
             "q_value": 0.9906964062
           },
           {
@@ -1053,12 +1053,12 @@
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.06492851,
-            "null_mean": 0.07004554,
-            "null_sd": 0.01382253,
-            "z": -0.370195,
-            "p_value": 0.6896620675864827,
-            "p_simulated": 0.6896620675864827,
+            "statistic": 0.06711573,
+            "null_mean": 0.0700896,
+            "null_sd": 0.01343324,
+            "z": -0.221381,
+            "p_value": 0.8278344331133773,
+            "p_simulated": 0.8278344331133773,
             "q_value": 0.9906964062
           },
           {
@@ -1066,12 +1066,12 @@
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": 0.00837085,
-            "null_mean": 7.189e-05,
-            "null_sd": 0.01321031,
-            "z": 0.628219,
-            "p_value": 0.5270945810837833,
-            "p_simulated": 0.5270945810837833,
+            "statistic": 0.00877579,
+            "null_mean": 4.796e-05,
+            "null_sd": 0.01335933,
+            "z": 0.653313,
+            "p_value": 0.52249550089982,
+            "p_simulated": 0.52249550089982,
             "q_value": 0.9906964062
           },
           {
@@ -1079,26 +1079,26 @@
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.06108936,
-            "null_mean": 0.04852911,
-            "null_sd": 0.00917394,
-            "z": 1.369123,
-            "p_value": 0.09158168366326734,
-            "p_simulated": 0.09158168366326734,
-            "q_value": 0.9645004332
+            "statistic": 0.0612635,
+            "null_mean": 0.04741901,
+            "null_sd": 0.00896708,
+            "z": 1.543925,
+            "p_value": 0.06898620275944811,
+            "p_simulated": 0.06898620275944811,
+            "q_value": 0.8759137061
           },
           {
             "test": "hot_persistence",
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": -0.15721221,
-            "null_mean": 0.00016654,
-            "null_sd": 0.09927874,
-            "z": -1.585221,
-            "p_value": 0.11497700459908018,
-            "p_simulated": 0.11497700459908018,
-            "q_value": 0.9645004332
+            "statistic": -0.17467793,
+            "null_mean": -0.00179404,
+            "null_sd": 0.10103063,
+            "z": -1.711203,
+            "p_value": 0.08978204359128174,
+            "p_simulated": 0.08978204359128174,
+            "q_value": 0.9906964062
           }
         ]
       },
@@ -1246,7 +1246,7 @@
             "p_value": 0.12917416516696661,
             "p_simulated": 0.12917416516696661,
             "p_asymptotic": 0.1203296381668381,
-            "q_value": 0.9645004332
+            "q_value": 0.9906964062
           },
           {
             "test": "special_digits",
@@ -1332,20 +1332,20 @@
       },
       {
         "province": "Thừa Thiên Huế",
-        "draws": 115,
+        "draws": 116,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 37.53047741,
-            "null_mean": 45.02523714,
-            "null_sd": 9.67288142,
-            "z": -0.774822,
-            "p_value": 0.7776646223547853,
-            "p_simulated": 0.7758448310337932,
-            "p_asymptotic": 0.7776646223547853,
+            "statistic": 37.85860379,
+            "null_mean": 44.91081305,
+            "null_sd": 9.64048274,
+            "z": -0.73152,
+            "p_value": 0.765902659166831,
+            "p_simulated": 0.763247350529894,
+            "p_asymptotic": 0.765902659166831,
             "q_value": 0.9906964062
           },
           {
@@ -1353,13 +1353,13 @@
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 693.82608696,
-            "null_mean": 739.01572174,
-            "null_sd": 38.70710546,
-            "z": -1.167476,
-            "p_value": 0.8842231553689263,
-            "p_simulated": 0.8842231553689263,
-            "p_asymptotic": 0.8761872201510665,
+            "statistic": 698.0,
+            "null_mean": 738.35827586,
+            "null_sd": 39.16935616,
+            "z": -1.030353,
+            "p_value": 0.8514297140571886,
+            "p_simulated": 0.8514297140571886,
+            "p_asymptotic": 0.8515613947394797,
             "q_value": 0.9906964062
           },
           {
@@ -1367,27 +1367,27 @@
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 29.82608696,
-            "null_mean": 18.11784348,
-            "null_sd": 5.99689261,
-            "z": 1.952385,
-            "p_value": 0.04059188162367527,
-            "p_simulated": 0.04059188162367527,
-            "p_asymptotic": 0.03917199892965707,
-            "q_value": 0.8830233953
+            "statistic": 30.06896552,
+            "null_mean": 18.05006897,
+            "null_sd": 5.94187163,
+            "z": 2.022746,
+            "p_value": 0.03759248150369926,
+            "p_simulated": 0.03759248150369926,
+            "p_asymptotic": 0.03678137097798508,
+            "q_value": 0.8759137061
           },
           {
             "test": "loto_uniformity",
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 94.05797101,
-            "null_mean": 99.0531401,
-            "null_sd": 14.01754918,
-            "z": -0.356351,
-            "p_value": 0.6210757848430314,
-            "p_simulated": 0.6210757848430314,
-            "p_asymptotic": 0.6215806020525084,
+            "statistic": 97.1532567,
+            "null_mean": 99.07132184,
+            "null_sd": 13.97816926,
+            "z": -0.137219,
+            "p_value": 0.5450909818036392,
+            "p_simulated": 0.5450909818036392,
+            "p_asymptotic": 0.5337074071604849,
             "q_value": 0.9906964062
           },
           {
@@ -1395,25 +1395,25 @@
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.10366573,
-            "null_mean": 0.07029878,
-            "null_sd": 0.00981455,
-            "z": 3.399743,
-            "p_value": 0.002599480103979204,
-            "p_simulated": 0.002599480103979204,
-            "q_value": 0.2911417716
+            "statistic": 0.10288257,
+            "null_mean": 0.07016199,
+            "null_sd": 0.00964353,
+            "z": 3.393009,
+            "p_value": 0.001999600079984003,
+            "p_simulated": 0.001999600079984003,
+            "q_value": 0.223955209
           },
           {
             "test": "repeat_lift",
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": 0.0015548,
-            "null_mean": -1.03e-06,
-            "null_sd": 0.00943094,
-            "z": 0.164971,
-            "p_value": 0.861627674465107,
-            "p_simulated": 0.861627674465107,
+            "statistic": 0.00118798,
+            "null_mean": 9.3e-07,
+            "null_sd": 0.00926896,
+            "z": 0.128067,
+            "p_value": 0.8960207958408318,
+            "p_simulated": 0.8960207958408318,
             "q_value": 0.9906964062
           },
           {
@@ -1421,25 +1421,25 @@
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.03255597,
-            "null_mean": 0.02585194,
-            "null_sd": 0.00582165,
-            "z": 1.151569,
-            "p_value": 0.1279744051189762,
-            "p_simulated": 0.1279744051189762,
-            "q_value": 0.9645004332
+            "statistic": 0.03193723,
+            "null_mean": 0.02572214,
+            "null_sd": 0.00577313,
+            "z": 1.076554,
+            "p_value": 0.14537092581483704,
+            "p_simulated": 0.14537092581483704,
+            "q_value": 0.9906964062
           },
           {
             "test": "hot_persistence",
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": -0.03892343,
-            "null_mean": 0.00199058,
-            "null_sd": 0.10081308,
-            "z": -0.40584,
-            "p_value": 0.6856628674265147,
-            "p_simulated": 0.6856628674265147,
+            "statistic": -0.02787482,
+            "null_mean": -0.00076034,
+            "null_sd": 0.09970457,
+            "z": -0.271948,
+            "p_value": 0.7886422715456909,
+            "p_simulated": 0.7886422715456909,
             "q_value": 0.9906964062
           }
         ]
@@ -1560,20 +1560,20 @@
       },
       {
         "province": "Đắk Lắk",
-        "draws": 58,
+        "draws": 59,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 30.85451882,
-            "null_mean": 44.91507184,
-            "null_sd": 9.52771499,
-            "z": -1.475753,
-            "p_value": 0.9465006242776083,
-            "p_simulated": 0.9436112777444511,
-            "p_asymptotic": 0.9465006242776083,
+            "statistic": 32.92464274,
+            "null_mean": 45.13896181,
+            "null_sd": 9.58966594,
+            "z": -1.273696,
+            "p_value": 0.9093335463485217,
+            "p_simulated": 0.9144171165766847,
+            "p_asymptotic": 0.9093335463485217,
             "q_value": 0.9906964062
           },
           {
@@ -1581,13 +1581,13 @@
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 712.62068966,
-            "null_mean": 738.12131034,
-            "null_sd": 37.84353847,
-            "z": -0.673843,
-            "p_value": 0.7478504299140172,
-            "p_simulated": 0.7478504299140172,
-            "p_asymptotic": 0.7424513113096939,
+            "statistic": 713.18644068,
+            "null_mean": 737.92379661,
+            "null_sd": 38.27516155,
+            "z": -0.646303,
+            "p_value": 0.7406518696260748,
+            "p_simulated": 0.7406518696260748,
+            "p_asymptotic": 0.7375636469337943,
             "q_value": 0.9906964062
           },
           {
@@ -1595,13 +1595,13 @@
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 9.86206897,
-            "null_mean": 17.87944828,
-            "null_sd": 5.84332023,
-            "z": -1.372059,
-            "p_value": 0.9416116776644671,
-            "p_simulated": 0.9416116776644671,
-            "p_asymptotic": 0.9363153125706638,
+            "statistic": 9.79661017,
+            "null_mean": 18.06311864,
+            "null_sd": 5.92612739,
+            "z": -1.394926,
+            "p_value": 0.9388122375524895,
+            "p_simulated": 0.9388122375524895,
+            "p_asymptotic": 0.9383428061581909,
             "q_value": 0.9906964062
           },
           {
@@ -1609,13 +1609,13 @@
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 94.12260536,
-            "null_mean": 98.76463602,
-            "null_sd": 13.98255919,
-            "z": -0.331987,
-            "p_value": 0.6172765446910617,
-            "p_simulated": 0.6172765446910617,
-            "p_asymptotic": 0.6197731969434673,
+            "statistic": 95.43879473,
+            "null_mean": 99.08131827,
+            "null_sd": 14.11848147,
+            "z": -0.257997,
+            "p_value": 0.5940811837632474,
+            "p_simulated": 0.5940811837632474,
+            "p_asymptotic": 0.5826352456943553,
             "q_value": 0.9906964062
           },
           {
@@ -1623,12 +1623,12 @@
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.0835352,
-            "null_mean": 0.07019398,
-            "null_sd": 0.01364831,
-            "z": 0.9775,
-            "p_value": 0.3181363727254549,
-            "p_simulated": 0.3181363727254549,
+            "statistic": 0.08237548,
+            "null_mean": 0.07012541,
+            "null_sd": 0.0135761,
+            "z": 0.902327,
+            "p_value": 0.36212757448510297,
+            "p_simulated": 0.36212757448510297,
             "q_value": 0.9906964062
           },
           {
@@ -1636,12 +1636,12 @@
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": 0.0197499,
-            "null_mean": 7.046e-05,
-            "null_sd": 0.01345206,
-            "z": 1.462932,
-            "p_value": 0.14317136572685463,
-            "p_simulated": 0.14317136572685463,
+            "statistic": 0.01702058,
+            "null_mean": 0.00018609,
+            "null_sd": 0.01304579,
+            "z": 1.290416,
+            "p_value": 0.1977604479104179,
+            "p_simulated": 0.1977604479104179,
             "q_value": 0.9906964062
           },
           {
@@ -1649,12 +1649,12 @@
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.04946897,
-            "null_mean": 0.04848744,
-            "null_sd": 0.00910128,
-            "z": 0.107844,
-            "p_value": 0.43691261747650467,
-            "p_simulated": 0.43691261747650467,
+            "statistic": 0.04829002,
+            "null_mean": 0.04767974,
+            "null_sd": 0.00898368,
+            "z": 0.067932,
+            "p_value": 0.4539092181563687,
+            "p_simulated": 0.4539092181563687,
             "q_value": 0.9906964062
           },
           {
@@ -1662,12 +1662,12 @@
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": -0.05727207,
-            "null_mean": -0.0027503,
-            "null_sd": 0.09920659,
-            "z": -0.549578,
-            "p_value": 0.5902819436112777,
-            "p_simulated": 0.5902819436112777,
+            "statistic": -0.05383903,
+            "null_mean": 0.00050744,
+            "null_sd": 0.09974385,
+            "z": -0.54486,
+            "p_value": 0.5802839432113577,
+            "p_simulated": 0.5802839432113577,
             "q_value": 0.9906964062
           }
         ]
@@ -1756,7 +1756,7 @@
             "z": -1.916861,
             "p_value": 0.055188962207558485,
             "p_simulated": 0.055188962207558485,
-            "q_value": 0.8830233953
+            "q_value": 0.8759137061
           },
           {
             "test": "gap_shape",
@@ -1792,35 +1792,35 @@
         "test": "cage_uniformity",
         "name": "Chữ số theo lồng",
         "stations": 14,
-        "z_sum": -3.837369,
-        "z_per_sqrt_station": -1.02558,
-        "p_value": 0.8488302339532093,
-        "q_value": 0.9700916959
+        "z_sum": -3.452431,
+        "z_per_sqrt_station": -0.922701,
+        "p_value": 0.8230353929214157,
+        "q_value": 0.9406118776
       },
       {
         "test": "digit_uniformity",
         "name": "Chữ số theo vị trí in",
         "stations": 14,
-        "z_sum": -2.504572,
-        "z_per_sqrt_station": -0.669375,
-        "p_value": 0.7516496700659868,
-        "q_value": 0.9700916959
+        "z_sum": -2.541191,
+        "z_per_sqrt_station": -0.679162,
+        "p_value": 0.750249950009998,
+        "q_value": 0.9406118776
       },
       {
         "test": "special_digits",
         "name": "Chữ số cuối Đặc Biệt",
         "stations": 14,
-        "z_sum": -0.943198,
-        "z_per_sqrt_station": -0.25208,
-        "p_value": 0.5904819036192761,
-        "q_value": 0.9700916959
+        "z_sum": -1.086293,
+        "z_per_sqrt_station": -0.290324,
+        "p_value": 0.6112777444511098,
+        "q_value": 0.9406118776
       },
       {
         "test": "loto_uniformity",
         "name": "Tần suất con lô",
         "stations": 14,
-        "z_sum": -7.220355,
-        "z_per_sqrt_station": -1.929721,
+        "z_sum": -7.090091,
+        "z_per_sqrt_station": -1.894907,
         "p_value": 0.9756048790241951,
         "q_value": 0.975604879
       },
@@ -1828,37 +1828,37 @@
         "test": "dispersion",
         "name": "Độ phân tán",
         "stations": 14,
-        "z_sum": 0.811362,
-        "z_per_sqrt_station": 0.216846,
-        "p_value": 0.8258348330333933,
-        "q_value": 0.9700916959
+        "z_sum": 0.876562,
+        "z_per_sqrt_station": 0.234271,
+        "p_value": 0.8220355928814237,
+        "q_value": 0.9406118776
       },
       {
         "test": "repeat_lift",
         "name": "Lô rơi / lô gan",
         "stations": 14,
-        "z_sum": 2.641352,
-        "z_per_sqrt_station": 0.705931,
-        "p_value": 0.48930213957208557,
-        "q_value": 0.9700916959
+        "z_sum": 2.367192,
+        "z_per_sqrt_station": 0.632659,
+        "p_value": 0.5236952609478105,
+        "q_value": 0.9406118776
       },
       {
         "test": "gap_shape",
         "name": "Nhịp khoảng cách",
         "stations": 14,
-        "z_sum": 2.728897,
-        "z_per_sqrt_station": 0.729328,
-        "p_value": 0.235752849430114,
-        "q_value": 0.9700916959
+        "z_sum": 2.701547,
+        "z_per_sqrt_station": 0.722019,
+        "p_value": 0.236752649470106,
+        "q_value": 0.9406118776
       },
       {
         "test": "hot_persistence",
         "name": "Độ bền số nóng",
         "stations": 14,
-        "z_sum": -4.224263,
-        "z_per_sqrt_station": -1.128982,
-        "p_value": 0.25774845030993804,
-        "q_value": 0.9700916959
+        "z_sum": -4.711616,
+        "z_per_sqrt_station": -1.259232,
+        "p_value": 0.20535892821435714,
+        "q_value": 0.9406118776
       }
     ]
   },
@@ -1871,11 +1871,11 @@
       "relative_lift": 1.274514
     },
     "pooled_region": {
-      "draws": 984,
+      "draws": 988,
       "hypotheses": 100,
       "baseline": 0.1654862385,
-      "absolute_lift": 0.051206,
-      "relative_lift": 0.309429
+      "absolute_lift": 0.051102,
+      "relative_lift": 0.308802
     }
   },
   "reading": "Không phép kiểm nào trong 112 phép (đài × phép kiểm) lệch khỏi máy quay công bằng sau hiệu chỉnh đa kiểm, và không con lô nào có tần suất khác mức nền. Ở cỡ mẫu hiện có (khoảng 58 kỳ mỗi đài), phép kiểm chỉ phát hiện được một con lô lệch khỏi mức nền từ 21,1 điểm phần trăm trở lên."

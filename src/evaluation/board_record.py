@@ -185,11 +185,14 @@ def build_record(boards: list[dict], draws: dict[str, list[str]], *, simulations
     for row in rows:
         high, low = _tail_p(null_total(sims[row["id"]]), row["hits"])
         row["p_high"], row["p_low"] = high, low
-        row["p"] = min(1.0, 2 * min(high, low))
+        # Làm tròn p TRƯỚC khi hiệu chỉnh: Holm nhân p với tới số danh sách, nên tính trên p chưa làm tròn
+        # rồi mới làm tròn thì p_holm đã in lệch Holm của chính các p đã in tới n·0,5·10⁻⁶ (17-11-2026:
+        # 1,2·10⁻⁵ trên 25 danh sách). Người đọc tính lại từ tệp phải ra đúng con số tệp in.
+        row["p"] = _round(min(1.0, 2 * min(high, low)))
     for row, adjusted in zip(rows, holm([row["p"] for row in rows]), strict=True):
         row["p_holm"] = adjusted
         row["verdict"] = _verdict(adjusted, row["hits"], row["expected"])
-        for key in ("expected", "expected_published", "days_expected", "p_high", "p_low", "p", "p_holm"):
+        for key in ("expected", "expected_published", "days_expected", "p_high", "p_low", "p_holm"):
             row[key] = _round(row[key])
 
     family: dict[str, Any] = {"lists": len(rows), "hits": family_observed, "expected": _round(family_expected)}

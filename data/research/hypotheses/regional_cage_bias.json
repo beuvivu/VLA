@@ -354,14 +354,14 @@
       "region": "mn",
       "province": "Bến Tre",
       "registered_through": "2026-11-10",
-      "draws_scored": 0,
-      "last_scored": null,
-      "log10_e": 0.0,
-      "log10_e_max": 0.0,
+      "draws_scored": 1,
+      "last_scored": "2026-11-17",
+      "log10_e": 1.166438,
+      "log10_e_max": 1.166438,
       "log10_threshold": 3.544068,
       "confirmed": false,
       "confirmed_on": null,
-      "reading": "Đài Bến Tre: giả thuyết đóng băng theo các kỳ đến 10/11/2026; chưa có kỳ mới nào để chấm."
+      "reading": "Đài Bến Tre: giả thuyết đóng băng theo các kỳ đến 10/11/2026; chưa đủ bằng chứng (bằng chứng 10^1,17 sau 1 kỳ mới (ngưỡng 10^3,54))."
     }
   ]
 }
