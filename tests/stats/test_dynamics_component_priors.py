@@ -185,16 +185,26 @@ def test_learned_priors_do_not_break_the_probability_contract(mode: str) -> None
         assert prob.sum() == pytest.approx(1.0)
 
 
-def test_learned_beats_hand_picked_on_real_walk_forward() -> None:
-    """Chốt lại con số đã biện minh cho thay đổi này.
+#: Kỳ cuối của lát 120 kỳ ĐÓNG BĂNG: dữ liệu lúc phép kiểm ra đời (commit 2a509ad, 14-11-2026).
+#: Lát trượt theo kỳ mới là đồng xu. Trên 120 kỳ hiệu số chỉ cỡ 1e-5, t từ −0,4 tới +0,1 (đo
+#: 18-11-2026 trên bảy cửa sổ liền nhau). Cửa sổ tới 18-11-2026 đổi dấu (+3,3e-6, t = +0,12) và làm
+#: đỏ mọi PR mà không mã nào đổi. Sổ chuẩn chỉ nối thêm, nên lát đóng băng cho cùng một con số mãi.
+FROZEN_THROUGH = pd.Timestamp("2026-11-13")
 
-    Đo trên 120 kỳ thật gần nhất để chạy nhanh; con số đầy đủ 500/1000 kỳ ghi
-    trong tài liệu của ``LEARN_COMPONENT_PRIOR``.
+
+def test_learned_beats_hand_picked_on_real_walk_forward() -> None:
+    """Chốt lại con số đã biện minh cho thay đổi này, trên ĐÚNG lát kỳ đã dùng khi ấy.
+
+    Đo trên 120 kỳ thật tới ``FROZEN_THROUGH`` để chạy nhanh; con số đầy đủ 500/1000 kỳ (t = −2,90 /
+    −4,05) ghi trong tài liệu của ``LEARN_COMPONENT_PRIOR``. Đây là phép chốt hồi quy của MÃ, không
+    phải phép kiểm ý nghĩa: 120 kỳ không đủ tách hai đường (t ≈ −0,3).
     """
     dates, hit = nd.build_hit_matrix_from_lottery("loto")
+    stop = int(dates.searchsorted(FROZEN_THROUGH, side="right"))
+    assert dates[stop - 1] == FROZEN_THROUGH and stop >= 120
     hand_err: list[float] = []
     learn_err: list[float] = []
-    for t in range(len(hit) - 120, len(hit)):
+    for t in range(stop - 120, stop):
         h, dd, y = hit[:t], dates[:t], hit[t].astype(float)
         a = nd.build_dynamics_signal(hit=h, dates=dd, mode="loto", **HAND_LOTO)
         b = nd.build_dynamics_signal(hit=h, dates=dd, mode="loto")

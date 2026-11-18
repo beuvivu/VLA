@@ -157,7 +157,7 @@ jobs:
           python3 scripts/ops/pages_deploy_window.py --ref FETCH_HEAD --canonical-at "${CANONICAL_AT}"
 
       - name: Chốt phiên bản và kiểm tra tài nguyên
-        if: github.ref_name == github.event.repository.default_branch
+        if: github.ref_name == github.event.repository.default_branch && steps.window.outputs.deploy == 'true'
         run: python3 src/web/site_assets.py --refresh docs --check
 
       - name: Đóng gói GitHub Pages

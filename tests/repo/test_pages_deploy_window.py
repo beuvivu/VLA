@@ -182,7 +182,7 @@ def test_the_package_is_taken_from_the_newest_branch_after_this_run_pushed() -> 
 def test_packaging_and_the_deploy_job_follow_the_window_decision(deploy: str, packaged: bool) -> None:
     github = SimpleNamespace(ref_name="main", event=SimpleNamespace(repository=SimpleNamespace(default_branch="main")))
     steps = SimpleNamespace(window=SimpleNamespace(outputs=SimpleNamespace(deploy=deploy)))
-    for name in ("Đóng gói GitHub Pages", "Đánh dấu đã đóng gói"):
+    for name in ("Chốt phiên bản và kiểm tra tài nguyên", "Đóng gói GitHub Pages", "Đánh dấu đã đóng gói"):
         expression = _step(name)["if"].replace("&&", " and ").replace("||", " or ")
         assert eval(expression, {"__builtins__": {}}, {"github": github, "steps": steps}) is packaged
     document = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
