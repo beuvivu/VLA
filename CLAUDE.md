@@ -697,6 +697,8 @@ Chi tiết và số đo: `documentation/qa/2026-11-16-nang-cap-lottery-intellige
   trên năm lồng thấp; các phép khác là p mô phỏng. Hạt giống theo TÊN đài.
 - `evaluation.regional_benchmark`: dự báo cho ngày d chỉ đọc kỳ có ngày < d (hai đài cùng ngày không thấy nhau).
   Đổi hằng số nào trong `CONFIG` thì tăng `BENCHMARK_VERSION`. Mô hình thêm SAU khi nhìn dữ liệu vào `POST_HOC_MODELS`.
+  Lợi thế riêng từng đài hiệu chỉnh Holm trên MỌI cặp (đài, mô hình) vì `station_edges` chọn mô hình thắng ở mỗi đài.
+  Khối kiểm định của trang miền chỉ in khi cả hai tệp số đo trùng ngày cuối của sổ miền (`load_evidence`).
   Trang miền in câu kết luận TỪ tệp số đo và KHÔNG công bố con số dự đoán cho đài: luật đang công bố là dự báo đều.
 - `research.regional_cage_test`: đăng ký một lần mỗi đài, luật đối đóng băng, chỉ chấm kỳ sau ngày đăng ký, sổ chỉ nối
   thêm. Không sửa đăng ký; đổi luật thì tăng `VERSION`. Bến Tre và Bình Phước (hai đài đã đăng ký) được đối chiếu từng ô

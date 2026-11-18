@@ -33,6 +33,10 @@ Không hằng số nào dưới đây được chọn bằng cách thử trên d
 Kết luận "có lợi thế" đòi: lợi log-loss trung bình dương VÀ p hoán vị (theo cụm ngày, hiệu chỉnh
 Holm trên mọi mô hình của cùng miền và cùng chế độ) dưới ``ALPHA``. Không đạt thì bản báo cáo ghi
 đúng như thế: chưa chứng minh được lợi thế dự báo.
+
+Lợi thế RIÊNG từng đài hiệu chỉnh Holm trên mọi cặp (đài, mô hình) của cùng miền và cùng chế độ,
+vì ``station_edges`` chọn mô hình thắng ở mỗi đài. Bản 1 chỉ hiệu chỉnh trên các đài của từng mô
+hình, bỏ sót phép chọn ấy; bản 2 (18-11-2026) sửa.
 """
 
 from __future__ import annotations
@@ -61,7 +65,7 @@ from stats.regional_stats import StationHistory, cage_table, load_stations
 from stats.statistical_corrections import holm
 
 SCHEMA_VERSION = 1
-BENCHMARK_VERSION = 1
+BENCHMARK_VERSION = 2
 #: Số kỳ của chính đài phải có trước khi một kỳ được chấm.
 WARMUP = 20
 ROLLING = 20
@@ -386,13 +390,18 @@ def evaluate_mode(states: list[StationState], mode: str) -> dict:
                     stations.append({"province": str(name_of), "draws": int(chosen.sum()),
                                      "mean_gain": _round(gain[chosen].mean()),
                                      "p_value": paired_sign_flip_p(gain[chosen])})
-            for row, adjusted in zip(stations, holm([r["p_value"] for r in stations]), strict=True):
-                row["p_holm"] = adjusted
             block["stations"] = stations
-            block["stations_with_edge"] = [r["province"] for r in stations
-                                           if r["p_holm"] < ALPHA and (r["mean_gain"] or 0) > 0]
         models[name] = block
     candidates = [name for name in PROBABILITY_MODELS if name != "deu"]
+    # Holm trên MỌI cặp (đài, mô hình) của chế độ, không riêng từng mô hình: ``station_edges`` chọn
+    # mô hình thắng ở mỗi đài, nên phép chọn ấy nằm trong họ. Hiệu chỉnh riêng từng mô hình thì một
+    # lịch sử công bằng có ``len(candidates)`` cơ hội cho mỗi đài và báo "thắng" quá thường.
+    family = [row for name in candidates for row in models[name]["stations"]]
+    for row, adjusted in zip(family, holm([r["p_value"] for r in family]), strict=True):
+        row["p_holm"] = adjusted
+    for name in candidates:
+        models[name]["stations_with_edge"] = [r["province"] for r in models[name]["stations"]
+                                              if r["p_holm"] < ALPHA and (r["mean_gain"] or 0) > 0]
     for name, adjusted in zip(candidates, holm([models[n]["p_value"] for n in candidates]), strict=True):
         models[name]["p_holm"] = adjusted
         models[name]["edge"] = bool(adjusted < ALPHA and (models[name]["mean_gain"] or 0) > 0)
@@ -458,7 +467,7 @@ def reading(region_name: str, modes: dict[str, dict]) -> str:
             for row in single
         )
         parts.append(
-            f"Riêng từng đài (hiệu chỉnh Holm trên mọi đài của miền): {listed}. Đây là số đo hồi cứu trên một "
+            f"Riêng từng đài (hiệu chỉnh Holm trên mọi cặp đài × mô hình của miền): {listed}. Đây là số đo hồi cứu trên một "
             "sổ chỉ ghi từ một nơi; nó chỉ thành lợi thế khi phép kiểm tiến cứu đã đăng ký xác nhận trên kỳ mới."
         )
     return f"{region_name}: " + " ".join(parts)

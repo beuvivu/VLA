@@ -92,7 +92,7 @@ vào tổ hợp xác suất.
 | XSMB Đặc Biệt — xác suất ĐÃ CÔNG BỐ | 80 kỳ | kỹ năng log-loss | +4,7·10⁻⁶, khoảng 95% ±1,1·10⁻³; MRR 0,054 so với 0,052 ngẫu nhiên (p 0,90); ECE 0,0037 so với 0,0035 (p 0,41) | **NO DEMONSTRATED PREDICTIVE EDGE** |
 | XSMB — walk-forward 9 mô hình | 997 kỳ, 13-02-2024 → 16-11-2026, học lại mỗi 50 kỳ | log-loss so với hằng số | tốt nhất: tiên nghiệm LOTO z +0,19, ML production ĐB z +1,64; mọi z trong ±2 trừ các mô hình kém hằng số | không ứng viên nào được đề bạt |
 | Miền Trung (14 đài) | 704 kỳ-đài ngoài mẫu (17-12-2025 → 15-11-2026) | log-loss so với dự báo đều, p hoán vị theo ngày, Holm | không mô hình nào thắng; 0/112 phép kiểm đài lệch | **NO DEMONSTRATED PREDICTIVE EDGE**; máy quay không phân biệt được với công bằng (phát hiện được lệch từ 21 điểm % mỗi con) |
-| Miền Nam (21 đài) | 853 kỳ-đài ngoài mẫu | như trên | cấp miền không mô hình nào thắng; RIÊNG đài Bến Tre mô hình chữ số theo lồng thắng (+0,0050 log-loss/kỳ trên 38 kỳ, p Holm 0,026) | cấp miền **NO DEMONSTRATED PREDICTIVE EDGE**; hai đài đã đăng ký phép kiểm tiến cứu |
+| Miền Nam (21 đài) | 859 kỳ-đài ngoài mẫu | như trên | cấp miền không mô hình nào thắng; RIÊNG đài Bến Tre mô hình chữ số theo lồng thắng (+0,0054 log-loss/kỳ trên 39 kỳ, p Holm 0,027 trên mọi cặp đài × mô hình) | cấp miền **NO DEMONSTRATED PREDICTIVE EDGE**; hai đài đã đăng ký phép kiểm tiến cứu |
 | Mega 6/45 | 1 569 kỳ | e-value hỗn hợp Bayes; phép đo số khớp H đăng ký 13-10 (test 382 kỳ) | e cao nhất 10^0,20 < 20; mọi nhánh ngang/kém công bằng | **NO DEMONSTRATED PREDICTIVE EDGE** |
 | Power 6/55 | 1 405 kỳ | như trên | e cao nhất 10^0,33 | **NO DEMONSTRATED PREDICTIVE EDGE** |
 | Lotto 5/35 | 920 kỳ | e-value | 10^0,12 | **NO DEMONSTRATED PREDICTIVE EDGE** |
@@ -188,6 +188,17 @@ Hình dạng của độ lệch Bến Tre cũng không giống lỗi ghi. Quả 
 dồn vào một giai đoạn. Kỳ 17-11-2026, kỳ đầu sau ngày đăng ký, cho 0/18, 0/18, 1/17, 0/16, 1/12 so với
 kỳ vọng 1,8 / 1,8 / 1,7 / 1,6 / 1,2. Giải thích hợp nhất là một đặc tính vật lý của bộ cầu hay của cách
 quay ở đài ấy, và phép kiểm tiến cứu sẽ chấm nó.
+
+**Hai sửa sau duyệt tự động (18-11-2026).** Bộ duyệt của PR #230 chỉ ra hai lỗ, cả hai đã sửa trong PR #231:
+
+- Lợi thế riêng từng đài trước chỉ hiệu chỉnh Holm trên các đài của từng mô hình. Trong khi đó
+  `station_edges` chọn mô hình thắng ở mỗi đài, nên phép chọn ấy phải nằm trong họ. Nay họ là mọi cặp
+  (đài, mô hình) của cùng miền và cùng chế độ (`BENCHMARK_VERSION` = 2). Bến Tre vẫn qua: p Holm 0,027
+  trên 126 cặp, so với 0,006 trước đó.
+- Khối kiểm định của trang miền chỉ so hai tệp số đo với nhau. Bước phân tích hỏng sau khi kết quả mới đã
+  về thì hai tệp cũ vẫn khớp nhau, và trang in kết luận của kỳ trước cạnh bảng của kỳ mới. Nay cả hai tệp
+  phải trùng ngày cuối của sổ miền, nếu không trang không in khối ấy. Câu báo lỗi của
+  `regional-results.yml` («trang đã dựng không in khối kiểm định») từ nay mới đúng.
 
 Cách lặp lại: `get_job_logs` chỉ trả khoảng 5 000 dòng cuối của log, tức khoảng 78 trang. Vì vậy mỗi lượt
 đọc tối đa 40 trang, và lượt sau chỉ chạy khi lượt trước đã xong: workflow tự huỷ lượt đang chạy.
