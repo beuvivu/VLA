@@ -51,3 +51,25 @@ def test_artifacts_are_pruned_before_the_published_forecasts_are_graded(monkeypa
     for grader in ("model_quality.py", "confidence_matrix.py",
                    "build_model_quality.py", "build_confidence_page.py"):
         assert pruning[0] < min(_positions(calls, grader)), grader
+
+
+def test_the_model_registry_runs_after_every_writer_of_a_model_record_and_before_its_page(monkeypatch) -> None:
+    """Sổ đăng ký đọc cổng của mọi mô hình vừa học: chạy trước một bộ ghi hồ sơ thì sổ mô tả kỳ hôm trước."""
+    calls = _calls(monkeypatch)
+    (registry,) = _positions(calls, "model_registry.py")
+    for writer in ("ml_train.py", "cau_keo_ml.py", "cau_keo_domain_challenger.py", "learn_ensemble_weights.py",
+                   "meta_predictor.py", "online_learning.py", "knowledge_base.py", "run_xsmb_agents.py",
+                   "model_quality.py", "cleanup_artifacts.py"):
+        assert max(_positions(calls, writer)) < registry, writer
+    assert registry < min(_positions(calls, "build_model_quality.py"))
+    # Lượt --strict phải dừng khi có hồ sơ không đọc được.
+    assert "--strict" in calls[registry]
+
+
+def test_the_model_registry_does_not_block_a_non_strict_run(monkeypatch) -> None:
+    seen: list[tuple[list[str], dict]] = []
+    monkeypatch.setattr(pipeline, "_run", lambda argv, **options: seen.append((argv, options)))
+    monkeypatch.setattr(sys, "argv", ["pipeline.py", "--skip-sync"])
+    pipeline.main()
+    ((argv, options),) = [(a, o) for a, o in seen if any(arg.endswith("/model_registry.py") for arg in a)]
+    assert "--strict" not in argv and options.get("allow_fail") is True

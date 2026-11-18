@@ -686,6 +686,27 @@ Hai điểm dễ sai: hai nháy BẤT ĐỐI XỨNG (số lộn về hai nháy K
 tần suất cũ `cau-giai-dac-biet.html`, `cau-dac-biet-theo-bo-so.html` là thống kê
 khác, giữ nguyên.
 
+## XSMT/XSMN, sổ đăng ký mô hình, thước xếp hạng — 16-11-2026
+
+Chi tiết và số đo: `documentation/qa/2026-11-16-nang-cap-lottery-intelligence-v3.md`.
+
+- Một ĐÀI miền Trung/Nam quay 18 giải: mức nền `core.regional_domain` (1 − 0,99¹⁸), không dùng hằng số XSMB. Bố cục giải
+  khai MỘT lần ở đó; `ingest.regional_lottery` đọc cùng đối tượng. Mỗi đài là một bộ lồng cầu: kiểm riêng, không ghép kỳ
+  của hai đài thành "hôm trước → hôm sau".
+- `stats.regional_stats` dừng hẳn (`RegionalDataError`) khi sổ miền sai cấu trúc. p của phép theo lồng là đuôi χ²(45)
+  trên năm lồng thấp; các phép khác là p mô phỏng. Hạt giống theo TÊN đài.
+- `evaluation.regional_benchmark`: dự báo cho ngày d chỉ đọc kỳ có ngày < d (hai đài cùng ngày không thấy nhau).
+  Đổi hằng số nào trong `CONFIG` thì tăng `BENCHMARK_VERSION`. Mô hình thêm SAU khi nhìn dữ liệu vào `POST_HOC_MODELS`.
+  Trang miền in câu kết luận TỪ tệp số đo và KHÔNG công bố con số dự đoán cho đài: luật đang công bố là dự báo đều.
+- `research.regional_cage_test`: đăng ký một lần mỗi đài, luật đối đóng băng, chỉ chấm kỳ sau ngày đăng ký, sổ chỉ nối
+  thêm. Không sửa đăng ký; đổi luật thì tăng `VERSION`.
+- `evaluation.model_registry`: trạng thái đọc từ CỔNG của chính mô hình (trust, quality_pass, promotion, gate), không suy
+  từ giá trị xác suất; trọng số chỉ qua `weights_provenance`, trust cầu-kèo chỉ qua `trust_from_pack`. `history.csv` chỉ
+  nối thêm. Thêm mắt xích mới vào chuỗi dự báo thì thêm mục vào sổ.
+- `evaluation.forecast_metrics`: Top-K, hạng, AUC chia đều khối hoà (vector phẳng ra đúng mức ngẫu nhiên); khoảng tin
+  cậy và hoán vị theo KỲ. Mốc của ECE là ECE của chính các xác suất ấy khi kết cục rút đúng theo chúng, không phải ECE
+  của dự báo hằng số.
+
 ## Kỷ luật kiểm thử
 
 Phép kiểm phải ĐỎ khi hành vi nó đặt tên bị đảo. Mỗi phép kiểm mới phải được

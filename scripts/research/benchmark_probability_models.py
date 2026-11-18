@@ -6,11 +6,14 @@ Các mô hình (mỗi khối ``--refit-every`` kỳ được huấn luyện lạ
 TRƯỚC khối):
 
 * ``hang_so``        — tỉ lệ nền (LOTO) / 1/100 (Đặc Biệt). Mốc kỹ năng 0.
+* ``tan_suat``       — tần suất THÔ của từng con trên toàn bộ lịch sử trước kỳ đích.
+* ``tan_suat_30`` / ``tan_suat_90`` — tần suất thô trên 30 / 90 kỳ gần nhất ("số nóng").
 * ``ml_production``  — thành phần ML đang chạy production, tái dựng nguyên quy
   trình huấn luyện (xem ``research.vla.models``).
 * ``tien_nghiem``    — tầng 1 (Dirichlet/Beta) + hiệu chỉnh Platt.
 * ``bayes_lgb``      — tầng 1 + LightGBM phần dư + Platt (mô hình mới).
 * ``bayes_lgb_focal_iso`` — như trên nhưng focal loss + isotonic.
+* ``mang_no_ron``    — tầng 1 + perceptron nhiều lớp trên cùng đặc trưng + Platt (ứng viên học sâu).
 
 Thêm: tổ hợp production ĐÃ GHI SỔ (``data/evaluation/prob_eval/ensemble_history.csv``)
 được so với các mô hình trên đúng những kỳ có trong sổ.
@@ -41,6 +44,7 @@ from research.vla.models import ProductionMLModel  # noqa: E402
 from research.vla.features import POWER_SEED, power_history  # noqa: E402
 from research.vla.features import History, build_features, load_history  # noqa: E402
 from research.vla.models import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
+from research.vla.models import FrequencyModel, NeuralModel  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul"
 
@@ -48,7 +52,11 @@ OUT = ROOT / "data" / "research" / "model_overhaul"
 def factories(mode: str, history: History, include_production: bool) -> dict:
     out = {
         "hang_so": lambda: ConstantModel(mode),
+        "tan_suat": lambda: FrequencyModel(mode),
+        "tan_suat_30": lambda: FrequencyModel(mode, 30),
+        "tan_suat_90": lambda: FrequencyModel(mode, 90),
         "tien_nghiem": lambda: PriorOnlyModel(mode),
+        "mang_no_ron": lambda: NeuralModel(mode),
         "bayes_lgb": lambda: BayesianLGBModel(mode),
         "bayes_lgb_focal_iso": lambda: BayesianLGBModel(
             mode, replace(ModelConfig(), loss="focal", calibration="isotonic")
@@ -114,7 +122,7 @@ def pairwise(frame: pd.DataFrame, mode: str) -> dict:
     """Mô hình mới so với ML production và với tiên nghiệm, từng kỳ."""
     wide = frame[frame["mode"] == mode].pivot(index="target_date", columns="model", values="logloss")
     out = {}
-    for new in ("bayes_lgb", "bayes_lgb_focal_iso"):
+    for new in ("bayes_lgb", "bayes_lgb_focal_iso", "mang_no_ron"):
         for old in ("ml_production", "tien_nghiem", "hang_so"):
             if new in wide and old in wide:
                 out[f"{new}_vs_{old}"] = backtest.paired(wide[new].to_numpy(), wide[old].to_numpy())

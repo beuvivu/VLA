@@ -24,14 +24,12 @@ from bs4 import BeautifulSoup
 from core.atomic_io import atomic_write_text
 from ingest.sources import REGIONAL_SOURCE_NAMES
 from core.paths import REPO_ROOT
+# Bố cục 18 giải khai MỘT lần ở ``core.regional_domain``: bộ thu thập, bộ thống kê và bộ chấm
+# cùng đọc nó, nên đổi cấu trúc giải không thể làm chúng lệch nhau.
+from core.regional_domain import PRIZE_SPECS, REGIONS
 
 VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 SOURCE = REGIONAL_SOURCE_NAMES[0]
-REGIONS = {"mt": "Miền Trung", "mn": "Miền Nam"}
-PRIZE_SPECS = (
-    ("G.8", 1, 2), ("G.7", 1, 3), ("G.6", 3, 4), ("G.5", 1, 4),
-    ("G.4", 7, 5), ("G.3", 2, 5), ("G.2", 1, 5), ("G.1", 1, 5), ("ĐB", 1, 6),
-)
 SPEC_BY_PRIZE = {name: (count, width) for name, count, width in PRIZE_SPECS}
 CSV_FIELDS = ("date", "region", "province", "prize", "position", "value", "source", "fetched_at")
 

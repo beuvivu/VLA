@@ -528,7 +528,22 @@ def _vung(region: str) -> tuple[Evidence, list[Section]]:
     }], [
         "Đọc sổ kết quả vùng đã lưu, nhóm theo ngày quay rồi theo tỉnh/thành.",
         "Hiển thị nguyên số đã công bố; bộ lọc ngày và tỉnh chỉ ẩn/hiện, không tính lại.",
-    ]), []
+    ]), [_sec(".rg-evidence", f"Kiểm định ngẫu nhiên và mốc xác suất {region}", _ev([{
+        "title": f"Kiểm định từng đài {region}",
+        "snippet": "Tám phép kiểm cho từng đài, phân phối chuẩn lấy bằng mô phỏng đúng cấu trúc 18 giải; "
+                   "hiệu chỉnh đa kiểm trên mọi (đài × phép kiểm) của miền.",
+    }, {
+        "title": f"Phép chấm tiến cứu {region}",
+        "snippet": "Mỗi cách dự báo chỉ đọc các kỳ trước ngày đích rồi được chấm bằng log-loss trên kỳ ấy, "
+                   "so với dự báo đều.",
+    }], [
+        "Mức nền một con lô ở một đài là 1 − 0,99¹⁸ (18 giải mỗi kỳ); đuôi Đặc Biệt là 1/100.",
+        "Mỗi đài được kiểm riêng vì là một bộ lồng cầu riêng; p của phép theo lồng lấy từ đuôi χ², các phép "
+        "còn lại lấy từ mô phỏng.",
+        "Lợi log-loss dương nghĩa là tốt hơn dự báo đều; khoảng 95% lấy mẫu lại theo ngày quay, p hiệu chỉnh Holm.",
+        "Độ lệch thấy trên dữ liệu cũ chỉ được coi là xác nhận khi phép kiểm đã đăng ký vượt ngưỡng trên các kỳ "
+        "quay SAU ngày đăng ký.",
+    ]))]
 
 
 def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tuple[Evidence, list[Section]]:
@@ -789,6 +804,21 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Kỹ năng từng kỳ = 1 − logloss mô hình / logloss dự báo hằng số; 0 là ngang hằng số.",
                 "Đường tích luỹ là trung bình các kỳ tới ngày ấy; dải là ±1,96 × sai số chuẩn của trung bình.",
                 "Tỉ lệ «tệ hơn đường cơ sở» đếm số kỳ có kỹ năng âm.",
+            ])),
+            _sec_heading("Hiệu chỉnh gộp và thứ hạng", "Hiệu chỉnh gộp và thứ hạng", _ev([_cham(f)], [
+                "ECE = trung bình có trọng số |dự báo − thực tế| trên đúng 10 nhóm của biểu đồ hiệu chỉnh.",
+                "Mốc so của ECE: rút lại kết cục 500 lần đúng theo chính các xác suất ấy (LOTO: 27 giải mỗi kỳ), rồi tính ECE; p là tỉ lệ lần rút có ECE không nhỏ hơn ECE thật.",
+                "LOTO: AUC từng kỳ = xác suất một con đã về được xếp trên một con không về, hoà tính nửa; Đặc Biệt: hạng nghịch đảo của con đã về, hoà chia đều.",
+                "Khoảng 95% lấy mẫu lại theo kỳ quay; p của thứ hạng là phép xáo nhãn trong từng kỳ, giữ nguyên số con về của kỳ ấy.",
+            ])),
+            _sec_heading("Kỹ năng theo tháng", "Kỹ năng theo tháng", _ev([_cham(f)], [
+                "Gom kỹ năng từng kỳ của chuỗi đã công bố theo tháng lịch; mỗi tháng: số kỳ, trung bình và khoảng ±1,96 × sai số chuẩn.",
+                "«Khác 0» khi khoảng của tháng ấy không chứa 0; với khoảng 95%, cứ hai mươi tháng sẽ có một tháng lệch chỉ do may rủi.",
+            ])),
+            _sec_heading("Sổ đăng ký mô hình", "Sổ đăng ký mô hình", _ev([_cham(f), _du_bao(f)], [
+                "Mỗi dòng là một mắt xích của chuỗi dự báo; trạng thái đọc từ cổng của chính mắt xích ấy (độ tin, cổng chất lượng, cổng đề bạt), không suy từ giá trị xác suất.",
+                "«Học tới» là ngày dữ liệu cuối cùng mắt xích ấy được học hoặc được chấm.",
+                "Sổ lịch sử ghi thêm một dòng mỗi lần một mắt xích đổi định nghĩa hoặc đổi trạng thái cổng.",
             ])),
         ]),
         "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], [

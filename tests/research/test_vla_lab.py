@@ -22,7 +22,10 @@ from research.vla.models import (
     Calibrator,
     ConstantModel,
     DirichletPrior,
+    FrequencyModel,
     ModelConfig,
+    NeuralConfig,
+    NeuralModel,
     row_logloss,
 )
 
@@ -380,3 +383,105 @@ def test_the_recorded_production_comparison_never_mixes_reconstructed_rows() -> 
     assert out["exact_emitted"]["production_recorded_logloss"] == pytest.approx(0.51)
     assert out["reconstructed"]["days"] == 3
     assert out["reconstructed"]["production_recorded_logloss"] == pytest.approx((0.90 + 0.95 + 0.99) / 3)
+
+
+# --- Mốc tần suất thô và ứng viên mạng nơ-ron (16-11-2026) -----------------------------------
+
+
+def test_frequency_model_is_the_smoothed_raw_rate_of_the_draws_it_has_seen() -> None:
+    hit = np.zeros((6, 100), dtype=bool)
+    hit[[0, 1, 4], 7] = True  # con 07 về ở kỳ 0, 1, 4
+    hit[:, 20:44] = True  # 24 con về mọi kỳ, giữ tỉ lệ nền quanh 24%
+    rows = np.array([1, 4])
+    base = (np.cumsum(hit.mean(axis=1)) / np.arange(1, 7))[rows]
+    whole = FrequencyModel("loto").predict(None, hit, rows)
+    assert whole[0, 7] == pytest.approx((2 + base[0]) / (2 + 1))  # kỳ 0..1: về 2/2
+    assert whole[1, 7] == pytest.approx((3 + base[1]) / (5 + 1))  # kỳ 0..4: về 3/5
+    assert whole[1, 99] == pytest.approx((0 + base[1]) / (5 + 1))
+    recent = FrequencyModel("loto", window=2).predict(None, hit, rows)
+    assert recent[1, 7] == pytest.approx((1 + base[1]) / (2 + 1))  # chỉ kỳ 3..4: về 1/2
+    special = np.zeros((6, 100), dtype=bool)
+    special[np.arange(6), [5, 5, 9, 5, 1, 5]] = True
+    q = FrequencyModel("de").predict(None, special, np.array([4]))
+    assert q.sum() == pytest.approx(1.0) and q[0, 5] == pytest.approx((3 + 0.01) / (5 + 1))
+    with pytest.raises(ValueError):
+        FrequencyModel("loto", window=0)
+
+
+@pytest.mark.parametrize("mode", ["loto", "de"])
+@pytest.mark.parametrize("window", [None, 30])
+def test_frequency_model_never_reads_a_draw_after_the_row_it_forecasts_from(mode: str, window: int | None) -> None:
+    history = synthetic_history(200, seed=21)
+    changed = _perturb_after(history, 120, seed=22)
+    rows = np.arange(40, 121)
+    model = FrequencyModel(mode, window)
+    assert np.array_equal(model.predict(None, history.hits(mode), rows), model.predict(None, changed.hits(mode), rows))
+    later = np.arange(121, 199)
+    assert not np.array_equal(model.predict(None, history.hits(mode), later),
+                              model.predict(None, changed.hits(mode), later))
+
+
+def test_raw_frequency_costs_more_log_loss_than_the_constant_on_a_fair_history() -> None:
+    """Tin tần suất thô trên lịch sử công bằng là trả giá: cửa sổ càng ngắn càng kém hằng số."""
+    history = synthetic_history(700, seed=23, loto_signal=0.0, de_signal=0.0)
+    hit = history.hits("loto")
+    T = len(history)
+    reference = backtest.cumulative_reference("loto", hit, np.arange(T - 300, T))
+    skill = {}
+    for name, window in (("all", None), ("w30", 30)):
+        res = backtest.run(lambda w=window: FrequencyModel("loto", w), None, hit, T - 300, T - 1)
+        report = backtest.evaluate("loto", res.probs, history.counts[res.targets], history.special[res.targets], reference)
+        skill[name] = report["logloss_skill"]
+    assert skill["w30"] < skill["all"] < 0
+
+
+@pytest.mark.parametrize("mode", ["loto", "de"])
+def test_neural_model_is_reproducible_calibrated_in_level_and_blind_to_the_future(mode: str) -> None:
+    history = synthetic_history(520, seed=24, loto_signal=0.0, de_signal=0.0)
+    feats = build_features(history, mode, PARAMS)
+    hit = history.hits(mode)
+    config = NeuralConfig(epochs=6, train_rows=250, calib_rows=120)
+    train, rows = np.arange(0, 400), np.arange(401, 480)
+    first = NeuralModel(mode, config).fit(feats.X, hit, train).predict(feats.X, hit, rows)
+    again = NeuralModel(mode, config).fit(feats.X, hit, train).predict(feats.X, hit, rows)
+    assert np.array_equal(first, again)
+    assert first.shape == (len(rows), 100) and (first > 0).all() and (first < 1).all()
+    if mode == "de":
+        assert first.sum(axis=1) == pytest.approx(np.ones(len(rows)))
+    else:
+        # Platt trên khối riêng giữ MỨC ở quanh tỉ lệ nền (~23,8 con mỗi kỳ).
+        assert abs(first.sum(axis=1).mean() - 100 * hit[:400].mean()) < 1.5
+    # Đổi mọi kỳ sau hàng huấn luyện cuối: mô hình đã học không đổi, dự báo từ hàng cũ không đổi.
+    changed = _perturb_after(history, 400, seed=25)
+    feats_changed = build_features(changed, mode, PARAMS)
+    model = NeuralModel(mode, config).fit(feats_changed.X, changed.hits(mode), train)
+    assert np.array_equal(model.predict(feats_changed.X, changed.hits(mode), np.array([400])),
+                          NeuralModel(mode, config).fit(feats.X, hit, train).predict(feats.X, hit, np.array([400])))
+    with pytest.raises(ValueError):
+        NeuralModel(mode, config).fit(feats.X, hit, np.arange(0, len(hit)))
+
+
+def test_the_neural_model_finds_a_planted_special_prize_signal() -> None:
+    """Công cụ đo không mù với ứng viên nơ-ron: Đặc Biệt kỳ sau = kỳ trước + 1 với xác suất 30%.
+
+    Đo 16-11-2026 trên ba hạt giống (11, 41, 77): z = 6,1 / 6,4 / 5,3. Ở tín hiệu 15% và lịch sử
+    1 300 kỳ mạng chỉ đạt z ≈ 1,3 trong khi LightGBM đạt > 3: mạng kém nhạy hơn ở lịch sử ngắn.
+    """
+    history = synthetic_history(1300, seed=11, loto_signal=0.0, de_signal=0.30)
+    feats = build_features(history, "de", FeatureParams())
+    hit = history.hits("de")
+    T = len(history)
+    res = backtest.run(lambda: NeuralModel("de"), feats.X, hit, T - 300, T - 1, refit_every=150)
+    report = backtest.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
+                                np.full(res.probs.shape, 0.01))
+    assert report["vs_reference"]["z"] > 4 and report["logloss_skill"] > 0.05
+
+
+def test_the_benchmark_scores_the_frequency_baselines_and_the_neural_candidate() -> None:
+    bench = _benchmark_module()
+    history = synthetic_history(60, seed=26)
+    names = set(bench.factories("loto", history, include_production=False))
+    assert {"hang_so", "tan_suat", "tan_suat_30", "tan_suat_90", "tien_nghiem", "bayes_lgb", "mang_no_ron"} <= names
+    made = bench.factories("de", history, include_production=False)
+    assert isinstance(made["tan_suat_30"](), FrequencyModel) and made["tan_suat_30"]().window == 30
+    assert made["tan_suat"]().window is None and isinstance(made["mang_no_ron"](), NeuralModel)

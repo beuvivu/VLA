@@ -437,6 +437,14 @@ def main() -> None:
     if not args.skip_ml:
         # Sổ hỏng phải dừng lượt xuất bản; không đánh mất bằng chứng tiến cứu.
         _run(_py("src/forecast/xsmb_agents/run_xsmb_agents.py"), allow_fail=False)
+        # Sổ đăng ký mô hình đọc CỔNG của mọi mô hình vừa học trong lượt này (trust, quality_pass, promotion,
+        # gate) và nối sổ lịch sử khi một mô hình đổi định nghĩa hay đổi trạng thái. Đứng sau bước cuối cùng
+        # còn ghi hồ sơ mô hình (tác tử) và trước trang Chất lượng mô hình, nơi in nó. Lượt --strict dừng
+        # khi có hồ sơ không đọc được: bước dự báo coi gói hỏng là "chưa có" mà không báo.
+        _run(
+            _py("src/evaluation/model_registry.py", *(["--strict"] if args.strict else [])),
+            allow_fail=soft_fail,
+        )
 
     if not args.skip_docs:
         _run(

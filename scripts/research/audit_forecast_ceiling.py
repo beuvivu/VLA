@@ -18,6 +18,11 @@ mỗi dạng một phép thử, rồi đặt kỹ năng ĐÃ CÔNG BỐ của h�
    walk-forward so với dự báo đều — dạng duy nhất khai thác được lệch vật lý
    nếu lệch ấy trôi theo thời gian.
 5. Kỹ năng ngoài mẫu của vector ĐÃ CÔNG BỐ (``data/evaluation/model_quality/report.json``).
+6. Chữ số theo LỒNG trong từng QUÝ (thêm 16-11-2026): mỗi hàng (đơn vị … chục nghìn) gộp mọi giải
+   dùng hàng ấy, kiểm đều trên mười chữ số cho từng quý, hiệu chỉnh đa kiểm trên mọi (quý × lồng).
+   Phép 1 so hai NỬA lịch sử theo từng (giải, hàng) nên không thấy một độ lệch chỉ kéo dài vài
+   tháng ở cả một lồng; phép 4 hỏi độ lệch ấy có KHAI THÁC được không. Hai câu trả lời khác nhau
+   được: lệch tạm thời có thật mà không đủ bền để dự báo.
 
     PYTHONPATH=src python3 scripts/research/audit_forecast_ceiling.py
 """
@@ -32,6 +37,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from core.xsmb_domain import FIELD_WIDTHS
+from stats.statistical_corrections import benjamini_hochberg
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "research" / "model_overhaul" / "forecast_ceiling.json"
@@ -148,6 +156,56 @@ def recency_digit_models(last_two: np.ndarray, hit: np.ndarray) -> list[dict]:
     return out
 
 
+CAGE_NAMES = ("đơn vị", "chục", "trăm", "nghìn", "chục nghìn")
+
+
+def cage_counts(frame: pd.DataFrame) -> np.ndarray:
+    """(5, 10): số lần mỗi chữ số ra ở từng hàng, gộp mọi giải có hàng ấy (``frame``: các cột giải dạng chuỗi)."""
+    table = np.zeros((len(CAGE_NAMES), 10), dtype=np.int64)
+    for name, width in FIELD_WIDTHS:
+        values = frame[name].astype(str).str.zfill(width)
+        for cage in range(width):
+            table[cage] += np.bincount(values.str[width - 1 - cage].astype(int), minlength=10)
+    return table
+
+
+def cage_windows(raw: pd.DataFrame, top: int = 8) -> dict:
+    """χ²(9) của từng (quý, lồng), với q Benjamini–Hochberg trên MỌI ô và phép KS của các p so với đều.
+
+    Mỗi ô có kỳ vọng ≥ 90 quan sát mỗi chữ số ở quý đủ kỳ (lồng chục nghìn: 10 giải × ~90 kỳ / 10), nên
+    đuôi χ² dùng được. Quý chưa đủ 30 kỳ bị bỏ. ``min_p_bonferroni`` trả lời "ô lệch nhất có phải may
+    rủi của việc nhìn vào nhiều ô không".
+    """
+    dates = pd.to_datetime(raw["date"])
+    quarter = dates.dt.year.astype(str) + "Q" + dates.dt.quarter.astype(str)
+    rows = []
+    for label, chunk in raw.groupby(quarter.to_numpy(), sort=True):
+        if len(chunk) < 30:
+            continue
+        table = cage_counts(chunk)
+        expected = table.sum(axis=1, keepdims=True) / 10.0
+        chi = ((table - expected) ** 2 / expected).sum(axis=1)
+        for cage, name in enumerate(CAGE_NAMES):
+            rows.append({"quarter": str(label), "cage": name, "draws": int(len(chunk)), "chi2": float(chi[cage]),
+                         "p_value": float(stats.chi2.sf(chi[cage], 9)), "counts": table[cage].tolist()})
+    if not rows:
+        return {"cells": 0}
+    p = np.array([row["p_value"] for row in rows])
+    for row, q in zip(rows, benjamini_hochberg(p), strict=True):
+        row["q_value"] = float(q)
+    ranked = sorted(rows, key=lambda row: (row["p_value"], row["quarter"], row["cage"]))
+    return {
+        "cells": len(rows),
+        "p_below_001": int((p < 0.01).sum()),
+        "expected_below_001": round(0.01 * len(rows), 2),
+        "q_below_005": int(sum(row["q_value"] < 0.05 for row in rows)),
+        "min_p": float(p.min()),
+        "min_p_bonferroni": float(min(1.0, p.min() * len(rows))),
+        "uniformity_ks_p": float(stats.kstest(p, "uniform").pvalue),
+        "most_extreme": ranked[:top],
+    }
+
+
 def published_skill(data_dir: Path) -> dict:
     report = json.loads((data_dir / "evaluation" / "model_quality" / "report.json").read_text(encoding="utf-8"))
     out = {}
@@ -169,6 +227,7 @@ def run(data_dir: Path) -> dict:
         "within_day_variance": within_day_independence(last_two),
         "lag_dependence": lag_dependence(hit),
         "recency_digit_models": recency_digit_models(last_two, hit),
+        "cage_windows": cage_windows(pd.read_csv(data_dir / "xsmb.csv", dtype=str).sort_values("date", kind="stable")),
         "published_skill": published_skill(data_dir),
     }
 
@@ -187,6 +246,10 @@ def main() -> None:
           f"± {report['digit_stability']['half_corr_se']:.3f}")
     print("độ trễ:", ", ".join(f"{r['lag']}: z = {r['z']:+.2f}" for r in report["lag_dependence"]))
     print(f"mô hình chữ số gần đây tốt nhất: W={best['window']} k={best['strength']} z = {best['z']:+.2f}")
+    cage = report["cage_windows"]
+    worst = cage["most_extreme"][0]
+    print(f"chữ số theo lồng từng quý: {cage['q_below_005']}/{cage['cells']} ô có q < 0,05; lệch nhất "
+          f"{worst['quarter']} lồng {worst['cage']} (p Bonferroni {cage['min_p_bonferroni']:.2g})")
 
 
 if __name__ == "__main__":

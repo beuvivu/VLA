@@ -143,8 +143,15 @@ def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path:
     ]
 
 
-def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(tmp_path: Path) -> None:
-    """Chạy nguyên bước workflow và xác minh gói trang trên remote Git thật."""
+@pytest.mark.parametrize("with_station_analysis", [True, False])
+def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(
+    tmp_path: Path, with_station_analysis: bool
+) -> None:
+    """Chạy nguyên bước workflow và xác minh gói trang trên remote Git thật.
+
+    Số đo từng đài (thống kê, phép chấm, phép kiểm tiến cứu) phải đi cùng commit khi có; khi bước
+    thống kê hỏng và chúng vắng mặt, kết quả vừa thu thập vẫn phải ghi được.
+    """
     workflow = yaml.safe_load(_text("regional-results.yml"))
     steps = workflow["jobs"]["sync"]["steps"]
     step = next(step for step in steps if "git add data/regions/" in step.get("run", ""))
@@ -178,6 +185,14 @@ def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(tmp_path:
         "docs/assets/ui.css": '/* new */ body { color: inherit; }\n',
         "docs/assets/icons/probe.svg": '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>\n',
     }
+    if with_station_analysis:
+        contents.update({
+            "data/stats/regional/summary_mn.json": '{"version":"new"}\n',
+            "data/stats/regional/frequency_mn.csv": "number,version\n00,new\n",
+            "data/evaluation/regional_benchmark/benchmark.json": '{"version":"new"}\n',
+            "data/research/hypotheses/regional_cage_bias.json": '{"version":"new"}\n',
+            "data/research/hypotheses/regional_cage_bias.csv": "id,version\n1,new\n",
+        })
     # Cả tệp đã có lẫn icon mới phải được stage; thiếu một trong hai đều làm đỏ.
     for relative, value in contents.items():
         if relative.endswith("probe.svg"):

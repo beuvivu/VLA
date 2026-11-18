@@ -372,6 +372,166 @@ def calibration_table(rows: list[dict]) -> str:
     )
 
 
+#: Ngưỡng đọc p trong hai câu kết luận dưới đây.
+READING_ALPHA = 0.05
+
+
+def _p_text(value) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if number != number:
+        return "—"
+    return "< 0,001" if number < 0.001 else _num(number, 3)
+
+
+def calibration_reading(error: dict) -> str:
+    """Câu đọc ECE, suy TỪ p của báo cáo: ECE dương không tự nó là lệch hiệu chỉnh."""
+    p = error.get("p_value")
+    if not isinstance(p, (int, float)) or p != p:
+        return "Chưa đủ dữ liệu để so ECE với mốc của một dự báo hiệu chỉnh hoàn hảo."
+    if p >= READING_ALPHA:
+        return ("ECE nằm trong dải mà một dự báo hiệu chỉnh hoàn hảo cũng cho ra: chưa có bằng chứng lệch "
+                "hiệu chỉnh.")
+    return ("ECE lớn hơn mức mà dao động mẫu giải thích được: có bằng chứng lệch hiệu chỉnh, xem biểu đồ "
+            "hiệu chỉnh để biết lệch ở nhóm nào.")
+
+
+def ranking_reading(rank: dict) -> str:
+    """Câu đọc thứ hạng, suy TỪ p hoán vị của báo cáo."""
+    p = rank.get("p_value")
+    if not isinstance(p, (int, float)) or p != p:
+        return "Chưa đủ kỳ để chấm thứ hạng."
+    if p >= READING_ALPHA:
+        return "Thứ hạng của vector đã công bố không phân biệt được với xếp ngẫu nhiên."
+    better = float(rank.get("value", 0.0)) > float(rank.get("chance", 0.0))
+    return (
+        "Thứ hạng khác xếp ngẫu nhiên theo hướng TỐT hơn — với một kỳ quay đã kiểm là ngẫu nhiên, phải kiểm lại "
+        "trước khi tin." if better else
+        "Thứ hạng khác xếp ngẫu nhiên theo hướng KÉM hơn — dấu hiệu hồi quy, cần xem ngay."
+    )
+
+
+def ranking_table(mode: str, block: dict) -> str:
+    """ECE và thước xếp hạng toàn vector, mỗi dòng đứng cạnh mức của kỳ quay công bằng và p của nó."""
+    error, rank = block.get("calibration_error") or {}, block.get("ranking") or {}
+    if "ece" not in error or "value" not in rank:
+        return '<p class="ui-table-empty">Chưa đủ dữ liệu.</p>'
+    rows = [(
+        "Sai số hiệu chỉnh kỳ vọng (ECE)", _num(error["ece"], 5),
+        f"hiệu chỉnh hoàn hảo: {_num(error.get('ece_expected'), 5)} (95% số lần dưới "
+        f"{_num(error.get('ece_upper95'), 5)})", "—", _p_text(error.get("p_value")),
+    )]
+    interval = f"{_num(rank.get('ci_low'), 4)} – {_num(rank.get('ci_high'), 4)}"
+    if rank.get("metric") == "auc":
+        rows.append(("AUC: con đã về được xếp trên con không về", _num(rank["value"], 4),
+                     f"ngẫu nhiên: {_num(rank['chance'], 1)}", interval, _p_text(rank.get("p_value"))))
+    else:
+        rows.append(("Hạng nghịch đảo trung bình của con đã về (MRR)", _num(rank["value"], 4),
+                     f"ngẫu nhiên: {_num(rank['chance'], 4)}", interval, _p_text(rank.get("p_value"))))
+        rows.append(("Hạng trung bình của con đã về (1 = đứng đầu)", _num(rank.get("mean_rank"), 1),
+                     f"ngẫu nhiên: {_num(rank.get('chance_rank'), 1)}", "—", "—"))
+    body = "".join(
+        f"<tr><td>{html.escape(name)}</td><td>{value}</td><td>{html.escape(reference)}</td>"
+        f"<td>{ci}</td><td>{p}</td></tr>"
+        for name, value, reference, ci, p in rows
+    )
+    return (
+        '<div class="ui-table-wrap"><table class="ui-table ui-r2 app-lab-prose">'
+        "<thead><tr><th>Thước đo</th><th>Giá trị</th><th>Mốc so</th><th>KTC 95%</th><th>p</th></tr></thead>"
+        f"<tbody>{body}</tbody></table></div>"
+        f'<p class="ui-muted" data-evidence-split>{html.escape(calibration_reading(error))} '
+        f"{html.escape(ranking_reading(rank))} Chấm trên {_count(rank.get('draws', 0))} kỳ còn giữ vector đầy "
+        "đủ; hoà điểm được chia đều nên một vector phẳng ra đúng mức ngẫu nhiên. Tỉ lệ trúng của từng danh "
+        "sách Top 10 được chấm riêng trên trang Trực tiếp, so với kỳ quay công bằng mô phỏng.</p>"
+    )
+
+
+def monthly_table(rows: list[dict]) -> str:
+    """Kỹ năng theo tháng lịch; mỗi tháng kèm số kỳ và khoảng 95% của chính nó."""
+    if not rows:
+        return '<p class="ui-table-empty">Chưa có kỳ đã công bố để gom theo tháng.</p>'
+    body = []
+    for row in rows:
+        stderr = row.get("stderr")
+        known = isinstance(stderr, (int, float)) and stderr == stderr
+        low = row["mean"] - 1.96 * stderr if known else None
+        high = row["mean"] + 1.96 * stderr if known else None
+        if not known:
+            verdict = "chỉ một kỳ"
+        elif low > 0 or high < 0:
+            verdict = "khác 0"
+        else:
+            verdict = "trong vùng 0"
+        year, month = str(row["period"]).split("-")
+        interval = f"{_pct(low, 4)} … {_pct(high, 4)}" if known else "—"
+        body.append(
+            f"<tr><td>{html.escape(month)}/{html.escape(year)}</td><td>{_count(row['draws'])}</td>"
+            f"<td>{_pct(row['mean'], 4)}</td><td>{interval}</td><td>{verdict}</td></tr>"
+        )
+    return (
+        '<div class="ui-table-wrap"><table class="ui-table ui-r2 ui-r3">'
+        "<thead><tr><th>Tháng</th><th>Số kỳ</th><th>Kỹ năng trung bình</th><th>Khoảng 95%</th>"
+        "<th>Đọc</th></tr></thead>"
+        f'<tbody>{"".join(body)}</tbody></table></div>'
+        '<p class="ui-muted">Mỗi dòng là một tháng lịch của chính chuỗi đã công bố. Một tháng "khác 0" đứng '
+        "riêng chưa nói gì: với khoảng 95%, cứ hai mươi tháng thì một tháng lệch chỉ do may rủi. Kết luận dùng "
+        "cả chuỗi nằm ở thẻ kỹ năng theo thời gian và ở bộ theo dõi đầu trang.</p>"
+    )
+
+
+_DEPLOYMENT_WORDS = {
+    "production": "Đang có hiệu lực",
+    "gated": "Cổng đang giữ ở mức nền",
+    "shadow": "Chạy bóng, không vào xác suất",
+    "missing": "KHÔNG đọc được hồ sơ",
+}
+_TRAINED_KEYS = ("trained_through_date", "trained_through_target_date", "history_through", "source_date",
+                 "last_graded")
+_PRODUCT_WORDS = {"xsmb": "XSMB", "xsmt": "Miền Trung", "xsmn": "Miền Nam"}
+
+
+def _vn_day(value) -> str:
+    """``YYYY-MM-DD`` thành ``dd/mm/yyyy``; thiếu hoặc không phải ngày thì dấu gạch."""
+    parts = str(value or "")[:10].split("-")
+    if len(parts) == 3 and all(part.isdigit() for part in parts):
+        return f"{parts[2]}/{parts[1]}/{parts[0]}"
+    return "—"
+
+
+def registry_table(registry: dict) -> str:
+    """Sổ đăng ký mô hình: mỗi mắt xích của chuỗi dự báo, trạng thái đọc từ cổng của chính nó."""
+    models = registry.get("models") or []
+    if not models:
+        return '<p class="ui-table-empty">Chưa có sổ đăng ký mô hình.</p>'
+    body = []
+    for entry in models:
+        scope = _PRODUCT_WORDS.get(entry.get("product"), "")
+        if entry.get("mode"):
+            scope = f"{scope} · {mode_label(entry['mode'])}"
+        training = entry.get("training") or {}
+        through = _vn_day(next((training[key] for key in _TRAINED_KEYS if training.get(key)), None))
+        body.append(
+            f"<tr><td>{html.escape(str(entry.get('role', '')))}</td><td>{html.escape(scope)}</td>"
+            f"<td>{html.escape(_DEPLOYMENT_WORDS.get(entry.get('deployment'), '—'))}</td>"
+            f"<td>{html.escape(str(entry.get('deployment_reason', '')))}</td>"
+            f"<td>{html.escape(str(through))}</td></tr>"
+        )
+    summary = registry.get("summary") or {}
+    counted = ", ".join(
+        f"{_count(summary[key])} {words.lower()}" for key, words in _DEPLOYMENT_WORDS.items() if summary.get(key)
+    )
+    return (
+        '<div class="ui-table-wrap app-lab-registry-wrap"><table class="ui-table app-lab-prose">'
+        "<thead><tr><th>Mắt xích</th><th>Phạm vi</th><th>Trạng thái</th><th>Vì sao</th><th>Học tới</th></tr></thead>"
+        f'<tbody>{"".join(body)}</tbody></table></div>'
+        f'<p class="ui-muted" data-evidence-split>{_count(len(models))} mắt xích: {html.escape(counted)}. Trạng thái '
+        "đọc từ cổng của chính từng mô hình (độ tin, cổng chất lượng, cổng đề bạt), không suy từ giá trị xác suất. "
+        "Một mô hình chỉ rời mức nền khi thắng dự báo hằng số trên dữ liệu nó chưa thấy.</p>"
+    )
+
+
 def coverage_cards(coverage: dict) -> str:
     """Bao nhiêu phần lịch sử được chấm từ artifact THẬT đã phát hành.
 
@@ -568,6 +728,15 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 lift=True,
             )
         )
+        blocks.append(
+            card(
+                ranking_table(mode, block),
+                title=f"Hiệu chỉnh gộp và thứ hạng · {name}",
+                ident=f"app-lab-{mode}-ranking",
+                span=12,
+                lift=True,
+            )
+        )
         skill = block["skill"]
         verdict = (
             "khác 0 một cách rõ rệt"
@@ -587,6 +756,27 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 lift=True,
             )
         )
+        blocks.append(
+            card(
+                monthly_table(block.get("by_month") or []),
+                title=f"Kỹ năng theo tháng · {name}",
+                ident=f"app-lab-{mode}-monthly",
+                span=12,
+                lift=True,
+            )
+        )
+
+    registry_path = data_dir / "evaluation" / "model_registry" / "registry.json"
+    registry = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else {}
+    blocks.append(
+        card(
+            registry_table(registry),
+            title="Sổ đăng ký mô hình",
+            ident="app-lab-registry",
+            span=12,
+            lift=True,
+        )
+    )
 
     page = f"""<!doctype html>
 <html lang="vi">
@@ -615,7 +805,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     ("Kỹ năng ngoài mẫu", "So sánh dự báo đã công bố với mô hình nền. Khoảng bất định chứa 0 nghĩa là chưa phân biệt được lợi thế với nhiễu."),
 ])}
 {lab_jump([("app-lab-sources", "Nguồn đánh giá")] + [
-    (f"app-lab-{mode}-brier", mode_label(mode)) for mode in modes])}
+    (f"app-lab-{mode}-brier", mode_label(mode)) for mode in modes] + [("app-lab-registry", "Sổ đăng ký mô hình")])}
 <div class="ui-grid">{"".join(blocks)}</div>
 {lab_footer()}</div>
 {app_shell_close("model-quality.html")}

@@ -1,0 +1,20 @@
+first_seen,model_id,fingerprint,deployment,reason
+2026-11-16,xsmb/agents/de,c96173dcb00934fc451bcbe07786e31be852c489a4ab5d228576cf9e59db0ff0,shadow,"hệ tác tử chạy bóng: được chấm mỗi kỳ, không vào xác suất công bố"
+2026-11-16,xsmb/agents/loto,c96173dcb00934fc451bcbe07786e31be852c489a4ab5d228576cf9e59db0ff0,shadow,"hệ tác tử chạy bóng: được chấm mỗi kỳ, không vào xác suất công bố"
+2026-11-16,xsmb/calibration/de,6395e306f85ceffc317a92e762881073d5766406e3f44effcbef5ef4820e46c5,gated,giữ phép đồng nhất: chưa ứng viên hiệu chỉnh nào thắng trên khối giữ riêng
+2026-11-16,xsmb/calibration/loto,6395e306f85ceffc317a92e762881073d5766406e3f44effcbef5ef4820e46c5,gated,giữ phép đồng nhất: chưa ứng viên hiệu chỉnh nào thắng trên khối giữ riêng
+2026-11-16,xsmb/cau_keo/de,e20aeaca332096d4c3aef56b7c6ebc5b77fcf865fba1448e83673483fd589195,production,"trust 0,0221%: xác suất công bố của Cầu Kèo là 0,0221% xác suất thô cộng phần còn lại ở mức nền"
+2026-11-16,xsmb/cau_keo/loto,df1b003af3656d8aef3966c02b2a9da29f9fe7cc3c5461882d615bec59d29db0,production,"trust 0,387%: xác suất công bố của Cầu Kèo là 0,387% xác suất thô cộng phần còn lại ở mức nền"
+2026-11-16,xsmb/ensemble_weights/de,0743cc812ce231be34465ec4609831008b6404f668c05d1681e6cbc91ee49893,production,cổng đã đo và từ chối đề bạt: đang chạy vector mặc định
+2026-11-16,xsmb/ensemble_weights/loto,0743cc812ce231be34465ec4609831008b6404f668c05d1681e6cbc91ee49893,production,cổng đã đo và từ chối đề bạt: đang chạy vector mặc định
+2026-11-16,xsmb/knowledge_base,66b4381fe59ccbd4257b51b99da6e61a838236df829cf4d97612541113cecc62,shadow,khung mô tả và phép kiểm tiến cứu: không vào tổ hợp xác suất
+2026-11-16,xsmb/ml/de,3dcef5f57d9633f1505e3121055574aa0ed89c2ad165f412159e93f4f2e8a31a,production,"trust 0,326%: xác suất công bố của thành phần ML là 0,326% xác suất thô cộng phần còn lại ở mức nền"
+2026-11-16,xsmb/ml/loto,9cc7e0f0c047e520bd36b4a1182662639477de2de19d5734f4ee0847733b4be2,gated,"trust 0: kỹ năng thẩm định không dương, xác suất công bố của thành phần ML bằng mức nền"
+2026-11-16,xsmb/online_hedge/de,35896dc0a2965bda46868578885d392d8f8dea5c4ce127e16325efdabd7ccfd6,shadow,Giữ đương nhiệm; chưa đủ bằng chứng hoặc vừa suy giảm
+2026-11-16,xsmb/online_hedge/loto,35896dc0a2965bda46868578885d392d8f8dea5c4ce127e16325efdabd7ccfd6,shadow,Giữ đương nhiệm; chưa đủ bằng chứng hoặc vừa suy giảm
+2026-11-16,xsmb/published/de,97a1c52b1c4dc36e05ca2d5f13e4446c1d9e4b53d3eb9aa752deab74499ccff5,production,vector ghi trước kỳ quay và in trên trang; chấm bằng chính tệp đã công bố
+2026-11-16,xsmb/published/loto,97a1c52b1c4dc36e05ca2d5f13e4446c1d9e4b53d3eb9aa752deab74499ccff5,production,vector ghi trước kỳ quay và in trên trang; chấm bằng chính tệp đã công bố
+2026-11-16,xsmb/stacking/de,03705ce2cecf3c04b67b35d1c773137d61005e06b7ab0f80a186c96a278c6f38,gated,không thắng cả tổ hợp tuyến tính lẫn dự báo hằng số trên lát thẩm định
+2026-11-16,xsmb/stacking/loto,03705ce2cecf3c04b67b35d1c773137d61005e06b7ab0f80a186c96a278c6f38,gated,chưa đủ lịch sử (79/100 kỳ)
+2026-11-16,xsmn/forecast,9bf31d0b76ee31f96bac020dfddaa7d8e62dee5a8d8f129c7e1184f4a717ff46,production,dự báo đều: không mô hình nào thắng nó ngoài mẫu ở cấp miền; không công bố con số dự đoán
+2026-11-16,xsmt/forecast,9bf31d0b76ee31f96bac020dfddaa7d8e62dee5a8d8f129c7e1184f4a717ff46,production,dự báo đều: không mô hình nào thắng nó ngoài mẫu ở cấp miền; không công bố con số dự đoán
