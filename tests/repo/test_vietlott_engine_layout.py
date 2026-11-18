@@ -108,3 +108,33 @@ def test_the_rules_themselves_catch_violations() -> None:
     cache = {"jobs": {"j": {"steps": [{"uses": "actions/cache/save@v6",
                                        "with": {"path": "vietlott/data/products\ndata/parquet\n"}}]}}}
     assert cache_paths_outside_engine(cache) == ["data/parquet"]
+
+
+def test_installing_the_engine_never_swaps_a_package_vla_pinned() -> None:
+    """`vietlott-results.yml` cài `requirements.txt` RỒI `pip install -e vietlott` vào CÙNG môi trường.
+
+    Khoảng phiên bản engine khai cho một gói chung mà loại bản VLA ghim thì pip lặng lẽ thay bản ấy, và
+    trang Vietlott (mã VLA) chạy trên thư viện chưa ai kiểm. Ghim ĐÚNG bản ở VLA là luật của kho (joblib
+    của mô hình phụ thuộc scikit-learn); engine được khai khoảng, nhưng khoảng phải chứa bản VLA ghim.
+    """
+    import re
+    import tomllib
+
+    from packaging.requirements import Requirement
+
+    pins: dict[str, str] = {}
+    for line in (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^([A-Za-z0-9_.\-]+)(?:\[[^\]]*\])?==([^\s;#]+)", line.strip())
+        if match:
+            pins[match.group(1).lower().replace("_", "-")] = match.group(2)
+    project = tomllib.loads((ROOT / "vietlott" / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    shared = {}
+    for text in project["dependencies"]:
+        requirement = Requirement(text)
+        name = requirement.name.lower().replace("_", "-")
+        if name in pins:
+            shared[name] = (pins[name], requirement.specifier)
+    assert {"numpy", "scikit-learn", "scipy"} <= shared.keys(), "phải có gói chung để kiểm, nếu không phép kiểm rỗng"
+    excluded = {name: f"VLA ghim {pin}, engine khai {spec}" for name, (pin, spec) in shared.items()
+                if not spec.contains(pin, prereleases=True)}
+    assert not excluded, excluded
