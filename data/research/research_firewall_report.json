@@ -1,13 +1,13 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-11-17T11:35:34Z",
-  "anchor_date": "2026-11-17",
+  "generated_at_utc": "2026-11-18T11:36:31Z",
+  "anchor_date": "2026-11-18",
   "modes": {
     "loto": {
       "mode": "loto",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
-      "train_days": 2560,
+      "train_days": 2561,
       "validation_days": 854,
       "holdout_days": 854,
       "fdr_significant_train": 0,
@@ -16,10 +16,10 @@
       "minimum_effect_gate": 0.004,
       "reality_check": {
         "permutations": 63,
-        "observed_max_skill": 0.048073777433206066,
-        "null_max_skill_mean": 0.04383473708424208,
-        "null_max_skill_p95": 0.05088629651717551,
-        "p_value": 0.171875,
+        "observed_max_skill": 0.04708289279169342,
+        "null_max_skill_mean": 0.04388887378767824,
+        "null_max_skill_p95": 0.051535277377729255,
+        "p_value": 0.203125,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
@@ -30,7 +30,7 @@
       "mode": "de",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
-      "train_days": 2560,
+      "train_days": 2561,
       "validation_days": 854,
       "holdout_days": 854,
       "fdr_significant_train": 0,
@@ -39,9 +39,9 @@
       "minimum_effect_gate": 0.0005,
       "reality_check": {
         "permutations": 63,
-        "observed_max_skill": 0.011073880597014928,
-        "null_max_skill_mean": 0.011814599620942908,
-        "null_max_skill_p95": 0.014016791044776121,
+        "observed_max_skill": 0.011076091010816861,
+        "null_max_skill_mean": 0.011786090241144326,
+        "null_max_skill_p95": 0.014016225289071243,
         "p_value": 0.546875,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
