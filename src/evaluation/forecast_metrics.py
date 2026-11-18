@@ -79,6 +79,57 @@ def rank_of_truth(scores: np.ndarray, truth: np.ndarray) -> tuple[np.ndarray, np
     return above + (tied + 1) / 2.0, (harmonic[above + tied] - harmonic[above]) / tied
 
 
+def auc_by_draw(scores: np.ndarray, hits: np.ndarray) -> np.ndarray:
+    """AUC từng kỳ: xác suất một con ĐÃ VỀ được xếp trên một con KHÔNG về; hoà tính nửa.
+
+    Thước xếp hạng của TOÀN vector (không chỉ Top-K): 0,5 là mức ngẫu nhiên chính xác, kể cả với
+    vector phẳng. Tính bằng hạng trung bình (thống kê U của Mann–Whitney). Kỳ không có con nào về,
+    hoặc mọi con đều về, không xác định và trả ``NaN``.
+    """
+    s = _matrix(scores)
+    y = np.asarray(hits).astype(bool)
+    if y.shape != s.shape:
+        raise ValueError("hits phải cùng hình dạng với scores")
+    order = np.argsort(s, axis=1, kind="stable")
+    ordered = np.take_along_axis(s, order, axis=1)
+    ranks = np.empty_like(s)
+    for row in range(len(s)):
+        # Hạng trung bình của từng khối hoà: (vị trí đầu + vị trí cuối) / 2, đếm từ 1.
+        _, first, counts = np.unique(ordered[row], return_index=True, return_counts=True)
+        ranks[row, order[row]] = np.repeat(first + (counts + 1) / 2.0, counts)
+    positives = y.sum(axis=1)
+    negatives = y.shape[1] - positives
+    u = (ranks * y).sum(axis=1) - positives * (positives + 1) / 2.0
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where((positives > 0) & (negatives > 0), u / (positives * negatives), np.nan)
+
+
+def within_draw_permutation_p(
+    scores: np.ndarray,
+    hits: np.ndarray,
+    statistic: Callable[[np.ndarray, np.ndarray], float],
+    *,
+    n_perm: int = 2000,
+    seed: int = DEFAULT_SEED,
+) -> float:
+    """p hai phía khi XÁO NHÃN trong từng kỳ (giữ nguyên số con về của kỳ ấy).
+
+    Null: "điểm số không liên quan tới con nào về". Xáo trong từng kỳ giữ đúng cấu trúc của kỳ (số
+    con khác nhau đã về), nên đây là phép kiểm chính xác có điều kiện, không cần giả định phân phối.
+    ``statistic(scores, hits)`` trả một số; tâm của phân phối null lấy từ chính các lần xáo.
+    """
+    s = _matrix(scores)
+    y = np.asarray(hits).astype(bool)
+    if y.shape != s.shape:
+        raise ValueError("hits phải cùng hình dạng với scores")
+    observed = float(statistic(s, y))
+    rng = np.random.default_rng(seed)
+    null = np.array([float(statistic(s, rng.permuted(y, axis=1))) for _ in range(n_perm)])
+    centre = float(null.mean())
+    extreme = int((np.abs(null - centre) >= abs(observed - centre) * (1.0 - 1e-12)).sum())
+    return float((extreme + 1) / (n_perm + 1))
+
+
 def chance_reciprocal_rank(size: int) -> float:
     """Hạng nghịch đảo kỳ vọng khi xếp ngẫu nhiên ``size`` phần tử: ``H_size / size``."""
     if size < 1:

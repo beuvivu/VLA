@@ -805,6 +805,21 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Đường tích luỹ là trung bình các kỳ tới ngày ấy; dải là ±1,96 × sai số chuẩn của trung bình.",
                 "Tỉ lệ «tệ hơn đường cơ sở» đếm số kỳ có kỹ năng âm.",
             ])),
+            _sec_heading("Hiệu chỉnh gộp và thứ hạng", "Hiệu chỉnh gộp và thứ hạng", _ev([_cham(f)], [
+                "ECE = trung bình có trọng số |dự báo − thực tế| trên đúng 10 nhóm của biểu đồ hiệu chỉnh.",
+                "Mốc so của ECE: rút lại kết cục 500 lần đúng theo chính các xác suất ấy (LOTO: 27 giải mỗi kỳ), rồi tính ECE; p là tỉ lệ lần rút có ECE không nhỏ hơn ECE thật.",
+                "LOTO: AUC từng kỳ = xác suất một con đã về được xếp trên một con không về, hoà tính nửa; Đặc Biệt: hạng nghịch đảo của con đã về, hoà chia đều.",
+                "Khoảng 95% lấy mẫu lại theo kỳ quay; p của thứ hạng là phép xáo nhãn trong từng kỳ, giữ nguyên số con về của kỳ ấy.",
+            ])),
+            _sec_heading("Kỹ năng theo tháng", "Kỹ năng theo tháng", _ev([_cham(f)], [
+                "Gom kỹ năng từng kỳ của chuỗi đã công bố theo tháng lịch; mỗi tháng: số kỳ, trung bình và khoảng ±1,96 × sai số chuẩn.",
+                "«Khác 0» khi khoảng của tháng ấy không chứa 0; với khoảng 95%, cứ hai mươi tháng sẽ có một tháng lệch chỉ do may rủi.",
+            ])),
+            _sec_heading("Sổ đăng ký mô hình", "Sổ đăng ký mô hình", _ev([_cham(f), _du_bao(f)], [
+                "Mỗi dòng là một mắt xích của chuỗi dự báo; trạng thái đọc từ cổng của chính mắt xích ấy (độ tin, cổng chất lượng, cổng đề bạt), không suy từ giá trị xác suất.",
+                "«Học tới» là ngày dữ liệu cuối cùng mắt xích ấy được học hoặc được chấm.",
+                "Sổ lịch sử ghi thêm một dòng mỗi lần một mắt xích đổi định nghĩa hoặc đổi trạng thái cổng.",
+            ])),
         ]),
         "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], [
             "Đọc sổ kết quả đã lưu và phân phối null của 10 000 lịch sử ngẫu nhiên cùng độ dài.",

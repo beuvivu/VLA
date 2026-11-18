@@ -45,11 +45,21 @@ from ensemble.ensemble_utils import (
     finalize_blend,
     load_ensemble_weights,
 )
-from core.xsmb_domain import baseline_rate
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY, baseline_rate
+from evaluation.forecast_metrics import (
+    auc_by_draw,
+    by_period,
+    calibration_error,
+    chance_reciprocal_rank,
+    cluster_bootstrap_ci,
+    rank_of_truth,
+    within_draw_permutation_p,
+)
 from evaluation.skill_monitor import MIN_DAYS, graded_series, published_evaluation, update_ledger
 from evaluation.skill_monitor import evaluate as evaluate_skill
 
-SCHEMA_VERSION = 1
+#: 2 (16-11-2026): thêm ``calibration_error``, ``ranking`` và ``by_month`` cho từng chế độ.
+SCHEMA_VERSION = 2
 
 #: Số nhóm của biểu đồ hiệu chỉnh. Mười nhóm theo phân vị giữ cho mỗi nhóm đủ
 #: đông để tỉ lệ quan sát được có ý nghĩa; chia đều theo giá trị thì nhóm đuôi
@@ -252,6 +262,99 @@ def sharpness(p: np.ndarray, mode: str, bins: int = 24) -> dict:
     }
 
 
+#: Số lịch sử mô phỏng cho mốc ECE và hạt giống cố định: báo cáo chỉ đổi khi dữ liệu đổi.
+ECE_SIMULATIONS = 500
+ECE_SEED = 20261116
+
+
+def simulate_calibrated_outcomes(p: np.ndarray, mode: str, rng: np.random.Generator) -> np.ndarray:
+    """Một bộ kết cục giả mà vector ``p`` là hiệu chỉnh ĐÚNG, giữ cấu trúc của kỳ quay.
+
+    Đặc Biệt: mỗi kỳ đúng một con, rút theo ``p`` của kỳ ấy. LOTO: 27 giải mỗi kỳ rút từ phân phối
+    từng-giải ``r`` suy ngược từ ``p = 1 − (1 − r)²⁷`` rồi chuẩn hoá, nên các con của một kỳ tranh
+    nhau 27 giải đúng như thật (100 con của một kỳ không độc lập). Vector đã neo mức
+    (``Σp ≈ 23,77``) thì bước chuẩn hoá gần như không đổi gì.
+    """
+    p = np.asarray(p, dtype=float)
+    if mode == "de":
+        per_slot, slots = p / p.sum(axis=1, keepdims=True), 1
+    else:
+        per_slot = 1.0 - (1.0 - np.clip(p, 0.0, 1.0 - 1e-12)) ** (1.0 / LOTO_DRAWS_PER_DAY)
+        per_slot, slots = per_slot / per_slot.sum(axis=1, keepdims=True), LOTO_DRAWS_PER_DAY
+    cumulative = np.cumsum(per_slot, axis=1)
+    cumulative[:, -1] = 1.0
+    picks = (rng.random((len(p), slots, 1)) >= cumulative[:, None, :]).sum(axis=2)
+    outcomes = np.zeros(p.shape)
+    outcomes[np.arange(len(p))[:, None], picks] = 1.0
+    return outcomes
+
+
+def calibration_summary(p: np.ndarray, y: np.ndarray, mode: str, *, simulations: int = ECE_SIMULATIONS,
+                        seed: int = ECE_SEED) -> dict:
+    """ECE của vector đã công bố, đặt cạnh ECE mà một dự báo hiệu chỉnh HOÀN HẢO cũng sẽ có.
+
+    ECE luôn dương kể cả khi hiệu chỉnh hoàn hảo: mỗi nhóm chỉ có vài trăm ô nên tỉ lệ quan sát của
+    nó dao động quanh xác suất dự báo. Một con số đứng riêng vì thế không nói được gì, và so với dự
+    báo hằng số cũng sai thước (hằng số dồn mọi ô vào MỘT nhóm, nhiễu nhỏ hơn hẳn). Mốc đúng là
+    ECE của chính các xác suất này khi kết cục được rút ĐÚNG theo chúng: ``ece_expected`` là trung
+    bình, ``ece_upper95`` là phân vị 95%, và ``p_value`` là tỉ lệ lịch sử mô phỏng có ECE không nhỏ
+    hơn ECE quan sát. p nhỏ mới là bằng chứng lệch hiệu chỉnh.
+    """
+    out = calibration_error(calibration(p, y))
+    rng = np.random.default_rng(seed)
+    null = np.array([
+        calibration_error(calibration(p, simulate_calibrated_outcomes(p, mode, rng)))["ece"]
+        for _ in range(simulations)
+    ])
+    out["ece_expected"] = float(null.mean())
+    out["ece_upper95"] = float(np.quantile(null, 0.95))
+    out["p_value"] = float((int((null >= out["ece"]).sum()) + 1) / (simulations + 1))
+    out["simulations"] = simulations
+    return out
+
+
+def ranking(p: np.ndarray, y: np.ndarray, mode: str) -> dict:
+    """Vector đã công bố XẾP HẠNG đúng tới đâu, trên toàn bộ 100 con chứ không chỉ Top-K.
+
+    LOTO: AUC — xác suất một con đã về được xếp trên một con không về (0,5 là ngẫu nhiên). Đặc
+    Biệt: hạng nghịch đảo trung bình và hạng trung bình của con đã về. Hoà điểm chia đều, nên vector
+    phẳng ra đúng mức ngẫu nhiên. p là phép hoán vị nhãn trong từng kỳ. Tỉ lệ trúng của danh sách
+    Top 10 từng trang có sổ riêng, chấm theo kỳ quay công bằng mô phỏng (`evaluation.board_record`).
+    """
+    hits = np.asarray(y) > 0.5
+    if len(hits) < 2:
+        return {"draws": int(len(hits))}
+    if mode == "de":
+        truth = hits.argmax(axis=1)
+        rank, reciprocal = rank_of_truth(p, truth)
+        low, high = cluster_bootstrap_ci(reciprocal)
+        return {
+            "draws": int(len(hits)),
+            "metric": "mrr",
+            "value": float(reciprocal.mean()),
+            "chance": chance_reciprocal_rank(hits.shape[1]),
+            "ci_low": low,
+            "ci_high": high,
+            "mean_rank": float(rank.mean()),
+            "chance_rank": (hits.shape[1] + 1) / 2.0,
+            "p_value": within_draw_permutation_p(
+                p, hits, lambda s, h: float(rank_of_truth(s, h.argmax(axis=1))[1].mean())
+            ),
+        }
+    per_draw = auc_by_draw(p, hits)
+    usable = per_draw[np.isfinite(per_draw)]
+    low, high = cluster_bootstrap_ci(usable)
+    return {
+        "draws": int(len(usable)),
+        "metric": "auc",
+        "value": float(usable.mean()),
+        "chance": 0.5,
+        "ci_low": low,
+        "ci_high": high,
+        "p_value": within_draw_permutation_p(p, hits, lambda s, h: float(np.nanmean(auc_by_draw(s, h)))),
+    }
+
+
 def skill_series(history: pd.DataFrame, mode: str) -> dict:
     """Chuỗi kỹ năng theo ngày, kèm dải bất định và đường tích luỹ.
 
@@ -356,11 +459,14 @@ def build(data_dir: Path) -> Path:
         # −2,0% trong khi thứ người xem nhận cao nhất 1,28% và kỹ năng −0,03%.
         # Chỉ lùi về bản dựng lại khi chưa đủ artifact để kết luận.
         days, probabilities, labels = published_evaluation(data_dir, mode)
+        monthly: list[dict] = []
         if len(days) >= MIN_DAYS:
             source = "published"
             # Kỹ năng lấy từ sổ cái để không mất những kỳ mà artifact đã bị dọn;
             # hiệu chỉnh và độ sắc cần cả vector nên chỉ chấm artifact còn trên đĩa.
-            skill = summarize_skill(*graded_series(data_dir, mode))
+            graded_days, graded_skill = graded_series(data_dir, mode)
+            skill = summarize_skill(graded_days, graded_skill)
+            monthly = by_period(graded_days, graded_skill)
         else:
             source = "reconstructed"
             predictions = pd.read_csv(data_dir / "evaluation" / "history" / f"pred_{mode}.csv")
@@ -375,8 +481,12 @@ def build(data_dir: Path) -> Path:
             "last_day": days[-1],
             "murphy": murphy(probabilities, labels),
             "calibration": calibration(probabilities, labels),
+            "calibration_error": calibration_summary(probabilities, labels, mode),
             "sharpness": sharpness(probabilities, mode),
+            "ranking": ranking(probabilities, labels, mode),
             "skill": skill,
+            # Kỹ năng theo tháng lịch của chính chuỗi đã công bố (sổ cái + artifact còn trên đĩa).
+            "by_month": monthly,
         }
 
     # Ngày chấm cuối cùng, để trang phát hiện được báo cáo cũ. Bước chẩn đoán

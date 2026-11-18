@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from evaluation.forecast_metrics import (
+    auc_by_draw,
     by_period,
     calibration_error,
     chance_presence,
@@ -20,6 +21,7 @@ from evaluation.forecast_metrics import (
     paired_sign_flip_p,
     rank_of_truth,
     top_k_mass,
+    within_draw_permutation_p,
 )
 
 
@@ -186,3 +188,60 @@ def test_invalid_inputs_are_rejected_instead_of_scored() -> None:
         rank_of_truth(np.ones((2, 5)), np.array([0, 5]))
     with pytest.raises(ValueError):
         chance_presence(27, picks=101)
+
+
+def _pairwise_auc(scores: np.ndarray, hits: np.ndarray) -> float:
+    """Định nghĩa gốc, đếm từng cặp: P(điểm con về > điểm con không về) + ½·P(bằng nhau)."""
+    wins = ties = pairs = 0
+    for a in np.flatnonzero(hits):
+        for b in np.flatnonzero(~hits):
+            pairs += 1
+            wins += scores[a] > scores[b]
+            ties += scores[a] == scores[b]
+    return (wins + 0.5 * ties) / pairs
+
+
+def test_auc_matches_the_pairwise_definition_including_ties() -> None:
+    rng = np.random.default_rng(13)
+    scores = np.round(rng.random((6, 40)), 1)  # làm tròn một chữ số: rất nhiều khối hoà
+    hits = rng.random((6, 40)) < 0.25
+    hits[:, 0] = True
+    got = auc_by_draw(scores, hits)
+    for row in range(6):
+        assert got[row] == pytest.approx(_pairwise_auc(scores[row], hits[row]), abs=1e-12)
+    perfect = np.arange(10.0)[None]
+    assert auc_by_draw(perfect, perfect > 6.5)[0] == 1.0
+    assert auc_by_draw(perfect, perfect < 2.5)[0] == 0.0
+
+
+def test_auc_of_a_flat_forecast_is_exactly_one_half_and_degenerate_draws_are_undefined() -> None:
+    flat = np.full((3, 100), 0.2377)
+    hits = np.zeros((3, 100), dtype=bool)
+    hits[0, :24] = True
+    hits[1, 60:] = True
+    assert auc_by_draw(flat, hits)[:2] == pytest.approx([0.5, 0.5])
+    assert np.isnan(auc_by_draw(flat, hits)[2])  # kỳ không có con nào về
+    assert np.isnan(auc_by_draw(flat, np.ones((3, 100), dtype=bool))).all()
+    with pytest.raises(ValueError):
+        auc_by_draw(flat, hits[:, :50])
+
+
+def test_within_draw_permutation_p_is_uniform_for_noise_and_small_for_a_real_ranking() -> None:
+    def mean_auc(scores: np.ndarray, hits: np.ndarray) -> float:
+        return float(np.nanmean(auc_by_draw(scores, hits)))
+
+    rng = np.random.default_rng(14)
+    null_p = []
+    for trial in range(120):
+        scores = rng.random((30, 100))
+        hits = rng.random((30, 100)) < 0.24
+        null_p.append(within_draw_permutation_p(scores, hits, mean_auc, n_perm=150, seed=trial))
+    null_p = np.array(null_p)
+    assert (null_p < 0.05).mean() < 0.12 and 0.3 < np.median(null_p) < 0.7
+    informative = rng.random((30, 100))
+    hits = rng.random((30, 100)) < 0.1 + 0.3 * informative  # điểm cao thì dễ về hơn
+    assert within_draw_permutation_p(informative, hits, mean_auc, n_perm=500, seed=1) < 0.01
+    # Xáo trong từng kỳ giữ nguyên số con về của kỳ ấy.
+    seen = []
+    within_draw_permutation_p(informative, hits, lambda s, h: seen.append(h.sum(axis=1).tolist()) or 0.0, n_perm=3)
+    assert all(row == hits.sum(axis=1).tolist() for row in seen)
