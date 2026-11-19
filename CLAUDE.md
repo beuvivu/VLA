@@ -545,6 +545,11 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   ghép kỳ của nhiều nguồn vào một lô; quyền sửa xét theo nhãn `source` của từng kỳ, `pipeline.conflicting_draws`). Đến
   05-11-2026 đường Max 3D ghi đè lặng lẽ (`tests/test_product_sync_conflicts.py`), đến 15-11-2026 `--full` từ nguồn khác
   ở đường Mega/Power/Lotto cũng vậy (`tests/test_crawler.py`). Tệp trạng thái ghi qua `core.products.write_text_atomic`.
+- Triển khai Pages (18-11-2026): `vietlott-results.yml` đóng gói `docs/` của nhánh mặc định MỚI NHẤT và NHƯỜNG khi XSMB
+  đang chốt kỳ (sổ chuẩn có kỳ D, chưa có dự báo kỳ sau D; trần 60 phút), vì trang `publish-results` vừa triển khai chưa
+  có trong git và mọi lần triển khai tải lên nguyên `docs/` — ngày 18-11 nó đè trang kết quả mới bằng trang hôm qua 2,5 phút
+  (`scripts/ops/pages_deploy_window.py`, `documentation/operations/scheduling.md`). Sổ đăng ký mô hình XSMB không chép
+  engine: engine giữ sổ riêng, gộp vào thì lỗi bên này chặn được pipeline bên kia.
 - Crawler cũ `src/vietlott_results.py` đã nghỉ; `data/vietlott/vietlott.sqlite3` chỉ còn là lưu trữ, không được ghi.
 - `multi-agent-summary.json` được commit, nên làm mới trên CÙNG dữ liệu phải giữ nguyên tệp. Phép so ở
   `service._publish_multi_agent_summary` bỏ qua `generated_at` và nhiễu dấu phẩy động (`_same_up_to_float_noise`,

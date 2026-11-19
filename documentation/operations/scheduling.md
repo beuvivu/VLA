@@ -100,7 +100,18 @@ Ba thay đổi (13-10-2026):
    vì hai tệp dự báo chỉ chứng minh phân tích đã xong, không chứng minh Pages
    hay hậu kiểm đã thành công. Pipeline hỏng giữa chừng thì chưa có dự báo kỳ
    sau, nên lượt gọi lại chạy đủ. Lượt gọi tay luôn chạy đủ.
-4. **Nguồn dự phòng còn hiện kỳ trước không chặn nguồn sau.** `Lottery.fetch`
+4. **Không workflow nào khác đè trang vừa xuất bản.** Trang mà `publish-results` triển khai chỉ có
+   trên Pages, chưa có trong git, tới khi `update` commit (~6 phút). Mọi lần triển khai tải lên NGUYÊN
+   `docs/`, nên lần triển khai nào lấy `docs/` từ git trong khoảng ấy sẽ đè trang mới bằng trang kỳ
+   trước. Ngày 18-11-2026 workflow trang Vietlott làm đúng như thế: `publish-results` triển khai
+   18:35:52, Vietlott triển khai 18:38:33, `deploy-pages` của XSMB triển khai lại 18:41:09; trang chủ
+   hiện kết quả hôm qua 2,5 phút. Từ 18-11-2026 `vietlott-results.yml` (1) đóng gói `docs/` của nhánh
+   mặc định MỚI NHẤT chứ không phải bản lấy lúc job bắt đầu, và (2) nhường khi XSMB đang chốt kỳ — sổ
+   chuẩn đã có kỳ D mà chưa có dự báo cho một kỳ sau D ở cả hai chế độ
+   (`scripts/ops/pages_deploy_window.py`). `deploy-pages` của XSMB lấy commit mới nhất nên mang luôn
+   trang Vietlott vừa commit. Cửa sổ kéo quá 60 phút thì pipeline XSMB đã kẹt; workflow Vietlott triển
+   khai trở lại để trang của nó không đứng yên vô hạn (`tests/repo/test_pages_deploy_window.py`).
+5. **Nguồn dự phòng còn hiện kỳ trước không chặn nguồn sau.** `Lottery.fetch`
    bỏ nguồn trả kết quả trùng khít kỳ đã lưu và hỏi nguồn kế tiếp; chỉ kết
    luận "không quay" khi mọi nguồn có kết quả đều trùng khít.
 

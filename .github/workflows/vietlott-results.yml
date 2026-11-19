@@ -132,12 +132,36 @@ jobs:
             python3 scripts/ops/push_generated_site.py --branch "${GITHUB_REF_NAME}"
           fi
 
-      - name: Chốt phiên bản và kiểm tra tài nguyên
+      - name: Lấy docs/ của nhánh mặc định mới nhất
+        # Pages là MỘT site và mọi lần triển khai tải lên nguyên docs/: đóng gói ảnh chụp lúc job
+        # bắt đầu thì đè trang mà workflow khác (XSMB) vừa đẩy sau đó. Trang Vietlott của lượt này
+        # đã được đẩy ở bước trên, hoặc không đổi, nên bản mới nhất của nhánh luôn chứa nó.
         if: github.ref_name == github.event.repository.default_branch
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${GITHUB_REF_NAME}"
+          git restore --source=FETCH_HEAD --staged --worktree -- docs
+
+      - name: Nhường lần triển khai khi XSMB đang chốt kỳ
+        # Trang kết quả XSMB của kỳ vừa chốt chỉ có trên Pages, chưa có trong git, tới khi pipeline
+        # đầy đủ commit (~6 phút); triển khai lúc ấy là đè chúng bằng trang kỳ trước (18-11-2026).
+        id: window
+        if: github.ref_name == github.event.repository.default_branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Giờ commit chốt kỳ gần nhất; API lỗi thì để rỗng và kịch bản nhường (an toàn cho XSMB).
+          CANONICAL_AT="$(gh api "repos/${GITHUB_REPOSITORY}/commits?sha=${GITHUB_REF_NAME}&path=data/xsmb.csv&per_page=1" \
+            --jq '.[0].commit.committer.date' 2>/dev/null || true)"
+          python3 scripts/ops/pages_deploy_window.py --ref FETCH_HEAD --canonical-at "${CANONICAL_AT}"
+
+      - name: Chốt phiên bản và kiểm tra tài nguyên
+        if: github.ref_name == github.event.repository.default_branch && steps.window.outputs.deploy == 'true'
         run: python3 src/web/site_assets.py --refresh docs --check
 
       - name: Đóng gói GitHub Pages
-        if: github.ref_name == github.event.repository.default_branch
+        if: github.ref_name == github.event.repository.default_branch && steps.window.outputs.deploy == 'true'
         uses: actions/upload-pages-artifact@v5
         with:
           name: vietlott-pages-${{ github.run_attempt }}
@@ -145,7 +169,7 @@ jobs:
 
       - name: Đánh dấu đã đóng gói
         id: publish
-        if: github.ref_name == github.event.repository.default_branch
+        if: github.ref_name == github.event.repository.default_branch && steps.window.outputs.deploy == 'true'
         run: echo "published=true" >> "$GITHUB_OUTPUT"
 
   deploy:
