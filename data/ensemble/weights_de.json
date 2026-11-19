@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "mode": "de",
-  "learned_at_utc": "2026-11-18T11:38:47Z",
+  "learned_at_utc": "2026-11-19T11:40:48Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -49,12 +49,13 @@
     "2026-11-15",
     "2026-11-16",
     "2026-11-17",
-    "2026-11-18"
+    "2026-11-18",
+    "2026-11-19"
   ],
   "component_availability_required": true,
   "metric": {
-    "logloss": 4.605092813531503,
-    "brier": 0.9899989297821692
+    "logloss": 4.605131846310253,
+    "brier": 0.9899997311484924
   },
   "promotion": {
     "promoted": false,
@@ -70,16 +71,16 @@
       "ung_vien": 4.602834927392628
     },
     "relative_gain": 0.00016706338196754864,
-    "delta_ci95_low": -0.0031573722538776783,
-    "delta_ci95_high": 0.0016001762657989738
+    "delta_ci95_low": -0.0031573722538775955,
+    "delta_ci95_high": 0.0016001762657991332
   },
   "chronological_split": {
     "weight_days": 27,
-    "calibration_days": 18,
+    "calibration_days": 19,
     "weight_first_day": "2026-10-05",
     "weight_last_day": "2026-10-31",
     "calibration_first_day": "2026-11-01",
-    "calibration_last_day": "2026-11-18",
+    "calibration_last_day": "2026-11-19",
     "disjoint": true
   },
   "weights": {
