@@ -1,4 +1,4 @@
-"""Community archive ``NhanAZ-Data/vietlott-research`` — fallback when vietlott.vn is unreachable.
+"""Community archive ``NhanAZ-Data/vietlott-data-collector`` (formerly ``vietlott-research``) — fallback when vietlott.vn is unreachable.
 
 The archive is updated by GitHub Actions — Keno/Bingo18 about every 10 minutes during the day,
 the other products several times a day — from vietlott.vn pages when they are reachable and
@@ -39,8 +39,11 @@ from vietlott_engine.core.products import FOUR_DIGIT_LAYOUT, THREE_DIGIT_LAYOUT,
 from vietlott_engine.crawler.official_data import fold
 from vietlott_engine.forecast.schedule import now_vn
 
-NHANAZ_REPO = "NhanAZ-Data/vietlott-research"
-NHANAZ_RAW_BASE = f"https://raw.githubusercontent.com/{NHANAZ_REPO}/main/datasets"
+# Kho đổi tên (vietlott-research → vietlott-data-collector) và chuyển dữ liệu sang nhánh ``datasets``
+# khoảng 20-11-2026; địa chỉ cũ trả 404 cho mọi sản phẩm nên Keno/Bingo18 mất nguồn đối chiếu.
+NHANAZ_REPO = "NhanAZ-Data/vietlott-data-collector"
+NHANAZ_BRANCH = "datasets"
+NHANAZ_RAW_BASE = f"https://raw.githubusercontent.com/{NHANAZ_REPO}/{NHANAZ_BRANCH}/datasets"
 MONTHLY = {ProductCode.KENO, ProductCode.BINGO18}
 FIRST_MONTH = {ProductCode.KENO: (2019, 8), ProductCode.BINGO18: (2024, 12)}
 MATRIX = {ProductCode.MEGA_645: "mega645", ProductCode.POWER_655: "power655", ProductCode.LOTTO_535: "lotto535"}
@@ -259,7 +262,7 @@ class NhanAZArchive:
             p = Path(local_dir)
             self.root = p / "datasets" if (p / "datasets").is_dir() else p
             if not (self.root / "draws").is_dir():
-                raise SourceError(f"{local_dir}: not a vietlott-research archive (no datasets/draws folder)")
+                raise SourceError(f"{local_dir}: not a NhanAZ archive (no datasets/draws folder; clone branch datasets)")
 
     async def _text(self, rel: str, missing_ok: bool = False) -> str | None:
         if self.root is not None:

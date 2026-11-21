@@ -183,8 +183,8 @@ class CanonicalGithubSource:
 
 
 class MonthlyArchiveSource:
-    name="NhanAZ-Data/vietlott-research"
-    def __init__(self, client: Any, base_url: str = "https://raw.githubusercontent.com/NhanAZ-Data/vietlott-research/main/datasets") -> None:
+    name="NhanAZ-Data/vietlott-data-collector"
+    def __init__(self, client: Any, base_url: str = "https://raw.githubusercontent.com/NhanAZ-Data/vietlott-data-collector/datasets/datasets") -> None:
         self.cache,self.base_url=TextCache(client,8),base_url.rstrip("/")
 
     async def fetch(self, game: str, draw_id: int, date_hint: str | None = None) -> DrawRecord | None:

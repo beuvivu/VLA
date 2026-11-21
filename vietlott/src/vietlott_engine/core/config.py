@@ -29,9 +29,9 @@ class Settings(BaseSettings):
     canonical_base_url: str = "https://raw.githubusercontent.com/pqminh-4/vietlott-data/main/data/canonical"
     product_mirror_base_url: str = "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data"
     # fallback when vietlott.vn is unreachable (README §1.7)
-    nhanaz_base_url: str = "https://raw.githubusercontent.com/NhanAZ-Data/vietlott-research/main/datasets"
+    nhanaz_base_url: str = "https://raw.githubusercontent.com/NhanAZ-Data/vietlott-data-collector/datasets/datasets"
     xskt_base_url: str = "https://xskt.com.vn"
-    nhanaz_dir: Path | None = None  # local clone / ZIP of NhanAZ-Data/vietlott-research (or the 1.3.0 product cache)
+    nhanaz_dir: Path | None = None  # local clone / ZIP of NhanAZ-Data/vietlott-data-collector, branch datasets (or the 1.3.0 product cache)
     v130_dir: Path | None = None  # Vietlott Quant Engine 1.3.0 package root (its data/products snapshot)
     # xskt: trang đăng lại có kết quả ngay sau kỳ quay (Mega/Power/Lotto); đứng sau bản sao cộng đồng,
     # chỉ được hỏi khi các nguồn trước không có kỳ mới. Chuỗi sản phẩm khác bỏ qua nó.

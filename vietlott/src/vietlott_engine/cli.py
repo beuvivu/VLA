@@ -29,7 +29,7 @@ Examples
     vietlott products list                         # coverage of Keno, Bingo18, Max 3D, Max 3D Pro
     vietlott products sync                         # auto: vietlott.vn → community archive → mirrors
     vietlott products sync --source vietlott        # vietlott.vn directly (Vietnamese IP only)
-    vietlott products sync --source nhanaz --path ~/vietlott-research   # local archive clone
+    vietlott products sync --source nhanaz --path ~/vietlott-data-collector   # local clone of branch datasets
     vietlott products sync --source v130 --path ~/Vietlott-Quant-Engine-1.3.0
     vietlott sync --game all --source auto         # Mega/Power/Lotto with the same fallback
     vietlott products analyze --product all        # randomness tests + Max 3D digit cross-check
