@@ -1,161 +1,161 @@
 {
-  "date": "2026-11-21",
-  "generated_at_local": "2026-11-21T02:15:39+07:00",
-  "generated_at_utc": "2026-11-20T19:15:39Z",
+  "date": "2026-11-22",
+  "generated_at_local": "2026-11-22T01:11:59+07:00",
+  "generated_at_utc": "2026-11-21T18:11:59Z",
   "top_lo_to": [
     {
-      "number": "55",
-      "probability": 0.23934343446090484,
+      "number": "74",
+      "probability": 0.240819158694478,
       "baseline": 0.23765728565289646,
-      "lift": 0.0016861488080083809,
+      "lift": 0.0031618730415815532,
       "contribution_reasons": {
-        "pattern_memory": 0.8772,
-        "special_set": -0.1173,
-        "double_hit": 0.0055,
+        "geometric": 0.515,
+        "pattern_memory": 0.4742,
+        "double_hit": 0.0108,
+        "special_set": 0.0
+      },
+      "gan_days": 15,
+      "gan_flagged": false
+    },
+    {
+      "number": "21",
+      "probability": 0.2389076358034452,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0012503501505487513,
+      "contribution_reasons": {
+        "double_hit": 0.4649,
+        "pattern_memory": 0.4191,
+        "special_set": 0.116,
         "geometric": 0.0
       },
-      "gan_days": 17,
+      "gan_days": 26,
       "gan_flagged": true
     },
     {
-      "number": "85",
-      "probability": 0.23896166105980604,
+      "number": "13",
+      "probability": 0.2388786733617623,
       "baseline": 0.23765728565289646,
-      "lift": 0.0013043754069095859,
+      "lift": 0.0012213877088658454,
       "contribution_reasons": {
-        "double_hit": 0.7404,
-        "pattern_memory": 0.2385,
-        "special_set": -0.0211,
+        "pattern_memory": 0.8857,
+        "double_hit": 0.1143,
+        "geometric": 0.0,
+        "special_set": 0.0
+      },
+      "gan_days": 15,
+      "gan_flagged": false
+    },
+    {
+      "number": "31",
+      "probability": 0.23884107075372954,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0011837851008330846,
+      "contribution_reasons": {
+        "geometric": 0.4886,
+        "double_hit": 0.269,
+        "special_set": 0.1418,
+        "pattern_memory": -0.1007
+      },
+      "gan_days": 0,
+      "gan_flagged": false
+    },
+    {
+      "number": "30",
+      "probability": 0.2387574070283215,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0011001213754250339,
+      "contribution_reasons": {
+        "pattern_memory": 0.8501,
+        "special_set": -0.147,
+        "double_hit": 0.0029,
+        "geometric": 0.0
+      },
+      "gan_days": 16,
+      "gan_flagged": true
+    },
+    {
+      "number": "91",
+      "probability": 0.2386219356845467,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0009646500316502493,
+      "contribution_reasons": {
+        "pattern_memory": 0.6829,
+        "special_set": 0.3045,
+        "double_hit": 0.0126,
+        "geometric": 0.0
+      },
+      "gan_days": 0,
+      "gan_flagged": false
+    },
+    {
+      "number": "00",
+      "probability": 0.23855548041107974,
+      "baseline": 0.23765728565289646,
+      "lift": 0.000898194758183285,
+      "contribution_reasons": {
+        "double_hit": 0.5075,
+        "pattern_memory": 0.3246,
+        "special_set": -0.1678,
+        "geometric": 0.0
+      },
+      "gan_days": 3,
+      "gan_flagged": false
+    },
+    {
+      "number": "57",
+      "probability": 0.2385389321861543,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0008816465332578405,
+      "contribution_reasons": {
+        "double_hit": 0.6821,
+        "pattern_memory": 0.2007,
+        "special_set": 0.1172,
+        "geometric": 0.0
+      },
+      "gan_days": 0,
+      "gan_flagged": false
+    },
+    {
+      "number": "79",
+      "probability": 0.23852148308604937,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0008641974331529134,
+      "contribution_reasons": {
+        "double_hit": 0.3879,
+        "pattern_memory": 0.3208,
+        "special_set": 0.2913,
         "geometric": 0.0
       },
       "gan_days": 5,
       "gan_flagged": false
     },
     {
-      "number": "22",
-      "probability": 0.23880805454621223,
+      "number": "77",
+      "probability": 0.23849460972146888,
       "baseline": 0.23765728565289646,
-      "lift": 0.001150768893315779,
+      "lift": 0.0008373240685724259,
       "contribution_reasons": {
-        "pattern_memory": 0.6171,
-        "double_hit": 0.2348,
-        "special_set": 0.1482,
+        "double_hit": 0.4445,
+        "special_set": 0.2956,
+        "pattern_memory": 0.2599,
         "geometric": 0.0
       },
-      "gan_days": 14,
-      "gan_flagged": false
-    },
-    {
-      "number": "30",
-      "probability": 0.23878111759215695,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0011238319392604945,
-      "contribution_reasons": {
-        "pattern_memory": 0.8078,
-        "special_set": -0.1535,
-        "double_hit": 0.0387,
-        "geometric": 0.0
-      },
-      "gan_days": 15,
-      "gan_flagged": false
-    },
-    {
-      "number": "13",
-      "probability": 0.23870889831187064,
-      "baseline": 0.23765728565289646,
-      "lift": 0.001051612658974188,
-      "contribution_reasons": {
-        "pattern_memory": 0.6268,
-        "special_set": -0.3043,
-        "double_hit": 0.0689,
-        "geometric": 0.0
-      },
-      "gan_days": 14,
-      "gan_flagged": false
-    },
-    {
-      "number": "39",
-      "probability": 0.23861693998226355,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0009596543293670934,
-      "contribution_reasons": {
-        "double_hit": 0.4559,
-        "special_set": 0.4122,
-        "pattern_memory": 0.1319,
-        "geometric": 0.0
-      },
-      "gan_days": 3,
-      "gan_flagged": false
-    },
-    {
-      "number": "09",
-      "probability": 0.23859800499026443,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0009407193373679734,
-      "contribution_reasons": {
-        "double_hit": 0.9376,
-        "special_set": -0.0318,
-        "pattern_memory": -0.0306,
-        "geometric": 0.0
-      },
-      "gan_days": 0,
-      "gan_flagged": false
-    },
-    {
-      "number": "81",
-      "probability": 0.23858861670669756,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0009313310538011099,
-      "contribution_reasons": {
-        "pattern_memory": 0.5732,
-        "special_set": 0.2666,
-        "double_hit": 0.1602,
-        "geometric": 0.0
-      },
-      "gan_days": 8,
-      "gan_flagged": false
-    },
-    {
-      "number": "94",
-      "probability": 0.23858189984723296,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0009246141943365094,
-      "contribution_reasons": {
-        "double_hit": 0.3813,
-        "pattern_memory": 0.3708,
-        "special_set": 0.2478,
-        "geometric": 0.0
-      },
-      "gan_days": 0,
-      "gan_flagged": false
-    },
-    {
-      "number": "91",
-      "probability": 0.23857409864326573,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0009168129903692757,
-      "contribution_reasons": {
-        "pattern_memory": 0.8074,
-        "double_hit": 0.188,
-        "special_set": 0.0046,
-        "geometric": 0.0
-      },
-      "gan_days": 3,
+      "gan_days": 7,
       "gan_flagged": false
     }
   ],
   "top_dac_biet": {
     "top_numbers": [
       "21",
-      "22",
-      "88",
       "30",
-      "81",
-      "33",
+      "13",
+      "98",
+      "23",
       "85",
-      "55",
-      "42",
-      "61"
+      "16",
+      "59",
+      "24",
+      "55"
     ],
     "cham": [
       0,
@@ -165,119 +165,120 @@
       4,
       5,
       6,
-      8
+      8,
+      9
     ],
     "tong": [
       0,
       3,
       4,
+      5,
       6,
-      7,
-      9
+      7
     ],
     "dan_36": [
       "05",
       "50",
-      "35",
-      "53",
       "06",
+      "60",
+      "01",
+      "07",
+      "10",
       "15",
       "51",
       "56",
-      "57",
       "58",
-      "60",
       "65",
-      "75",
+      "70",
       "85",
-      "01",
       "02",
       "03",
-      "07",
-      "10",
+      "04",
+      "08",
       "16",
       "20",
-      "23",
+      "24",
       "25",
       "30",
-      "32",
-      "33",
-      "36",
-      "38",
+      "35",
+      "40",
+      "42",
+      "45",
       "52",
+      "53",
+      "54",
+      "57",
       "59",
       "61",
-      "63",
       "67",
-      "69",
-      "70",
-      "76"
+      "68",
+      "75"
     ],
     "dan_64": [
       "05",
       "50",
-      "35",
-      "53",
       "06",
+      "60",
+      "01",
+      "07",
+      "10",
       "15",
       "51",
       "56",
-      "57",
       "58",
-      "60",
       "65",
-      "75",
+      "70",
       "85",
-      "01",
       "02",
       "03",
-      "07",
-      "10",
+      "04",
+      "08",
       "16",
       "20",
-      "23",
+      "24",
       "25",
       "30",
-      "32",
-      "33",
-      "36",
-      "38",
+      "35",
+      "40",
+      "42",
+      "45",
       "52",
+      "53",
+      "54",
+      "57",
       "59",
       "61",
-      "63",
       "67",
-      "69",
-      "70",
+      "68",
+      "75",
       "76",
-      "79",
-      "83",
+      "80",
+      "86",
       "95",
-      "96",
-      "97",
-      "08",
+      "00",
       "09",
       "12",
       "13",
+      "14",
       "21",
-      "24",
+      "23",
       "26",
-      "29",
       "31",
+      "32",
+      "33",
       "34",
-      "37",
-      "39",
-      "42",
+      "36",
+      "38",
+      "41",
       "43",
-      "45",
-      "54",
+      "46",
+      "47",
       "55",
       "62",
-      "66",
-      "68",
-      "73",
-      "80",
-      "86"
+      "63",
+      "64",
+      "69",
+      "74"
     ],
     "baseline": 0.01
   },
@@ -323,6 +324,7 @@
   },
   "gan_flagged": [
     "21",
+    "30",
     "37",
     "55"
   ]
