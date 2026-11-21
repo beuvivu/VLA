@@ -21,23 +21,31 @@ ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
 #: Khổ màn hình điện thoại phổ biến, từ máy nhỏ nhất còn dùng tới máy lớn.
 PHONE_WIDTHS = (320, 360, 390, 412, 430)
-#: Chỗ dành cho mũi tên của ô chọn gốc (Chromium vẽ khoảng 20px bên phải chữ).
-ARROW_PX = 20
 #: Trang đại diện cho bốn kiểu khung: trang chủ, công cụ soi cầu, Vietlott, bảng thống kê.
 TOGGLE_PAGES = ("index.html", "soi-cau-vi-tri.html", "vietlott-keno.html", "tan-suat-loto.html")
 
-_CLIPPED_SELECTS = """(arrow) => {
-  const ctx = document.createElement('canvas').getContext('2d');
+#: Bề rộng cần lấy từ CHÍNH Chromium: bản sao của ô chọn đặt cạnh ô gốc (cùng bộ chọn CSS, cùng phông, lề và
+#: mũi tên của theme), bề rộng ``max-content`` = chữ của lựa chọn dài nhất + lề + mũi tên. Ô gốc hẹp hơn bản sao
+#: là cắt chữ. Đừng ước lượng mũi tên bằng một hằng số: 20px rộng hơn mũi tên thật 1px, và trên runner CI (không
+#: có phông Inter) hai ô tự co giãn theo nội dung ở bảng Đặc Biệt tháng/năm bị báo nhầm như thế.
+_CLIPPED_SELECTS = """() => {
   const out = [];
   for (const s of document.querySelectorAll('select')) {
     if (!s.offsetParent) continue;
-    const cs = getComputedStyle(s);
-    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-    const room = s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - arrow;
-    for (const o of s.options) {
-      const text = o.textContent.trim();
-      const need = ctx.measureText(text).width;
-      if (need > room) out.push(`${s.id || s.name}: «${text}» cần ${Math.ceil(need)}px, có ${Math.floor(room)}px`);
+    const twin = s.cloneNode(true);
+    twin.removeAttribute('id');
+    twin.removeAttribute('name');
+    for (const [k, v] of [['position', 'absolute'], ['visibility', 'hidden'], ['width', 'max-content'],
+                          ['min-width', '0'], ['max-width', 'none'], ['left', '0'], ['top', '0']]) {
+      twin.style.setProperty(k, v, 'important');
+    }
+    s.after(twin);
+    const need = twin.getBoundingClientRect().width;
+    twin.remove();
+    const have = s.getBoundingClientRect().width;
+    if (have + 0.5 < need) {
+      const longest = [...s.options].map(o => o.textContent.trim()).sort((a, b) => b.length - a.length)[0];
+      out.push(`${s.id || s.name}: «${longest}» cần ${Math.ceil(need)}px, có ${Math.floor(have)}px`);
     }
   }
   return out;
@@ -117,7 +125,7 @@ def test_the_select_rule_catches_a_clipped_option(chromium) -> None:
         '<select id="rong" style="width:360px;padding:0 12px;font:13px sans-serif">'
         "<option>Tất cả ngày đang hiển thị</option></select>"
     )
-    found = page.evaluate(_CLIPPED_SELECTS, ARROW_PX)
+    found = page.evaluate(_CLIPPED_SELECTS)
     page.close()
     assert len(found) == 1 and found[0].startswith("hep:"), found
 
@@ -147,7 +155,7 @@ def test_no_select_clips_an_option_on_a_phone(chromium, width: int) -> None:
     clipped: list[str] = []
     for name in _pages_with_selects():
         page.goto((DOCS / name).as_uri(), wait_until="load")
-        clipped += [f"{name} @{width}px: {item}" for item in page.evaluate(_CLIPPED_SELECTS, ARROW_PX)]
+        clipped += [f"{name} @{width}px: {item}" for item in page.evaluate(_CLIPPED_SELECTS)]
     context.close()
     assert not clipped, "\n".join(clipped)
 
@@ -163,17 +171,23 @@ def test_the_motion_toggle_never_covers_text_on_a_phone(chromium, name: str) -> 
     page = context.new_page()
     page.goto((DOCS / name).as_uri(), wait_until="load")
     page.wait_for_function("() => document.getElementById('app-motion-toggle')?.hidden === false")
-    height = page.evaluate("() => document.documentElement.scrollHeight")
     seen_on_screen = False
     problems: list[str] = []
-    for fraction in (0, 0.25, 0.5, 0.75, 1):
-        page.evaluate("y => window.scrollTo(0, y)", int(height * fraction))
+    # Cuộn TỨC THÌ: trang đặt scroll-behavior: smooth, nên khi bật hiệu ứng mỗi lần cuộn là một hoạt cảnh và
+    # đo giữa chừng thì nút chưa tới (trang chủ dài ~30 000px). Đọc lại chiều cao ở mỗi bước vì khối tải chậm
+    # làm trang dài thêm; bước cuối cuộn thẳng tới nút để luôn có ít nhất một lần nút ở trên màn hình.
+    for label in ("0%", "25%", "50%", "75%", "nút"):
+        if label == "nút":
+            page.evaluate("() => document.getElementById('app-motion-toggle').scrollIntoView({block: 'end', behavior: 'instant'})")
+        else:
+            page.evaluate("f => window.scrollTo({top: document.documentElement.scrollHeight * f, behavior: 'instant'})", int(label[:-1]) / 100)
+        page.wait_for_timeout(100)
         state = page.evaluate(_TEXT_UNDER_TOGGLE)
         assert not state["missing"], name
         if state["bottom"] > 0 and state["top"] < state["height"]:
             seen_on_screen = True
         if state["covered"]:
-            problems.append(f"cuộn {int(fraction * 100)}%: {state['covered'][:3]}")
+            problems.append(f"cuộn {label}: {state['covered'][:3]}")
     context.close()
     assert seen_on_screen, f"{name}: nút không lần nào hiện trên màn hình, phép kiểm không đo được gì"
     assert not problems, f"{name}: " + "; ".join(problems)
