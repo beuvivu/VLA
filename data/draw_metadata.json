@@ -762,6 +762,48 @@
       "special": "21915",
       "source_url": "https://xoso.com.vn/xsmb-18-11-2026.html",
       "checked_at": "2026-11-18T18:38:54+07:00"
+    },
+    "2026-11-19": {
+      "station": "Hà Nội",
+      "special_codes": [
+        "2LM",
+        "8LM",
+        "10LM",
+        "11LM",
+        "12LM",
+        "14LM"
+      ],
+      "special": "15178",
+      "source_url": "https://xoso.com.vn/xsmb-19-11-2026.html",
+      "checked_at": "2026-11-19T18:40:59+07:00"
+    },
+    "2026-11-20": {
+      "station": "Hải Phòng",
+      "special_codes": [
+        "3LN",
+        "4LN",
+        "8LN",
+        "9LN",
+        "12LN",
+        "15LN"
+      ],
+      "special": "10760",
+      "source_url": "https://xoso.com.vn/xsmb-20-11-2026.html",
+      "checked_at": "2026-11-20T18:39:07+07:00"
+    },
+    "2026-11-21": {
+      "station": "Nam Định",
+      "special_codes": [
+        "2LP",
+        "6LP",
+        "7LP",
+        "10LP",
+        "11LP",
+        "13LP"
+      ],
+      "special": "06804",
+      "source_url": "https://xoso.com.vn/xsmb-21-11-2026.html",
+      "checked_at": "2026-11-21T18:39:22+07:00"
     }
   }
 }
