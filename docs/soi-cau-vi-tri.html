@@ -541,8 +541,11 @@ body.app-position-page button.app-bridge-cell.is-partner{background:var(--ui-bad
   .app-position-page .app-position-disclosure>summary{padding:16px}
   .app-position-page .app-position-disclosure-body{padding:0 16px 16px}
 }
-@media (max-width:380px){
+
+@media (max-width:480px){
   body.app-position-page .app-bridge-form{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:380px){
   body.app-position-page .app-bridge-links a{grid-template-columns:minmax(0,1fr) 40px 100px}
   .app-position-page .app-bridge-matrix-row{grid-template-columns:56px minmax(0,1fr)}
   body.app-position-page .app-bridge-cell{min-width:30px}
@@ -667,7 +670,7 @@ body.app-workspace .sp-bar {background:var(--ui-chart-1)}
 <link rel="stylesheet" href="assets/app-shell.css?rev=cb5a4b08a430f9b0" data-app-shell>
 <link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png?rev=b1cb60b93dacacc8" data-app-brand>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png?rev=2e4f5d3a86139a08" data-app-brand>
-<link rel="stylesheet" href="assets/app-design.css?rev=e36cab6cbdcddf9b" data-app-design-style>
+<link rel="stylesheet" href="assets/app-design.css?rev=a39771ca440eacae" data-app-design-style>
 <script src="assets/app-motion.js?rev=4b1931911c005d19" defer data-app-motion-script></script>
 <script type="application/json" id="app-evidence-data" data-app-evidence>{"schema":1,"page":{"sources":[{"title":"Sổ kết quả XSMB đã lưu","snippet":"4 273 kỳ quay, 01-01-2015 → 21-11-2026. Mỗi kỳ 27 giải, từ Đặc Biệt (5 chữ số) đến giải bảy (2 chữ số).","url":"so-ket-qua-truyen-thong.html"},{"title":"Bộ dò cầu vị trí","snippet":"107 vị trí chữ số trên bảng kết quả (Đặc Biệt 0–4 … giải bảy 99–106); một cầu ghép chữ số ở hai vị trí và chạy theo kỳ quay.","url":"soi-cau-vi-tri.html"}],"reasoningTrace":{"steps":["Đọc sổ kết quả đã lưu và đánh số 107 vị trí chữ số của mỗi kỳ.","Với mỗi cặp vị trí a \u003c b, ghép số 10·d[a] + d[b] ở từng kỳ.","Lộn thì cộng gộp nháy của cả hai chiều; số kép chỉ là một số (số bóng chỉ hiện kèm).","Cầu chạy N ngày khi N bước liên tiếp gần nhất đều trúng. Đây là thống kê mô tả; độ dài cầu đã được đo trên toàn lịch sử ở mục «Cầu dài có đáng tin hơn?»."]}},"sections":[{"match":"#app-main .app-bridge-shadow","title":"Số bóng","sources":[{"title":"Bộ dò cầu vị trí","snippet":"107 vị trí chữ số trên bảng kết quả (Đặc Biệt 0–4 … giải bảy 99–106); một cầu ghép chữ số ở hai vị trí và chạy theo kỳ quay.","url":"soi-cau-vi-tri.html"}],"reasoningTrace":{"steps":["Số bóng đổi từng chữ số của số kép sang bóng của nó: 0↔5, 1↔6, 2↔7, 3↔8, 4↔9 (44 → 99).","Chỉ hiện kèm để tham khảo cho người quen đọc cặp kép–bóng; số bóng KHÔNG tham gia phép dò cầu và không tính vào phép trúng."]}}],"values":{}}</script>
 <script src="assets/app-evidence.js?rev=e1281d77091b2f40" defer data-app-evidence></script>

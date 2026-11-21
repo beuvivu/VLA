@@ -61,6 +61,10 @@ def test_ai_judgement_adds_reason_and_probability_alias() -> None:
     assert "prob" in out.columns
     assert abs(float(out["prob"].sum()) - 1.0) < 1e-9
     assert out.iloc[0]["number_str"] == "00"
+    # Số 00 có path_support cao nhất: lý do in cho người đọc phải là lời đọc được, không phải tên biến.
+    reasons = " | ".join(str(out.iloc[0][c]) for c in ("primary_reason", "reason_1", "reason_2", "reason_3"))
+    assert cau_keo_ml.PATH_SUPPORT_REASON in reasons
+    assert "rawdata" not in " ".join(out.astype(str).to_numpy().ravel()).lower()
 
 
 def _judgement_frame(raw: list[float]) -> pd.DataFrame:

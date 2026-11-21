@@ -186,6 +186,8 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .bf-page .app-frequency-controls{grid-template-areas:"from to weekday sort" "quick quick gan gan" "count count count count" "marks marks marks marks"}
 .bf-page .bf-totals #sp-matrix .sp-cell i::after{content:" lượt";font-size:10px;font-weight:500}
 @media(max-width:800px){.bf-page .app-frequency-controls{grid-template-areas:"from to" "weekday sort" "quick quick" "gan gan" "count count" "marks marks"}}
+/* Nửa hàng hẹp hơn chữ «Gan nhiều nhất», «Tất cả các thứ» từ khoảng 365px trở xuống (đo 320 và 360px). */
+@media(max-width:400px){.bf-page .app-frequency-controls{grid-template-areas:"from to" "weekday weekday" "sort sort" "quick quick" "gan gan" "count count" "marks marks"}}
 /* Bề rộng cột nhãn dính khai trên KHUNG CUỘN, bảng kế thừa: scroll-padding-left phải bằng đúng bề rộng ấy,
    nếu không ô được cuộn tới (bàn phím, Tab, scrollIntoView) nằm khuất dưới cột dính. */
 body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix){--app-frequency-label-width:176px;--app-frequency-cell-width:54px;scroll-padding-left:var(--app-frequency-label-width)}

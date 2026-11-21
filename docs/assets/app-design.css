@@ -278,7 +278,8 @@ body[data-app-design="crafto"] .hero .app-hero-meta {margin:20px 0 0;padding-top
   body[data-app-design="crafto"] .metric-tile strong {font-size:28px}
   body[data-app-design="crafto"] .metric-tile[data-long="true"] strong {font-size:20px}
   body[data-app-design="crafto"] .section-title {margin-block:32px 16px}
-  body[data-app-design="crafto"] #app-motion-toggle {right:12px;bottom:12px;min-height:40px;padding:10px 12px}
+
+  body[data-app-design="crafto"] #app-motion-toggle {position:static;display:flex;width:max-content;margin:8px auto 16px;min-height:40px;padding:10px 12px}
 }
 @media (max-width:480px) {
   body[data-app-design="crafto"] .main>.hero {padding:32px 20px 0}
