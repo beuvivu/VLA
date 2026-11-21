@@ -342,3 +342,23 @@ def test_duckdb_cli_fallback_escapes_quotes_in_paths(tmp_path, monkeypatch):
     (sql,) = [args[2] for args in seen]
     assert "read_parquet('" + parquet.as_posix().replace("'", "''") + "')" in sql
     assert sql.count("'") % 2 == 0
+
+
+def test_every_default_archive_address_points_at_the_renamed_repository() -> None:
+    """Kho cộng đồng đổi tên (``vietlott-research`` → ``vietlott-data-collector``) và chuyển dữ liệu sang
+    nhánh ``datasets`` khoảng 20-11-2026: địa chỉ cũ trả 404 cho mọi sản phẩm, Keno/Bingo18 mất nguồn đối
+    chiếu và đứng ở kỳ 19-11. Ba chỗ khai mặc định (cấu hình, nguồn của engine, nguồn của gói ``vlm``) phải
+    trùng nhau và trỏ đúng nhánh; lệch một chỗ là một đường đồng bộ lặng lẽ quay về địa chỉ chết."""
+    import inspect
+
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.crawler.sources.nhanaz import NHANAZ_RAW_BASE
+    from vlm.crawler.sources import MonthlyArchiveSource
+
+    live = "https://raw.githubusercontent.com/NhanAZ-Data/vietlott-data-collector/datasets/datasets"
+    declared = {
+        "config": Settings.model_fields["nhanaz_base_url"].default,
+        "engine": NHANAZ_RAW_BASE,
+        "vlm": inspect.signature(MonthlyArchiveSource.__init__).parameters["base_url"].default,
+    }
+    assert declared == {name: live for name in declared}

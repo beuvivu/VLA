@@ -8,7 +8,7 @@ equal draw ids) and leaves out draws Vietlott announced as *not confirmed*.
 Sources (``--source``):
 
 * ``vietlott``  — vietlott.vn results lists (AjaxPro). Vietnamese IPs only.
-* ``nhanaz``    — community archive ``NhanAZ-Data/vietlott-research`` (GitHub raw, or a local
+* ``nhanaz``    — community archive ``NhanAZ-Data/vietlott-data-collector`` (branch ``datasets``) (GitHub raw, or a local
   folder via ``VQE_NHANAZ_DIR``); Keno/Bingo18 updated about every 10 minutes in the day;
   all 8 products + exclusions.
 * ``mirror``    — ``vietvudanh/vietlott-data`` JSONL (Keno, Bingo18, Max 3D, Max 3D Pro). Với
