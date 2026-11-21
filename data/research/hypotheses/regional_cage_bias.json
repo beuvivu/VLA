@@ -340,14 +340,14 @@
       "region": "mn",
       "province": "Bình Phước",
       "registered_through": "2026-11-14",
-      "draws_scored": 0,
-      "last_scored": null,
-      "log10_e": 0.0,
-      "log10_e_max": 0.0,
+      "draws_scored": 1,
+      "last_scored": "2026-11-21",
+      "log10_e": 0.326015,
+      "log10_e_max": 0.326015,
       "log10_threshold": 3.544068,
       "confirmed": false,
       "confirmed_on": null,
-      "reading": "Đài Bình Phước: giả thuyết đóng băng theo các kỳ đến 14/11/2026; chưa có kỳ mới nào để chấm."
+      "reading": "Đài Bình Phước: giả thuyết đóng băng theo các kỳ đến 14/11/2026; chưa đủ bằng chứng (bằng chứng 10^0,33 sau 1 kỳ mới (ngưỡng 10^3,54))."
     },
     {
       "id": "mn:Bến Tre:2026-11-10",
