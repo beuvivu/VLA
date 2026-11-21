@@ -107,6 +107,11 @@ jobs:
         env:
           UI_BROWSER_REQUIRED: "1"
         run: python -m pytest tests/web/test_app_shell.py::test_touch_can_reach_every_navigation_link_on_a_phone -q
+      - name: Kiểm ô chọn và nút hiệu ứng trên khổ điện thoại
+        if: matrix.shard.id == 'khung'
+        env:
+          UI_BROWSER_REQUIRED: "1"
+        run: python -m pytest tests/web/test_phone_controls_browser.py -q
       - if: matrix.shard.id == 'khung'
         run: python scripts/browser/check_ui_browser.py
       - if: matrix.shard.id == 'khung'

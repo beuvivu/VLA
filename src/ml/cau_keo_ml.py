@@ -58,6 +58,9 @@ NUMBER_COLS = list(range(100))
 TRUST_POLICY_VERSION = COMPONENT_POLICY["cau"]
 #: Khoá dấu giờ học của gói: học lại y hệt (cùng dữ liệu, runner khác CPU) thì giữ tệp cũ.
 PACK_STAMP_KEYS = frozenset({"trained_at"})
+#: Lý do in cho người đọc khi đặc trưng ``path_support`` ở nhóm cao nhất. Trước 21-11-2026 là
+#: «cầu rawdata mạnh»: tên nội bộ của dãy chữ số đã lọt ra trang chủ và trang thống kê.
+PATH_SUPPORT_REASON = "nhiều cặp vị trí ghép ra số"
 
 logger = logging.getLogger(__name__)
 
@@ -845,7 +848,9 @@ def _reason_candidates(
     if float(row.get("ml_prob_raw", 0.0)) >= quantiles.get("ml_prob_raw", 1.0):
         reasons.append("ML xác suất cao")
     if float(row.get("path_support", 0.0)) >= quantiles.get("path_support", 1.0):
-        reasons.append("cầu rawdata mạnh")
+        # Đặc trưng đếm MỌI cặp vị trí của 30 kỳ gần nhất ghép ra số này, không phải một cầu cụ thể;
+        # «rawdata» là tên nội bộ của dãy chữ số, không phải lời cho người đọc.
+        reasons.append(PATH_SUPPORT_REASON)
     if float(row.get("cond_de_rate", 0.0)) >= quantiles.get("cond_de_rate", 1.0):
         reasons.append("hợp điều kiện Đặc Biệt hôm trước")
     if float(row.get("cond_loto_max_rate", 0.0)) >= quantiles.get(

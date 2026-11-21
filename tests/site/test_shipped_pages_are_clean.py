@@ -82,6 +82,28 @@ def test_no_page_spells_out_where_the_data_lives(page: Path) -> None:
         assert token not in body, f"{page.name} lộ {token!r}"
 
 
+#: Tên nội bộ của mã từng lọt ra trang người đọc. «cầu rawdata mạnh» (lý do của Cầu Kèo) hiện trên trang
+#: chủ và trang thống kê tới 21-11-2026: «rawdata» là tên biến của dãy 107 chữ số, không phải lời đọc được.
+INTERNAL_WORDS = ("rawdata",)
+
+
+def _internal_words(text: str) -> list[str]:
+    return [word for word in INTERNAL_WORDS if word in text.lower()]
+
+
+def test_the_internal_word_rule_catches_the_old_reason() -> None:
+    """Ghim chính luật trên mẫu dựng sẵn: một lần glob hỏng không được thu tập quét về rỗng mà vẫn xanh."""
+    assert _internal_words("Lý do chính: ML xác suất cao + cầu RawData mạnh") == ["rawdata"]
+    assert _internal_words("Lý do chính: nhiều cặp vị trí ghép ra số") == []
+    assert len(PAGES) >= 40
+
+
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_no_page_shows_an_internal_variable_name(page: Path) -> None:
+    """Quét cả dữ liệu nhúng (JSON của bảng, bằng chứng): JS dựng chúng thành chữ trên trang."""
+    assert not _internal_words(page.read_text(encoding="utf-8", errors="replace")), page.name
+
+
 @pytest.mark.parametrize("sheet", SHEETS, ids=lambda p: p.name)
 def test_no_comment_survives_into_a_published_stylesheet(sheet: Path) -> None:
     """Biểu định kiểu rời phải sạch hệt thẻ ``<style>`` trong trang.
