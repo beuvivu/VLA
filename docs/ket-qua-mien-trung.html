@@ -332,7 +332,8 @@ border:1px solid var(--ui-brand-border);border-radius:12px;background:var(--ui-b
   .rg-table thead th{font-size:12px;padding:10px 6px}
   .rg-table .tr-prize-label{padding:8px 6px}
 }
-@media(max-width:390px){.rg-filter{grid-template-columns:minmax(0,1fr)}.rg-filter .rg-btn{grid-column:auto}}
+
+@media(max-width:480px){.rg-filter{grid-template-columns:minmax(0,1fr)}.rg-filter .rg-btn{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.rg-btn{transition:none}}
 
 @media print{
@@ -355,7 +356,7 @@ border:1px solid var(--ui-brand-border);border-radius:12px;background:var(--ui-b
 <link rel="stylesheet" href="assets/app-shell.css?rev=cb5a4b08a430f9b0" data-app-shell>
 <link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png?rev=b1cb60b93dacacc8" data-app-brand>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png?rev=2e4f5d3a86139a08" data-app-brand>
-<link rel="stylesheet" href="assets/app-design.css?rev=e36cab6cbdcddf9b" data-app-design-style>
+<link rel="stylesheet" href="assets/app-design.css?rev=a39771ca440eacae" data-app-design-style>
 <script src="assets/app-motion.js?rev=4b1931911c005d19" defer data-app-motion-script></script>
 <script type="application/json" id="app-evidence-data" data-app-evidence>{"schema":1,"page":{"sources":[{"title":"Sổ kết quả Miền Trung đã lưu","snippet":"Kết quả theo tỉnh/thành mỗi ngày quay, từ giải tám tới Đặc Biệt; lưu riêng, không dùng trong dự báo XSMB."}],"reasoningTrace":{"steps":["Đọc sổ kết quả vùng đã lưu, nhóm theo ngày quay rồi theo tỉnh/thành.","Hiển thị nguyên số đã công bố; bộ lọc ngày và tỉnh chỉ ẩn/hiện, không tính lại."]}},"sections":[{"match":".rg-evidence","title":"Kiểm định ngẫu nhiên và mốc xác suất Miền Trung","sources":[{"title":"Kiểm định từng đài Miền Trung","snippet":"Tám phép kiểm cho từng đài, phân phối chuẩn lấy bằng mô phỏng đúng cấu trúc 18 giải; hiệu chỉnh đa kiểm trên mọi (đài × phép kiểm) của miền."},{"title":"Phép chấm tiến cứu Miền Trung","snippet":"Mỗi cách dự báo chỉ đọc các kỳ trước ngày đích rồi được chấm bằng log-loss trên kỳ ấy, so với dự báo đều."}],"reasoningTrace":{"steps":["Mức nền một con lô ở một đài là 1 − 0,99¹⁸ (18 giải mỗi kỳ); đuôi Đặc Biệt là 1/100.","Mỗi đài được kiểm riêng vì là một bộ lồng cầu riêng; p của phép theo lồng lấy từ đuôi χ², các phép còn lại lấy từ mô phỏng.","Lợi log-loss dương nghĩa là tốt hơn dự báo đều; khoảng 95% lấy mẫu lại theo ngày quay, p hiệu chỉnh Holm.","Độ lệch thấy trên dữ liệu cũ chỉ được coi là xác nhận khi phép kiểm đã đăng ký vượt ngưỡng trên các kỳ quay SAU ngày đăng ký."]}}],"values":{}}</script>
 <script src="assets/app-evidence.js?rev=e1281d77091b2f40" defer data-app-evidence></script>

@@ -79,7 +79,8 @@
   .rg-table thead th{font-size:12px;padding:10px 6px}
   .rg-table .tr-prize-label{padding:8px 6px}
 }
-@media(max-width:390px){.rg-filter{grid-template-columns:minmax(0,1fr)}.rg-filter .rg-btn{grid-column:auto}}
+/* Hai cột hẹp hơn chữ «Tất cả ngày đang hiển thị» tới khoảng 470px (đo 412 và 430px). */
+@media(max-width:480px){.rg-filter{grid-template-columns:minmax(0,1fr)}.rg-filter .rg-btn{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.rg-btn{transition:none}}
 
 /* Khi in, cuộn không còn là cách xem phần còn lại: mọi đài phải vừa khổ giấy. */

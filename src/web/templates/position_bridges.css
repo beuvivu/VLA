@@ -171,8 +171,11 @@ body.app-position-page button.app-bridge-cell.is-partner{background:var(--ui-bad
   .app-position-page .app-position-disclosure>summary{padding:16px}
   .app-position-page .app-position-disclosure-body{padding:0 16px 16px}
 }
-@media (max-width:380px){
+/* Hai cột hẹp hơn chữ «Từ độ dài này trở lên» tới khoảng 430px (đo 390 và 412px). */
+@media (max-width:480px){
   body.app-position-page .app-bridge-form{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:380px){
   body.app-position-page .app-bridge-links a{grid-template-columns:minmax(0,1fr) 40px 100px}
   .app-position-page .app-bridge-matrix-row{grid-template-columns:56px minmax(0,1fr)}
   body.app-position-page .app-bridge-cell{min-width:30px}
