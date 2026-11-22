@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-11-21T11:40:41Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-11-22T06:01:30Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -552,20 +552,20 @@
 ### Cầu-kèo LOTO đứng đầu
 | # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **14** | 83.784 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **49** | 75.085 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | **79** | 69.146 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 1 | **14** | 83.784 | ML xác suất cao + nhiều cặp vị tr… | ML xác suất cao + nhiều cặp vị trí gh… | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **49** | 75.085 | ML xác suất cao + nhiều cặp vị tr… | ML xác suất cao + nhiều cặp vị trí gh… | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | **79** | 69.146 | ML xác suất cao + nhiều cặp vị tr… | ML xác suất cao + nhiều cặp vị trí gh… | ▰▰▰▰▰▰▰▰▱▱ |
 | 4 | **25** | 67.380 | ML xác suất cao + cùng thứ trong … | ML xác suất cao + cùng thứ trong tuần… | ▰▰▰▰▰▰▰▰▱▱ |
 | 5 | **95** | 65.150 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | **24** | 64.458 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | **24** | 64.458 | ML xác suất cao + nhiều cặp vị tr… | ML xác suất cao + nhiều cặp vị trí gh… | ▰▰▰▰▰▰▰▰▱▱ |
 | 7 | **19** | 62.284 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▱▱▱ |
 | 8 | **35** | 61.369 | ML xác suất cao + tần suất gần | ML xác suất cao + tần suất gần | ▰▰▰▰▰▰▰▱▱▱ |
 | 9 | **87** | 60.461 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **04** | 59.600 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện loto… | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **04** | 59.600 | nhiều cặp vị trí ghép ra số + hợp… | nhiều cặp vị trí ghép ra số + hợp điề… | ▰▰▰▰▰▰▰▱▱▱ |
 | 11 | **75** | 58.862 | ML xác suất cao + hợp điều kiện l… | ML xác suất cao + hợp điều kiện loto … | ▰▰▰▰▰▰▰▱▱▱ |
 | 12 | **97** | 58.686 | ML xác suất cao + tần suất 30 ngà… | ML xác suất cao + tần suất 30 ngày cao | ▰▰▰▰▰▰▰▱▱▱ |
 | 13 | **88** | 58.377 | ML xác suất cao + hợp điều kiện l… | ML xác suất cao + hợp điều kiện loto … | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **84** | 58.196 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | **84** | 58.196 | nhiều cặp vị trí ghép ra số + hợp… | nhiều cặp vị trí ghép ra số + hợp điề… | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **68** | 58.018 | ML xác suất cao + hợp điều kiện l… | ML xác suất cao + hợp điều kiện loto … | ▰▰▰▰▰▰▰▱▱▱ |
 
 ### Cầu-kèo Đặc Biệt · ma trận nhiệt điểm
@@ -597,18 +597,18 @@
 ### Cầu-kèo Đặc Biệt đứng đầu
 | # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **44** | 60.459 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | **44** | 60.459 | ML xác suất cao + nhiều cặp vị tr… | ML xác suất cao + nhiều cặp vị trí gh… | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **72** | 57.489 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▰▰ |
 | 3 | **30** | 56.772 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▰▱ |
 | 4 | **54** | 54.534 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▰▱ |
 | 5 | **81** | 50.850 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + tầ… | ▰▰▰▰▰▰▰▰▱▱ |
 | 6 | **96** | 49.542 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | **40** | 49.104 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | **39** | 47.834 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | **40** | 49.104 | ML xác suất cao + nhiều cặp vị tr… | ML xác suất cao + nhiều cặp vị trí gh… | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | **39** | 47.834 | nhiều cặp vị trí ghép ra số + hợp… | nhiều cặp vị trí ghép ra số + hợp điề… | ▰▰▰▰▰▰▰▰▱▱ |
 | 9 | **48** | 47.700 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▱▱ |
 | 10 | **00** | 45.979 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▰▱▱ |
 | 11 | **42** | 45.648 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | **43** | 45.490 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | **43** | 45.490 | nhiều cặp vị trí ghép ra số + hợp… | nhiều cặp vị trí ghép ra số + hợp điề… | ▰▰▰▰▰▰▰▰▱▱ |
 | 13 | **25** | 45.318 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▱▱▱ |
 | 14 | **05** | 44.901 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **03** | 44.489 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▱▱▱ |
