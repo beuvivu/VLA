@@ -478,7 +478,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
             _table(
                 "Đài quay miền Bắc · lồng cầu và phát hiện thay đổi",
                 venue_reading,
-                ["Dãy", "Số kỳ", "Kỳ/tuần", "Đều theo lồng: p (Holm)", "Phát hiện thay đổi: đỉnh / ngưỡng",
+                ["Dãy", "Số kỳ", "Kỳ/tuần", "Phân bố đều theo lồng: p (Holm)", "Phát hiện thay đổi: đỉnh / ngưỡng",
                  "Đợt báo động"],
                 "ui-r2 ui-r3 ui-r4 ui-r5",
                 _venue_monitor_rows(venue),

@@ -925,6 +925,19 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Mỗi quy tắc ghép chữ số ở vị trí A (trễ A ngày) với vị trí B (trễ B ngày; −1 là không dùng) bằng phép biến đổi ghi ở cột đầu.",
                 "Độ nâng chấm trên tập giữ lại chưa chạm; «CẦN XEM XÉT» khi q (BH-FDR, tập huấn luyện) ≤ 0,05 và độ nâng ở cả tập kiểm định lẫn tập giữ lại ≥ 1,03 — chỉ là đáng xem tiếp, không nối vào vận hành.",
             ])),
+            _sec_heading("Đài quay miền Bắc · lồng cầu", "Đài quay miền Bắc · lồng cầu và phát hiện thay đổi",
+                         _ev([_ket_qua(f)], [
+                "Mỗi dòng là một dãy kỳ: của một đài theo lịch luân phiên có hiệu lực ngày quay, hoặc «Toàn miền Bắc» gộp mọi kỳ (mọi đài dùng chung một lần quay).",
+                "Lồng là cột chữ số của mỗi giải (đơn vị, chục, trăm, nghìn, chục nghìn); p của phép χ² đều trên 5 lồng × 10 chữ số, trong ngoặc là p sau Holm trên mọi dãy.",
+                "Phát hiện thay đổi: e-detector cộng các quá trình e bắt đầu ở từng kỳ, ước lượng lồng chỉ từ các kỳ trước và quên dần; ngưỡng chặn xác suất báo nhầm của cả họ trong 38 năm ở 1%.",
+                "Câu đầu thẻ in từ chính tệp số đo; một đợt báo động là lý do kiểm lại dữ liệu, không phải tín hiệu dự báo.",
+            ])),
+            _sec_heading("Đài quay miền Bắc · kết quả", "Đài quay miền Bắc · kết quả có khác theo đài không",
+                         _ev([_ket_qua(f), _LOTO, _DAC_BIET], [
+                "Năm thống kê, mỗi thống kê gom theo đài và theo thứ: p bằng hoán vị nhãn giữa các kỳ (1 999 lần), giữ nguyên mọi phụ thuộc trong một kỳ; Holm trên cả họ 10 phép kiểm.",
+                "Xác suất riêng từng đài co về tần suất gộp (Bayes thực nghiệm), chấm walk-forward: mỗi kỳ chỉ dùng các kỳ trước nó; z so với tần suất gộp.",
+                "Mô hình lồng thích nghi chỉ bật khi bộ phát hiện đang báo động ở kỳ trước; z so với xác suất hằng số. «Có» ở cột cuối chỉ khi thắng ngoài mẫu với z ≥ 2,326.",
+            ])),
             _sec_heading("Tường lửa nghiên cứu", "Tường lửa nghiên cứu", _ev([_ket_qua(f)], [
                 "Mô tả quy trình chung: quét 27 × 27 vị trí giải cho hai họ đuôi–đuôi và đầu–đuôi, rồi chia huấn luyện / kiểm định / giữ lại theo thời gian.",
                 "FDR chỉ áp trên tập huấn luyện; phép kiểm thực tế dịch vòng với thống kê cực đại kiểm soát việc dò dữ liệu trên cả họ.",
