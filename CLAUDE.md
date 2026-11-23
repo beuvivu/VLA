@@ -726,8 +726,10 @@ quay» trên trang Phòng nghiên cứu): đồng nhất theo đài/thứ bằng
 thì p Holm nhỏ nhất bằng α, không bao giờ kết luận được), lồng cầu từng đài và dãy «Toàn miền Bắc», e-detector
 quên dần với ngưỡng theo tầm hoạch định (`DETECTOR_YEARS`; đừng đặt bằng ARL: bản đầu báo nhầm ở 3/6 đài), xác
 suất theo đài chỉ đề bạt khi thắng CẢ hằng số LẪN tần suất gộp. Số đo hiện tại: không hiệu ứng đài hay thứ,
-xác suất theo đài không chuẩn hơn; dãy gộp có một đợt lệch lồng đơn vị 20-04 → 24-11-2024 (chưa đối chiếu nơi ghi
-độc lập). `randomness_battery.weekday_effect` nhận thứ THẬT: chỉ số hàng chia 7 lệch nhãn sau mỗi ngày vắng.
+xác suất theo đài không chuẩn hơn; dãy gộp có một đợt lệch lồng đơn vị 20-04 → 24-11-2024, nằm trong kết quả công
+bố: 306 kỳ 03–12/2024 trùng từng ô với Minh Ngọc và mketqua (`scripts/ops/crosscheck_canonical_history.py`, chạy
+qua `diagnose-live-sources.yml` khi khai `crosscheck_start`). Kỳ 2015 → 08-2026 của sổ chuẩn đến từ MỘT nguồn mỗi
+kỳ (bổ sung lịch sử, `min_agreement = 1`): một bất thường trên chúng phải đối chiếu như thế trước khi kết luận. `randomness_battery.weekday_effect` nhận thứ THẬT: chỉ số hàng chia 7 lệch nhãn sau mỗi ngày vắng.
 Chi tiết: `documentation/research/2026-11-23-dai-quay-mien-bac.md`.
 
 ## Kỷ luật kiểm thử

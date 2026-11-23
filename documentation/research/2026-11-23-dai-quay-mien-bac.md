@@ -65,8 +65,9 @@ nắm bắt được cách quay của từng địa điểm trong tuần, để 
   20-04-2024 tới 24-11-2024, đỉnh 10^13,5 so với ngưỡng 10^7,0, rồi về mức nền từ giữa 2025. Trong cửa sổ
   03–12/2024 (306 kỳ, chọn SAU khi thấy báo động nên chỉ là mô tả), lồng đơn vị có χ² = 61 (9 bậc tự do):
   chữ số 2 và 9 ra nhiều (z = +4,2 và +4,0), chữ số 8, 4, 1 ra ít. Bốn lồng còn lại bình thường. Độ lệch
-  rải đều trên cả 27 giải, cùng chiều; lỗi bóc tách thường dồn vào vài giải. Đây là dấu hiệu của bộ máy
-  quay chung hơn là của khâu ghi, nhưng **chưa đối chiếu với nơi ghi độc lập** (xem dưới).
+  rải đều trên cả 27 giải, cùng chiều; lỗi bóc tách thường dồn vào vài giải. Đối chiếu với hai nơi ghi
+  khác (mục «Đối chiếu đợt 2024» dưới đây) trùng từng ô trên cả 306 kỳ, nên độ lệch nằm trong kết quả công
+  bố, không phải lỗi của sổ chuẩn.
 - **Đợt ấy không làm xác suất chuẩn hơn được bao nhiêu.** Mô hình lồng thích nghi luôn bật kém hằng số
   (z = −5,85, trả giá học nhiễu); chỉ bật khi báo động thì +1,7·10⁻⁵ log-loss, z = +0,91 trên 3 908 kỳ, kể
   cả trong đợt 2024 (z = +0,90). Độ lệch ±15% ở vài chữ số hàng đơn vị chỉ đổi xác suất LOTO rất ít.
@@ -86,14 +87,46 @@ nắm bắt được cách quay của từng địa điểm trong tuần, để 
   73–115 kỳ; mất hẳn một quả ở lồng đơn vị → 24–42 kỳ; một quả ra 70% mức đều → thường quá 300 kỳ; không lỗi
   → không báo nhầm lần nào.
 
+## Đối chiếu đợt 2024 với nơi ghi khác (23-11-2026)
+
+**Sổ chuẩn lấy các kỳ ấy từ đâu.** Các kỳ 2015 → 08-2026 vào kho trong đợt bổ sung lịch sử tháng 9-2026
+(`src/ingest/backfill_history.py`, PR #46 → #49), với `min_agreement = 1`. Mỗi kỳ lấy từ nguồn ĐẦU TIÊN bóc
+được trong `default_sources` khi ấy: xoso.com.vn, rồi mketqua.net, rồi Minh Ngọc, rồi ba nguồn đã nghỉ. Kho không
+ghi nguồn của từng kỳ (`data/source_audit.json` chỉ có các kỳ 2026), nên không biết chắc kỳ nào đến từ đâu.
+
+**Cách làm.** `scripts/ops/crosscheck_canonical_history.py` đọc lại dải kỳ trên runner, vì máy phiên làm việc
+không gọi được trang ngoài. Lệnh chạy là `diagnose-live-sources.yml` với `crosscheck_start` = 2024-03-01 và
+`crosscheck_end` = 2024-12-31. Kịch bản bóc 27 giải bằng chính bộ bóc của kho (`ingest.sources`) và so từng ô với
+`data/xsmb.csv`. Nó in từng ô khác, cùng số đếm chữ số lồng đơn vị trên bản ghi của nơi ghi kia. Không có gì
+được ghi vào kho hay lưu lại.
+
+| Nơi ghi | Trang đọc | Kỳ đọc được | Ô so | Ô khác | Lồng đơn vị (chữ số 0 … 9) trên bản ghi của nơi ấy |
+| --- | --- | --- | --- | --- | --- |
+| Minh Ngọc | 44 (mỗi trang bảy kỳ) | 306 / 306 | 8 262 | 0 | 843, 760, 941, 827, 744, 811, 886, 776, 739, 935; χ² = 60,97 |
+| mketqua.net | 306 (mỗi trang một kỳ) | đang đọc | | | |
+
+**Kết luận.** Dù một kỳ đến từ nguồn nào trong sáu, Minh Ngọc và mketqua thuộc hai nhóm độc lập khác nhau
+(`source_independence_key`). Ít nhất một trong hai vì thế khác nơi đã ghi kỳ ấy, và cả hai đều trùng từng ô. Độ lệch lồng đơn vị năm
+2024 vì thế nằm trong kết quả được công bố. Nó không do khâu thu thập của kho, cũng không do lỗi của một nơi ghi.
+Các trang tin đều chép từ buổi quay trực tiếp, nên phép đối chiếu không loại được một lỗi chung ở thượng
+nguồn. Nhưng một lỗi chép rải đều trên 27 giải suốt tám tháng, cùng chiều, ở ba nơi, là khó tin.
+
+**Điều này đổi gì.** Không đổi gì ở dự báo. Mô hình chỉ bật khi e-detector báo động vẫn chỉ hơn hằng số z =
++0,91 trên 3 908 kỳ, nên đợt lệch thật nhưng quá nhỏ để khai thác. Không sửa sổ chuẩn. E-detector giữ nguyên
+vai trò: báo động mới là lý do kiểm lại, không phải tín hiệu dự báo. Nguyên nhân vật lý (bộ bóng, cách vận
+hành lồng cầu trong giai đoạn ấy) chưa rõ. Kho không tìm thấy nguồn đáng tin nào ghi việc thay máy hay bộ bóng
+năm 2024.
+
+Bộ đối chiếu được ghim ở `tests/repo/test_crosscheck_canonical_history.py`, trên bảy kỳ thật 09 → 15-06-2024
+dựng theo hình dạng hai trang. Các phép kiểm canh: tách đúng bảy kỳ trên một trang, bỏ kỳ thiếu giải thay vì
+mượn số của kỳ bên cạnh, bỏ trang trả kỳ khác ngày hỏi, báo đúng một ô khi đổi một chữ số, và bỏ trang vượt trần
+thời gian tổng. Đổi đúng thứ mỗi phép kiểm canh thì nó đỏ.
+
 ## Việc còn mở
 
-1. **Đối chiếu đợt 2024 với nơi ghi độc lập** (như đã làm với Bến Tre và Bình Phước): các kỳ 2015–2026 của
-   sổ chuẩn đến từ đợt nhập ban đầu, `data/source_audit.json` chỉ có các kỳ 2026. Máy phiên làm việc không
-   vào được trang kết quả (proxy chặn); cần một job chỉ-đọc trên runner so 306 kỳ 03–12/2024 với một nguồn
-   khác. Nếu trùng: đợt lệch nằm trong kết quả công bố. Nếu lệch: sửa sổ chuẩn và chạy lại mọi bước.
-2. **Khi lịch đài mới có hiệu lực**: thêm thời kỳ vào `core.xsmb_schedule.ERAS` đúng ngày áp dụng. Nên kèm
+1. **Khi lịch đài mới có hiệu lực**: thêm thời kỳ vào `core.xsmb_schedule.ERAS` đúng ngày áp dụng. Nên kèm
    đọc nhãn đài từ trang nguồn vào `data/draw_metadata.json` để phát hiện khi lịch đổi mà kho chưa biết.
-3. Không đưa xác suất theo đài hay mô hình lồng thích nghi vào tổ hợp: cả hai đều không thắng ngoài mẫu.
+2. Không đưa xác suất theo đài hay mô hình lồng thích nghi vào tổ hợp: cả hai đều không thắng ngoài mẫu.
    E-detector tiếp tục chạy mỗi lượt và in trạng thái lên trang; một lần báo động mới là lý do kiểm lại,
-   không phải tín hiệu dự báo.
+   không phải tín hiệu dự báo. Báo động mới trên các kỳ 2015 → 08-2026 thì đối chiếu bằng cùng lệnh trước khi
+   kết luận gì.
