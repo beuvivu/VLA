@@ -7,8 +7,10 @@ max-statistic circular shift. Cả hai đều đúng và đều cần thiết. N
 đánh giá đường cầu trên CHÍNH đoạn dữ liệu đã dùng để chọn nó.
 
 Đó là kẽ hở cuối cùng, và nó không phải giả định — kho đã đo được nó:
-``data/research/randomness_report.json`` cho thấy tín hiệu duy nhất sống sót
-Bonferroni có nửa đầu z = −0,40 và nửa sau z = −2,50, tức ``replicates = False``.
+``data/research/randomness_report.json`` ngày 08-09-2026 (2 392 kỳ) có đúng một
+tín hiệu sống sót Bonferroni (đỉnh phổ, p = 0,001); đo lại ngày 23-11-2026 trên
+4 273 kỳ thì nó biến mất (p = 0,092). Phép kiểm lặp lại của báo cáo cho nửa đầu
+z = −0,37 và nửa sau z = −2,46 (bản 08-09: −0,40 và −2,50), tức ``replicates = False``.
 Một phát hiện qua được mọi cổng thống kê vẫn có thể không tái lặp.
 
 Cách chữa duy nhất là tách bạch theo thời gian:

@@ -716,6 +716,20 @@ Chi tiết và số đo: `documentation/qa/2026-11-16-nang-cap-lottery-intellige
   cậy và hoán vị theo KỲ. Mốc của ECE là ECE của chính các xác suất ấy khi kết cục rút đúng theo chúng, không phải ECE
   của dự báo hằng số.
 
+## Đài quay miền Bắc — 23-11-2026
+
+Mọi đài miền Bắc dùng MỘT lần quay chung (Quyết định 2564/QĐ-BTC, từ 01-09-2005); «đài» là công ty phát hành
+vé hôm ấy. Tên đài của một kỳ CHỈ qua `core.xsmb_schedule.venue_for` (lịch có thời kỳ `ERAS`); đừng chép bảng 7
+đài ở chỗ khác. Lịch mới (công văn 15825/BTC-DCTC, dự kiến 2026, chưa chính thức) thì THÊM một thời kỳ đúng
+ngày áp dụng, không sửa thời kỳ cũ. `stats.xsmb_venue_effects` (bước pipeline, `data/stats/venue/`, thẻ «Đài
+quay» trên trang Phòng nghiên cứu): đồng nhất theo đài/thứ bằng hoán vị nhãn giữa các kỳ (1 999 lần: với 999
+thì p Holm nhỏ nhất bằng α, không bao giờ kết luận được), lồng cầu từng đài và dãy «Toàn miền Bắc», e-detector
+quên dần với ngưỡng theo tầm hoạch định (`DETECTOR_YEARS`; đừng đặt bằng ARL: bản đầu báo nhầm ở 3/6 đài), xác
+suất theo đài chỉ đề bạt khi thắng CẢ hằng số LẪN tần suất gộp. Số đo hiện tại: không hiệu ứng đài hay thứ,
+xác suất theo đài không chuẩn hơn; dãy gộp có một đợt lệch lồng đơn vị 20-04 → 24-11-2024 (chưa đối chiếu nơi ghi
+độc lập). `randomness_battery.weekday_effect` nhận thứ THẬT: chỉ số hàng chia 7 lệch nhãn sau mỗi ngày vắng.
+Chi tiết: `documentation/research/2026-11-23-dai-quay-mien-bac.md`.
+
 ## Kỷ luật kiểm thử
 
 Phép kiểm phải ĐỎ khi hành vi nó đặt tên bị đảo. Mỗi phép kiểm mới phải được

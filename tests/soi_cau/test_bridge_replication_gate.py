@@ -3,8 +3,9 @@
 ``FirewallGate`` đã chạy BH-FDR trên toàn họ và kiểm chống data snooping. Cả
 hai đều cần, nhưng cả hai chấm điểm đường cầu trên CHÍNH đoạn dữ liệu đã dùng
 để chọn nó. Kẽ hở ấy không phải giả định — kho đã đo được:
-``randomness_report.json`` cho thấy tín hiệu duy nhất sống sót Bonferroni có
-nửa đầu z = −0,40, nửa sau z = −2,50, ``replicates = False``.
+``randomness_report.json`` ngày 08-09-2026 có một tín hiệu sống sót Bonferroni
+(đỉnh phổ, p = 0,001) mà trên lịch sử dài gấp đôi (23-11-2026) không còn (p = 0,092);
+phép kiểm lặp lại cho nửa đầu z = −0,37, nửa sau z = −2,46, ``replicates = False``.
 
 Không đường cầu nào trong dữ liệu THẬT sống sót nổi đoạn phát hiện, nên đường
 tái lập không thể kiểm bằng dữ liệu thật. Các phép kiểm ở đây cài tín hiệu vào

@@ -51,5 +51,35 @@ def test_lab_navigation_reaches_all_existing_research_tables(tmp_path: Path) -> 
     assert len(links) >= 5
     for link in links:
         assert page.select_one(link["href"]) is not None
-    assert len(page.select(".rl-panel table")) == 8
+    assert len(page.select(".rl-panel table")) == 10
     assert all(table.select("th[scope='col']") for table in page.select(".rl-panel table"))
+
+
+def test_venue_cards_print_the_measured_reading_or_say_nothing_is_measured(tmp_path: Path) -> None:
+    """Thẻ đài quay in câu kết luận và từng dãy TỪ tệp số đo; thiếu tệp thì nói chưa có, không bịa."""
+    empty = _render(tmp_path / "trong", {}, {})
+    assert "Chưa có số đo theo đài quay." in empty.select_one("#rl-venue").get_text()
+    assert "Chưa có số đo theo đài." in empty.select_one("#rl-venue-tests").get_text()
+
+    venue_dir = tmp_path / "co" / "data" / "stats" / "venue"
+    venue_dir.mkdir(parents=True)
+    (venue_dir / "xsmb_venue_effects.json").write_text(json.dumps({
+        "reading": "Câu kết luận đo được 12345.",
+        "cage_monitor": [{"venue": "Đài Thử", "draws": 610, "draws_per_week": 1, "p_value": 0.5, "p_holm": 0.9,
+                          "detector_log10_max": 7.5, "detector_log10_threshold": 6.1,
+                          "detector_alarm_on": "2024-04-20", "detector_alarm_last": "2024-11-24",
+                          "detector_in_alarm": False}],
+        "heterogeneity": [{"label": "số lần ra của 100 con LOTO", "grouping": "đài", "p_value": 0.004,
+                           "p_holm": 0.04, "rejected": False}],
+        "benchmark": {"test_draws": 730, "modes": {"loto": {"comparisons": {
+            "đài": {"vs_pooled": {"z": 2.5}, "promoted": True}}}},
+            "adaptive_cage": {"draws": 3908, "gated": {"z": 0.91, "promoted": False}}},
+    }), encoding="utf-8")
+    page = _render(tmp_path / "co", {}, {})
+    monitor = page.select_one("#rl-venue")
+    assert "Câu kết luận đo được 12345." in monitor.get_text()
+    row = [td.get_text(strip=True) for td in monitor.select("tbody tr")[0].select("td")]
+    assert row[0] == "Đài Thử" and row[-1] == "Từ 2024-04-20 tới 2024-11-24"
+    tests = page.select_one("#rl-venue-tests").get_text()
+    assert "z = 2.50" in tests and "z = 0.91" in tests
+    assert page.select_one(".rl-nav a[href='#rl-venue']") is not None

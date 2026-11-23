@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
+from functools import partial
 from dataclasses import dataclass
 from typing import Final
 
@@ -234,17 +235,23 @@ def spectral_peak(counts: np.ndarray) -> float:
     return float(power.max() / total) if total > 0 else 0.0
 
 
-def weekday_effect(counts: np.ndarray) -> float:
-    """Chênh lệch lớn nhất về tần suất giữa các thứ trong tuần.
+def weekday_effect(counts: np.ndarray, weekdays: np.ndarray | None = None) -> float:
+    """Chênh lệch lớn nhất về số con khác nhau mỗi kỳ giữa các thứ trong tuần.
 
-    Ở đây dùng chỉ số ngày chia 7 làm đại diện cho thứ, đủ để bắt bất kỳ nhịp
-    bảy ngày nào mà không cần lịch thật — và nhờ vậy phép mô phỏng cũng dùng
-    đúng định nghĩa đó.
+    ``weekdays`` là thứ THẬT của từng kỳ (0 = thứ Hai). Thiếu nó thì dùng chỉ số hàng chia 7, chỉ đúng khi
+    chuỗi kỳ liền mạch: sổ chuẩn vắng mọi ngày không quay (mỗi Tết, 23 ngày giãn cách 2020), nên sau mỗi
+    khoảng trống nhãn chỉ số lệch khỏi thứ thật và các đài bị trộn vào nhau. Báo cáo ngẫu nhiên tới
+    23-11-2026 tính theo cách ấy và in p = 0,024 cho một "hiệu ứng thứ" không tồn tại theo lịch thật
+    (``stats.xsmb_venue_effects``: p = 0,69 theo thứ thật, bằng hoán vị). Phép mô phỏng giữ nguyên nhãn
+    thật và chỉ mô phỏng kết quả, nên phân phối rỗng vẫn đúng.
     """
     hits = (counts > 0).sum(axis=1).astype(float)
-    groups = [hits[i::7] for i in range(7)]
-    means = np.array([g.mean() if g.size else 0.0 for g in groups])
-    return float(means.max() - means.min())
+    labels = np.arange(hits.size) % 7 if weekdays is None else np.asarray(weekdays)
+    if labels.size != hits.size:
+        raise ValueError("weekdays phải có đúng một nhãn cho mỗi kỳ")
+    means = np.array([hits[labels == day].mean() if (labels == day).any() else 0.0 for day in range(7)])
+    present = np.array([(labels == day).any() for day in range(7)])
+    return float(means[present].max() - means[present].min())
 
 
 def hot_number_persistence(counts: np.ndarray) -> float:
@@ -312,13 +319,17 @@ def run_battery(
     *,
     simulations: int = DEFAULT_SIMULATIONS,
     seed: int = DEFAULT_SEED,
+    weekdays: np.ndarray | None = None,
 ) -> list[TestResult]:
-    """Chạy toàn bộ bộ kiểm định trên ma trận đếm quan sát."""
+    """Chạy toàn bộ bộ kiểm định trên ma trận đếm quan sát.
+
+    ``weekdays``: thứ thật của từng kỳ cho phép kiểm theo thứ; nên luôn truyền khi chuỗi có ngày vắng.
+    """
     return [
         monte_carlo_test(
             name,
             question,
-            statistic,
+            partial(weekday_effect, weekdays=weekdays) if statistic is weekday_effect else statistic,
             counts,
             simulations=simulations,
             seed=seed,

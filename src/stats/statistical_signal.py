@@ -619,8 +619,8 @@ def build_statistical_signal(
         "prior_strength": _strength,
         "prior_strength_learned": pooling is not None,
         # Số tham số HIỆU DỤNG là con số nối thẳng tới công suất thống kê: báo
-        # cáo ngẫu nhiên đo được ngưỡng phát hiện +15,8 % tương đối với 100 giả
-        # thuyết, nhưng chỉ +10,3 % với một. Co ngót kéo 100 xuống gần 1, tức
+        # cáo ngẫu nhiên đo được ngưỡng phát hiện +11,8 % tương đối với 100 giả
+        # thuyết, nhưng chỉ +7,7 % với một (23-11-2026). Co ngót kéo 100 xuống gần 1, tức
         # hạ ngưỡng ấy khoảng một phần ba — đó mới là phần thắng thật, không
         # phải vài phần trăm nghìn Brier.
         "pooling": None if pooling is None else {

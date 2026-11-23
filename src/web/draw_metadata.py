@@ -16,19 +16,16 @@ from bs4 import BeautifulSoup
 from web.calendar_widget import load_special_results
 from ingest.sources import XosoComVnSource, _request_page
 from core.paths import REPO_ROOT
+from core.xsmb_schedule import venue_for
 
 logger = logging.getLogger(__name__)
-STATIONS = ("Hà Nội", "Quảng Ninh", "Bắc Ninh", "Hà Nội", "Hải Phòng", "Nam Định", "Thái Bình")
 CODE = re.compile(r"[1-9][0-9]?[A-Z]{2}")
 CACHE = Path("data/draw_metadata.json")
 
 
 def station_for_date(value: str) -> str:
-    """Lịch đài theo nhãn ngày Việt Nam, không phụ thuộc múi giờ máy dựng."""
-    try:
-        return STATIONS[date.fromisoformat(value).weekday()]
-    except (TypeError, ValueError):
-        return ""
+    """Tên đài theo lịch có hiệu lực ngày ấy (``core.xsmb_schedule``), không phụ thuộc múi giờ máy dựng."""
+    return venue_for(value)
 
 
 def _valid_codes(values: object) -> bool:

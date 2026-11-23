@@ -180,6 +180,9 @@ def main() -> None:
         "src/stats/significance_stats.py",
         "src/stats/statistical_signal.py",
         "src/stats/descriptive_extensions.py",
+        # Đài quay miền Bắc: kết quả có khác theo đài/thứ không, lồng cầu từng đài, xác suất theo đài
+        # có thắng ngoài mẫu không. Trang Phòng nghiên cứu (dựng sau) đọc data/stats/venue.
+        "src/stats/xsmb_venue_effects.py",
     ]:
         _run(_py(script), allow_fail=soft_fail)
 
