@@ -118,6 +118,67 @@ def _primary_tests(diag: dict) -> str:
     return "".join(rows) or '<tr><td colspan="5">Chưa có dữ liệu</td></tr>'
 
 
+def _venue_monitor_rows(venue: dict) -> str:
+    """Mỗi dãy giám sát của ``stats.xsmb_venue_effects``: đều theo lồng và bộ phát hiện thay đổi."""
+    rows = []
+    for item in venue.get("cage_monitor", []):
+        if item.get("detector_alarm_on"):
+            end = "nay vẫn báo động" if item.get("detector_in_alarm") else f"tới {html.escape(str(item.get('detector_alarm_last')))}"
+            episode = f"Từ {html.escape(str(item['detector_alarm_on']))} {end}"
+        else:
+            episode = "Không"
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(item.get('venue', '')))}</td>"
+            f"<td>{_count(item.get('draws'))}</td>"
+            f"<td>{_count(item.get('draws_per_week'))}</td>"
+            f"<td>{_fmt(item.get('p_value'), 4)} ({_fmt(item.get('p_holm'), 3)})</td>"
+            f"<td>10^{_fmt(item.get('detector_log10_max'), 1)} / 10^{_fmt(item.get('detector_log10_threshold'), 1)}</td>"
+            f"<td>{episode}</td>"
+            "</tr>"
+        )
+    return "".join(rows) or '<tr><td colspan="6">Chưa có số đo theo đài.</td></tr>'
+
+
+def _venue_test_rows(venue: dict) -> str:
+    """Kết quả có khác nhau giữa các đài/các thứ không, rồi xác suất theo đài có thắng ngoài mẫu không."""
+    rows = []
+    for item in venue.get("heterogeneity", []):
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(item.get('label', '')))}</td>"
+            f"<td>Theo {html.escape(str(item.get('grouping', '')))}</td>"
+            f"<td>{_fmt(item.get('p_value'), 3)}</td>"
+            f"<td>{_fmt(item.get('p_holm'), 3)}</td>"
+            f"<td>{'Có' if item.get('rejected') else 'Không'}</td>"
+            "</tr>"
+        )
+    benchmark = venue.get("benchmark", {})
+    loto = benchmark.get("modes", {}).get("loto", {}).get("comparisons", {})
+    for key, label in (("đài", "Xác suất riêng từng đài (so với tần suất gộp)"),
+                       ("thứ", "Xác suất riêng từng thứ (so với tần suất gộp)")):
+        item = loto.get(key)
+        if item:
+            rows.append(
+                "<tr>"
+                f"<td>{label}</td><td>Walk-forward {_count(benchmark.get('test_draws'))} kỳ</td>"
+                f"<td colspan=\"2\">z = {_fmt(item['vs_pooled']['z'], 2)}</td>"
+                f"<td>{'Có' if item.get('promoted') else 'Không'}</td>"
+                "</tr>"
+            )
+    adaptive = benchmark.get("adaptive_cage", {}).get("gated")
+    if adaptive:
+        rows.append(
+            "<tr>"
+            f"<td>Mô hình lồng thích nghi, bật khi báo động (so với hằng số)</td>"
+            f"<td>Walk-forward {_count(benchmark['adaptive_cage'].get('draws'))} kỳ</td>"
+            f"<td colspan=\"2\">z = {_fmt(adaptive['z'], 2)}</td>"
+            f"<td>{'Có' if adaptive.get('promoted') else 'Không'}</td>"
+            "</tr>"
+        )
+    return "".join(rows) or '<tr><td colspan="5">Chưa có số đo theo đài.</td></tr>'
+
+
 def _firewall_cards(report: dict, cross: dict, conditional: dict, bong: dict) -> str:
     cards = []
     for mode, item in report.get("modes", {}).items():
@@ -317,10 +378,12 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     conditional_manifest = _read_json(data_dir / "stats" / "conditional" / "manifest.json")
     conditional = _read_csv(data_dir / "stats" / "conditional" / "current_special_next_loto.csv")
     current_special = str(conditional_manifest.get("current_special_2d", ""))
+    venue = _read_json(data_dir / "stats" / "venue" / "xsmb_venue_effects.json")
+    venue_reading = html.escape(str(venue.get("reading") or "Chưa có số đo theo đài quay."))
 
     table_index = 0
     anchors = ("rl-diagnostics", "rl-descriptive", "rl-legacy", "rl-conditional",
-               "rl-bong", "rl-loto", "rl-special", "rl-crosslag")
+               "rl-bong", "rl-loto", "rl-special", "rl-crosslag", "rl-venue", "rl-venue-tests")
 
     def _table(title, desc, headers, align_cls, rows_html, span=6):
         nonlocal table_index
@@ -412,6 +475,24 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 _crosslag_table(cross_rules),
                 span=12,
             ),
+            _table(
+                "Đài quay miền Bắc · lồng cầu và phát hiện thay đổi",
+                venue_reading,
+                ["Dãy", "Số kỳ", "Kỳ/tuần", "Phân bố đều theo lồng: p (Holm)", "Phát hiện thay đổi: đỉnh / ngưỡng",
+                 "Đợt báo động"],
+                "ui-r2 ui-r3 ui-r4 ui-r5",
+                _venue_monitor_rows(venue),
+                span=12,
+            ),
+            _table(
+                "Đài quay miền Bắc · kết quả có khác theo đài không",
+                "Giá trị p bằng hoán vị nhãn đài giữa các kỳ, Holm trên cả họ. Xác suất theo đài chỉ được dùng "
+                "khi thắng ngoài mẫu.",
+                ["Thống kê", "Gom theo", "p", "p sau Holm", "Có ý nghĩa"],
+                "ui-r3 ui-r4 ui-m5",
+                _venue_test_rows(venue),
+                span=12,
+            ),
             card(
                 '<p id="rl-firewall" class="ui-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
                 "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
@@ -431,7 +512,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     navigation = (
         ("rl-protocol", "Quy trình"), ("rl-diagnostics", "Kiểm định nền"),
         ("rl-conditional", "Có điều kiện"), ("rl-bong", "Cầu & vị trí"),
-        ("rl-loto", "Chiến lược"), ("rl-glossary", "Thuật ngữ"),
+        ("rl-loto", "Chiến lược"), ("rl-venue", "Đài quay"), ("rl-glossary", "Thuật ngữ"),
     )
     nav = "".join(f'<a href="#{anchor}">{label}</a>' for anchor, label in navigation)
     stages = (

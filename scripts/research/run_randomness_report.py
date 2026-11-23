@@ -84,7 +84,9 @@ def main() -> int:
     tensor = DigitTensor.from_raw(pd.read_csv(args.raw))
     counts = tensor.loto_counts.astype(np.int16)
 
-    results = run_battery(counts, simulations=args.simulations, seed=args.seed)
+    # Thứ thật của từng kỳ: sổ vắng mọi ngày không quay, nên chỉ số hàng chia 7 không phải là thứ.
+    weekdays = tensor.dates.dayofweek.to_numpy()
+    results = run_battery(counts, simulations=args.simulations, seed=args.seed, weekdays=weekdays)
     base = baseline_rate("loto")
     power = {
         label: minimum_detectable_lift(tensor.n_days, baseline=base, hypotheses=count)

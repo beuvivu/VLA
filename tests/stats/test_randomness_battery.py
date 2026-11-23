@@ -127,6 +127,24 @@ class TestStatisticsDiscriminate:
         skewed[::7, :LOTO_DRAWS_PER_DAY] = 1
         assert weekday_effect(skewed) > weekday_effect(counts) + 3.0
 
+    def test_weekday_effect_uses_real_weekdays_across_a_gap(self) -> None:
+        """Sau một khoảng ngày vắng (Tết), chỉ số hàng chia 7 trộn các thứ; nhãn thật thì không.
+
+        Cài hiệu ứng vào đúng một thứ THẬT trên một chuỗi có 3 ngày vắng giữa chừng: tính theo nhãn thật
+        thấy rõ, tính theo chỉ số hàng thì hiệu ứng bị rải ra các nhóm và yếu hẳn.
+        """
+        counts = simulate_draws(280, np.random.default_rng(29))
+        day_index = np.concatenate([np.arange(140), np.arange(143, 283)])  # vắng 3 ngày ở giữa
+        weekdays = day_index % 7
+        skewed = counts.copy()
+        skewed[weekdays == 2] = 0
+        skewed[weekdays == 2, :LOTO_DRAWS_PER_DAY] = 1
+        # Một khoảng vắng ở giữa chia hiệu ứng làm hai nhóm chỉ số: thống kê còn khoảng một nửa.
+        assert weekday_effect(skewed, weekdays) > 1.5 * weekday_effect(skewed)
+        assert weekday_effect(skewed, weekdays) > weekday_effect(counts, weekdays) + 2.0
+        with pytest.raises(ValueError):
+            weekday_effect(counts, weekdays[:-1])
+
     def test_dispersion_index_rises_when_days_clump(self) -> None:
         counts = simulate_draws(240, np.random.default_rng(23))
         clumped = counts.copy()

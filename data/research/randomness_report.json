@@ -1,110 +1,110 @@
 {
-  "generated_at_utc": "2026-09-08T04:41:34Z",
-  "days": 2392,
+  "generated_at_utc": "2026-11-23T12:19:24Z",
+  "days": 4273,
   "simulations": 2000,
   "baseline": 0.23765728565289646,
   "tests": [
     {
       "name": "Đồng đều biên (chi-square)",
       "question": "Có con nào ra nhiều/ít hơn mức ngẫu nhiên không?",
-      "statistic": 82.60163507989594,
-      "null_mean": 98.93607395020437,
-      "null_sd": 13.690955930545519,
-      "z_score": -1.1930824226718246,
-      "p_value": 0.881559220389805,
+      "statistic": 91.430766830486,
+      "null_mean": 99.22444115072244,
+      "null_sd": 13.929843369058114,
+      "z_score": -0.5594947562402799,
+      "p_value": 0.7021489255372314,
       "significant_uncorrected": false
     },
     {
       "name": "Chỉ số phân tán",
       "question": "Các kỳ có 'vón cục' hơn mức đa thức không?",
-      "statistic": 0.09542569420534062,
-      "null_mean": 0.09622953612977424,
-      "null_sd": 0.002854066090680926,
-      "z_score": -0.2816479713130368,
-      "p_value": 0.783608195902049,
+      "statistic": 0.09624483546903546,
+      "null_mean": 0.09640083732742656,
+      "null_sd": 0.002098752292697893,
+      "z_score": -0.0743307625839735,
+      "p_value": 0.9345327336331835,
       "significant_uncorrected": false
     },
     {
       "name": "Thông tin tương hỗ trễ-1",
       "question": "Kết quả hôm qua có nói gì về hôm nay không? (bạc nhớ)",
-      "statistic": 0.00029239944493516146,
-      "null_mean": 0.0003020492371324718,
-      "null_sd": 4.267865813116804e-06,
-      "z_score": -2.261034582589917,
-      "p_value": 0.9870064967516242,
+      "statistic": 0.0001650632065181955,
+      "null_mean": 0.00016904481828007928,
+      "null_sd": 2.424615605630216e-06,
+      "z_score": -1.642162061746225,
+      "p_value": 0.9490254872563718,
       "significant_uncorrected": false
     },
     {
       "name": "Phân bố khoảng cách (KS)",
       "question": "Nhịp gan có lệch khỏi phân bố hình học không?",
-      "statistic": 0.0022816765127762206,
-      "null_mean": 0.0023755679034198176,
-      "null_sd": 0.0008561422663723244,
-      "z_score": -0.10966797731110364,
-      "p_value": 0.48575712143928035,
+      "statistic": 0.0028450696824844357,
+      "null_mean": 0.0017436339522928167,
+      "null_sd": 0.000613658133898472,
+      "z_score": 1.794868623665711,
+      "p_value": 0.05297351324337831,
       "significant_uncorrected": false
     },
     {
       "name": "Đỉnh phổ (Fisher g)",
       "question": "Có chu kỳ tuần/tháng nào không?",
-      "statistic": 0.010955595309651851,
-      "null_mean": 0.006412329965283489,
-      "null_sd": 0.0010579806790171748,
-      "z_score": 4.294280070018754,
-      "p_value": 0.0009995002498750624,
-      "significant_uncorrected": true
+      "statistic": 0.004678673846799407,
+      "null_mean": 0.0038528558447683448,
+      "null_sd": 0.0005834992852207719,
+      "z_score": 1.415285370432985,
+      "p_value": 0.09195402298850575,
+      "significant_uncorrected": false
     },
     {
       "name": "Hiệu ứng thứ trong tuần",
       "question": "Tần suất có khác nhau theo thứ không?",
-      "statistic": 0.36232443278283455,
-      "null_mean": 0.22143996844506164,
-      "null_sd": 0.06756942990871895,
-      "z_score": 2.0850326031771598,
-      "p_value": 0.02448775612193903,
-      "significant_uncorrected": true
+      "statistic": 0.1274798100399792,
+      "null_mean": 0.16615610930750443,
+      "null_sd": 0.05049585296485287,
+      "z_score": -0.7659302100401288,
+      "p_value": 0.7661169415292354,
+      "significant_uncorrected": false
     },
     {
       "name": "Độ bền của 'số nóng'",
       "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
-      "statistic": -0.20798079261699237,
-      "null_mean": 0.0031525204018758362,
-      "null_sd": 0.09960299421282953,
-      "z_score": -2.11974865502259,
-      "p_value": 0.03648175912043978,
-      "significant_uncorrected": true
+      "statistic": 0.025895815044517708,
+      "null_mean": 0.0029086785356124568,
+      "null_sd": 0.10157938778276109,
+      "z_score": 0.22629725390810407,
+      "p_value": 0.8200899550224887,
+      "significant_uncorrected": false
     }
   ],
-  "significant_uncorrected": 3,
+  "significant_uncorrected": 0,
   "bonferroni_threshold": 0.0071428571428571435,
-  "significant_after_bonferroni": 1,
+  "significant_after_bonferroni": 0,
   "power": {
     "một mô hình duy nhất": {
       "hypotheses": 1,
-      "detectable_lift": 0.024382259155856578,
-      "relative_lift": 0.10259420025299534
+      "detectable_lift": 0.01824265665129664,
+      "relative_lift": 0.07676035094476519
     },
     "20 đặc trưng đã xây": {
       "hypotheses": 20,
-      "detectable_lift": 0.03363685706190324,
-      "relative_lift": 0.14153513943195745
+      "detectable_lift": 0.025166890003367536,
+      "relative_lift": 0.10589572263365962
     },
     "một giả thuyết mỗi con số": {
       "hypotheses": 100,
-      "detectable_lift": 0.03761774978531948,
-      "relative_lift": 0.15828569985546756
+      "detectable_lift": 0.02814536950580872,
+      "relative_lift": 0.11842838913390451
     },
     "họ cầu ghép chéo ngày": {
       "hypotheses": 412164,
-      "detectable_lift": 0.05337677408369249,
-      "relative_lift": 0.22459557230511507
+      "detectable_lift": 0.03993617476290099,
+      "relative_lift": 0.1680410287157307
     }
   },
   "replication": {
-    "first_half_days": 1196,
-    "second_half_days": 1196,
-    "first_half_z": -0.4032154675993622,
-    "second_half_z": -2.5033466364744754,
+    "first_half_days": 2136,
+    "second_half_days": 2137,
+    "first_half_z": -0.3678993092972705,
+    "second_half_z": -2.4621234933153233,
     "replicates": false
   }
 }

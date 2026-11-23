@@ -1,8 +1,8 @@
 """Gộp thông tin có phân cấp: học độ co ngót thay vì đặt tay.
 
 Vì sao đây là hướng duy nhất nâng được công suất: ``randomness_report.json``
-đo được ngưỡng phát hiện +15,8 % tương đối với 100 giả thuyết, nhưng chỉ
-+10,3 % với một. Mô hình phân cấp không thêm sức chứa — nó BỚT đi, kéo số tham
+đo được ngưỡng phát hiện +11,8 % tương đối với 100 giả thuyết, nhưng chỉ
++7,7 % với một (23-11-2026, 4 273 kỳ). Mô hình phân cấp không thêm sức chứa — nó BỚT đi, kéo số tham
 số hiệu dụng từ 100 xuống gần 1.
 
 Điều một bộ ước lượng co ngót phải làm đúng là PHÂN BIỆT hai chế độ. Co ngót

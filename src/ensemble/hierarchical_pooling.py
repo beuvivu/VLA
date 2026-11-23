@@ -2,10 +2,11 @@
 
 Vì sao đây là hướng DUY NHẤT nâng được công suất
 ================================================
-``data/research/randomness_report.json`` đo được: với 100 giả thuyết độc lập
-(một cho mỗi con số), hiệu ứng tối thiểu phát hiện được là +15,8 % tương đối;
-với một giả thuyết duy nhất, chỉ +10,3 %. Khoảng cách ấy là cái giá của việc
-ước lượng 100 tham số rời rạc.
+``data/research/randomness_report.json`` đo được (23-11-2026, 4 273 kỳ): với 100
+giả thuyết độc lập (một cho mỗi con số), hiệu ứng tối thiểu phát hiện được là
++11,8 % tương đối; với một giả thuyết duy nhất, chỉ +7,7 % (bản 08-09-2026 trên
+2 392 kỳ: +15,8 % và +10,3 %). Khoảng cách ấy là cái giá của việc ước lượng 100
+tham số rời rạc.
 
 Mô hình phân cấp không thêm sức chứa — nó **bớt** đi. Mỗi con số vay mượn
 thông tin từ 99 con còn lại, nên số tham số HIỆU DỤNG nằm giữa 1 và 100 thay vì
