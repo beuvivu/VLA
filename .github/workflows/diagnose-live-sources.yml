@@ -3,6 +3,10 @@ name: Chẩn đoán nguồn live
 # CHẠY TAY. Môi trường phát triển bị chặn mạng, nên muốn biết bộ bóc giải thấy gì trên
 # trang nguồn thật thì phải chạy trên runner. Job chỉ ĐỌC: in bảng giải bóc được và các
 # dòng quanh giải 7 ra log, lưu HTML thô làm hiện vật MỘT ngày, không commit gì.
+#
+# Khai `crosscheck_start` thì job thứ hai chạy thay: đối chiếu một dải kỳ của sổ chuẩn
+# `data/xsmb.csv` với nơi ghi khác, từng ô (`scripts/ops/crosscheck_canonical_history.py`).
+# Cũng chỉ ĐỌC: log in số ô trùng và từng ô khác, không lưu trang, không commit.
 
 on:
   workflow_dispatch:
@@ -11,6 +15,21 @@ on:
         description: "Ngày quay YYYY-MM-DD (để trống là hôm nay VÀ hôm qua giờ VN)"
         required: false
         default: ""
+        type: string
+      crosscheck_start:
+        description: "Đối chiếu sổ chuẩn từ ngày YYYY-MM-DD (để trống là chẩn đoán nguồn live)"
+        required: false
+        default: ""
+        type: string
+      crosscheck_end:
+        description: "Đối chiếu tới ngày YYYY-MM-DD"
+        required: false
+        default: ""
+        type: string
+      crosscheck_sources:
+        description: "Nơi ghi để đối chiếu, cách nhau bằng dấu cách (minhngoc, mketqua)"
+        required: false
+        default: "minhngoc"
         type: string
 
 permissions:
@@ -23,6 +42,7 @@ concurrency:
 jobs:
   diagnose:
     name: Bóc thử trên trang nguồn thật
+    if: inputs.crosscheck_start == ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -56,3 +76,31 @@ jobs:
           path: ${{ runner.temp }}/pages
           retention-days: 1
           if-no-files-found: ignore
+
+  crosscheck:
+    name: Đối chiếu sổ chuẩn với nơi ghi khác
+    if: inputs.crosscheck_start != ''
+    runs-on: ubuntu-latest
+    # Minh Ngọc: một trang cho bảy kỳ; mketqua: một trang mỗi kỳ, chờ 1,5–3 giây giữa hai lần gọi.
+    # Một năm qua mketqua khoảng 15 phút.
+    timeout-minutes: 45
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      - run: python -m pip install --no-cache-dir -r requirements-live.txt
+
+      - name: So từng ô
+        env:
+          START: ${{ inputs.crosscheck_start }}
+          END: ${{ inputs.crosscheck_end }}
+          SOURCES: ${{ inputs.crosscheck_sources }}
+        run: |
+          args=()
+          for source in $SOURCES; do args+=(--source "$source"); done
+          python scripts/ops/crosscheck_canonical_history.py --start "$START" --end "${END:-$START}" "${args[@]}"
