@@ -158,3 +158,42 @@ def test_the_workflow_runs_the_crosscheck_read_only() -> None:
     assert "scripts/ops/crosscheck_canonical_history.py" in run
     assert "git push" not in run and "upload-artifact" not in str(job["steps"])
     assert "inputs.crosscheck_start == ''" in workflow["jobs"]["diagnose"]["if"]
+
+
+class _Response:
+    def __init__(self, status: int, chunks: list[bytes], encoding: str | None = "ISO-8859-1",
+                 clock: list[float] | None = None) -> None:
+        self.status_code, self._chunks, self.encoding, self._clock = status, chunks, encoding, clock
+
+    def __enter__(self) -> "_Response":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def iter_content(self, chunk_size: int):
+        for chunk in self._chunks:
+            if self._clock is not None:
+                self._clock[0] += 10.0  # mỗi mẩu tới sau 10 giây
+            yield chunk
+
+
+class _Session:
+    def __init__(self, response: _Response) -> None:
+        self.response = response
+
+    def get(self, url: str, timeout: object, stream: bool) -> _Response:
+        assert stream and timeout
+        return self.response
+
+
+def test_a_page_is_read_as_utf8_and_abandoned_past_the_total_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = "Ngày: 15/06/2024".encode()
+    # Tiêu đề không khai charset (requests đoán ISO-8859-1) mà chữ vẫn đúng.
+    assert cc.fetch_with_deadline(_Session(_Response(200, [body[:5], body[5:]])), "u") == "Ngày: 15/06/2024"
+    assert cc.fetch_with_deadline(_Session(_Response(404, [body])), "u") == ""
+    clock = [0.0]
+    monkeypatch.setattr(cc.time, "monotonic", lambda: clock[0])
+    trickle = _Response(200, [b"x"] * 10, clock=clock)
+    assert cc.fetch_with_deadline(_Session(trickle), "u", deadline=45.0) == ""
+    assert clock[0] == 50.0  # bỏ ngay mẩu đầu tiên vượt trần, không đọc hết

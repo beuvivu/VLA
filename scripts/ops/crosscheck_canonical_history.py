@@ -46,8 +46,8 @@ from ingest.sources import (  # noqa: E402
     EXPECTED_WIDTHS,
     PRIZE_ORDER,
     MketquaSource,
+    MAX_PAGE_BYTES,
     MinhNgocSource,
-    _request_page,
     extract_partial_prize_map,
 )
 
@@ -60,6 +60,8 @@ FIELDS: tuple[str, ...] = tuple(
 WIDTHS: dict[str, int] = {field: EXPECTED_WIDTHS[field.split("_")[0]] for field in FIELDS}
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 DELAY_RANGE = (1.5, 3.0)
+#: Trần thời gian TỔNG cho một trang, tính bằng giây.
+REQUEST_DEADLINE = 45.0
 #: Minh Ngọc in bảy kỳ trên một trang theo ngày.
 MINHNGOC_DAYS_PER_PAGE = 7
 
@@ -137,12 +139,43 @@ def minhngoc_anchors(days: Iterable[date]) -> list[date]:
 
 def _page_days(url: str, get: Callable[[str], str], marker: re.Pattern[str]) -> dict[date, dict[str, str]]:
     """Các kỳ bóc được trên một trang; trang không cho kỳ nào thì in vài dòng mang ngày để chẩn đoán."""
+    began = time.monotonic()
     lines = text_lines(get(url))
     days = split_days(lines, marker)
     if not days:
         hints = [line[:90] for line in lines if "gày" in line][:4]
-        print(f"   trang không cho kỳ nào ({len(lines)} dòng): {url} {hints}", flush=True)
+        print(f"   trang không cho kỳ nào ({len(lines)} dòng, {time.monotonic() - began:.0f}s): {url} {hints}",
+              flush=True)
     return days
+
+
+def fetch_with_deadline(session: requests.Session, url: str, *, deadline: float = REQUEST_DEADLINE) -> str:
+    """Đọc một trang theo luồng, bỏ khi quá ``deadline`` giây TỔNG hoặc quá trần kích thước.
+
+    ``timeout`` của requests chỉ chặn từng lần chờ một mẩu dữ liệu: máy chủ nhỏ giọt vài byte mỗi
+    lúc giữ được kết nối mãi. Trả chuỗi rỗng khi hỏng, như ``ingest.sources._request_page``.
+    """
+    began = time.monotonic()
+    try:
+        with session.get(url, timeout=(10, 20), stream=True) as response:
+            if response.status_code != 200:
+                return ""
+            chunks, size = [], 0
+            for chunk in response.iter_content(chunk_size=65536):
+                chunks.append(chunk)
+                size += len(chunk)
+                if size > MAX_PAGE_BYTES or time.monotonic() - began > deadline:
+                    print(f"   bỏ trang ({size // 1024} KB, {time.monotonic() - began:.0f}s): {url}", flush=True)
+                    return ""
+            body = b"".join(chunks)
+    except requests.RequestException as exc:
+        print(f"   lỗi mạng {type(exc).__name__}: {url}", flush=True)
+        return ""
+    # Các trang kết quả đều là UTF-8; requests đoán ISO-8859-1 khi tiêu đề không khai charset.
+    try:
+        return body.decode("utf-8")
+    except UnicodeDecodeError:
+        return body.decode(response.encoding or "utf-8", errors="replace")
 
 
 def read_minhngoc(days: list[date], get: Callable[[str], str], pause: Callable[[], None]) -> dict[date, dict[str, str]]:
@@ -226,14 +259,16 @@ def main(argv: list[str] | None = None) -> int:
     session.headers["User-Agent"] = UA
 
     def get(url: str) -> str:
-        return _request_page(session, url)
+        return fetch_with_deadline(session, url)
 
     def pause() -> None:
         time.sleep(random.uniform(*DELAY_RANGE))
 
     exit_code = 0
     for name in dict.fromkeys(args.source):
+        began = time.monotonic()
         other = READERS[name](sorted(ledger), get, pause)
+        print(f"   ({name}: {time.monotonic() - began:.0f}s)", flush=True)
         for line in report(name, ledger, other):
             print(line, flush=True)
         if compare(ledger, other)["differences"]:
