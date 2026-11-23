@@ -103,13 +103,16 @@ không gọi được trang ngoài. Lệnh chạy là `diagnose-live-sources.yml
 | Nơi ghi | Trang đọc | Kỳ đọc được | Ô so | Ô khác | Lồng đơn vị (chữ số 0 … 9) trên bản ghi của nơi ấy |
 | --- | --- | --- | --- | --- | --- |
 | Minh Ngọc | 44 (mỗi trang bảy kỳ) | 306 / 306 | 8 262 | 0 | 843, 760, 941, 827, 744, 811, 886, 776, 739, 935; χ² = 60,97 |
-| mketqua.net | 306 (mỗi trang một kỳ) | đang đọc | | | |
+| mketqua.net | 306 (mỗi trang một kỳ), rồi đọc lại 3 | 306 / 306 ¹ | 8 262 | 0 | trên 304 kỳ của lượt đầu: 840, 757, 937, 820, 737, 808, 880, 771, 732, 926; χ² = 61,00 |
+
+¹ Lượt đầu (826 giây) đọc được 304 kỳ; hai trang 30-10 và 01-11-2024 lỗi kết nối. Lượt đọc lại 30-10 → 01-11 cho 3/3 kỳ, 81 ô, 0 ô khác.
 
 **Kết luận.** Dù một kỳ đến từ nguồn nào trong sáu, Minh Ngọc và mketqua thuộc hai nhóm độc lập khác nhau
 (`source_independence_key`). Ít nhất một trong hai vì thế khác nơi đã ghi kỳ ấy, và cả hai đều trùng từng ô. Độ lệch lồng đơn vị năm
 2024 vì thế nằm trong kết quả được công bố. Nó không do khâu thu thập của kho, cũng không do lỗi của một nơi ghi.
 Các trang tin đều chép từ buổi quay trực tiếp, nên phép đối chiếu không loại được một lỗi chung ở thượng
-nguồn. Nhưng một lỗi chép rải đều trên 27 giải suốt tám tháng, cùng chiều, ở ba nơi, là khó tin.
+nguồn. Nhưng một lỗi chép rải đều trên 27 giải suốt tám tháng, cùng chiều, giống hệt nhau ở nơi đã ghi sổ
+và ở hai nơi đối chiếu, là khó tin.
 
 **Điều này đổi gì.** Không đổi gì ở dự báo. Mô hình chỉ bật khi e-detector báo động vẫn chỉ hơn hằng số z =
 +0,91 trên 3 908 kỳ, nên đợt lệch thật nhưng quá nhỏ để khai thác. Không sửa sổ chuẩn. E-detector giữ nguyên
