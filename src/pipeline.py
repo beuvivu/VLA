@@ -183,6 +183,9 @@ def main() -> None:
         # Đài quay miền Bắc: kết quả có khác theo đài/thứ không, lồng cầu từng đài, xác suất theo đài
         # có thắng ngoài mẫu không. Trang Phòng nghiên cứu (dựng sau) đọc data/stats/venue.
         "src/stats/xsmb_venue_effects.py",
+        # Bộ máy Bayes theo đoạn của lồng chục/đơn vị: chạy bóng, chấm walk-forward và phép kiểm tiến cứu
+        # (data/forecast/cage_bayes, data/research/hypotheses/cage_bayes.*). Sổ đăng ký mô hình (sau) đọc nó.
+        "src/forecast/cage_bayes.py",
     ]:
         _run(_py(script), allow_fail=soft_fail)
 

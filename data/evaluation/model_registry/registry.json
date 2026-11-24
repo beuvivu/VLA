@@ -4,7 +4,7 @@
   "summary": {
     "gated": 6,
     "production": 8,
-    "shadow": 5
+    "shadow": 6
   },
   "models": [
     {
@@ -103,6 +103,52 @@
       },
       "deployment": "shadow",
       "deployment_reason": "hệ tác tử chạy bóng: được chấm mỗi kỳ, không vào xác suất công bố",
+      "continuous_trust": false
+    },
+    {
+      "model_id": "xsmb/cage_bayes",
+      "product": "xsmb",
+      "mode": null,
+      "role": "Bộ máy Bayes theo đoạn (lồng chục, đơn vị)",
+      "artifact": "data/forecast/cage_bayes/summary.json",
+      "artifact_sha256": "cb9cb3e3402d93dd6a7100524bd5c0c1c769f506d5145bcbb80bee02dd91a28c",
+      "definition": {
+        "version": 1,
+        "config": {
+          "hazards": [
+            0.004,
+            0.001
+          ],
+          "kappas": [
+            300.0,
+            1000.0,
+            3000.0
+          ],
+          "max_run": 1500,
+          "prior_uniform": 0.5,
+          "share": 0.0005
+        },
+        "warmup": 365
+      },
+      "fingerprint": "17f7f39e5cef54a2e99be101d2d68ceb337b7dcd2f217ca12ca1a325d8612059",
+      "training": {
+        "data_through": "2026-11-23",
+        "draws": 4275,
+        "registered_on": "2026-11-23"
+      },
+      "validation": {
+        "walk_forward_draws": 3910,
+        "loto_gain_nats": 8.2912766905,
+        "loto_z": 1.1871837625,
+        "de_gain_nats": 2.5606312105,
+        "de_z": 1.83299273,
+        "prospective_draws": 0,
+        "prospective_log10_e": 0.0,
+        "prospective_evidence": false,
+        "eligible": false
+      },
+      "deployment": "shadow",
+      "deployment_reason": "chạy bóng: chưa đủ điều kiện vào tổ hợp (cần walk-forward LOTO z ≥ 2,326 và phép kiểm tiến cứu vượt ngưỡng)",
       "continuous_trust": false
     },
     {

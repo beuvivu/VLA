@@ -938,6 +938,13 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Xác suất riêng từng đài co về tần suất gộp (Bayes thực nghiệm), chấm walk-forward: mỗi kỳ chỉ dùng các kỳ trước nó; z so với tần suất gộp.",
                 "Mô hình lồng thích nghi chỉ bật khi bộ phát hiện đang báo động ở kỳ trước; z so với xác suất hằng số. «Có» ở cột cuối chỉ khi thắng ngoài mẫu với z ≥ 2,326.",
             ])),
+            _sec_heading("Bộ máy Bayes theo đoạn", "Bộ máy Bayes theo đoạn · lồng chục và lồng đơn vị",
+                         _ev([_ket_qua(f), _LOTO, _DAC_BIET], [
+                "Mỗi lồng (chữ số cuối và áp cuối của 27 giải) là đa thức trong một đoạn máy quay ổn định, tiên nghiệm Dirichlet tâm ở phân bố đều; phát hiện điểm đổi Bayes trực tuyến tính hậu nghiệm trên độ dài đoạn.",
+                "Sáu chuyên gia (ba độ co × hai tốc độ đổi) và chính dự báo đều được trộn bằng chia sẻ cố định: tổng log-loss chữ số không bao giờ kém dự báo đều quá ln 2 cộng 0,0005 nat mỗi kỳ.",
+                "Chấm walk-forward: dự báo cho mỗi kỳ chỉ đọc các kỳ trước nó; số dương là mô hình hơn dự báo đều. Tham số chọn sau khi đã thấy đợt 2024 nên điểm hồi cứu chỉ là mô tả.",
+                "Dòng tiến cứu chỉ chấm kỳ sau ngày đăng ký với tham số đóng băng; e vượt 10² là bằng chứng ở mức 1%. Mô hình chạy bóng, không đổi xác suất công bố.",
+            ])),
             _sec_heading("Tường lửa nghiên cứu", "Tường lửa nghiên cứu", _ev([_ket_qua(f)], [
                 "Mô tả quy trình chung: quét 27 × 27 vị trí giải cho hai họ đuôi–đuôi và đầu–đuôi, rồi chia huấn luyện / kiểm định / giữ lại theo thời gian.",
                 "FDR chỉ áp trên tập huấn luyện; phép kiểm thực tế dịch vòng với thống kê cực đại kiểm soát việc dò dữ liệu trên cả họ.",

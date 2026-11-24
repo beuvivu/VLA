@@ -726,9 +726,25 @@ quay» trên trang Phòng nghiên cứu): đồng nhất theo đài/thứ bằng
 thì p Holm nhỏ nhất bằng α, không bao giờ kết luận được), lồng cầu từng đài và dãy «Toàn miền Bắc», e-detector
 quên dần với ngưỡng theo tầm hoạch định (`DETECTOR_YEARS`; đừng đặt bằng ARL: bản đầu báo nhầm ở 3/6 đài), xác
 suất theo đài chỉ đề bạt khi thắng CẢ hằng số LẪN tần suất gộp. Số đo hiện tại: không hiệu ứng đài hay thứ,
-xác suất theo đài không chuẩn hơn; dãy gộp có một đợt lệch lồng đơn vị 20-04 → 24-11-2024 (chưa đối chiếu nơi ghi
-độc lập). `randomness_battery.weekday_effect` nhận thứ THẬT: chỉ số hàng chia 7 lệch nhãn sau mỗi ngày vắng.
+xác suất theo đài không chuẩn hơn; dãy gộp có một đợt lệch lồng đơn vị 20-04 → 24-11-2024, nằm trong kết quả công
+bố: 306 kỳ 03–12/2024 trùng từng ô với Minh Ngọc và mketqua (`scripts/ops/crosscheck_canonical_history.py`, chạy
+qua `diagnose-live-sources.yml` khi khai `crosscheck_start`). Kỳ 2015 → 08-2026 của sổ chuẩn đến từ MỘT nguồn mỗi
+kỳ (bổ sung lịch sử, `min_agreement = 1`): một bất thường trên chúng phải đối chiếu như thế trước khi kết luận. `randomness_battery.weekday_effect` nhận thứ THẬT: chỉ số hàng chia 7 lệch nhãn sau mỗi ngày vắng.
 Chi tiết: `documentation/research/2026-11-23-dai-quay-mien-bac.md`.
+
+## Bộ máy Bayes theo đoạn của lồng cầu — 24-11-2026
+
+`forecast.cage_bayes` (bước pipeline sau `xsmb_venue_effects`) dự báo chữ số lồng chục/đơn vị bằng BOCPD
+Dirichlet–đa thức trên lưới `(κ, H)`, trộn fixed-share với CHÍNH dự báo đều. Cận tất định: log-loss chữ số
+không kém dự báo đều quá `fixed_share_bound` (ln 2 + 0,0005 nat mỗi kỳ); đừng bỏ chuyên gia «đều» hay phần
+chia sẻ: thiếu chia sẻ, sau một đoạn lệch trọng số của dự báo đều kẹt gần 0 hàng trăm kỳ. Thống kê theo độ dài đoạn
+là tổng `r` kỳ gần nhất, CHUNG cho mọi chuyên gia (đoạn dài hơn `max_run` dùng `max_run` kỳ gần nhất); gộp đuôi theo
+trọng số riêng từng chuyên gia thì mất tính chung ấy. Số đo: walk-forward LOTO +8,29 nat (z 1,19), gần hết từ đợt 2024
+đã xác nhận và một đợt nhỏ 2022; tham số chọn SAU khi thấy đợt 2024 nên chỉ là mô tả. Mô hình CHẠY BÓNG
+(`model_registry` luôn `shadow`, lý do không mang con số đổi mỗi kỳ); đủ điều kiện xét vào tổ hợp khi walk-forward
+z ≥ 2,326 VÀ phép kiểm tiến cứu (`data/research/hypotheses/cage_bayes.*`, đăng ký trên dữ liệu tới 23-11-2026, e vượt
+1/α = 100) qua — việc đưa vào vẫn là quyết định riêng. Đổi `CONFIG` thì tăng `VERSION`: đăng ký cũ vào `retired`, không
+chấm lại kỳ cũ; sổ tiến cứu chỉ nối thêm. Chi tiết: `documentation/research/2026-11-24-bo-may-bayes-theo-doan.md`.
 
 ## Kỷ luật kiểm thử
 

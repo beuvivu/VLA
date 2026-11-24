@@ -330,6 +330,43 @@ def knowledge_base(root: Path) -> dict:
     return _guarded(model_id, role, path, root, build)
 
 
+def cage_bayes(root: Path) -> dict:
+    """Bộ máy Bayes theo đoạn của lồng chục/đơn vị (``forecast.cage_bayes``): luôn chạy bóng.
+
+    Lý do triển khai không mang con số (z, e đổi mỗi kỳ, mà sổ lịch sử chỉ ghi khi trạng thái hay lý do đổi).
+    """
+    model_id, role = "xsmb/cage_bayes", "Bộ máy Bayes theo đoạn (lồng chục, đơn vị)"
+    path = root / "data" / "forecast" / "cage_bayes" / "summary.json"
+
+    def build() -> dict:
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        whole = summary["windows"]["all"]
+        prospective = summary["prospective"]
+        promotion = summary["promotion"]
+        if promotion["eligible"]:
+            reason = "chạy bóng: đủ điều kiện xét đưa vào tổ hợp, chờ quyết định riêng"
+        else:
+            reason = ("chạy bóng: chưa đủ điều kiện vào tổ hợp (cần walk-forward LOTO z ≥ 2,326 và phép kiểm "
+                      "tiến cứu vượt ngưỡng)")
+        return _entry(
+            model_id, role, artifact=path, root=root,
+            definition={"version": summary.get("version"), "config": _json(summary.get("config")),
+                        "warmup": summary.get("warmup")},
+            training={"data_through": summary.get("data_through"), "draws": summary.get("draws"),
+                      "registered_on": prospective.get("registered_on")},
+            validation={"walk_forward_draws": whole["loto"]["draws"],
+                        "loto_gain_nats": _json(whole["loto"]["total"]), "loto_z": _json(whole["loto"]["z"]),
+                        "de_gain_nats": _json(whole["de"]["total"]), "de_z": _json(whole["de"]["z"]),
+                        "prospective_draws": prospective.get("draws"),
+                        "prospective_log10_e": _json(prospective.get("log10_e")),
+                        "prospective_evidence": bool(prospective.get("evidence")),
+                        "eligible": bool(promotion["eligible"])},
+            deployment="shadow", reason=reason,
+        )
+
+    return _guarded(model_id, role, path, root, build)
+
+
 def _count(values) -> dict[str, int]:
     out: dict[str, int] = {}
     for value in values:
@@ -399,6 +436,7 @@ def collect(root: Path) -> list[dict]:
                     ml_component(root, mode), cau_keo_component(root, mode), stacking(root, mode),
                     online_hedge(root, mode), agents(root, mode)]
     entries.append(knowledge_base(root))
+    entries.append(cage_bayes(root))
     entries += [regional_forecast(root, region) for region in ("mt", "mn")]
     return sorted(entries, key=lambda entry: entry["model_id"])
 

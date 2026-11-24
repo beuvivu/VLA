@@ -20,3 +20,4 @@ first_seen,model_id,fingerprint,deployment,reason
 2026-11-16,xsmt/forecast,9bf31d0b76ee31f96bac020dfddaa7d8e62dee5a8d8f129c7e1184f4a717ff46,production,dự báo đều: không mô hình nào thắng nó ngoài mẫu ở cấp miền; không công bố con số dự đoán
 2026-11-17,xsmn/forecast,c4b9185652de056a216fd85aeff14b626a96ddd9643f98b9d3b96eed06c57f3f,production,dự báo đều: không mô hình nào thắng nó ngoài mẫu ở cấp miền; không công bố con số dự đoán
 2026-11-17,xsmt/forecast,c4b9185652de056a216fd85aeff14b626a96ddd9643f98b9d3b96eed06c57f3f,production,dự báo đều: không mô hình nào thắng nó ngoài mẫu ở cấp miền; không công bố con số dự đoán
+2026-11-23,xsmb/cage_bayes,17f7f39e5cef54a2e99be101d2d68ceb337b7dcd2f217ca12ca1a325d8612059,shadow,"chạy bóng: chưa đủ điều kiện vào tổ hợp (cần walk-forward LOTO z ≥ 2,326 và phép kiểm tiến cứu vượt ngưỡng)"

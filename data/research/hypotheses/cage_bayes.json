@@ -1,0 +1,25 @@
+{
+  "registration": {
+    "alpha": 0.01,
+    "config": {
+      "hazards": [
+        0.004,
+        0.001
+      ],
+      "kappas": [
+        300.0,
+        1000.0,
+        3000.0
+      ],
+      "max_run": 1500,
+      "prior_uniform": 0.5,
+      "share": 0.0005
+    },
+    "registered_on": "2026-11-23",
+    "rule": "chấm các kỳ có ngày sau registered_on; e = tích p_hỗn hợp(chữ số) / p_đều(chữ số)",
+    "threshold": 100.0,
+    "version": 1
+  },
+  "retired": [],
+  "schema_version": 1
+}
