@@ -179,6 +179,43 @@ def _venue_test_rows(venue: dict) -> str:
     return "".join(rows) or '<tr><td colspan="5">Chưa có số đo theo đài.</td></tr>'
 
 
+def _gain(block: dict) -> str:
+    """Tổng lợi (nat) so với dự báo đều và z của một thước chấm."""
+    if not block or block.get("draws") is None:
+        return "—"
+    return f"{float(block['total']):+.2f} (z = {_fmt(block.get('z'), 2)})"
+
+
+def _cage_bayes_rows(cage: dict) -> str:
+    """Bộ máy Bayes theo đoạn: chấm walk-forward theo năm, toàn bộ, kỳ cuối, rồi phép kiểm tiến cứu."""
+    rows = []
+    windows = cage.get("windows", {})
+    for item in [*cage.get("by_year", []), windows.get("all"), windows.get("last")]:
+        if not item:
+            continue
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(item.get('label', '')))}</td>"
+            f"<td>{_count(item.get('loto', {}).get('draws'))}</td>"
+            f"<td>{_gain(item.get('loto', {}))}</td>"
+            f"<td>{_gain(item.get('de', {}))}</td>"
+            f"<td>{_fmt(100 * float(item['uniform_weight']), 1) if item.get('uniform_weight') is not None else '—'}%</td>"
+            f"<td>{_fmt(item.get('log10_lr'), 2)}</td>"
+            "</tr>"
+        )
+    pro = cage.get("prospective")
+    if pro:
+        rows.append(
+            "<tr>"
+            f"<td>Tiến cứu từ sau {html.escape(str(pro.get('registered_on', '')))}</td>"
+            f"<td>{_count(pro.get('draws'))}</td>"
+            '<td colspan="3">Chỉ chấm kỳ sau ngày đăng ký; tham số đóng băng</td>'
+            f"<td>{_fmt(pro.get('log10_e'), 2)} / ngưỡng {_fmt(pro.get('log10_threshold'), 0)}</td>"
+            "</tr>"
+        )
+    return "".join(rows) or '<tr><td colspan="6">Chưa có số đo của bộ máy Bayes theo đoạn.</td></tr>'
+
+
 def _firewall_cards(report: dict, cross: dict, conditional: dict, bong: dict) -> str:
     cards = []
     for mode, item in report.get("modes", {}).items():
@@ -380,10 +417,12 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     current_special = str(conditional_manifest.get("current_special_2d", ""))
     venue = _read_json(data_dir / "stats" / "venue" / "xsmb_venue_effects.json")
     venue_reading = html.escape(str(venue.get("reading") or "Chưa có số đo theo đài quay."))
+    cage = _read_json(data_dir / "forecast" / "cage_bayes" / "summary.json")
+    cage_reading = html.escape(str(cage.get("reading") or "Chưa có số đo của bộ máy Bayes theo đoạn."))
 
     table_index = 0
     anchors = ("rl-diagnostics", "rl-descriptive", "rl-legacy", "rl-conditional",
-               "rl-bong", "rl-loto", "rl-special", "rl-crosslag", "rl-venue", "rl-venue-tests")
+               "rl-bong", "rl-loto", "rl-special", "rl-crosslag", "rl-venue", "rl-venue-tests", "rl-cage-bayes")
 
     def _table(title, desc, headers, align_cls, rows_html, span=6):
         nonlocal table_index
@@ -493,6 +532,15 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 _venue_test_rows(venue),
                 span=12,
             ),
+            _table(
+                "Bộ máy Bayes theo đoạn · lồng chục và lồng đơn vị",
+                cage_reading,
+                ["Giai đoạn", "Số kỳ chấm", "LOTO: nat so với dự báo đều (z)", "Đặc Biệt: nat (z)",
+                 "Trọng số dự báo đều", "Bằng chứng chữ số: log₁₀ e"],
+                "ui-r2 ui-r3 ui-r4 ui-r5 ui-r6",
+                _cage_bayes_rows(cage),
+                span=12,
+            ),
             card(
                 '<p id="rl-firewall" class="ui-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
                 "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
@@ -512,7 +560,8 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     navigation = (
         ("rl-protocol", "Quy trình"), ("rl-diagnostics", "Kiểm định nền"),
         ("rl-conditional", "Có điều kiện"), ("rl-bong", "Cầu & vị trí"),
-        ("rl-loto", "Chiến lược"), ("rl-venue", "Đài quay"), ("rl-glossary", "Thuật ngữ"),
+        ("rl-loto", "Chiến lược"), ("rl-venue", "Đài quay"), ("rl-cage-bayes", "Bayes theo đoạn"),
+        ("rl-glossary", "Thuật ngữ"),
     )
     nav = "".join(f'<a href="#{anchor}">{label}</a>' for anchor, label in navigation)
     stages = (

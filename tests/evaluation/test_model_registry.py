@@ -18,6 +18,7 @@ COPIED = (
     "data/ensemble",
     "data/forecast/online",
     "data/forecast/knowledge",
+    "data/forecast/cage_bayes",
     "data/forecast/predict",
     "data/evaluation/model_quality",
     "data/evaluation/regional_benchmark",
@@ -68,7 +69,7 @@ def test_the_registry_covers_every_stage_of_the_forecast_chain(root: Path) -> No
     assert ids == sorted(ids) and len(set(ids)) == len(ids)
     expected = {f"xsmb/{stage}/{mode}" for mode in mr.MODES for stage in (
         "published", "ensemble_weights", "calibration", "ml", "cau_keo", "stacking", "online_hedge", "agents")}
-    assert set(ids) == expected | {"xsmb/knowledge_base", "xsmt/forecast", "xsmn/forecast"}
+    assert set(ids) == expected | {"xsmb/knowledge_base", "xsmb/cage_bayes", "xsmt/forecast", "xsmn/forecast"}
     for entry in entries:
         assert entry["deployment"] in mr.DEPLOYMENTS and entry["deployment"] != "missing", entry["model_id"]
         assert entry["deployment_reason"] and entry["fingerprint"] == mr.digest(entry["definition"])
@@ -176,6 +177,19 @@ def test_online_learning_follows_its_promotion_gate_and_agents_stay_in_shadow(ro
     assert _by_id(mr.collect(root))["xsmb/agents/loto"]["deployment"] == "shadow"
 
 
+def test_the_cage_model_stays_in_shadow_even_when_eligible(root: Path) -> None:
+    """Bộ máy Bayes theo đoạn không tự vào tổ hợp; lý do không mang con số đổi mỗi kỳ (sổ lịch sử ghi khi lý do đổi)."""
+    path = root / "data" / "forecast" / "cage_bayes" / "summary.json"
+    entry = _by_id(mr.collect(root))["xsmb/cage_bayes"]
+    assert entry["deployment"] == "shadow" and entry["artifact"] == "data/forecast/cage_bayes/summary.json"
+    assert not any(ch.isdigit() for ch in entry["deployment_reason"].replace("2,326", ""))
+    assert {"loto_z", "de_z", "prospective_log10_e", "eligible"} <= set(entry["validation"])
+    _edit_json(path, lambda p: p["promotion"].update(eligible=True))
+    eligible = _by_id(mr.collect(root))["xsmb/cage_bayes"]
+    assert eligible["deployment"] == "shadow" and eligible["validation"]["eligible"]
+    assert eligible["deployment_reason"] != entry["deployment_reason"]
+
+
 def test_a_corrupt_record_becomes_missing_without_losing_the_rest(root: Path) -> None:
     (root / "models" / "ml_loto.joblib").write_bytes(b"khong phai joblib")
     (root / "data" / "forecast" / "knowledge" / "kb.json").write_text("{", encoding="utf-8")
@@ -183,7 +197,7 @@ def test_a_corrupt_record_becomes_missing_without_losing_the_rest(root: Path) ->
     entries = _by_id(mr.collect(root))
     for model_id in ("xsmb/ml/loto", "xsmb/knowledge_base", "xsmt/forecast", "xsmn/forecast"):
         assert entries[model_id]["deployment"] == "missing", model_id
-    assert len(entries) == 19 and entries["xsmb/ml/de"]["deployment"] != "missing"
+    assert len(entries) == 20 and entries["xsmb/ml/de"]["deployment"] != "missing"
     assert mr.build(root)["summary"]["missing"] == 4
 
 
@@ -215,7 +229,8 @@ def test_history_is_append_only_and_logs_gate_transitions_and_new_definitions(ro
     registry_path = mr.run(root)
     history = root / "data" / mr.HISTORY
     first = history.read_text(encoding="utf-8")
-    assert first.splitlines()[0] == ",".join(mr.HISTORY_FIELDS) and first.count("\n") == 20
+    lines = len(mr.collect(root)) + 1  # tiêu đề + một dòng mỗi mục
+    assert first.splitlines()[0] == ",".join(mr.HISTORY_FIELDS) and first.count("\n") == lines
     registry_bytes = registry_path.read_bytes()
     mr.run(root)
     assert history.read_text(encoding="utf-8") == first and registry_path.read_bytes() == registry_bytes
@@ -229,14 +244,14 @@ def test_history_is_append_only_and_logs_gate_transitions_and_new_definitions(ro
     _edit_pack(root, "meta_de", status="trained", quality_pass=True, meta_trust=0.5)
     mr.run(root)
     second = history.read_text(encoding="utf-8")
-    assert second.startswith(first) and second.count("\n") == 21
+    assert second.startswith(first) and second.count("\n") == lines + 1
     assert second.splitlines()[-1].split(",")[1:4:2] == ["xsmb/stacking/de", "production"]
     # (3) định nghĩa ML đổi: ghi một dòng với dấu vân tay mới.
     pack = joblib.load(root / "models" / "ml_loto.joblib")
     _edit_pack(root, "ml_loto", feature_schema_version=pack["feature_schema_version"] + 1)
     mr.run(root)
     third = history.read_text(encoding="utf-8")
-    assert third.startswith(second) and third.count("\n") == 22
+    assert third.startswith(second) and third.count("\n") == lines + 2
     last = third.splitlines()[-1].split(",")
     assert last[1] == "xsmb/ml/loto" and last[2] == _by_id(mr.collect(root))["xsmb/ml/loto"]["fingerprint"]
     assert last[0] == mr.data_through(root)

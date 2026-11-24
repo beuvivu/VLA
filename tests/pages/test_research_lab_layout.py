@@ -51,7 +51,7 @@ def test_lab_navigation_reaches_all_existing_research_tables(tmp_path: Path) -> 
     assert len(links) >= 5
     for link in links:
         assert page.select_one(link["href"]) is not None
-    assert len(page.select(".rl-panel table")) == 10
+    assert len(page.select(".rl-panel table")) == 11
     assert all(table.select("th[scope='col']") for table in page.select(".rl-panel table"))
 
 
@@ -83,3 +83,26 @@ def test_venue_cards_print_the_measured_reading_or_say_nothing_is_measured(tmp_p
     tests = page.select_one("#rl-venue-tests").get_text()
     assert "z = 2.50" in tests and "z = 0.91" in tests
     assert page.select_one(".rl-nav a[href='#rl-venue']") is not None
+
+
+def test_cage_bayes_card_prints_the_measured_rows_or_says_nothing_is_measured(tmp_path: Path) -> None:
+    """Thẻ bộ máy Bayes theo đoạn in câu đọc, từng năm và dòng tiến cứu TỪ tệp số đo; thiếu tệp thì nói chưa có."""
+    empty = _render(tmp_path / "trong", {}, {})
+    assert "Chưa có số đo của bộ máy Bayes theo đoạn." in empty.select_one("#rl-cage-bayes").get_text()
+
+    out = tmp_path / "co" / "data" / "forecast" / "cage_bayes"
+    out.mkdir(parents=True)
+    year = {"label": "2024", "loto": {"draws": 362, "total": 7.63, "z": 1.3}, "de": {"draws": 362, "total": 2.42, "z": 1.9},
+            "uniform_weight": 0.417, "log10_lr": 4.55}
+    (out / "summary.json").write_text(json.dumps({
+        "reading": "Câu đọc đo được 67890.",
+        "by_year": [year],
+        "windows": {"all": {**year, "label": "toàn bộ"}, "last": {**year, "label": "730 kỳ cuối"}},
+        "prospective": {"registered_on": "2026-11-23", "draws": 4, "log10_e": -0.12, "log10_threshold": 2.0},
+    }), encoding="utf-8")
+    card = _render(tmp_path / "co", {}, {}).select_one("#rl-cage-bayes")
+    assert "Câu đọc đo được 67890." in card.get_text()
+    rows = [[td.get_text(strip=True) for td in tr.select("td")] for tr in card.select("tbody tr")]
+    assert [row[0] for row in rows] == ["2024", "toàn bộ", "730 kỳ cuối", "Tiến cứu từ sau 2026-11-23"]
+    assert rows[0][2] == "+7.63 (z = 1.30)" and rows[0][4] == "41.7%" and rows[0][5] == "4.55"
+    assert rows[-1][-1] == "-0.12 / ngưỡng 2"

@@ -130,6 +130,9 @@ thời gian tổng. Đổi đúng thứ mỗi phép kiểm canh thì nó đỏ.
 1. **Khi lịch đài mới có hiệu lực**: thêm thời kỳ vào `core.xsmb_schedule.ERAS` đúng ngày áp dụng. Nên kèm
    đọc nhãn đài từ trang nguồn vào `data/draw_metadata.json` để phát hiện khi lịch đổi mà kho chưa biết.
 2. Không đưa xác suất theo đài hay mô hình lồng thích nghi vào tổ hợp: cả hai đều không thắng ngoài mẫu.
+   Mô hình lồng thích nghi được thay bằng bộ máy Bayes theo đoạn ngày 24-11-2026
+   ([2026-11-24-bo-may-bayes-theo-doan.md](2026-11-24-bo-may-bayes-theo-doan.md)): nó thu khoảng 100 lần phần lợi của
+   đợt 2024 mà vẫn có cận tất định so với dự báo đều. Nó chạy bóng, kèm một phép kiểm tiến cứu.
    E-detector tiếp tục chạy mỗi lượt và in trạng thái lên trang; một lần báo động mới là lý do kiểm lại,
    không phải tín hiệu dự báo. Báo động mới trên các kỳ 2015 → 08-2026 thì đối chiếu bằng cùng lệnh trước khi
    kết luận gì.
