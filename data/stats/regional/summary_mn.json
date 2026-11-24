@@ -2,7 +2,7 @@
   "schema_version": 1,
   "region": "mn",
   "region_name": "Miền Nam",
-  "data_through": "2026-11-22",
+  "data_through": "2026-11-23",
   "game": {
     "prizes_per_station_draw": 18,
     "digits_per_station_draw": 82,
@@ -10,16 +10,16 @@
     "special_baseline": 0.01,
     "pair_cooccurrence": 0.026107808,
     "expected_distinct_numbers": 16.548624,
-    "observed_distinct_numbers": 16.555985,
+    "observed_distinct_numbers": 16.557011,
     "distinct_numbers_sd_exact": 1.076555
   },
   "quality": {
-    "rows": 23310,
-    "station_draws": 1295,
+    "rows": 23364,
+    "station_draws": 1298,
     "stations": 21,
     "first_date": "2025-10-07",
-    "last_date": "2026-11-22",
-    "draw_dates": 412,
+    "last_date": "2026-11-23",
+    "draw_dates": 413,
     "origins": 1,
     "calendar_gaps": [],
     "off_schedule": [],
@@ -70,10 +70,10 @@
       "Bình Thuận": 59,
       "Bạc Liêu": 59,
       "Bến Tre": 59,
-      "Cà Mau": 58,
+      "Cà Mau": 59,
       "Cần Thơ": 59,
       "Hậu Giang": 59,
-      "Hồ Chí Minh": 117,
+      "Hồ Chí Minh": 118,
       "Kiên Giang": 59,
       "Long An": 59,
       "Sóc Trăng": 59,
@@ -84,9 +84,9 @@
       "Vũng Tàu": 59,
       "Đà Lạt": 59,
       "Đồng Nai": 59,
-      "Đồng Tháp": 58
+      "Đồng Tháp": 59
     },
-    "content_sha256": "5b703108e31c04fd004123f14c3ce7826a62b65afdf48613aa06f13062778c51"
+    "content_sha256": "3141066e5fdfa300c0437041dbfe68747c8142d5b42a534b91c13a96cc03b8e0"
   },
   "numbers": {
     "tested": 2100,
@@ -145,7 +145,7 @@
         "draws": 59,
         "expected_present": 9.763688,
         "p_value": 0.0026238124,
-        "q_value": 0.6608327862
+        "q_value": 0.688750755
       },
       {
         "province": "Vũng Tàu",
@@ -154,7 +154,7 @@
         "draws": 59,
         "expected_present": 9.763688,
         "p_value": 0.0026238124,
-        "q_value": 0.6608327862
+        "q_value": 0.688750755
       },
       {
         "province": "Đà Lạt",
@@ -163,25 +163,25 @@
         "draws": 59,
         "expected_present": 9.763688,
         "p_value": 0.0026238124,
-        "q_value": 0.6608327862
+        "q_value": 0.688750755
       },
       {
         "province": "Hồ Chí Minh",
         "number": "42",
         "present": 32,
-        "draws": 117,
-        "expected_present": 19.36189,
-        "p_value": 0.0038119978,
-        "q_value": 0.6608327862
+        "draws": 118,
+        "expected_present": 19.527376,
+        "p_value": 0.0039879169,
+        "q_value": 0.7209084941
       },
       {
-        "province": "Đồng Tháp",
-        "number": "42",
+        "province": "Bạc Liêu",
+        "number": "09",
         "present": 2,
-        "draws": 58,
-        "expected_present": 9.598202,
-        "p_value": 0.0040154189,
-        "q_value": 0.6608327862
+        "draws": 59,
+        "expected_present": 9.763688,
+        "p_value": 0.004181511,
+        "q_value": 0.7209084941
       }
     ]
   },
@@ -233,7 +233,7 @@
             "p_value": 0.3254372972012285,
             "p_simulated": 0.3215356928614277,
             "p_asymptotic": 0.3254372972012285,
-            "q_value": 0.8411302451
+            "q_value": 0.8160218795
           },
           {
             "test": "digit_uniformity",
@@ -247,7 +247,7 @@
             "p_value": 0.6684663067386523,
             "p_simulated": 0.6684663067386523,
             "p_asymptotic": 0.6627709252962768,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "special_digits",
@@ -261,7 +261,7 @@
             "p_value": 0.40151969606078786,
             "p_simulated": 0.40151969606078786,
             "p_asymptotic": 0.39496093975325475,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "loto_uniformity",
@@ -275,7 +275,7 @@
             "p_value": 0.6980603879224155,
             "p_simulated": 0.6980603879224155,
             "p_asymptotic": 0.6916671928013207,
-            "q_value": 0.8668047412
+            "q_value": 0.862309891
           },
           {
             "test": "dispersion",
@@ -288,7 +288,7 @@
             "z": 0.517794,
             "p_value": 0.5926814637072585,
             "p_simulated": 0.5926814637072585,
-            "q_value": 0.8658303122
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
@@ -301,7 +301,7 @@
             "z": -0.94043,
             "p_value": 0.34573085382923413,
             "p_simulated": 0.34573085382923413,
-            "q_value": 0.8451198649
+            "q_value": 0.8346274407
           },
           {
             "test": "gap_shape",
@@ -314,7 +314,7 @@
             "z": 0.31722,
             "p_value": 0.35272945410917816,
             "p_simulated": 0.35272945410917816,
-            "q_value": 0.8451198649
+            "q_value": 0.8346274407
           },
           {
             "test": "hot_persistence",
@@ -327,7 +327,7 @@
             "z": 0.645021,
             "p_value": 0.5200959808038392,
             "p_simulated": 0.5200959808038392,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           }
         ]
       },
@@ -347,7 +347,7 @@
             "p_value": 0.8068951845108564,
             "p_simulated": 0.8106378724255149,
             "p_asymptotic": 0.8068951845108564,
-            "q_value": 0.9027916271
+            "q_value": 0.8968522085
           },
           {
             "test": "digit_uniformity",
@@ -361,7 +361,7 @@
             "p_value": 0.9468106378724255,
             "p_simulated": 0.9468106378724255,
             "p_asymptotic": 0.9451921021592421,
-            "q_value": 0.9709277657
+            "q_value": 0.9699035803
           },
           {
             "test": "special_digits",
@@ -375,7 +375,7 @@
             "p_value": 0.6662667466506699,
             "p_simulated": 0.6662667466506699,
             "p_asymptotic": 0.6700969624825077,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "loto_uniformity",
@@ -389,7 +389,7 @@
             "p_value": 0.6522695460907818,
             "p_simulated": 0.6522695460907818,
             "p_asymptotic": 0.6562846442705885,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "dispersion",
@@ -402,7 +402,7 @@
             "z": -0.673032,
             "p_value": 0.4929014197160568,
             "p_simulated": 0.4929014197160568,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
@@ -415,7 +415,7 @@
             "z": -0.36322,
             "p_value": 0.7068586282743451,
             "p_simulated": 0.7068586282743451,
-            "q_value": 0.8668047412
+            "q_value": 0.8665647152
           },
           {
             "test": "gap_shape",
@@ -428,7 +428,7 @@
             "z": -0.195843,
             "p_value": 0.5584883023395321,
             "p_simulated": 0.5584883023395321,
-            "q_value": 0.8529639527
+            "q_value": 0.844102366
           },
           {
             "test": "hot_persistence",
@@ -441,7 +441,7 @@
             "z": 0.554388,
             "p_value": 0.5856828634273146,
             "p_simulated": 0.5856828634273146,
-            "q_value": 0.8631115882
+            "q_value": 0.844102366
           }
         ]
       },
@@ -475,7 +475,7 @@
             "p_value": 0.057588482303539294,
             "p_simulated": 0.057588482303539294,
             "p_asymptotic": 0.05914428339324776,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "special_digits",
@@ -489,7 +489,7 @@
             "p_value": 0.7284543091381723,
             "p_simulated": 0.7284543091381723,
             "p_asymptotic": 0.7157395113146843,
-            "q_value": 0.8727105643
+            "q_value": 0.8665647152
           },
           {
             "test": "loto_uniformity",
@@ -503,7 +503,7 @@
             "p_value": 0.5290941811637673,
             "p_simulated": 0.5290941811637673,
             "p_asymptotic": 0.518120208299367,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "dispersion",
@@ -516,7 +516,7 @@
             "z": 1.812438,
             "p_value": 0.0653869226154769,
             "p_simulated": 0.0653869226154769,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "repeat_lift",
@@ -529,7 +529,7 @@
             "z": -0.472006,
             "p_value": 0.6416716656668666,
             "p_simulated": 0.6416716656668666,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "gap_shape",
@@ -542,7 +542,7 @@
             "z": 0.299664,
             "p_value": 0.36372725454909016,
             "p_simulated": 0.36372725454909016,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "hot_persistence",
@@ -555,7 +555,7 @@
             "z": -0.070128,
             "p_value": 0.9442111577684463,
             "p_simulated": 0.9442111577684463,
-            "q_value": 0.9709277657
+            "q_value": 0.9699035803
           }
         ],
         "cage_counts": [
@@ -649,7 +649,7 @@
             "p_value": 0.675802935644603,
             "p_simulated": 0.6878624275144971,
             "p_asymptotic": 0.675802935644603,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "digit_uniformity",
@@ -677,7 +677,7 @@
             "p_value": 0.5170965806838632,
             "p_simulated": 0.5170965806838632,
             "p_asymptotic": 0.5056955561409449,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "loto_uniformity",
@@ -691,7 +691,7 @@
             "p_value": 0.473505298940212,
             "p_simulated": 0.473505298940212,
             "p_asymptotic": 0.4752931037851074,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "dispersion",
@@ -704,7 +704,7 @@
             "z": 0.847363,
             "p_value": 0.3889222155568886,
             "p_simulated": 0.3889222155568886,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "repeat_lift",
@@ -717,7 +717,7 @@
             "z": -0.204106,
             "p_value": 0.8380323935212958,
             "p_simulated": 0.8380323935212958,
-            "q_value": 0.9201924321
+            "q_value": 0.9142171566
           },
           {
             "test": "gap_shape",
@@ -730,7 +730,7 @@
             "z": 0.19754,
             "p_value": 0.40311937612477505,
             "p_simulated": 0.40311937612477505,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "hot_persistence",
@@ -743,7 +743,7 @@
             "z": -0.398657,
             "p_value": 0.6916616676664668,
             "p_simulated": 0.6916616676664668,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           }
         ]
       },
@@ -763,7 +763,7 @@
             "p_value": 0.44894385995195574,
             "p_simulated": 0.4543091381723655,
             "p_asymptotic": 0.44894385995195574,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "digit_uniformity",
@@ -777,7 +777,7 @@
             "p_value": 0.09198160367926415,
             "p_simulated": 0.09198160367926415,
             "p_asymptotic": 0.09512422105743804,
-            "q_value": 0.7628052136
+            "q_value": 0.7358528294
           },
           {
             "test": "special_digits",
@@ -791,7 +791,7 @@
             "p_value": 0.26774645070985803,
             "p_simulated": 0.26774645070985803,
             "p_asymptotic": 0.24738318573004475,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "loto_uniformity",
@@ -818,7 +818,7 @@
             "z": -0.223119,
             "p_value": 0.8238352329534093,
             "p_simulated": 0.8238352329534093,
-            "q_value": 0.9105547312
+            "q_value": 0.904603393
           },
           {
             "test": "repeat_lift",
@@ -831,7 +831,7 @@
             "z": 1.550653,
             "p_value": 0.11457708458308338,
             "p_simulated": 0.11457708458308338,
-            "q_value": 0.7628052136
+            "q_value": 0.7699580084
           },
           {
             "test": "gap_shape",
@@ -844,7 +844,7 @@
             "z": -0.154627,
             "p_value": 0.5292941411717657,
             "p_simulated": 0.5292941411717657,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "hot_persistence",
@@ -857,7 +857,7 @@
             "z": 1.16335,
             "p_value": 0.2491501699660068,
             "p_simulated": 0.2491501699660068,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           }
         ]
       },
@@ -905,7 +905,7 @@
             "p_value": 0.7926414717056589,
             "p_simulated": 0.7926414717056589,
             "p_asymptotic": 0.7803801047497936,
-            "q_value": 0.9027916271
+            "q_value": 0.8968522085
           },
           {
             "test": "loto_uniformity",
@@ -932,7 +932,7 @@
             "z": -0.25556,
             "p_value": 0.7996400719856028,
             "p_simulated": 0.7996400719856028,
-            "q_value": 0.9027916271
+            "q_value": 0.8968522085
           },
           {
             "test": "repeat_lift",
@@ -945,7 +945,7 @@
             "z": 1.348448,
             "p_value": 0.17596480703859227,
             "p_simulated": 0.17596480703859227,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "gap_shape",
@@ -958,7 +958,7 @@
             "z": 0.554763,
             "p_value": 0.27814437112577484,
             "p_simulated": 0.27814437112577484,
-            "q_value": 0.7788042392
+            "q_value": 0.792004311
           },
           {
             "test": "hot_persistence",
@@ -971,7 +971,7 @@
             "z": 2.15396,
             "p_value": 0.03179364127174565,
             "p_simulated": 0.03179364127174565,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           }
         ],
         "cage_counts": [
@@ -1051,62 +1051,62 @@
       },
       {
         "province": "Cà Mau",
-        "draws": 58,
+        "draws": 59,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 54.95709376,
-            "null_mean": 45.02818433,
-            "null_sd": 9.48157135,
-            "z": 1.04718,
-            "p_value": 0.14686611757440654,
-            "p_simulated": 0.15096980603879223,
-            "p_asymptotic": 0.14686611757440654,
-            "q_value": 0.7628052136
+            "statistic": 58.98188767,
+            "null_mean": 45.1178646,
+            "null_sd": 9.57512409,
+            "z": 1.447921,
+            "p_value": 0.07887388034208949,
+            "p_simulated": 0.08138372325534893,
+            "p_asymptotic": 0.07887388034208949,
+            "q_value": 0.7358528294
           },
           {
             "test": "digit_uniformity",
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 720.89655172,
-            "null_mean": 738.58337931,
-            "null_sd": 37.58835477,
-            "z": -0.47054,
-            "p_value": 0.6814637072585483,
-            "p_simulated": 0.6814637072585483,
-            "p_asymptotic": 0.6668689962995726,
-            "q_value": 0.8668047412
+            "statistic": 725.05084746,
+            "null_mean": 738.80277966,
+            "null_sd": 37.84669418,
+            "z": -0.363359,
+            "p_value": 0.6414717056588682,
+            "p_simulated": 0.6414717056588682,
+            "p_asymptotic": 0.6261469303837293,
+            "q_value": 0.8617298762
           },
           {
             "test": "special_digits",
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 9.51724138,
-            "null_mean": 17.99537931,
-            "null_sd": 5.9513213,
-            "z": -1.424581,
-            "p_value": 0.9478104379124175,
-            "p_simulated": 0.9478104379124175,
-            "p_asymptotic": 0.94653037437652,
-            "q_value": 0.9709277657
+            "statistic": 10.81355932,
+            "null_mean": 17.95877966,
+            "null_sd": 5.92132348,
+            "z": -1.206693,
+            "p_value": 0.9170165966806638,
+            "p_simulated": 0.9170165966806638,
+            "p_asymptotic": 0.9021001792913337,
+            "q_value": 0.9568868835
           },
           {
             "test": "loto_uniformity",
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 70.36781609,
-            "null_mean": 98.99923372,
-            "null_sd": 14.1007871,
-            "z": -2.030484,
-            "p_value": 0.9860027994401119,
-            "p_simulated": 0.9860027994401119,
-            "p_asymptotic": 0.9869246150471684,
+            "statistic": 71.89830508,
+            "null_mean": 99.11875706,
+            "null_sd": 14.03512745,
+            "z": -1.939452,
+            "p_value": 0.9816036792641472,
+            "p_simulated": 0.9816036792641472,
+            "p_asymptotic": 0.981602802775341,
             "q_value": 0.9932013597
           },
           {
@@ -1114,52 +1114,52 @@
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.061848,
-            "null_mean": 0.07016729,
-            "null_sd": 0.01368565,
-            "z": -0.607884,
-            "p_value": 0.5398920215956808,
-            "p_simulated": 0.5398920215956808,
-            "q_value": 0.8451198649
+            "statistic": 0.06087048,
+            "null_mean": 0.069817,
+            "null_sd": 0.01351087,
+            "z": -0.662172,
+            "p_value": 0.49610077984403117,
+            "p_simulated": 0.49610077984403117,
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": -0.01557895,
-            "null_mean": -0.00011339,
-            "null_sd": 0.01333381,
-            "z": -1.159875,
-            "p_value": 0.24315136972605478,
-            "p_simulated": 0.24315136972605478,
-            "q_value": 0.7628052136
+            "statistic": -0.01392722,
+            "null_mean": -0.00034147,
+            "null_sd": 0.0131795,
+            "z": -1.030824,
+            "p_value": 0.3097380523895221,
+            "p_simulated": 0.3097380523895221,
+            "q_value": 0.8146370726
           },
           {
             "test": "gap_shape",
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.03849276,
-            "null_mean": 0.0483554,
-            "null_sd": 0.0089846,
-            "z": -1.097728,
-            "p_value": 0.8682263547290542,
-            "p_simulated": 0.8682263547290542,
-            "q_value": 0.9290575006
+            "statistic": 0.04204169,
+            "null_mean": 0.04752162,
+            "null_sd": 0.00886735,
+            "z": -0.61799,
+            "p_value": 0.7226554689062188,
+            "p_simulated": 0.7226554689062188,
+            "q_value": 0.8665647152
           },
           {
             "test": "hot_persistence",
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": -0.17625869,
-            "null_mean": -0.00119984,
-            "null_sd": 0.09995827,
-            "z": -1.751319,
-            "p_value": 0.07858428314337132,
-            "p_simulated": 0.07858428314337132,
-            "q_value": 0.740918483
+            "statistic": -0.16564253,
+            "null_mean": 0.00062001,
+            "null_sd": 0.09857269,
+            "z": -1.6867,
+            "p_value": 0.08818236352729454,
+            "p_simulated": 0.08818236352729454,
+            "q_value": 0.7358528294
           }
         ]
       },
@@ -1179,7 +1179,7 @@
             "p_value": 0.07817681023689155,
             "p_simulated": 0.07338532293541292,
             "p_asymptotic": 0.07817681023689155,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "digit_uniformity",
@@ -1193,7 +1193,7 @@
             "p_value": 0.14537092581483704,
             "p_simulated": 0.14537092581483704,
             "p_asymptotic": 0.14952002613515375,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "special_digits",
@@ -1207,7 +1207,7 @@
             "p_value": 0.7480503899220156,
             "p_simulated": 0.7480503899220156,
             "p_asymptotic": 0.7378866462058051,
-            "q_value": 0.8727254549
+            "q_value": 0.8667066587
           },
           {
             "test": "loto_uniformity",
@@ -1221,7 +1221,7 @@
             "p_value": 0.9306138772245551,
             "p_simulated": 0.9306138772245551,
             "p_asymptotic": 0.928114218400781,
-            "q_value": 0.9709277657
+            "q_value": 0.9650810579
           },
           {
             "test": "dispersion",
@@ -1234,7 +1234,7 @@
             "z": -0.508706,
             "p_value": 0.6174765046990602,
             "p_simulated": 0.6174765046990602,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "repeat_lift",
@@ -1247,7 +1247,7 @@
             "z": 1.1167,
             "p_value": 0.2643471305738852,
             "p_simulated": 0.2643471305738852,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "gap_shape",
@@ -1260,7 +1260,7 @@
             "z": 1.26146,
             "p_value": 0.10957808438312337,
             "p_simulated": 0.10957808438312337,
-            "q_value": 0.7628052136
+            "q_value": 0.7670465907
           },
           {
             "test": "hot_persistence",
@@ -1293,7 +1293,7 @@
             "p_value": 0.2242612265085239,
             "p_simulated": 0.21055788842231554,
             "p_asymptotic": 0.2242612265085239,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "digit_uniformity",
@@ -1307,7 +1307,7 @@
             "p_value": 0.0621875624875025,
             "p_simulated": 0.0621875624875025,
             "p_asymptotic": 0.06114245258469948,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "special_digits",
@@ -1321,7 +1321,7 @@
             "p_value": 0.5708858228354329,
             "p_simulated": 0.5708858228354329,
             "p_asymptotic": 0.5759910472101362,
-            "q_value": 0.8631115882
+            "q_value": 0.844102366
           },
           {
             "test": "loto_uniformity",
@@ -1335,7 +1335,7 @@
             "p_value": 0.20555888822235552,
             "p_simulated": 0.20555888822235552,
             "p_asymptotic": 0.19841199365363604,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "dispersion",
@@ -1348,7 +1348,7 @@
             "z": 0.280404,
             "p_value": 0.7896420715856829,
             "p_simulated": 0.7896420715856829,
-            "q_value": 0.9027916271
+            "q_value": 0.8968522085
           },
           {
             "test": "repeat_lift",
@@ -1361,7 +1361,7 @@
             "z": 0.455885,
             "p_value": 0.6436712657468506,
             "p_simulated": 0.6436712657468506,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "gap_shape",
@@ -1374,7 +1374,7 @@
             "z": 0.663599,
             "p_value": 0.24415116976604678,
             "p_simulated": 0.24415116976604678,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "hot_persistence",
@@ -1387,54 +1387,54 @@
             "z": 0.359208,
             "p_value": 0.7280543891221756,
             "p_simulated": 0.7280543891221756,
-            "q_value": 0.8727105643
+            "q_value": 0.8665647152
           }
         ]
       },
       {
         "province": "Hồ Chí Minh",
-        "draws": 117,
+        "draws": 118,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 39.45033797,
-            "null_mean": 45.02375433,
-            "null_sd": 9.44820889,
-            "z": -0.589891,
-            "p_value": 0.705344058190505,
-            "p_simulated": 0.7074585082983403,
-            "p_asymptotic": 0.705344058190505,
-            "q_value": 0.8668047412
+            "statistic": 42.44041487,
+            "null_mean": 45.07854912,
+            "null_sd": 9.45334142,
+            "z": -0.279069,
+            "p_value": 0.5809843533960461,
+            "p_simulated": 0.5852829434113177,
+            "p_asymptotic": 0.5809843533960461,
+            "q_value": 0.844102366
           },
           {
             "test": "digit_uniformity",
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 721.38461538,
-            "null_mean": 737.93292308,
-            "null_sd": 38.53615346,
-            "z": -0.429423,
-            "p_value": 0.6532693461307738,
-            "p_simulated": 0.6532693461307738,
-            "p_asymptotic": 0.6621666553353841,
-            "q_value": 0.8668047412
+            "statistic": 728.91525424,
+            "null_mean": 738.40162712,
+            "null_sd": 38.4306063,
+            "z": -0.246844,
+            "p_value": 0.592881423715257,
+            "p_simulated": 0.592881423715257,
+            "p_asymptotic": 0.5870925283810509,
+            "q_value": 0.844102366
           },
           {
             "test": "special_digits",
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 10.78632479,
-            "null_mean": 18.08929915,
-            "null_sd": 6.1207337,
-            "z": -1.193153,
-            "p_value": 0.9020195960807839,
-            "p_simulated": 0.9020195960807839,
-            "p_asymptotic": 0.903203046266024,
+            "statistic": 10.77966102,
+            "null_mean": 18.09050847,
+            "null_sd": 5.99355907,
+            "z": -1.219784,
+            "p_value": 0.909618076384723,
+            "p_simulated": 0.909618076384723,
+            "p_asymptotic": 0.9034717952693768,
             "q_value": 0.9561704107
           },
           {
@@ -1442,66 +1442,66 @@
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 111.66381766,
-            "null_mean": 98.9854321,
-            "null_sd": 13.96527021,
-            "z": 0.907851,
-            "p_value": 0.1837632473505299,
-            "p_simulated": 0.1837632473505299,
-            "p_asymptotic": 0.18110789924027063,
-            "q_value": 0.7628052136
+            "statistic": 112.06403013,
+            "null_mean": 99.14919021,
+            "null_sd": 14.28886126,
+            "z": 0.90384,
+            "p_value": 0.1785642871425715,
+            "p_simulated": 0.1785642871425715,
+            "p_asymptotic": 0.17428555884631855,
+            "q_value": 0.7759570276
           },
           {
             "test": "dispersion",
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.06753994,
-            "null_mean": 0.06999905,
-            "null_sd": 0.0096866,
-            "z": -0.253867,
-            "p_value": 0.8010397920415917,
-            "p_simulated": 0.8010397920415917,
-            "q_value": 0.9027916271
+            "statistic": 0.06707572,
+            "null_mean": 0.06975119,
+            "null_sd": 0.00946419,
+            "z": -0.282693,
+            "p_value": 0.7786442711457708,
+            "p_simulated": 0.7786442711457708,
+            "q_value": 0.8959742298
           },
           {
             "test": "repeat_lift",
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": -0.00418314,
-            "null_mean": -0.00018338,
-            "null_sd": 0.00937052,
-            "z": -0.426845,
-            "p_value": 0.670865826834633,
-            "p_simulated": 0.670865826834633,
-            "q_value": 0.8668047412
+            "statistic": -0.00377258,
+            "null_mean": -0.00010702,
+            "null_sd": 0.00926805,
+            "z": -0.395505,
+            "p_value": 0.6880623875224955,
+            "p_simulated": 0.6880623875224955,
+            "q_value": 0.8617298762
           },
           {
             "test": "gap_shape",
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.03189208,
-            "null_mean": 0.02543224,
-            "null_sd": 0.00577419,
-            "z": 1.118743,
-            "p_value": 0.13737252549490103,
-            "p_simulated": 0.13737252549490103,
-            "q_value": 0.7628052136
+            "statistic": 0.03094026,
+            "null_mean": 0.02509818,
+            "null_sd": 0.00570564,
+            "z": 1.023913,
+            "p_value": 0.15376924615076984,
+            "p_simulated": 0.15376924615076984,
+            "q_value": 0.7759570276
           },
           {
             "test": "hot_persistence",
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": 0.06616161,
-            "null_mean": 0.00025776,
-            "null_sd": 0.09993705,
-            "z": 0.659454,
-            "p_value": 0.5114977004599081,
-            "p_simulated": 0.5114977004599081,
-            "q_value": 0.8451198649
+            "statistic": 0.10779071,
+            "null_mean": 0.00073262,
+            "null_sd": 0.10208904,
+            "z": 1.048674,
+            "p_value": 0.2989402119576085,
+            "p_simulated": 0.2989402119576085,
+            "q_value": 0.8100315421
           }
         ]
       },
@@ -1521,7 +1521,7 @@
             "p_value": 0.2609204226785894,
             "p_simulated": 0.2679464107178564,
             "p_asymptotic": 0.2609204226785894,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "digit_uniformity",
@@ -1535,7 +1535,7 @@
             "p_value": 0.5404919016196761,
             "p_simulated": 0.5404919016196761,
             "p_asymptotic": 0.5430823380451438,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "special_digits",
@@ -1563,7 +1563,7 @@
             "p_value": 0.47330533893221355,
             "p_simulated": 0.47330533893221355,
             "p_asymptotic": 0.4699801133212344,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "dispersion",
@@ -1576,7 +1576,7 @@
             "z": -0.525691,
             "p_value": 0.5822835432913417,
             "p_simulated": 0.5822835432913417,
-            "q_value": 0.8631115882
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
@@ -1589,7 +1589,7 @@
             "z": 0.398198,
             "p_value": 0.6810637872425515,
             "p_simulated": 0.6810637872425515,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "gap_shape",
@@ -1602,7 +1602,7 @@
             "z": 1.488447,
             "p_value": 0.07698460307938412,
             "p_simulated": 0.07698460307938412,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "hot_persistence",
@@ -1615,7 +1615,7 @@
             "z": -0.601044,
             "p_value": 0.5512897420515896,
             "p_simulated": 0.5512897420515896,
-            "q_value": 0.8496942813
+            "q_value": 0.844102366
           }
         ]
       },
@@ -1635,7 +1635,7 @@
             "p_value": 0.2920385379292034,
             "p_simulated": 0.29514097180563886,
             "p_asymptotic": 0.2920385379292034,
-            "q_value": 0.8043028586
+            "q_value": 0.8100315421
           },
           {
             "test": "digit_uniformity",
@@ -1649,7 +1649,7 @@
             "p_value": 0.40431913617276544,
             "p_simulated": 0.40431913617276544,
             "p_asymptotic": 0.40697564917478213,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "special_digits",
@@ -1663,7 +1663,7 @@
             "p_value": 0.23195360927814437,
             "p_simulated": 0.23195360927814437,
             "p_asymptotic": 0.23198513316745645,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "loto_uniformity",
@@ -1677,7 +1677,7 @@
             "p_value": 0.6924615076984603,
             "p_simulated": 0.6924615076984603,
             "p_asymptotic": 0.6866900334785777,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "dispersion",
@@ -1690,7 +1690,7 @@
             "z": -0.499392,
             "p_value": 0.6354729054189162,
             "p_simulated": 0.6354729054189162,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "repeat_lift",
@@ -1703,7 +1703,7 @@
             "z": 1.511338,
             "p_value": 0.13177364527094582,
             "p_simulated": 0.13177364527094582,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "gap_shape",
@@ -1716,7 +1716,7 @@
             "z": 0.029787,
             "p_value": 0.46190761847630474,
             "p_simulated": 0.46190761847630474,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "hot_persistence",
@@ -1729,7 +1729,7 @@
             "z": -1.26169,
             "p_value": 0.20855828834233153,
             "p_simulated": 0.20855828834233153,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           }
         ]
       },
@@ -1763,7 +1763,7 @@
             "p_value": 0.8052389522095581,
             "p_simulated": 0.8052389522095581,
             "p_asymptotic": 0.8082641394384164,
-            "q_value": 0.9027916271
+            "q_value": 0.8968522085
           },
           {
             "test": "special_digits",
@@ -1777,7 +1777,7 @@
             "p_value": 0.5272945410917816,
             "p_simulated": 0.5272945410917816,
             "p_asymptotic": 0.5289387264087728,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "loto_uniformity",
@@ -1791,7 +1791,7 @@
             "p_value": 0.3209358128374325,
             "p_simulated": 0.3209358128374325,
             "p_asymptotic": 0.319819374248157,
-            "q_value": 0.8411302451
+            "q_value": 0.8160218795
           },
           {
             "test": "dispersion",
@@ -1804,7 +1804,7 @@
             "z": 0.862515,
             "p_value": 0.3903219356128774,
             "p_simulated": 0.3903219356128774,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "repeat_lift",
@@ -1817,7 +1817,7 @@
             "z": 1.761399,
             "p_value": 0.07938412317536493,
             "p_simulated": 0.07938412317536493,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "gap_shape",
@@ -1830,7 +1830,7 @@
             "z": -0.17066,
             "p_value": 0.5432913417316537,
             "p_simulated": 0.5432913417316537,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "hot_persistence",
@@ -1843,7 +1843,7 @@
             "z": 0.614731,
             "p_value": 0.5392921415716857,
             "p_simulated": 0.5392921415716857,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           }
         ]
       },
@@ -1863,7 +1863,7 @@
             "p_value": 0.5772761018772713,
             "p_simulated": 0.562887422515497,
             "p_asymptotic": 0.5772761018772713,
-            "q_value": 0.8631115882
+            "q_value": 0.844102366
           },
           {
             "test": "digit_uniformity",
@@ -1877,7 +1877,7 @@
             "p_value": 0.08918216356728655,
             "p_simulated": 0.08918216356728655,
             "p_asymptotic": 0.08551963782202884,
-            "q_value": 0.7628052136
+            "q_value": 0.7358528294
           },
           {
             "test": "special_digits",
@@ -1891,7 +1891,7 @@
             "p_value": 0.5404919016196761,
             "p_simulated": 0.5404919016196761,
             "p_asymptotic": 0.5289387264087728,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "loto_uniformity",
@@ -1905,7 +1905,7 @@
             "p_value": 0.6596680663867227,
             "p_simulated": 0.6596680663867227,
             "p_asymptotic": 0.6665171160356484,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "dispersion",
@@ -1918,7 +1918,7 @@
             "z": -1.397653,
             "p_value": 0.15696860627874426,
             "p_simulated": 0.15696860627874426,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "repeat_lift",
@@ -1931,7 +1931,7 @@
             "z": -0.345999,
             "p_value": 0.7376524695060988,
             "p_simulated": 0.7376524695060988,
-            "q_value": 0.8727155977
+            "q_value": 0.8666126914
           },
           {
             "test": "gap_shape",
@@ -1944,7 +1944,7 @@
             "z": 0.975849,
             "p_value": 0.16376724655068986,
             "p_simulated": 0.16376724655068986,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "hot_persistence",
@@ -1957,7 +1957,7 @@
             "z": -1.609491,
             "p_value": 0.10217956408718257,
             "p_simulated": 0.10217956408718257,
-            "q_value": 0.7628052136
+            "q_value": 0.7463550768
           }
         ]
       },
@@ -1977,7 +1977,7 @@
             "p_value": 0.258910151238981,
             "p_simulated": 0.2599480103979204,
             "p_asymptotic": 0.258910151238981,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "digit_uniformity",
@@ -1991,7 +1991,7 @@
             "p_value": 0.261747650469906,
             "p_simulated": 0.261747650469906,
             "p_asymptotic": 0.25979044703898024,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "special_digits",
@@ -2005,7 +2005,7 @@
             "p_value": 0.20315936812637472,
             "p_simulated": 0.20315936812637472,
             "p_asymptotic": 0.20327004467892562,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "loto_uniformity",
@@ -2019,7 +2019,7 @@
             "p_value": 0.4297140571885623,
             "p_simulated": 0.4297140571885623,
             "p_asymptotic": 0.4279829896425596,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "dispersion",
@@ -2032,7 +2032,7 @@
             "z": -0.798541,
             "p_value": 0.41551689662067587,
             "p_simulated": 0.41551689662067587,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
@@ -2045,7 +2045,7 @@
             "z": 0.843449,
             "p_value": 0.39632073585282945,
             "p_simulated": 0.39632073585282945,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "gap_shape",
@@ -2058,7 +2058,7 @@
             "z": 1.544663,
             "p_value": 0.07158568286342731,
             "p_simulated": 0.07158568286342731,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "hot_persistence",
@@ -2071,7 +2071,7 @@
             "z": 0.950754,
             "p_value": 0.34573085382923413,
             "p_simulated": 0.34573085382923413,
-            "q_value": 0.8451198649
+            "q_value": 0.8346274407
           }
         ]
       },
@@ -2091,7 +2091,7 @@
             "p_value": 0.7307744882250296,
             "p_simulated": 0.730253949210158,
             "p_asymptotic": 0.7307744882250296,
-            "q_value": 0.8727105643
+            "q_value": 0.8665647152
           },
           {
             "test": "digit_uniformity",
@@ -2119,7 +2119,7 @@
             "p_value": 0.4481103779244151,
             "p_simulated": 0.4481103779244151,
             "p_asymptotic": 0.43792664177160834,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "loto_uniformity",
@@ -2133,7 +2133,7 @@
             "p_value": 0.4849030193961208,
             "p_simulated": 0.4849030193961208,
             "p_asymptotic": 0.480617226395748,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "dispersion",
@@ -2146,7 +2146,7 @@
             "z": 1.892606,
             "p_value": 0.05598880223955209,
             "p_simulated": 0.05598880223955209,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "repeat_lift",
@@ -2159,7 +2159,7 @@
             "z": -1.414489,
             "p_value": 0.15916816636672665,
             "p_simulated": 0.15916816636672665,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "gap_shape",
@@ -2172,7 +2172,7 @@
             "z": 0.004196,
             "p_value": 0.47690461907618475,
             "p_simulated": 0.47690461907618475,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "hot_persistence",
@@ -2185,7 +2185,7 @@
             "z": 0.228796,
             "p_value": 0.8114377124575085,
             "p_simulated": 0.8114377124575085,
-            "q_value": 0.9027916271
+            "q_value": 0.8968522085
           }
         ]
       },
@@ -2205,7 +2205,7 @@
             "p_value": 0.501221388870354,
             "p_simulated": 0.4971005798840232,
             "p_asymptotic": 0.501221388870354,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "digit_uniformity",
@@ -2219,7 +2219,7 @@
             "p_value": 0.14417116576684663,
             "p_simulated": 0.14417116576684663,
             "p_asymptotic": 0.14559221990881407,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "special_digits",
@@ -2247,7 +2247,7 @@
             "p_value": 0.6742651469706059,
             "p_simulated": 0.6742651469706059,
             "p_asymptotic": 0.671598209586921,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "dispersion",
@@ -2260,7 +2260,7 @@
             "z": -1.169489,
             "p_value": 0.2375524895020996,
             "p_simulated": 0.2375524895020996,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "repeat_lift",
@@ -2286,7 +2286,7 @@
             "z": 0.210395,
             "p_value": 0.3945210957808438,
             "p_simulated": 0.3945210957808438,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "hot_persistence",
@@ -2299,7 +2299,7 @@
             "z": -0.7757,
             "p_value": 0.4497100579884023,
             "p_simulated": 0.4497100579884023,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           }
         ]
       },
@@ -2319,7 +2319,7 @@
             "p_value": 0.26788992620930985,
             "p_simulated": 0.27134573085382924,
             "p_asymptotic": 0.26788992620930985,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "digit_uniformity",
@@ -2333,7 +2333,7 @@
             "p_value": 0.22955408918216358,
             "p_simulated": 0.22955408918216358,
             "p_asymptotic": 0.2248183834519778,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "special_digits",
@@ -2347,7 +2347,7 @@
             "p_value": 0.3883223355328934,
             "p_simulated": 0.3883223355328934,
             "p_asymptotic": 0.3742856448332661,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "loto_uniformity",
@@ -2361,7 +2361,7 @@
             "p_value": 0.2565486902619476,
             "p_simulated": 0.2565486902619476,
             "p_asymptotic": 0.25481990267844695,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "dispersion",
@@ -2374,7 +2374,7 @@
             "z": -1.118049,
             "p_value": 0.2479504099180164,
             "p_simulated": 0.2479504099180164,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "repeat_lift",
@@ -2387,7 +2387,7 @@
             "z": 1.794197,
             "p_value": 0.07478504299140172,
             "p_simulated": 0.07478504299140172,
-            "q_value": 0.740918483
+            "q_value": 0.7358528294
           },
           {
             "test": "gap_shape",
@@ -2400,7 +2400,7 @@
             "z": 1.320754,
             "p_value": 0.09958008398320337,
             "p_simulated": 0.09958008398320337,
-            "q_value": 0.7628052136
+            "q_value": 0.7463550768
           },
           {
             "test": "hot_persistence",
@@ -2413,7 +2413,7 @@
             "z": -0.408206,
             "p_value": 0.6824635072985403,
             "p_simulated": 0.6824635072985403,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           }
         ]
       },
@@ -2433,7 +2433,7 @@
             "p_value": 0.6513441827099509,
             "p_simulated": 0.6454709058188363,
             "p_asymptotic": 0.6513441827099509,
-            "q_value": 0.8668047412
+            "q_value": 0.8617298762
           },
           {
             "test": "digit_uniformity",
@@ -2447,7 +2447,7 @@
             "p_value": 0.23415316936612676,
             "p_simulated": 0.23415316936612676,
             "p_asymptotic": 0.23263216481892518,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "special_digits",
@@ -2461,7 +2461,7 @@
             "p_value": 0.34833033393321333,
             "p_simulated": 0.34833033393321333,
             "p_asymptotic": 0.35419892875302694,
-            "q_value": 0.8451198649
+            "q_value": 0.8346274407
           },
           {
             "test": "loto_uniformity",
@@ -2475,7 +2475,7 @@
             "p_value": 0.365126974605079,
             "p_simulated": 0.365126974605079,
             "p_asymptotic": 0.3576167865766953,
-            "q_value": 0.8451198649
+            "q_value": 0.838587838
           },
           {
             "test": "dispersion",
@@ -2488,7 +2488,7 @@
             "z": 0.613611,
             "p_value": 0.5326934613077384,
             "p_simulated": 0.5326934613077384,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
@@ -2501,7 +2501,7 @@
             "z": 1.337618,
             "p_value": 0.18136372725454908,
             "p_simulated": 0.18136372725454908,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "gap_shape",
@@ -2514,7 +2514,7 @@
             "z": 0.405646,
             "p_value": 0.32213557288542294,
             "p_simulated": 0.32213557288542294,
-            "q_value": 0.8411302451
+            "q_value": 0.8160218795
           },
           {
             "test": "hot_persistence",
@@ -2527,7 +2527,7 @@
             "z": -0.625315,
             "p_value": 0.5400919816036792,
             "p_simulated": 0.5400919816036792,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           }
         ]
       },
@@ -2547,7 +2547,7 @@
             "p_value": 0.7442047334599191,
             "p_simulated": 0.7464507098580284,
             "p_asymptotic": 0.7442047334599191,
-            "q_value": 0.8727254549
+            "q_value": 0.8667066587
           },
           {
             "test": "digit_uniformity",
@@ -2561,7 +2561,7 @@
             "p_value": 0.7324535092981403,
             "p_simulated": 0.7324535092981403,
             "p_asymptotic": 0.7375636469337943,
-            "q_value": 0.8727105643
+            "q_value": 0.8665647152
           },
           {
             "test": "special_digits",
@@ -2589,7 +2589,7 @@
             "p_value": 0.5128974205158968,
             "p_simulated": 0.5128974205158968,
             "p_asymptotic": 0.5234999058860825,
-            "q_value": 0.8451198649
+            "q_value": 0.844102366
           },
           {
             "test": "dispersion",
@@ -2602,7 +2602,7 @@
             "z": 1.342341,
             "p_value": 0.17556488702259548,
             "p_simulated": 0.17556488702259548,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "repeat_lift",
@@ -2615,7 +2615,7 @@
             "z": 1.034367,
             "p_value": 0.3103379324135173,
             "p_simulated": 0.3103379324135173,
-            "q_value": 0.8409156878
+            "q_value": 0.8146370726
           },
           {
             "test": "gap_shape",
@@ -2628,7 +2628,7 @@
             "z": 0.959839,
             "p_value": 0.16756648670265947,
             "p_simulated": 0.16756648670265947,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           },
           {
             "test": "hot_persistence",
@@ -2641,121 +2641,121 @@
             "z": -1.549101,
             "p_value": 0.12117576484703059,
             "p_simulated": 0.12117576484703059,
-            "q_value": 0.7628052136
+            "q_value": 0.7759570276
           }
         ]
       },
       {
         "province": "Đồng Tháp",
-        "draws": 58,
+        "draws": 59,
         "tests": [
           {
             "test": "cage_uniformity",
             "name": "Chữ số theo lồng",
             "question": "Mỗi lồng (hàng đơn vị … chục nghìn) có ra đều mười quả không?",
             "two_sided": false,
-            "statistic": 53.17252648,
-            "null_mean": 45.25113604,
-            "null_sd": 9.5293986,
-            "z": 0.831258,
-            "p_value": 0.18846582262897033,
-            "p_simulated": 0.1907618476304739,
-            "p_asymptotic": 0.18846582262897033,
-            "q_value": 0.7628052136
+            "statistic": 53.16558657,
+            "null_mean": 45.32222541,
+            "null_sd": 9.65286762,
+            "z": 0.812542,
+            "p_value": 0.18864252587431846,
+            "p_simulated": 0.19876024795040992,
+            "p_asymptotic": 0.18864252587431846,
+            "q_value": 0.7759570276
           },
           {
             "test": "digit_uniformity",
             "name": "Chữ số theo vị trí in",
             "question": "Mỗi vị trí chữ số của từng giải có ra đều không?",
             "two_sided": false,
-            "statistic": 740.55172414,
-            "null_mean": 737.98565517,
-            "null_sd": 37.73070279,
-            "z": 0.06801,
-            "p_value": 0.46530693861227757,
-            "p_simulated": 0.46530693861227757,
-            "p_asymptotic": 0.46665101359762545,
-            "q_value": 0.8451198649
+            "statistic": 757.59322034,
+            "null_mean": 737.41369492,
+            "null_sd": 38.22313359,
+            "z": 0.52794,
+            "p_value": 0.29574085182963405,
+            "p_simulated": 0.29574085182963405,
+            "p_asymptotic": 0.3005350666225717,
+            "q_value": 0.8100315421
           },
           {
             "test": "special_digits",
             "name": "Chữ số cuối Đặc Biệt",
             "question": "Hàng chục và hàng đơn vị Đặc Biệt có ra đều không?",
             "two_sided": false,
-            "statistic": 15.72413793,
-            "null_mean": 17.92468966,
-            "null_sd": 5.85287718,
-            "z": -0.375978,
-            "p_value": 0.6280743851229754,
-            "p_simulated": 0.6280743851229754,
-            "p_asymptotic": 0.6117929613701854,
-            "q_value": 0.8668047412
+            "statistic": 15.89830508,
+            "null_mean": 17.85179661,
+            "null_sd": 5.97891492,
+            "z": -0.32673,
+            "p_value": 0.5746850629874025,
+            "p_simulated": 0.5746850629874025,
+            "p_asymptotic": 0.5996445782002968,
+            "q_value": 0.844102366
           },
           {
             "test": "loto_uniformity",
             "name": "Tần suất con lô",
             "question": "Có con lô nào ra nhiều/ít hơn mức công bằng không?",
             "two_sided": false,
-            "statistic": 110.02298851,
-            "null_mean": 99.26241379,
-            "null_sd": 14.08608242,
-            "z": 0.763915,
-            "p_value": 0.21795640871825636,
-            "p_simulated": 0.21795640871825636,
-            "p_asymptotic": 0.21098000347424117,
-            "q_value": 0.7628052136
+            "statistic": 108.80979284,
+            "null_mean": 99.37785311,
+            "null_sd": 14.20093438,
+            "z": 0.664177,
+            "p_value": 0.2473505298940212,
+            "p_simulated": 0.2473505298940212,
+            "p_asymptotic": 0.2350265791097665,
+            "q_value": 0.7759570276
           },
           {
             "test": "dispersion",
             "name": "Độ phân tán",
             "question": "Số con khác nhau mỗi kỳ có dao động khác mức công bằng không?",
             "two_sided": true,
-            "statistic": 0.05987597,
-            "null_mean": 0.06995817,
-            "null_sd": 0.01376506,
-            "z": -0.732449,
-            "p_value": 0.4641071785642871,
-            "p_simulated": 0.4641071785642871,
-            "q_value": 0.8451198649
+            "statistic": 0.06095366,
+            "null_mean": 0.07000908,
+            "null_sd": 0.01379388,
+            "z": -0.656481,
+            "p_value": 0.5070985802839432,
+            "p_simulated": 0.5070985802839432,
+            "q_value": 0.844102366
           },
           {
             "test": "repeat_lift",
             "name": "Lô rơi / lô gan",
             "question": "Con vừa về ở kỳ trước của đài có về lại nhiều hay ít hơn không?",
             "two_sided": true,
-            "statistic": 0.01185533,
-            "null_mean": -2.926e-05,
-            "null_sd": 0.01334886,
-            "z": 0.890308,
-            "p_value": 0.36372725454909016,
-            "p_simulated": 0.36372725454909016,
-            "q_value": 0.8451198649
+            "statistic": 0.0103306,
+            "null_mean": -0.00016033,
+            "null_sd": 0.01307653,
+            "z": 0.802272,
+            "p_value": 0.42231553689262147,
+            "p_simulated": 0.42231553689262147,
+            "q_value": 0.844102366
           },
           {
             "test": "gap_shape",
             "name": "Nhịp khoảng cách",
             "question": "Khoảng cách giữa hai lần về có lệch phân bố hình học không?",
             "two_sided": false,
-            "statistic": 0.03919065,
-            "null_mean": 0.04828263,
-            "null_sd": 0.00911797,
-            "z": -0.997151,
-            "p_value": 0.8464307138572286,
-            "p_simulated": 0.8464307138572286,
-            "q_value": 0.9224064864
+            "statistic": 0.0375712,
+            "null_mean": 0.04763682,
+            "null_sd": 0.00902746,
+            "z": -1.115,
+            "p_value": 0.8674265146970606,
+            "p_simulated": 0.8674265146970606,
+            "q_value": 0.9282016208
           },
           {
             "test": "hot_persistence",
             "name": "Độ bền số nóng",
             "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
             "two_sided": true,
-            "statistic": 0.18642991,
-            "null_mean": 0.00101426,
-            "null_sd": 0.10053115,
-            "z": 1.84436,
-            "p_value": 0.0647870425914817,
-            "p_simulated": 0.0647870425914817,
-            "q_value": 0.740918483
+            "statistic": 0.18045873,
+            "null_mean": 0.00339921,
+            "null_sd": 0.10250481,
+            "z": 1.727329,
+            "p_value": 0.08738252349530094,
+            "p_simulated": 0.08738252349530094,
+            "q_value": 0.7358528294
           }
         ]
       }
@@ -2765,8 +2765,8 @@
         "test": "cage_uniformity",
         "name": "Chữ số theo lồng",
         "stations": 21,
-        "z_sum": 23.807175,
-        "z_per_sqrt_station": 5.195151,
+        "z_sum": 24.500022,
+        "z_per_sqrt_station": 5.346343,
         "p_value": 0.0001999600079984003,
         "q_value": 0.0015996801
       },
@@ -2774,64 +2774,64 @@
         "test": "digit_uniformity",
         "name": "Chữ số theo vị trí in",
         "stations": 21,
-        "z_sum": 7.450031,
-        "z_per_sqrt_station": 1.62573,
-        "p_value": 0.05618876224755049,
-        "q_value": 0.1143771246
+        "z_sum": 8.199721,
+        "z_per_sqrt_station": 1.789326,
+        "p_value": 0.038792241551689664,
+        "q_value": 0.1034459775
       },
       {
         "test": "special_digits",
         "name": "Chữ số cuối Đặc Biệt",
         "stations": 21,
-        "z_sum": -7.296829,
-        "z_per_sqrt_station": -1.592299,
-        "p_value": 0.9528094381123775,
-        "q_value": 0.9528094381
+        "z_sum": -7.056324,
+        "z_per_sqrt_station": -1.539816,
+        "p_value": 0.9474105178964207,
+        "q_value": 0.9474105179
       },
       {
         "test": "loto_uniformity",
         "name": "Tần suất con lô",
         "stations": 21,
-        "z_sum": 5.202603,
-        "z_per_sqrt_station": 1.135301,
-        "p_value": 0.131373725254949,
-        "q_value": 0.2101979604
+        "z_sum": 5.189886,
+        "z_per_sqrt_station": 1.132526,
+        "p_value": 0.129374125174965,
+        "q_value": 0.2069986003
       },
       {
         "test": "dispersion",
         "name": "Độ phân tán",
         "stations": 21,
-        "z_sum": -0.594361,
-        "z_per_sqrt_station": -0.1297,
-        "p_value": 0.8944211157768446,
-        "q_value": 0.9528094381
+        "z_sum": -0.601508,
+        "z_per_sqrt_station": -0.13126,
+        "p_value": 0.8970205958808238,
+        "q_value": 0.9474105179
       },
       {
         "test": "repeat_lift",
         "name": "Lô rơi / lô gan",
         "stations": 21,
-        "z_sum": 8.723527,
-        "z_per_sqrt_station": 1.90363,
-        "p_value": 0.05718856228754249,
-        "q_value": 0.1143771246
+        "z_sum": 8.795883,
+        "z_per_sqrt_station": 1.919419,
+        "p_value": 0.05458908218356329,
+        "q_value": 0.1091781644
       },
       {
         "test": "gap_shape",
         "name": "Nhịp khoảng cách",
         "stations": 21,
-        "z_sum": 8.736557,
-        "z_per_sqrt_station": 1.906473,
-        "p_value": 0.03179364127174565,
-        "q_value": 0.1143771246
+        "z_sum": 9.003615,
+        "z_per_sqrt_station": 1.96475,
+        "p_value": 0.027394521095780843,
+        "q_value": 0.1034459775
       },
       {
         "test": "hot_persistence",
         "name": "Độ bền số nóng",
         "stations": 21,
-        "z_sum": -2.36434,
-        "z_per_sqrt_station": -0.515941,
-        "p_value": 0.614877024595081,
-        "q_value": 0.8198360328
+        "z_sum": -2.027531,
+        "z_per_sqrt_station": -0.442444,
+        "p_value": 0.6652669466106779,
+        "q_value": 0.8870225955
       }
     ]
   },
@@ -2844,11 +2844,11 @@
       "relative_lift": 1.263667
     },
     "pooled_region": {
-      "draws": 1295,
+      "draws": 1298,
       "hypotheses": 100,
       "baseline": 0.1654862385,
-      "absolute_lift": 0.044636,
-      "relative_lift": 0.269727
+      "absolute_lift": 0.044584,
+      "relative_lift": 0.269415
     }
   },
   "reading": "Sau hiệu chỉnh đa kiểm: 4/168 phép kiểm (đài × phép kiểm) lệch khỏi máy quay công bằng — Bình Phước (chữ số theo lồng); Bến Tre (chữ số theo lồng, chữ số theo vị trí in, tần suất con lô); phép gộp cấp miền lệch ở: chữ số theo lồng. Sổ miền chỉ ghi từ một nơi, nên độ lệch này có thể là của bộ cầu hoặc của cách kết quả được ghi lại; nó chưa phải lợi thế dự báo cho tới khi phép kiểm tiến cứu trên các kỳ SAU ngày phát hiện xác nhận. Ở cỡ mẫu hiện có (khoảng 59 kỳ mỗi đài), phép kiểm chỉ phát hiện được một con lô lệch khỏi mức nền từ 20,9 điểm phần trăm trở lên."
