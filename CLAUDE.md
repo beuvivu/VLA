@@ -550,6 +550,12 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   có trong git và mọi lần triển khai tải lên nguyên `docs/` — ngày 18-11 nó đè trang kết quả mới bằng trang hôm qua 2,5 phút
   (`scripts/ops/pages_deploy_window.py`, `documentation/operations/scheduling.md`). Sổ đăng ký mô hình XSMB không chép
   engine: engine giữ sổ riêng, gộp vào thì lỗi bên này chặn được pipeline bên kia.
+- Học chuyển giao Max 3D ↔ Max 3D Pro (`vlm.forecast.transfer`, 25-11-2026): mỗi sản phẩm trộn fixed-share (tốc độ chuyển
+  CỦA ENGINE, không chỉnh) giữa luật riêng của engine và cùng `Component` học kỳ của cả hai sản phẩm theo thời gian; chấm theo NGÀY
+  (kỳ cùng ngày không thấy nhau). Hồi cứu Max 3D +2,92 log10 so với luật riêng (z 3,15), Max 3D Pro −0,02; cận tất định
+  `fixed_share_bound`. CHẠY BÓNG: không đổi luật engine, checkpoint hay e-value; sổ tiến cứu `transfer-ledger.jsonl` chỉ nối thêm,
+  chấm kỳ sau `REGISTERED_ON` (25-11-2026); đổi luật thì tăng `VERSION` VÀ dời `REGISTERED_ON` tới ngày chưa quay. BOCPD Dirichlet
+  (bộ máy XSMB) thua tilt thưa của engine trên Max 3D: đừng thay. `documentation/research/2026-11-25-hoc-chuyen-giao-max3d.md`.
 - Crawler cũ `src/vietlott_results.py` đã nghỉ; `data/vietlott/vietlott.sqlite3` chỉ còn là lưu trữ, không được ghi.
 - `multi-agent-summary.json` được commit, nên làm mới trên CÙNG dữ liệu phải giữ nguyên tệp. Phép so ở
   `service._publish_multi_agent_summary` bỏ qua `generated_at` và nhiễu dấu phẩy động (`_same_up_to_float_noise`,

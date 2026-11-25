@@ -1,5 +1,14 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — học chuyển giao Max 3D ↔ Max 3D Pro, chạy bóng (25-11-2026)
+
+- **`vlm.forecast.transfer`.** Max 3D và Max 3D Pro cùng lệch chữ số 6 ở hàng đơn vị. Mỗi sản phẩm nay có thêm một luật
+  chạy bóng: hỗn hợp chia sẻ cố định (tốc độ chuyển của engine) giữa luật riêng của engine và cùng `Component` học kỳ của
+  cả hai sản phẩm theo ngày. Hồi cứu: Max 3D +2,92 log10 so với luật riêng (z = 3,15), Max 3D Pro −0,02.
+  Không đổi luật, checkpoint, e-value hay vé công bố. `python -m vlm.forecast.transfer` ghi `data/forecast/transfer.json`
+  và sổ tiến cứu chỉ nối thêm `data/forecast/transfer-ledger.jsonl` (chấm kỳ sau 25-11-2026); `vlm-results.yml` chạy nó
+  mỗi lượt và `persist_site.FILES` commit hai tệp ấy (`tests/test_vlm_transfer.py`).
+
 ## Chưa phát hành — nguồn không được sửa kỳ đã lưu (05 → 15-11-2026)
 
 - **Max 3D / 3D Pro / 4D (05-11-2026).** Bản sao và kho canonical trả cả lịch sử, và `ProductSyncPipeline.run`
