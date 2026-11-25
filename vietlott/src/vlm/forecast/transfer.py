@@ -7,28 +7,37 @@ cả hai: chữ số 6 ở hàng đơn vị ra khoảng 11% thay vì 10% (e-valu
 phẩm riêng. Nếu nguyên nhân là chung (cùng bộ máy hay cùng bộ bóng), thì dữ liệu của sản phẩm này là bằng
 chứng cho sản phẩm kia, và học riêng bỏ phí một nửa dữ liệu.
 
-Đo trên lịch sử (seed tới 30-09/01-10-2026, chấm trước – học sau, theo ngày):
+Đo trên lịch sử (tới 23-11-2026 / 21-11-2026, chấm trước – học sau, theo ngày):
 
 * Luật học gộp (chính ``Component`` của engine, nạp kỳ của cả hai sản phẩm theo thời gian) cho Max 3D
-  log10 W = +4,81, trong khi học riêng chỉ được +1,52.
-* Max 3D Pro thì ngược lại: −0,63 log10. Năm 2024 nó hết lệch (z −0,36) đúng lúc Max 3D lệch mạnh nhất
+  log10 W = +4,74, trong khi học riêng chỉ được +1,50.
+* Max 3D Pro thì ngược lại: −0,68 log10. Năm 2024 nó hết lệch (z −0,36) đúng lúc Max 3D lệch mạnh nhất
   (z +3,16), nên nguyên nhân có phần chung nhưng không trùng hoàn toàn.
 
 Luật
 ----
 Với mỗi sản phẩm, dự báo là hỗn hợp **chia sẻ cố định** của hai luật: luật học riêng (đúng luật engine đang
-công bố) và luật học gộp. Tốc độ chuyển là CHÍNH tốc độ của engine (``Forecaster.SWITCH_YEARS``, một lần
-mỗi mười năm), không chỉnh theo dữ liệu.
+công bố) và luật học gộp. Tốc độ chuyển của hỗn hợp là CHÍNH tốc độ của engine cho sản phẩm ấy
+(``Forecaster.SWITCH_YEARS``: một lần mỗi mười năm, tức 1/1 560 kỳ), không chỉnh theo dữ liệu.
+
+Luật gộp là ``Component`` của engine với tham số THEO KỲ của Max 3D (tốc độ chuyển 1/1 560 kỳ, cửa sổ EWMA
+20/200 kỳ), nạp nguyên dòng kỳ gộp. Dòng ấy có khoảng 312 kỳ một năm thay vì 156, nên TÍNH THEO THỜI GIAN luật
+gộp chuyển khoảng năm năm một lần và quên nhanh gấp đôi luật riêng. Đó là lựa chọn của phiên bản 1, đo hồi cứu
+như vậy; đổi nó là đổi luật.
 
 **Bảo đảm tất định:** với mọi dãy kết quả, log-loss của hỗn hợp không vượt của luật riêng cộng
-``−ln(1 − PRIOR_POOLED) − T·ln(1 − share)``. ``fixed_share_bound`` tính cận ấy. Đo lại: Max 3D +2,97 log10
-so với học riêng (z = +3,23); Max 3D Pro −0,01, tức không mất gì.
+``−ln(1 − PRIOR_POOLED) − T·ln(1 − share)``. ``fixed_share_bound`` tính cận ấy. Đo lại: Max 3D +2,92 log10
+so với học riêng (z = +3,15); Max 3D Pro −0,02, tức không mất gì.
 
 Trung thực
 ----------
 * Ý tưởng gộp hai sản phẩm nảy ra SAU khi đã thấy cả hai lệch, nên điểm walk-forward chỉ là mô tả.
 * Bằng chứng thật là phép kiểm TIẾN CỨU: luật đóng băng cùng ``VERSION``, và chỉ chấm các kỳ có ngày sau
-  ``REGISTERED_ON``.
+  ``REGISTERED_ON``. Luật còn dựa vào mã của engine (``Component``, ``SWITCH_YEARS``), nên mỗi dòng sổ mang
+  ``engine_fingerprint``: dấu vân tay HÀNH VI của luật trên một dãy giả lập cố định. Engine đổi thì sổ ngừng
+  ghi và báo ``engine_consistent = False`` cho tới khi đăng ký lại (tăng ``VERSION``).
+* Một dòng sổ chỉ được ghi khi nó đã chắc chắn: kỳ của MỌI sản phẩm đã đủ tới ngày ấy (``final_through``).
+  Nếu không, kỳ Max 3D Pro về muộn sẽ làm luật gộp học khác đi, và dòng Max 3D đã ghi thành sai luật.
 * Module CHẠY BÓNG. Nó không đổi luật engine, checkpoint hay e-value đang công bố. Một mình nó không đủ để
   bật mặc định (luật «challenger mặc định tắt» của engine).
 * Hai sản phẩm quay khác ngày. Dù vậy, mọi kỳ của cùng một ngày vẫn được chấm hết rồi mới học: kỳ cùng giờ
@@ -45,7 +54,7 @@ from pathlib import Path
 
 import numpy as np
 
-from vietlott_engine.core.products import ProductCode
+from vietlott_engine.core.products import ProductCode, write_text_atomic
 from vietlott_engine.forecast.data import CONFIGS, DigitSpec, Series
 from vietlott_engine.forecast.engine import Forecaster
 from vlm.forecast.bayes_expert import BayesMixtureExpert
@@ -77,6 +86,57 @@ def _spec() -> DigitSpec:
     if len(specs) != 1:
         raise ValueError("Các sản phẩm học chung phải cùng khuôn chữ số")
     return specs.pop()
+
+
+def engine_fingerprint() -> str:
+    """Dấu vân tay HÀNH VI của phần engine mà luật dựa vào: chạy ``Component`` trên 24 kỳ giả lập cố định.
+
+    Đổi mã engine theo bất kỳ cách nào làm đổi dự báo (chuyên gia, tiên nghiệm, tốc độ chuyển) thì đổi dấu
+    vân tay. Đổi chú thích hay sắp lại mã thì không. Làm tròn 9 chữ số để nhiễu bit cuối giữa các CPU không lọt.
+    """
+    import hashlib
+
+    from vietlott_engine.forecast.data import digit_counts
+
+    spec = _spec()
+    rng = np.random.default_rng(20261125)
+    counts = digit_counts(rng.integers(0, spec.alphabet, size=(24, spec.per_draw, spec.positions)), spec.alphabet)
+    expert = BayesMixtureExpert(PRODUCTS[0], COMPONENT, spec)
+    predictions = []
+    for index, row in enumerate(counts, start=1):
+        predictions.append(expert.predict())
+        expert.learn(row, index)
+    payload = {
+        "switch_years": Forecaster.SWITCH_YEARS,
+        "share": {p.value: share(p) for p in PRODUCTS},
+        "experts": list(expert.component.names),
+        "prior": np.round(expert.component.prior, 12).tolist(),
+        "predictions": np.round(np.asarray(predictions), 9).tolist(),
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+
+
+def final_through(series: dict[ProductCode, Series]) -> date | None:
+    """Ngày mới nhất mà kỳ của MỌI sản phẩm đều đã có đủ (mã kỳ liền mạch sau ``REGISTERED_ON``).
+
+    Hai sản phẩm quay xen kẽ ngày, nên một kỳ ngày d chỉ được chấm chắc chắn khi sản phẩm kia đã có kỳ từ ngày
+    d trở đi: khi ấy mọi kỳ trước d mà luật gộp cần đều đã học. Khoảng hở mã kỳ sau ngày đăng ký (một kỳ chưa
+    đồng bộ) chặn mốc ngay trước khoảng hở.
+    """
+    horizons = []
+    for product in PRODUCTS:
+        s = series[product]
+        if len(s) == 0:
+            return None
+        ids = np.asarray(s.draw_ids)
+        days = [np.datetime64(d, "D").astype(object) for d in s.dates]
+        last = days[0]
+        for index in range(1, len(s)):
+            if ids[index] != ids[index - 1] + 1 and days[index] > REGISTERED_ON:
+                break
+            last = days[index]
+        horizons.append(last)
+    return min(horizons)
 
 
 def fixed_share_bound(draws: int, product: ProductCode) -> float:
@@ -212,18 +272,21 @@ def product_summary(product: ProductCode, steps: list[Step], model: TransferMode
     }
 
 
-def prospective(steps: list[Step], ledger_path: Path) -> dict:
-    """Chấm các kỳ có ngày sau ``REGISTERED_ON`` vào sổ chỉ nối thêm; trả tổng và z theo từng sản phẩm.
+def prospective(steps: list[Step], ledger_path: Path, through: date | None, fingerprint: str) -> dict:
+    """Chấm các kỳ có ngày trong (``REGISTERED_ON``, ``through``] vào sổ chỉ nối thêm; trả tổng và z theo sản phẩm.
 
-    Dòng đã ghi không bao giờ bị sửa. Tính lại khác dòng đã ghi thì ``ledger_consistent`` là ``False``.
+    ``through`` là ``final_through``: dòng sau mốc ấy chưa chắc chắn nên chưa ghi, lượt sau ghi. Dòng đã ghi không
+    bao giờ bị sửa. Tính lại khác dòng đã ghi thì ``ledger_consistent`` là ``False``. Dòng cũ của cùng ``VERSION``
+    mang dấu vân tay engine khác thì ``engine_consistent`` là ``False`` và sổ ngừng ghi: luật đã đổi mà chưa đăng ký lại.
     """
     rows = []
     if ledger_path.exists():
         rows = [json.loads(line) for line in ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
     recorded = {(r["version"], r["product"], r["draw_id"]): r for r in rows}
     consistent = True
+    engine_consistent = all(r.get("engine") == fingerprint for r in rows if r["version"] == VERSION)
     for step in steps:
-        if step.day <= REGISTERED_ON:
+        if step.day <= REGISTERED_ON or through is None or step.day > through:
             continue
         key = (VERSION, step.product.value, step.draw_id)
         gain_sep = round(step.mix - step.sep, 9)
@@ -231,29 +294,28 @@ def prospective(steps: list[Step], ledger_path: Path) -> dict:
         if key in recorded:
             consistent = consistent and abs(recorded[key]["gain_vs_separate"] - gain_sep) <= 1e-6
             continue
-        row = {"version": VERSION, "product": step.product.value, "draw_id": step.draw_id,
+        if not engine_consistent:
+            continue
+        row = {"version": VERSION, "product": step.product.value, "draw_id": step.draw_id, "engine": fingerprint,
                "date": step.day.isoformat(), "gain_vs_separate": gain_sep, "gain_vs_uniform": gain_uniform}
         rows.append(row)
         recorded[key] = row
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in rows)
     if not ledger_path.exists() or ledger_path.read_text(encoding="utf-8") != text:
-        _atomic_write(ledger_path, text)
-    out = {"version": VERSION, "registered_on": REGISTERED_ON.isoformat(), "ledger_consistent": consistent,
-           "products": {}}
+        write_text_atomic(ledger_path, text)
+    out = {"version": VERSION, "registered_on": REGISTERED_ON.isoformat(),
+           "ledger_through": through.isoformat() if through is not None else None,
+           "engine_fingerprint": fingerprint, "ledger_consistent": consistent,
+           "engine_consistent": engine_consistent, "products": {}}
     for product in PRODUCTS:
         mine = [r for r in rows if r["version"] == VERSION and r["product"] == product.value]
         gains = np.array([r["gain_vs_separate"] for r in mine], dtype=float)
         uniform = float(sum(r["gain_vs_uniform"] for r in mine) / math.log(10))
-        out["products"][product.value] = {**_paired(gains), "log10_e_vs_fair": uniform,
-                                          "eligible": bool(gains.size >= 2 and _paired(gains)["z"] >= PROMOTE_Z)}
+        paired = _paired(gains)
+        eligible = consistent and engine_consistent and gains.size >= 2 and paired["z"] >= PROMOTE_Z
+        out["products"][product.value] = {**paired, "log10_e_vs_fair": uniform, "eligible": bool(eligible)}
     return out
-
-
-def _atomic_write(path: Path, text: str) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    tmp.replace(path)
 
 
 def _rounded(value: object) -> object:
@@ -273,9 +335,10 @@ def summarize(series: dict[ProductCode, Series], ledger_path: Path) -> dict:
         "version": VERSION,
         "products": [p.value for p in PRODUCTS],
         "rule": {"prior_pooled": PRIOR_POOLED, "share": {p.value: share(p) for p in PRODUCTS},
-                 "registered_on": REGISTERED_ON.isoformat(), "promote_z": PROMOTE_Z},
+                 "registered_on": REGISTERED_ON.isoformat(), "promote_z": PROMOTE_Z,
+                 "pooled_law": "Component của engine, tham số theo kỳ của Max 3D, nạp dòng kỳ gộp"},
         "walk_forward": {p.value: product_summary(p, steps, model) for p in PRODUCTS},
-        "prospective": prospective(steps, ledger_path),
+        "prospective": prospective(steps, ledger_path, final_through(series), engine_fingerprint()),
         "deployment": "shadow",
     })
 
@@ -287,7 +350,7 @@ def write(series: dict[ProductCode, Series], directory: Path) -> Path:
     path = directory / SUMMARY
     old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
     if old is None or not _same_up_to_float_noise(summary, old):
-        _atomic_write(path, json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+        write_text_atomic(path, json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
     return path
 
 

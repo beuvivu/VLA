@@ -60,8 +60,11 @@ Với mỗi sản phẩm, dự báo là hỗn hợp chia sẻ cố định của
 Các tham số:
 
 - **Tiên nghiệm** 0,5 / 0,5.
-- **Tốc độ chuyển** là chính tốc độ của engine (`Forecaster.SWITCH_YEARS`), tức một lần mỗi mười năm, 1/1 560
-  kỳ. Không có tham số nào chỉnh theo dữ liệu.
+- **Tốc độ chuyển của hỗn hợp** là chính tốc độ của engine cho mỗi sản phẩm (`Forecaster.SWITCH_YEARS`), tức
+  một lần mỗi mười năm, 1/1 560 kỳ. Không có tham số nào chỉnh theo dữ liệu.
+- **Luật gộp** dùng nguyên tham số THEO KỲ của Max 3D: tốc độ chuyển 1/1 560 kỳ, cửa sổ EWMA 20/200 kỳ. Nó nhận
+  dòng kỳ gộp, khoảng 312 kỳ một năm, nên tính theo thời gian nó chuyển khoảng năm năm một lần và quên nhanh gấp
+  đôi luật riêng. Đó là lựa chọn của phiên bản 1 và là cấu hình đã đo hồi cứu. Đổi nó là đổi luật.
 - **Thứ tự chấm và học:** theo ngày. Mọi kỳ của một ngày được chấm xong mới học kỳ nào của ngày ấy, để luật gộp
   không thấy kỳ cùng giờ của sản phẩm kia.
 
@@ -95,6 +98,14 @@ liệu. Với Max 3D Pro, hỗn hợp cho ×1,073, luật riêng ×1,077.
   và so với máy công bằng.
   - Đủ điều kiện xét bật khi chênh lệch so với luật riêng trên kỳ tiến cứu đạt z ≥ 2,326 (một phía, α = 0,01).
   - Sổ không bao giờ sửa dòng cũ. Tính lại khác dòng đã ghi thì `ledger_consistent = false`.
+- **Dòng sổ chỉ ghi khi đã chắc chắn** (`final_through`): kỳ của MỌI sản phẩm phải đủ tới ngày ấy, với mã kỳ
+  liền mạch. Nếu không, kỳ Max 3D Pro về muộn sẽ làm luật gộp học khác đi, và dòng Max 3D đã ghi thành sai luật mãi
+  mãi. Dòng chưa chắc chắn được ghi ở lượt sau, khi sản phẩm kia đã theo kịp.
+- **Dấu vân tay engine.** Luật dựa vào mã của engine (`Component`, `SWITCH_YEARS`), thứ mà `VERSION` của module
+  không phủ. Mỗi dòng sổ vì thế mang `engine_fingerprint`: dấu vân tay hành vi, chạy luật trên một dãy giả lập cố
+  định. Engine đổi theo cách làm đổi dự báo thì sổ ngừng ghi và báo `engine_consistent = false`, cho tới khi đăng
+  ký lại.
+- **`eligible` cần sổ khớp:** cả `ledger_consistent` lẫn `engine_consistent` phải đúng.
 - **Chạy bóng.** Module không đổi luật engine, checkpoint (`VERSION = 5` của bộ ML), e-value hay vé đang công bố.
   Theo luật «challenger mặc định tắt», muốn đưa luật này vào dự báo công bố phải qua phép đo tiến cứu, rồi là
   một quyết định riêng.
@@ -122,3 +133,20 @@ sổ, luật gộp không học, luật trộn bỏ luật gộp, điểm trộn
 1. Đọc sổ tiến cứu sau vài chục kỳ. Mỗi sản phẩm quay 156 kỳ một năm, và độ lệch thì nhỏ. Lợi thế hồi cứu của Max
    3D là +2,92 log₁₀ qua 1 162 kỳ, tức khoảng 0,0058 nat mỗi kỳ. Cỡ ấy cần vài trăm kỳ tiến cứu mới đạt z ≥ 2,326.
 2. Thêm một khối nhỏ lên trang Vietlott, in kết quả từ `transfer.json`, nếu chủ dự án muốn thấy nó trên trang.
+
+## Rà soát sau khi gộp (25-11-2026)
+
+Codex hết hạn mức, nên PR #237 được rà lại bằng quy trình rà soát mã (mức cao). Tìm được bảy điểm, và đã sửa cả
+bảy trước khi có kỳ tiến cứu đầu tiên:
+
+1. **Quan trọng.** Dòng sổ được ghi ngay khi kỳ về, nên kỳ sản phẩm kia về muộn để lại dòng sai luật vĩnh viễn.
+   Sửa bằng `final_through`.
+2. Tài liệu nói luật gộp «chuyển như engine», nhưng tính theo thời gian nó chuyển nhanh gấp đôi. Đã sửa lời; luật
+   giữ nguyên.
+3. `eligible` có thể đúng khi sổ không khớp. Đã sửa.
+4. `VERSION` không phủ mã engine. Đã thêm dấu vân tay hành vi.
+5. Hàm ghi nguyên tử tự viết, thiếu `fsync`. Nay dùng `core.products.write_text_atomic` của engine.
+6. Docstring còn số của lần đo cũ. Đã cập nhật.
+7. Phép kiểm tệp đã commit ghim cứng ngày. Nay dùng `REGISTERED_ON`, và kiểm thêm cả hai cờ khớp.
+
+Luật chấm không đổi, nên `VERSION` vẫn là 1. Lúc sửa, sổ tiến cứu chưa có dòng nào.

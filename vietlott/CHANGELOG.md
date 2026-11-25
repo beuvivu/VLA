@@ -8,6 +8,9 @@
   Không đổi luật, checkpoint, e-value hay vé công bố. `python -m vlm.forecast.transfer` ghi `data/forecast/transfer.json`
   và sổ tiến cứu chỉ nối thêm `data/forecast/transfer-ledger.jsonl` (chấm kỳ sau 25-11-2026); `vlm-results.yml` chạy nó
   mỗi lượt và `persist_site.FILES` commit hai tệp ấy (`tests/test_vlm_transfer.py`).
+- **Rà soát sau khi gộp (25-11-2026).** Dòng sổ tiến cứu chỉ ghi khi kỳ của mọi sản phẩm đã đủ tới ngày ấy
+  (`final_through`). Mỗi dòng mang dấu vân tay hành vi của engine; engine đổi thì sổ ngừng ghi. `eligible` cần sổ khớp.
+  Ghi tệp qua `write_text_atomic`. Luật chấm không đổi (`VERSION` 1).
 
 ## Chưa phát hành — nguồn không được sửa kỳ đã lưu (05 → 15-11-2026)
 

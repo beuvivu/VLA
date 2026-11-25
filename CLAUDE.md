@@ -554,7 +554,11 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   CỦA ENGINE, không chỉnh) giữa luật riêng của engine và cùng `Component` học kỳ của cả hai sản phẩm theo thời gian; chấm theo NGÀY
   (kỳ cùng ngày không thấy nhau). Hồi cứu Max 3D +2,92 log10 so với luật riêng (z 3,15), Max 3D Pro −0,02; cận tất định
   `fixed_share_bound`. CHẠY BÓNG: không đổi luật engine, checkpoint hay e-value; sổ tiến cứu `transfer-ledger.jsonl` chỉ nối thêm,
-  chấm kỳ sau `REGISTERED_ON` (25-11-2026); đổi luật thì tăng `VERSION` VÀ dời `REGISTERED_ON` tới ngày chưa quay. BOCPD Dirichlet
+  chấm kỳ sau `REGISTERED_ON` (25-11-2026); đổi luật thì tăng `VERSION` VÀ dời `REGISTERED_ON` tới ngày chưa quay. Dòng sổ chỉ ghi khi
+  kỳ của MỌI sản phẩm đã đủ tới ngày ấy (`final_through`, mã kỳ liền mạch): ghi sớm thì kỳ sản phẩm kia về muộn để lại dòng sai luật
+  vĩnh viễn. Mỗi dòng mang `engine_fingerprint` (dấu vân tay HÀNH VI của `Component` trên dãy giả lập cố định): engine đổi thì sổ ngừng
+  ghi; `eligible` cần cả `ledger_consistent` lẫn `engine_consistent`. Luật gộp dùng tham số THEO KỲ của Max 3D trên dòng gộp ≈ 312
+  kỳ/năm (theo thời gian chuyển ≈ 5 năm/lần): đó là luật v1, đừng nói nó «chuyển như engine». BOCPD Dirichlet
   (bộ máy XSMB) thua tilt thưa của engine trên Max 3D: đừng thay. `documentation/research/2026-11-25-hoc-chuyen-giao-max3d.md`.
 - Crawler cũ `src/vietlott_results.py` đã nghỉ; `data/vietlott/vietlott.sqlite3` chỉ còn là lưu trữ, không được ghi.
 - `multi-agent-summary.json` được commit, nên làm mới trên CÙNG dữ liệu phải giữ nguyên tệp. Phép so ở

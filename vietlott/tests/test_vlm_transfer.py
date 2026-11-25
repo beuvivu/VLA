@@ -99,17 +99,86 @@ def test_prospective_scores_only_later_draws_and_never_rewrites_a_row(tmp_path: 
     series = {A: _series(A, start, 20, seed=9, step=2), B: _series(B, start + timedelta(days=1), 20, seed=10, step=2)}
     ledger = tmp_path / tr.LEDGER
     steps, _ = tr.walk_forward(series)
-    first = tr.prospective(steps, ledger)
+    through = tr.final_through(series)
+    first = tr.prospective(steps, ledger, through, "dau-van-tay")
     rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
-    assert rows and all(date.fromisoformat(r["date"]) > tr.REGISTERED_ON for r in rows)
-    later = [s for s in steps if s.day > tr.REGISTERED_ON]
-    assert len(rows) == len(later) and first["ledger_consistent"]
+    assert rows and all(tr.REGISTERED_ON < date.fromisoformat(r["date"]) <= through for r in rows)
+    assert all(r["engine"] == "dau-van-tay" for r in rows)
+    later = [s for s in steps if tr.REGISTERED_ON < s.day <= through]
+    assert len(rows) == len(later) and first["ledger_consistent"] and first["engine_consistent"]
     assert first["products"][A.value]["draws"] == len(_by_product(later, A))
     text = ledger.read_text(encoding="utf-8")
-    assert tr.prospective(steps, ledger) == first and ledger.read_text(encoding="utf-8") == text
+    assert tr.prospective(steps, ledger, through, "dau-van-tay") == first and ledger.read_text(encoding="utf-8") == text
     shifted = [tr.Step(s.product, s.draw_id, s.day, s.sep, s.pool, s.mix + 1.0, s.w_pool) for s in steps]
-    third = tr.prospective(shifted, ledger)
+    third = tr.prospective(shifted, ledger, through, "dau-van-tay")
     assert not third["ledger_consistent"] and ledger.read_text(encoding="utf-8") == text
+
+
+def _drop(series: Series, index: int) -> Series:
+    keep = np.arange(len(series)) != index
+    return Series(series.product, series.draw_ids[keep], series.dates[keep],
+                  {"digits": {"C": series.obs["digits"]["C"][keep]}})
+
+
+def test_a_row_is_written_only_once_every_product_has_caught_up(tmp_path: Path) -> None:
+    """Kỳ B về muộn: kỳ A sau nó chưa được ghi (luật gộp chưa học B), lượt sau ghi đúng giá trị và sổ vẫn khớp."""
+    start = tr.REGISTERED_ON + timedelta(days=1)
+    full = {A: _series(A, start, 6, seed=21, six=0.13, step=2), B: _series(B, start + timedelta(days=1), 6, seed=22, six=0.13, step=2)}
+    late = {A: full[A], B: full[B].head(2)}                        # B mới có hai kỳ đầu
+    gap = {A: full[A], B: _drop(full[B], 2)}                        # B thiếu một kỳ giữa chừng
+    assert tr.final_through(late) == full[B].dates[1].astype(object)
+    assert tr.final_through(gap) == full[B].dates[1].astype(object)
+    ledger = tmp_path / tr.LEDGER
+    steps, _ = tr.walk_forward(late)
+    partial = tr.prospective(steps, ledger, tr.final_through(late), "fp")
+    written = {(r["product"], r["draw_id"]) for r in map(json.loads, ledger.read_text(encoding="utf-8").splitlines())}
+    assert all(day <= full[B].dates[1].astype(object) for day in
+               [s.day for s in steps if (s.product.value, s.draw_id) in written])
+    assert partial["products"][A.value]["draws"] == 2  # hai kỳ A trước kỳ B cuối đã có
+    steps_full, _ = tr.walk_forward(full)
+    done = tr.prospective(steps_full, ledger, tr.final_through(full), "fp")
+    assert done["ledger_consistent"]
+    rows = {(r["product"], r["draw_id"]): r for r in map(json.loads, ledger.read_text(encoding="utf-8").splitlines())}
+    for step in steps_full:
+        if step.day <= tr.final_through(full):
+            assert rows[(step.product.value, step.draw_id)]["gain_vs_separate"] == pytest.approx(step.mix - step.sep, abs=1e-8)
+
+
+def test_a_changed_engine_stops_the_ledger_and_blocks_promotion(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    start = tr.REGISTERED_ON + timedelta(days=1)
+    series = {A: _series(A, start, 8, seed=23, six=0.13, step=2), B: _series(B, start + timedelta(days=1), 8, seed=24, six=0.13, step=2)}
+    fingerprint = tr.engine_fingerprint()
+    assert fingerprint == tr.engine_fingerprint() and len(fingerprint) == 16
+    monkeypatch.setattr(tr.Forecaster, "SWITCH_YEARS", 5.0)
+    assert tr.engine_fingerprint() != fingerprint  # engine đổi hành vi thì đổi dấu vân tay
+    monkeypatch.undo()
+    original = tr.BayesMixtureExpert.predict
+    monkeypatch.setattr(tr.BayesMixtureExpert, "predict", lambda self: original(self) * (1 + 1e-6))
+    assert tr.engine_fingerprint() != fingerprint  # cùng tên chuyên gia, khác dự báo: vẫn bắt được
+    monkeypatch.undo()
+    ledger = tmp_path / tr.LEDGER
+    steps, _ = tr.walk_forward(series)
+    first_half = [s for s in steps if s.day <= start + timedelta(days=6)]
+    tr.prospective(first_half, ledger, tr.final_through(series), fingerprint)
+    before = ledger.read_text(encoding="utf-8")
+    changed = tr.prospective(steps, ledger, tr.final_through(series), "khac")
+    assert not changed["engine_consistent"] and ledger.read_text(encoding="utf-8") == before
+    assert not any(v["eligible"] for v in changed["products"].values())
+
+
+def test_eligibility_needs_a_ledger_that_still_matches_the_rule(tmp_path: Path) -> None:
+    """Sổ có z cao nhưng tính lại không khớp: không được gọi là đủ điều kiện."""
+    start = tr.REGISTERED_ON + timedelta(days=1)
+    rows = [{"version": tr.VERSION, "product": A.value, "draw_id": i, "engine": "fp", "date": (start + timedelta(days=2 * i)).isoformat(),
+             "gain_vs_separate": 1.0 + 0.01 * i, "gain_vs_uniform": 1.0} for i in range(1, 6)]
+    ledger = tmp_path / tr.LEDGER
+    ledger.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    steps = [tr.Step(A, i, date.fromisoformat(r["date"]), 0.0, 0.0, 0.5, 0.5) for i, r in zip(range(1, 6), rows)]
+    out = tr.prospective(steps, ledger, start + timedelta(days=20), "fp")
+    assert not out["ledger_consistent"] and out["products"][A.value]["z"] > tr.PROMOTE_Z
+    assert not out["products"][A.value]["eligible"]
+    matching = [tr.Step(A, i, date.fromisoformat(r["date"]), 0.0, 0.0, r["gain_vs_separate"], 0.5) for i, r in zip(range(1, 6), rows)]
+    assert tr.prospective(matching, ledger, start + timedelta(days=20), "fp")["products"][A.value]["eligible"]
 
 
 def test_write_is_deterministic_and_keeps_an_unchanged_summary(tmp_path: Path) -> None:
@@ -133,8 +202,12 @@ def test_the_committed_summary_carries_the_frozen_rule() -> None:
     assert summary["version"] == tr.VERSION and summary["products"] == [p.value for p in tr.PRODUCTS]
     assert summary["rule"]["registered_on"] == tr.REGISTERED_ON.isoformat()
     assert summary["rule"]["prior_pooled"] == tr.PRIOR_POOLED
-    assert all(v["last_date"] <= "2026-11-25" or summary["prospective"]["products"][k]["draws"] > 0
+    registered = tr.REGISTERED_ON.isoformat()
+    assert all(v["last_date"] <= registered or summary["prospective"]["products"][k]["draws"] > 0
+               or summary["prospective"]["ledger_through"] <= registered
                for k, v in summary["walk_forward"].items())
+    assert summary["prospective"]["ledger_consistent"] and summary["prospective"]["engine_consistent"]
+    assert summary["prospective"]["engine_fingerprint"] == tr.engine_fingerprint()
 
 
 def test_fixed_share_keeps_a_floor_under_the_losing_law() -> None:
