@@ -3,60 +3,60 @@
   "benchmark": {
     "adaptive_cage": {
       "always": {
-        "mean_gain": -0.00029653563804019214,
+        "mean_gain": -0.0002980342041761922,
         "promoted": false,
-        "se": 5.07241423615752e-05,
-        "z": -5.846045378676037
+        "se": 5.07333083304667e-05,
+        "z": -5.874527287573216
       },
-      "draws": 3910,
+      "draws": 3911,
       "first": "2016-01-05",
       "gated": {
-        "mean_gain": 1.7123683143548497e-05,
+        "mean_gain": 1.711930480472382e-05,
         "promoted": false,
-        "se": 1.891625203211848e-05,
-        "z": 0.9052365719421414
+        "se": 1.8911415241331692e-05,
+        "z": 0.9052365772873973
       },
-      "last": "2026-11-23",
+      "last": "2026-11-24",
       "memory": 104.0
     },
-    "first": "2024-11-16",
-    "last": "2026-11-23",
+    "first": "2024-11-17",
+    "last": "2026-11-24",
     "modes": {
       "de": {
         "comparisons": {
           "pooled": {
             "vs_constant": {
-              "mean_gain": -0.00909658388039287,
-              "se": 0.005519774108115406,
-              "z": -1.6479993025473063
+              "mean_gain": -0.008742974458178626,
+              "se": 0.005517452334053427,
+              "z": -1.584603532361747
             }
           },
           "thứ": {
             "kappa": 100000000.0,
             "promoted": false,
             "vs_constant": {
-              "mean_gain": -0.00909656014553553,
-              "se": 0.005519779069200294,
-              "z": -1.6479935213880654
+              "mean_gain": -0.008742947027252071,
+              "se": 0.005517457256209777,
+              "z": -1.5845971470666267
             },
             "vs_pooled": {
-              "mean_gain": 2.3734857339195592e-08,
-              "se": 8.31022748654139e-08,
-              "z": 0.2856101999329712
+              "mean_gain": 2.7430926555482545e-08,
+              "se": 8.309065500643237e-08,
+              "z": 0.3301325107301057
             }
           },
           "đài": {
             "kappa": 100000000.0,
             "promoted": false,
             "vs_constant": {
-              "mean_gain": -0.00909651103622264,
-              "se": 0.0055197820758058685,
-              "z": -1.647983726765985
+              "mean_gain": -0.00874289791793918,
+              "se": 0.0055174602597631356,
+              "z": -1.584587383745744
             },
             "vs_pooled": {
-              "mean_gain": 7.28441702294291e-08,
-              "se": 8.949618943502157e-08,
-              "z": 0.8139359976026397
+              "mean_gain": 7.654023944571605e-08,
+              "se": 8.948261736931977e-08,
+              "z": 0.855364334391484
             }
           }
         },
@@ -66,16 +66,16 @@
             "skill_vs_constant": 0.0
           },
           "pooled": {
-            "log_loss": 4.614266769868484,
-            "skill_vs_constant": -0.001975298091712263
+            "log_loss": 4.61391316044627,
+            "skill_vs_constant": -0.0018985127813038183
           },
           "thứ": {
-            "log_loss": 4.614266746133627,
-            "skill_vs_constant": -0.001975292937753448
+            "log_loss": 4.613913133015343,
+            "skill_vs_constant": -0.0018985068247538983
           },
           "đài": {
-            "log_loss": 4.614266697024314,
-            "skill_vs_constant": -0.001975282273801504
+            "log_loss": 4.613913083906031,
+            "skill_vs_constant": -0.0018984961608021766
           }
         }
       },
@@ -83,56 +83,56 @@
         "comparisons": {
           "pooled": {
             "vs_constant": {
-              "mean_gain": -0.00017031100392641917,
-              "se": 5.480943169890642e-05,
-              "z": -3.1073302285273883
+              "mean_gain": -0.000168989241004204,
+              "se": 5.481632485199568e-05,
+              "z": -3.0828269034904423
             }
           },
           "thứ": {
             "kappa": 100000000.0,
             "promoted": false,
             "vs_constant": {
-              "mean_gain": -0.00017031333403348727,
-              "se": 5.480876527828692e-05,
-              "z": -3.1074105240053402
+              "mean_gain": -0.0001689930029284473,
+              "se": 5.481563017774169e-05,
+              "z": -3.08293460059624
             },
             "vs_pooled": {
-              "mean_gain": -2.3301070681003594e-09,
-              "se": 2.011476910290943e-08,
-              "z": -0.11584060727613966
+              "mean_gain": -3.761924243274146e-09,
+              "se": 2.017635300514074e-08,
+              "z": -0.18645214238250313
             }
           },
           "đài": {
             "kappa": 100000000.0,
             "promoted": false,
             "vs_constant": {
-              "mean_gain": -0.00017028448432852651,
-              "se": 5.4807304912983065e-05,
-              "z": -3.106966938054795
+              "mean_gain": -0.0001689641532234864,
+              "se": 5.4814169042089755e-05,
+              "z": -3.0824904614306043
             },
             "vs_pooled": {
-              "mean_gain": 2.6519597892644413e-08,
-              "se": 2.354031810828072e-08,
-              "z": 1.1265607274574458
+              "mean_gain": 2.508778071762271e-08,
+              "se": 2.3595363689668616e-08,
+              "z": 1.0632504354492132
             }
           }
         },
         "models": {
           "constant": {
-            "log_loss": 0.5488118072436303,
+            "log_loss": 0.5488277739087163,
             "skill_vs_constant": 0.0
           },
           "pooled": {
-            "log_loss": 0.5489821182475568,
-            "skill_vs_constant": -0.0003103267853910019
+            "log_loss": 0.5489967631497206,
+            "skill_vs_constant": -0.00030790941901637225
           },
           "thứ": {
-            "log_loss": 0.5489821205776638,
-            "skill_vs_constant": -0.0003103310311214358
+            "log_loss": 0.5489967669116449,
+            "skill_vs_constant": -0.00030791627348780715
           },
           "đài": {
-            "log_loss": 0.5489820917279589,
-            "skill_vs_constant": -0.00031027846354803046
+            "log_loss": 0.5489967380619398,
+            "skill_vs_constant": -0.000307863707443623
           }
         }
       }
@@ -141,16 +141,16 @@
   },
   "cage_monitor": [
     {
-      "chi_square": 69.2484,
+      "chi_square": 69.1707,
       "detector_alarm_draws": 218,
       "detector_alarm_last": "2024-11-24",
       "detector_alarm_on": "2024-04-20",
       "detector_in_alarm": false,
-      "detector_log10": 1.2822,
+      "detector_log10": 1.2435,
       "detector_log10_max": 13.5037,
       "detector_log10_threshold": 6.9875,
       "df": 45,
-      "draws": 4275,
+      "draws": 4276,
       "draws_per_week": 7,
       "era_start": "2005-09-01",
       "first": "2015-01-01",
@@ -158,16 +158,16 @@
       "largest_deviation": {
         "cage": "trăm",
         "digit": 0,
-        "expected": 9832.5,
-        "observed": 9547,
-        "z": -3.035
+        "expected": 9834.8,
+        "observed": 9548,
+        "z": -3.048
       },
-      "last": "2026-11-23",
-      "log10_e": -83.5841,
+      "last": "2026-11-24",
+      "log10_e": -83.6027,
       "log10_e_max": -6.6185,
       "log10_threshold": 2.8451,
-      "p_holm": 0.06956957825253288,
-      "p_value": 0.011594929708755478,
+      "p_holm": 0.07070106544927825,
+      "p_value": 0.011783510908213042,
       "pooled": true,
       "venue": "Toàn miền Bắc"
     },
@@ -296,16 +296,16 @@
       "venue": "Thái Bình"
     },
     {
-      "chi_square": 71.2572,
+      "chi_square": 70.4719,
       "detector_alarm_draws": 0,
       "detector_alarm_last": null,
       "detector_alarm_on": null,
       "detector_in_alarm": false,
-      "detector_log10": 1.0572,
+      "detector_log10": 1.1953,
       "detector_log10_max": 4.7124,
       "detector_log10_threshold": 6.1424,
       "df": 45,
-      "draws": 610,
+      "draws": 611,
       "draws_per_week": 1,
       "era_start": "2005-09-01",
       "first": "2015-01-06",
@@ -313,16 +313,16 @@
       "largest_deviation": {
         "cage": "chục nghìn",
         "digit": 2,
-        "expected": 610.0,
-        "observed": 549,
-        "z": -2.603
+        "expected": 611.0,
+        "observed": 551,
+        "z": -2.559
       },
-      "last": "2026-11-17",
-      "log10_e": -64.1875,
+      "last": "2026-11-24",
+      "log10_e": -64.3755,
       "log10_e_max": -8.7674,
       "log10_threshold": 2.8451,
-      "p_holm": 0.05309322752682396,
-      "p_value": 0.00758474678954628,
+      "p_holm": 0.06278653618782011,
+      "p_value": 0.008969505169688587,
       "pooled": false,
       "venue": "Quảng Ninh"
     },
@@ -358,7 +358,7 @@
       "venue": "Bắc Ninh"
     }
   ],
-  "draws": 4275,
+  "draws": 4276,
   "first": "2015-01-01",
   "heterogeneity": [
     {
@@ -367,17 +367,17 @@
         "Hà Nội": 1222,
         "Hải Phòng": 611,
         "Nam Định": 611,
-        "Quảng Ninh": 610,
+        "Quảng Ninh": 611,
         "Thái Bình": 611
       },
       "grouping": "đài",
       "groups": 6,
       "label": "số lần ra của 100 con LOTO",
       "min_attainable_p_holm": 0.005,
-      "null_median": 491.958582,
-      "observed": 486.914031,
+      "null_median": 491.805053,
+      "observed": 485.028144,
       "p_holm": 1.0,
-      "p_value": 0.56,
+      "p_value": 0.585,
       "rejected": false,
       "statistic": "loto"
     },
@@ -387,17 +387,17 @@
         "Hà Nội": 1222,
         "Hải Phòng": 611,
         "Nam Định": 611,
-        "Quảng Ninh": 610,
+        "Quảng Ninh": 611,
         "Thái Bình": 611
       },
       "grouping": "đài",
       "groups": 6,
       "label": "2 số cuối Đặc Biệt",
       "min_attainable_p_holm": 0.005,
-      "null_median": 493.689908,
-      "observed": 544.654562,
-      "p_holm": 0.56,
-      "p_value": 0.056,
+      "null_median": 496.045693,
+      "observed": 545.045204,
+      "p_holm": 0.645,
+      "p_value": 0.0645,
       "rejected": false,
       "statistic": "special"
     },
@@ -407,17 +407,17 @@
         "Hà Nội": 1222,
         "Hải Phòng": 611,
         "Nam Định": 611,
-        "Quảng Ninh": 610,
+        "Quảng Ninh": 611,
         "Thái Bình": 611
       },
       "grouping": "đài",
       "groups": 6,
       "label": "chữ số ở 107 vị trí",
       "min_attainable_p_holm": 0.005,
-      "null_median": 4817.410783,
-      "observed": 4791.559028,
+      "null_median": 4816.710124,
+      "observed": 4789.799723,
       "p_holm": 1.0,
-      "p_value": 0.609,
+      "p_value": 0.5995,
       "rejected": false,
       "statistic": "position_digits"
     },
@@ -427,17 +427,17 @@
         "Hà Nội": 1222,
         "Hải Phòng": 611,
         "Nam Định": 611,
-        "Quảng Ninh": 610,
+        "Quảng Ninh": 611,
         "Thái Bình": 611
       },
       "grouping": "đài",
       "groups": 6,
       "label": "chữ số theo 5 lồng",
       "min_attainable_p_holm": 0.005,
-      "null_median": 225.11282,
-      "observed": 254.868383,
-      "p_holm": 0.588,
-      "p_value": 0.083,
+      "null_median": 224.129393,
+      "observed": 254.155588,
+      "p_holm": 0.648,
+      "p_value": 0.0905,
       "rejected": false,
       "statistic": "cage_digits"
     },
@@ -447,24 +447,24 @@
         "Hà Nội": 1222,
         "Hải Phòng": 611,
         "Nam Định": 611,
-        "Quảng Ninh": 610,
+        "Quảng Ninh": 611,
         "Thái Bình": 611
       },
       "grouping": "đài",
       "groups": 6,
       "label": "số con LOTO khác nhau mỗi kỳ",
       "min_attainable_p_holm": 0.005,
-      "null_median": 10.137119,
-      "observed": 4.803415,
+      "null_median": 9.775062,
+      "observed": 4.946793,
       "p_holm": 1.0,
-      "p_value": 0.859,
+      "p_value": 0.814,
       "rejected": false,
       "statistic": "distinct"
     },
     {
       "group_sizes": {
         "Chủ Nhật": 611,
-        "Thứ Ba": 610,
+        "Thứ Ba": 611,
         "Thứ Bảy": 611,
         "Thứ Hai": 611,
         "Thứ Năm": 611,
@@ -475,17 +475,17 @@
       "groups": 7,
       "label": "số lần ra của 100 con LOTO",
       "min_attainable_p_holm": 0.005,
-      "null_median": 591.092822,
-      "observed": 570.641755,
+      "null_median": 590.734217,
+      "observed": 568.757145,
       "p_holm": 1.0,
-      "p_value": 0.7325,
+      "p_value": 0.736,
       "rejected": false,
       "statistic": "loto"
     },
     {
       "group_sizes": {
         "Chủ Nhật": 611,
-        "Thứ Ba": 610,
+        "Thứ Ba": 611,
         "Thứ Bảy": 611,
         "Thứ Hai": 611,
         "Thứ Năm": 611,
@@ -496,17 +496,17 @@
       "groups": 7,
       "label": "2 số cuối Đặc Biệt",
       "min_attainable_p_holm": 0.005,
-      "null_median": 593.404656,
-      "observed": 646.965396,
-      "p_holm": 0.56,
-      "p_value": 0.061,
+      "null_median": 594.628466,
+      "observed": 647.378419,
+      "p_holm": 0.645,
+      "p_value": 0.0665,
       "rejected": false,
       "statistic": "special"
     },
     {
       "group_sizes": {
         "Chủ Nhật": 611,
-        "Thứ Ba": 610,
+        "Thứ Ba": 611,
         "Thứ Bảy": 611,
         "Thứ Hai": 611,
         "Thứ Năm": 611,
@@ -517,17 +517,17 @@
       "groups": 7,
       "label": "chữ số ở 107 vị trí",
       "min_attainable_p_holm": 0.005,
-      "null_median": 5778.622722,
-      "observed": 5757.444861,
+      "null_median": 5779.757168,
+      "observed": 5755.711721,
       "p_holm": 1.0,
-      "p_value": 0.581,
+      "p_value": 0.5845,
       "rejected": false,
       "statistic": "position_digits"
     },
     {
       "group_sizes": {
         "Chủ Nhật": 611,
-        "Thứ Ba": 610,
+        "Thứ Ba": 611,
         "Thứ Bảy": 611,
         "Thứ Hai": 611,
         "Thứ Năm": 611,
@@ -538,17 +538,17 @@
       "groups": 7,
       "label": "chữ số theo 5 lồng",
       "min_attainable_p_holm": 0.005,
-      "null_median": 269.455841,
-      "observed": 305.144677,
-      "p_holm": 0.588,
-      "p_value": 0.0735,
+      "null_median": 268.634728,
+      "observed": 304.431483,
+      "p_holm": 0.648,
+      "p_value": 0.081,
       "rejected": false,
       "statistic": "cage_digits"
     },
     {
       "group_sizes": {
         "Chủ Nhật": 611,
-        "Thứ Ba": 610,
+        "Thứ Ba": 611,
         "Thứ Bảy": 611,
         "Thứ Hai": 611,
         "Thứ Năm": 611,
@@ -559,21 +559,21 @@
       "groups": 7,
       "label": "số con LOTO khác nhau mỗi kỳ",
       "min_attainable_p_holm": 0.005,
-      "null_median": 12.44512,
-      "observed": 8.699487,
+      "null_median": 11.992306,
+      "observed": 8.842865,
       "p_holm": 1.0,
-      "p_value": 0.722,
+      "p_value": 0.687,
       "rejected": false,
       "statistic": "distinct"
     }
   ],
-  "last": "2026-11-23",
+  "last": "2026-11-24",
   "permutations": 1999,
   "profile_kappa": {
     "de": 100000000.0,
     "loto": 100000000.0
   },
-  "reading": "Trên 4275 kỳ (01/01/2015 → 23/11/2026), không thống kê nào cho thấy kết quả khác nhau giữa các đài hay các thứ: p sau Holm nhỏ nhất là 0,560 (2 số cuối Đặc Biệt theo đài). Tính trên toàn quãng từ kỳ đầu, chưa dãy nào lệch khỏi phân bố đều theo lồng. Bộ phát hiện thay đổi theo lồng từng báo động ở: Toàn miền Bắc (từ 20/04/2024 tới 24/11/2024, nay đã về dưới ngưỡng, đỉnh 10^13,5, ngưỡng 10^7,0). Mô hình lồng thích nghi chỉ bật khi báo động không thắng hằng số trên toàn lịch sử (z = +0,91). Xác suất riêng từng đài không thắng ngoài mẫu: so với tần suất gộp z = +1,13, so với hằng số z = −3,11 (chính tần suất gộp đã kém hằng số, z = −3,11). Vì vậy xác suất cho mọi đài giữ mức chung: mỗi con LOTO 23,77%, mỗi số Đặc Biệt 1%.",
+  "reading": "Trên 4276 kỳ (01/01/2015 → 24/11/2026), không thống kê nào cho thấy kết quả khác nhau giữa các đài hay các thứ: p sau Holm nhỏ nhất là 0,645 (2 số cuối Đặc Biệt theo đài). Tính trên toàn quãng từ kỳ đầu, chưa dãy nào lệch khỏi phân bố đều theo lồng. Bộ phát hiện thay đổi theo lồng từng báo động ở: Toàn miền Bắc (từ 20/04/2024 tới 24/11/2024, nay đã về dưới ngưỡng, đỉnh 10^13,5, ngưỡng 10^7,0). Mô hình lồng thích nghi chỉ bật khi báo động không thắng hằng số trên toàn lịch sử (z = +0,91). Xác suất riêng từng đài không thắng ngoài mẫu: so với tần suất gộp z = +1,06, so với hằng số z = −3,08 (chính tần suất gộp đã kém hằng số, z = −3,08). Vì vậy xác suất cho mọi đài giữ mức chung: mỗi con LOTO 23,77%, mỗi số Đặc Biệt 1%.",
   "schedule": [
     {
       "basis": "Quay chung từ 01-09-2005 (Quyết định 2564/QĐ-BTC); lịch luân phiên đang ghi nhận.",
@@ -597,7 +597,7 @@
     "Hà Nội": 1222,
     "Hải Phòng": 611,
     "Nam Định": 611,
-    "Quảng Ninh": 610,
+    "Quảng Ninh": 611,
     "Thái Bình": 611
   }
 }
