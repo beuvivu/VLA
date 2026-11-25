@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 FILES = ('data/results/results.jsonl', 'data/forecast/ledger.jsonl', 'data/forecast/ml-ledger.jsonl',
-         'data/forecast/multi-agent-summary.json')
+         'data/forecast/multi-agent-summary.json', 'data/forecast/transfer.json', 'data/forecast/transfer-ledger.jsonl')
 
 
 def git(*args: str) -> str:

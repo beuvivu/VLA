@@ -179,6 +179,11 @@ jobs:
       - name: Hoàn tất dự báo ML theo dữ liệu mới
         continue-on-error: true
         run: vlm-forecast next --product all > ml-forecasts.json
+      # Challenger chạy bóng: Max 3D và Max 3D Pro học chung (vlm.forecast.transfer). Không đổi luật
+      # engine; ghi data/forecast/transfer.json và sổ tiến cứu transfer-ledger.jsonl (bước sau commit).
+      - name: Học chuyển giao Max 3D ↔ Max 3D Pro (chạy bóng)
+        continue-on-error: true
+        run: python -m vlm.forecast.transfer --dir data/forecast > transfer-report.json
       - name: Giữ kết quả đã xác thực trong repo
         id: persist
         if: always()
