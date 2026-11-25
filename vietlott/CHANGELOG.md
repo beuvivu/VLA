@@ -1,5 +1,12 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — Vietlott là mã của VLA, gỡ phần phát hành riêng (25-11-2026)
+
+- Kho VLM đã bỏ hẳn; mã Vietlott là một phần của VLA. Gỡ `vlm-release.yml` (phát hành bằng tag `vlm-v…`, chưa từng
+  chạy), `vlm-installer.yml` (chạy bộ cài mỗi tuần trên Linux, macOS, Windows) và ba bộ cài `install.sh`, `install.ps1`,
+  `install.cmd`. `paths.project_root` thôi đọc `<venv>/vietlott_home.txt` (chỉ bộ cài ghi tệp ấy). `make install` / `make dev`
+  cài bằng pip; `docs/INSTALL.md` viết lại cho cách cài trong kho VLA.
+
 ## Chưa phát hành — học chuyển giao Max 3D ↔ Max 3D Pro, chạy bóng (25-11-2026)
 
 - **`vlm.forecast.transfer`.** Max 3D và Max 3D Pro cùng lệch chữ số 6 ở hàng đơn vị. Mỗi sản phẩm nay có thêm một luật

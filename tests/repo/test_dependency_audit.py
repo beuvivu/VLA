@@ -2,7 +2,7 @@
 
 Dependabot không cập nhật pip cho Python 3.15, nên job này là cảnh báo bảo mật duy nhất của gói Python.
 Ngoài requirements, nó phải cài cả gói mà workflow cài thẳng trong lệnh `pip install` (playwright của job
-Chromium, build của vlm-release.yml) và mọi phần tuỳ chọn của engine mà workflow cài (xgboost/lightgbm
+Chromium; build của vlm-release.yml, gỡ 25-11-2026) và mọi phần tuỳ chọn của engine mà workflow cài (xgboost/lightgbm
 của job ML) — bốn góp ý Codex trên PR #206 chỉ ra từng gói lọt khỏi bản trước. Tập gói tính bằng
 `scripts/ops/audit_install_set.py`; luật đọc lệnh cài được ghim trên workflow dựng sẵn, còn phép trên kho
 thật canh rằng các gói đã biết vẫn nằm trong tập.
@@ -85,7 +85,7 @@ def test_a_pinned_install_wins_over_a_bare_one(tmp_path: Path) -> None:
 
 def test_the_real_install_set_covers_every_package_codex_found_missing() -> None:
     extra = audit.extra_requirements()
-    assert {"playwright==1.55.0", "build"} <= set(extra)
+    assert "playwright==1.55.0" in extra
     pins = requirement_pins()
     assert [line for line in extra if line.split("==")[0].lower() in pins] == [], "gói đã có trong requirements"
     extras = audit.engine_extras()

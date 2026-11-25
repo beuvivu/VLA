@@ -7,10 +7,9 @@ Hệ thống phân tích định lượng cho **toàn bộ sản phẩm** xổ s
 **ML và tự học sau kỳ quay:** [hướng dẫn CLI/API](docs/VLM_ML_FORECAST.md), [kiểm định dữ liệu thật](reports/VLM_ML_2026-10-03.md). Thêm GRU với backpropagation, logistic online, Random Forest và optional XGBoost/LightGBM; crawler tự gọi học sau khi lưu kết quả. `vlm-forecast next --product mega645 --top-n 10` trả xác suất tổ hợp, diagnostics và confidence có kiểm định. Benchmark mới chưa cải thiện log-loss so với fair; giữ xác suất triển khai theo fair cho đến khi có bằng chứng live. Snapshot mới có 538 gap Keno, 83.874 ID Bingo18 còn thiếu từ kỳ đầu và 11 date anomaly Keno, nên các số đếm audit seed ở dòng trên là mốc lịch sử.
 
 > **Cài đặt nhanh** (chi tiết: [docs/INSTALL.md](docs/INSTALL.md))
-> - **Windows:** giải nén, bấm đúp `install.cmd` (chưa có Python: `install.cmd -InstallPython`). Sau đó, trong thư mục này: `vietlott forecast next` (Command Prompt) hoặc `.\vietlott.cmd forecast next` (PowerShell).
-> - **Linux / macOS:** `bash install.sh`, rồi `./vietlott forecast next`.
+> - **Máy cá nhân:** `cd vietlott && python -m pip install -e ".[dev,crawler]" && vietlott init`, rồi `vietlott forecast next`.
 > - **Docker:** `docker compose up -d` → API tại http://localhost:8000/docs.
-> - **GitHub (repo riêng):** đẩy mã lên, bật Pages (Source: GitHub Actions); workflow tự đồng bộ, học, ghi sổ dự báo và dựng lại trang sau mỗi luồng cập nhật kết quả; luồng đồng bộ tổng thể chạy hai lần mỗi ngày.
+> - **GitHub:** các workflow `vlm-*.yml` ở gốc kho VLA tự đồng bộ, học, ghi sổ dự báo và lưu dữ liệu; trang Vietlott của site do `vietlott-results.yml` dựng.
 
 **v4.0 — repo riêng, bộ cài hoàn chỉnh** (tách khỏi VLA): gói Python `vietlott_engine` (`pip install -e .`, lệnh `vietlott`; không còn package `src` trùng tên với VLA), bộ cài `install.cmd` / `install.ps1` (Windows PowerShell 5.1 trở lên) và `install.sh` (Linux, macOS), lệnh `vietlott init` (nạp dữ liệu đi kèm, học bộ dự báo, kiểm tra) và `vietlott doctor`, sổ dự báo chỉ nhận dự báo ghi **trước** kỳ quay theo lịch quay chính thức, và GitHub Actions: CI (test trên Linux, Windows), chạy thử chính các bộ cài trên Linux / macOS / Windows, cập nhật tự động + trang tĩnh trên GitHub Pages (JSON cho VLA hoặc trang khác đọc), phát hành bằng tag.
 
@@ -538,7 +537,6 @@ API: `GET /forecast/{sản phẩm}?record=true` (học kỳ mới, trả dự b�
 
 ```
 vietlott-quant-engine/
-├── install.cmd  install.ps1  install.sh   # bộ cài (Windows / Linux, macOS) → .venv + lệnh tắt vietlott(.cmd)
 ├── src/vietlott_engine/   # gói Python (pip install -e .; lệnh `vietlott`), paths.py tìm thư mục dự án
 │   ├── core/            # GameSpec (luật 3 game, cơ cấu giải, thuế, trần 300 tỷ, luật chia giải), Draw/Ticket, DrawHistory, PrizeHistory,
 │   │                    # products (8 sản phẩm, ProductHistory cho Keno/Bingo18/Max 3D/Max 4D, danh sách loại trừ)
@@ -565,8 +563,8 @@ vietlott-quant-engine/
 ├── scripts/             # build_official_dataset.py (dựng data/seed từ bản ghi chính thức), build_prize_dataset.py (nguồn v3),
 │                        # market_report.py, bao_report.py, products_report.py, verification_checklist.py (trang nên kiểm bằng tay), forecast_report.py,
 │                        # build_site.py (trang tĩnh + JSON cho GitHub Pages)
-├── .github/workflows/   # ci.yml (test), installer.yml (bộ cài trên 3 hệ điều hành), update.yml (đồng bộ, dự báo, sổ, Pages), release.yml (tag → Release)
-├── docs/INSTALL.md      # hướng dẫn cài đặt, đưa lên GitHub, phát hành, sự cố thường gặp
+├── docs/INSTALL.md      # cài đặt, Docker, lệnh thường dùng, sự cố thường gặp
+│                        # (workflow ở gốc kho VLA: .github/workflows/vlm-{ci,results,update}.yml)
 ├── tests/               # 178 test (pytest)
 ├── data/seed/           # snapshot: kết quả + bảng giải 3 game, Keno, Bingo18, Max 3D, Max 3D Pro, Max 4D, exclusions.json,
 │                        # keno_rules_official.json, OFFICIAL_DATA_REPORT.json, DATA_MERGE_REPORT.json
@@ -583,14 +581,7 @@ Luồng dữ liệu: `Source → Pydantic validation → integrity check → Duc
 
 ### 3.1 Local
 
-Bộ cài làm mọi bước (môi trường ảo `.venv`, cài gói, `.env`, nạp dữ liệu, học bộ dự báo, kiểm tra) — xem [docs/INSTALL.md](docs/INSTALL.md):
-
-```bash
-bash install.sh              # Linux / macOS   (Windows: install.cmd)
-bash install.sh --dev        # thêm pytest/ruff/mypy và chạy bộ test
-```
-
-Cài tay, nếu muốn:
+Xem [docs/INSTALL.md](docs/INSTALL.md). Tóm tắt:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate

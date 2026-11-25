@@ -45,8 +45,8 @@ jobs:
           python -m pip install --no-cache-dir -r requirements-dev.txt -r requirements-live.txt
           python -m pip install --no-cache-dir pip-audit==2.10.1
       - name: Cài thêm gói mà workflow cài thẳng trong lệnh cài
-        # Gói viết thẳng trong `pip install` của một workflow mà requirements không có — playwright của job
-        # Chromium, build của vlm-release.yml — cũng chạy trên runner, nên cũng phải bị chấm: bản ghim nếu
+        # Gói viết thẳng trong `pip install` của một workflow mà requirements không có — như playwright của job
+        # Chromium — cũng chạy trên runner, nên cũng phải bị chấm: bản ghim nếu
         # workflow ghim, bản mới nhất nếu không (đúng thứ workflow ấy sẽ cài). Đọc từ chính các workflow
         # (scripts/ops/audit_install_set.py) để gói thêm sau này không lọt.
         run: |

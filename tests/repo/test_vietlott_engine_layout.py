@@ -28,7 +28,7 @@ def test_the_engine_is_a_self_contained_project() -> None:
                 "data/seed", "scripts/persist_site.py", "scripts/build_site.py", "tests/conftest.py"):
         assert (ENGINE / rel).exists(), rel
     assert {p.name for p in WORKFLOWS} == {
-        "vlm-ci.yml", "vlm-installer.yml", "vlm-release.yml", "vlm-results.yml", "vlm-update.yml",
+        "vlm-ci.yml", "vlm-results.yml", "vlm-update.yml",
     }
 
 
