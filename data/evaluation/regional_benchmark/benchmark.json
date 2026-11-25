@@ -14,56 +14,56 @@
   "regions": {
     "mt": {
       "region_name": "Miền Trung",
-      "data_through": "2026-11-24",
+      "data_through": "2026-11-25",
       "modes": {
         "loto": {
-          "station_draws": 725,
+          "station_draws": 727,
           "stations": 14,
           "first_scored": "2025-12-17",
-          "last_scored": "2026-11-24",
+          "last_scored": "2026-11-25",
           "baseline": 0.1654862385,
           "models": {
             "deu": {
               "name": "Dự báo đều",
               "post_hoc": false,
-              "log_loss": 0.448684202,
-              "log_loss_uniform": 0.448684202,
+              "log_loss": 0.4487042164,
+              "log_loss_uniform": 0.4487042164,
               "skill": 0.0,
               "level": 16.548623855,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1655034483,
+                "hit_rate": 0.1655158184,
                 "chance": 0.1654862385,
-                "ci_low": 0.1647478992,
-                "ci_high": 0.1662304518,
-                "p_value": 0.24187581241875813,
-                "hits_per_draw": 1.6550344828
+                "ci_low": 0.1647666,
+                "ci_high": 0.1662691007,
+                "p_value": 0.2526747325267473,
+                "hits_per_draw": 1.6551581843
               }
             },
             "tan_suat": {
               "name": "Tần suất lịch sử",
               "post_hoc": false,
-              "log_loss": 0.4630989094,
-              "log_loss_uniform": 0.448684202,
-              "skill": -0.0321266213,
-              "level": 16.5123354618,
+              "log_loss": 0.4630971319,
+              "log_loss_uniform": 0.4487042164,
+              "skill": -0.0320766218,
+              "level": 16.5122564148,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1666011841,
+                "hit_rate": 0.1665555137,
                 "chance": 0.1654862385,
-                "ci_low": 0.159019294,
-                "ci_high": 0.174228096,
-                "p_value": 0.7721227877212279,
-                "hits_per_draw": 1.6660118406
+                "ci_low": 0.1596714029,
+                "ci_high": 0.1738544,
+                "p_value": 0.7847215278472153,
+                "hits_per_draw": 1.6655551368
               },
-              "mean_gain": -0.0144147075,
-              "ci_low": -0.0159493627,
-              "ci_high": -0.0128894561,
+              "mean_gain": -0.0143929154,
+              "ci_low": -0.0158688871,
+              "ci_high": -0.0129423205,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.001992385,
+              "detectable_gain": 0.0019874116,
               "halves": [
-                -0.0193942473,
-                -0.0094488853
+                -0.0193572908,
+                -0.0094421785
               ],
               "stations": [
                 {
@@ -82,8 +82,8 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -0.0125689316,
+                  "draws": 99,
+                  "mean_gain": -0.0124831112,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -145,8 +145,8 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -0.0096088403,
+                  "draws": 99,
+                  "mean_gain": -0.0096018208,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -172,27 +172,27 @@
             "tan_suat_truot": {
               "name": "Tần suất 20 kỳ gần nhất",
               "post_hoc": false,
-              "log_loss": 0.4805583963,
-              "log_loss_uniform": 0.448684202,
-              "skill": -0.0710392614,
-              "level": 16.5230050768,
+              "log_loss": 0.4806177232,
+              "log_loss_uniform": 0.4487042164,
+              "skill": -0.071123706,
+              "level": 16.523210162,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.160247331,
+                "hit_rate": 0.1602614639,
                 "chance": 0.1654862385,
-                "ci_low": 0.152776128,
-                "ci_high": 0.1675977956,
-                "p_value": 0.1695830416958304,
-                "hits_per_draw": 1.6024733102
+                "ci_low": 0.15291731,
+                "ci_high": 0.1677338769,
+                "p_value": 0.1792820717928207,
+                "hits_per_draw": 1.6026146386
               },
-              "mean_gain": -0.0318741943,
-              "ci_low": -0.0339290267,
-              "ci_high": -0.0298346199,
+              "mean_gain": -0.0319135068,
+              "ci_low": -0.0339031992,
+              "ci_high": -0.0299840107,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0029633758,
+              "detectable_gain": 0.0029735356,
               "halves": [
-                -0.0326400106,
-                -0.0311104877
+                -0.0326440701,
+                -0.0311849505
               ],
               "stations": [
                 {
@@ -211,8 +211,8 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -0.0322068795,
+                  "draws": 99,
+                  "mean_gain": -0.0317543935,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -274,8 +274,8 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -0.0321358478,
+                  "draws": 99,
+                  "mean_gain": -0.0328710189,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -301,27 +301,27 @@
             "bayes_thuc_nghiem": {
               "name": "Bayes thực nghiệm",
               "post_hoc": false,
-              "log_loss": 0.4487107044,
-              "log_loss_uniform": 0.448684202,
-              "skill": -5.90671e-05,
-              "level": 16.5486703786,
+              "log_loss": 0.4487306467,
+              "log_loss_uniform": 0.4487042164,
+              "skill": -5.89036e-05,
+              "level": 16.5486702293,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1666011841,
+                "hit_rate": 0.1665555137,
                 "chance": 0.1654862385,
-                "ci_low": 0.159019294,
-                "ci_high": 0.174228096,
-                "p_value": 0.7721227877212279,
-                "hits_per_draw": 1.6660118406
+                "ci_low": 0.1596714029,
+                "ci_high": 0.1738544,
+                "p_value": 0.7847215278472153,
+                "hits_per_draw": 1.6655551368
               },
-              "mean_gain": -2.65025e-05,
-              "ci_low": -4.44195e-05,
-              "ci_high": -1.13385e-05,
-              "p_value": 0.0004999500049995,
-              "detectable_gain": 2.44828e-05,
+              "mean_gain": -2.64303e-05,
+              "ci_low": -4.42274e-05,
+              "ci_high": -1.13679e-05,
+              "p_value": 0.0005999400059994001,
+              "detectable_gain": 2.44159e-05,
               "halves": [
-                -5.30497e-05,
-                -2.84e-08
+                -5.29032e-05,
+                -3.01e-08
               ],
               "stations": [
                 {
@@ -340,9 +340,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -1.63252e-05,
-                  "p_value": 0.2766723327667233,
+                  "draws": 99,
+                  "mean_gain": -1.61617e-05,
+                  "p_value": 0.2816718328167183,
                   "p_holm": 1.0
                 },
                 {
@@ -403,9 +403,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -8.60068e-05,
-                  "p_value": 0.057694230576942306,
+                  "draws": 99,
+                  "mean_gain": -8.5142e-05,
+                  "p_value": 0.051994800519948,
                   "p_holm": 1.0
                 },
                 {
@@ -424,33 +424,33 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.0014998500149985001,
+              "p_holm": 0.0017998200179982003,
               "edge": false
             },
             "long_chu_so": {
               "name": "Chữ số theo lồng",
               "post_hoc": false,
-              "log_loss": 0.4504061623,
-              "log_loss_uniform": 0.448684202,
-              "skill": -0.0038378001,
-              "level": 16.5211285663,
+              "log_loss": 0.4504183693,
+              "log_loss_uniform": 0.4487042164,
+              "skill": -0.003820229,
+              "level": 16.5211744283,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1708006568,
+                "hit_rate": 0.1708809851,
                 "chance": 0.1654862385,
-                "ci_low": 0.1626859456,
-                "ci_high": 0.1799723036,
-                "p_value": 0.21037896210378962,
-                "hits_per_draw": 1.7080065681
+                "ci_low": 0.1628135501,
+                "ci_high": 0.1794494869,
+                "p_value": 0.21247875212478753,
+                "hits_per_draw": 1.7088098513
               },
-              "mean_gain": -0.0017219603,
-              "ci_low": -0.0021455417,
-              "ci_high": -0.0012879053,
+              "mean_gain": -0.0017141529,
+              "ci_low": -0.0021476149,
+              "ci_high": -0.0012740309,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0006328755,
+              "detectable_gain": 0.0006314782,
               "halves": [
-                -0.0019525329,
-                -0.0014920229
+                -0.0019548234,
+                -0.0014741435
               ],
               "stations": [
                 {
@@ -469,9 +469,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -0.0014358148,
-                  "p_value": 0.025697430256974303,
+                  "draws": 99,
+                  "mean_gain": -0.0014360411,
+                  "p_value": 0.026497350264973504,
                   "p_holm": 1.0
                 },
                 {
@@ -532,9 +532,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -0.0012256995,
-                  "p_value": 0.029197080291970802,
+                  "draws": 99,
+                  "mean_gain": -0.0011760428,
+                  "p_value": 0.0352964703529647,
                   "p_holm": 1.0
                 },
                 {
@@ -559,27 +559,27 @@
             "long_bayes": {
               "name": "Chữ số theo lồng (Bayes thực nghiệm)",
               "post_hoc": true,
-              "log_loss": 0.4487624903,
-              "log_loss_uniform": 0.448684202,
-              "skill": -0.0001744841,
-              "level": 16.5461075099,
+              "log_loss": 0.4487827724,
+              "log_loss_uniform": 0.4487042164,
+              "skill": -0.000175073,
+              "level": 16.5461120153,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1702489327,
+                "hit_rate": 0.1703307788,
                 "chance": 0.1654862385,
-                "ci_low": 0.1621847217,
-                "ci_high": 0.1792493773,
-                "p_value": 0.260973902609739,
-                "hits_per_draw": 1.7024893268
+                "ci_low": 0.1623095066,
+                "ci_high": 0.1788042415,
+                "p_value": 0.26207379262073793,
+                "hits_per_draw": 1.703307788
               },
-              "mean_gain": -7.82883e-05,
-              "ci_low": -0.0002086058,
-              "ci_high": 5.00634e-05,
-              "p_value": 0.256974302569743,
-              "detectable_gain": 0.000193228,
+              "mean_gain": -7.8556e-05,
+              "ci_low": -0.0002122473,
+              "ci_high": 5.66186e-05,
+              "p_value": 0.24617538246175383,
+              "detectable_gain": 0.0001926994,
               "halves": [
-                -0.0001350439,
-                -2.1689e-05
+                -0.0001346747,
+                -2.25914e-05
               ],
               "stations": [
                 {
@@ -598,9 +598,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -4.12036e-05,
-                  "p_value": 0.252974702529747,
+                  "draws": 99,
+                  "mean_gain": -4.44252e-05,
+                  "p_value": 0.22377762223777622,
                   "p_holm": 1.0
                 },
                 {
@@ -661,9 +661,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": 2.348e-07,
-                  "p_value": 0.7022297770222977,
+                  "draws": 99,
+                  "mean_gain": 3.227e-07,
+                  "p_value": 0.6002399760023998,
                   "p_holm": 1.0
                 },
                 {
@@ -682,33 +682,33 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.513948605139486,
+              "p_holm": 0.49235076492350766,
               "edge": false
             },
             "hoi_quy_logistic": {
               "name": "Hồi quy logistic",
               "post_hoc": false,
-              "log_loss": 0.4487020618,
-              "log_loss_uniform": 0.448684202,
-              "skill": -3.98049e-05,
-              "level": 16.4834182048,
+              "log_loss": 0.4487222461,
+              "log_loss_uniform": 0.4487042164,
+              "skill": -4.01818e-05,
+              "level": 16.4835442781,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1668528736,
+                "hit_rate": 0.1669440624,
                 "chance": 0.1654862385,
-                "ci_low": 0.1586944962,
-                "ci_high": 0.1746784779,
-                "p_value": 0.7397260273972602,
-                "hits_per_draw": 1.6685287356
+                "ci_low": 0.1591283518,
+                "ci_high": 0.1751106794,
+                "p_value": 0.7213278672132787,
+                "hits_per_draw": 1.6694406236
               },
-              "mean_gain": -1.78598e-05,
-              "ci_low": -6.31494e-05,
-              "ci_high": 2.57719e-05,
-              "p_value": 0.4363563643635636,
-              "detectable_gain": 6.16829e-05,
+              "mean_gain": -1.80297e-05,
+              "ci_low": -6.20785e-05,
+              "ci_high": 2.67738e-05,
+              "p_value": 0.42025797420257976,
+              "detectable_gain": 6.15649e-05,
               "halves": [
-                -7.01871e-05,
-                3.43234e-05
+                -6.78991e-05,
+                3.17026e-05
               ],
               "stations": [
                 {
@@ -727,9 +727,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": 1.3482e-05,
-                  "p_value": 0.8209179082091791,
+                  "draws": 99,
+                  "mean_gain": 1.71806e-05,
+                  "p_value": 0.7731226877312268,
                   "p_holm": 1.0
                 },
                 {
@@ -790,9 +790,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -3.82585e-05,
-                  "p_value": 0.6261373862613738,
+                  "draws": 99,
+                  "mean_gain": -4.33154e-05,
+                  "p_value": 0.5675432456754325,
                   "p_holm": 1.0
                 },
                 {
@@ -811,7 +811,7 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.513948605139486,
+              "p_holm": 0.49235076492350766,
               "edge": false
             }
           },
@@ -819,47 +819,47 @@
             "nong": {
               "name": "Số nóng",
               "top_k": 10,
-              "hit_rate": 0.160247331,
+              "hit_rate": 0.1602614639,
               "chance": 0.1654862385,
-              "ci_low": 0.152776128,
-              "ci_high": 0.1675977956,
-              "p_value": 0.1695830416958304,
-              "hits_per_draw": 1.6024733102,
-              "p_holm": 0.5087491250874913,
+              "ci_low": 0.15291731,
+              "ci_high": 0.1677338769,
+              "p_value": 0.1792820717928207,
+              "hits_per_draw": 1.6026146386,
+              "p_holm": 0.5378462153784621,
               "edge": false
             },
             "gan": {
               "name": "Lô gan",
               "top_k": 10,
-              "hit_rate": 0.1611743842,
+              "hit_rate": 0.1612811947,
               "chance": 0.1654862385,
-              "ci_low": 0.1531677406,
-              "ci_high": 0.1688853533,
-              "p_value": 0.27747225277472254,
-              "hits_per_draw": 1.6117438424,
-              "p_holm": 0.5549445055494451,
+              "ci_low": 0.1536592661,
+              "ci_high": 0.1689788963,
+              "p_value": 0.28677132286771323,
+              "hits_per_draw": 1.6128119473,
+              "p_holm": 0.5735426457354265,
               "edge": false
             },
             "lap": {
               "name": "Lặp kỳ trước",
               "top_k": 10,
-              "hit_rate": 0.1653824111,
+              "hit_rate": 0.1653572876,
               "chance": 0.1654862385,
-              "ci_low": 0.159587711,
-              "ci_high": 0.1714643297,
-              "p_value": 0.9698030196980302,
-              "hits_per_draw": 1.6538241114,
-              "p_holm": 0.9698030196980302,
+              "ci_low": 0.1594410888,
+              "ci_high": 0.1713025862,
+              "p_value": 0.9579042095790421,
+              "hits_per_draw": 1.6535728759,
+              "p_holm": 0.9579042095790421,
               "edge": false
             }
           },
           "edge": []
         },
         "de": {
-          "station_draws": 725,
+          "station_draws": 727,
           "stations": 14,
           "first_scored": "2025-12-17",
-          "last_scored": "2026-11-24",
+          "last_scored": "2026-11-25",
           "baseline": 0.01,
           "models": {
             "deu": {
@@ -885,30 +885,30 @@
             "tan_suat": {
               "name": "Tần suất lịch sử",
               "post_hoc": false,
-              "log_loss": 6.5532565089,
+              "log_loss": 6.5610447817,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.4230215701,
+              "skill": -0.4247127721,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1161807856,
+                "hit_rate": 0.1158611686,
                 "chance": 0.1,
-                "ci_low": 0.0970241982,
-                "ci_high": 0.1368167304,
-                "p_value": 0.10518948105189481,
-                "mean_rank": 49.6110344828,
+                "ci_low": 0.0974641021,
+                "ci_high": 0.1354950633,
+                "p_value": 0.1161883811618838,
+                "mean_rank": 49.7090784044,
                 "chance_rank": 50.5,
-                "mrr": 0.0544893003,
+                "mrr": 0.0543720198,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -1.9480863229,
-              "ci_low": -2.1112058417,
-              "ci_high": -1.7861287271,
+              "mean_gain": -1.9558745957,
+              "ci_low": -2.1169481464,
+              "ci_high": -1.789971485,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.2404806363,
+              "detectable_gain": 0.2403131598,
               "halves": [
-                -2.023766661,
-                -1.8726144705
+                -2.0282124447,
+                -1.883735477
               ],
               "stations": [
                 {
@@ -927,8 +927,8 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -1.8438937721,
+                  "draws": 99,
+                  "mean_gain": -1.8735425571,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -990,8 +990,8 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -1.8304539093,
+                  "draws": 99,
+                  "mean_gain": -1.8602384506,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -1017,30 +1017,30 @@
             "tan_suat_truot": {
               "name": "Tần suất 20 kỳ gần nhất",
               "post_hoc": false,
-              "log_loss": 6.7701136208,
+              "log_loss": 6.7725333704,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.4701114937,
+              "skill": -0.4706369356,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1039221792,
+                "hit_rate": 0.103636286,
                 "chance": 0.1,
-                "ci_low": 0.087590075,
-                "ci_high": 0.1201816057,
-                "p_value": 0.623037696230377,
-                "mean_rank": 50.1862068966,
+                "ci_low": 0.0885754507,
+                "ci_high": 0.1193900526,
+                "p_value": 0.6554344565543445,
+                "mean_rank": 50.2132049519,
                 "chance_rank": 50.5,
-                "mrr": 0.0538339187,
+                "mrr": 0.0537415392,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -2.1649434348,
-              "ci_low": -2.2981659464,
-              "ci_high": -2.0349157926,
+              "mean_gain": -2.1673631845,
+              "ci_low": -2.2944353595,
+              "ci_high": -2.0425954592,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.1907399688,
+              "detectable_gain": 0.1902751157,
               "halves": [
-                -2.1192207638,
-                -2.210540148
+                -2.1217698042,
+                -2.2128313082
               ],
               "stations": [
                 {
@@ -1059,8 +1059,8 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -2.189824951,
+                  "draws": 99,
+                  "mean_gain": -2.198458259,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -1122,8 +1122,8 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -2.0345011721,
+                  "draws": 99,
+                  "mean_gain": -2.0447034071,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.008399160083991601
                 },
@@ -1149,30 +1149,30 @@
             "bayes_thuc_nghiem": {
               "name": "Bayes thực nghiệm",
               "post_hoc": false,
-              "log_loss": 4.604983474,
+              "log_loss": 4.6049843122,
               "log_loss_uniform": 4.605170186,
-              "skill": 4.0544e-05,
+              "skill": 4.0362e-05,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1161807856,
+                "hit_rate": 0.1158611686,
                 "chance": 0.1,
-                "ci_low": 0.0970241982,
-                "ci_high": 0.1368167304,
-                "p_value": 0.10518948105189481,
-                "mean_rank": 49.6110344828,
+                "ci_low": 0.0974641021,
+                "ci_high": 0.1354950633,
+                "p_value": 0.1161883811618838,
+                "mean_rank": 49.7090784044,
                 "chance_rank": 50.5,
-                "mrr": 0.0544893003,
+                "mrr": 0.0543720198,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": 0.000186712,
-              "ci_low": -0.0019062298,
-              "ci_high": 0.0023582644,
-              "p_value": 0.8622137786221378,
-              "detectable_gain": 0.0029782685,
+              "mean_gain": 0.0001858738,
+              "ci_low": -0.0017886054,
+              "ci_high": 0.0023204808,
+              "p_value": 0.8625137486251375,
+              "detectable_gain": 0.00297007,
               "halves": [
-                0.0009157745,
-                -0.000540342
+                0.0008933753,
+                -0.0005196841
               ],
               "stations": [
                 {
@@ -1191,9 +1191,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -0.0004569701,
-                  "p_value": 0.8836116388361164,
+                  "draws": 99,
+                  "mean_gain": -0.0004535461,
+                  "p_value": 0.8891110888911109,
                   "p_holm": 1.0
                 },
                 {
@@ -1254,9 +1254,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": 0.0026530488,
-                  "p_value": 0.5129487051294871,
+                  "draws": 99,
+                  "mean_gain": 0.0026250585,
+                  "p_value": 0.5109489051094891,
                   "p_holm": 1.0
                 },
                 {
@@ -1281,30 +1281,30 @@
             "long_chu_so": {
               "name": "Chữ số theo lồng",
               "post_hoc": false,
-              "log_loss": 4.6058706453,
+              "log_loss": 4.6059689753,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.0001521028,
+              "skill": -0.0001734549,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1142528736,
+                "hit_rate": 0.1139385603,
                 "chance": 0.1,
-                "ci_low": 0.0918151428,
-                "ci_high": 0.1369163906,
-                "p_value": 0.21727827217278273,
-                "mean_rank": 48.8931034483,
+                "ci_low": 0.0926783124,
+                "ci_high": 0.1367618249,
+                "p_value": 0.23367663233676633,
+                "mean_rank": 48.9085281981,
                 "chance_rank": 50.5,
-                "mrr": 0.0565847643,
+                "mrr": 0.056535432,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -0.0007004593,
-              "ci_low": -0.0114327075,
-              "ci_high": 0.0096802891,
-              "p_value": 0.8961103889611038,
-              "detectable_gain": 0.0150205498,
+              "mean_gain": -0.0007987893,
+              "ci_low": -0.0113517582,
+              "ci_high": 0.0104828795,
+              "p_value": 0.8842115788421158,
+              "detectable_gain": 0.0149973203,
               "halves": [
-                -0.000655123,
-                -0.0007456707
+                -0.0014464901,
+                -0.0001528679
               ],
               "stations": [
                 {
@@ -1323,9 +1323,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": 0.0136777624,
-                  "p_value": 0.34966503349665035,
+                  "draws": 99,
+                  "mean_gain": 0.0118540657,
+                  "p_value": 0.42815718428157185,
                   "p_holm": 1.0
                 },
                 {
@@ -1386,9 +1386,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -0.0208426568,
-                  "p_value": 0.1316868313168683,
+                  "draws": 99,
+                  "mean_gain": -0.0196828178,
+                  "p_value": 0.15658434156584342,
                   "p_holm": 1.0
                 },
                 {
@@ -1413,30 +1413,30 @@
             "long_bayes": {
               "name": "Chữ số theo lồng (Bayes thực nghiệm)",
               "post_hoc": true,
-              "log_loss": 4.6032320472,
+              "log_loss": 4.603323886,
               "log_loss_uniform": 4.605170186,
-              "skill": 0.0004208615,
+              "skill": 0.000400919,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1149425287,
+                "hit_rate": 0.1146263182,
                 "chance": 0.1,
-                "ci_low": 0.09188578,
-                "ci_high": 0.1384325499,
-                "p_value": 0.19868013198680132,
-                "mean_rank": 48.8434482759,
+                "ci_low": 0.0927651447,
+                "ci_high": 0.1373642439,
+                "p_value": 0.21287871212878712,
+                "mean_rank": 48.8590096286,
                 "chance_rank": 50.5,
-                "mrr": 0.0566253892,
+                "mrr": 0.0565759452,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": 0.0019381388,
-              "ci_low": -0.0009367958,
-              "ci_high": 0.0047259648,
-              "p_value": 0.20087991200879912,
-              "detectable_gain": 0.0043010462,
+              "mean_gain": 0.0018463,
+              "ci_low": -0.0012333823,
+              "ci_high": 0.0048143964,
+              "p_value": 0.22367763223677634,
+              "detectable_gain": 0.004296519,
               "halves": [
-                -0.000685142,
-                0.004554193
+                -0.0006837832,
+                0.0043694324
               ],
               "stations": [
                 {
@@ -1455,9 +1455,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": 0.0019814684,
-                  "p_value": 0.12338766123387661,
+                  "draws": 99,
+                  "mean_gain": 0.0013240591,
+                  "p_value": 0.35776422357764226,
                   "p_holm": 1.0
                 },
                 {
@@ -1518,9 +1518,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": -1.48657e-05,
-                  "p_value": 0.3568643135686431,
+                  "draws": 99,
+                  "mean_gain": -1.25789e-05,
+                  "p_value": 0.44645535446455353,
                   "p_holm": 1.0
                 },
                 {
@@ -1539,36 +1539,36 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.8035196480351965,
+              "p_holm": 0.8947105289471053,
               "edge": false
             },
             "hoi_quy_logistic": {
               "name": "Hồi quy logistic",
               "post_hoc": false,
-              "log_loss": 4.6054834456,
+              "log_loss": 4.6056927379,
               "log_loss_uniform": 4.605170186,
-              "skill": -6.80235e-05,
+              "skill": -0.0001134707,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1089655172,
+                "hit_rate": 0.1086657497,
                 "chance": 0.1,
-                "ci_low": 0.0844866063,
-                "ci_high": 0.1330556009,
-                "p_value": 0.46015398460153983,
-                "mean_rank": 49.5668965517,
+                "ci_low": 0.0865367852,
+                "ci_high": 0.1322339418,
+                "p_value": 0.47775222477752227,
+                "mean_rank": 49.6650618982,
                 "chance_rank": 50.5,
-                "mrr": 0.0480532669,
+                "mrr": 0.0479536921,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -0.0003132597,
-              "ci_low": -0.0022577825,
-              "ci_high": 0.0016180529,
-              "p_value": 0.7517248275172482,
-              "detectable_gain": 0.0025887084,
+              "mean_gain": -0.000522552,
+              "ci_low": -0.00251633,
+              "ci_high": 0.0015092349,
+              "p_value": 0.6063393660633937,
+              "detectable_gain": 0.002614582,
               "halves": [
-                0.0001554909,
-                -0.0007807189
+                0.0001385251,
+                -0.0011818129
               ],
               "stations": [
                 {
@@ -1587,9 +1587,9 @@
                 },
                 {
                   "province": "Khánh Hòa",
-                  "draws": 98,
-                  "mean_gain": -0.0007603595,
-                  "p_value": 0.8044195580441956,
+                  "draws": 99,
+                  "mean_gain": -0.0015266183,
+                  "p_value": 0.6379362063793621,
                   "p_holm": 1.0
                 },
                 {
@@ -1650,9 +1650,9 @@
                 },
                 {
                   "province": "Đà Nẵng",
-                  "draws": 98,
-                  "mean_gain": 3.39424e-05,
-                  "p_value": 0.9932006799320068,
+                  "draws": 99,
+                  "mean_gain": -0.000735714,
+                  "p_value": 0.8343165683431657,
                   "p_holm": 1.0
                 },
                 {
@@ -1679,14 +1679,14 @@
             "nong": {
               "name": "Số nóng",
               "top_k": 10,
-              "hit_rate": 0.1039221792,
+              "hit_rate": 0.103636286,
               "chance": 0.1,
-              "ci_low": 0.087590075,
-              "ci_high": 0.1201816057,
-              "p_value": 0.623037696230377,
-              "mean_rank": 50.1862068966,
+              "ci_low": 0.0885754507,
+              "ci_high": 0.1193900526,
+              "p_value": 0.6554344565543445,
+              "mean_rank": 50.2132049519,
               "chance_rank": 50.5,
-              "mrr": 0.0538339187,
+              "mrr": 0.0537415392,
               "chance_mrr": 0.0518737752,
               "p_holm": 1.0,
               "edge": false
@@ -1694,14 +1694,14 @@
             "gan": {
               "name": "Lô gan",
               "top_k": 10,
-              "hit_rate": 0.0981711807,
+              "hit_rate": 0.0988033287,
               "chance": 0.1,
-              "ci_low": 0.0921712152,
-              "ci_high": 0.1043854766,
-              "p_value": 0.5687431256874312,
-              "mean_rank": 51.2772413793,
+              "ci_low": 0.0924256439,
+              "ci_high": 0.1051077807,
+              "p_value": 0.7125287471252875,
+              "mean_rank": 51.1795048143,
               "chance_rank": 50.5,
-              "mrr": 0.0511300957,
+              "mrr": 0.0513513022,
               "chance_mrr": 0.0518737752,
               "p_holm": 1.0,
               "edge": false
@@ -1709,14 +1709,14 @@
             "lap": {
               "name": "Lặp kỳ trước",
               "top_k": 10,
-              "hit_rate": 0.0984326019,
+              "hit_rate": 0.0984119045,
               "chance": 0.1,
-              "ci_low": 0.0933827236,
-              "ci_high": 0.1045707603,
-              "p_value": 0.6603339666033397,
-              "mean_rank": 50.5862068966,
+              "ci_low": 0.0933895572,
+              "ci_high": 0.1047599867,
+              "p_value": 0.6733326667333267,
+              "mean_rank": 50.5873452545,
               "chance_rank": 50.5,
-              "mrr": 0.0502225627,
+              "mrr": 0.0502007585,
               "chance_mrr": 0.0518737752,
               "p_holm": 1.0,
               "edge": false
@@ -1726,60 +1726,60 @@
         }
       },
       "station_edges": [],
-      "reading": "Miền Trung: CHƯA CHỨNG MINH ĐƯỢC LỢI THẾ DỰ BÁO cho lô và đuôi Đặc Biệt: không cách nào trong 6 mô hình xác suất và 3 cách xếp hạng thắng dự báo đều trên 725 kỳ ngoài mẫu sau hiệu chỉnh Holm."
+      "reading": "Miền Trung: CHƯA CHỨNG MINH ĐƯỢC LỢI THẾ DỰ BÁO cho lô và đuôi Đặc Biệt: không cách nào trong 6 mô hình xác suất và 3 cách xếp hạng thắng dự báo đều trên 727 kỳ ngoài mẫu sau hiệu chỉnh Holm."
     },
     "mn": {
       "region_name": "Miền Nam",
-      "data_through": "2026-11-24",
+      "data_through": "2026-11-25",
       "modes": {
         "loto": {
-          "station_draws": 881,
+          "station_draws": 884,
           "stations": 21,
           "first_scored": "2025-12-20",
-          "last_scored": "2026-11-24",
+          "last_scored": "2026-11-25",
           "baseline": 0.1654862385,
           "models": {
             "deu": {
               "name": "Dự báo đều",
               "post_hoc": false,
-              "log_loss": 0.4486317919,
-              "log_loss_uniform": 0.4486317919,
+              "log_loss": 0.4486566595,
+              "log_loss_uniform": 0.4486566595,
               "skill": 0.0,
               "level": 16.548623855,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1654710556,
+                "hit_rate": 0.1654864253,
                 "chance": 0.1654862385,
-                "ci_low": 0.1647765676,
-                "ci_high": 0.1661889449,
+                "ci_low": 0.1647917544,
+                "ci_high": 0.16621802,
                 "p_value": 1.0,
-                "hits_per_draw": 1.6547105562
+                "hits_per_draw": 1.6548642534
               }
             },
             "tan_suat": {
               "name": "Tần suất lịch sử",
               "post_hoc": false,
-              "log_loss": 0.4646075032,
-              "log_loss_uniform": 0.4486317919,
-              "skill": -0.0356098511,
-              "level": 16.5884687929,
+              "log_loss": 0.4645654196,
+              "log_loss_uniform": 0.4486566595,
+              "skill": -0.0354586513,
+              "level": 16.5886897863,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1659373094,
+                "hit_rate": 0.1660987357,
                 "chance": 0.1654862385,
-                "ci_low": 0.1593384278,
-                "ci_high": 0.1726132813,
-                "p_value": 0.8847115288471152,
-                "hits_per_draw": 1.6593730937
+                "ci_low": 0.1594029656,
+                "ci_high": 0.1724909323,
+                "p_value": 0.8585141485851415,
+                "hits_per_draw": 1.6609873572
               },
-              "mean_gain": -0.0159757113,
-              "ci_low": -0.0175970453,
-              "ci_high": -0.0145119864,
+              "mean_gain": -0.0159087601,
+              "ci_low": -0.0175728482,
+              "ci_high": -0.0144178653,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0020575042,
+              "detectable_gain": 0.00205418,
               "halves": [
-                -0.0215091424,
-                -0.0104548276
+                -0.021490476,
+                -0.0103270441
               ],
               "stations": [
                 {
@@ -1833,8 +1833,8 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0177236284,
+                  "draws": 40,
+                  "mean_gain": -0.0172720373,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -1868,10 +1868,10 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.0120150133,
-                  "p_value": 0.0010998900109989002,
-                  "p_holm": 0.09129087091290872
+                  "draws": 40,
+                  "mean_gain": -0.0118921773,
+                  "p_value": 0.00029997000299970003,
+                  "p_holm": 0.025197480251974803
                 },
                 {
                   "province": "Tiền Giang",
@@ -1917,8 +1917,8 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0213806942,
+                  "draws": 40,
+                  "mean_gain": -0.0203956942,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -1937,27 +1937,27 @@
             "tan_suat_truot": {
               "name": "Tần suất 20 kỳ gần nhất",
               "post_hoc": false,
-              "log_loss": 0.4801227848,
-              "log_loss_uniform": 0.4486317919,
-              "skill": -0.0701934046,
-              "level": 16.5611771048,
+              "log_loss": 0.4800614186,
+              "log_loss_uniform": 0.4486566595,
+              "skill": -0.0699973095,
+              "level": 16.5609234803,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1662227259,
+                "hit_rate": 0.1665598283,
                 "chance": 0.1654862385,
-                "ci_low": 0.1597150427,
-                "ci_high": 0.1728820949,
-                "p_value": 0.8235176482351765,
-                "hits_per_draw": 1.6622272592
+                "ci_low": 0.1596680794,
+                "ci_high": 0.1730395766,
+                "p_value": 0.756024397560244,
+                "hits_per_draw": 1.6655982828
               },
-              "mean_gain": -0.0314909929,
-              "ci_low": -0.0335318585,
-              "ci_high": -0.0295499789,
+              "mean_gain": -0.0314047591,
+              "ci_low": -0.0334107781,
+              "ci_high": -0.0294141578,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0028865544,
+              "detectable_gain": 0.0028804142,
               "halves": [
-                -0.032499988,
-                -0.0304842858
+                -0.0324637544,
+                -0.0303457637
               ],
               "stations": [
                 {
@@ -2011,8 +2011,8 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0288256117,
+                  "draws": 40,
+                  "mean_gain": -0.0279924302,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -2046,8 +2046,8 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.032512424,
+                  "draws": 40,
+                  "mean_gain": -0.0319760028,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -2095,8 +2095,8 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0301296182,
+                  "draws": 40,
+                  "mean_gain": -0.0296685862,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -2115,27 +2115,27 @@
             "bayes_thuc_nghiem": {
               "name": "Bayes thực nghiệm",
               "post_hoc": false,
-              "log_loss": 0.4486716876,
-              "log_loss_uniform": 0.4486317919,
-              "skill": -8.89274e-05,
-              "level": 16.5505519066,
+              "log_loss": 0.4486950294,
+              "log_loss_uniform": 0.4486566595,
+              "skill": -8.55216e-05,
+              "level": 16.5505577686,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1659373094,
+                "hit_rate": 0.1660987357,
                 "chance": 0.1654862385,
-                "ci_low": 0.1593384278,
-                "ci_high": 0.1726132813,
-                "p_value": 0.8847115288471152,
-                "hits_per_draw": 1.6593730937
+                "ci_low": 0.1594029656,
+                "ci_high": 0.1724909323,
+                "p_value": 0.8585141485851415,
+                "hits_per_draw": 1.6609873572
               },
-              "mean_gain": -3.98957e-05,
-              "ci_low": -9.70293e-05,
-              "ci_high": 1.39045e-05,
-              "p_value": 0.1680831916808319,
-              "detectable_gain": 8.11838e-05,
+              "mean_gain": -3.83698e-05,
+              "ci_low": -9.9455e-05,
+              "ci_high": 1.72685e-05,
+              "p_value": 0.18788121187881213,
+              "detectable_gain": 8.09748e-05,
               "halves": [
-                -6.59189e-05,
-                -1.39315e-05
+                -6.66653e-05,
+                -1.00743e-05
               ],
               "stations": [
                 {
@@ -2189,9 +2189,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0001195184,
-                  "p_value": 0.458054194580542,
+                  "draws": 40,
+                  "mean_gain": -0.0001087784,
+                  "p_value": 0.49605039496050396,
                   "p_holm": 1.0
                 },
                 {
@@ -2224,9 +2224,9 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": 9.2886e-05,
-                  "p_value": 0.5183481651834817,
+                  "draws": 40,
+                  "mean_gain": 9.01298e-05,
+                  "p_value": 0.5168483151684832,
                   "p_holm": 1.0
                 },
                 {
@@ -2273,9 +2273,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.000115267,
-                  "p_value": 0.36276372362763726,
+                  "draws": 40,
+                  "mean_gain": -8.89746e-05,
+                  "p_value": 0.48905109489051096,
                   "p_holm": 1.0
                 },
                 {
@@ -2287,33 +2287,33 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.3361663833616638,
+              "p_holm": 0.37576242375762425,
               "edge": false
             },
             "long_chu_so": {
               "name": "Chữ số theo lồng",
               "post_hoc": false,
-              "log_loss": 0.4503934233,
-              "log_loss_uniform": 0.4486317919,
-              "skill": -0.0039266754,
-              "level": 16.5159978941,
+              "log_loss": 0.4504071751,
+              "log_loss_uniform": 0.4486566595,
+              "skill": -0.0039016819,
+              "level": 16.5160485961,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1707094211,
+                "hit_rate": 0.1708088235,
                 "chance": 0.1654862385,
-                "ci_low": 0.1634139366,
-                "ci_high": 0.178379274,
-                "p_value": 0.1837816218378162,
-                "hits_per_draw": 1.7070942111
+                "ci_low": 0.1631449693,
+                "ci_high": 0.1788387249,
+                "p_value": 0.17478252174782521,
+                "hits_per_draw": 1.7080882353
               },
-              "mean_gain": -0.0017616314,
-              "ci_low": -0.0022400327,
-              "ci_high": -0.0013054809,
+              "mean_gain": -0.0017505156,
+              "ci_low": -0.0022195589,
+              "ci_high": -0.0012776906,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0006457938,
+              "detectable_gain": 0.0006439025,
               "halves": [
-                -0.002377925,
-                -0.0011467353
+                -0.002376673,
+                -0.0011243581
               ],
               "stations": [
                 {
@@ -2367,10 +2367,10 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0034888069,
-                  "p_value": 0.012398760123987601,
-                  "p_holm": 0.9547045295470453
+                  "draws": 40,
+                  "mean_gain": -0.003384776,
+                  "p_value": 0.0150984901509849,
+                  "p_holm": 1.0
                 },
                 {
                   "province": "Hậu Giang",
@@ -2398,13 +2398,13 @@
                   "draws": 39,
                   "mean_gain": -0.0040357435,
                   "p_value": 0.00039996000399960006,
-                  "p_holm": 0.033596640335966405
+                  "p_holm": 0.03319668033196681
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.0018351534,
-                  "p_value": 0.0397960203979602,
+                  "draws": 40,
+                  "mean_gain": -0.0017824236,
+                  "p_value": 0.038196180381961806,
                   "p_holm": 1.0
                 },
                 {
@@ -2451,9 +2451,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.001647749,
-                  "p_value": 0.08599140085991401,
+                  "draws": 40,
+                  "mean_gain": -0.0015166785,
+                  "p_value": 0.11328867113288671,
                   "p_holm": 1.0
                 },
                 {
@@ -2473,27 +2473,27 @@
             "long_bayes": {
               "name": "Chữ số theo lồng (Bayes thực nghiệm)",
               "post_hoc": true,
-              "log_loss": 0.4488429295,
-              "log_loss_uniform": 0.4486317919,
-              "skill": -0.0004706255,
-              "level": 16.5442891523,
+              "log_loss": 0.4488658193,
+              "log_loss_uniform": 0.4486566595,
+              "skill": -0.0004661912,
+              "level": 16.5442850502,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1709364359,
+                "hit_rate": 0.1710350679,
                 "chance": 0.1654862385,
-                "ci_low": 0.1636066021,
-                "ci_high": 0.1786972623,
-                "p_value": 0.16428357164283572,
-                "hits_per_draw": 1.7093643587
+                "ci_low": 0.1633896641,
+                "ci_high": 0.1791097563,
+                "p_value": 0.1576842315768423,
+                "hits_per_draw": 1.7103506787
               },
-              "mean_gain": -0.0002111376,
-              "ci_low": -0.000379377,
-              "ci_high": -3.93234e-05,
-              "p_value": 0.020897910208979104,
-              "detectable_gain": 0.0002457932,
+              "mean_gain": -0.0002091598,
+              "ci_low": -0.0003779367,
+              "ci_high": -2.48902e-05,
+              "p_value": 0.017998200179982,
+              "detectable_gain": 0.0002449842,
               "halves": [
-                -0.0003723513,
-                -5.02895e-05
+                -0.000377388,
+                -4.09315e-05
               ],
               "stations": [
                 {
@@ -2547,9 +2547,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0020633007,
-                  "p_value": 0.0347965203479652,
+                  "draws": 40,
+                  "mean_gain": -0.0019946405,
+                  "p_value": 0.037896210378962104,
                   "p_holm": 1.0
                 },
                 {
@@ -2582,9 +2582,9 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.0002900228,
-                  "p_value": 0.294970502949705,
+                  "draws": 40,
+                  "mean_gain": -0.0002721134,
+                  "p_value": 0.33186681331866813,
                   "p_holm": 1.0
                 },
                 {
@@ -2631,9 +2631,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0002394026,
-                  "p_value": 0.5314468553144686,
+                  "draws": 40,
+                  "mean_gain": -0.0002332798,
+                  "p_value": 0.521047895210479,
                   "p_holm": 1.0
                 },
                 {
@@ -2647,33 +2647,33 @@
               "stations_with_edge": [
                 "Bến Tre"
               ],
-              "p_holm": 0.06269373062693731,
+              "p_holm": 0.053994600539946,
               "edge": false
             },
             "hoi_quy_logistic": {
               "name": "Hồi quy logistic",
               "post_hoc": false,
-              "log_loss": 0.4486751805,
-              "log_loss_uniform": 0.4486317919,
-              "skill": -9.6713e-05,
-              "level": 16.5965743572,
+              "log_loss": 0.4486968129,
+              "log_loss_uniform": 0.4486566595,
+              "skill": -8.9497e-05,
+              "level": 16.5964394789,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.1694211124,
+                "hit_rate": 0.1696945701,
                 "chance": 0.1654862385,
-                "ci_low": 0.1624447658,
-                "ci_high": 0.1767034528,
-                "p_value": 0.286971302869713,
-                "hits_per_draw": 1.6942111237
+                "ci_low": 0.1622717658,
+                "ci_high": 0.1769206936,
+                "p_value": 0.25277472252774724,
+                "hits_per_draw": 1.6969457014
               },
-              "mean_gain": -4.33885e-05,
-              "ci_low": -0.0001130654,
-              "ci_high": 2.21279e-05,
-              "p_value": 0.21897810218978103,
-              "detectable_gain": 9.75254e-05,
+              "mean_gain": -4.01534e-05,
+              "ci_low": -0.0001102237,
+              "ci_high": 2.92181e-05,
+              "p_value": 0.2555744425557444,
+              "detectable_gain": 9.73551e-05,
               "halves": [
-                -6.11035e-05,
-                -2.57137e-05
+                -6.15109e-05,
+                -1.8796e-05
               ],
               "stations": [
                 {
@@ -2727,9 +2727,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": 3.9912e-05,
-                  "p_value": 0.781021897810219,
+                  "draws": 40,
+                  "mean_gain": 6.39652e-05,
+                  "p_value": 0.6471352864713529,
                   "p_holm": 1.0
                 },
                 {
@@ -2762,9 +2762,9 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": 0.0001448823,
-                  "p_value": 0.3922607739226077,
+                  "draws": 40,
+                  "mean_gain": 0.000151871,
+                  "p_value": 0.35056494350564943,
                   "p_holm": 1.0
                 },
                 {
@@ -2811,9 +2811,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0001456794,
-                  "p_value": 0.38966103389661033,
+                  "draws": 40,
+                  "mean_gain": -0.000109457,
+                  "p_value": 0.5163483651634837,
                   "p_holm": 1.0
                 },
                 {
@@ -2825,7 +2825,7 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.3361663833616638,
+              "p_holm": 0.37576242375762425,
               "edge": false
             }
           },
@@ -2833,47 +2833,47 @@
             "nong": {
               "name": "Số nóng",
               "top_k": 10,
-              "hit_rate": 0.1662227259,
+              "hit_rate": 0.1665598283,
               "chance": 0.1654862385,
-              "ci_low": 0.1597150427,
-              "ci_high": 0.1728820949,
-              "p_value": 0.8235176482351765,
-              "hits_per_draw": 1.6622272592,
-              "p_holm": 0.9527047295270473,
+              "ci_low": 0.1596680794,
+              "ci_high": 0.1730395766,
+              "p_value": 0.756024397560244,
+              "hits_per_draw": 1.6655982828,
+              "p_holm": 0.8241175882411759,
               "edge": false
             },
             "gan": {
               "name": "Lô gan",
               "top_k": 10,
-              "hit_rate": 0.1628686287,
+              "hit_rate": 0.1624667367,
               "chance": 0.1654862385,
-              "ci_low": 0.155750701,
-              "ci_high": 0.1700469434,
-              "p_value": 0.47635236476352366,
-              "hits_per_draw": 1.6286862872,
-              "p_holm": 0.9527047295270473,
+              "ci_low": 0.1556647427,
+              "ci_high": 0.1694083743,
+              "p_value": 0.41205879412058793,
+              "hits_per_draw": 1.6246673669,
+              "p_holm": 0.8241175882411759,
               "edge": false
             },
             "lap": {
               "name": "Lặp kỳ trước",
               "top_k": 10,
-              "hit_rate": 0.1693682073,
+              "hit_rate": 0.1697268711,
               "chance": 0.1654862385,
-              "ci_low": 0.1641565177,
-              "ci_high": 0.1748577825,
-              "p_value": 0.1601839816018398,
-              "hits_per_draw": 1.6936820728,
-              "p_holm": 0.48055194480551944,
+              "ci_low": 0.1643606158,
+              "ci_high": 0.1752428435,
+              "p_value": 0.12488751124887511,
+              "hits_per_draw": 1.6972687105,
+              "p_holm": 0.37466253374662534,
               "edge": false
             }
           },
           "edge": []
         },
         "de": {
-          "station_draws": 881,
+          "station_draws": 884,
           "stations": 21,
           "first_scored": "2025-12-20",
-          "last_scored": "2026-11-24",
+          "last_scored": "2026-11-25",
           "baseline": 0.01,
           "models": {
             "deu": {
@@ -2899,30 +2899,30 @@
             "tan_suat": {
               "name": "Tần suất lịch sử",
               "post_hoc": false,
-              "log_loss": 6.7821422977,
+              "log_loss": 6.7834284932,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.4727234877,
+              "skill": -0.4730027815,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.0991757456,
+                "hit_rate": 0.0988391763,
                 "chance": 0.1,
-                "ci_low": 0.0826455765,
-                "ci_high": 0.1157254975,
-                "p_value": 0.9264073592640736,
-                "mean_rank": 51.5431328036,
+                "ci_low": 0.0833270055,
+                "ci_high": 0.1160069285,
+                "p_value": 0.8912108789121088,
+                "mean_rank": 51.5707013575,
                 "chance_rank": 50.5,
-                "mrr": 0.04911564,
+                "mrr": 0.0490256231,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -2.1769721117,
-              "ci_low": -2.3218830895,
-              "ci_high": -2.0396150261,
+              "mean_gain": -2.1782583072,
+              "ci_low": -2.31397405,
+              "ci_high": -2.0261910081,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.2056094194,
+              "detectable_gain": 0.2052694691,
               "halves": [
-                -2.2589465725,
-                -2.0951835341
+                -2.2549754079,
+                -2.1015412066
               ],
               "stations": [
                 {
@@ -2976,8 +2976,8 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -2.4274522679,
+                  "draws": 40,
+                  "mean_gain": -2.4691245753,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -3011,8 +3011,8 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -2.4450980216,
+                  "draws": 40,
+                  "mean_gain": -2.4863291851,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -3060,8 +3060,8 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -2.6994166222,
+                  "draws": 40,
+                  "mean_gain": -2.6189118078,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -3080,30 +3080,30 @@
             "tan_suat_truot": {
               "name": "Tần suất 20 kỳ gần nhất",
               "post_hoc": false,
-              "log_loss": 6.8226119924,
+              "log_loss": 6.8201981026,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.4815113702,
+              "skill": -0.4809872007,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.0980305486,
+                "hit_rate": 0.0982634766,
                 "chance": 0.1,
-                "ci_low": 0.0842697557,
-                "ci_high": 0.1124253259,
-                "p_value": 0.7892210778922107,
-                "mean_rank": 50.8416572077,
+                "ci_low": 0.0848868873,
+                "ci_high": 0.1132429489,
+                "p_value": 0.818018198180182,
+                "mean_rank": 50.8173076923,
                 "chance_rank": 50.5,
-                "mrr": 0.053462085,
+                "mrr": 0.0535295212,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -2.2174418064,
-              "ci_low": -2.3302721432,
-              "ci_high": -2.1024852055,
+              "mean_gain": -2.2150279166,
+              "ci_low": -2.3233778599,
+              "ci_high": -2.0950706914,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.1692459439,
+              "detectable_gain": 0.1691384177,
               "halves": [
-                -2.2297023861,
-                -2.2052090285
+                -2.2333893547,
+                -2.1966664785
               ],
               "stations": [
                 {
@@ -3157,8 +3157,8 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -2.6718674136,
+                  "draws": 40,
+                  "mean_gain": -2.6811837892,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -3192,8 +3192,8 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -2.6895131672,
+                  "draws": 40,
+                  "mean_gain": -2.698388399,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -3241,8 +3241,8 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -2.4528403202,
+                  "draws": 40,
+                  "mean_gain": -2.3522543602,
                   "p_value": 9.999000099990002e-05,
                   "p_holm": 0.012598740125987402
                 },
@@ -3261,30 +3261,30 @@
             "bayes_thuc_nghiem": {
               "name": "Bayes thực nghiệm",
               "post_hoc": false,
-              "log_loss": 4.6058181431,
+              "log_loss": 4.6058160313,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.0001407021,
+              "skill": -0.0001402435,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.0991757456,
+                "hit_rate": 0.0988391763,
                 "chance": 0.1,
-                "ci_low": 0.0826455765,
-                "ci_high": 0.1157254975,
-                "p_value": 0.9264073592640736,
-                "mean_rank": 51.5431328036,
+                "ci_low": 0.0833270055,
+                "ci_high": 0.1160069285,
+                "p_value": 0.8912108789121088,
+                "mean_rank": 51.5707013575,
                 "chance_rank": 50.5,
-                "mrr": 0.04911564,
+                "mrr": 0.0490256231,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -0.0006479571,
-              "ci_low": -0.0011841278,
-              "ci_high": -7.9317e-05,
-              "p_value": 0.016198380161983803,
-              "detectable_gain": 0.0008117809,
+              "mean_gain": -0.0006458453,
+              "ci_low": -0.0012054714,
+              "ci_high": -0.0001005835,
+              "p_value": 0.0192980701929807,
+              "detectable_gain": 0.0008090317,
               "halves": [
-                -0.0011838102,
-                -0.0001133192
+                -0.0011784038,
+                -0.0001132868
               ],
               "stations": [
                 {
@@ -3338,9 +3338,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0005272498,
-                  "p_value": 0.5546445355464453,
+                  "draws": 40,
+                  "mean_gain": -0.0005155435,
+                  "p_value": 0.5629437056294371,
                   "p_holm": 1.0
                 },
                 {
@@ -3373,9 +3373,9 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.0013209727,
-                  "p_value": 0.061193880611938804,
+                  "draws": 40,
+                  "mean_gain": -0.0012894233,
+                  "p_value": 0.06209379062093791,
                   "p_holm": 1.0
                 },
                 {
@@ -3422,10 +3422,10 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0014151106,
-                  "p_value": 0.0004999500049995,
-                  "p_holm": 0.041995800419958006
+                  "draws": 40,
+                  "mean_gain": -0.0013787079,
+                  "p_value": 0.0007999200079992001,
+                  "p_holm": 0.06719328067193281
                 },
                 {
                   "province": "Đồng Tháp",
@@ -3436,36 +3436,36 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.032396760323967606,
+              "p_holm": 0.0385961403859614,
               "edge": false
             },
             "long_chu_so": {
               "name": "Chữ số theo lồng",
               "post_hoc": false,
-              "log_loss": 4.62997464,
+              "log_loss": 4.6299669369,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.0053862188,
+              "skill": -0.005384546,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.0792659856,
+                "hit_rate": 0.0789969834,
                 "chance": 0.1,
-                "ci_low": 0.0619101548,
-                "ci_high": 0.0967989812,
-                "p_value": 0.0254974502549745,
-                "mean_rank": 53.2014755959,
+                "ci_low": 0.0614217314,
+                "ci_high": 0.0975115321,
+                "p_value": 0.0197980201979802,
+                "mean_rank": 53.1872171946,
                 "chance_rank": 50.5,
-                "mrr": 0.0463973082,
+                "mrr": 0.0463554134,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -0.0248044541,
-              "ci_low": -0.0352650584,
-              "ci_high": -0.0147523111,
+              "mean_gain": -0.0247967509,
+              "ci_low": -0.0352938436,
+              "ci_high": -0.0145132202,
               "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0147158805,
+              "detectable_gain": 0.0146892803,
               "halves": [
-                -0.0392930954,
-                -0.0103486667
+                -0.0393734499,
+                -0.0102200519
               ],
               "stations": [
                 {
@@ -3519,9 +3519,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.050022914,
-                  "p_value": 0.0402959704029597,
+                  "draws": 40,
+                  "mean_gain": -0.0545854186,
+                  "p_value": 0.026697330266973303,
                   "p_holm": 1.0
                 },
                 {
@@ -3554,9 +3554,9 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.0337265794,
-                  "p_value": 0.1302869713028697,
+                  "draws": 40,
+                  "mean_gain": -0.0300038356,
+                  "p_value": 0.17018298170182983,
                   "p_holm": 1.0
                 },
                 {
@@ -3603,9 +3603,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0644784659,
-                  "p_value": 0.0244975502449755,
+                  "draws": 40,
+                  "mean_gain": -0.0616231009,
+                  "p_value": 0.029197080291970802,
                   "p_holm": 1.0
                 },
                 {
@@ -3623,30 +3623,30 @@
             "long_bayes": {
               "name": "Chữ số theo lồng (Bayes thực nghiệm)",
               "post_hoc": true,
-              "log_loss": 4.6125908391,
+              "log_loss": 4.6126261479,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.0016113743,
+              "skill": -0.0016190416,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.0809685963,
+                "hit_rate": 0.080693816,
                 "chance": 0.1,
-                "ci_low": 0.0638804106,
-                "ci_high": 0.0989535403,
-                "p_value": 0.039896010398960104,
-                "mean_rank": 53.2366628831,
+                "ci_low": 0.0630202273,
+                "ci_high": 0.0994286526,
+                "p_value": 0.0342965703429657,
+                "mean_rank": 53.2222850679,
                 "chance_rank": 50.5,
-                "mrr": 0.0464162923,
+                "mrr": 0.046374333,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -0.0074206531,
-              "ci_low": -0.0110519435,
-              "ci_high": -0.003687895,
-              "p_value": 9.999000099990002e-05,
-              "detectable_gain": 0.0052773979,
+              "mean_gain": -0.0074559619,
+              "ci_low": -0.0112522415,
+              "ci_high": -0.0038587175,
+              "p_value": 0.00019998000199980003,
+              "detectable_gain": 0.0052865566,
               "halves": [
-                -0.0085720995,
-                -0.0062718177
+                -0.0087359234,
+                -0.0061760005
               ],
               "stations": [
                 {
@@ -3700,9 +3700,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0342321379,
-                  "p_value": 0.06229377062293771,
+                  "draws": 40,
+                  "mean_gain": -0.0369838502,
+                  "p_value": 0.04409559044095591,
                   "p_holm": 1.0
                 },
                 {
@@ -3735,9 +3735,9 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.0085912292,
-                  "p_value": 0.25407459254074594,
+                  "draws": 40,
+                  "mean_gain": -0.0061072057,
+                  "p_value": 0.44245575442455753,
                   "p_holm": 1.0
                 },
                 {
@@ -3784,9 +3784,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0163336053,
-                  "p_value": 0.1476852314768523,
+                  "draws": 40,
+                  "mean_gain": -0.0159238667,
+                  "p_value": 0.145985401459854,
                   "p_holm": 1.0
                 },
                 {
@@ -3804,30 +3804,30 @@
             "hoi_quy_logistic": {
               "name": "Hồi quy logistic",
               "post_hoc": false,
-              "log_loss": 4.6057287665,
+              "log_loss": 4.6057232356,
               "log_loss_uniform": 4.605170186,
-              "skill": -0.0001212942,
+              "skill": -0.0001200932,
               "level": 1.0,
               "ranking": {
                 "top_k": 10,
-                "hit_rate": 0.0919409762,
+                "hit_rate": 0.092760181,
                 "chance": 0.1,
-                "ci_low": 0.0728622652,
-                "ci_high": 0.1121281465,
-                "p_value": 0.4206579342065793,
-                "mean_rank": 51.7077185017,
+                "ci_low": 0.0736961451,
+                "ci_high": 0.1117473898,
+                "p_value": 0.4557544245575442,
+                "mean_rank": 51.7109728507,
                 "chance_rank": 50.5,
-                "mrr": 0.0478716579,
+                "mrr": 0.0478665883,
                 "chance_mrr": 0.0518737752
               },
-              "mean_gain": -0.0005585805,
-              "ci_low": -0.0016300852,
-              "ci_high": 0.000473419,
-              "p_value": 0.3100689931006899,
-              "detectable_gain": 0.0015297818,
+              "mean_gain": -0.0005530496,
+              "ci_low": -0.0015962674,
+              "ci_high": 0.0005043673,
+              "p_value": 0.30386961303869614,
+              "detectable_gain": 0.0015339941,
               "halves": [
-                -0.0001636052,
-                -0.0009526601
+                -0.0001523111,
+                -0.0009537881
               ],
               "stations": [
                 {
@@ -3881,9 +3881,9 @@
                 },
                 {
                   "province": "Cần Thơ",
-                  "draws": 39,
-                  "mean_gain": -0.0030346173,
-                  "p_value": 0.09319068093190681,
+                  "draws": 40,
+                  "mean_gain": -0.0034649335,
+                  "p_value": 0.060193980601939805,
                   "p_holm": 1.0
                 },
                 {
@@ -3916,10 +3916,10 @@
                 },
                 {
                   "province": "Sóc Trăng",
-                  "draws": 39,
-                  "mean_gain": -0.004423679,
-                  "p_value": 0.007599240075992401,
-                  "p_holm": 0.6155384461553844
+                  "draws": 40,
+                  "mean_gain": -0.0048442445,
+                  "p_value": 0.0033996600339966003,
+                  "p_holm": 0.2753724627537246
                 },
                 {
                   "province": "Tiền Giang",
@@ -3965,9 +3965,9 @@
                 },
                 {
                   "province": "Đồng Nai",
-                  "draws": 39,
-                  "mean_gain": -0.0023723218,
-                  "p_value": 0.22127787221277873,
+                  "draws": 40,
+                  "mean_gain": -0.0011953369,
+                  "p_value": 0.593040695930407,
                   "p_holm": 1.0
                 },
                 {
@@ -3979,7 +3979,7 @@
                 }
               ],
               "stations_with_edge": [],
-              "p_holm": 0.3100689931006899,
+              "p_holm": 0.30386961303869614,
               "edge": false
             }
           },
@@ -3987,14 +3987,14 @@
             "nong": {
               "name": "Số nóng",
               "top_k": 10,
-              "hit_rate": 0.0980305486,
+              "hit_rate": 0.0982634766,
               "chance": 0.1,
-              "ci_low": 0.0842697557,
-              "ci_high": 0.1124253259,
-              "p_value": 0.7892210778922107,
-              "mean_rank": 50.8416572077,
+              "ci_low": 0.0848868873,
+              "ci_high": 0.1132429489,
+              "p_value": 0.818018198180182,
+              "mean_rank": 50.8173076923,
               "chance_rank": 50.5,
-              "mrr": 0.053462085,
+              "mrr": 0.0535295212,
               "chance_mrr": 0.0518737752,
               "p_holm": 1.0,
               "edge": false
@@ -4002,29 +4002,29 @@
             "gan": {
               "name": "Lô gan",
               "top_k": 10,
-              "hit_rate": 0.1039791756,
+              "hit_rate": 0.1040613903,
               "chance": 0.1,
-              "ci_low": 0.099162081,
-              "ci_high": 0.1090268158,
-              "p_value": 0.1254874512548745,
-              "mean_rank": 49.4069239501,
+              "ci_low": 0.0988899181,
+              "ci_high": 0.1089922623,
+              "p_value": 0.11888811118888111,
+              "mean_rank": 49.4021493213,
               "chance_rank": 50.5,
-              "mrr": 0.0534045133,
+              "mrr": 0.0534331509,
               "chance_mrr": 0.0518737752,
-              "p_holm": 0.37646235376462356,
+              "p_holm": 0.35666433356664334,
               "edge": false
             },
             "lap": {
               "name": "Lặp kỳ trước",
               "top_k": 10,
-              "hit_rate": 0.1012279435,
+              "hit_rate": 0.1011929247,
               "chance": 0.1,
-              "ci_low": 0.0950792327,
-              "ci_high": 0.1079323459,
-              "p_value": 0.7265273472652735,
-              "mean_rank": 50.4324631101,
+              "ci_low": 0.095947565,
+              "ci_high": 0.108062226,
+              "p_value": 0.7288271172882712,
+              "mean_rank": 50.4343891403,
               "chance_rank": 50.5,
-              "mrr": 0.0531673812,
+              "mrr": 0.0531304899,
               "chance_mrr": 0.0518737752,
               "p_holm": 1.0,
               "edge": false
@@ -4045,7 +4045,7 @@
           "p_holm": 0.0173982601739826
         }
       ],
-      "reading": "Miền Nam: CHƯA CHỨNG MINH ĐƯỢC LỢI THẾ DỰ BÁO cho lô và đuôi Đặc Biệt: không cách nào trong 6 mô hình xác suất và 3 cách xếp hạng thắng dự báo đều trên 881 kỳ ngoài mẫu sau hiệu chỉnh Holm. Riêng từng đài (hiệu chỉnh Holm trên mọi cặp đài × mô hình của miền): Bến Tre — Chữ số theo lồng cho lô (lợi +0,0058 log-loss mỗi kỳ trên 40 kỳ, p Holm 0,017). Đây là số đo hồi cứu trên một sổ chỉ ghi từ một nơi; nó chỉ thành lợi thế khi phép kiểm tiến cứu đã đăng ký xác nhận trên kỳ mới."
+      "reading": "Miền Nam: CHƯA CHỨNG MINH ĐƯỢC LỢI THẾ DỰ BÁO cho lô và đuôi Đặc Biệt: không cách nào trong 6 mô hình xác suất và 3 cách xếp hạng thắng dự báo đều trên 884 kỳ ngoài mẫu sau hiệu chỉnh Holm. Riêng từng đài (hiệu chỉnh Holm trên mọi cặp đài × mô hình của miền): Bến Tre — Chữ số theo lồng cho lô (lợi +0,0058 log-loss mỗi kỳ trên 40 kỳ, p Holm 0,017). Đây là số đo hồi cứu trên một sổ chỉ ghi từ một nơi; nó chỉ thành lợi thế khi phép kiểm tiến cứu đã đăng ký xác nhận trên kỳ mới."
     }
   }
 }
