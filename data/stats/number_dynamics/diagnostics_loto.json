@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4276,
+  "history_days": 4277,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-11-24",
-  "active_numbers_last_draw": 25,
+  "calendar_end": "2026-11-25",
+  "active_numbers_last_draw": 24,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 41.61878611956033,
+    "hazard": 41.59114920845716,
     "lag_median": 1000000.0,
-    "regime_recent": 124.91351662784069,
-    "regime_long": 14709.24102850306
+    "regime_recent": 132.02845104767343,
+    "regime_long": 4837.287469996746
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 5.537724545895576,
-    "holdout_days": 1069,
-    "brier_arithmetic": 0.18131786500597072,
-    "brier_logodds": 0.18145222699482882
+    "t_statistic": 5.570711615878149,
+    "holdout_days": 1070,
+    "brier_arithmetic": 0.18131890210070548,
+    "brier_logodds": 0.18145400035067688
   },
-  "transition_active_mean_trials": 1018.84,
-  "regime_js_divergence_30_vs_180": 0.01138297093955776,
-  "entropy_recent": 4.544046617273516,
-  "entropy_long": 4.596337582057778,
-  "global_dynamics_reliability": 0.7570884743862986,
+  "transition_active_mean_trials": 1022.0416666666666,
+  "regime_js_divergence_30_vs_180": 0.011224297665126032,
+  "entropy_recent": 4.54472420915536,
+  "entropy_long": 4.596125951530356,
+  "global_dynamics_reliability": 0.757666721896504,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-11-24T11:42:12Z",
+  "generated_at_utc": "2026-11-25T11:36:30Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-11-24"
+  "anchor_date": "2026-11-25"
 }
