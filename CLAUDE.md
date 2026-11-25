@@ -517,13 +517,15 @@ triển khai Pages và hậu kiểm lại. Đừng gộp lại thành một job:
 pipeline. Điều kiện `if:` của các job được ĐÁNH GIÁ (kể cả `success()` ngầm định) trong
 `tests/repo/test_finalization_timing.py`; xem `documentation/operations/scheduling.md`.
 
-## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
+## Vietlott `vietlott/` — mã của VLA
 
-Dự án TỰ ĐỦ (bản `6bec0c9` của kho `beuvivu/VLM`, 07-10-2026, để sau còn tách thành hai trang): đừng trộn vào `src/` hay
-`data/` của VLA, đừng sửa logic ở đây khi không cần. Chạy:
+Vietlott là mã của VLA (chủ dự án nhắc lại 25-11-2026). Kho VLM đã bỏ hẳn: KHÔNG còn yêu cầu nào đối với VLM — không giữ
+tương thích với kho ấy, không chờ tách trang, không đưa bản vá về đó; sửa mã ở `vietlott/` như mọi mã VLA khác, cùng kỷ luật
+kiểm thử. Thư mục giữ bố cục gói riêng (`pyproject.toml`, `src/vietlott_engine`, `src/vlm`, bộ kiểm riêng) vì lý do kỹ
+thuật; chữ `vlm` trong tên gói, lệnh và tệp workflow chỉ là tên. Chạy:
 `cd vietlott && python -m pip install -e ".[dev,crawler]" && python -m pytest`. Workflow ở `.github/workflows/vlm-*.yml`
-(`working-directory: vietlott`, cache tiền tố `vietlott/`) KHÔNG triển khai Pages (`tests/repo/test_vietlott_engine_layout.py`); phép kiểm của engine tìm workflow ở cả hai bố cục; tag phát
-hành `vlm-v<phiên bản>`. Luật phải giữ:
+(`working-directory: vietlott`, cache tiền tố `vietlott/`) KHÔNG triển khai Pages (`tests/repo/test_vietlott_engine_layout.py`).
+Luật phải giữ:
 
 - Trang Vietlott (`src/pages/build_vietlott_results.py`): bảng giải ĐÚNG mã kỳ (khuyết in "—", không mượn kỳ trước); KHÔNG
   in `source`, `source_url`, `official_url` hay cảnh báo nhắc tên nguồn (`tests/pages/test_vietlott_results.py`); câu kết
@@ -566,7 +568,7 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   ngưỡng 10⁻⁹): `np.exp`/`np.dot` lệch bit cuối giữa các CPU của runner, và tuần 03 → 10-11-2026 có 40/64 commit chạm
   tệp chỉ mang kiểu lệch ấy. Chỉ số thực được nới; số nguyên, khoá, độ dài danh sách phải trùng tuyệt đối.
 
-Số đo, lý do và lịch sử từng điểm: `documentation/architecture/claude-md-chi-tiet.md`, mục «Engine Vietlott».
+Số đo, lý do và lịch sử từng điểm: `documentation/architecture/claude-md-chi-tiet.md`, mục «Vietlott».
 
 ## Phòng thử thách mô hình `src/research/vla/` và Lô VIP
 

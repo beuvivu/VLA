@@ -1,4 +1,4 @@
-"""Trang Vietlott của VLA, dựng từ engine ``vietlott/`` (chép từ VLM ngày 07-10-2026).
+"""Trang Vietlott của VLA, dựng từ engine Vietlott ``vietlott/`` (từ 07-10-2026).
 
 Trước đây VLA tự cào một trang tin và lưu vào SQLite riêng: chỉ có số quay và
 một con số jackpot bóc từ chữ, không Keno/Bingo18, không bảng giải, không số

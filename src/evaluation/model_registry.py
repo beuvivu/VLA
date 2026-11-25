@@ -27,7 +27,7 @@ phải quay về bản nào khi cần lùi. Hai thành phần co theo ``trust`` 
 ghi khi đổi ĐỊNH NGHĨA: trust của chúng học lại mỗi ngày và dao động quanh 0, nên "vừa qua 0" không
 phải một lần đề bạt — giá trị trust từng ngày nằm trong ``registry.json`` và lịch sử git của nó.
 
-Engine Vietlott (`vietlott/`) là dự án tự đủ và giữ sổ riêng (checkpoint có phiên bản, sổ
+Engine Vietlott (`vietlott/`) giữ sổ riêng (checkpoint có phiên bản, sổ
 ``ml-ledger.jsonl``, lệnh ``vietlott forecast scoreboard``); sổ này không chép lại nó.
 """
 

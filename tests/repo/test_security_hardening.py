@@ -64,7 +64,7 @@ def files_scanned_for_dom_sinks() -> list[Path]:
     và ``docs/*.html`` thì một cống thêm vào bất kỳ tệp nào trong số đó vẫn
     để phép kiểm XANH — đúng thứ mà tên phép kiểm hứa là không xảy ra.
 
-    Engine Vietlott ``vietlott/`` (chép từ VLM) cũng nằm trong kho: trang riêng
+    Engine Vietlott ``vietlott/`` cũng nằm trong kho: trang riêng
     của nó dựng bằng ``scripts/build_site.py`` + ``scripts/site_assets/*.js``.
     Bản chép đầu tiên mang bốn cống trong ``dashboard.js`` mà CodeQL bắt được
     còn phép kiểm này không, vì nó chỉ quét ``src`` và ``docs``.
