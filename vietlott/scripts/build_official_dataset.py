@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rebuild the bundled seed data from official vietlott.vn records.
 
-    python scripts/build_official_dataset.py --vendor /tmp/vqe-sources
+    python scripts/build_official_dataset.py --vendor .vendor
 
 * Mega 6/45, Power 6/55, Lotto 5/35, Max 3D, Max 3D Pro: ``pqminh-4/vietlott-data``
   canonical records — vietlott.vn draw-detail pages (result, winners per tier, jackpot
@@ -128,7 +128,9 @@ def merge_layers(product: ProductCode, layers: list[tuple[str, list[dict]]]) -> 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--vendor", default="/tmp/vqe-sources")
+    # Mặc định trong thư mục engine (đã .gitignore), như Makefile và README. Thư mục cố định dưới /tmp dùng
+    # chung: ai dựng sẵn nó với kho git giả thì `ensure_repo` dùng luôn và dữ liệu ấy được gộp vào data/seed.
+    ap.add_argument("--vendor", default=str(ROOT / ".vendor"))
     ap.add_argument("--canonical-dir", help="directory with <game>.jsonl canonical records (default: pqminh-4 clone)")
     ap.add_argument("--update", action="store_true", help="git pull the source repositories first")
     ap.add_argument("--compare-with", help="seed directory to compare against (default: the current data/seed)")

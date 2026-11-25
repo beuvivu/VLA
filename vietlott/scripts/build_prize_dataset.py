@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rebuild the bundled seed data (draws + per-draw prize data) from public sources.
 
-    python scripts/build_prize_dataset.py --vendor /tmp/vqe-sources
+    python scripts/build_prize_dataset.py --vendor .vendor
 
 Clones (or reuses) three public repositories, merges and validates them, and writes:
 

@@ -611,3 +611,67 @@ def test_the_finalization_dispatch_does_not_retry_a_permission_error(tmp_path: P
 
     assert result.returncode != 0
     assert len(seen) == 1
+
+
+# ---------------------------------------------------------------------------
+# post-finalization.yml — bước "Xuất bản ảnh chụp chuẩn lên nhánh live"
+# ---------------------------------------------------------------------------
+
+
+def _run_live_reconcile_push(tmp_path: Path, failures: int) -> tuple[subprocess.CompletedProcess, int]:
+    """Chạy nguyên khối đẩy ảnh chụp chuẩn với ``git push`` giả bị từ chối ``failures`` lần."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (tmp_path / "push_failures").write_text(str(failures), encoding="utf-8")
+    (tmp_path / "pushes").write_text("", encoding="utf-8")
+    _write_exe(bin_dir / "sleep", "exit 0\n")
+    _write_exe(
+        bin_dir / "git",
+        'case "$1" in\n'
+        "  config) exit 0 ;;\n"
+        '  hash-object) [[ -f "$3" ]] || exit 9; echo blob ;;\n'
+        '  mktree|commit-tree) cat > /dev/null; echo "obj$RANDOM" ;;\n'
+        "  push)\n"
+        '    left=$(cat "$FAKE_DIR/push_failures")\n'
+        "    if (( left > 0 )); then\n"
+        '      echo $(( left - 1 )) > "$FAKE_DIR/push_failures"\n'
+        "      echo \"! [remote rejected] obj -> live (cannot lock ref 'refs/heads/live')\" >&2\n"
+        "      exit 1\n"
+        "    fi\n"
+        '    echo "$3" >> "$FAKE_DIR/pushes" ;;\n'
+        '  *) echo "git giả không hiểu: $*" >&2; exit 2 ;;\n'
+        "esac\n",
+    )
+    step = _step("post-finalization.yml", "reconcile", "Xuất bản ảnh chụp chuẩn lên nhánh live")
+    assert step["env"] == {"LIVE_PATH": "${{ steps.live-payload.outputs.path }}"}
+    live_json = tmp_path / "live-canonical.json"
+    live_json.write_text('{"status": "complete_verified"}', encoding="utf-8")
+    script = tmp_path / "publish.sh"
+    script.write_text(step["run"], encoding="utf-8")
+    result = subprocess.run(
+        _shell_command(step, script),
+        cwd=tmp_path,
+        env={**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+             "FAKE_DIR": str(tmp_path), "LIVE_PATH": str(live_json)},
+        capture_output=True, text=True, timeout=60, check=False,
+    )
+    pushes = len((tmp_path / "pushes").read_text(encoding="utf-8").splitlines())
+    return result, pushes
+
+
+def test_a_concurrent_live_push_does_not_fail_the_canonical_reconcile(tmp_path: Path) -> None:
+    """Lượt 45607100671: live-results.yml đẩy nhánh live cùng giây, máy chủ từ chối «cannot lock
+    ref» và cả lượt kiểm toán đỏ, ảnh chụp chuẩn không lên. Một lần bị từ chối phải được đẩy lại."""
+    result, pushes = _run_live_reconcile_push(tmp_path, failures=1)
+
+    assert result.returncode == 0, result.stderr[-600:]
+    assert pushes == 1
+
+
+def test_a_live_push_that_never_recovers_fails_the_reconcile(tmp_path: Path) -> None:
+    """Không còn vòng nào sau bước này: hỏng dai dẳng phải đỏ, không xanh giả, không lặp mãi."""
+    result, pushes = _run_live_reconcile_push(tmp_path, failures=10**6)
+
+    assert result.returncode != 0
+    assert pushes == 0
+    assert "Không đẩy được ảnh chụp chuẩn" in result.stdout

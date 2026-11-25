@@ -139,7 +139,7 @@ jobs:
         # Chênh lệch giữa mốc lịch và dòng này CHÍNH LÀ độ trễ của bộ lập
         # lịch. Ghi lại để còn đo được, thay vì đoán.
         run: |
-          echo "Sự kiện kích hoạt : ${{ github.event_name }}"
+          echo "Sự kiện kích hoạt : $GITHUB_EVENT_NAME"
           echo "Giờ Việt Nam      : $(date '+%Y-%m-%d %H:%M:%S %Z')"
           echo "Giờ UTC           : $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
@@ -277,15 +277,20 @@ jobs:
           # Mốc lưới an toàn CUỐI CÙNG trong ngày. Phải khớp chính xác với
           # mốc cuối ở khối `schedule` phía trên.
           LAST_CRON: "17 8 * * *"
+          # Đầu ra của bước khác cũng đi qua env, không thay thẳng vào khối lệnh
+          # (tests/repo/test_security_hardening.py: không có ${{ }} trong run:).
+          POLL_VERIFIED: ${{ steps.poll.outputs.verified }}
+          POLL_SLOTS: ${{ steps.poll.outputs.verified_slots || 0 }}
+          GATE_RUN: ${{ steps.gate.outputs.run }}
         run: |
           set -euo pipefail
-          verified="${{ steps.poll.outputs.verified }}"
-          slots="${{ steps.poll.outputs.verified_slots || 0 }}"
+          verified="$POLL_VERIFIED"
+          slots="$POLL_SLOTS"
 
           # Bước chặn cho thoát sớm là kết cục ĐÚNG, không phải thiếu số: hoặc
           # kỳ đã có trong kho, hoặc còn quá sớm và mốc sau sẽ lo. Báo đỏ ở đây
           # sẽ dạy người ta bỏ qua cảnh báo của chính workflow này.
-          if [ "${{ steps.gate.outputs.run }}" != "true" ]; then
+          if [ "$GATE_RUN" != "true" ]; then
             echo "::notice::Bỏ qua theo bước chặn; không thăm dò."
             exit 0
           fi

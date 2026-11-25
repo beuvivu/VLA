@@ -769,7 +769,10 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 `tests/repo/test_workflow_shell_behaviour.py` chạy nguyên khối lấy từ YAML bằng
 đúng lệnh shell của GitHub, chỉ thay đồng hồ, lệnh ngủ, nguồn và lệnh đẩy.
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
-một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
+một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật. Khối `run:` không chứa
+`${{ }}` nào (25-11-2026): đầu vào dispatch, đầu ra bước khác, tên sự kiện đi qua `env:` rồi
+đọc là `"$BIEN"`, vì runner thay biểu thức vào văn bản lệnh trước khi shell đọc
+(`test_no_workflow_substitutes_an_expression_into_a_run_block`).
 
 Số kiểm thử và bằng chứng phát hành gần nhất nằm trong PR và `documentation/qa/`.
 Bốn kịch bản chốt phát hành
