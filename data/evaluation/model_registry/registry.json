@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_through": "2026-11-25",
+  "data_through": "2026-11-26",
   "summary": {
     "gated": 6,
     "production": 8,
@@ -13,7 +13,7 @@
       "mode": "de",
       "role": "Hệ ba tác tử",
       "artifact": "data/forecast/online/agents_de.json",
-      "artifact_sha256": "d714cd573e3cc3feffeb05e651d08465cc9a753973b860d318bd40d172ed90cf",
+      "artifact_sha256": "4926c11a8d884c09627a3d5295790fd574bb12cbb710ee2893410d4a00b207f4",
       "definition": {
         "schema_version": 1,
         "recipe": {
@@ -31,24 +31,24 @@
       },
       "fingerprint": "c96173dcb00934fc451bcbe07786e31be852c489a4ab5d228576cf9e59db0ff0",
       "training": {
-        "settled_draws": 37,
-        "history_through": "2026-11-25",
-        "records": 38
+        "settled_draws": 38,
+        "history_through": "2026-11-26",
+        "records": 39
       },
       "validation": {
         "fast_loss": [
-          11.154110198707,
-          11.153887271689,
-          11.156234695049,
-          11.15437542453,
-          11.153897233363
+          11.314427689477,
+          11.314270653538,
+          11.316217879494,
+          11.315966530293,
+          11.314279769487
         ],
         "slow_loss": [
-          18.315251919398,
-          18.315,
-          18.319124189448,
-          18.318841415763,
-          18.31502544431
+          18.810192716129,
+          18.81,
+          18.813794414744,
+          18.815063784262,
+          18.810024897435
         ],
         "gate_active": false
       },
@@ -62,7 +62,7 @@
       "mode": "loto",
       "role": "Hệ ba tác tử",
       "artifact": "data/forecast/online/agents_loto.json",
-      "artifact_sha256": "7b14c37fc12d7abb36bb7cecfcdae77ad0e663fd5c5d234ff495e0a0903c5721",
+      "artifact_sha256": "fe8094d2eae22dd63d8f82bbd7a124d591edf9ac61c2c058233d14b77017a4a0",
       "definition": {
         "schema_version": 1,
         "recipe": {
@@ -80,24 +80,24 @@
       },
       "fingerprint": "c96173dcb00934fc451bcbe07786e31be852c489a4ab5d228576cf9e59db0ff0",
       "training": {
-        "settled_draws": 37,
-        "history_through": "2026-11-25",
-        "records": 38
+        "settled_draws": 38,
+        "history_through": "2026-11-26",
+        "records": 39
       },
       "validation": {
         "fast_loss": [
-          4.080208447641,
-          4.080428235094,
-          4.080697577122,
-          4.080361698774,
-          4.080452955162
+          4.150662825803,
+          4.150914584926,
+          4.151711941996,
+          4.151685869988,
+          4.150938563264
         ],
         "slow_loss": [
-          6.722463101849,
-          6.722768796054,
-          6.723086124738,
-          6.72282260087,
-          6.722830960082
+          6.915323733441,
+          6.915667992939,
+          6.916521416926,
+          6.916557623047,
+          6.915730156839
         ],
         "gate_active": false
       },
@@ -111,7 +111,7 @@
       "mode": null,
       "role": "Bộ máy Bayes theo đoạn (lồng chục, đơn vị)",
       "artifact": "data/forecast/cage_bayes/summary.json",
-      "artifact_sha256": "bc1113b757c2daac8fcc9c2929a2b19cb7451f043bd9b1936ae22203d4b3e954",
+      "artifact_sha256": "2e9c0489eaa05095f485147e8618bd5234bbc8e8244c964bc5296c64f0762f28",
       "definition": {
         "version": 1,
         "config": {
@@ -132,18 +132,18 @@
       },
       "fingerprint": "17f7f39e5cef54a2e99be101d2d68ceb337b7dcd2f217ca12ca1a325d8612059",
       "training": {
-        "data_through": "2026-11-25",
-        "draws": 4277,
+        "data_through": "2026-11-26",
+        "draws": 4278,
         "registered_on": "2026-11-23"
       },
       "validation": {
-        "walk_forward_draws": 3912,
-        "loto_gain_nats": 8.2882868014,
-        "loto_z": 1.1867474608,
-        "de_gain_nats": 2.5632836095,
-        "de_z": 1.8348906339,
-        "prospective_draws": 2,
-        "prospective_log10_e": -0.0020473072,
+        "walk_forward_draws": 3913,
+        "loto_gain_nats": 8.2795047854,
+        "loto_z": 1.1854886141,
+        "de_gain_nats": 2.5604847493,
+        "de_z": 1.8328815662,
+        "prospective_draws": 3,
+        "prospective_log10_e": -0.0055600379,
         "prospective_evidence": false,
         "eligible": false
       },
@@ -157,7 +157,7 @@
       "mode": "de",
       "role": "Hiệu chỉnh xác suất",
       "artifact": "data/ensemble/calibration_de.json",
-      "artifact_sha256": "0fd57c06702dc850bffe711ed7beb13b0701536cf43db9eb63263a71253644c4",
+      "artifact_sha256": "c53c63f8221cc8e29a79cd0226076bbe3dfbe694e443a0f7f8a5acd81b40b9b2",
       "definition": {
         "schema_version": 8,
         "window_days": 180,
@@ -173,18 +173,18 @@
         },
         "chronological_split": {
           "weight_days": 31,
-          "calibration_days": 21,
+          "calibration_days": 22,
           "weight_first_day": "2026-10-05",
           "weight_last_day": "2026-11-04",
           "calibration_first_day": "2026-11-05",
-          "calibration_last_day": "2026-11-25",
+          "calibration_last_day": "2026-11-26",
           "disjoint": true
         }
       },
       "validation": {
         "chosen": "identity",
         "selected": false,
-        "fit_days": 21,
+        "fit_days": 22,
         "holdout_days": 0,
         "brier_by_candidate": {}
       },
@@ -198,7 +198,7 @@
       "mode": "loto",
       "role": "Hiệu chỉnh xác suất",
       "artifact": "data/ensemble/calibration_loto.json",
-      "artifact_sha256": "96d07946218ed9e38887d589e70665bf621b282c65282f966728d65045008459",
+      "artifact_sha256": "783c351b4f31b0543deb6ffb971da0ff7e475f8aecab0fa2a30d3e5ff2d52654",
       "definition": {
         "schema_version": 8,
         "window_days": 180,
@@ -214,18 +214,18 @@
         },
         "chronological_split": {
           "weight_days": 31,
-          "calibration_days": 21,
+          "calibration_days": 22,
           "weight_first_day": "2026-10-05",
           "weight_last_day": "2026-11-04",
           "calibration_first_day": "2026-11-05",
-          "calibration_last_day": "2026-11-25",
+          "calibration_last_day": "2026-11-26",
           "disjoint": true
         }
       },
       "validation": {
         "chosen": "identity",
         "selected": false,
-        "fit_days": 21,
+        "fit_days": 22,
         "holdout_days": 0,
         "brier_by_candidate": {}
       },
@@ -239,7 +239,7 @@
       "mode": "de",
       "role": "Thành phần Cầu Kèo",
       "artifact": "models/cau_keo_de.joblib",
-      "artifact_sha256": "543758996b93c527c4e73992c7bc703e78a026c2cea565cdbe459a85e6317d79",
+      "artifact_sha256": "91768dd9272cbcf90b228c030afe6c3000d4737ee8de34124bfc172807adc8d0",
       "definition": {
         "model_type": "cau_keo_platt_hgb",
         "neg_ratio": 22,
@@ -254,21 +254,21 @@
       },
       "fingerprint": "e20aeaca332096d4c3aef56b7c6ebc5b77fcf865fba1448e83673483fd589195",
       "training": {
-        "trained_through_date": "2026-11-24",
-        "trained_at": "2026-11-25T11:38:39Z",
-        "calib_start": "2026-08-27 00:00:00",
-        "val_start": "2026-09-26 00:00:00"
+        "trained_through_date": "2026-11-25",
+        "trained_at": "2026-11-26T11:40:22Z",
+        "calib_start": "2026-08-28 00:00:00",
+        "val_start": "2026-09-27 00:00:00"
       },
       "validation": {
-        "val_logloss": 0.055995806031,
-        "val_brier": 0.009899888073,
-        "logloss_skill": 0.000102288695,
-        "brier_skill": 1.1305745e-05,
-        "model_trust": 0.000226114907,
+        "val_logloss": 0.055998259236,
+        "val_brier": 0.009899934929,
+        "logloss_skill": 5.8482658e-05,
+        "brier_skill": 6.572855e-06,
+        "model_trust": 0.000131457094,
         "base_rate": 0.01
       },
       "deployment": "production",
-      "deployment_reason": "trust 0,0226%: xác suất công bố của Cầu Kèo là 0,0226% xác suất thô cộng phần còn lại ở mức nền",
+      "deployment_reason": "trust 0,0131%: xác suất công bố của Cầu Kèo là 0,0131% xác suất thô cộng phần còn lại ở mức nền",
       "continuous_trust": true
     },
     {
@@ -277,7 +277,7 @@
       "mode": "loto",
       "role": "Thành phần Cầu Kèo",
       "artifact": "models/cau_keo_loto.joblib",
-      "artifact_sha256": "25e4ddd100af339261cb30220f533767fea9794ca73e19198461b1ad853bd1f7",
+      "artifact_sha256": "e7336635c14efc39f9cf677d2fcf8e1f619632f23d92a0b2cb2405d575bf5144",
       "definition": {
         "model_type": "cau_keo_platt_hgb",
         "neg_ratio": 8,
@@ -292,21 +292,21 @@
       },
       "fingerprint": "df1b003af3656d8aef3966c02b2a9da29f9fe7cc3c5461882d615bec59d29db0",
       "training": {
-        "trained_through_date": "2026-11-24",
-        "trained_at": "2026-11-25T11:38:37Z",
-        "calib_start": "2026-08-27 00:00:00",
-        "val_start": "2026-09-26 00:00:00"
+        "trained_through_date": "2026-11-25",
+        "trained_at": "2026-11-26T11:40:19Z",
+        "calib_start": "2026-08-28 00:00:00",
+        "val_start": "2026-09-27 00:00:00"
       },
       "validation": {
-        "val_logloss": 0.548513030165,
-        "val_brier": 0.18124758809,
-        "logloss_skill": 0.000103074439,
-        "brier_skill": 0.000116156451,
-        "model_trust": 0.002061488783,
+        "val_logloss": 0.549379707123,
+        "val_brier": 0.181630344684,
+        "logloss_skill": -6.1872626e-05,
+        "brier_skill": -6.7378493e-05,
+        "model_trust": 0.0,
         "base_rate": 0.237902061856
       },
-      "deployment": "production",
-      "deployment_reason": "trust 0,206%: xác suất công bố của Cầu Kèo là 0,206% xác suất thô cộng phần còn lại ở mức nền",
+      "deployment": "gated",
+      "deployment_reason": "trust 0: kỹ năng thẩm định không dương, xác suất công bố của Cầu Kèo bằng mức nền",
       "continuous_trust": true
     },
     {
@@ -315,7 +315,7 @@
       "mode": "de",
       "role": "Trọng số tổ hợp",
       "artifact": "data/ensemble/weights_de.json",
-      "artifact_sha256": "4759cf542621913ecf085c1098fdb0ee2bbe49f795150b19c8dba3fb9dd411f6",
+      "artifact_sha256": "70127ea19235c85768eff896b87ea7399597c0a7da619f631c65f6f1aff4c543",
       "definition": {
         "window_days": 180,
         "half_life_days": 45,
@@ -339,7 +339,7 @@
           "w_active": 0.125,
           "w_stable": 0.125
         },
-        "days_used": 52
+        "days_used": 53
       },
       "validation": {
         "origin": "bi_tu_choi",
@@ -349,9 +349,9 @@
         "logloss_ngoai_mau": {
           "mac_dinh": 4.606246548744,
           "dang_hieu_luc": 4.606246548744,
-          "ung_vien": 4.607081195792
+          "ung_vien": 4.6070811844
         },
-        "loi_tuong_doi": -0.000181198952
+        "loi_tuong_doi": -0.000181196479
       },
       "deployment": "production",
       "deployment_reason": "cổng đã đo và từ chối đề bạt: đang chạy vector mặc định",
@@ -363,7 +363,7 @@
       "mode": "loto",
       "role": "Trọng số tổ hợp",
       "artifact": "data/ensemble/weights_loto.json",
-      "artifact_sha256": "bbff906782c5667cef2034d6d75548f12842cd3342d8e362a52386608fa1235b",
+      "artifact_sha256": "135130571f5bfbd82f9cffdadbb4dbaf8b6d454b87ceaf896219b19b20f7ebb7",
       "definition": {
         "window_days": 180,
         "half_life_days": 45,
@@ -387,7 +387,7 @@
           "w_active": 0.125,
           "w_stable": 0.125
         },
-        "days_used": 52
+        "days_used": 53
       },
       "validation": {
         "origin": "bi_tu_choi",
@@ -411,7 +411,7 @@
       "mode": null,
       "role": "Kho tri thức",
       "artifact": "data/forecast/knowledge/kb.json",
-      "artifact_sha256": "679f3c864240b3e1c32f7f09813ebcd620f7925cedf45016babc9952e58a140f",
+      "artifact_sha256": "90f26bdd0939d81d5817c90f289811fff05fc38213309c66f9830f0c4eb69bcb",
       "definition": {
         "version": 1,
         "alpha_budget": 0.01,
@@ -439,8 +439,8 @@
       },
       "fingerprint": "66b4381fe59ccbd4257b51b99da6e61a838236df829cf4d97612541113cecc62",
       "training": {
-        "source_date": "2026-11-25",
-        "draws": 4277,
+        "source_date": "2026-11-26",
+        "draws": 4278,
         "batches": 2,
         "rules": 40,
         "retired": 0
@@ -460,7 +460,7 @@
       "mode": "de",
       "role": "Thành phần ML",
       "artifact": "models/ml_de.joblib",
-      "artifact_sha256": "31625280fb571fbcb26062d2402b3271a04cc1590d68be1da2ff4fe77f34d50a",
+      "artifact_sha256": "e880378b52598733efd45c0da74f151bb9ae0a9959fe21d13c01559e0c24c3fa",
       "definition": {
         "model_type": "platt_temporal_hgb",
         "feature_schema_version": 2,
@@ -477,33 +477,33 @@
       },
       "fingerprint": "3dcef5f57d9633f1505e3121055574aa0ed89c2ad165f412159e93f4f2e8a31a",
       "training": {
-        "trained_through_date": "2026-11-25",
-        "calib_start": "2026-07-13 00:00:00",
-        "selection_start": "2026-08-27 00:00:00",
-        "val_start": "2026-10-11 00:00:00",
+        "trained_through_date": "2026-11-26",
+        "calib_start": "2026-07-14 00:00:00",
+        "selection_start": "2026-08-28 00:00:00",
+        "val_start": "2026-10-12 00:00:00",
         "selected_candidate": {
-          "name": "balanced",
-          "max_depth": 3,
-          "learning_rate": 0.04,
-          "max_iter": 220,
-          "l2_regularization": 0.6,
-          "min_samples_leaf": 20
+          "name": "shallow_smooth",
+          "max_depth": 2,
+          "learning_rate": 0.05,
+          "max_iter": 180,
+          "l2_regularization": 0.45,
+          "min_samples_leaf": 25
         }
       },
       "validation": {
-        "val_logloss": 0.056216622546,
-        "val_brier": 0.0099052222,
+        "val_logloss": 0.055964963146,
+        "val_brier": 0.009899310037,
         "baseline_logloss": 0.056001534355,
         "baseline_brier": 0.0099,
-        "logloss_skill": -0.003840755329,
-        "brier_skill": -0.000527494981,
-        "quality_pass": false,
-        "model_trust": 0.0,
-        "selection_logloss": 0.055748022376,
-        "selection_brier": 0.009891952331
+        "logloss_skill": 0.000653039399,
+        "brier_skill": 6.9693213e-05,
+        "quality_pass": true,
+        "model_trust": 0.001393864259,
+        "selection_logloss": 0.056012935938,
+        "selection_brier": 0.009900209619
       },
-      "deployment": "gated",
-      "deployment_reason": "trust 0: kỹ năng thẩm định không dương, xác suất công bố của thành phần ML bằng mức nền",
+      "deployment": "production",
+      "deployment_reason": "trust 0,139%: xác suất công bố của thành phần ML là 0,139% xác suất thô cộng phần còn lại ở mức nền",
       "continuous_trust": true
     },
     {
@@ -512,7 +512,7 @@
       "mode": "loto",
       "role": "Thành phần ML",
       "artifact": "models/ml_loto.joblib",
-      "artifact_sha256": "2ccc37899b76ee34bdf68b24e7ce13c9a280cb18c955fde26ecb232f0abba1fe",
+      "artifact_sha256": "f46c409f9601187d0777b4ccbc4e77fe61b299ae96846b9c1a6cbcec74538a4a",
       "definition": {
         "model_type": "platt_temporal_hgb",
         "feature_schema_version": 2,
@@ -529,30 +529,30 @@
       },
       "fingerprint": "9cc7e0f0c047e520bd36b4a1182662639477de2de19d5734f4ee0847733b4be2",
       "training": {
-        "trained_through_date": "2026-11-25",
-        "calib_start": "2026-07-13 00:00:00",
-        "selection_start": "2026-08-27 00:00:00",
-        "val_start": "2026-10-11 00:00:00",
+        "trained_through_date": "2026-11-26",
+        "calib_start": "2026-07-14 00:00:00",
+        "selection_start": "2026-08-28 00:00:00",
+        "val_start": "2026-10-12 00:00:00",
         "selected_candidate": {
-          "name": "responsive",
-          "max_depth": 3,
-          "learning_rate": 0.06,
-          "max_iter": 160,
-          "l2_regularization": 0.35,
+          "name": "shallow_smooth",
+          "max_depth": 2,
+          "learning_rate": 0.05,
+          "max_iter": 180,
+          "l2_regularization": 0.45,
           "min_samples_leaf": 25
         }
       },
       "validation": {
-        "val_logloss": 0.550198275938,
-        "val_brier": 0.18199259603,
-        "baseline_logloss": 0.550057385121,
-        "baseline_brier": 0.181938522746,
-        "logloss_skill": -0.000256138398,
-        "brier_skill": -0.000297206348,
+        "val_logloss": 0.550591254339,
+        "val_brier": 0.18217809986,
+        "baseline_logloss": 0.55057484042,
+        "baseline_brier": 0.182171508108,
+        "logloss_skill": -2.9812331e-05,
+        "brier_skill": -3.6184317e-05,
         "quality_pass": false,
         "model_trust": 0.0,
-        "selection_logloss": 0.546095564547,
-        "selection_brier": 0.18016133089
+        "selection_logloss": 0.546134905641,
+        "selection_brier": 0.18017615714
       },
       "deployment": "gated",
       "deployment_reason": "trust 0: kỹ năng thẩm định không dương, xác suất công bố của thành phần ML bằng mức nền",
@@ -564,7 +564,7 @@
       "mode": "de",
       "role": "Học trực tuyến (Hedge hai trí nhớ)",
       "artifact": "data/forecast/online/de.json",
-      "artifact_sha256": "3d63661e4c208ec301d03ab55dfeef3616b7d9ea9e6269a0ff555a507a3eaa15",
+      "artifact_sha256": "35e68d986a57e006d474187526a1292d43b8a9964da68841f2f96904e3321a96",
       "definition": {
         "schema_version": 1,
         "recipe": {
@@ -582,28 +582,28 @@
       },
       "fingerprint": "35896dc0a2965bda46868578885d392d8f8dea5c4ce127e16325efdabd7ccfd6",
       "training": {
-        "settled_draws": 59,
-        "history_through": "2026-11-25",
-        "records": 60
+        "settled_draws": 60,
+        "history_through": "2026-11-26",
+        "records": 61
       },
       "validation": {
         "fast_loss": [
-          13.764802001415,
-          13.764628825922,
-          13.766984682725,
-          13.766724067144,
-          13.764641109887,
-          13.764739783719,
-          13.766637612099
+          13.846798738104,
+          13.846689961144,
+          13.848975442248,
+          13.847737607414,
+          13.846702645121,
+          13.846798728723,
+          13.84863948855
         ],
         "slow_loss": [
-          29.205089588643,
-          29.205,
-          29.213736477088,
-          29.199845687129,
-          29.205016765693,
-          29.196679287532,
-          29.207210118533
+          29.700030385374,
+          29.7,
+          29.708736777093,
+          29.693860949413,
+          29.700017534224,
+          29.691680426047,
+          29.702211123346
         ],
         "gate_active": false
       },
@@ -617,7 +617,7 @@
       "mode": "loto",
       "role": "Học trực tuyến (Hedge hai trí nhớ)",
       "artifact": "data/forecast/online/loto.json",
-      "artifact_sha256": "3c7353b190a8d67ab01cc3994f3e81bef6a9c24112c638995a3a09c51c5dd974",
+      "artifact_sha256": "cc761ea25173acabdb0f1c01bafa9fbec69c48811f17309591d7a3de7c1930b1",
       "definition": {
         "schema_version": 1,
         "recipe": {
@@ -635,28 +635,28 @@
       },
       "fingerprint": "35896dc0a2965bda46868578885d392d8f8dea5c4ce127e16325efdabd7ccfd6",
       "training": {
-        "settled_draws": 59,
-        "history_through": "2026-11-25",
-        "records": 60
+        "settled_draws": 60,
+        "history_through": "2026-11-26",
+        "records": 61
       },
       "validation": {
         "fast_loss": [
-          5.037211980455,
-          5.037411811393,
-          5.039330374399,
-          5.037421824936,
-          5.037416336277,
-          5.034856362143,
-          5.037580589135
+          5.078956252633,
+          5.079188653936,
+          5.082508003465,
+          5.078991889804,
+          5.079197676961,
+          5.076714660369,
+          5.079453447998
         ],
         "slow_loss": [
-          10.703994647768,
-          10.704208413164,
-          10.706464801343,
-          10.704231658025,
-          10.704224737888,
-          10.698961452155,
-          10.705053836724
+          10.89685527936,
+          10.897107610048,
+          10.90082234164,
+          10.896924377641,
+          10.897128568661,
+          10.891865441245,
+          10.898054113261
         ],
         "gate_active": false
       },
@@ -670,7 +670,7 @@
       "mode": "de",
       "role": "Xác suất đã công bố",
       "artifact": "data/evaluation/model_quality/published_skill.csv",
-      "artifact_sha256": "f413b09da74429d046a355cf8939b2cf1b376b42cb7b1fa8103c9afecd93585d",
+      "artifact_sha256": "4dfc47e1765950d2e5d4e6241e7df9ffb7f7389f14aa060fae67de2745dcf2b0",
       "definition": {
         "components": [
           "ml",
@@ -687,14 +687,14 @@
       "fingerprint": "97a1c52b1c4dc36e05ca2d5f13e4446c1d9e4b53d3eb9aa752deab74499ccff5",
       "training": {
         "first_graded": "2026-08-11",
-        "last_graded": "2026-11-25"
+        "last_graded": "2026-11-26"
       },
       "validation": {
-        "graded_draws": 89,
-        "mean_logloss_skill": -4.6581665e-05,
-        "stderr": 0.000524894542,
-        "ci95_low": -0.001075374966,
-        "ci95_high": 0.000982211637,
+        "graded_draws": 90,
+        "mean_logloss_skill": -3.1776837e-05,
+        "stderr": 0.000519240718,
+        "ci95_low": -0.001049488644,
+        "ci95_high": 0.00098593497,
         "monitor_state": "vung_0",
         "monitor_alarm": false
       },
@@ -708,7 +708,7 @@
       "mode": "loto",
       "role": "Xác suất đã công bố",
       "artifact": "data/evaluation/model_quality/published_skill.csv",
-      "artifact_sha256": "f413b09da74429d046a355cf8939b2cf1b376b42cb7b1fa8103c9afecd93585d",
+      "artifact_sha256": "4dfc47e1765950d2e5d4e6241e7df9ffb7f7389f14aa060fae67de2745dcf2b0",
       "definition": {
         "components": [
           "ml",
@@ -725,14 +725,14 @@
       "fingerprint": "97a1c52b1c4dc36e05ca2d5f13e4446c1d9e4b53d3eb9aa752deab74499ccff5",
       "training": {
         "first_graded": "2026-08-11",
-        "last_graded": "2026-11-25"
+        "last_graded": "2026-11-26"
       },
       "validation": {
-        "graded_draws": 89,
-        "mean_logloss_skill": -2.7750121e-05,
-        "stderr": 6.332154e-05,
-        "ci95_low": -0.00015186034,
-        "ci95_high": 9.6360097e-05,
+        "graded_draws": 90,
+        "mean_logloss_skill": -2.5387458e-05,
+        "stderr": 6.2658575e-05,
+        "ci95_low": -0.000148198265,
+        "ci95_high": 9.7423349e-05,
         "monitor_state": "vung_0",
         "monitor_alarm": false
       },
@@ -746,7 +746,7 @@
       "mode": "de",
       "role": "Tầng xếp chồng",
       "artifact": "models/meta_de.joblib",
-      "artifact_sha256": "905a2e56f10900709492c1eb232021aafaf0977b150e02dcf0085bd341dd31fa",
+      "artifact_sha256": "50af1d75488b0d0147d2ac3659903a8f9683ef9c885f185724b167386d65a062",
       "definition": {
         "schema_version": 3,
         "minimum_history_days": 100,
@@ -764,22 +764,22 @@
         "component_tier": "core_three",
         "history_days": 240,
         "tier_maturity_days": {
-          "five_component": 52,
-          "four_with_cau": 52,
-          "four_with_stat": 86,
+          "five_component": 53,
+          "four_with_cau": 53,
+          "four_with_stat": 87,
           "core_three": 240
         },
-        "trained_through_target_date": "2026-11-25"
+        "trained_through_target_date": "2026-11-26"
       },
       "validation": {
         "quality_pass": false,
         "meta_trust": 0.0,
-        "logloss_skill": -0.01170137251,
-        "brier_skill": -0.001068511837,
-        "constant_logloss_skill": -0.01211447918,
-        "constant_brier_skill": -0.001106901773,
-        "validation_logloss": 4.660959424327,
-        "baseline_validation_logloss": 4.607050608981,
+        "logloss_skill": -0.001156776011,
+        "brier_skill": -0.000108179898,
+        "constant_logloss_skill": -0.001505298147,
+        "constant_brier_skill": -0.000140849188,
+        "validation_logloss": 4.612102340137,
+        "baseline_validation_logloss": 4.606773335255,
         "constant_validation_logloss": 4.605170185988
       },
       "deployment": "gated",
@@ -792,7 +792,7 @@
       "mode": "loto",
       "role": "Tầng xếp chồng",
       "artifact": "models/meta_loto.joblib",
-      "artifact_sha256": "11e3e98e35a3760f9e13567ed98231e5e4145989651ed4c61741ef986eba4a67",
+      "artifact_sha256": "b8e557a5a0d134a8362432de0171419b58405f1b8803da6a2dd8b6853f183ac8",
       "definition": {
         "schema_version": 3,
         "minimum_history_days": 100,
@@ -808,12 +808,12 @@
       "training": {
         "status": "insufficient_history",
         "component_tier": null,
-        "history_days": 88,
+        "history_days": 89,
         "tier_maturity_days": {
-          "five_component": 52,
-          "four_with_cau": 52,
-          "four_with_stat": 88,
-          "core_three": 88
+          "five_component": 53,
+          "four_with_cau": 53,
+          "four_with_stat": 89,
+          "core_three": 89
         },
         "trained_through_target_date": null
       },
@@ -822,7 +822,7 @@
         "meta_trust": 0.0
       },
       "deployment": "gated",
-      "deployment_reason": "chưa đủ lịch sử (88/100 kỳ)",
+      "deployment_reason": "chưa đủ lịch sử (89/100 kỳ)",
       "continuous_trust": false
     },
     {

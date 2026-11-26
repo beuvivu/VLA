@@ -1,13 +1,13 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-11-25T11:37:31Z",
-  "anchor_date": "2026-11-25",
+  "generated_at_utc": "2026-11-26T11:38:44Z",
+  "anchor_date": "2026-11-26",
   "modes": {
     "loto": {
       "mode": "loto",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
-      "train_days": 2565,
+      "train_days": 2566,
       "validation_days": 855,
       "holdout_days": 856,
       "fdr_significant_train": 0,
@@ -16,10 +16,10 @@
       "minimum_effect_gate": 0.004,
       "reality_check": {
         "permutations": 63,
-        "observed_max_skill": 0.04807240323029793,
-        "null_max_skill_mean": 0.04389866475713091,
-        "null_max_skill_p95": 0.052104212754107475,
-        "p_value": 0.171875,
+        "observed_max_skill": 0.04806369276834149,
+        "null_max_skill_mean": 0.0439268439186214,
+        "null_max_skill_p95": 0.05211494943246948,
+        "p_value": 0.15625,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
@@ -30,7 +30,7 @@
       "mode": "de",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
-      "train_days": 2565,
+      "train_days": 2566,
       "validation_days": 855,
       "holdout_days": 856,
       "fdr_significant_train": 0,
@@ -39,15 +39,15 @@
       "minimum_effect_gate": 0.0005,
       "reality_check": {
         "permutations": 63,
-        "observed_max_skill": 0.010997020484171323,
-        "null_max_skill_mean": 0.011695841092489135,
-        "null_max_skill_p95": 0.014016499068901305,
+        "observed_max_skill": 0.010994043186895012,
+        "null_max_skill_mean": 0.011679850843290901,
+        "null_max_skill_p95": 0.014015376023827252,
         "p_value": 0.640625,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
       "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented.",
-      "cut_rows": 191
+      "cut_rows": 190
     }
   }
 }
