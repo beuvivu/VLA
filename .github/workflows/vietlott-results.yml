@@ -103,8 +103,11 @@ jobs:
           restore-keys: vqe-state-
 
       - name: Giữ bản tóm tắt mô hình đã commit
-        # Cache *.json có thể cũ hơn sổ công bố; bản tóm tắt theo đúng checkout.
-        run: git restore --source=HEAD -- vietlott/data/forecast/multi-agent-summary.json
+        # Cache *.json có thể cũ hơn bản đã commit: mọi tệp git THEO DÕI khớp mẫu cache phải theo đúng
+        # checkout, tệp trạng thái chưa theo dõi thì lấy từ cache. Lượt 45781875880 (26-11-2026) chỉ giữ
+        # multi-agent-summary.json; cache lưu trước khi gộp PR #238 đè transfer.json khuôn mới bằng khuôn
+        # cũ, cây làm việc bẩn và bước đẩy trang từ chối.
+        run: git restore --source=HEAD -- ':(glob)vietlott/data/forecast/*.json'
 
       - name: Dựng trang Vietlott
         run: python src/pages/build_vietlott_results.py --cache-states vietlott/data/forecast
