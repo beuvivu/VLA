@@ -675,3 +675,49 @@ def test_a_live_push_that_never_recovers_fails_the_reconcile(tmp_path: Path) -> 
     assert result.returncode != 0
     assert pushes == 0
     assert "Không đẩy được ảnh chụp chuẩn" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# vietlott-results.yml — bước "Giữ bản tóm tắt mô hình đã commit"
+# ---------------------------------------------------------------------------
+
+
+def _git_in(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True)
+
+
+def test_the_page_build_keeps_every_tracked_forecast_file_the_cache_overwrote(tmp_path: Path) -> None:
+    """Lượt 45781875880: cache lưu trước khi gộp PR #238 đè transfer.json đã commit, cây làm việc bẩn và
+    bước đẩy trang từ chối. Sau bước này, mọi tệp git THEO DÕI khớp mẫu cache phải về đúng bản HEAD
+    (kể cả tệp thêm sau này), còn tệp trạng thái chưa theo dõi mà cache mang về thì giữ nguyên."""
+    doc = yaml.safe_load((ROOT / ".github/workflows/vietlott-results.yml").read_text(encoding="utf-8"))
+    steps = doc["jobs"]["build"]["steps"]
+    cache = next(s for s in steps if str(s.get("uses", "")).startswith("actions/cache/restore"))
+    keep = _step("vietlott-results.yml", "build", "Giữ bản tóm tắt mô hình đã commit")
+    assert steps.index(cache) < steps.index(keep), "phải giữ bản đã commit SAU khi khôi phục cache"
+    assert "vietlott/data/forecast/*.json" in cache["with"]["path"]
+
+    repo = tmp_path / "repo"
+    forecast = repo / "vietlott" / "data" / "forecast"
+    forecast.mkdir(parents=True)
+    tracked = {"multi-agent-summary.json": '{"v": 2}', "transfer.json": '{"engine_fingerprint": "moi"}',
+               "tep-moi-sau-nay.json": '{"a": 1}'}
+    for name, text in tracked.items():
+        (forecast / name).write_text(text, encoding="utf-8")
+    _git_in(repo, "init", "-q")
+    _git_in(repo, "add", ".")
+    _git_in(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "goc")
+    for name in tracked:  # cache cũ đè mọi tệp đã commit
+        (forecast / name).write_text('{"cu": true}', encoding="utf-8")
+    (forecast / "state-mega645.json").write_text('{"trang_thai": 1}', encoding="utf-8")
+
+    script = tmp_path / "keep.sh"
+    script.write_text(keep["run"], encoding="utf-8")
+    result = subprocess.run(_shell_command(keep, script), cwd=repo, capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stderr
+    for name, text in tracked.items():
+        assert (forecast / name).read_text(encoding="utf-8") == text, name
+    assert (forecast / "state-mega645.json").read_text(encoding="utf-8") == '{"trang_thai": 1}'
+    status = subprocess.run(["git", "status", "--porcelain"], cwd=repo, capture_output=True, text=True, check=True)
+    assert status.stdout.split() == ["??", "vietlott/data/forecast/state-mega645.json"]
