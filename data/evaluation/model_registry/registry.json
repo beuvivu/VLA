@@ -315,7 +315,7 @@
       "mode": "de",
       "role": "Trọng số tổ hợp",
       "artifact": "data/ensemble/weights_de.json",
-      "artifact_sha256": "2084d2dd90c6de2bd86c821806704c5ffe2eb0af58ca9e5d25e051adaef57254",
+      "artifact_sha256": "4759cf542621913ecf085c1098fdb0ee2bbe49f795150b19c8dba3fb9dd411f6",
       "definition": {
         "window_days": 180,
         "half_life_days": 45,
@@ -349,9 +349,9 @@
         "logloss_ngoai_mau": {
           "mac_dinh": 4.606246548744,
           "dang_hieu_luc": 4.606246548744,
-          "ung_vien": 4.6070811844
+          "ung_vien": 4.607081195792
         },
-        "loi_tuong_doi": -0.000181196479
+        "loi_tuong_doi": -0.000181198952
       },
       "deployment": "production",
       "deployment_reason": "cổng đã đo và từ chối đề bạt: đang chạy vector mặc định",
