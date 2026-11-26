@@ -253,6 +253,8 @@ jobs:
         id: canonical_commit
         if: steps.canonical.outputs.ready == 'true'
         shell: bash
+        env:
+          TARGET_DATE: ${{ steps.canonical.outputs.target }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -263,7 +265,6 @@ jobs:
             echo "Canonical result already committed."
             echo "canonical_changed=false" >> "$GITHUB_OUTPUT"
           else
-            TARGET_DATE="${{ steps.canonical.outputs.target }}"
             git commit -m "data: finalize XSMB ${TARGET_DATE}"
 
             if [[ -n "$(git status --porcelain)" ]]; then
@@ -425,11 +426,13 @@ jobs:
           retention-days: 30
 
       - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
+        env:
+          # Kỳ đích job canonical đã chốt, không tính lại theo đồng hồ lúc pipeline xong.
+          TARGET_DATE: ${{ needs.canonical.outputs.target }}
         run: |
           python src/evaluation/monitor_health.py \
             --health data/health.json \
-            --cutoff 18:35 \
-            --cutoff-aware \
+            --expected-date "$TARGET_DATE" \
             --max-staleness-days 0 \
             --fail-on-stale \
             --fail-on-missing

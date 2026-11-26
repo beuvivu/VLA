@@ -57,7 +57,9 @@ def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
     assert "Ghi nhận kết quả chuẩn ngay lập tức" in text
     assert "--fail-on-stale" in text
     assert "--fail-on-missing" in text
-    assert "--cutoff-aware" in text
+    # Kiểm sức khoẻ theo kỳ đích job canonical đã chốt, không theo đồng hồ lúc pipeline xong
+    # (tests/evaluation/test_monitor_health.py).
+    assert '--expected-date "$TARGET_DATE"' in text
     assert "push:" in text
     assert '"reason": "live_verified"' in _text("live-results.yml")
 

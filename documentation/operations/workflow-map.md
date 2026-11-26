@@ -47,7 +47,6 @@ xong 11:32 UTC; năm lượt đến lúc 07:34 → 10:36 UTC bị thay (0 job); 
 
 - Mỗi push/PR chạy `ci.yml` (bộ kiểm VLA, trình duyệt, bốn kịch bản chốt phát hành) và `codeql.yml`.
   Thay đổi trong `vietlott/` chạy thêm `vlm-ci.yml`, kiểm Python sàn 3.11 lẫn bản đang chạy.
-- `vlm-installer.yml` (hằng tuần) và `vlm-release.yml` (tag `vlm-v…`) chỉ dành cho engine.
 - Chỉ chạy tay: `inspect-reference-*` (đọc trang tham chiếu qua runner), `diagnose-live-sources`,
   `backfill-history`, `cache-purge`, `dashboard-refresh`.
 
@@ -127,8 +126,6 @@ flowchart LR
 | `update-data.yml` | Hoàn tất XSMB, thống kê và AI/ML | cron `33 11 * * *`, `41 11 * * *`, `53 11 * * *`, `7 12 * * *`, `19 12 * * *`, `27 12 * * *`, `39 12 * * *`, `51 12 * * *`, `9 13 * * *`; hẹn giờ ngoài `daily-finalize`; push (7 bộ lọc đường dẫn); workflow_dispatch | `post-finalization.yml` (API), `daily_prediction.yml` (workflow_run), `vlm-results.yml` (workflow_run) | có | có |
 | `vietlott-results.yml` | Trang Vietlott (dựng từ engine) | cron `25 6 * * *`, `40 11 * * *`, `30 12 * * *`, `25 14 * * *`, `20 15 * * *`; sau «VLM · Tự cập nhật kết quả từng sản phẩm Vietlott», «VLM · Cập nhật dữ liệu, dự báo và trang Vietlott»; push (12 bộ lọc đường dẫn); workflow_dispatch | — | có | có |
 | `vlm-ci.yml` | VLM · Kiểm thử engine Vietlott | push (6 bộ lọc đường dẫn); pull_request; workflow_dispatch | — | — | — |
-| `vlm-installer.yml` | VLM · Bộ cài engine Vietlott | cron `25 2 * * 1`; push (8 bộ lọc đường dẫn); pull_request; workflow_dispatch | — | — | — |
-| `vlm-release.yml` | VLM · Phát hành engine Vietlott | push | — | — | — |
 | `vlm-results.yml` | VLM · Tự cập nhật kết quả từng sản phẩm Vietlott | cron `*/10 23,0-15 * * *`, `17 16-22 * * *`; hẹn giờ ngoài `vietlott-results`; sau «Hoàn tất XSMB, thống kê và AI/ML»; push (13 bộ lọc đường dẫn); workflow_dispatch | `vietlott-results.yml` (workflow_run) | có | — |
 | `vlm-update.yml` | VLM · Cập nhật dữ liệu, dự báo và trang Vietlott | cron `40 15 * * *`, `10 3 * * *`; workflow_dispatch | `vietlott-results.yml` (workflow_run) | có | — |
 | `watchdog.yml` | Giám sát và tự phục hồi production | cron `55 10 * * *`, `5 11 * * *`, `15 11 * * *`, `25 11 * * *`, `45 11 * * *`, `5 12 * * *`, `25 12 * * *`, `45 12 * * *`, `5 13 * * *`, `15 0 * * *`; workflow_dispatch | `live-results.yml` (API), `pages.yml` (API), `post-finalization.yml` (API), `update-data.yml` (API) | — | — |

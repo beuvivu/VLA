@@ -64,8 +64,8 @@ jobs:
         env:
           MANUAL_DAYS: ${{ github.event.inputs.backfill_days || '30' }}
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then MANUAL_DAYS=365; fi
-          if [ "${{ github.event_name }}" = "push" ]; then MANUAL_DAYS=30; fi
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then MANUAL_DAYS=365; fi
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then MANUAL_DAYS=30; fi
           python src/ingest/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15 --require-latest
 
       # Thứ tự có ràng buộc: thống kê gắn cờ đài lệch → phép kiểm tiến cứu đăng ký/chấm đúng các đài ấy
@@ -140,11 +140,14 @@ jobs:
 
       - name: Báo lỗi nếu chưa thu thập đủ ngày bắt buộc hoặc thống kê từng đài hỏng
         if: ${{ always() && (steps.collect.outcome == 'failure' || steps.analyse.outcome == 'failure') }}
+        env:
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          ANALYSE_OUTCOME: ${{ steps.analyse.outcome }}
         run: |
-          if [ "${{ steps.collect.outcome }}" = "failure" ]; then
+          if [ "$COLLECT_OUTCOME" = "failure" ]; then
             echo "::error::Đồng bộ vùng chưa hoàn tất; xem bước thu thập để biết miền và ngày còn thiếu."
           fi
-          if [ "${{ steps.analyse.outcome }}" = "failure" ]; then
+          if [ "$ANALYSE_OUTCOME" = "failure" ]; then
             echo "::error::Thống kê/kiểm định từng đài không chạy xong; trang đã dựng không in khối kiểm định."
           fi
           exit 1

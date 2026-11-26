@@ -64,7 +64,7 @@ def files_scanned_for_dom_sinks() -> list[Path]:
     và ``docs/*.html`` thì một cống thêm vào bất kỳ tệp nào trong số đó vẫn
     để phép kiểm XANH — đúng thứ mà tên phép kiểm hứa là không xảy ra.
 
-    Engine Vietlott ``vietlott/`` (chép từ VLM) cũng nằm trong kho: trang riêng
+    Engine Vietlott ``vietlott/`` cũng nằm trong kho: trang riêng
     của nó dựng bằng ``scripts/build_site.py`` + ``scripts/site_assets/*.js``.
     Bản chép đầu tiên mang bốn cống trong ``dashboard.js`` mà CodeQL bắt được
     còn phép kiểm này không, vì nó chỉ quét ``src`` và ``docs``.
@@ -204,6 +204,48 @@ def test_duplicate_dates_in_canonical_json_fail_closed(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="duplicate draw dates"):
         lottery.load()
+
+
+_RUN_EXPRESSION = re.compile(r"\$\{\{.*?\}\}", re.S)
+
+
+def _expressions_in_run_blocks(doc: dict) -> list[str]:
+    """Mọi biểu thức ``${{ }}`` nằm TRONG khối ``run:`` của một workflow đã đọc."""
+    found = []
+    for job_name, job in (doc.get("jobs") or {}).items():
+        for index, step in enumerate(job.get("steps") or []):
+            for match in _RUN_EXPRESSION.finditer(step.get("run") or ""):
+                found.append(f"{job_name}/{step.get('id') or step.get('name') or index}: {match.group(0)}")
+    return found
+
+
+def test_the_run_block_expression_rule_itself_catches_an_interpolation() -> None:
+    """Ghim chính LUẬT trên mẫu dựng sẵn, để một lần đổi thư mục không thu tập quét về rỗng."""
+    import yaml
+
+    dangerous = yaml.safe_load(
+        "jobs:\n  a:\n    steps:\n"
+        "      - name: x\n        run: echo \"${{ github.event.inputs.reason }}\"\n"
+        "      - name: y\n        env:\n          REASON: ${{ github.event.inputs.reason }}\n"
+        "        run: echo \"$REASON\"\n"
+    )
+    assert _expressions_in_run_blocks(dangerous) == ["a/x: ${{ github.event.inputs.reason }}"]
+
+
+def test_no_workflow_substitutes_an_expression_into_a_run_block() -> None:
+    """Runner thay ``${{ }}`` vào văn bản lệnh TRƯỚC khi shell đọc nó, nên dấu nháy không bảo vệ gì:
+    một giá trị chứa ``"; lệnh; "`` trở thành lệnh. Mọi giá trị (đầu vào dispatch, đầu ra bước khác,
+    tên sự kiện) đi qua ``env:`` rồi được đọc là ``"$BIEN"`` — shell nhận nó làm dữ liệu. Đến
+    25-11-2026 còn tám chỗ thay thẳng (đều là giá trị do chính kho sinh ra); luật này giữ con số ấy ở 0."""
+    import yaml
+
+    workflows = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+    assert len(workflows) > 10
+    offenders = []
+    for path in workflows:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        offenders += [f"{path.name}: {item}" for item in _expressions_in_run_blocks(doc)]
+    assert offenders == []
 
 
 def test_production_modules_do_not_use_optimizable_assertions() -> None:

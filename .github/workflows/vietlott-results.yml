@@ -1,6 +1,6 @@
 name: Trang Vietlott (dựng từ engine)
 
-# Từ 07-10-2026 trang Vietlott dựng từ engine `vietlott/` (chép từ VLM): kết
+# Từ 07-10-2026 trang Vietlott dựng từ engine `vietlott/` (mã Vietlott của VLA): kết
 # quả đã xác thực của 7 sản phẩm, bảng giải, dự báo đăng ký trước kỳ và đối
 # chiếu. Việc ĐỒNG BỘ dữ liệu do `vlm-results.yml` / `vlm-update.yml` làm và
 # commit vào `vietlott/data`; workflow này KHÔNG gọi mạng, chỉ dựng trang từ

@@ -27,16 +27,11 @@ PROJECT = Path(__file__).resolve().parents[1]
 
 
 def find_workflows(project: Path = PROJECT) -> dict[str, Path]:
-    """Workflow của engine theo TÊN GỐC (``ci.yml``, ``update.yml``…), ở cả hai cách bố trí.
+    """Workflow của Vietlott theo tên bỏ tiền tố (``ci.yml``, ``update.yml``…).
 
-    * Kho riêng: ``<dự án>/.github/workflows/*.yml``.
-    * Nằm trong kho khác (VLA chép engine vào thư mục con ``vietlott/``): GitHub chỉ
-      đọc workflow ở gốc kho, nên chúng nằm ở ``<kho>/.github/workflows/vlm-*.yml``;
-      bỏ tiền tố ``vlm-`` để các phép kiểm vẫn hỏi đúng tên gốc.
+    GitHub chỉ đọc workflow ở gốc kho, nên chúng nằm ở ``<kho>/.github/workflows/vlm-*.yml``;
+    bỏ tiền tố ``vlm-`` để các phép kiểm hỏi bằng tên ngắn.
     """
-    own = project / ".github" / "workflows"
-    if own.is_dir():
-        return {p.name: p for p in own.glob("*.yml")}
     host = project.parent / ".github" / "workflows"
     return {p.name.removeprefix("vlm-"): p for p in host.glob("vlm-*.yml")}
 

@@ -517,13 +517,15 @@ triển khai Pages và hậu kiểm lại. Đừng gộp lại thành một job:
 pipeline. Điều kiện `if:` của các job được ĐÁNH GIÁ (kể cả `success()` ngầm định) trong
 `tests/repo/test_finalization_timing.py`; xem `documentation/operations/scheduling.md`.
 
-## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
+## Vietlott `vietlott/` — mã của VLA
 
-Dự án TỰ ĐỦ (bản `6bec0c9` của kho `beuvivu/VLM`, 07-10-2026, để sau còn tách thành hai trang): đừng trộn vào `src/` hay
-`data/` của VLA, đừng sửa logic ở đây khi không cần. Chạy:
+Vietlott là mã của VLA (chủ dự án nhắc lại 25-11-2026). Kho VLM đã bỏ hẳn: KHÔNG còn yêu cầu nào đối với VLM — không giữ
+tương thích với kho ấy, không chờ tách trang, không đưa bản vá về đó; sửa mã ở `vietlott/` như mọi mã VLA khác, cùng kỷ luật
+kiểm thử. Thư mục giữ bố cục gói riêng (`pyproject.toml`, `src/vietlott_engine`, `src/vlm`, bộ kiểm riêng) vì lý do kỹ
+thuật; chữ `vlm` trong tên gói, lệnh và tệp workflow chỉ là tên. Chạy:
 `cd vietlott && python -m pip install -e ".[dev,crawler]" && python -m pytest`. Workflow ở `.github/workflows/vlm-*.yml`
-(`working-directory: vietlott`, cache tiền tố `vietlott/`) KHÔNG triển khai Pages (`tests/repo/test_vietlott_engine_layout.py`); phép kiểm của engine tìm workflow ở cả hai bố cục; tag phát
-hành `vlm-v<phiên bản>`. Luật phải giữ:
+(`working-directory: vietlott`, cache tiền tố `vietlott/`) KHÔNG triển khai Pages (`tests/repo/test_vietlott_engine_layout.py`).
+Luật phải giữ:
 
 - Trang Vietlott (`src/pages/build_vietlott_results.py`): bảng giải ĐÚNG mã kỳ (khuyết in "—", không mượn kỳ trước); KHÔNG
   in `source`, `source_url`, `official_url` hay cảnh báo nhắc tên nguồn (`tests/pages/test_vietlott_results.py`); câu kết
@@ -554,7 +556,11 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   CỦA ENGINE, không chỉnh) giữa luật riêng của engine và cùng `Component` học kỳ của cả hai sản phẩm theo thời gian; chấm theo NGÀY
   (kỳ cùng ngày không thấy nhau). Hồi cứu Max 3D +2,92 log10 so với luật riêng (z 3,15), Max 3D Pro −0,02; cận tất định
   `fixed_share_bound`. CHẠY BÓNG: không đổi luật engine, checkpoint hay e-value; sổ tiến cứu `transfer-ledger.jsonl` chỉ nối thêm,
-  chấm kỳ sau `REGISTERED_ON` (25-11-2026); đổi luật thì tăng `VERSION` VÀ dời `REGISTERED_ON` tới ngày chưa quay. BOCPD Dirichlet
+  chấm kỳ sau `REGISTERED_ON` (25-11-2026); đổi luật thì tăng `VERSION` VÀ dời `REGISTERED_ON` tới ngày chưa quay. Dòng sổ chỉ ghi khi
+  kỳ của MỌI sản phẩm đã đủ tới ngày ấy (`final_through`, mã kỳ liền mạch): ghi sớm thì kỳ sản phẩm kia về muộn để lại dòng sai luật
+  vĩnh viễn. Mỗi dòng mang `engine_fingerprint` (dấu vân tay HÀNH VI của `Component` trên dãy giả lập cố định): engine đổi thì sổ ngừng
+  ghi; `eligible` cần cả `ledger_consistent` lẫn `engine_consistent`. Luật gộp dùng tham số THEO KỲ của Max 3D trên dòng gộp ≈ 312
+  kỳ/năm (theo thời gian chuyển ≈ 5 năm/lần): đó là luật v1, đừng nói nó «chuyển như engine». BOCPD Dirichlet
   (bộ máy XSMB) thua tilt thưa của engine trên Max 3D: đừng thay. `documentation/research/2026-11-25-hoc-chuyen-giao-max3d.md`.
 - Crawler cũ `src/vietlott_results.py` đã nghỉ; `data/vietlott/vietlott.sqlite3` chỉ còn là lưu trữ, không được ghi.
 - `multi-agent-summary.json` được commit, nên làm mới trên CÙNG dữ liệu phải giữ nguyên tệp. Phép so ở
@@ -562,7 +568,7 @@ hành `vlm-v<phiên bản>`. Luật phải giữ:
   ngưỡng 10⁻⁹): `np.exp`/`np.dot` lệch bit cuối giữa các CPU của runner, và tuần 03 → 10-11-2026 có 40/64 commit chạm
   tệp chỉ mang kiểu lệch ấy. Chỉ số thực được nới; số nguyên, khoá, độ dài danh sách phải trùng tuyệt đối.
 
-Số đo, lý do và lịch sử từng điểm: `documentation/architecture/claude-md-chi-tiet.md`, mục «Engine Vietlott».
+Số đo, lý do và lịch sử từng điểm: `documentation/architecture/claude-md-chi-tiet.md`, mục «Vietlott».
 
 ## Phòng thử thách mô hình `src/research/vla/` và Lô VIP
 
@@ -765,7 +771,10 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 `tests/repo/test_workflow_shell_behaviour.py` chạy nguyên khối lấy từ YAML bằng
 đúng lệnh shell của GitHub, chỉ thay đồng hồ, lệnh ngủ, nguồn và lệnh đẩy.
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
-một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
+một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật. Khối `run:` không chứa
+`${{ }}` nào (25-11-2026): đầu vào dispatch, đầu ra bước khác, tên sự kiện đi qua `env:` rồi
+đọc là `"$BIEN"`, vì runner thay biểu thức vào văn bản lệnh trước khi shell đọc
+(`test_no_workflow_substitutes_an_expression_into_a_run_block`).
 
 Số kiểm thử và bằng chứng phát hành gần nhất nằm trong PR và `documentation/qa/`.
 Bốn kịch bản chốt phát hành

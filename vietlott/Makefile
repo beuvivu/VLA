@@ -2,11 +2,11 @@
 
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python)
 
-install:         ## bộ cài: .venv + gói + dữ liệu + bộ dự báo + kiểm tra (Windows: install.cmd)
-	bash install.sh
+install:         ## cài gói (editable) kèm phần thu thập
+	$(PY) -m pip install -e ".[crawler]"
 
-dev:             ## như install, thêm pytest/ruff/mypy và chạy test
-	bash install.sh --dev
+dev:             ## như install, thêm pytest/ruff/mypy
+	$(PY) -m pip install -e ".[dev,crawler]"
 
 init:            ## nạp dữ liệu đi kèm vào kho, học bộ dự báo, kiểm tra
 	$(PY) -m vietlott_engine.cli init

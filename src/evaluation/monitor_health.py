@@ -45,7 +45,7 @@ def _write_github_summary(md: str) -> None:
     Path(p).write_text(md, encoding="utf-8")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description="Monitor data health and optionally fail the job.")
     ap.add_argument("--health", default="data/health.json")
     ap.add_argument("--tz", default=VIETNAM_TIMEZONE)
@@ -60,9 +60,19 @@ def main() -> None:
         action="store_true",
         help="Before cutoff, compare freshness to yesterday instead of requiring today's unfinished draw.",
     )
+    ap.add_argument(
+        "--expected-date",
+        type=date.fromisoformat,
+        default=None,
+        help=(
+            "Kỳ phải có (YYYY-MM-DD), thay cho phép tính theo đồng hồ. Job hoàn tất truyền kỳ đích mà bước "
+            "chốt kết quả chuẩn đã chốt: lượt bắt đầu trước 18:35 chốt kỳ hôm qua, chạy pipeline ~8 phút rồi "
+            "tính lại theo đồng hồ sau 18:35 thì đòi kỳ hôm nay chưa về và đỏ giả (lượt 45384584244)."
+        ),
+    )
     ap.add_argument("--fail-on-missing", action="store_true", help="Fail if missing_count > 0 in lookback window.")
     ap.add_argument("--fail-on-stale", action="store_true", help="Fail if staleness > max-staleness-days.")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     health = _load_health(Path(args.health))
     latest = health.get("latest_date")
@@ -71,7 +81,12 @@ def main() -> None:
 
     now = _now(args.tz)
     today = now.date()
-    expected = expected_latest_draw_date(now=now, cutoff=_parse_hhmm(args.cutoff)) if args.cutoff_aware else today
+    if args.expected_date is not None:
+        expected = args.expected_date
+    elif args.cutoff_aware:
+        expected = expected_latest_draw_date(now=now, cutoff=_parse_hhmm(args.cutoff))
+    else:
+        expected = today
 
     staleness = None
     if latest:

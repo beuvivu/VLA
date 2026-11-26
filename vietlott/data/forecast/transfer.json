@@ -5,7 +5,10 @@
     "max3dpro"
   ],
   "prospective": {
+    "engine_consistent": true,
+    "engine_fingerprint": "6567ace8e8610226",
     "ledger_consistent": true,
+    "ledger_through": "2026-11-23",
     "products": {
       "max3d": {
         "draws": 0,
@@ -26,6 +29,7 @@
     "version": 1
   },
   "rule": {
+    "pooled_law": "Component của engine, tham số theo kỳ của Max 3D, nạp dòng kỳ gộp",
     "prior_pooled": 0.5,
     "promote_z": 2.326,
     "registered_on": "2026-11-25",

@@ -1,9 +1,8 @@
-"""Engine Vietlott chép từ VLM sống trong ``vietlott/`` như một dự án TỰ ĐỦ.
+"""Bố cục của mã Vietlott trong ``vietlott/``.
 
-Chủ dự án yêu cầu (07-10-2026): VLA có đủ tính năng của VLM nhưng hai bên chạy
-riêng rẽ, để sau còn tách thành hai trang. Vì vậy engine không bị trộn vào
-``src/`` hay ``data/`` của VLA: nó giữ nguyên bố cục của kho VLM, và các phép
-kiểm dưới đây canh để bố cục ấy không trôi.
+Vietlott là mã của VLA (kho VLM đã bỏ hẳn, 25-11-2026). Thư mục giữ bố cục gói
+riêng — ``pyproject.toml``, bộ kiểm riêng, engine tự tìm thư mục dự án — và các
+phép kiểm dưới đây canh để bố cục ấy không trôi.
 
 GitHub chỉ đọc workflow ở gốc kho, nên workflow của engine nằm ở
 ``.github/workflows/vlm-*.yml`` và chạy trong thư mục con. Chúng KHÔNG được
@@ -29,7 +28,7 @@ def test_the_engine_is_a_self_contained_project() -> None:
                 "data/seed", "scripts/persist_site.py", "scripts/build_site.py", "tests/conftest.py"):
         assert (ENGINE / rel).exists(), rel
     assert {p.name for p in WORKFLOWS} == {
-        "vlm-ci.yml", "vlm-installer.yml", "vlm-release.yml", "vlm-results.yml", "vlm-update.yml",
+        "vlm-ci.yml", "vlm-results.yml", "vlm-update.yml",
     }
 
 

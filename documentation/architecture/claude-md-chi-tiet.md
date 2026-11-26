@@ -37,14 +37,13 @@ cũ z = +3,40 (`scripts/research/benchmark_ml_engine_aggregation.py`,
 `data/research/ml_engine_aggregation.json`). Đừng đo kỹ năng trên dự báo đã qua cổng: trust = 0 thì
 dự báo trùng nền và cổng không bao giờ mở lại.
 
-## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
+## Vietlott `vietlott/` — mã của VLA
 
-Ngày 07-10-2026 chủ dự án yêu cầu VLA có ĐỦ tính năng của VLM (kho `beuvivu/VLM`,
-"Vietlott Quant Engine") nhưng hai bên chạy riêng rẽ, để sau còn tách thành hai
-trang. Toàn bộ VLM (bản `6bec0c9`, trừ `.github`) nằm ở `vietlott/` như một dự án
-TỰ ĐỦ: `pyproject.toml`, `src/vietlott_engine`, `src/vlm`, `data/`, `scripts/`,
-`tests/`, `reports/`. Đừng trộn nó vào `src/` hay `data/` của VLA, và đừng sửa
-logic của nó ở đây khi không cần — engine tự tìm thư mục dự án qua `paths.py`.
+Vietlott là mã của VLA. Ngày 25-11-2026 chủ dự án nhắc lại: kho VLM đã bỏ hẳn, mọi yêu cầu
+đối với VLM (giữ tương thích, chạy riêng rẽ để sau tách trang, không sửa logic, đưa bản vá
+về kho ấy) không còn hiệu lực. `vietlott/` giữ bố cục gói riêng vì lý do kỹ thuật:
+`pyproject.toml`, `src/vietlott_engine`, `src/vlm`, `data/`, `scripts/`, `tests/`,
+`reports/`; engine tự tìm thư mục dự án qua `paths.py`.
 
 - Chạy: `cd vietlott && python -m pip install -e ".[dev,crawler]" && python -m pytest`
   (369 phép kiểm). Lệnh: `vietlott`, `vlm-update`, `vlm-forecast`, `vlm-audit`.
@@ -52,10 +51,8 @@ logic của nó ở đây khi không cần — engine tự tìm thư mục dự 
   `working-directory: vietlott`, đường dẫn cache có tiền tố `vietlott/`. Chúng KHÔNG
   triển khai Pages; trang riêng của engine chỉ được dựng và lưu thành artifact.
   `tests/repo/test_vietlott_engine_layout.py` canh cả ba điều.
-- Phép kiểm của engine tìm workflow ở cả hai bố cục (`tests/conftest.py`,
-  `find_workflows`): kho riêng thì `.github/workflows/*.yml`, nằm trong VLA thì
-  `../.github/workflows/vlm-*.yml`.
-- Tag phát hành của engine là `vlm-v<phiên bản>`.
+- Phép kiểm của engine tìm workflow ở `../.github/workflows/vlm-*.yml`
+  (`tests/conftest.py`, `find_workflows`).
 
 Trang Vietlott của site (`vietlott.html` + 7 trang sản phẩm) dựng bằng
 `src/pages/build_vietlott_results.py` từ `vlm.web.dashboard.build_dashboard` của engine:
@@ -73,7 +70,7 @@ POST/PUT/PATCH/DELETE và mọi `?record=` mà FastAPI đọc là True (`on`, `y
 chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`; ba GET làm mới dự báo (`/forecast/{p}`,
 `/forecast/{p}/evidence`, `/ml/forecast/{p}`) cũng là lệnh ghi. Không có token thì lệnh ghi do trình
 duyệt gửi từ trang khác (`Sec-Fetch-Site`/`Origin`) bị 403; `vietlott serve` và compose chỉ nghe
-`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; bản vá đã đưa ngược về kho VLM ở beuvivu/vlm#9 (01-11-2026).
+`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh.
 Kiểm chứng xác suất và số khớp H cho Mega/Power (13-10-2026, `vietlott/docs/VLM_HIT_BENCHMARK.md`):
 `vlm.forecast.hits` (H = |vé ∩ 6 số chính| so với siêu bội C(6,h)C(N−6,6−h)/C(N,6), đơn vị KỲ, số đặc biệt
 Power KHÔNG cộng vào H), `vlm.forecast.challengers`, `vlm.forecast.hit_benchmark` (giao thức `PROTOCOL` đăng ký

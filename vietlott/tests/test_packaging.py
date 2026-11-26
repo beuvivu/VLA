@@ -1,4 +1,4 @@
-"""v4.0: package layout, project-root detection, installers, static site."""
+"""v4.0: package layout, project-root detection, static site."""
 
 from __future__ import annotations
 
@@ -38,17 +38,7 @@ def test_version_and_help() -> None:
     assert e.value.code == 0
 
 
-def test_installer_files_are_well_formed() -> None:
-    sh = ROOT / "install.sh"
-    assert sh.read_bytes().startswith(b"#!/usr/bin/env bash\n") and b"\r\n" not in sh.read_bytes()
-    if sys.platform != "win32":  # Windows' bash.exe may be the WSL stub
-        subprocess.run(["bash", "-n", str(sh)], check=True)
-    ps1 = (ROOT / "install.ps1").read_bytes()
-    assert ps1.startswith(b"\xef\xbb\xbf") and b"\r\n" in ps1 and b"\n" not in ps1.replace(b"\r\n", b"")  # UTF-8 BOM + CRLF for Windows PowerShell 5.1
-    cmd = (ROOT / "install.cmd").read_bytes()
-    assert cmd.isascii() and b"install.ps1" in cmd and b"ExecutionPolicy Bypass" in cmd
-    attrs = (ROOT / ".gitattributes").read_text()
-    assert "*.sh text eol=lf" in attrs and "*.ps1 text eol=crlf" in attrs
+def test_local_runs_keep_their_own_ledger() -> None:
     # local runs keep their own ledger, so they never touch the public one that GitHub Actions commits
     assert "\nVQE_FORECAST_DIR=data/local/forecast\n" in (ROOT / ".env.example").read_text(encoding="utf-8")
     ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
@@ -58,7 +48,7 @@ def test_installer_files_are_well_formed() -> None:
 def test_workflows_reference_real_commands(workflow_files: dict[str, Path]) -> None:
     yaml = pytest.importorskip("yaml")
     wf = {name: yaml.safe_load(p.read_text(encoding="utf-8")) for name, p in workflow_files.items()}
-    assert {"ci.yml", "installer.yml", "update.yml", "release.yml"} <= set(wf)
+    assert {"ci.yml", "update.yml"} <= set(wf)
     names = [s.get("name", "") for s in wf["update.yml"]["jobs"]["update"]["steps"]]
     assert names.index("Ghi sổ dự báo vào repo") < names.index("Dựng trang")  # the ledger is committed even if the site fails
     steps = " ".join(str(s.get("run", "")) for job in wf["update.yml"]["jobs"].values() for s in job.get("steps", []))

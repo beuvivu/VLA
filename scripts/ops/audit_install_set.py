@@ -2,7 +2,7 @@
 
 `dependency-audit.yml` cài requirements của VLA rồi `pip install -r` đúng đầu ra của script này trước khi chạy
 `pip-audit`, để mọi gói chạy trên runner đều bị chấm (04-11-2026, ba góp ý Codex trên PR #206: playwright của
-ci.yml, playwright cài trần ở inspect-reference-*, build của vlm-release.yml).
+ci.yml, playwright cài trần ở inspect-reference-*, build của vlm-release.yml — workflow này gỡ 25-11-2026).
 
 Mỗi dòng một yêu cầu: `gói==bản` khi workflow ghim, tên trần khi không ghim — khi ấy workflow cài bản mới nhất
 lúc chạy, nên job kiểm cũng chấm bản mới nhất. Chỉ đọc lệnh thật trong `run:` của từng bước (bỏ dòng chú thích);

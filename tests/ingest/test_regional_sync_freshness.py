@@ -162,10 +162,17 @@ def test_workflow_publishes_valid_partial_results_before_reporting_failure(tmp_p
     fake_python.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$ARGUMENTS"\nexit 1\n')
     fake_python.chmod(0o755)
     arguments = tmp_path / "arguments"
-    env = dict(os.environ, PATH=f"{fake_bin}:{os.environ['PATH']}", ARGUMENTS=str(arguments), MANUAL_DAYS="30")
-    shell = collector["run"].replace("${{ github.event_name }}", "push")
-    result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", shell], env=env, check=False)
+    env = dict(os.environ, PATH=f"{fake_bin}:{os.environ['PATH']}", ARGUMENTS=str(arguments), MANUAL_DAYS="30",
+               GITHUB_EVENT_NAME="push")
+    result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", collector["run"]],
+                            env=env, check=False)
     assert result.returncode == 1
     assert "--require-latest" in arguments.read_text().splitlines()
-    result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", final["run"]], capture_output=True, text=True, check=False)
+    # Kết cục của hai bước đến qua env của bước cuối, đúng như GitHub đặt chúng.
+    assert set(final["env"].values()) == {"${{ steps.collect.outcome }}", "${{ steps.analyse.outcome }}"}
+    final_env = dict(os.environ, COLLECT_OUTCOME="failure", ANALYSE_OUTCOME="success")
+    result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", final["run"]],
+                            env=final_env, capture_output=True, text=True, check=False)
     assert result.returncode == 1
+    assert "Đồng bộ vùng chưa hoàn tất" in result.stdout
+    assert "Thống kê/kiểm định" not in result.stdout
