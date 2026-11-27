@@ -16,10 +16,10 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.products import ProductCode  # noqa: E402
-from vietlott_engine.crawler.product_store import ProductStore  # noqa: E402
-from vietlott_engine.forecast.data import DigitSpec, SetSpec, digit_counts, load_series  # noqa: E402
-from vietlott_engine.forecast.engine import Component, Forecaster, vn, vn_int  # noqa: E402
+from vietlott_engine.core.products import ProductCode
+from vietlott_engine.crawler.product_store import ProductStore
+from vietlott_engine.forecast.data import DigitSpec, SetSpec, digit_counts, load_series
+from vietlott_engine.forecast.engine import Component, Forecaster, vn, vn_int
 
 SEED = Path(os.environ.get("VQE_PRODUCT_SEED_DIR") or ROOT / "data" / "seed")
 OUT = Path(os.environ.get("VQE_REPORTS_DIR") or ROOT / "reports")
@@ -62,7 +62,7 @@ def calibration(sims: int) -> dict:
     return out
 
 
-def _timeline(f: Forecaster, series) -> dict:  # type: ignore[no-untyped-def]
+def _timeline(f: Forecaster, series) -> dict:
     if not f.trace:
         return {}
     ids = np.concatenate([a for a, _ in f.trace])
@@ -113,7 +113,7 @@ def main() -> int:
                 "max": rep.evidence.max_log10_wealth, "now": rep.evidence.log10_wealth, "found": rep.evidence.found,
                 "uniform": c.uniform_weight, "top": f"{non_uniform.name} ({vn(100 * non_uniform.weight, 1)}%)",
                 "ratio": c.pick_score.ratio, "z": c.pick_score.z,
-                "lift": (c.set.numbers[0].lift if c.set else max(s.lift for p in c.digit.positions for s in p.symbols)),  # type: ignore[union-attr]
+                "lift": (c.set.numbers[0].lift if c.set else max(s.lift for p in c.digit.positions for s in p.symbols)),
                 "verdict": rep.verdict,
             })
     cal = calibration(a.sims)

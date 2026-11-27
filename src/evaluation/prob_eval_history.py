@@ -86,7 +86,7 @@ def _load_exact_emitted_prediction(
     pred = pd.read_csv(pred_file)
     component = probability_component(
         pred,
-        mode=mode,  # type: ignore[arg-type]
+        mode=mode,
         expected_target_date=target_date,
     )
     if not component.available:

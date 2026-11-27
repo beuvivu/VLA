@@ -210,7 +210,7 @@ def _condition(job: str):
     def evaluate(ctx: dict) -> bool:
         if implicit and any(ctx[f"needs.{n}.result"] != "success" for n in needs):
             return False
-        return bool(eval(expr, {"__builtins__": {}}, {"ctx": ctx}))  # noqa: S307
+        return bool(eval(expr, {"__builtins__": {}}, {"ctx": ctx}))
 
     return evaluate
 

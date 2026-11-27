@@ -36,7 +36,7 @@ class FallbackLog:
 
 class ArchiveDrawSource(DrawSource):
 
-    def __init__(self, archive=None, v130_dir=None) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, archive=None, v130_dir=None) -> None:
         if (archive is None) == (v130_dir is None):
             raise ValueError("give exactly one of archive / v130_dir")
         self.archive = archive

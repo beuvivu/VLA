@@ -107,7 +107,7 @@ def backfill(
     for index, day in enumerate(todo, start=1):
         try:
             ok = lottery.fetch(day, min_agreement=min_agreement)
-        except Exception as exc:  # noqa: BLE001 - một kỳ hỏng không được dừng cả dải
+        except Exception as exc:
             logger.debug("kỳ %s lỗi: %s", day, exc)
             ok = False
 

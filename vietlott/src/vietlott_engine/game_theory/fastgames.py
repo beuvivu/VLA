@@ -110,7 +110,7 @@ def keno_odds() -> tuple[list[KenoBacOdds], list[SideBetOdds]]:
         )
     split = keno_split_distribution()
     sides = []
-    def rtp_of(tiers: list) -> float | None:  # type: ignore[type-arg]
+    def rtp_of(tiers: list) -> float | None:
         if any(pay is None for _, _, pay in tiers):
             return None
         return sum(sum(split[x] for x in range(lo, hi + 1)) * pay for lo, hi, pay in tiers) / KENO_PRICE

@@ -14,12 +14,12 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla import backtest  # noqa: E402
-from research.vla.models import ProductionMLModel  # noqa: E402
-from research.vla.features import POWER_SEED, power_history  # noqa: E402
-from research.vla.features import History, build_features, load_history  # noqa: E402
-from research.vla.models import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
-from research.vla.models import FrequencyModel, NeuralModel  # noqa: E402
+from research.vla import backtest
+from research.vla.models import ProductionMLModel
+from research.vla.features import POWER_SEED, power_history
+from research.vla.features import History, build_features, load_history
+from research.vla.models import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel
+from research.vla.models import FrequencyModel, NeuralModel
 
 OUT = ROOT / "data" / "research" / "model_overhaul"
 

@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from web.ui_page_refinements import _LEGACY_STYLE_IDS, _STYLE_ID, refine_page  # noqa: E402
+from web.ui_page_refinements import _LEGACY_STYLE_IDS, _STYLE_ID, refine_page
 
 
 def _doc(body: str) -> str:

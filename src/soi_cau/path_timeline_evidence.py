@@ -173,13 +173,13 @@ def run(
     for mode in ("loto", "de"):
         source = evidence_root / f"cau_position_evidence_{mode}.csv"
         if not source.exists() or source.stat().st_size == 0:
-            manifest["modes"][mode] = {"status": "missing_position_evidence", "rows": 0}  # type: ignore[index]
+            manifest["modes"][mode] = {"status": "missing_position_evidence", "rows": 0}
             continue
         positions = pd.read_csv(source, keep_default_na=False)
-        table = build_timeline_table(raw, two, positions, mode=mode, recent=recent)  # type: ignore[arg-type]
+        table = build_timeline_table(raw, two, positions, mode=mode, recent=recent)
         target, cut_target, cut_rows = write_timeline(table, out, mode)
         created += [target, cut_target]
-        manifest["modes"][mode] = {  # type: ignore[index]
+        manifest["modes"][mode] = {
             "status": "ok",
             "rows": int(len(table)),
             "source": source.name,

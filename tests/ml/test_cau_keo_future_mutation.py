@@ -50,7 +50,7 @@ def _build(
     fake = _FakeLottery(raw, two_digits)
     monkeypatch.setattr(cau_keo_ml, "Lottery", lambda: fake)
     frame, target = cau_keo_ml.build_cau_keo_feature_frame(
-        mode,  # type: ignore[arg-type]
+        mode,
         include_target=True,
         config=CauKeoConfig(
             min_history_days=20,

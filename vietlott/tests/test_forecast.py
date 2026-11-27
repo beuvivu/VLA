@@ -137,14 +137,14 @@ def test_planted_biases_are_learned_and_proven() -> None:
     incr, st = _run(comp, {"C": digit_counts(d, 10)})
     assert np.cumsum(incr).max() >= LOG20
     fc = comp.forecast(st)
-    assert fc.evidence.found and fc.picks[2] == "6" and fc.digit.positions[2].symbols[0].symbol == "6"  # type: ignore[union-attr]
+    assert fc.evidence.found and fc.picks[2] == "6" and fc.digit.positions[2].symbols[0].symbol == "6"
     w = np.ones(45)
     w[6] = 1.8
     nums = sample_product_subsets(w, 6, 900, np.random.default_rng(8))
     comp = Component("main", SetSpec(45, 6), batch=20, switch_rate=1 / 1560)
     incr, st = _run(comp, _set_obs(nums, 45))
     fc = comp.forecast(st)
-    assert np.cumsum(incr).max() >= LOG20 and fc.set.numbers[0].symbol == "7" and 7 in fc.picks  # type: ignore[union-attr]
+    assert np.cumsum(incr).max() >= LOG20 and fc.set.numbers[0].symbol == "7" and 7 in fc.picks
     assert fc.pick_score.ratio > 1.0
 
 
@@ -152,8 +152,8 @@ def test_real_data_findings() -> None:
     f = Forecaster("max3d")
     f.update(load_series("max3d", seed_dir=SEED))
     rep = f.forecast()
-    assert rep.evidence.found and rep.components[0].digit.positions[2].symbols[0].symbol == "6"  # type: ignore[union-attr]
-    assert rep.components[0].digit.bets[0].rtp_model < 1  # type: ignore[union-attr]
+    assert rep.evidence.found and rep.components[0].digit.positions[2].symbols[0].symbol == "6"
+    assert rep.components[0].digit.bets[0].rtp_model < 1
     m = Forecaster("mega645")
     m.update(load_series("mega645", seed_dir=SEED))
     rm = m.forecast()
@@ -233,8 +233,8 @@ def test_chosen_window_is_never_evidence_and_ticket_uses_exact_probabilities(tmp
     p = Forecaster("power655")
     p.update(load_series("power655", seed_dir=SEED))
     c = p.forecast().components[0]
-    top = sorted(int(x.symbol) for x in c.set.numbers[:6])  # type: ignore[union-attr]
-    assert c.set.ticket == top == c.picks  # type: ignore[union-attr]
+    top = sorted(int(x.symbol) for x in c.set.numbers[:6])
+    assert c.set.ticket == top == c.picks
 
 
 def test_ledger_only_takes_forecasts_made_before_their_draw() -> None:
@@ -246,7 +246,7 @@ def test_ledger_only_takes_forecasts_made_before_their_draw() -> None:
     vn = timezone(timedelta(hours=7))
     fri_evening = datetime(2026, 10, 2, 19, 29, tzinfo=vn)
 
-    def ok(code, dates, now=fri_evening):  # type: ignore[no-untyped-def]
+    def ok(code, dates, now=fri_evening):
         return record_window(code, np.array(dates, dtype="datetime64[D]"), now)[0]
 
     assert not ok(P.MAX3D, ["2026-09-30"])

@@ -163,7 +163,7 @@ def vietlott_style(spec: GameSpec, plays: dict[str, int]) -> str:
     return " + ".join(parts) if parts else "0"
 
 
-def _add(plays: dict[str, int], tier, count: int) -> None:  # type: ignore[no-untyped-def]
+def _add(plays: dict[str, int], tier, count: int) -> None:
     if tier is None or count <= 0:
         return
     plays[tier.name] = plays.get(tier.name, 0) + count
@@ -385,7 +385,7 @@ def bao_ev(
     specials: list[int] | None,
     jackpots: dict[str, float],
     tickets_sold: int,
-    popularity=None,  # type: ignore[no-untyped-def]
+    popularity=None,
     tax: TaxRule = DEFAULT_TAX,
     tax_basis: TaxBasis = "ticket",
 ) -> BaoEV:

@@ -34,11 +34,11 @@ class DrawRepository(Protocol):
 class _HistoryMixin:
     def load_history(self, game: GameCode | str) -> DrawHistory:
         spec: GameSpec = get_game(game)
-        return DrawHistory.from_draws(self.load(spec.code), spec)  # type: ignore[attr-defined]
+        return DrawHistory.from_draws(self.load(spec.code), spec)
 
     def load_prize_history(self, game: GameCode | str) -> tuple[DrawHistory, PrizeHistory]:
         h = self.load_history(game)
-        return h, PrizeHistory.align(h, self.load_prizes(game))  # type: ignore[attr-defined]
+        return h, PrizeHistory.align(h, self.load_prizes(game))
 
 
 class InMemoryRepository(_HistoryMixin):
@@ -163,7 +163,7 @@ class DuckDBRepository(_HistoryMixin):
     def __init__(self, db_path: Path | str, parquet_dir: Path | str | None = None) -> None:
         try:
             import duckdb
-        except ImportError as exc:  # pragma: no cover - environment dependent
+        except ImportError as exc:
             raise StorageError("duckdb is not installed: pip install duckdb") from exc
         self.db_path = str(db_path)
         if self.db_path != ":memory:":

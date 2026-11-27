@@ -12,9 +12,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla import backtest  # noqa: E402
-from research.vla.models import ProductionMLModel  # noqa: E402
-from research.vla.features import History, load_history  # noqa: E402
+from research.vla import backtest
+from research.vla.models import ProductionMLModel
+from research.vla.features import History, load_history
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "trust_floor.json"
 

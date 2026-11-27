@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "ops"))
 
-from check_on_time_trigger import (  # noqa: E402
+from check_on_time_trigger import (
     STATE_ALIVE,
     STATE_DEAD,
     STATE_NEVER,
@@ -55,7 +55,7 @@ def test_dispatch_that_stopped_is_the_one_real_regression() -> None:
 
 
 def test_only_the_dead_state_exits_non_zero() -> None:
-    from check_on_time_trigger import main  # noqa: PLC0415
+    from check_on_time_trigger import main
 
     assert STATE_DEAD != STATE_NEVER != STATE_ALIVE
     assert main(["--repository", ""]) == 0
@@ -78,7 +78,7 @@ def _page(runs, size=100):
 
 
 def test_scheduled_runs_cannot_crowd_the_dispatch_signal_off_page_one() -> None:
-    from check_on_time_trigger import fetch_dispatch_runs  # noqa: PLC0415
+    from check_on_time_trigger import fetch_dispatch_runs
 
     seen_urls = []
 
@@ -97,7 +97,7 @@ def test_scheduled_runs_cannot_crowd_the_dispatch_signal_off_page_one() -> None:
 
 
 def test_pagination_continues_until_the_lookback_cutoff() -> None:
-    from check_on_time_trigger import fetch_dispatch_runs  # noqa: PLC0415
+    from check_on_time_trigger import fetch_dispatch_runs
 
     hourly = [_run(i / 24) for i in range(100)]
     older = [_run(30), _run(31)]
@@ -117,7 +117,7 @@ def test_pagination_continues_until_the_lookback_cutoff() -> None:
 
 
 def test_pagination_stops_once_it_passes_the_cutoff() -> None:
-    from check_on_time_trigger import fetch_dispatch_runs  # noqa: PLC0415
+    from check_on_time_trigger import fetch_dispatch_runs
 
     calls = []
 

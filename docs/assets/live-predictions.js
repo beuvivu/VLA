@@ -1,6 +1,3 @@
-/* 10 số đứng đầu bảng Cầu Kèo, chụp theo ngày quay (src/ml/cau_keo_daily_top.py)
-   và khoá đúng vào ngày của phiên đang quay. Mỗi số là một nút: bấm mở đúng số ấy trong bảng
-   đối chiếu (live-scorecard.js), nơi hiện các cầu đang chạy ghép ra số ấy. */
 (function () {
   'use strict';
   var root = document.getElementById('live-predictions');
@@ -77,7 +74,6 @@
         ready.add(mode);
         column(mode, 'ready', '', values);
       } else {
-        // Kỳ sắp quay chưa có số: hệ thống chưa tính xong sau kỳ vừa quay (như khung chờ của bảng đối chiếu).
         column(mode, 'missing', upcoming ? 'Đang chờ tính dự đoán cho kỳ này. Số sẽ tự hiện khi tính xong.'
           : 'Chưa có dự đoán cho ngày này.');
       }
@@ -110,12 +106,6 @@
       .finally(function () { if (version === revision) pending = null; });
     return pending;
   }
-  // Kỳ đã quay xong thì số của nó không còn là dự đoán: chuyển sang kỳ kế tiếp.
-  // live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau, nên nếu chỉ khoá
-  // theo ngày ấy thì khối đứng yên ở số cũ cả đêm lẫn sáng hôm sau.
-  // Mọi trạng thái "complete*" đều nghĩa là đã đủ 27 giải: complete_verified,
-  // complete_provisional, complete_conflict (src/ingest/live_sync.py, worker/src/snapshot.js).
-  // Chưa xác minh hay còn bất đồng nguồn thì kỳ quay vẫn đã kết thúc.
   function finished(status) {
     return typeof status === 'string' && status.indexOf('complete') === 0;
   }
@@ -126,9 +116,6 @@
     return day.toISOString().slice(0, 10);
   }
 
-  // Kỳ kế tiếp bỏ các ngày nghỉ quay (Tết…), cùng luật và cùng lịch với bảng đối chiếu
-  // (LiveScorecard.closedDays, forecast.multi_hit_forecast.next_draw_date). Không có bảng đối chiếu
-  // hay không đọc được lịch thì coi như không có ngày nghỉ nào.
   function nextDraw(date, skip) {
     var day = nextDay(date);
     for (var i = 0; i < 366 && skip.has(day); i++) day = nextDay(day);
@@ -141,7 +128,7 @@
     var scorecard = window.LiveScorecard;
     var days = scorecard && typeof scorecard.closedDays === 'function' ? scorecard.closedDays() : null;
     return Promise.resolve(days).catch(function () { return null; }).then(function (skip) {
-      if (token !== drawRequest) return undefined;  // live.json đã sang lượt khác trong lúc đọc lịch
+      if (token !== drawRequest) return undefined;
       return load(nextDraw(drawDate, skip && typeof skip.has === 'function' ? skip : new Set()), true);
     });
   }

@@ -95,7 +95,7 @@ def learn_calibration(
 ) -> CalibParams:
     try:
         from scipy.optimize import minimize
-    except ImportError:  # pragma: no cover
+    except ImportError:
         minimize = None
 
     D = probs_by_day.shape[0]
@@ -195,7 +195,7 @@ def _fit_isotonic_params(
 ) -> CalibParams | None:
     try:
         from sklearn.isotonic import IsotonicRegression
-    except ImportError:  # pragma: no cover - sklearn là phụ thuộc bắt buộc
+    except ImportError:
         return None
     flat_p = np.asarray(probs, dtype=float).reshape(-1)
     flat_y = np.asarray(labels, dtype=float).reshape(-1)

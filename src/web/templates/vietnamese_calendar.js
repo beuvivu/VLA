@@ -1,28 +1,3 @@
-/* Phần tính sóc được chuyển thể từ astronomia (Meeus chương 49).
-The MIT License (MIT)
-
-Copyright (c) 2013 Sonia Keys
-Copyright (c) 2016 Commenthol
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-/* Lịch Việt Nam UTC+7. Công thức thiên văn và tài liệu đối chiếu nằm trong
-   documentation/architecture/vietnamese-calendar.md. Không dùng lịch Trung Quốc. */
 (function (root) {
   'use strict';
   const MIN_YEAR = 1900, MAX_YEAR = 2099, ZONE = 7 / 24;
@@ -65,7 +40,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   function newMoon(cycle) {
     if (moonCache.has(cycle)) return moonCache.get(cycle);
-    // Meeus chương 49, đủ các số hạng nhiễu loạn; chuyển TT sang UT trước khi lấy ngày.
     const k = cycle - 1237, t = k / 1236.85, t2 = t * t, t3 = t2 * t, t4 = t3 * t;
     const mean = 2451550.09766 + 29.530588861 * k + 0.00015437 * t2 - 0.00000015 * t3 + 0.00000000073 * t4;
     const e = 1 - 0.002516 * t - 0.0000074 * t2;

@@ -1,13 +1,3 @@
-// Bản JS của `src/ingest/live_sync.py::fetch_snapshot`, tách làm hai nửa.
-//
-// `buildSnapshot` là phần THUẦN: vào là các bảng giải đã lấy được, ra là đúng
-// payload live.json. Tách ra như vậy để `tests/worker/test_worker_snapshot_parity.py`
-// so được nó với bản Python mà không cần mạng.
-//
-// `collectSnapshot` là phần có tác dụng phụ: gọi nguồn rồi giao cho phần
-// thuần. Lượt gọi một nguồn (`fetchSource`) thay được bằng hàm giả, nên phép
-// đối chiếu chạy được cả luật chuyển nguồn; chỉ phần đi mạng thật là không.
-
 import {
   EXPECTED_COUNTS,
   PRIZE_ORDER,
@@ -24,7 +14,6 @@ import {
 
 export const VIETNAM_OFFSET_MINUTES = 7 * 60;
 
-/** Giờ Việt Nam suy từ UTC. Việt Nam không đổi giờ mùa nên cộng cứng 7 tiếng. */
 export function vietnamParts(nowUtcMs) {
   const shifted = new Date(nowUtcMs + VIETNAM_OFFSET_MINUTES * 60_000);
   return {
@@ -55,12 +44,6 @@ export function drawDate(nowUtcMs) {
   return `${t.year}-${p2(t.month)}-${p2(t.day)}`;
 }
 
-/**
- * `round()` của Python làm tròn NỬA VỀ SỐ CHẴN, còn `Math.round` của JS làm
- * tròn nửa lên. Hai bên lệch nhau ở đúng các giá trị nửa chừng, và tuy hiếm,
- * một phần trăm lệch 0,1 giữa trang live và bảng kiểm là thứ không ai truy ra
- * nổi. Viết lại cho khớp.
- */
 export function roundHalfEven(value, digits = 1) {
   const factor = 10 ** digits;
   const scaled = value * factor;
@@ -118,17 +101,8 @@ export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement =
   };
 }
 
-// --- Phần gọi mạng ---------------------------------------------------------
-
 const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
 
-/**
- * Thử lại có lùi mũ kèm nhiễu, khớp chính sách của `src/ingest/sources.py`.
- *
- * Nhiễu là bắt buộc chứ không phải trang trí: các nguồn chạy song song, nếu
- * cùng hỏng rồi cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng một
- * thời điểm — đúng lúc máy chủ đang quá tải.
- */
 async function fetchWithRetry(url, { attempts = 3, timeoutMs = 8000, fetchImpl = fetch } = {}) {
   let delay = 500;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -150,12 +124,10 @@ async function fetchWithRetry(url, { attempts = 3, timeoutMs = 8000, fetchImpl =
       continue;
     }
     if (response.status === 200) return await response.text();
-    // 403/404 thì thử lại vô ích: câu trả lời sẽ y hệt.
     if (!RETRYABLE.has(response.status) || attempt === attempts) {
       throw new Error(`HTTP ${response.status}`);
     }
     const retryAfter = Number(response.headers.get("retry-after"));
-    // Có nơi trả về hàng trăm giây; chờ chừng ấy thì hết cả kỳ quay.
     const wait = Number.isFinite(retryAfter) && retryAfter > 0
       ? Math.min(retryAfter * 1000, 4000)
       : jitter(delay);
@@ -180,7 +152,6 @@ function receivedCount(prizeMap) {
   return received;
 }
 
-/** Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được. */
 export function independentGroupCount(results) {
   const groups = new Set();
   for (const r of results) {
@@ -189,14 +160,8 @@ export function independentGroupCount(results) {
   return groups.size;
 }
 
-// Khớp `sources.STALE_PAGE_ERROR`: hai bản phải ghi cùng một chuỗi vào `source_status`.
 export const STALE_PAGE_ERROR = "StalePage: nguồn còn hiện kỳ trước";
 
-/**
- * Nguồn còn hiện kỳ TRƯỚC: có giá trị, và mọi giá trị trùng đúng ô của kỳ trước. Khớp
- * `sources.shows_previous_draw` bên Python — trước giờ quay, trang live của cả ba nguồn vẫn
- * hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
- */
 export function showsPreviousDraw(prizeMap, previous) {
   if (!previous) return false;
   let received = 0;
@@ -211,14 +176,8 @@ export function showsPreviousDraw(prizeMap, previous) {
   return received > 0;
 }
 
-// Giờ Việt Nam mà kỳ quay chắc chắn đã xong; khớp `PRIMARY_COMPLETE_BY` bên Python.
 export const PRIMARY_COMPLETE_BY = { hour: 18, minute: 40 };
 
-/**
- * Nguồn chính có gặp sự cố hay không. Khớp `sources.primary_has_failed` bên Python:
- * không bóc được giá trị nào, hoặc đã quá 18:40 giờ VN mà còn thiếu ô. Thiếu ô TRONG lúc
- * quay là bình thường.
- */
 export function primaryHasFailed(prizeMap, nowUtcMs) {
   const received = receivedCount(prizeMap);
   if (received === 0) return { failed: true, reason: "nguồn chính không trả giá trị nào" };
@@ -242,7 +201,6 @@ async function fetchOne(source, tier, priority, date, fetchImpl) {
   let error = null;
   let best = 0;
   const expected = totalExpected();
-  // Thử lần lượt các đường dẫn ứng viên; giữ bản bóc được nhiều giá trị nhất.
   for (const url of source.liveUrls(date)) {
     try {
       const html = await fetchWithRetry(url, { fetchImpl });
@@ -266,7 +224,6 @@ async function fetchOne(source, tier, priority, date, fetchImpl) {
   });
 }
 
-/** Một quan sát nguồn kèm hàng `source_status`; khớp cách `live_sync.fetch_snapshot` dựng hàng. */
 export function observation({ priority, tier, name, prizeMap, error = null, latencyMs = 0 }) {
   const received = receivedCount(prizeMap);
   return {
@@ -293,8 +250,6 @@ export async function collectSnapshot({
   const date = vietnamParts(now);
   const fetchRaw = fetchSource
     ?? ((source, tier, priority) => fetchOne(source, tier, priority, date, fetchImpl));
-  // Nguồn còn hiện kỳ trước bị coi là chưa có gì TRƯỚC khi quyết định chuyển nguồn, như bên
-  // Python (`live_sync.fetch_snapshot`).
   const fetchFrom = async (source, tier, priority) => {
     const result = await fetchRaw(source, tier, priority);
     if (!showsPreviousDraw(result.prizeMap, previous)) return result;
@@ -308,14 +263,10 @@ export async function collectSnapshot({
     });
   };
 
-  // Nguồn chính trước. Hai nguồn dự phòng chỉ được gọi khi nó gặp sự cố, và khi ấy chỉ dữ
-  // liệu của chúng được hợp nhất: bản rỗng hay kẹt của nguồn chính không được che chúng.
   const results = await Promise.all(
     PRIMARY_SOURCES.map((source, i) => fetchFrom(source, "primary", i + 1)),
   );
   const verdict = primaryHasFailed(results[0].prizeMap, now);
-  // Khớp `sources.fetch_with_failover`: nguồn chính là MỘT nhóm, nên ngưỡng > 1 luôn cần dự
-  // phòng; nguồn chính chỉ bị loại khỏi phép hợp nhất khi nó thật sự hỏng.
   const witnesses = minAgreement > 1;
   const failover = {
     primary_attempted: PRIMARY_SOURCES.length,
@@ -347,11 +298,6 @@ export async function collectSnapshot({
     failover,
   });
 }
-
-// --- Ẩn nguồn khỏi mọi thứ ra tới trình duyệt -------------------------------
-// Khớp `sources.anonymise_snapshot` bên Python. Tên nguồn nằm rải ở bốn chỗ
-// trong cùng một bản chụp; bỏ sót một chỗ là lộ hết, nên phép ẩn danh là MỘT
-// hàm duy nhất kiểm được.
 
 const GROUP_CODE = Object.fromEntries(
   [...new Set(SOURCES.map((s) => sourceIndependenceKey(s.name)))]

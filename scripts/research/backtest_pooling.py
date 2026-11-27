@@ -10,8 +10,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ensemble.opinion_pool import PoolParams, apply_pool, fit_pool  # noqa: E402
-from stats.statistical_signal import _eb_posterior, _exp_weights, _weighted_counts  # noqa: E402
+from ensemble.opinion_pool import PoolParams, apply_pool, fit_pool
+from stats.statistical_signal import _eb_posterior, _exp_weights, _weighted_counts
 
 PRODUCTION_WEIGHTS = np.array([0.55, 0.25, 0.20])
 COMPONENT_NAMES = ("ewm", "weekday", "p90")

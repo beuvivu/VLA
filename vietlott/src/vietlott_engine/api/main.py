@@ -155,7 +155,7 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         return site is not None
 
     @app.middleware("http")
-    async def _require_token_for_writes(request: Request, call_next):  # type: ignore[no-untyped-def]
+    async def _require_token_for_writes(request: Request, call_next):
         token = settings.api_token
         path = request.scope["path"]
         root_path = request.scope.get("root_path", "")

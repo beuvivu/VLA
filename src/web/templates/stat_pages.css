@@ -18,9 +18,6 @@ border-color:var(--ui-brand-border)}
 .sp-count{margin-left:auto;font-size:.75rem;color:var(--ui-ink-soft);
 font-variant-numeric:tabular-nums}
 
-/* Nút HÀNH ĐỘNG, không phải nút lọc. Trước đây nó đội lớp .sp-chip và vì thế
-   dính cả bộ xử lý chọn dải: bấm "Xoá đánh dấu" thì dải ngày âm thầm nhảy từ
-   90 kỳ lên toàn bộ lịch sử. Lớp riêng khiến sự nhầm lẫn đó không tái diễn. */
 .sp-btn{padding:.35rem .7rem;border-radius:999px;border:1px solid var(--ui-border);
 background:var(--ui-surface);color:var(--ui-ink-2);font:inherit;font-size:.75rem;
 font-weight:700;cursor:pointer;box-shadow:var(--ui-sh-sm);
@@ -28,19 +25,11 @@ transition:border-color .15s ease-in-out,background .15s ease-in-out}
 .sp-btn:hover{border-color:var(--ui-brand-border);background:var(--ui-brand-soft);
 color:var(--ui-brand-ink)}
 
-/* `padding-bottom` chứ không phải đệm bốn phía: cột đầu và hàng tiêu đề đều
-   `position:sticky`, mà đệm ngang sẽ đẩy mốc dính lệch khỏi cạnh khung và để
-   lộ một dải nội dung trôi qua bên dưới chúng. Đo trước khi sửa: hàng cuối
-   cách chân khung đúng 1px, tức đang dính viền. */
 .sp-scroll{overflow-x:auto;width:fit-content;max-width:100%;
 padding-bottom:10px;
 border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);
 background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}
-/* width:auto chứ không phải 100%. Bảng xếp hạng chỉ có 5 cột: ép nó rộng
-hết khung 1330px thì mỗi cột giãn ra ~270px và con số nằm cách tiêu đề của nó
-cả gang tay, mắt phải rà ngang mới ghép được cặp. Để cột tự co theo nội dung
-thì bảng hẹp lại vừa đủ đọc, còn bảng nhiều cột (13 cột của bảng Đặc Biệt)
-vẫn nở ra và cuộn ngang trong .sp-scroll như cũ. */
+
 .sp-table{width:auto;border-collapse:separate;border-spacing:0;font-size:.8125rem}
 .sp-table th,.sp-table td{white-space:nowrap}
 .sp-table th{position:sticky;top:0;z-index:1;padding:.6rem .75rem;text-align:left;
@@ -51,7 +40,6 @@ border-bottom:1px solid var(--ui-border);white-space:nowrap}
 .sp-table td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sp-table tbody tr:hover{background:var(--ui-surface-2)}
 
-/* Ma trận 00-99. auto-fill giữ ô vuông ở mọi bề rộng mà không cần media query. */
 .sp-matrix{display:grid;grid-template-columns:repeat(auto-fill,minmax(3.25rem,1fr));
 gap:.5rem;margin-bottom:1.5rem}
 .sp-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -80,17 +68,10 @@ text-transform:uppercase;letter-spacing:.05em}
 .sp-kpi-card strong{display:block;margin-top:.25rem;font-size:1.375rem;
 color:var(--ui-ink);font-variant-numeric:tabular-nums}
 
-/* Ghi chú mốc ngẫu nhiên. Không phải trang trí: thiếu nó thì bảng xếp hạng
-   trông như quy luật trong khi đó là mức ngẫu nhiên thường tạo ra. */
 .sp-note{margin:1.5rem 0 0;padding:1rem;border-radius:var(--ui-r-lg);
 background:var(--ui-warn-soft);border:1px solid var(--ui-warn-border);color:var(--ui-warn);font-size:.8125rem;
 line-height:1.65}
 
-/* --- Giải ĐẶC BIỆT -------------------------------------------------------
-   Ba chữ số đầu để mờ nhưng vẫn hiện đủ, để đối chiếu được với kết quả gốc.
-   Giải ĐẶC BIỆT. Ba chữ số đầu để mờ, hai số cuối là thứ người soi cầu đọc —
-   và giải Đặc Biệt luôn mang màu đỏ, không phụ thuộc số nháy hay bất cứ điều
-   gì khác. Đỏ #BE123C trên #FFE4E6 đo được 5,24:1. */
 .sp-de { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ui-ink-soft); }
 .sp-de b {
   color: var(--ui-special-ink); font-weight: 800;
@@ -98,9 +79,6 @@ line-height:1.65}
   background: var(--ui-special-bg); border: 1px solid var(--ui-special-border);
 }
 
-/* --- Đánh dấu ô để so sánh -----------------------------------------------
-   `th` cũng nằm trong danh sách: ở chiều dọc, CON SỐ là tiêu đề cột chứ không
-   phải nhãn hàng, nên bỏ `th` ra là bỏ luôn thứ người dùng bấm vào. */
 .sp-table td.cell,
 .sp-table th.cell { cursor: pointer; }
 .sp-table td.cell:hover,
@@ -120,16 +98,12 @@ line-height:1.65}
 .sp-mark-count { color: var(--ui-warn); font-size: 12px; font-weight: 800; }
 .sp-subhead { margin: 24px 0 8px; font-size: 17px; }
 
-/* Lịch tuần của bảng Đặc Biệt theo tháng: số ngày nhỏ ở góc, giải bên dưới. */
 .sp-daynum {
   display: block; font-size: 11px; font-weight: 800;
   color: var(--ui-ink-soft); margin-bottom: 2px;
 }
 .sp-none { color: var(--ui-ink-soft); }
 
-/* --- Ô bảng Đặc Biệt sáu trường ------------------------------------------
-   Giải nổi bật, các trường phụ (Tổng/Đầu/Đuôi/Chẵn lẻ/Bộ) nhỏ và mờ hơn để
-   mắt bắt được con số trước, chi tiết sau. */
 .sp-fields {
   display: block; margin-top: 2px;
   font-size: 10px; line-height: 1.25; color: var(--ui-ink-soft);
@@ -139,20 +113,13 @@ line-height:1.65}
 .sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid var(--ui-border); }
 .sp-f-ngay { min-width: 34px; color: var(--ui-ink-soft); }
 
-/* Dòng "dải rỗng": chiếm cả bảng, không gạch chéo như ô trống trong lịch —
-   đây là câu trả lời cho bộ lọc, không phải một ngày không quay. */
 .sp-empty-row {
   padding: 18px 14px !important; text-align: center;
   color: var(--ui-ink-soft); font-size: 12.5px; font-style: italic;
 }
 
-/* Ô "0 lần": vẫn là dữ liệu, không phải ô trống, nên mờ chứ không gạch chéo. */
 .sp-zero { color: var(--ui-ink-soft); font-weight: 400; }
 
-/* --- Chú giải ô ----------------------------------------------------------
-   Sáu trường xếp thành lưới tự co: mỗi thẻ mang giá trị thật của kỳ gần nhất,
-   tên trường, rồi câu giải thích. Không giấu lời giải thích sau tooltip — trên
-   điện thoại không có chuột để trỏ vào. */
 .sp-legend {
   margin: 0 0 16px; padding: 16px;
   border: 1px solid var(--ui-border); border-radius: var(--ui-r-lg);
@@ -194,7 +161,6 @@ line-height:1.65}
 }
 .sp-fchk input { cursor: pointer; }
 
-/* --- Bộ chọn con số 00-99 ------------------------------------------------- */
 .sp-picker { margin-bottom: 16px; }
 .sp-pick-quick { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .sp-pick-quick button {
@@ -211,28 +177,16 @@ line-height:1.65}
 }
 .sp-pick.on { background: var(--ui-brand-soft); border-color: var(--ui-brand-border);
   color: var(--ui-brand-ink); }
-/* Con số bị bỏ ra: mờ đi VÀ gạch ngang. Chỉ đổi màu thì người không phân
-   biệt được màu không đọc ra trạng thái — và ở đây trạng thái chính là câu
-   trả lời cho "tôi vừa bỏ những con nào". */
+
 .sp-pick:not(.on) { text-decoration: line-through; }
 
-/* Ma trận dày: chữ nhỏ, cột hẹp, luôn cuộn trong khung của nó.
-
-   Kích thước CỐ ĐỊNH. Trước đây bề rộng ô chạy từ 26 tới 44px tuỳ nội dung —
-   ô chứa "1" hẹp hơn ô chứa "12" — nên lưới răng cưa và mắt không dóng thẳng
-   được theo cột. table-layout:fixed cắt hẳn liên hệ giữa nội dung và bề rộng.
-
-   48px chứ không phải 40: nhãn ngày rộng nhất ("04-08", Inter 11px đậm) đo
-   được 34,6px, cộng padding 8px là 42,6px. Đặt 40px thì 52 trên 90 tiêu đề bị
-   cắt thành "04-…" — bảng tự giấu mất nhãn của chính nó. */
 .sp-table.sp-dense { table-layout: fixed; }
 .sp-table.sp-dense td, .sp-table.sp-dense th {
   width: 48px; min-width: 48px; max-width: 48px; height: 24px;
   padding: 2px 4px; font-size: 11px; text-align: center;
   overflow: hidden; text-overflow: ellipsis;
 }
-/* Cột nhãn hàng cần rộng hơn: nó mang "Đầu 7" hoặc "00-55", không phải một
-   chữ số. Không nới ra thì nhãn bị cắt mất và bảng tự phản bội chính nó. */
+
 .sp-table.sp-dense td:first-child, .sp-table.sp-dense th:first-child {
   width: 64px; min-width: 64px; max-width: 64px;
 }
@@ -240,7 +194,6 @@ line-height:1.65}
 
 @media (max-width: 860px) { .sp-pick-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
 
-/* --- Cầu giải Đặc Biệt ---------------------------------------------------- */
 .sp-times { display: block; font-style: normal; font-size: 10px; color: var(--ui-ink-soft); }
 .sp-recent { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .sp-draw { padding: 16px; border: 1px solid var(--ui-border);
@@ -256,18 +209,8 @@ line-height:1.65}
   font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 
-/* Ghi chú kích thước ma trận. Lớp RIÊNG, không dùng .sp-note: lớp đó dành cho
-   ghi chú mốc ngẫu nhiên, và một ghi chú rỗng đứng trước sẽ che mất nó. */
 .sp-matrix-note { margin: 0 0 8px; color: var(--ui-ink-soft); font-size: 12px; }
 
-/* =========================================================================
-   Bảng dạng lưới cho các trang thống kê mới
-   =========================================================================
-   Bản trước chỉ kẻ border-bottom, nên một vùng ô trống — ngày XSMB không quay,
-   hoặc ô ngoài tháng — trông như lỗi hiển thị chứ không phải khoảng trống có
-   thật. Ba việc dưới đây sửa điều đó.                                       */
-
-/* 1. LƯỚI ĐỦ. Kẻ cả dọc lẫn ngang để mỗi ô là một khung nhìn thấy được. */
 .sp-table.sp-grid-lines { border-collapse: separate; border-spacing: 0; }
 .sp-table.sp-grid-lines th,
 .sp-table.sp-grid-lines td {
@@ -279,14 +222,11 @@ line-height:1.65}
 .sp-table.sp-grid-lines thead th { border-top: 1px solid var(--ui-border); }
 .sp-table.sp-grid-lines tr:last-child td { border-bottom: 1px solid var(--ui-border); }
 
-/* Bo góc khung ngoài: viền vuông trông như bảng tính chưa xong. */
 .sp-table.sp-grid-lines thead th:first-child { border-top-left-radius: .55rem; }
 .sp-table.sp-grid-lines thead th:last-child { border-top-right-radius: .55rem; }
 .sp-table.sp-grid-lines tr:last-child td:first-child { border-bottom-left-radius: .55rem; }
 .sp-table.sp-grid-lines tr:last-child td:last-child { border-bottom-right-radius: .55rem; }
 
-/* Empty, data and pending are different states. A data cell retains an
-   inset ring as a second cue; empty cells are quiet, flat and darker. */
 .sp-table td.is-empty {
   background-color: var(--ui-empty-bg);
   background-image: none;
@@ -298,8 +238,7 @@ line-height:1.65}
   box-shadow: inset 0 0 0 1px var(--ui-border-strong), 0 1px 1.5px rgba(22,28,45,.07);
   font-weight: 700;
 }
-/* Muted tiers, each with AA text contrast. The numeric count remains the
-   primary encoding; matching legend swatches appear beside every matrix. */
+
 .sp-table td.sp-n1 { background-color: var(--ui-n1-bg); color: var(--ui-n1-ink); }
 .sp-table td.sp-n2 { background-color: var(--ui-n2-bg); color: var(--ui-n2-ink); }
 .sp-table td.sp-n3 { background-color: var(--ui-n3-bg); color: var(--ui-n3-ink); }
@@ -325,8 +264,7 @@ line-height:1.65}
   font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
 }
 .sp-nl span { color: var(--ui-ink-2); font-weight: 600; }
-/* Quy tắc cấp nháy ở trên neo vào "td", nên ô mẫu trong chú giải — vốn là
-   thẻ <i> — không với tới được. Khai lại cho đúng nơi nó sống. */
+
 .sp-nl i.sp-n1 { background: var(--ui-n1-bg); color: var(--ui-n1-ink); }
 .sp-nl i.sp-n2 { background: var(--ui-n2-bg); color: var(--ui-n2-ink); }
 .sp-nl i.sp-n3 { background: var(--ui-n3-bg); color: var(--ui-n3-ink); }
@@ -334,16 +272,13 @@ line-height:1.65}
 .sp-nl i.sp-n5 { background: var(--ui-n5-bg); color: var(--ui-n5-ink); }
 .sp-nl i.sp-de-key { background: var(--ui-special-strong-bg); color: var(--ui-special-strong-ink); }
 .sp-nl i.sp-gan-key { background: var(--ui-gan-bg); box-shadow: inset 0 0 0 1px var(--ui-border-strong); }
-/* Chú giải phải hiện ĐÚNG thứ nó chú giải. Để lại sọc ở đây trong khi ô thật
-   đã phẳng thì chú giải nói sai về chính bảng nó đang giải thích. */
+
 .sp-nl i.sp-empty-key {
   background-color: var(--ui-empty-bg);
   background-image: none;
   box-shadow: inset 0 0 0 1px var(--ui-border-strong);
 }
 
-/* 3. CỘT ĐẦU DÍNH. Ma trận rộng tới 120 cột; cuộn ngang mà mất nhãn hàng thì
-      mọi con số thành vô nghĩa. */
 .sp-table.sp-grid-lines.has-rowhead td:first-child,
 .sp-table.sp-grid-lines.has-rowhead th:first-child {
   position: sticky; left: 0; z-index: 2;
@@ -352,17 +287,11 @@ line-height:1.65}
 }
 .sp-table.sp-grid-lines.has-rowhead thead th:first-child { z-index: 3; }
 
-/* Tiêu đề cột đang trỏ tới. Không có nó thì đọc lệch cột là chuyện thường. */
 .sp-table th.col-hint {
   background: var(--ui-brand);
   color: var(--ui-on-brand);
 }
 
-/* Dóng chữ thập. Nửa theo CỘT đã có từ trước, nửa theo HÀNG thì không — mà
-   trên ma trận 100 hàng thì dóng ngược lại mới là việc khó hơn. Dùng nền
-   thương hiệu rất nhạt, KHÔNG đổi màu nền của ô dữ liệu: ô đang mã hoá số
-   nháy bằng nền, đè lên là xoá mất dữ liệu. Vì vậy chỉ ô nhãn và ô trống
-   nhận nền, còn cả hàng được đánh dấu bằng một đường viền ngang. */
 .sp-table.sp-crosshair tbody tr.row-hint > td {
   border-top-color: var(--ui-brand-border);
   border-bottom-color: var(--ui-brand-border);
@@ -374,18 +303,11 @@ line-height:1.65}
 .sp-table.sp-crosshair tbody tr.row-hint > td.is-empty {
   background-color: var(--ui-brand-soft);
 }
-/* Ô đang trỏ tới: viền trong đậm, không đổi nền. */
+
 .sp-table.sp-crosshair td.cell-hint {
   box-shadow: inset 0 0 0 2px var(--ui-brand);
 }
 
-/* Sọc ngang nhạt: đếm hàng bằng mắt trên bảng 100 hàng.
-
-   KHÔNG áp lên bảng có mã màu số nháy. Hai quy tắc này cùng vẽ `background`
-   lên đúng ô mà cấp nháy đang dùng để mang dữ liệu, và chúng cụ thể hơn nên
-   chúng thắng — đo được: ô "4 nháy" nằm ở hàng chẵn mất sạch nền cam, tức là
-   một nửa số hàng bị xoá thông tin. Trợ giúp điều hướng phải nhường dữ liệu;
-   trên bảng ấy việc dóng hàng do .row-hint lo bằng viền, không bằng nền. */
 .sp-table.sp-grid-lines:not(.sp-nhay) tbody tr:nth-child(even) td:not(.is-empty):not(.marked) {
   background: color-mix(in srgb, var(--ui-surface-2) 45%, transparent);
 }
@@ -393,15 +315,8 @@ line-height:1.65}
   background: color-mix(in srgb, var(--ui-brand) 8%, transparent);
 }
 
-/* Ô đánh dấu phải thắng mọi nền ở trên. */
 .sp-table.sp-grid-lines td.marked { background: var(--ui-mark-bg); }
 
-/* Ô của kỳ CHƯA QUAY: xám tro, viền nét đứt.
-   ------------------------------------------------------------------------
-   Phải phân biệt được 100% với dữ liệu quá khứ, nên dùng HAI dấu hiệu chứ
-   không riêng màu: nền xám tro và viền NÉT ĐỨT. Nét đứt là thứ duy nhất trên
-   bảng này dùng kiểu viền khác, nên nó không lẫn vào đâu được — kể cả khi in
-   trắng đen hoặc khi người xem không phân biệt màu. */
 .sp-table td.sp-pending,
 .sp-table th.sp-pending {
   background-color: var(--ui-pending-bg) !important;
@@ -414,26 +329,14 @@ line-height:1.65}
 
 .sp-pending-note { color: var(--ui-ink-soft); font-size: 12px; }
 
-/* Ô về GIẢI ĐẶC BIỆT: đỏ riêng, không lẫn vào thang nháy.
-   #C0392B chứ không phải #D9534F của trang mẫu — đo ra #D9534F chỉ đạt 3,96
-   với chữ trắng, tức trượt AA và chữ chìm. #C0392B đạt 5,44, cùng sắc đỏ. */
 .sp-table td.sp-de-hit { background-color: var(--ui-special-strong-bg) !important; color: var(--ui-special-strong-ink) !important;
   font-weight: 800; }
 
-/* KHOẢNG GAN: những kỳ từ lần về GẦN NHẤT tới hôm nay.
-   ------------------------------------------------------------------------
-   Khác hẳn "không về trong quá khứ". Một ô trống nằm giữa hai lần về chỉ là
-   một kỳ trượt; còn cả dải trống chạy từ lần về cuối tới hôm nay CHÍNH LÀ
-   nhịp gan — thứ người soi cầu tìm. Trước đây hai loại ấy cùng một màu nên
-   phải tự đếm bằng mắt.
-   Nét đứt bên TRÁI+PHẢI chứ không bao quanh: các ô gan của cùng một con số
-   nằm liền nhau, viền bao quanh từng ô sẽ thành một hàng rào răng cưa. */
 .sp-table td.sp-gan {
   background-color: var(--ui-gan-bg);
   box-shadow: inset 1px 0 0 var(--ui-border-strong), inset -1px 0 0 var(--ui-border-strong);
 }
 
-/* Cột mini trong tiêu đề số: một vạch dựng đứng dưới con số. */
 .sp-table th.cell, .sp-table td.cell { position: relative; }
 .sp-mini-bar {
   display: block; width: 100%; height: 4px; margin-top: 2px;
@@ -442,9 +345,6 @@ line-height:1.65}
   border-radius: 999px; opacity: .85;
 }
 
-/* Popup chu kỳ gan. `hidden` phải THẬT SỰ ẩn — thuộc tính ấy chỉ là
-   `display:none` trong biểu định kiểu mặc định của trình duyệt, nên bất kỳ
-   quy tắc `display` nào của tác giả cũng thắng nó. */
 .sp-gan-modal[hidden] { display: none !important; }
 .sp-gan-modal {
   position: fixed; inset: 0; z-index: 200; display: grid; place-items: center;
@@ -478,7 +378,6 @@ line-height:1.65}
   font-weight: 700; background: var(--ui-surface-2); border: 1px solid var(--ui-border);
   font-variant-numeric: tabular-nums; }
 
-/* Đầu/đuôi dùng một dải xanh liên tục; màu tăng theo số lượt thực tế. */
 #sp-head,#sp-tail{width:100%;table-layout:fixed}
 :is(#sp-head,#sp-tail) :is(th,td){padding:10px 4px;white-space:normal;overflow-wrap:anywhere}
 :is(#sp-head,#sp-tail) :is(th,td):first-child{text-align:center}
@@ -498,7 +397,6 @@ html[data-ui-theme=dark] .app-head-tail-legend .app-head-tail-heat{background:va
 .app-head-tail-swatch{display:inline-grid;place-items:center;min-width:32px;min-height:28px;padding:4px 8px;border:0;border-radius:6px;font-weight:750;font-variant-numeric:tabular-nums}
 @media(max-width:480px){.app-head-tail-legend{gap:6px}.app-head-tail-legend-label,.app-head-tail-legend small{flex-basis:100%}}
 
-/* Cặp lộn: đặt hai bảng cạnh nhau, dành độ rộng cho các cặp số thật. */
 .sp-page-cap-lon-loto .app-reverse-layout{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(220px,1fr);align-items:start;gap:24px;margin:24px 0}
 .sp-page-cap-lon-loto .app-reverse-card{min-width:0;padding:24px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}
 .sp-page-cap-lon-loto .app-reverse-card header{min-height:80px}
@@ -517,7 +415,6 @@ body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card :i
 @media(max-width:1023px){.sp-page-cap-lon-loto .app-reverse-layout{grid-template-columns:minmax(0,1fr);gap:16px}.sp-page-cap-lon-loto .app-reverse-card{padding:16px}.sp-page-cap-lon-loto .app-reverse-card header{min-height:0}}
 @media print{.sp-page-cap-lon-loto .app-reverse-layout{display:block}.sp-page-cap-lon-loto .app-reverse-card{margin-bottom:16px;break-inside:avoid}}
 
-/* Cầu Đặc Biệt: đủ mười hàng; chọn số chỉ đổi màu, không đổi cỡ chữ. */
 body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix{max-height:none;height:auto;overscroll-behavior-y:auto}
 body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid{min-width:620px;table-layout:fixed}
 body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid :is(th,td){padding:8px 6px;text-align:center;vertical-align:middle}
@@ -526,7 +423,6 @@ body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-mat
 body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] #sp-lon td:nth-child(2){font-size:24px;line-height:1.35;font-weight:800}
 body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid td.marked :is(.sp-none,.sp-times){color:inherit}
 
-/* Theo tổng: cùng cỡ chữ cho giá trị tổng, chia cột theo nội dung thực. */
 .sp-page-giai-dac-biet-theo-tong .app-total-overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start;margin:24px 0}
 .sp-page-giai-dac-biet-theo-tong .app-total-card{min-width:0;padding:24px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}
 .sp-page-giai-dac-biet-theo-tong .app-total-card header{min-height:80px}

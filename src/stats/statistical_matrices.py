@@ -569,7 +569,7 @@ def _write_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Font, PatternFill
         from openpyxl.utils import get_column_letter
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         logger.warning("openpyxl not available; skip statistics workbook: %s", exc)
         return
 
@@ -659,7 +659,7 @@ def generate_statistics(
     freq_loto: dict[PeriodKind, pd.DataFrame] = {}
     freq_de: dict[PeriodKind, pd.DataFrame] = {}
     for period in ["day", "week", "month", "year"]:
-        p = period  # type: ignore[assignment]
+        p = period
         freq_loto[p] = _period_frequency_from_sparse(sparse_loto, period=p, mode="loto")
         freq_de[p] = _period_frequency_from_sparse(sparse_de, period=p, mode="de")
         created.append(_dump_table(freq_loto[p], out_dir=out.data_dir, name=f"period_frequency_loto_{period}"))
@@ -677,7 +677,7 @@ def generate_statistics(
         ("year", None, "all"),
     ]
     for period, last_n, suffix in matrix_specs:
-        p = period  # type: ignore[assignment]
+        p = period
         m_loto = _period_matrix(sparse_loto, period=p, last_n=last_n)
         m_de = _period_matrix(sparse_de, period=p, last_n=last_n)
         created.append(_dump_table(m_loto.reset_index(), out_dir=out.data_dir, name=f"period_matrix_loto_{period}_{suffix}"))
@@ -693,7 +693,7 @@ def generate_statistics(
     pair_frames: list[pd.DataFrame] = []
     special_group_frames: list[pd.DataFrame] = []
     for period in ["day", "week", "month", "year"]:
-        p = period  # type: ignore[assignment]
+        p = period
         hht = _head_tail_total_by_period(two, period=p)
         pair = _reverse_pair_frequency(sparse_loto, period=p)
         sg = _special_group_frequency(raw, period=p)

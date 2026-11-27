@@ -213,7 +213,7 @@ def parse_three_digit_html(html: str) -> list[dict]:
     return out
 
 
-def _cell_int(cells: list, i: int | None) -> int | None:  # type: ignore[type-arg]
+def _cell_int(cells: list, i: int | None) -> int | None:
     if i is None or i >= len(cells):
         return None
     digits = re.sub(r"\D", "", cells[i].get_text(" ", strip=True))

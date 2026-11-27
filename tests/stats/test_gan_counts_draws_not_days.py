@@ -9,8 +9,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from stats.advanced_stats import compute_cycle_stats  # noqa: E402
-from stats.gap_cycle_stats import compute_gap_stats  # noqa: E402
+from stats.advanced_stats import compute_cycle_stats
+from stats.gap_cycle_stats import compute_gap_stats
 
 
 def _sparse(rows: list[tuple[str, list[int]]]) -> pd.DataFrame:

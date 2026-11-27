@@ -1,10 +1,5 @@
 name: Đọc bài phân tích của trang tham chiếu
 
-# CHẠY TAY, KHÔNG CÓ LỊCH. Proxy của môi trường phát triển chặn trang tham chiếu;
-# runner của Actions thì gọi được. Job chỉ ĐỌC và in chữ của các bài ra log để
-# học CÁCH phân tích. Không commit, không tải hiện vật, không lưu nội dung vào
-# kho. Mỗi URL gọi đúng một lần, có nhịp chờ giữa các lần.
-
 on:
   workflow_dispatch:
     inputs:

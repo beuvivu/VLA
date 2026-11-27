@@ -334,7 +334,7 @@ def _upper_bound(k: int, n: int, conf: float = 0.95) -> float | None:
     return 1.0 if k >= n else float(stats.beta.ppf(conf, k + 1, n - k))
 
 
-def compare_products(imp: PageImport, store) -> dict:  # type: ignore[no-untyped-def]
+def compare_products(imp: PageImport, store) -> dict:
     from vietlott_engine.core.products import parse_product_rows
 
     out = {}
@@ -358,7 +358,7 @@ def compare_products(imp: PageImport, store) -> dict:  # type: ignore[no-untyped
     return out
 
 
-def compare_matrix(imp: PageImport, repository) -> dict:  # type: ignore[no-untyped-def]
+def compare_matrix(imp: PageImport, repository) -> dict:
     from vietlott_engine.core.games import GameCode
     from vietlott_engine.crawler.official_data import import_canonical
 

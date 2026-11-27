@@ -10,8 +10,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from stats import statistical_signal  # noqa: E402
-from stats.statistical_signal import (  # noqa: E402
+from stats import statistical_signal
+from stats.statistical_signal import (
     _de_posterior,
     _de_signal,
     _effective_n,

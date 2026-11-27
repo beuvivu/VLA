@@ -1,4 +1,3 @@
-/* Bố cục trang tần suất, màu kế thừa cùng chủ đề với toàn ứng dụng. */
 body.bf-page {
   background:var(--ui-canvas);color:var(--ui-ink);min-height:100vh;
 }
@@ -83,7 +82,7 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .bf-page #sp-matrix-grid td.sp-de-hit::before {content:"★";position:absolute;right:3px;top:2px;font-size:8px;color:var(--ui-special-ink)}
 .bf-page #sp-matrix-grid td.sp-pending,.bf-page .bf-wait {background:var(--ui-pending-bg)!important;color:var(--ui-pending-ink)!important;outline:none;border:1px dashed var(--ui-border)}
 .bf-page #sp-matrix-grid td.sp-pending::before {content:"·"}
-/* Dóng bằng viền để nền mang nghĩa dữ liệu luôn hiện nguyên vẹn. */
+
 .bf-page #sp-matrix-grid :is(td,th).bf-track::after {content:"";position:absolute;inset:0;background:transparent;box-shadow:inset 0 0 0 1px var(--ui-mark-border);pointer-events:none}
 .bf-page #sp-matrix-grid :is(th,td:first-child).bf-track {background:var(--ui-mark-bg);color:var(--ui-mark-ink)}
 .bf-page #sp-matrix-grid td.bf-active {outline:2px solid var(--ui-mark-border);outline-offset:-2px;z-index:2}
@@ -132,7 +131,7 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 @media(max-width:800px){.bf-guide-grid,.bf-distributions{grid-template-columns:minmax(0,1fr);gap:16px}.bf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bf-hero{flex-wrap:wrap}.bf-tabs span{display:none}.bf-page .bf-totals .bf-pair-totals{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:600px){.bf-page .ui-shell{padding:16px 12px 32px}.bf-topline{font-size:11px;gap:8px}.bf-live{font-size:10px;padding:8px}.bf-hero{display:block;padding:16px}.bf-hero p:not(.bf-eyebrow){font-size:13px}.bf-demo-link{display:inline-block;margin-top:16px;padding:8px 12px}.bf-tabs{width:100%}.bf-tabs a{flex:1;justify-content:center;padding:12px 8px;font-size:12px}.bf-kpis{gap:8px;margin-bottom:16px}.bf-kpi{padding:16px 12px}.bf-kpi strong,.sp-overview-page .bf-kpi strong{font-size:26px}.bf-kpi .bf-kpi-label,.sp-overview-page .bf-kpi>span{font-size:11px;margin-bottom:8px}.bf-kpi small{font-size:11px}.bf-kpi-icon{right:12px;top:12px;font-size:12px}.bf-card{padding:16px 12px;margin-bottom:16px}.bf-card-heading{gap:8px}.bf-page .bf-card-heading h2{font-size:15px}.bf-card-heading>span{font-size:11px}.bf-page .sp-controls{gap:16px 8px}.bf-page .sp-marktools .sp-hint{width:100%}.bf-legend{gap:8px;font-size:11px}.bf-swatch{height:24px;width:24px;font-size:11px}.bf-matrix-footer{font-size:11px}.bf-page .bf-totals .sp-matrix{gap:4px}.bf-page .bf-totals .sp-cell{min-height:56px;padding:8px 2px;gap:4px}.bf-page .bf-totals .sp-cell b{font-size:12px}.bf-page .bf-totals .sp-cell i{font-size:10px}.bf-page .bf-totals .bf-pair-totals .sp-cell b{font-size:12px}.bf-page .sp-pick{min-height:36px}.bf-page .bf-ranking :is(th,td){padding:12px;font-size:12px}.bf-distributions{margin-bottom:16px}}
 @media(prefers-reduced-motion:reduce){.bf-page *{scroll-behavior:auto!important;transition:none!important}}
-/* Các ô lọc cùng độ rộng; mốc nhanh chia hàng với sắp xếp và chu kỳ gan. */
+
 .bf-page .sp-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"from to orient weekday" "quick quick sort gan" "count count count count" "marks marks marks marks";align-items:end}
 .bf-page .sp-controls>label:nth-of-type(1){grid-area:from}
 .bf-page .sp-controls>label:nth-of-type(2){grid-area:to}
@@ -148,7 +147,7 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .sp-overview-page .sp-controls>.sp-chips{grid-area:quick}
 .sp-overview-page .sp-chips .sp-chip{border-radius:8px;padding:8px 12px;font-size:12px}
 @media(max-width:800px){.bf-page .sp-controls{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"from to" "orient weekday" "sort gan" "quick quick" "count count" "marks marks"}.bf-page .sp-quick button{flex:1 1 auto;min-height:36px}.sp-overview-page .sp-controls{grid-template-areas:"from to" "weekday weekday" "quick quick" "count count" "marks marks"}}
-/* Cùng một ma trận; đổi chiều bằng hoán đổi trục ngày và số. */
+
 .app-frequency-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:16px}
 .app-frequency-toolbar p,.app-frequency-chart-help{font-size:12px;line-height:1.7;color:var(--ui-ink-soft);margin:0}
 .app-frequency-chart-help{margin-bottom:16px}
@@ -186,10 +185,9 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .bf-page .app-frequency-controls{grid-template-areas:"from to weekday sort" "quick quick gan gan" "count count count count" "marks marks marks marks"}
 .bf-page .bf-totals #sp-matrix .sp-cell i::after{content:" lượt";font-size:10px;font-weight:500}
 @media(max-width:800px){.bf-page .app-frequency-controls{grid-template-areas:"from to" "weekday sort" "quick quick" "gan gan" "count count" "marks marks"}}
-/* Nửa hàng hẹp hơn chữ «Gan nhiều nhất», «Tất cả các thứ» từ khoảng 365px trở xuống (đo 320 và 360px). */
+
 @media(max-width:400px){.bf-page .app-frequency-controls{grid-template-areas:"from to" "weekday weekday" "sort sort" "quick quick" "gan gan" "count count" "marks marks"}}
-/* Bề rộng cột nhãn dính khai trên KHUNG CUỘN, bảng kế thừa: scroll-padding-left phải bằng đúng bề rộng ấy,
-   nếu không ô được cuộn tới (bàn phím, Tab, scrollIntoView) nằm khuất dưới cột dính. */
+
 body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix){--app-frequency-label-width:176px;--app-frequency-cell-width:54px;scroll-padding-left:var(--app-frequency-label-width)}
 body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical]){--app-frequency-label-width:86px;--app-frequency-cell-width:96px}
 body.bf-page[data-ui-page] .sp-table-layout:has(> #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical][data-app-frequency-kind=pair]){--app-frequency-cell-width:160px}

@@ -20,7 +20,7 @@ from vietlott_engine.game_theory.bao import (
 )
 
 
-def _styles(spec, level, specials=1):  # type: ignore[no-untyped-def]
+def _styles(spec, level, specials=1):
     return {(r["hits_in_set"], r["bonus"]): r["vietlott_style"] for r in bao_prize_table(spec, level, specials)}
 
 

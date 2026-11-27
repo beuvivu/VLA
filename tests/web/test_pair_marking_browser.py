@@ -12,7 +12,7 @@ CHROMIUM = os.environ.get(
 )
 
 pytest.importorskip("playwright.sync_api", reason="cần playwright để đo trong trình duyệt")
-if not Path(CHROMIUM).exists():  # pragma: no cover - phụ thuộc máy chạy
+if not Path(CHROMIUM).exists():
     pytest.skip(f"không có Chromium tại {CHROMIUM}", allow_module_level=True)
 
 PAIR_RE = r"/\|(?:n|c)([0-9]{2}(?:-[0-9]{2})?)/"

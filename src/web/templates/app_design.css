@@ -1,4 +1,3 @@
-/* Lớp Crafto cuối cùng: chỉ đổi trình bày, giữ hình học khung và màu dữ liệu. */
 body[data-app-design="crafto"][data-ui-page] {
   --app-design-cream:color-mix(in srgb,var(--ui-surface,#fff) 94%,#dabd88);
   --app-design-ink:var(--ui-ink,#2c2e3c);
@@ -17,7 +16,7 @@ body[data-app-design="crafto"][data-ui-page] {
   background:var(--app-design-cream);background-attachment:scroll;
   color:var(--app-design-ink);isolation:isolate;
 }
-/* Shell geometry and colors belong to app_shell.css (Nexlink reference). */
+
 body[data-app-design="crafto"] .app-main {min-width:0}
 body[data-app-design="crafto"] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-controls,
   .sp-kpi-card,.sp-recent-card,.sp-duo>div,.bf-card,.bf-kpi,.tr-filter,.tr-summary>div,.tr-day,
@@ -27,7 +26,7 @@ body[data-app-design="crafto"] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-
   backdrop-filter:none;-webkit-backdrop-filter:none;
   transition:box-shadow .3s var(--app-design-ease),border-color .3s var(--app-design-ease);
 }
-/* Giữ bảng đứng yên để người đọc không phải nhìn theo con trỏ. */
+
 body[data-app-design="crafto"] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-kpi-card,
   .sp-recent-card,.bf-card,.tr-day,.ai-status-item,.rl-stage,.rl-console-card):hover {
   transform:none;box-shadow:var(--ui-elevation-hover);
@@ -64,7 +63,6 @@ body[data-app-design="crafto"] .metric-tile span {font-weight:600}
 body[data-app-design="crafto"] .metric-tile strong {font-size:32px;letter-spacing:-.045em}
 body[data-app-design="crafto"] .metric-tile[data-long="true"] strong {font-size:24px}
 
-/* Lớp trang trí độc lập với nội dung và không chặn thao tác. */
 [data-app-effects] {display:contents;pointer-events:none}
 .app-ambience {position:fixed;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
 .app-orb {position:absolute;display:block;width:560px;height:560px;border-radius:50%;opacity:.18}
@@ -106,7 +104,6 @@ body[data-app-design="crafto"] #app-motion-toggle[hidden] {display:none!importan
 body[data-app-design="crafto"] #app-motion-toggle svg {width:15px;height:15px;flex-shrink:0}
 body[data-app-design="crafto"] #app-motion-toggle:hover {border-color:var(--app-accent);color:var(--app-accent)}
 
-/* Hero Application: khoảng trắng, quầng sáng ở mép và kết quả thật ở giữa. */
 body[data-app-design="crafto"] .main>.hero {
   position:relative;isolation:isolate;overflow:hidden;margin-top:0;margin-bottom:24px;
   padding:64px 56px 0;border:1px solid var(--app-design-line);border-radius:24px;
@@ -280,7 +277,7 @@ body[data-app-design="crafto"] .hero .app-hero-meta {margin:20px 0 0;padding-top
   body[data-app-design="crafto"] .metric-tile strong {font-size:28px}
   body[data-app-design="crafto"] .metric-tile[data-long="true"] strong {font-size:20px}
   body[data-app-design="crafto"] .section-title {margin-block:32px 16px}
-  /* Trên màn hẹp nút nổi che chữ ở góc dưới, nên nó về dòng chảy: một nút thường ở cuối nội dung chính. */
+
   body[data-app-design="crafto"] #app-motion-toggle {position:static;display:flex;width:max-content;margin:8px auto 16px;min-height:40px;padding:10px 12px}
 }
 @media (max-width:480px) {

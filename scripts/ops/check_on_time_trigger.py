@@ -27,7 +27,7 @@ def fetch_dispatch_runs(
     fetch_page: Callable[[str], dict] | None = None,
 ) -> list[dict]:
     if fetch_page is None:
-        fetch_page = lambda url: _get_json(url, token)  # noqa: E731
+        fetch_page = lambda url: _get_json(url, token)
 
     collected: list[dict] = []
     for page in range(1, max_pages + 1):
@@ -79,9 +79,9 @@ def _get_json(url: str, token: str) -> dict:
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.load(response)
-    except urllib.error.HTTPError as exc:  # pragma: no cover - phụ thuộc mạng
+    except urllib.error.HTTPError as exc:
         raise RuntimeError(f"API trả về HTTP {exc.code}: {exc.read()[:200]!r}") from exc
-    except urllib.error.URLError as exc:  # pragma: no cover - phụ thuộc mạng
+    except urllib.error.URLError as exc:
         raise RuntimeError(f"Không gọi được API: {exc.reason}") from exc
 
 

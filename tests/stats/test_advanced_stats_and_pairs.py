@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from stats.advanced_stats import (  # noqa: E402
+from stats.advanced_stats import (
     compute_cycle_stats,
     compute_daily_nhay_stats,
     compute_frequency,
@@ -18,7 +18,7 @@ from stats.advanced_stats import (  # noqa: E402
     compute_overdue,
     compute_special_total_overdue,
 )
-from stats.pair_stats import (  # noqa: E402
+from stats.pair_stats import (
     compute_pair_frequency,
     compute_reversal_pair_cooccurrence,
 )

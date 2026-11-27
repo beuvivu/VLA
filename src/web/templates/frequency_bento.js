@@ -1,5 +1,3 @@
-/* Lớp trình bày cho hai trang tần suất. Bộ máy thống kê cung cấp phép đếm,
-   bộ lọc và danh tính ô. Các hàm mk, put, fill nằm cùng phạm vi script. */
 function installFrequencyBento(renderName) {
   const pairPage = renderName === "renderPairFrequency";
   const demo = !!window.__D_DEMO_DRAWS__;
@@ -22,7 +20,6 @@ function installFrequencyBento(renderName) {
         a.href = target.href;
       }
     });
-    // Minh họa lịch sử không thêm kỳ chờ của hôm nay.
     pendingDay = () => "";
   }
   const orientation = $("sp-orient");
@@ -84,7 +81,6 @@ function installFrequencyBento(renderName) {
       }
     });
   }
-  /** Một đường cho mỗi số, gộp tối đa 24 nhóm kỳ và dùng chung trần lượt/kỳ. */
   function drawRangeCharts(rows, counts) {
     syncOrientation();
     grid.classList.add("app-frequency-chart-matrix");
@@ -156,7 +152,6 @@ function installFrequencyBento(renderName) {
       mk("span", {class: "bf-kpi-icon", "aria-hidden": "true"}, icon),
       mk("span", {class: "bf-kpi-label"}, label),
       mk("strong", null, value),
-      // Dòng phụ in kết quả tính được thì khai để số trong câu có bằng chứng.
       mk("small", {"data-evidence-split": computed}, hint),
     ])));
     drawRangeCharts(rows, counts);
@@ -197,7 +192,6 @@ function installFrequencyBento(renderName) {
     if (pairPage && rows.length) filterPairs(rows);
     const first = Array.from(dataCells).find(c => c.cellIndex > 0 && !c.hidden && !c.parentElement.hidden);
     if (first) first.tabIndex = -1;
-    // Dải không có kỳ không đồng nghĩa với những lần không về.
     if (!rows.length || !first) {
       if (grid._spWindow) grid._spWindow.destroy();
       fill(grid, mk("tbody", null, mk("tr", null, mk("td", {class: "sp-empty-row"},
@@ -249,7 +243,6 @@ function installFrequencyBento(renderName) {
   }
   const render = () => {original();decorate();};
   window[renderName] = render;
-  // Hàm khởi động gắn bộ xử lý này riêng cho hai trang tần suất.
   bindColumnHint = () => {
     let tracked = [], active = null, touch = false;
     function clear() {

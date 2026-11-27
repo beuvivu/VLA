@@ -154,7 +154,7 @@ def build_http_client(settings: Settings) -> AsyncHttpClient:
                          max_retries=settings.max_retries)
         endpoint = os.getenv("VLM_FLARESOLVERR_URL")
         solver = FlareSolverrSolver(endpoint) if endpoint else None
-        return AsyncScraper(config, solver=solver)  # type: ignore[return-value]
+        return AsyncScraper(config, solver=solver)
     return AsyncHttpClient(
         timeout=settings.http_timeout_s,
         rate_limit_per_s=settings.rate_limit_per_s,

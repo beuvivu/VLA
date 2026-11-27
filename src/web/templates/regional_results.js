@@ -8,7 +8,6 @@
   const empty = document.getElementById("rg-filter-empty");
   if (!results || !date || !province || !reset) return;
 
-  // Chính bộ đánh dấu của Miền Bắc; khóa ô đã bao gồm tỉnh để không lẫn đài.
   const marks = window.TraditionalResults.createMarks(results, {
     pairMode: document.getElementById("rg-pair-mode"),
     clearButton: document.getElementById("rg-mark-clear"),

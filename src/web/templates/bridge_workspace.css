@@ -1,5 +1,3 @@
-/* Giao diện dùng chung cho cầu vị trí, bảy trang soi cầu và phôi tuần.
-   Giữ khung và bảng màu hiện tại, chỉ áp dụng trong các trang này. */
 body.app-analysis-page .ui-grid > .ui-c12 {grid-column:1/-1}
 body.app-analysis-page .ui-header.app-analysis-header {
   padding:0;margin-bottom:24px;border:0;border-radius:0;background:transparent;
@@ -19,7 +17,6 @@ body.app-analysis-page .ui-card-head h2 {font-size:16px;font-weight:750;letter-s
 body.app-analysis-page .ui-card-body:not(.ui-card-flush) {padding:22px;gap:14px}
 .app-analysis-caption {font-size:11px;font-weight:500;line-height:1.5;color:var(--ui-ink-soft)}
 
-/* Trường nhập rộng hết ô, cùng nhịp khoảng cách cho mọi bộ lọc soi cầu. */
 body.app-analysis-page :is(.app-cau-form,.app-bridge-form) {
   display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));
   align-items:end;gap:16px;padding:22px;margin:0;
@@ -46,7 +43,6 @@ body.app-analysis-page .app-cau-tabs {gap:8px;padding:18px 22px;border-bottom:1p
 body.app-analysis-page .app-cau-tabs a {min-height:40px;padding:8px 12px;font-size:12px;background:var(--ui-surface);line-height:1.4}
 body.app-analysis-page .app-cau-tabs a[aria-current=page] {background:var(--ui-brand);color:var(--ui-on-brand)}
 
-/* Chỉ số phản ánh bộ lọc đang chọn, kể cả khi xem lại kỳ trong quá khứ. */
 .app-cau-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0}
 .app-cau-metrics > div {padding:20px 22px;border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);
   background:var(--ui-surface);box-shadow:var(--ui-elevation);min-width:0}

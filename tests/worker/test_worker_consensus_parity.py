@@ -92,9 +92,9 @@ def test_python_and_javascript_consensus_agree_on_every_case(tmp_path: Path) -> 
 
     lech: list[str] = []
     for n, (case, js) in enumerate(zip(cases, javascript, strict=True)):
-        partials = [(name, pmap) for name, pmap in case["partials"]]  # type: ignore[misc]
+        partials = [(name, pmap) for name, pmap in case["partials"]]
         merged, meta = source_consensus_partial(
-            partials, min_agreement=case["min_agreement"]  # type: ignore[arg-type]
+            partials, min_agreement=case["min_agreement"]
         )
         left = json.dumps({"merged": merged, "meta": meta}, sort_keys=True, ensure_ascii=False)
         right = json.dumps(js, sort_keys=True, ensure_ascii=False)
@@ -109,9 +109,9 @@ def test_python_and_javascript_consensus_agree_on_every_case(tmp_path: Path) -> 
 def test_the_generated_cases_actually_reach_every_branch() -> None:
     verified = conflicted = tied = empty = 0
     for case in _cases():
-        partials = [(name, pmap) for name, pmap in case["partials"]]  # type: ignore[misc]
+        partials = [(name, pmap) for name, pmap in case["partials"]]
         _merged, meta = source_consensus_partial(
-            partials, min_agreement=case["min_agreement"]  # type: ignore[arg-type]
+            partials, min_agreement=case["min_agreement"]
         )
         if meta["verified_slots"]:
             verified += 1

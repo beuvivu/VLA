@@ -56,7 +56,7 @@ def test_invalid_tickets_are_rejected(mega_history: DrawHistory) -> None:
     class Bad(Strategy):
         name = "bad"
 
-        def generate(self, history, n_tickets, rng):  # noqa: ANN001
+        def generate(self, history, n_tickets, rng):
             return np.array([[1, 1, 2, 3, 4, 5]])
 
     with pytest.raises(LookAheadError):
@@ -91,7 +91,7 @@ def test_power_bonus_tier(power_history: DrawHistory) -> None:
         def __init__(self, target: int, full: DrawHistory) -> None:
             self.target, self.full = target, full
 
-        def generate(self, history, n_tickets, rng):  # noqa: ANN001
+        def generate(self, history, n_tickets, rng):
             nums = list(self.full.numbers[self.target][:5]) + [int(self.full.bonus[self.target])]
             return np.array([nums])
 

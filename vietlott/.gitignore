@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -10,14 +9,11 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
-# cấu hình máy cục bộ
 .env
 
-# lệnh tắt do bộ cài tạo
 /vietlott
 /vietlott.cmd
 
-# dữ liệu tạo ra khi chạy (dựng lại được từ data/seed + nguồn dữ liệu)
 data/*.duckdb*
 data/parquet/
 data/products/

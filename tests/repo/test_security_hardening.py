@@ -156,7 +156,7 @@ def test_duplicate_dates_in_canonical_json_fail_closed(tmp_path: Path) -> None:
     )
     lottery = Lottery(
         paths=RepoPaths(root=tmp_path, data_dir=data_dir, images_dir=tmp_path / "images"),
-        http=object(),  # type: ignore[arg-type]
+        http=object(),
         sources=[],
     )
     with pytest.raises(ValueError, match="duplicate draw dates"):

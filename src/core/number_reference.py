@@ -203,7 +203,7 @@ def all_cap_loto_50() -> tuple[frozenset[str], ...]:
 
 def kep_bong_pairs() -> tuple[tuple[str, str], ...]:
     return tuple(
-        tuple(sorted(cap_loto_50(f"{d}{d}")))  # type: ignore[arg-type]
+        tuple(sorted(cap_loto_50(f"{d}{d}")))
         for d in range(5)
     )
 

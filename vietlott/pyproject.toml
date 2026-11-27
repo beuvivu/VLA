@@ -67,8 +67,6 @@ target-version = "py311"
 src = ["src", "."]
 
 [tool.ruff.lint]
-# What CI enforces: real errors (undefined names, unused imports, late-binding closures).
-# Style rules (E, I, UP, ...) are not enforced; the maths code uses long lines and X, W1, ... names.
 select = ["F", "B023"]
 
 [tool.ruff.lint.isort]

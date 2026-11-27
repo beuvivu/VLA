@@ -33,10 +33,10 @@ def test_exclusive_markov_chain_rejects_ambiguous_numeric_types(
     kwargs: dict[str, object],
 ) -> None:
     with pytest.raises(ValueError):
-        build_markov_chain([0, 1], **kwargs)  # type: ignore[arg-type]
+        build_markov_chain([0, 1], **kwargs)
 
     with pytest.raises(ValueError, match="observations"):
-        build_markov_chain([0, 1.5])  # type: ignore[list-item]
+        build_markov_chain([0, 1.5])
 
 
 @pytest.mark.parametrize(

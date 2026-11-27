@@ -66,7 +66,7 @@ def test_lab_is_chronological_fdr_controlled_and_never_production_eligible():
     assert not table.empty
     assert report["research_only"] is True
     assert report["production_wired"] is False
-    assert (table["production_eligible"] == False).all()  # noqa: E712
+    assert (table["production_eligible"] == False).all()
     assert table["train_q_value_fdr"].between(0, 1).all()
     assert table["train_bonferroni_p"].between(0, 1).all()
     assert pd.Timestamp(report["train_end_date"]) < pd.Timestamp(report["validation_end_date"])

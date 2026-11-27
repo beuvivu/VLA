@@ -82,7 +82,7 @@ def test_consensus_discards_malformed_tokens_and_invalid_thresholds() -> None:
     assert meta["verified_slots"] == 0
     for invalid in (0, True, 1.5):
         with pytest.raises(ValueError, match="min_agreement"):
-            source_consensus_partial([], min_agreement=invalid)  # type: ignore[arg-type]
+            source_consensus_partial([], min_agreement=invalid)
 
 
 def test_slot_consensus_uses_priority_only_for_provisional_values() -> None:

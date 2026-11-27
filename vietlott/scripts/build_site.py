@@ -13,10 +13,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine import __version__  # noqa: E402
-from vlm.web.dashboard import build_dashboard  # noqa: E402
-from vietlott_engine.core.products import PRODUCT_INFO, ProductCode  # noqa: E402
-from vietlott_engine.forecast.engine import LEDGER, Forecaster, scoreboard, state_path, vn, vn_int  # noqa: E402
+from vietlott_engine import __version__
+from vlm.web.dashboard import build_dashboard
+from vietlott_engine.core.products import PRODUCT_INFO, ProductCode
+from vietlott_engine.forecast.engine import LEDGER, Forecaster, scoreboard, state_path, vn, vn_int
 
 THRESHOLD = 1.30103
 

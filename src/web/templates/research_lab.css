@@ -1,4 +1,3 @@
-/* Không gian nghiên cứu dùng token chung; dải tiêu đề luôn có nền tối. */
 .rl-lab{--rl-line:var(--ui-border);max-width:1440px;margin:auto;color:var(--ui-ink);font-size:14px;line-height:1.6}
 .rl-lab *{box-sizing:border-box}
 .rl-lab :is(section,article,details,[id]){scroll-margin-top:100px}

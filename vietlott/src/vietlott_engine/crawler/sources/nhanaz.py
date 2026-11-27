@@ -209,7 +209,7 @@ class NhanAZArchive:
 
     name = "nhanaz"
 
-    def __init__(self, client=None, base_url: str = NHANAZ_RAW_BASE, local_dir: Path | str | None = None) -> None:  # type: ignore[no-untyped-def]
+    def __init__(self, client=None, base_url: str = NHANAZ_RAW_BASE, local_dir: Path | str | None = None) -> None:
         self.client = client
         self.base_url = base_url.rstrip("/")
         self.root: Path | None = None

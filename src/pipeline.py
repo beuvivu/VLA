@@ -28,7 +28,7 @@ def _keep_committed_when_unchanged() -> None:
     try:
         restored = (keep_committed_when_only_stamps_changed(ROOT) + keep_committed_tables_when_only_noise_changed(ROOT)
                     + keep_committed_pages_when_only_stamps_changed(ROOT))
-    except Exception as exc:  # noqa: BLE001 - giữ sạch commit là việc phụ, không phải cổng
+    except Exception as exc:
         logging.warning("Không so được dấu giờ và nhiễu số thực với bản đã commit: %s", exc)
         return
     if restored:
@@ -40,7 +40,7 @@ def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> N
     logging.info("RUN: %s", " ".join(cmd))
     started = time.perf_counter()
     try:
-        proc = subprocess.run(  # noqa: S603
+        proc = subprocess.run(
             cmd, cwd=ROOT, env=_child_env(), check=False, timeout=timeout_s
         )
     except subprocess.TimeoutExpired as exc:

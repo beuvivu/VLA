@@ -143,7 +143,7 @@ def parse_product_rows(product: ProductCode, rows: list[dict], source: str) -> t
 
 def read_jsonl(path: Path) -> list[dict]:
     opener = gzip.open if str(path).endswith(".gz") else open
-    with opener(path, "rt", encoding="utf-8") as fh:  # type: ignore[operator]
+    with opener(path, "rt", encoding="utf-8") as fh:
         return [json.loads(line) for line in fh if line.strip()]
 
 

@@ -197,7 +197,7 @@ def test_digit_bias_is_detected_and_replicated() -> None:
     assert len(first) + len(second) == len(a)
 
 
-def _simulate_two_phase(days: int = 420, cs: float = 0.078, cf: float = 0.375, refund: float = 5.64e9, p_win: float = 0.012, seed: int = 7):  # type: ignore[no-untyped-def]
+def _simulate_two_phase(days: int = 420, cs: float = 0.078, cf: float = 0.375, refund: float = 5.64e9, p_win: float = 0.012, seed: int = 7):
     spec = LOTTO_535
     rng = np.random.default_rng(seed)
     d0 = date(2024, 1, 1)
@@ -261,7 +261,7 @@ def test_rolldown_forecast_phase_and_backtest() -> None:
     assert bt["cases"] >= 20 and bt["median_abs_error_draws"] <= 3 and bt["spearman_rho"] > 0.8
 
 
-def _client(handler) -> AsyncHttpClient:  # type: ignore[no-untyped-def]
+def _client(handler) -> AsyncHttpClient:
     async def no_sleep(_: float) -> None:
         return None
 
@@ -383,7 +383,7 @@ def test_sync_canonical_prizes_into_repository() -> None:
 
     repo = InMemoryRepository()
 
-    async def run():  # type: ignore[no-untyped-def]
+    async def run():
         async with _client(handler) as c:
             return await sync_canonical_prizes(c, repo, MEGA_645, source="canonical", canonical_base_url="https://c", vietlott_base_url="https://v")
 
@@ -393,7 +393,7 @@ def test_sync_canonical_prizes_into_repository() -> None:
 
 
 @pytest.fixture(scope="module")
-def api():  # type: ignore[no-untyped-def]
+def api():
     from fastapi.testclient import TestClient
 
     from vietlott_engine.api.main import create_app
@@ -404,14 +404,14 @@ def api():  # type: ignore[no-untyped-def]
         yield client
 
 
-def test_api_catalogue_covers_all_products(api) -> None:  # type: ignore[no-untyped-def]
+def test_api_catalogue_covers_all_products(api) -> None:
     rows = {r["code"]: r for r in api.get("/products").json()}
     assert set(rows) == {c.value for c in ProductCode}
     assert all(r["stored_draws"] > 500 for r in rows.values())
     assert rows["mega645"]["endpoints"] == "/games/mega645" and rows["keno"]["endpoints"] == "/products/keno"
 
 
-def test_api_product_endpoints(api) -> None:  # type: ignore[no-untyped-def]
+def test_api_product_endpoints(api) -> None:
     k = api.get("/products/keno/odds").json()
     assert len(k["bac"]) == 10 and k["side_bets"]
     assert len(api.get("/products/bingo18/odds").json()) == 23
@@ -452,7 +452,7 @@ def test_break_even_finds_first_crossing_with_convex_sales() -> None:
     t = [3, 9, 14, 22, 31, 38]
     be = calc.break_even_jackpot(t, tickets_sold=None)
     assert be is not None
-    sold = lambda j: int(ConvexSales().predict(j))  # noqa: E731
+    sold = lambda j: int(ConvexSales().predict(j))
     below = calc.evaluate_ev_only(t, be * 0.95, None, sold(be * 0.95))
     above = calc.evaluate_ev_only(t, be * 1.05, None, sold(be * 1.05))
     assert below < MEGA_645.ticket_price < above

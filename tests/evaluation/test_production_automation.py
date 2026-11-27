@@ -118,7 +118,7 @@ class _SameEvidenceForEveryDate(dict):
         super().__init__()
         self._item = item
 
-    def get(self, key, default=None):  # noqa: ARG002
+    def get(self, key, default=None):
         return self._item
 
 

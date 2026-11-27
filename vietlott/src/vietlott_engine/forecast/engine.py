@@ -186,7 +186,7 @@ def _evidence(draws: int, lw: float, mlw: float, window: dict | None = None) -> 
     found = valid and mlw >= thr
     if not valid:
         text = (
-            f"Không dùng làm bằng chứng: mô hình học từ {vn_int(window['last'])} kỳ cuối do người dùng chọn (--last). "  # type: ignore[index]
+            f"Không dùng làm bằng chứng: mô hình học từ {vn_int(window['last'])} kỳ cuối do người dùng chọn (--last). "
             "E-value chỉ hợp lệ khi điểm bắt đầu được định trước khi xem dữ liệu; chạy `forecast fit` không có --last để học toàn bộ lịch sử."
         )
     elif found:
@@ -199,7 +199,7 @@ def _evidence(draws: int, lw: float, mlw: float, window: dict | None = None) -> 
     return Evidence(draws=draws, log10_wealth=round(lw, 4), max_log10_wealth=round(mlw, 4), threshold_log10=round(thr, 4), anytime_p_value=float(min(1.0, 10 ** (-max(mlw, 0.0)))), found=found, valid=valid, text=text)
 
 
-def _jsonable(obj):  # type: ignore[no-untyped-def]
+def _jsonable(obj):
     if isinstance(obj, np.ndarray):
         return {"__nd__": obj.tolist(), "dtype": str(obj.dtype)}
     if isinstance(obj, dict):
@@ -211,7 +211,7 @@ def _jsonable(obj):  # type: ignore[no-untyped-def]
     return obj
 
 
-def _from_jsonable(obj):  # type: ignore[no-untyped-def]
+def _from_jsonable(obj):
     if isinstance(obj, dict):
         if "__nd__" in obj:
             return np.asarray(obj["__nd__"], dtype=obj.get("dtype", "float64"))
@@ -598,7 +598,7 @@ def _record_unlocked(directory: Path, rep: ForecastReport, pre_draw: bool = True
         "log10_wealth": rep.evidence.log10_wealth,
         "picks": {c.name: c.picks for c in rep.components},
         "ticket": next((c.set.ticket for c in rep.components if c.set is not None), None),
-        "top": {c.name: ([x.symbol for x in c.set.numbers[:10]] if c.set else [x.symbol for x in c.digit.top_numbers]) for c in rep.components},  # type: ignore[union-attr]
+        "top": {c.name: ([x.symbol for x in c.set.numbers[:10]] if c.set else [x.symbol for x in c.digit.top_numbers]) for c in rep.components},
         "score": None,
     }
     path = Path(directory) / LEDGER

@@ -42,14 +42,14 @@ def forecast_guard(directory: Path):
                 _LOCAL.held = held
 
 
-def model_config(settings) -> MLConfig:  # type: ignore[no-untyped-def]
+def model_config(settings) -> MLConfig:
     return MLConfig(bootstrap=settings.ml_bootstrap, tree_every=settings.ml_tree_every,
                     backends=tuple(settings.ml_backends), search_nodes=settings.ml_search_nodes,
                     adaptive=settings.ml_adaptive, multi_agent=settings.ml_multi_agent,
                     patterns=settings.ml_patterns)
 
 
-def directory_for(state) -> Path:  # type: ignore[no-untyped-def]
+def directory_for(state) -> Path:
     return Path(state.settings.forecast_dir or state.settings.data_dir / 'forecast')
 
 
@@ -348,7 +348,7 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
         return model, learned, summary
 
 
-async def refresh_models(state, product: str) -> dict:  # type: ignore[no-untyped-def]
+async def refresh_models(state, product: str) -> dict:
     code = get_product(product)
     directory = directory_for(state)
     def learn_latest():

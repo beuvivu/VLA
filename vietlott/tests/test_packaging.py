@@ -95,7 +95,7 @@ def test_audit_resolves_defaults_inside_the_project(tmp_path: Path, monkeypatch:
 
     seen: dict[str, Path] = {}
 
-    async def fake_run(args):  # type: ignore[no-untyped-def]
+    async def fake_run(args):
         seen["cwd"] = Path.cwd()
         seen["seed"] = args.seed_dir.resolve()
         return 0

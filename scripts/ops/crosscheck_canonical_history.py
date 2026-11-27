@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ingest.sources import (  # noqa: E402
+from ingest.sources import (
     EXPECTED_COUNTS,
     EXPECTED_WIDTHS,
     PRIZE_ORDER,

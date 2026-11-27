@@ -39,7 +39,7 @@ class OddsTable(BaseModel):
     note: str
 
 
-def _rule(spec: GameSpec, t) -> str:  # type: ignore[no-untyped-def]
+def _rule(spec: GameSpec, t) -> str:
     r = t.main_range()
     main = f"{r.start}" if len(r) == 1 else f"{r.start}–{r.stop - 1}"
     extra = "số đặc biệt" if spec.separate_special else "số phụ"

@@ -376,7 +376,7 @@ class BridgeScanner:
                         hits, sizes = self._evaluate_block(
                             forward, target, target_type, expand_bo=True
                         )
-                    else:  # pragma: no cover - đã chặn ở __init__
+                    else:
                         raise ValueError(transformation)
 
                     if transformation in (TRANSFORM_CONCAT, TRANSFORM_REVERSE_CONCAT):
@@ -462,7 +462,7 @@ class BridgeScanner:
             elif transformation == TRANSFORM_BO:
                 block = _BO_TABLE[forward][:, None, :]
                 size = _BO_SIZE[forward]
-            else:  # pragma: no cover - khung đã chặn từ __init__
+            else:
                 raise ValueError(transformation)
 
             members[:, slot, :] = block[:, 0, :]

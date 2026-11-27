@@ -22,7 +22,6 @@ export function setup({ narrow = false, hash = '', mediaThrows = false, beforeSh
   });
   dom.window.matchMedia = query => ({ matches: query.includes('max-width') && narrow });
   if (mediaThrows) dom.window.matchMedia = () => { throw new Error('media unavailable'); };
-  // JSDOM chưa có lớp modal native; giữ tác dụng open/close để kiểm thử mã điều khiển.
   dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   dom.window.HTMLDialogElement.prototype.close = function () {
     this.open = false;

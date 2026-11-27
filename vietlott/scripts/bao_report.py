@@ -9,9 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.games import LOTTO_535, MEGA_645, POWER_655, GameSpec  # noqa: E402
-from vietlott_engine.game_theory import max3d  # noqa: E402
-from vietlott_engine.game_theory.bao import analyse_bao, bao_catalog, bao_ev, bao_prize_table, compare_bao_strategies, fmt_vnd  # noqa: E402
+from vietlott_engine.core.games import LOTTO_535, MEGA_645, POWER_655, GameSpec
+from vietlott_engine.game_theory import max3d
+from vietlott_engine.game_theory.bao import analyse_bao, bao_catalog, bao_ev, bao_prize_table, compare_bao_strategies, fmt_vnd
 
 OUT = Path(os.environ.get("VQE_REPORTS_DIR") or ROOT / "reports")
 

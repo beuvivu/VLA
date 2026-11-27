@@ -216,7 +216,7 @@ def _build_positions_for_mode(
 
     rows: list[dict[str, object]] = []
     for kind in ("active", "stable"):
-        view = _filter_kind(all_paths, params, kind)  # type: ignore[arg-type]
+        view = _filter_kind(all_paths, params, kind)
         if view.empty:
             continue
 

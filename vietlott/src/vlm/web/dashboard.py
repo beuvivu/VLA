@@ -148,11 +148,11 @@ def prize_coverage(code: ProductCode, tickets: list[list[int]], specials: int) -
             'shared_special_prize': 1 - none_plain * (1 - 1 / pool), 'one_ticket_prize': float(game.p_any_prize)}
 
 
-def _covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-untyped-def]
+def _covered(code: ProductCode, name: str, spec) -> bool:
     return name == 'main' and isinstance(spec, SetSpec) and code.value in GAMES
 
 
-def _special_covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-untyped-def]
+def _special_covered(code: ProductCode, name: str, spec) -> bool:
     return name == 'special' and isinstance(spec, DigitSpec) and spec.positions == 1 and code.value in GAMES
 
 

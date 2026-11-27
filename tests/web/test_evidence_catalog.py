@@ -309,7 +309,7 @@ def test_raw_cau_keo_inputs_get_their_own_derivation_not_the_score_formula() -> 
 
 def test_ledger_actual_results_and_scores_are_not_explained_as_simulated_draws() -> None:
     sections = {s.get("match"): s for s in registry("index.html")["sections"]}
-    steps = lambda m: " ".join(sections[m]["reasoningTrace"]["steps"])  # noqa: E731
+    steps = lambda m: " ".join(sections[m]["reasoningTrace"]["steps"])
     actual = steps(".fun-ledger td[data-col='actual']")
     assert "sổ kết quả" in actual and "Rút" not in actual
     loto = steps(".fun-ledger td[data-col='loto']")

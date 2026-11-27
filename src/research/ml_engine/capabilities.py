@@ -30,7 +30,7 @@ def _load(name: str) -> ModuleType | None:
         for submodule in _SUBMODULES.get(name, ()):
             importlib.import_module(f"{name}.{submodule}")
         return module
-    except Exception as error:  # pragma: no cover - phụ thuộc môi trường
+    except Exception as error:
         LOGGER.debug("Không nhập được %s: %s", name, error)
         return None
 

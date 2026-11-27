@@ -138,7 +138,7 @@ def test_the_model_finds_a_planted_special_prize_signal() -> None:
     feats = build_features(history, "de", FeatureParams())
     hit = history.hits("de")
     T = len(history)
-    model = lambda: BayesianLGBModel("de", replace(ModelConfig(), threads=2))  # noqa: E731
+    model = lambda: BayesianLGBModel("de", replace(ModelConfig(), threads=2))
     res = backtest.run(model, feats.X, hit, T - 300, T - 1, refit_every=150)
     report = backtest.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
                                 np.full(res.probs.shape, 0.01))

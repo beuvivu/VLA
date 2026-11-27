@@ -17,11 +17,11 @@ def _row(did: int, values: list[str] | None = None) -> dict:
 class _Pipeline(ProductSyncPipeline):
 
     def __init__(self, store: ProductStore, served: dict[str, list[dict]], order: list[str]) -> None:
-        super().__init__(None, store, vietlott_base_url="https://v", mirror_base_url="https://m",  # type: ignore[arg-type]
+        super().__init__(None, store, vietlott_base_url="https://v", mirror_base_url="https://m",
                          canonical_base_url="https://c", fallback_order=order)
         self.served = served
 
-    async def fetch(self, product, source, max_pages, full):  # type: ignore[no-untyped-def,override]
+    async def fetch(self, product, source, max_pages, full):
         return [dict(r) for r in self.served[source]]
 
 
@@ -36,7 +36,7 @@ def _values(store: ProductStore, did: int) -> list[str]:
     return [f"{int(v):03d}" for v in h.values[list(h.draw_ids).index(did)]]
 
 
-def _run(store: ProductStore, served: dict[str, list[dict]], source: str, order: list[str], full: bool = False):  # type: ignore[no-untyped-def]
+def _run(store: ProductStore, served: dict[str, list[dict]], source: str, order: list[str], full: bool = False):
     return asyncio.run(_Pipeline(store, served, order).run(ProductCode.MAX3D, source, full=full))
 
 

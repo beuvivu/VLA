@@ -24,7 +24,7 @@ class Strategy(ABC):
     refit_every: int = 1
     min_history: int = 1
 
-    def fit(self, history: DrawHistory) -> None:  # noqa: B027 - optional hook
+    def fit(self, history: DrawHistory) -> None:
         pass
 
     @abstractmethod

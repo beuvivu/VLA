@@ -63,11 +63,8 @@ test('A finished draw moves the block to the next draw date', async t => {
   const urls = [];
   const {d} = setup(t, async url => { urls.push(url); return csv('number\n31'); });
   const api = d.defaultView.LivePredictions;
-  // Đang quay: vẫn là số của chính kỳ ấy.
   await api.loadForDraw('2026-10-07', 'partial');
   assert.equal(d.querySelector('time').dateTime, '2026-10-07');
-  // Quay xong (kể cả qua cuối tháng/năm): số của kỳ kế tiếp.
-  // Mọi trạng thái hoàn tất mà hai nguồn trực tiếp thật sự ghi ra.
   for (const [status, draw, next] of [['complete_verified', '2026-10-07', '2026-10-08'], ['complete_provisional', '2026-10-31', '2026-11-01'], ['complete_conflict', '2026-12-31', '2027-01-01'], ['complete', '2026-10-09', '2026-10-10']]) {
     await api.loadForDraw(draw, status);
     assert.equal(d.querySelector('time').dateTime, next);
@@ -91,7 +88,6 @@ test('Each number is a button that opens that number in the scorecard of the sam
   d.querySelector('[data-prediction-mode="loto"] [data-prediction-number="78"]').click();
   d.querySelector('[data-prediction-mode="de"] [data-prediction-number="65"]').click();
   assert.deepEqual(calls, [['2026-10-23', 'loto', '78'], ['2026-10-23', 'de', '65']]);
-  // Không có bảng đối chiếu trên trang: bấm không lỗi (lỗi trong trình xử lý chỉ hiện ở sự kiện error).
   const errors = [];
   d.defaultView.addEventListener('error', e => errors.push(e.error));
   delete d.defaultView.LiveScorecard;
@@ -107,10 +103,8 @@ test('Kỳ kế tiếp bỏ ngày nghỉ quay của bảng đối chiếu, và c
   assert.equal(d.querySelector('time').dateTime, '2026-10-10', 'Tết: 08 và 09/10 không quay');
   assert.ok(urls.every(u => u.endsWith('_top10_2026-10-10.csv')), urls.join(' '));
   assert.match(d.querySelector('[data-prediction-mode="de"] p').textContent, /Đang chờ tính dự đoán cho kỳ này/);
-  // Đang quay: chính kỳ ấy, thiếu số thì vẫn là «Chưa có».
   await w.LivePredictions.loadForDraw('2026-10-10', 'partial');
   assert.match(d.querySelector('[data-prediction-mode="de"] p').textContent, /^Chưa có dự đoán/);
-  // Lịch đọc hỏng: coi như không có ngày nghỉ.
   w.LiveScorecard = {closedDays: () => Promise.reject(new Error('mạng'))};
   await w.LivePredictions.loadForDraw('2026-10-07', 'complete_verified');
   assert.equal(d.querySelector('time').dateTime, '2026-10-08');
@@ -121,7 +115,6 @@ test('Lịch nghỉ đọc chậm: lượt live.json mới hơn thắng, lượt
   let release;
   w.LiveScorecard = {closedDays: () => new Promise(resolve => { release = () => resolve(new Set()); })};
   const old = w.LivePredictions.loadForDraw('2026-10-07', 'complete_verified');
-  // Trong lúc chờ lịch, live.json sang kỳ 09/10 đang quay; lượt cũ (sẽ ra 08/10) không được đè.
   await w.LivePredictions.loadForDraw('2026-10-09', 'partial');
   release();
   await old;

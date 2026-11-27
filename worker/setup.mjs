@@ -1,21 +1,3 @@
-#!/usr/bin/env node
-// Bộ cài đặt MỘT LỆNH cho Worker đúng giờ.
-//
-//   cd worker && npm run setup
-//
-// Việc của bạn chỉ còn: có tài khoản Cloudflare (miễn phí, không cần thẻ).
-// Kịch bản này lo phần còn lại và KHÔNG bắt bạn chép–dán gì cả:
-//
-//   1. đăng nhập Cloudflare nếu chưa
-//   2. tạo kho KV, tự đọc id, tự điền vào wrangler.toml
-//   3. triển khai Worker và tự đọc địa chỉ
-//   4. tự điền địa chỉ vào docs/live.html
-//   5. tự điền REST endpoint vào trang Sổ kết quả
-//   6. gọi thử /health, /live.json và API để xác minh
-//
-// Chạy lại nhiều lần đều an toàn: bước nào đã xong thì bỏ qua.
-// Thêm `--dry-run` để xem nó ĐỊNH làm gì mà không đụng vào đâu.
-
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -60,12 +42,8 @@ function wrangler(args, { capture = true } = {}) {
   return { code: result.status, output };
 }
 
-// --- 1. Đăng nhập ----------------------------------------------------------
-
 heading("Kiểm tra đăng nhập Cloudflare");
 if (DRY) {
-  // Thử khô KHÔNG gọi wrangler: nó sẽ tải về ~30 MB và cần mạng. Phép kiểm
-  // chạy đúng nhánh này trong CI, nên nó phải hermetic và nhanh.
   note("(thử khô) sẽ kiểm `wrangler whoami`, mở trình duyệt đăng nhập nếu cần");
 } else {
   const who = wrangler(["whoami"]);
@@ -80,8 +58,6 @@ if (DRY) {
   }
 }
 
-// --- 2. Kho KV -------------------------------------------------------------
-
 heading("Kho KV (nơi cất ảnh chụp giữa hai lượt cron)");
 {
   const toml = readFileSync(WRANGLER_TOML, "utf-8");
@@ -92,7 +68,6 @@ heading("Kho KV (nơi cất ảnh chụp giữa hai lượt cron)");
   } else {
     let created = wrangler(["kv", "namespace", "create", "LIVE"]);
     if (created.code !== 0 && /unknown argument|did you mean/i.test(created.output)) {
-      // Wrangler cũ dùng cú pháp hai chấm. Tự thử, không bắt người dùng đoán.
       note("wrangler bản cũ — thử lại với cú pháp kv:namespace");
       created = wrangler(["kv:namespace", "create", "LIVE"]);
     }
@@ -102,8 +77,6 @@ heading("Kho KV (nơi cất ảnh chụp giữa hai lượt cron)");
     ok(`đã tạo kho KV và điền id vào wrangler.toml (${id.slice(0, 8)}…)`);
   }
 }
-
-// --- 3. Triển khai ---------------------------------------------------------
 
 heading("Triển khai Worker");
 let workerUrl = null;
@@ -117,8 +90,6 @@ let workerUrl = null;
     ok(`đã triển khai: ${workerUrl}`);
   }
 }
-
-// --- 4. Trỏ trang live vào Worker -----------------------------------------
 
 heading("Trỏ docs/live.html vào Worker");
 {
@@ -134,26 +105,21 @@ heading("Trỏ docs/live.html vào Worker");
   }
 }
 
-// --- 5. Xác minh -----------------------------------------------------------
-
 heading("Gọi thử để xác minh");
 if (DRY) {
   note("(thử khô) sẽ gọi /health, /live.json và REST API Sổ kết quả");
 } else {
-  // Worker vừa lên có thể cần vài giây để lan ra biên.
   let health = null;
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     try {
       const response = await fetch(`${workerUrl}/health`, { cache: "no-store" });
       if (response.ok) { health = await response.json(); break; }
-    } catch { /* chưa lan tới, thử lại */ }
+    } catch {   }
     await new Promise((r) => setTimeout(r, attempt * 1500));
   }
   if (!health) fail(`Worker chưa trả lời tại ${workerUrl}/health`);
   ok(`/health trả lời: ok=${health.ok}, đã có ảnh chụp=${health.has_snapshot}`);
 
-  // Lượt yêu cầu không còn thu thập (chỉ cron gọi nguồn), nên Worker vừa triển khai trả 503
-  // cho tới lượt cron đầu trong khung quay số. Đó là trạng thái chờ, không phải lỗi cài đặt.
   note("đang đọc ảnh chụp của Worker để kiểm đường ra nguồn…");
   try {
     const response = await fetch(`${workerUrl}/live.json`, { cache: "no-store" });
@@ -164,9 +130,6 @@ if (DRY) {
     } else {
       const snap = await response.json();
       const rows = snap.source_status || [];
-      // Bản chụp công khai đã ẩn danh nguồn: không còn `error`, chỉ còn cờ
-      // `failed`. Đọc `r.error` thì mọi hàng đều tính là sống, và cảnh báo
-      // "không nguồn nào trả lời" sẽ KHÔNG BAO GIỜ hiện ra.
       const alive = rows.filter((r) => !r.failed).length;
       ok(`${alive}/${rows.length} nguồn trả lời được`);
       if (rows.length > 0 && alive === 0) {
@@ -194,8 +157,6 @@ if (DRY) {
     note(`chưa gọi được API Sổ kết quả (${error.message}) — thử lại sau vài phút`);
   }
 }
-
-// --- Xong ------------------------------------------------------------------
 
 say("");
 if (DRY) {

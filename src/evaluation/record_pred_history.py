@@ -153,7 +153,7 @@ def main() -> None:
         components = {
             key: probability_component(
                 frame,
-                mode=mode,  # type: ignore[arg-type]
+                mode=mode,
                 expected_target_date=target,
                 expected_anchor_date=anchor,
             )

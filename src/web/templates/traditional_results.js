@@ -27,30 +27,12 @@
   let current = [];
   let shown = 0;
 
-  // Dựng dần thay vì dựng hết một lượt.
-  //
-  // Đo trên Chromium máy bàn: 2 399 kỳ sinh 545 060 nút DOM và mất 2 622 ms
-  // để dựng — trên điện thoại tầm trung con số ấy còn tệ hơn nhiều lần. Bộ
-  // lọc vẫn chọn TRỌN khoảng (và xuất file vẫn xuất trọn), chỉ phần hiển thị
-  // là dựng theo lô.
-  //
-  //     30 kỳ      6 811 nút     68 ms
-  //    300 kỳ     68 178 nút    347 ms
-  //  1 000 kỳ    227 227 nút  1 091 ms
-  //  2 399 kỳ    545 060 nút  2 622 ms
   const PAGE_SIZE = 100;
 
   const ALL = embedded.rows.map((row) => decode(row,
     typeof row === "string" ? embedded.draw_metadata?.[row.slice(0, 10)] : undefined))
     .filter((draw) => draw !== null);
   const { paintMarks } = shared.createMarks(resultsNode, { pairMode, clearButton });
-
-  // ---- Chọn khoảng ------------------------------------------------------
-  //
-  // Mốc nhanh đếm theo SỐ KỲ chứ không theo ngày lịch. XSMB nghỉ quay dịp Tết
-  // và đợt giãn cách 2020, nên "lùi 30 ngày lịch" có thể chỉ ra 27 kỳ — và
-  // người xem không hiểu vì sao chọn 30 lại được 27. Đếm theo kỳ thì luôn ra
-  // đúng số đã chọn, chừng nào lịch sử còn đủ.
 
   function selectRange() {
     if (period.value === "custom") {
@@ -67,17 +49,6 @@
     return Number.isFinite(amount) && amount > 0 ? ALL.slice(0, amount) : ALL.slice(0, 30);
   }
 
-  /** Lọc thứ CHẠY SAU khi đã chốt khoảng, không phải trước.
-   *
-   *  Thứ tự này là một lựa chọn có hệ quả thấy được, nên nói rõ: yêu cầu là
-   *  "hiển thị sổ kết quả của riêng các ngày Thứ 2 TRONG KHOẢNG THỜI GIAN ĐÃ
-   *  CHỌN". Vậy khoảng là cái được chốt trước, thứ lọc bên trong nó.
-   *
-   *  Hệ quả: chọn "30 kỳ gần nhất" + "Thứ hai" thì ra khoảng 4 kỳ, không phải
-   *  30 kỳ thứ Hai. Con số ấy đúng theo định nghĩa trên nhưng dễ làm người xem
-   *  ngỡ ngàng, nên dòng trạng thái phải nói rõ đã lọc từ bao nhiêu kỳ —
-   *  xem `statusLine()`. Im lặng ở đây mới là cái sai.
-   */
   function selectRows() {
     const rows = selectRange();
     if (weekday.value === "all") return rows;
@@ -86,8 +57,6 @@
     return rows.filter((draw) => weekdayOf(draw.date) === want);
   }
 
-  /** Nhãn của thứ đang chọn, lấy thẳng từ ô chọn để không phải chép danh sách
-   *  tên thứ lần thứ hai ở đây. */
   function weekdayLabel() {
     return weekday.options[weekday.selectedIndex]?.textContent || "";
   }
@@ -96,8 +65,6 @@
     const first = ALL.at(-1)?.date;
     const last = ALL[0]?.date;
     if (!first) return "Chưa nạp được dữ liệu nào.";
-    // Rỗng vì lọc thứ là chuyện khác hẳn với rỗng vì khoảng sai, và phải nói
-    // khác nhau. `selectRange()` có kỳ mà kết quả rỗng thì thủ phạm là ô thứ.
     if (weekday.value !== "all") {
       let inRange = 0;
       try { inRange = selectRange().length; } catch { inRange = 0; }
@@ -107,9 +74,6 @@
       }
     }
     if (period.value !== "custom") return "Hãy chọn khoảng khác.";
-    // Nói rõ vì sao rỗng. Bản trước chỉ hiện "Chưa có kết quả trong khoảng đã
-    // chọn", đọc như thể hôm ấy không quay — trong khi thật ra ngày đã chọn
-    // nằm ngoài dải dữ liệu.
     if (toInput.value < first || fromInput.value > last) {
       return `Khoảng đã chọn nằm ngoài dải dữ liệu. Sổ hiện có từ `
         + `${formatDate(first)} đến ${formatDate(last)}.`;
@@ -131,7 +95,6 @@
       + ` (còn ${current.length - shown})`;
   }
 
-  /** Dựng nốt phần còn lại — dùng trước khi in, vì trình duyệt chỉ in thứ đã có. */
   function renderEverything() {
     if (shown < current.length) appendPage(current.length - shown);
   }
@@ -153,14 +116,12 @@
     statusNode.dataset.state = "ready";
   }
 
-  /** Khi có lọc thứ, nói luôn đã lọc từ bao nhiêu kỳ — nếu không, "4 kỳ"
-   *  sau khi chọn "30 kỳ gần nhất" trông như trang bị hỏng. */
   function statusLine() {
     if (weekday.value === "all") {
       return `Đang hiển thị ${current.length} kỳ trong tổng số ${ALL.length} kỳ đã lưu.`;
     }
     let inRange = current.length;
-    try { inRange = selectRange().length; } catch { /* giữ nguyên */ }
+    try { inRange = selectRange().length; } catch {   }
     return `Đang hiển thị ${current.length} kỳ ${weekdayLabel()}, lọc từ `
       + `${inRange} kỳ của khoảng đã chọn (tổng kho ${ALL.length} kỳ).`;
   }
@@ -177,8 +138,6 @@
     }
   }
 
-  // ---- Tuỳ chọn hiển thị ------------------------------------------------
-
   function applyLayout() {
     const picked = form.parentElement.querySelector('input[name="tr-layout"]:checked');
     resultsNode.dataset.layout = picked ? picked.value : "1";
@@ -189,8 +148,6 @@
     resultsNode.dataset.loto = toggleLoto.checked ? "on" : "off";
     resultsNode.dataset.tail = toggleTail.checked ? "on" : "off";
   }
-
-  // ---- Xuất dữ liệu -----------------------------------------------------
 
   function exportRows() {
     const rows = [["Ngày", "Khu vực", "Giải", "Thứ tự", "Kết quả"]];
@@ -226,8 +183,6 @@
     download(new Blob([text], { type: "text/csv;charset=utf-8" }), "csv");
   }
 
-  // Trình tạo ZIP tối thiểu (store/no compression) để xuất một tệp OOXML
-  // .xlsx thật, không dùng CDN và không vi phạm CSP của GitHub Pages.
   const encoder = new TextEncoder();
   const crcTable = (() => {
     const table = new Uint32Array(256);
@@ -346,12 +301,6 @@
     }), "xlsx");
   }
 
-  // ---- Mở từ liên kết cầu ------------------------------------------------
-  //
-  // `?ngay=YYYY-MM-DD&vt=AxB` (trang Live, khung chi tiết cầu): mở đúng kỳ ấy và tô hai vị trí chữ số
-  // ghép thành số của cầu (shared_results.js, markBridge). Kỳ không có trong sổ hay vị trí sai thì bỏ
-  // qua, trang hiện như mặc định. Dấu tô khoá theo DỮ LIỆU nên còn nguyên khi danh sách dựng lại; kỳ
-  // ấy bị bộ lọc ẩn thì dòng báo nói rõ.
   const { markBridge, clearBridge, positionLabel } = shared;
   let bridge = null;
   let bridgeStatus = null;
@@ -397,8 +346,6 @@
     resultsNode.parentNode.insertBefore(note, resultsNode);
   }
 
-  // ---- Nối sự kiện ------------------------------------------------------
-
   period.addEventListener("change", () => {
     customDates.hidden = period.value !== "custom";
     refresh();
@@ -418,8 +365,6 @@
   document.getElementById("tr-export-xlsx").addEventListener("click", exportXlsx);
   moreButton.addEventListener("click", () => appendPage(PAGE_SIZE));
   document.getElementById("tr-print").addEventListener("click", () => {
-    // In thì phải có đủ. Không dựng nốt thì bản in chỉ có lô đầu tiên, mà
-    // trên giấy thì không ai thấy được là đang thiếu.
     renderEverything();
     window.print();
   });

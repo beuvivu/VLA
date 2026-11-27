@@ -30,7 +30,7 @@ def test_the_browser_job_can_import_what_its_pytest_step_imports_without_the_ana
     blocker = "; ".join(f"sys.modules[{blocked!r}] = None" for blocked in NOT_IN_BROWSER_JOB)
     imports = "; ".join(f"importlib.import_module({module!r})" for module in modules)
     code = f"import importlib, sys; sys.path.insert(0, 'src'); {blocker}; {imports}"
-    result = subprocess.run(  # noqa: S603 — lệnh dựng từ hằng của chính phép kiểm
+    result = subprocess.run(
         [sys.executable, "-c", code], check=False, cwd=ROOT, capture_output=True, text=True, timeout=120
     )
     assert result.returncode == 0, f"{modules}: " + result.stderr[-2000:]

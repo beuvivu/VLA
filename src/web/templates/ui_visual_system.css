@@ -1,19 +1,14 @@
-/* Final shared visual layer. Preserve all existing IDs, classes and states. */
 :root {
   --ui-page-max:1280px;
   --ui-page-gutter:clamp(16px,2.5vw,32px);
-  /* Nền: quầng sáng + dải chuyển lên trắng, theo đúng mẫu đo được của trang
-     tham chiếu. Ba lớp xếp từ trên xuống: lớp trắng làm nhẹ phần đầu trang,
-     hai quầng lấy màu #2946f3 và #724ade, rồi nền phẳng #f0f4fd đỡ bên dưới. */
+
   --ui-canvas:linear-gradient(to top,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 46%),
     radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.13),transparent 62%),
     radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.11),transparent 64%),
     linear-gradient(180deg,#f0f4fd 0%,#eaedff 100%);
   --ui-glass:color-mix(in srgb,var(--ui-surface) 88%,transparent);
   --ui-glass-border:color-mix(in srgb,var(--ui-surface) 76%,var(--ui-border));
-  /* Bóng đen 8% toả rộng, không lệch — dấu hiệu nhận ra của trang tham chiếu.
-     Bản trước dùng bóng hai lớp ám lạnh; nó tách bề mặt khỏi nền rõ hơn nhưng
-     cho cảm giác "cứng" hơn hẳn. */
+
   --ui-elevation:0 0 25px rgba(0,0,0,.08);
   --ui-elevation-hover:0 20px 60px rgba(0,0,0,.08);
   --ui-r-lg:16px;
@@ -43,7 +38,7 @@ body[data-ui-page] {
   font-family:var(--ui-font);
   -webkit-font-smoothing:antialiased;
 }
-/* Mọi họ trang kế thừa token từ html; bảng dữ liệu dùng cặp màu trạng thái. */
+
 body[data-ui-page] :is(.ui-shell,.ui-shell-wide,.path-shell),
 body[data-ui-page].live-console>.wrap,
 body[data-ui-page] .app>.main {
@@ -65,15 +60,13 @@ body[data-ui-page] :is(.ui-card,.card,.metric-card,.sp-controls,.sp-kpi-card,
   transition:box-shadow var(--ui-dur,.3s) var(--ui-ease-out,ease),
     transform var(--ui-dur,.3s) var(--ui-ease-out,ease);
 }
-/* Bề mặt nâng lên khi trỏ vào: bóng đổi từ mức toả gần sang mức toả xa, đúng
-   cặp giá trị của trang tham chiếu (0 0 25px -> 0 20px 60px, cùng đen 8%).
-   Nhấc 2px chứ không nhấc nhiều: bảng số nhảy theo con trỏ thì khó đọc. */
+
 @media (hover:hover) and (prefers-reduced-motion:no-preference) {
   body[data-ui-page] :is(.ui-card,.card,.metric-card,.bf-card,.tr-day):hover {
     box-shadow:var(--ui-elevation-hover);transform:translateY(-2px);
   }
 }
-/* Nested controls share the parent card rather than drawing a second card. */
+
 body.bf-page[data-ui-page] .sp-controls {background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
 body[data-ui-page] :is(.ui-header,.path-hero,.live-hero) {
   padding:24px;margin-bottom:24px;border-radius:var(--ui-r-xl);
@@ -103,7 +96,7 @@ body[data-ui-page] :is(.ui-table,.ui-table-wrap>table) th {
 body[data-ui-page] :is(.ui-table,.ui-table-wrap>table) tbody tr:nth-child(even) {background:var(--ui-surface-2)}
 body[data-ui-page] :is(.ui-table,.ui-table-wrap>table) tbody tr:hover {background:var(--ui-brand-soft)}
 body[data-ui-page] .sp-table thead th:not(.col-hint) {background:var(--ui-surface-2);color:var(--ui-ink-2)}
-/* Calendar cells have no row heading: all seven weekdays use the same rules. */
+
 body[data-ui-page="bang-dac-biet"] #sp-grid :is(th,td) {text-align:center;vertical-align:middle}
 body[data-ui-page="bang-dac-biet"] #sp-grid td {height:64px;padding:10px 8px}
 body[data-ui-page="bang-dac-biet"] #sp-grid .sp-fields {font-size:11px;line-height:1.45}
@@ -115,8 +108,7 @@ body[data-ui-page] input[type="checkbox"] {accent-color:var(--ui-brand)}
 body[data-ui-page] :is(.sp-chip,.sp-btn,.sp-controls select,.sp-controls input:not([type="checkbox"]),
   .ui-tab,.ui-btn) {min-height:36px}
 body[data-ui-page] :is(.sp-chip,.sp-btn,.ui-btn,.tr-btn,.bf-tabs a,.ui-tab) {
-  /* .3s là nhịp đếm được nhiều nhất ở trang tham chiếu (107 lần), và
-     cubic-bezier(.37,0,.63,1) là đường cong "vào" của họ. */
+
   transition:background-color var(--ui-dur,.3s) var(--ui-ease-out,ease),
     border-color var(--ui-dur,.3s) var(--ui-ease-out,ease),
     box-shadow var(--ui-dur,.3s) var(--ui-ease-out,ease),
@@ -135,7 +127,7 @@ body[data-ui-page] .sp-lg-item {background:var(--ui-surface);border-color:var(--
 body[data-ui-page] .sp-lg-val {background:var(--ui-brand-soft);color:var(--ui-brand-ink)}
 body[data-ui-page] .sp-note {background:var(--ui-warn-soft);border-color:var(--ui-warn-border);color:var(--ui-warn)}
 body[data-ui-page] .sp-fields-toggle {background:var(--ui-surface-2)}
-/* Readable secondary labels and identical colors in matrix and legend. */
+
 body.bf-page[data-ui-page] :is(.bf-kpi small,.bf-card-heading>span,.bf-matrix-footer,
   .bf-matrix-footer [role="status"],.bf-summary .sp-cell i,.bf-ranking th,
   .bf-pair-grid button,.bf-tabs a,.bf-step) {color:var(--ui-ink-soft)}
@@ -170,8 +162,6 @@ body[data-ui-page] [hidden] {display:none!important}
   body[data-ui-page] :is(.sp-scroll,.ui-table-wrap,.path-table-scroll) {max-height:none;overflow:visible}
 }
 
-/* Nexlink là lớp trình bày chung. Nền chuyển sắc đã được chọn trước đây
-   chỉ dành cho trang chủ; màu ô số và bố cục bảng giữ hợp đồng dữ liệu. */
 body[data-ui-page]{
   --ui-page-max:1440px;--ui-page-gutter:24px;
   --ui-r-lg:10px;--ui-r-xl:10px;
@@ -215,7 +205,6 @@ body[data-ui-page] .app-main :is(.ui-table-wrap,.table-wrap,.sp-scroll){scrollba
 }
 @media(max-width:360px){body[data-ui-page] .metric-row{grid-template-columns:minmax(0,1fr)}}
 
-/* Hero thống kê nằm ngoài .main; dùng cùng token với mọi trang con. */
 body[data-ui-page="statistics"] :is(.hero,.section){
   background:var(--ui-surface);color:var(--ui-ink);
   border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);box-shadow:var(--ui-elevation);

@@ -32,7 +32,7 @@ def _money(text: str) -> int | None:
     return int(digits) if len(digits) >= 6 else None
 
 
-def _jackpots(table) -> tuple[int | None, int | None]:  # type: ignore[no-untyped-def]
+def _jackpots(table) -> tuple[int | None, int | None]:
     stats = table.find_next("table")
     if stats is None or "trunggiai" not in (stats.get("class") or []):
         return None, None
@@ -49,7 +49,7 @@ def _jackpots(table) -> tuple[int | None, int | None]:  # type: ignore[no-untype
     return jp1, jp2
 
 
-def _draw(spec: GameSpec, table) -> Draw | None:  # type: ignore[no-untyped-def]
+def _draw(spec: GameSpec, table) -> Draw | None:
     head = table.find(class_="kmt")
     link = head.find("a", href=True) if head else None
     day = _DATE_IN_LINK.search(link["href"]) if link else None

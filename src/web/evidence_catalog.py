@@ -222,11 +222,11 @@ def _ev(sources: list[Source], steps: list[str], confidence: float | None = None
 
 
 def _sec(match: str, title: str, ev: Evidence) -> Section:
-    return {"match": match, "title": title, **ev}  # type: ignore[typeddict-item]
+    return {"match": match, "title": title, **ev}
 
 
 def _sec_heading(heading: str, title: str, ev: Evidence) -> Section:
-    return {"heading": heading, "title": title, **ev}  # type: ignore[typeddict-item]
+    return {"heading": heading, "title": title, **ev}
 
 
 def ml_summary_evidence(mode: str) -> Section:
@@ -596,8 +596,8 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
 
 
 def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
-    tk = lambda *extra: (_thong_ke(f, *extra), [])  # noqa: E731
-    cau = lambda *extra: (_cau(f, *extra), [])  # noqa: E731
+    tk = lambda *extra: (_thong_ke(f, *extra), [])
+    cau = lambda *extra: (_cau(f, *extra), [])
     home = _trang_chu(f)
     return {
         "index.html": home,

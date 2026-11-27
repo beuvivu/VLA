@@ -12,15 +12,15 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from stats.randomness_battery import (  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from stats.randomness_battery import (
     DEFAULT_SIMULATIONS,
     lag1_mutual_information,
     minimum_detectable_lift,
     run_battery,
     simulate_draws,
 )
-from core.xsmb_domain import baseline_rate  # noqa: E402
+from core.xsmb_domain import baseline_rate
 
 HYPOTHESIS_FAMILIES: tuple[tuple[str, int], ...] = (
     ("một mô hình duy nhất", 1),

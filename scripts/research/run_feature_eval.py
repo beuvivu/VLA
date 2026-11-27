@@ -12,9 +12,9 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from soi_cau.features import FeatureContext, default_registry  # noqa: E402
-from core.xsmb_domain import LOTO_DRAWS_PER_DAY, baseline_rate  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from soi_cau.features import FeatureContext, default_registry
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY, baseline_rate
 
 SIGNIFICANCE_T = 1.96
 

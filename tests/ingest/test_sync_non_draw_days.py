@@ -50,15 +50,15 @@ def setup(tmp_path: Path, monkeypatch):
     gap_known, gap_fresh, gap_real = (target - timedelta(days=k) for k in (5, 6, 8))
     source = CountingSource(answers={})
     paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
-    lot = Lottery(paths=paths, http=object(), sources=[source])  # type: ignore[arg-type]
+    lot = Lottery(paths=paths, http=object(), sources=[source])
     for k in range(10):
         day = target - timedelta(days=k)
         if day not in (gap_known, gap_fresh, gap_real):
-            lot._data[day] = _result(day, special=10000 + k)  # type: ignore[attr-defined]
+            lot._data[day] = _result(day, special=10000 + k)
     lot.generate_dataframes()
     monkeypatch.setattr(lot, "dump", lambda: None)
     before = gap_fresh - timedelta(days=1)
-    source.answers[gap_fresh] = _result(gap_fresh, special=lot._data[before].special)  # type: ignore[attr-defined]
+    source.answers[gap_fresh] = _result(gap_fresh, special=lot._data[before].special)
     return lot, source, sleeps, (gap_known, gap_fresh, gap_real)
 
 
@@ -113,13 +113,13 @@ def test_a_twin_inside_the_recent_window_is_still_retried(tmp_path: Path, monkey
     target = _target()
     paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
     first, second = CountingSource(answers={}, name="a"), CountingSource(answers={}, name="b")
-    lot = Lottery(paths=paths, http=object(), sources=[first, second])  # type: ignore[arg-type]
+    lot = Lottery(paths=paths, http=object(), sources=[first, second])
     for k in range(1, 10):
         day = target - timedelta(days=k)
-        lot._data[day] = _result(day, special=10000 + k)  # type: ignore[attr-defined]
+        lot._data[day] = _result(day, special=10000 + k)
     lot.generate_dataframes()
     monkeypatch.setattr(lot, "dump", lambda: None)
-    stale = _result(target, special=lot._data[target - timedelta(days=1)].special)  # type: ignore[attr-defined]
+    stale = _result(target, special=lot._data[target - timedelta(days=1)].special)
     first.answers[target] = second.answers[target] = stale
 
     sync.ensure_up_to_date(

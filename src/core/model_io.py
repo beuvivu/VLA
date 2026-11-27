@@ -59,7 +59,7 @@ def _equivalent(current: dict[str, Any], fresh: dict[str, Any], *, stamp_keys: f
         old, new = current[key], fresh[key]
         try:
             same = type(old) is type(new) and _close_arrays(predictions[key](old), predictions[key](new))
-        except Exception:  # noqa: BLE001 - mô hình cũ không dự báo được trên dữ liệu này thì đã khác
+        except Exception:
             return False
         if not same:
             return False

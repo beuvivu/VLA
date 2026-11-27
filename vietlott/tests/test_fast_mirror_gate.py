@@ -69,7 +69,7 @@ def sync(tmp_path, *, seed_src=OFFICIAL, mirror_override=None, archive_override=
     text = mirror_text(mirror_override)
 
     async def run():
-        handler = lambda request: httpx.Response(200, text=text)  # noqa: E731
+        handler = lambda request: httpx.Response(200, text=text)
         async with AsyncHttpClient(transport=httpx.MockTransport(handler), rate_limit_per_s=10000, burst=1000) as client:
             pipe = ProductSyncPipeline(client, store, vietlott_base_url='https://official.test',
                                        mirror_base_url='https://mirror.test', canonical_base_url='https://canonical.test',
@@ -166,7 +166,7 @@ def _second_run(tmp_path, republished=()):
     text = '\n'.join(json.dumps({'date': _feb(d), 'id': f'{d:07d}', 'result': digits(d)}) for d in range(1, 41)) + '\n'
 
     async def run():
-        handler = lambda request: httpx.Response(200, text=text)  # noqa: E731
+        handler = lambda request: httpx.Response(200, text=text)
         async with AsyncHttpClient(transport=httpx.MockTransport(handler), rate_limit_per_s=10000, burst=1000) as client:
             pipe = ProductSyncPipeline(client, store, vietlott_base_url='https://official.test',
                                        mirror_base_url='https://mirror.test', canonical_base_url='https://canonical.test',

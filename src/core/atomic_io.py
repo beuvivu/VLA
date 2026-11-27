@@ -189,7 +189,7 @@ def same_but_for_stamps_and_noise(old: object, new: object,
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
-    return subprocess.run(["git", *args], cwd=repo, capture_output=True, check=False)  # noqa: S603, S607
+    return subprocess.run(["git", *args], cwd=repo, capture_output=True, check=False)
 
 
 def _same_json_but_for_stamps(committed: bytes, current: bytes) -> bool:

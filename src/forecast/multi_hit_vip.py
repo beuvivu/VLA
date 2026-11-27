@@ -460,7 +460,7 @@ class VIPReport:
 
     def render(self) -> str:
         bt = self.backtest
-        pct = lambda x: f"{100 * x:.2f}%"  # noqa: E731
+        pct = lambda x: f"{100 * x:.2f}%"
         lines = [
             f"BÁO CÁO LÔ NHIỀU NHÁY — kỳ kế tiếp sau {self.after} ({self.draws_used} kỳ dữ liệu)",
             f"Mức nền: chọn bừa một con trúng ≥ 2 nháy với xác suất {pct(self.base)}.",

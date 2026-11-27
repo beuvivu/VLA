@@ -45,7 +45,7 @@ def test_population_probabilities_normalised() -> None:
 
 def test_patterns_are_popular_high_numbers_are_not() -> None:
     model = PopularityModel(POWER_655, last_draw=(14, 18, 21, 38, 48, 52))
-    ratio = lambda c: float(model.popularity_ratio(np.array([c]))[0])  # noqa: E731
+    ratio = lambda c: float(model.popularity_ratio(np.array([c]))[0])
     assert ratio((1, 2, 3, 4, 5, 6)) > 50
     assert ratio((14, 18, 21, 38, 48, 52)) > 20
     assert ratio((34, 37, 40, 43, 47, 53)) < 0.6

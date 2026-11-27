@@ -158,7 +158,7 @@ class Model:
 def fit(X: np.ndarray, y: np.ndarray) -> Model:
     n = len(X)
     cut = max(1, min(n - 1, int(round(n * (1 - INNER_SHARE)))))
-    flat = lambda a: a.reshape(-1, a.shape[-1]) if a.ndim == 3 else a.reshape(-1)  # noqa: E731
+    flat = lambda a: a.reshape(-1, a.shape[-1]) if a.ndim == 3 else a.reshape(-1)
     if len(np.unique(flat(y))) < 2:
         raise ValueError("nhãn huấn luyện chỉ có một lớp: chưa có kỳ nào về ≥ 2 nháy để học")
     best = None

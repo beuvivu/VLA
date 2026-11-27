@@ -373,7 +373,7 @@ def export_excel_outputs(
 
     try:
         import openpyxl  # noqa: F401
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         logger.warning("openpyxl is not available; skip Excel export: %s", exc)
         return
 

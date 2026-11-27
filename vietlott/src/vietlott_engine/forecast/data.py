@@ -118,7 +118,7 @@ def product_series(h: ProductHistory) -> Series:
     return Series(code, h.draw_ids[order].copy(), h.dates[order].copy(), obs)
 
 
-def load_series(product: str | ProductCode, repository=None, store=None, seed_dir: Path | None = None) -> Series:  # type: ignore[no-untyped-def]
+def load_series(product: str | ProductCode, repository=None, store=None, seed_dir: Path | None = None) -> Series:
     code = get_product(product)
     if code in (ProductCode.MEGA_645, ProductCode.POWER_655, ProductCode.LOTTO_535):
         spec = get_game(GameCode(code.value))

@@ -12,12 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.games import GameCode  # noqa: E402
-from collections import Counter  # noqa: E402
+from vietlott_engine.core.games import GameCode
+from collections import Counter
 
-from vietlott_engine.core.products import DIGIT_PRODUCTS, EXCLUSIONS_FILE, ProductCode, SEED_FILES, drop_ids, parse_product_rows, read_jsonl, write_jsonl  # noqa: E402
-from vietlott_engine.crawler.official_data import CANONICAL_GAMES, draws_to_seed_rows, import_canonical  # noqa: E402
-from vietlott_engine.crawler.prize_sources import records_from_jsonl, records_to_jsonl  # noqa: E402
+from vietlott_engine.core.products import DIGIT_PRODUCTS, EXCLUSIONS_FILE, ProductCode, SEED_FILES, drop_ids, parse_product_rows, read_jsonl, write_jsonl
+from vietlott_engine.crawler.official_data import CANONICAL_GAMES, draws_to_seed_rows, import_canonical
+from vietlott_engine.crawler.prize_sources import records_from_jsonl, records_to_jsonl
 
 REPOS = {
     "pqminh-4_vietlott-data": "https://github.com/pqminh-4/vietlott-data",
@@ -37,7 +37,7 @@ def ensure_repo(vendor: Path, name: str, update: bool) -> Path:
     return dest
 
 
-def compare_prizes(old_path: Path, new_records) -> dict:  # type: ignore[no-untyped-def]
+def compare_prizes(old_path: Path, new_records) -> dict:
     if not old_path.exists():
         return {"previous_records": 0}
     old = {r.draw_id: r for r in records_from_jsonl(old_path.read_text(encoding="utf-8"))}
@@ -130,10 +130,10 @@ def main() -> int:
         report["sources"]["v130"] = str(a.v130_dir)
     merge: dict = {"policy": "official records first; lower layers only add missing draw ids; every disagreement listed", "products": {}}
 
-    def archive_draws(product: ProductCode):  # type: ignore[no-untyped-def]
+    def archive_draws(product: ProductCode):
         return asyncio.run(archive.draws(product)) if archive else None
 
-    def v130_draws(product: ProductCode):  # type: ignore[no-untyped-def]
+    def v130_draws(product: ProductCode):
         if not a.v130_dir:
             return None
         from vietlott_engine.crawler.sources.vqe130 import import_v130

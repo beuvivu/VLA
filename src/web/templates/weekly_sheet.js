@@ -1,10 +1,6 @@
 (() => {
   "use strict";
 
-  // Tạo phôi tuần: bảng giải Đặc Biệt theo tuần (Thứ Hai → Chủ Nhật), tách 3 chữ
-  // số đầu và 2 chữ số cuối, cỡ chữ và màu do người xem chọn rồi in.
-  // Dựng DOM bằng createElement + textContent; màu và cỡ chữ đặt qua CSSOM.
-
   const DATA = document.getElementById("app-phoi-data");
   if (!DATA) return;
   const SPECIALS = JSON.parse(DATA.textContent).specials;
@@ -24,7 +20,6 @@
     return t.toISOString().slice(0, 10);
   };
 
-  /** Các tuần (theo Thứ Hai), cũ trước; mỗi tuần 7 ô, ô trống khi kỳ ấy chưa có. */
   function weeks(specials, count) {
     const byWeek = new Map();
     for (const [date, value] of specials) {

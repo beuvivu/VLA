@@ -83,7 +83,7 @@ class _Client:
     def __init__(self, pages: dict[str, str]) -> None:
         self.pages, self.urls = pages, []
 
-    async def get(self, url: str):  # type: ignore[no-untyped-def]
+    async def get(self, url: str):
         self.urls.append(url)
         if url not in self.pages:
             raise SourceError(f"GET {url} failed with non-retryable HTTP 404")
@@ -105,7 +105,7 @@ def test_an_unreadable_page_fails_the_source_instead_of_claiming_no_new_draw():
 class _Stale(DrawSource):
     name = "nhanaz"
 
-    async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+    async def fetch(self, spec, since_id=None):
         return FetchResult(draws=[d for d in [Draw(game=spec.code, draw_id=927, draw_date=date(2026, 10, 5),
                                                     numbers=(2, 5, 19, 30, 33), bonus=7, source="nhanaz")]
                                   if since_id is None or d.draw_id > since_id])
@@ -121,9 +121,9 @@ def test_a_lagging_archive_no_longer_hides_a_draw_the_republisher_already_has():
 def test_the_default_chain_asks_xskt_after_the_archive_and_only_for_matrix_games():
     order = Settings().fallback_order
     assert order.index("nhanaz") < order.index("xskt") < order.index("github_mirror")
-    source = build_source(Settings(), object(), "auto")  # type: ignore[arg-type]
+    source = build_source(Settings(), object(), "auto")
     assert [s.name for s in source.sources][:3] == ["vietlott", "nhanaz", "xskt"]
-    products = ProductSyncPipeline(object(), object(), vietlott_base_url="", mirror_base_url="", canonical_base_url="",  # type: ignore[arg-type]
+    products = ProductSyncPipeline(object(), object(), vietlott_base_url="", mirror_base_url="", canonical_base_url="",
                                    fallback_order=order)
     assert "xskt" not in products.chain(ProductCode.MAX3D)
 
@@ -132,7 +132,7 @@ def test_the_source_can_be_chosen_through_the_environment(monkeypatch):
     monkeypatch.setenv("VQE_SOURCE", "xskt")
     settings = Settings()
     assert settings.source == "xskt"
-    assert isinstance(build_source(settings, object()), XsktDrawSource)  # type: ignore[arg-type]
+    assert isinstance(build_source(settings, object()), XsktDrawSource)
 
 
 def test_a_partially_caught_up_archive_is_extended_by_the_later_source():
@@ -148,7 +148,7 @@ class _Fixed(DrawSource):
         self.name, self.draws = name, draws
         self.cursors: list[int | None] = []
 
-    async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+    async def fetch(self, spec, since_id=None):
         self.cursors.append(since_id)
         return FetchResult(draws=[d for d in self.draws if since_id is None or d.draw_id > since_id])
 

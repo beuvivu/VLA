@@ -302,13 +302,13 @@ def main() -> None:
         table, report = evaluate_mode(
             two,
             sparse,
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             permutations=max(15, args.permutations),
             seed=args.seed + offset,
             max_reality_days=max(120, args.max_reality_days),
         )
         _, _, cut_rows = write_mode_tables(table, out, mode)
-        reports["modes"][mode] = {**report, "cut_rows": cut_rows}  # type: ignore[index]
+        reports["modes"][mode] = {**report, "cut_rows": cut_rows}
 
     (out / "research_firewall_report.json").write_text(
         json.dumps(reports, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

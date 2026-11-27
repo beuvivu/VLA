@@ -182,7 +182,7 @@ class ProductSyncPipeline:
         text = (await self.client.get(url)).text
         return await asyncio.to_thread(lambda: [json.loads(line) for line in text.splitlines() if line.strip()])
 
-    def _archive(self):  # type: ignore[no-untyped-def]
+    def _archive(self):
         from vietlott_engine.crawler.sources.nhanaz import NhanAZArchive
 
         return NhanAZArchive(local_dir=self.nhanaz_dir) if self.nhanaz_dir else NhanAZArchive(self.client, self.nhanaz_base_url)
@@ -356,7 +356,7 @@ class ProductSyncPipeline:
             attempts=attempts,
         )
 
-    async def _run_fast(self, product, source, max_pages, full, history, t0, before_upsert):  # type: ignore[no-untyped-def]
+    async def _run_fast(self, product, source, max_pages, full, history, t0, before_upsert):
         known = await asyncio.to_thread(identities, history)
         known_max = max(known,default=0)
         excluded = (await asyncio.to_thread(self.store.exclusions)).get(product.value, set())
@@ -482,7 +482,7 @@ class ProductSyncPipeline:
             latest_source=origins.get(max(r['id'] for r in delta)) if delta else None)
 
 
-def _prefer_prize_record(current, incoming):  # type: ignore[no-untyped-def]
+def _prefer_prize_record(current, incoming):
     rank = lambda origin: 3 if origin.startswith('vietlott') else 2 if origin.startswith('canonical') else 1
     pairs = ((current.winners, incoming.winners),
              (current.jackpot_pots or {}, incoming.jackpot_pots or {}))
@@ -513,7 +513,7 @@ class CanonicalPrizeReport:
         return asdict(self)
 
 
-async def _prize_records(client, repository, spec, source: str, *, canonical_base_url: str, vietlott_base_url: str, last: int, bootstrap_cookie: bool, nhanaz_base_url: str | None, nhanaz_dir: Path | None, v130_dir: Path | None) -> list[dict]:  # type: ignore[no-untyped-def]
+async def _prize_records(client, repository, spec, source: str, *, canonical_base_url: str, vietlott_base_url: str, last: int, bootstrap_cookie: bool, nhanaz_base_url: str | None, nhanaz_dir: Path | None, v130_dir: Path | None) -> list[dict]:
     from vietlott_engine.crawler.sources.vietlott_official import VietlottOfficialSource
 
     if source == "canonical":
@@ -538,8 +538,8 @@ async def _prize_records(client, repository, spec, source: str, *, canonical_bas
 
 async def sync_canonical_prizes(
     client: AsyncHttpClient,
-    repository,  # type: ignore[no-untyped-def]
-    spec,  # type: ignore[no-untyped-def]
+    repository,
+    spec,
     *,
     source: str,
     canonical_base_url: str,

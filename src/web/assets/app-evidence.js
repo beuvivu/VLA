@@ -1,28 +1,3 @@
-/* Nguồn & bằng chứng suy luận cho mọi con số trên trang.
-
-   Gợi ý nguồn chỉ hiện khi điều hướng bằng bàn phím; rê/nhấp chuột không
-   bật tooltip để người xem chọn số và tính cầu liên tục.
-   Nhấp: ngăn kéo chi tiết — nguồn dữ liệu, các bước tính, ngữ cảnh của ô.
-   Con số đã có chức năng nhấp riêng (đánh dấu ô, chọn số, nút, liên kết) giữ
-   nguyên chức năng ấy; trang chủ mở bằng chứng bằng nhấp đúp, trang khác
-   bằng Alt + nhấp; cả hai giữ nhấn giữ trên màn hình cảm ứng.
-
-   Danh mục nằm trong khối JSON #app-evidence-data do page_output chèn vào
-   <head>. Phần tử khai data-evidence="<id>" lấy bằng chứng riêng trong
-   values[id]; trình dựng hoặc kịch bản của trang thêm mục qua khối JSON
-   [data-app-evidence-values] hoặc window.appEvidence.register(id, mục).
-   data-evidence-row="<id>" trên một hàng bảng: mọi con số trong hàng dùng
-   values[id], còn giá trị vẫn là chữ của chính ô được chọn.
-
-   Hình dạng một bằng chứng (đặc tả của chủ dự án):
-
-   @typedef {{title: string, snippet: string, url?: string, page?: number}} EvidenceSource
-   @typedef {{steps: string[], confidenceScore?: number, promptUsed?: string}} ReasoningTrace
-   @typedef {{id: string, value: (string|number), sources: EvidenceSource[],
-              reasoningTrace?: ReasoningTrace}} CitationEvidence
-
-   KHÔNG dùng bất kỳ cách ghi DOM nào nhận chuỗi rồi tự phân tích thành thẻ:
-   mọi nút dựng bằng createElement và textContent. */
 (function () {
   "use strict";
 
@@ -33,9 +8,6 @@
   doc.body.dataset.appEvidenceReady = "true";
 
   var SVG_NS = "http://www.w3.org/2000/svg";
-  /* Một con số đứng một mình: dấu, phần nghìn bằng khoảng trắng/chấm/phẩy,
-     phần thập phân, số mũ (−7.15e-05), đơn vị (%, ‰, hệ số 0,45×, hoặc một đơn vị đếm như
-     "565 kỳ", "3 nháy"). Ngày (03-10-2026) và giờ không khớp. */
   var NUM = /^[+\-\u2212\u00b1]?\s?(?:\d{1,3}(?:[ \u00a0\u202f.,]\d{3})+|\d+)(?:[.,]\d+)?(?:[eE][+\-]?\d+)?\s?(?:%|\u2030|\u00d7|x|k\u1ef3|l\u1ea7n|ng\u00e0y|nh\u00e1y|c\u1ea7u|con|s\u1ed1|tu\u1ea7n|th\u00e1ng|n\u0103m)?$/;
   var MAX_LEN = 24;
   var KNOWN_VALUE = ".tr-number, .tr-mini, .sp-de, [data-evidence-value]";
@@ -44,14 +16,11 @@
     ".app-evidence-drawer", "input", "textarea", "select", "option", "[contenteditable]",
     "[data-no-evidence]", "[hidden]", "[aria-hidden='true']", "script", "style", "noscript", "code", "pre",
   ].join(",");
-  /* Đã có chức năng nhấp riêng: nhấp thường không được cướp. */
   var INTERACTIVE = [
     "a[href]", "button", "label", "summary", "[role='button']", "[role='link']", "[role='tab']",
     "[role='checkbox']", "[role='switch']", "[role='option']", "[onclick]", "[data-key]",
     ".tr-number", ".tr-mini",
   ].join(",");
-  /* Một ô là đơn vị lớn nhất: phép dò không đi lên quá các thẻ này, và không
-     bao giờ nhận một hàng hay một khối làm "con số". */
   var STOP_AT = { TD: 1, TH: 1, LI: 1, DT: 1, DD: 1, P: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, CAPTION: 1 };
   var NEVER = { TR: 1, THEAD: 1, TBODY: 1, TFOOT: 1, TABLE: 1, UL: 1, OL: 1, DL: 1, SECTION: 1,
     ARTICLE: 1, MAIN: 1, NAV: 1, FORM: 1, HEADER: 1, FOOTER: 1, ASIDE: 1, FIGURE: 1 };
@@ -82,12 +51,10 @@
         try {
           var values = JSON.parse(node.textContent || "{}");
           Object.keys(values).forEach(function (id) { registry.values[id] = values[id]; });
-        } catch (error) { /* khối hỏng thì bỏ qua, phần còn lại vẫn chạy */ }
+        } catch (error) {   }
       });
   }
   mergeValueBlocks();
-
-  /* ---------- nhận diện con số ---------- */
 
   function norm(text) { return String(text || "").replace(/\s+/g, " ").trim(); }
   function short(text, max) {
@@ -97,8 +64,6 @@
   }
   function isNumber(text) { return text.length > 0 && text.length <= MAX_LEN && NUM.test(text); }
 
-  /* Vùng gấp và CSS có thể giấu số mà không thêm thuộc tính hidden. Không
-     dùng kích thước hộp để trình kiểm DOM không có bố cục vẫn chạy đúng. */
   function isVisible(el, styles) {
     if (!el || !root.contains(el) || el.closest(EXCLUDE)) { return false; }
     for (var ancestor = el; ancestor; ancestor = ancestor.parentElement) {
@@ -124,13 +89,11 @@
     return norm(title ? title.textContent : el.getAttribute("aria-label"));
   }
 
-  /** Phần tử mang con số mà sự kiện chạm vào, hoặc null. */
   function valueTarget(node) {
     var el = node && node.nodeType === 1 ? node : node && node.parentElement;
     if (!el || !root.contains(el) || el.closest(EXCLUDE)) { return null; }
     var explicit = el.closest("[data-evidence]");
     if (explicit && root.contains(explicit)) { return explicit; }
-    /* Phần tử kết quả đã biết là MỘT giá trị dù bị tách để tô (779<span>61</span>). */
     var known = el.closest(KNOWN_VALUE);
     if (known && root.contains(known) && isNumber(norm(known.textContent))) { return known; }
     if (el.namespaceURI === SVG_NS) {
@@ -147,9 +110,6 @@
     return null;
   }
 
-  /* Chữ của phần tử là MỘT con số, không phải hai con số dính nhau: "46" và
-     "64" ở hai thẻ con nối lại thành "4664" vẫn khớp mẫu số. Chỉ cho tối đa
-     một nút con mang chữ số ("23,9" + "<small>%</small>" là hợp lệ). */
   function singleNumber(el) {
     var parts = 0;
     for (var node = el.firstChild; node; node = node.nextSibling) {
@@ -158,11 +118,8 @@
     return parts <= 1;
   }
 
-  /* tabindex chỉ tính khi CHÍNH con số nhận tiêu điểm: khung cuộn có
-     tabindex để cuộn bằng bàn phím, không phải để nhấp. */
   function isInteractive(el) {
     if (el.hasAttribute("data-evidence")) { return false; }
-    /* tabindex do chính module gắn cho vùng bàn phím không phải "chức năng nhấp". */
     if (el.matches("[tabindex]:not([tabindex='-1'])") && !el.hasAttribute("data-evidence-region")) { return true; }
     var hit = el.closest(INTERACTIVE);
     return Boolean(hit && root.contains(hit) && !hit.hasAttribute("data-evidence"));
@@ -173,8 +130,6 @@
     if (el.namespaceURI === SVG_NS && !isNumber(norm(el.textContent))) { return svgLabel(el); }
     return norm(el.textContent);
   }
-
-  /* ---------- ngữ cảnh của con số ---------- */
 
   function pageTitle() {
     var h1 = root.querySelector("h1");
@@ -189,8 +144,6 @@
     return h ? short(h.textContent, 80) : "";
   }
 
-  /* Tiêu đề GẦN NHẤT của khối đứng TRƯỚC con số: thẻ «Trọng số» có bảng trọng
-     số rồi mới tới h3 «Hiệu chỉnh» — ô trọng số không thuộc tiêu đề đứng sau nó. */
   function headingBefore(container, el) {
     var found = "";
     var all = container.querySelectorAll(HEADINGS);
@@ -237,8 +190,6 @@
     return "";
   }
 
-  /* Nhãn hàng: ô tiêu đề hàng nếu có, không thì "tiêu đề cột + giá trị" của
-     tối đa hai ô đứng trước ô được chọn (hoặc ô ngay sau nếu nó đứng đầu). */
   function rowLabel(cell, table) {
     var row = cell.parentElement;
     if (!row || cell.closest("thead")) { return ""; }
@@ -264,8 +215,6 @@
     return text && text.length <= 60 && !isNumber(text) && text.indexOf(value) < 0 ? text : "";
   }
 
-  /* Nhãn của một con số đứng ngoài bảng: thuộc tính mô tả, hoặc phần tử anh
-     em ngắn ngay cạnh nó hay cạnh tổ tiên gần — không lấy cả khối chữ. */
   function nearbyLabel(el, value) {
     var own = norm(el.getAttribute("aria-label") || el.getAttribute("aria-description") || el.getAttribute("title"));
     if (own && !isNumber(own)) { return short(own, 60); }
@@ -300,8 +249,6 @@
     return ctx;
   }
 
-  /* Chỗ một mục danh mục bám vào quanh con số: tổ tiên khớp bộ chọn, hoặc
-     tổ tiên mang tiêu đề bắt đầu bằng "heading". */
   function entryAnchor(entry, el) {
     try {
       if (entry.match) { return el.closest(entry.match); }
@@ -313,8 +260,6 @@
     return null;
   }
 
-  /* Khối khớp GẦN con số nhất thắng: khối lồng trong khối khác (mô phỏng
-     nằm trong AI/ML) phải dùng được bằng chứng riêng của nó. */
   function sectionEntry(el) {
     var best = null;
     var bestAnchor = null;
@@ -328,7 +273,6 @@
     }
     return best;
   }
-
 
   function whereStep(ctx, value) {
     var parts = [];
@@ -345,7 +289,6 @@
     return bits.filter(Boolean).join(" › ").slice(0, 160);
   }
 
-  /* data-evidence-cols="1,2" trên hàng: chỉ các cột ấy dùng bằng chứng của hàng. */
   function rowCovers(row, el) {
     var cols = row.getAttribute("data-evidence-cols");
     if (!cols) { return true; }
@@ -353,9 +296,6 @@
     return Boolean(cell) && cols.split(",").indexOf(String(cell.cellIndex)) >= 0;
   }
 
-  /* Cột định danh ("Số") và cột thứ hạng ("#") của một bảng không mang phép
-     tính của bảng: số 17 ở cột «Số» là TÊN của hàng, không phải xác suất. Mục
-     danh mục khai riêng cho ô (bộ chọn trỏ vào chính ô) vẫn thắng. */
   var IDENT_COLUMN = /^(?:số|con|cặp|cặp số|bộ số|số loto|số đặc biệt|2 số cuối)$/i;
   var RANK_COLUMN = /^(?:#|stt|top|(?:thứ )?hạng(?: .*)?)$/i;
 
@@ -383,7 +323,6 @@
     return null;
   }
 
-  /** Bằng chứng đầy đủ của một con số (CitationEvidence + ngữ cảnh). */
   function evidenceFor(el) {
     var value = valueText(el);
     var explicitId = el.getAttribute("data-evidence") || "";
@@ -415,8 +354,6 @@
     return out;
   }
 
-  /* ---------- dựng nút ---------- */
-
   function mk(tag, cls, text) {
     var node = doc.createElement(tag);
     if (cls) { node.className = cls; }
@@ -426,11 +363,8 @@
 
   function safeUrl(url) {
     var u = String(url || "");
-    /* Chỉ đường dẫn tương đối nội bộ: không giao thức, không mở ra ngoài. */
     return /^[a-z0-9][a-z0-9._\-/]*(?:\.html)?(?:#[a-z0-9._\-]*)?$/i.test(u) ? u : "";
   }
-
-  /* ---------- tooltip ---------- */
 
   var tip = mk("div", "app-evidence-tip");
   tip.id = "app-evidence-tip";
@@ -451,9 +385,6 @@
     var where = ev.context.column || ev.context.label || ev.scope || ev.context.section;
     lines.push(mk("p", "app-evidence-tip-meta",
       "Suy luận qua " + ev.reasoningTrace.steps.length + " bước" + (where ? " · " + where : "")));
-    /* viaKeyboard: "region" khi chọn bằng mũi tên trong một vùng, "self" khi
-       chính con số nhận tiêu điểm Tab. Số đã có chức năng riêng giữ Enter cho
-       chức năng ấy, nên bằng chứng mở bằng Alt + Enter — phải nói ra. */
     lines.push(mk("p", "app-evidence-tip-hint", viaKeyboard === "region"
       ? "Enter để xem chi tiết bằng chứng suy luận · mũi tên để chọn số khác"
       : viaKeyboard && interactive
@@ -518,9 +449,6 @@
     }
     var el = valueTarget(event.target);
     if (keyboard && el && el === event.target && !drawerOpen()) { showTip(el, "self"); return; }
-    /* Liên kết hay nút chứa NHIỀU số (cầu "67,76" kèm số ngày, thanh "54 … 59"):
-       tiêu điểm nằm trên chính điều khiển, nên Alt + Enter mở số chính của nó.
-       Các số còn lại vẫn chọn được bằng mũi tên trong vùng bao quanh. */
     var inner = keyboard && !drawerOpen() ? controlNumber(event.target) : null;
     if (inner) {
       showTip(inner, "self");
@@ -540,8 +468,6 @@
     if (!tipFor) { return; }
     if (tipFor === active) { placeTip(active); } else { hideTip(); }
   }, { passive: true, capture: true });
-
-  /* ---------- ngăn kéo chi tiết ---------- */
 
   var drawer = null;
   var lastFocus = null;
@@ -685,7 +611,6 @@
     return Boolean(sel && !sel.isCollapsed && norm(String(sel)));
   }
 
-  /* Alt + nhấp: chạy ở pha bắt để tới trước mọi trình xử lý của trang. */
   doc.addEventListener("click", function (event) {
     if (homeEvidence || !event.altKey || event.button !== 0) { return; }
     var el = valueTarget(event.target);
@@ -695,8 +620,6 @@
     openFor(el);
   }, true);
 
-  /* Trang chủ: hai lần nhấp vẫn chọn số theo chức năng sẵn có, rồi sự kiện
-     nhấp đúp mở bằng chứng. Không trì hoãn thao tác chọn số hay máy tính. */
   doc.addEventListener("dblclick", function (event) {
     if (!homeEvidence || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) { return; }
     var el = valueTarget(event.target);
@@ -706,7 +629,6 @@
     openFor(el);
   }, true);
 
-  /* Nhấp thường: pha nổi, sau trình xử lý của trang; chỉ số chưa có chức năng nhấp. */
   doc.addEventListener("click", function (event) {
     if (homeEvidence || event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey ||
         event.metaKey || event.shiftKey) { return; }
@@ -715,7 +637,6 @@
     openFor(el);
   });
 
-  /* Nhấn giữ trên màn hình cảm ứng mở bằng chứng cả cho số đã có chức năng nhấp. */
   doc.addEventListener("contextmenu", function (event) {
     if (Date.now() - lastTouch > TOUCH_GRACE * 2) { return; }
     var el = valueTarget(event.target);
@@ -723,12 +644,6 @@
     event.preventDefault();
     openFor(el);
   });
-
-  /* ---------- bàn phím: mỗi bảng hay khối có số là MỘT điểm dừng Tab ----------
-     Gắn tabindex cho từng con số sẽ thêm hàng nghìn điểm dừng trên trang thống
-     kê. Thay vào đó, bảng (hoặc khối) nhận tiêu điểm một lần; mũi tên chọn con
-     số bên trong (lên/xuống theo cột trong bảng), Enter hoặc Space mở bằng
-     chứng. Tooltip đi theo số đang chọn; vùng aria-live đọc giá trị. */
 
   var REGION_OF = "section, article, aside, figure, .ui-card";
   var SHOW_TEXT = 4;
@@ -770,9 +685,6 @@
     region.setAttribute("aria-describedby", described ? described + " " + hint.id : hint.id);
   }
 
-  /* Điểm dữ liệu SVG (vòng tròn, cột) không có chữ: con số nằm trong <title>
-     hoặc aria-label của nó. Nó là một mục như mọi con số; chữ của chính thẻ
-     <title>/<desc> thì không — nếu không, một điểm bị đếm hai lần. */
   function svgPoint(el) {
     return el.namespaceURI === SVG_NS && /\d/.test(svgLabel(el)) && valueTarget(el) === el;
   }
@@ -798,8 +710,6 @@
     }
   }
 
-  /* Số chính của một điều khiển nhận tiêu điểm (liên kết, nút) chứa nhiều số:
-     phần tử khai [data-evidence-primary] nếu có, không thì số đầu tiên. */
   function controlNumber(control) {
     if (!control || control.nodeType !== 1 || !root.contains(control) || control.closest(EXCLUDE)) { return null; }
     if (!selfFocusable(control) || control.hasAttribute("data-evidence-region")) { return null; }
@@ -825,15 +735,12 @@
     return out;
   }
 
-  /* Ô có nhiều số (đã tách thành từng span): đi sang trái thì vào số CUỐI
-     của ô bên trái, như đọc ngược một dòng chữ. */
   function itemInCell(cell, region, fromEnd) {
     var found = null;
     if (cell) { eachItem(cell, region, function (el) { found = el; return fromEnd ? undefined : false; }); }
     return found;
   }
 
-  /* Bước trong bảng: trái/phải theo hàng, lên/xuống theo cột; bỏ qua ô không có số. */
   function cellStep(cell, region, dRow, dCol) {
     var rows = region.rows;
     var r = cell.parentElement.rowIndex;
@@ -907,7 +814,6 @@
       var all = itemsIn(region);
       next = all[all.length - 1];
     } else if (cell) {
-      /* Trái/phải đi qua các số còn lại trong cùng ô trước khi sang ô kế. */
       var dir = key === "ArrowRight" ? 1 : key === "ArrowLeft" ? -1 : 0;
       next = (dir && stepInCell(cell, region, cur, dir)) ||
         (dir ? cellStep(cell, region, 0, dir) : cellStep(cell, region, key === "ArrowDown" ? 1 : -1, 0));
@@ -919,30 +825,13 @@
     if (next) { setActive(region, next); }
   }
 
-  /* ---------- ô nhiều số: "23,56% (2.344/9.950)", "hiện tại=3 / dài nhất=4" ----------
-     Mỗi con số trong một ô ngắn được bọc riêng một span — dựng bằng
-     createElement + textContent, chữ hiển thị giữ nguyên — để chuột lẫn bàn
-     phím chọn được. Ô bảng (td, th, dd, li) ngắn được tách cả khi có chữ;
-     phần tử khác chỉ khi toàn bộ chữ là số và dấu phân cách. Ngày, giờ không
-     bao giờ thành số: chúng được loại theo từng đoạn, không loại cả ô. Ngày
-     rút gọn là dd/mm đủ hai chữ số và hợp lệ (03/10) — "5/26" là số trúng
-     trên tổng, không phải ngày. */
   var COMPOUND = /^[\d\s.,%\u2030\u00d7()\/+\-\u2212\u2013\u2014\u00b1\u2248~=\u2192\u2190]+$/;
   var DATE_PART = /(?<!\d[.,]?)(?:(?:0[1-9]|[12]\d|3[01])\/(?:0[1-9]|1[0-2])(?!\/)|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2}(?::\d{2})?)(?![.,]?\d)/g;
-  /* Dấu âm chỉ khi không đứng ngay sau chữ số hay chữ cái: "12-68" là hai số
-     12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. Phần nghìn
-     bằng khoảng trắng ("5 671") là MỘT số, như NUM vẫn đọc. */
   var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d)|\u00b1\s?(?=\d))?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)*)(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
   var CELLISH = "td, th, dd, li";
-  /* Điều khiển (nút, liên kết, nhãn bộ lọc) không bị tách: chữ của chúng là
-     tên thao tác. Ô dữ liệu có chức năng nhấp ([data-key]) thì vẫn tách — số
-     trong ô là dữ liệu, và chức năng nhấp đi theo ủy quyền nên không mất. */
   var CONTROL = "a[href], button, label, summary, [role='button'], [role='link'], [role='tab'], " +
     "[role='checkbox'], [role='switch'], [role='option'], [onclick]";
-  /* Tiêu đề cột "09-24" là tháng-ngày; trong ô dữ liệu "12-21" vẫn là cặp số,
-     nên dạng rút gọn này chỉ là ngày khi nó là TOÀN BỘ chữ của một ô tiêu đề. */
   var MONTH_DAY = /^(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
-  /* "[10,95]" là danh sách vị trí, không phải số thập phân 10,95. */
   var BRACKET_LIST = /\[(\d+(?:,\s?\d+)+)\]/g;
 
   function tokenRanges(value) {
@@ -969,9 +858,6 @@
     return out.sort(function (x, y) { return x[0] - y[0]; });
   }
 
-  /* Câu văn thường không bị tách. Khối tóm tắt in kết quả tính được giữa
-     câu ("= 0,1794618", "336 cầu chạy từ 3 ngày") khai [data-evidence-split]
-     ở trình dựng thì mọi con số trong đó thành một giá trị. */
   function splittable(parent, whole) {
     var marked = parent.closest("[data-evidence-split]");
     if (marked && root.contains(marked)) { return whole.length <= 600; }
@@ -988,8 +874,6 @@
       var parent = node.parentElement;
       if (!parent || !/\d/.test(node.nodeValue) || valueTarget(node)) { continue; }
       if (parent.closest(EXCLUDE) || parent.closest(".app-evidence-token") || parent.closest(CONTROL)) { continue; }
-      /* Chữ trong SVG không bao giờ được tách: span HTML trong <text> không
-         được vẽ, nhãn trục "08-11" chỉ còn lại dấu gạch. */
       if (parent.namespaceURI === SVG_NS) { continue; }
       var whole = norm(parent.textContent);
       if (parent.closest("th") && MONTH_DAY.test(whole)) { continue; }
@@ -1020,7 +904,7 @@
     eachItem(root, null, function (el) {
       var region = regionFor(el);
       if (seen.indexOf(region) < 0) { seen.push(region); markRegion(region); }
-    }, true); // Vùng trong details sẵn sàng nhận Tab khi mở; chỉ chọn số đang hiện.
+    }, true);
   }
   function scheduleScan() { if (!scanTimer) { scanTimer = setTimeout(scan, 250); } }
   scan();
@@ -1043,7 +927,6 @@
     }
   }, true);
 
-  /* Mở rộng: kịch bản của trang đăng ký bằng chứng cho phần tử nó dựng. */
   win.appEvidence = {
     register: function (id, entry) { if (id && entry) { registry.values[String(id)] = entry; } },
     evidenceFor: function (el) { return el ? evidenceFor(el) : null; },

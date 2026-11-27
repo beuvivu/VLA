@@ -128,7 +128,7 @@ def select_signal_pool(
         labels.append(hit[t])
 
     return fit_pool(
-        mode,  # type: ignore[arg-type]
+        mode,
         np.stack(cube),
         np.stack(labels),
         np.asarray(SIGNAL_COMPONENT_WEIGHTS),
@@ -291,7 +291,7 @@ def _blend_dynamics(
     *,
     mode: str,
 ) -> tuple[pd.DataFrame, dict]:
-    dynamics = build_dynamics_signal(hit, dates=dates, mode=mode)  # type: ignore[arg-type]
+    dynamics = build_dynamics_signal(hit, dates=dates, mode=mode)
     dyn = dynamics.current.rename(
         columns={
             "prob": "dynamics_prob",

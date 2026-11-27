@@ -77,7 +77,6 @@ for mode in ("loto", "de"):
     table = pd.read_csv(root / f"research_firewall_{mode}.csv")
     assert len(table) == 27 * 27 * 2
     assert table["train_q_value_fdr"].between(0, 1).all()
-    # Bảng đầy đủ không vào git; bản cắt git theo dõi phải là đúng các dòng `cut_table` chọn từ nó.
     from research import research_firewall
     firewall_cut = pd.read_csv(root / research_firewall.CUT_TABLE.format(mode=mode))
     assert int(item["cut_rows"]) == len(firewall_cut) >= research_firewall.CUT_ROWS
@@ -123,7 +122,6 @@ for name in (
 ):
     table = pd.read_csv(ext / name)
     assert not table.empty, name
-# Bảng cặp đầy đủ không vào git; bản cắt git theo dõi phải là đúng phần đầu của nó.
 from research import research_legacy_extensions as legacy_extensions
 pair_full = pd.read_csv(ext / legacy_extensions.PAIR_FULL_TABLE)
 pair_cut = pd.read_csv(ext / legacy_extensions.PAIR_CUT_TABLE)
@@ -164,7 +162,6 @@ assert conditional["p_eb"].between(0, 1).all()
 assert conditional["baseline"].between(0, 1).all()
 assert conditional["p_value"].between(0, 1).all()
 assert conditional["q_value_fdr"].between(0, 1).all()
-# Bảng dài không vào git; trang đọc bản cắt của trạng thái hiện tại, phải trùng phần đầu bảng dài.
 from research.conditional_nextday import current_special_rows
 current_cut = pd.read_csv(conditional_dir / "current_special_next_loto.csv")
 expected_cut = current_special_rows(conditional, int(conditional_manifest["current_special_2d"]), 20)
@@ -183,7 +180,6 @@ assert cross_table["train_q_value_fdr"].between(0, 1).all()
 assert cross_table["train_bonferroni_p"].between(0, 1).all()
 assert (~cross_table["production_eligible"].astype(bool)).all()
 assert set(cross_table["operator"]) == {"concat", "lon", "bo", "cham", "tong"}
-# Bảng đầy đủ không vào git; trang đọc bản cắt, phải chứa đúng các dòng đầu của bảng đầy đủ.
 from research.crosslag_positional_lab import CUT_ROWS, cut_table
 cross_cut = pd.read_csv(cross / "crosslag_rules_top.csv")
 assert int(cross_report["cut_rows"]) == len(cross_cut) >= CUT_ROWS
@@ -200,7 +196,6 @@ for mode in ("loto", "de"):
     assert not timeline.empty
     assert timeline["timeline_trials"].gt(0).all()
     assert timeline["recent_hit_rate"].dropna().between(0, 1).all()
-    # Bảng đầy đủ không vào git; bản cắt git theo dõi phải là đúng phần đầu của nó.
     from soi_cau import path_timeline_evidence
     timeline_cut = pd.read_csv(root / "path_timelines" / item["cut_output"])
     assert item["cut_output"] == path_timeline_evidence.CUT_TABLE.format(mode=mode)

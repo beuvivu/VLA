@@ -183,8 +183,6 @@ test('dòng nhúng hỏng bị bỏ qua mà không làm mất những kỳ hợp
   assert.equal(d.getElementById('tr-source-status').dataset.state, 'ready');
 });
 
-// ---- Vị trí cầu trên bảng kết quả (markBridge / clearBridge) ------------------------------------
-
 test('markBridge tô đúng chữ số của cả 107 vị trí; nhãn vị trí trùng bản Python', t => {
   const dom = setup(t, 'positions_board'), d = dom.window.document, TR = dom.window.TraditionalResults;
   const root = d.getElementById('app-daily-results');
@@ -240,7 +238,6 @@ test('Sổ KQ mở từ liên kết cầu: đúng kỳ, tô hai vị trí, dòng
   assert.deepEqual([...d.querySelectorAll('#tr-results .tr-bridge-src')].map((s) => s.textContent), ['4', '7']);
   const note = d.querySelector('.tr-bridge-note');
   assert.match(note.textContent, /Đang tô vị trí cầu kỳ 27\/09\/2026: vị trí 4 \(ĐB · chữ số 5\) ghép vị trí 57 \(G4\.2 · chữ số 4\)\./);
-  // Đổi bộ lọc sang kỳ khác: không tô, dòng báo nói rõ; quay lại thì tô lại.
   d.getElementById('tr-from').value = '2026-09-26'; d.getElementById('tr-to').value = '2026-09-26';
   d.getElementById('tr-to').dispatchEvent(new dom.window.Event('change'));
   assert.equal(d.querySelectorAll('#tr-results .tr-bridge-src').length, 0);

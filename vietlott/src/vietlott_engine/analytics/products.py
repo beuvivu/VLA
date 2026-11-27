@@ -298,7 +298,7 @@ def digit_replication(discovery: ProductHistory, confirmation: ProductHistory, d
 
 def split_history(h: ProductHistory, fraction: float = 0.5) -> tuple[ProductHistory, ProductHistory]:
     cut = int(len(h) * fraction)
-    part = lambda s: ProductHistory(h.product, h.draw_ids[s], h.dates[s], h.values[s], h.source)  # noqa: E731
+    part = lambda s: ProductHistory(h.product, h.draw_ids[s], h.dates[s], h.values[s], h.source)
     return part(slice(0, cut)), part(slice(cut, None))
 
 

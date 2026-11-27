@@ -29,19 +29,19 @@ def read_parquet(path: Path) -> list[dict]:
         raise SourceError(f"missing file {path}")
     errors = []
     try:
-        import duckdb  # type: ignore[import-not-found]
+        import duckdb
 
         con = duckdb.connect()
         cur = con.execute("SELECT * FROM read_parquet(?)", [str(path)])
         cols = [c[0] for c in cur.description]
         return [dict(zip(cols, r)) for r in cur.fetchall()]
-    except Exception as exc:  # noqa: BLE001 — try the next reader
+    except Exception as exc:
         errors.append(f"duckdb: {type(exc).__name__}")
     try:
-        import pyarrow.parquet as pq  # type: ignore[import-not-found]
+        import pyarrow.parquet as pq
 
         return pq.read_table(str(path)).to_pylist()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         errors.append(f"pyarrow: {type(exc).__name__}")
     cli = os.environ.get("VQE_DUCKDB_CLI") or shutil.which("duckdb")
     if cli:

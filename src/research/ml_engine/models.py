@@ -244,7 +244,7 @@ class TemporalSequenceModel:
                 self.gru = torch.nn.GRU(NUMBER_SPACE, hidden, batch_first=True)
                 self.head = torch.nn.Linear(hidden, NUMBER_SPACE)
 
-            def forward(self, batch):  # type: ignore[no-untyped-def]
+            def forward(self, batch):
                 output, _ = self.gru(batch)
                 return self.head(output[:, -1, :])
 

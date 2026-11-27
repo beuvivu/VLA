@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from stats import number_dynamics as nd  # noqa: E402
+from stats import number_dynamics as nd
 
 BASE_RATE = 0.2378
 

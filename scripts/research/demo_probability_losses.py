@@ -9,8 +9,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from sklearn.isotonic import IsotonicRegression  # noqa: E402
-from sklearn.linear_model import LogisticRegression  # noqa: E402
+from sklearn.isotonic import IsotonicRegression
+from sklearn.linear_model import LogisticRegression
 
 
 def brier(y: np.ndarray, p: np.ndarray) -> float:

@@ -11,10 +11,10 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from core.calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
-from ingest.lottery import Lottery  # noqa: E402
-from core.path_models import PathParams, build_daily_targets  # noqa: E402
-from soi_cau.path_prob import predict_next_day  # noqa: E402
+from core.calendar_alignment import consecutive_next_pairs, normalize_dates
+from ingest.lottery import Lottery
+from core.path_models import PathParams, build_daily_targets
+from soi_cau.path_prob import predict_next_day
 
 Mode = Literal["loto", "de"]
 Kind = Literal["active", "stable"]
@@ -129,8 +129,8 @@ def main() -> None:
             idx_train_end=int(idx_train_end),
             target_idx=int(idx_target),
             params=params,
-            mode=args.mode,  # type: ignore[arg-type]
-            kind=args.kind,  # type: ignore[arg-type]
+            mode=args.mode,
+            kind=args.kind,
             top_k=args.top_k,
         )
         res.append(

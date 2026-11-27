@@ -192,7 +192,7 @@ def build_report(two: pd.DataFrame, sparse: pd.DataFrame, *, permutations: int =
         "weekday_test": weekday,
         "loto_repeat_test": repeat,
         "coverage": _coverage_summary(hit),
-        "acf_significant_lags_fdr05": acf.loc[acf.get("fdr_05", False) == True, "lag"].astype(int).tolist() if not acf.empty else [],  # noqa: E712
+        "acf_significant_lags_fdr05": acf.loc[acf.get("fdr_05", False) == True, "lag"].astype(int).tolist() if not acf.empty else [],
         "interpretation": (
             "These are historical falsification diagnostics. Failing to reject randomness does not prove randomness; "
             "rejecting a null does not by itself establish exploitable future predictability."

@@ -11,7 +11,7 @@ from vietlott_engine.game_theory.max3d import PRODUCTS, Max3DBaoAnalysis, Produc
 router = APIRouter(prefix="/max3d", tags=["max3d"])
 
 
-def _product(code: str):  # type: ignore[no-untyped-def]
+def _product(code: str):
     try:
         return get_product(code)
     except KeyError as exc:

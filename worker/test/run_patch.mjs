@@ -1,4 +1,3 @@
-// Chạy các phép biến đổi của bộ cài đặt trên bộ ca dùng chung.
 import { readFileSync } from "node:fs";
 import {
   currentLiveWorkerUrl, extractKvId, extractWorkerUrl,

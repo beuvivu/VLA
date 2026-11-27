@@ -74,7 +74,7 @@ def link(cfg: dict, bridge: dict | None = None, *, base: str = PAGE) -> str:
 def _chip(cfg: dict, bridge: dict) -> str:
     numbers = pair_key(bridge["numbers"])
     shadow = bridge.get("shadow")
-    num = lambda n: f'<span class="app-bridge-num">{html.escape(n)}</span>'  # noqa: E731
+    num = lambda n: f'<span class="app-bridge-num">{html.escape(n)}</span>'
     shown = ",".join(num(n) for n in numbers.split(","))
     extra = f'<i class="app-bridge-shadow">,{num(shadow)}</i>' if shadow else ""
     title = f'Vị trí {bridge["vt"]} · chạy {bridge["streak"]} ngày · {bridge.get("same_pair", 1)} cầu cùng báo cặp này'

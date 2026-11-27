@@ -451,7 +451,7 @@ def _run_dispatch_step(
     queue = list(replies)
 
     class Handler(BaseHTTPRequestHandler):
-        def do_POST(self) -> None:  # noqa: N802 — tên do http.server đặt
+        def do_POST(self) -> None:
             body = self.rfile.read(int(self.headers["Content-Length"]))
             seen.append(
                 {

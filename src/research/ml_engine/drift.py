@@ -121,7 +121,7 @@ class ConceptDriftDetector:
             try:
                 self._adwin: Any = river.drift.ADWIN(delta=delta)
                 self.backend = "river"
-            except Exception as error:  # pragma: no cover - phụ thuộc phiên bản
+            except Exception as error:
                 LOGGER.warning("Không dùng được ADWIN của river (%s); dùng bản tự cài", error)
                 self._adwin = _PureAdwin(delta=delta)
                 self.backend = "pure"

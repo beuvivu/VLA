@@ -11,16 +11,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.games import GAMES, LOTTO_535, MEGA_645, POWER_655, get_game  # noqa: E402
-from vietlott_engine.crawler.pipeline import SyncPipeline  # noqa: E402
-from vietlott_engine.crawler.prize_sources import records_from_jsonl  # noqa: E402
-from vietlott_engine.crawler.sources.mirror import JsonlFileSource  # noqa: E402
-from vietlott_engine.crawler.storage import InMemoryRepository  # noqa: E402
-from vietlott_engine.game_theory.bao import analyse_bao  # noqa: E402
-from vietlott_engine.game_theory.calibration import load_calibration  # noqa: E402
-from vietlott_engine.game_theory.coverage import optimise_coverage  # noqa: E402
-from vietlott_engine.game_theory.ev import EVCalculator, optimize_tickets  # noqa: E402
-from vietlott_engine.game_theory.market import MarketReport, build_all  # noqa: E402
+from vietlott_engine.core.games import GAMES, LOTTO_535, MEGA_645, POWER_655, get_game
+from vietlott_engine.crawler.pipeline import SyncPipeline
+from vietlott_engine.crawler.prize_sources import records_from_jsonl
+from vietlott_engine.crawler.sources.mirror import JsonlFileSource
+from vietlott_engine.crawler.storage import InMemoryRepository
+from vietlott_engine.game_theory.bao import analyse_bao
+from vietlott_engine.game_theory.calibration import load_calibration
+from vietlott_engine.game_theory.coverage import optimise_coverage
+from vietlott_engine.game_theory.ev import EVCalculator, optimize_tickets
+from vietlott_engine.game_theory.market import MarketReport, build_all
 
 SEED = Path(os.environ.get("VQE_SEED_FILE_DIR") or ROOT / "data" / "seed")
 CAL = Path(os.environ.get("VQE_CALIBRATION_DIR") or ROOT / "data" / "calibration")
@@ -45,7 +45,7 @@ def ty(x: float) -> str:
     return f"{x / 1e9:,.1f} tỷ"
 
 
-def calc_for(spec, repo) -> EVCalculator:  # type: ignore[no-untyped-def]
+def calc_for(spec, repo) -> EVCalculator:
     cal = load_calibration(spec.code, CAL)
     rep = market(spec.code.value)
     pop = cal.popularity_model(repo.load_history(spec.code))
@@ -55,7 +55,7 @@ def calc_for(spec, repo) -> EVCalculator:  # type: ignore[no-untyped-def]
     return calc
 
 
-def ev_section(repo) -> tuple[list[str], list[dict]]:  # type: ignore[no-untyped-def]
+def ev_section(repo) -> tuple[list[str], list[dict]]:
     rows, md = [], ["| Game · Jackpot · vé bán (mô hình) | Vé mẫu hình | Vé \"ngày sinh\" | Vé ít người chọn (tối ưu) | Jackpot hòa vốn (vé ít người chọn, có phản ứng doanh số) |", "|---|---|---|---|---|"]
     scen = [
         (MEGA_645, 30e9, None, [1, 2, 3, 4, 5, 6], [3, 7, 8, 19, 25, 31], None),

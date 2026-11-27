@@ -142,7 +142,7 @@ class Lottery:
             name = getattr(source, "name", "?")
             try:
                 result = source.fetch(selected_date, self._http)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.debug("Source %s failed for %s: %s", name, selected_date, exc)
                 continue
 

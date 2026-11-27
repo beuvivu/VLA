@@ -12,8 +12,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from forecast.modeling.benchmark import (  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from forecast.modeling.benchmark import (
     BetaBinomialShrinkage,
     ClusterRate,
     Evaluation,

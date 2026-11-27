@@ -375,7 +375,7 @@ def main() -> None:
             / f"predict_next_{args.mode}_stable_{anchor_date.isoformat()}_all.csv",
             index=False,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"[WARN] could not export full predict tables: {exc}")
 
     manifest = {

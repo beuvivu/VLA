@@ -28,7 +28,7 @@ def _games(arg: str) -> list:
 
 def _print(obj: object, as_json: bool = True) -> None:
     if hasattr(obj, "model_dump_json"):
-        print(obj.model_dump_json(indent=2))  # type: ignore[attr-defined]
+        print(obj.model_dump_json(indent=2))
     elif as_json:
         print(json.dumps(obj, indent=2, ensure_ascii=False, default=str))
     else:
@@ -60,7 +60,7 @@ def cmd_sync(a: argparse.Namespace) -> int:
     return 0
 
 
-def _archive_extras(src, spec, repo) -> dict:  # type: ignore[no-untyped-def]
+def _archive_extras(src, spec, repo) -> dict:
     from vietlott_engine.crawler.official_data import import_canonical
     from vietlott_engine.crawler.sources.fallback import ArchiveDrawSource, FallbackDrawSource
 
@@ -103,7 +103,7 @@ def cmd_analyze(a: argparse.Namespace) -> int:
     return 0
 
 
-def _calculator(spec, quick_pick: float | None = None, use_history: bool = True):  # type: ignore[no-untyped-def]
+def _calculator(spec, quick_pick: float | None = None, use_history: bool = True):
     from vietlott_engine.game_theory.calibration import load_calibration
     from vietlott_engine.game_theory.ev import EVCalculator
     from vietlott_engine.game_theory.market import load_sales_model
@@ -196,7 +196,7 @@ def cmd_ml(a: argparse.Namespace) -> int:
     return 0
 
 
-def _print_forecast(rep) -> None:  # type: ignore[no-untyped-def]
+def _print_forecast(rep) -> None:
     from vietlott_engine.forecast.engine import vn, vn_int
 
     head = f"dự báo kỳ #{rep.target_id:05d}" if rep.target_id is not None else "đã ngừng phát hành: chỉ phân tích lịch sử"
@@ -368,7 +368,7 @@ def _row_id(r: dict) -> int:
         return -1
 
 
-def _import_pages(a: argparse.Namespace, store) -> int:  # type: ignore[no-untyped-def]
+def _import_pages(a: argparse.Namespace, store) -> int:
     from vietlott_engine.core.games import GameCode
     from vietlott_engine.core.products import get_product
     from vietlott_engine.crawler.official_data import import_canonical
@@ -387,7 +387,7 @@ def _import_pages(a: argparse.Namespace, store) -> int:  # type: ignore[no-untyp
         "imported": {},
     }
     if not a.dry_run:
-        def keep(c: dict):  # type: ignore[no-untyped-def]
+        def keep(c: dict):
             held = set() if a.replace_mismatches else set(c.get("mismatch_ids", []))
             return lambda i: int(i) not in held
 
@@ -706,7 +706,7 @@ def cmd_rolldown(a: argparse.Namespace) -> int:
     return 0
 
 
-def _load_bundled(repo, seed_dir: Path) -> list[dict]:  # type: ignore[no-untyped-def]
+def _load_bundled(repo, seed_dir: Path) -> list[dict]:
     from vietlott_engine.crawler.pipeline import SyncPipeline
     from vietlott_engine.crawler.prize_sources import records_from_jsonl
     from vietlott_engine.crawler.sources.mirror import JsonlFileSource
@@ -791,7 +791,7 @@ def cmd_doctor(a: argparse.Namespace) -> int:
         try:
             m = importlib.import_module(mod)
             add(f"gói {name}", True, str(getattr(m, "__version__", "đã cài")), required=mod != "duckdb")
-        except Exception as exc:  # noqa: BLE001 - report any import failure
+        except Exception as exc:
             add(f"gói {name}", False, f"chưa cài được: {exc.__class__.__name__}", required=mod != "duckdb")
     seed = Path(s.product_seed_dir)
     needed = ["power645.jsonl", "power655.jsonl", "power535.jsonl", *SEED_FILES.values(), "exclusions.json"]
@@ -802,7 +802,7 @@ def cmd_doctor(a: argparse.Namespace) -> int:
         counts = {spec.code.value: repo.count(spec.code) for spec in GAMES.values()}
         empty = [g for g, c in counts.items() if c == 0]
         add("kho kết quả (DuckDB)", not empty, ", ".join(f"{g} {c}" for g, c in counts.items()) + ("" if not empty else " — chạy `vietlott init`"), required=False)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         add("kho kết quả (DuckDB)", False, f"{exc.__class__.__name__}: {exc}", required=False)
     fdir = s.forecast_dir or s.data_dir / "forecast"
     states = [c.value for c in ProductCode if (Path(fdir) / f"{c.value}.json").exists()]
@@ -1054,7 +1054,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return int(args.func(args))
-    except Exception as exc:  # noqa: BLE001 - one readable line for the user; VQE_DEBUG=1 shows the traceback
+    except Exception as exc:
         if os.environ.get("VQE_DEBUG"):
             raise
         hint = ""

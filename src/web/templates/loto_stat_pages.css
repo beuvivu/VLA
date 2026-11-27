@@ -1,4 +1,3 @@
-/* Ba trang LOTO dùng cùng nhịp đọc; màu luôn mô tả đại lượng ghi ở chú giải. */
 body.app-lotostats-page .app-lotostats-shell{max-width:1200px;min-width:0;margin:0 auto;color:var(--ui-ink);font-size:14px;line-height:1.6}
 body.app-lotostats-page .app-lotostats-shell *{box-sizing:border-box}
 body.app-lotostats-page .app-lotostats-header{margin:0 0 16px;padding:0;border:0;background:none;box-shadow:none}
@@ -42,7 +41,6 @@ body.app-lotostats-page .app-lotostats-shell .sp-table tbody tr:hover{background
 body.app-lotostats-page .app-lotostats-shell .sp-table td:not(.marked):first-child{background:var(--ui-surface-2)}
 body.app-lotostats-page .app-lotostats-shell .sp-table .sp-empty-row{height:auto;padding:24px!important;white-space:normal;color:var(--ui-ink-soft);font-size:13px;font-style:normal}
 
-/* Hai bảng tổng giữ nguyên tỉ lệ cột; ba ma trận ngày cuộn trong từng khung. */
 body.app-lotostats-page .app-lotostats-summary .sp-scroll,body.app-lotostats-page .app-lotostats-daily .sp-scroll{max-height:none}
 body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail){min-width:0}
 body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail) :is(th,td){padding:8px;white-space:normal;overflow-wrap:normal}
@@ -57,7 +55,6 @@ body.app-lotostats-page .app-head-tail-legend{gap:8px 16px;margin:0 0 16px;paddi
 body.app-lotostats-page .app-head-tail-legend small{font-size:12px}
 body.app-lotostats-page .app-head-tail-swatch{min-width:32px;min-height:28px;border-radius:4px}
 
-/* Cặp và số kép là nhãn chính, hạng và tổng lượt là các lớp đọc sau. */
 body.app-lotostats-page .app-lotostats-reverse{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr);gap:24px;align-items:start;margin:0}
 body.app-lotostats-page .app-lotostats-reverse #sp-grid{min-width:560px}
 body.app-lotostats-page .app-lotostats-reverse #sp-kep{min-width:190px}
@@ -67,7 +64,6 @@ body.app-lotostats-page .app-lotostats-reverse :is(#sp-grid td:nth-child(2),#sp-
 body.app-lotostats-page .app-lotostats-reverse :is(#sp-grid td:nth-child(2),#sp-kep td:first-child):not(.marked){color:var(--ui-brand-ink)}
 body.app-lotostats-page .app-lotostats-reverse #sp-kep td:nth-child(2){font-size:14px;font-weight:600}
 
-/* Gan hiện tại, chu kỳ dài nhất và số lượt dùng các thang có tên riêng. */
 body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan){min-width:700px}
 body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) th:first-child{width:16%}
 body.app-lotostats-page .app-lotostats-shell[data-stat-view="lo-gan"] :is(#sp-grid,#sp-pair-gan) th:nth-child(2){width:30%}
@@ -93,7 +89,6 @@ body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td
 body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-frequency.app-stat-level-2:not(.marked){background:color-mix(in srgb,var(--ui-ok-soft) 65%,var(--ui-surface));color:var(--ui-ok)}
 body.app-lotostats-page .app-lotostats-shell :is(table.sp-table.sp-grid-lines td,.app-lotostats-legend i).app-stat-frequency.app-stat-level-3:not(.marked){background:var(--ui-ok-soft);color:var(--ui-ok)}
 
-/* Màu bám giá trị khi rê chuột; nền đánh dấu vẫn có mức ưu tiên cao nhất. */
 body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),body.app-lotostats-page .app-head-tail-legend .app-head-tail-heat{background:var(--app-hit-bg-light,var(--ui-empty-bg));color:var(--app-hit-ink-light,var(--ui-empty-ink))}
 html.dark body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),html[data-ui-theme="dark"] body.app-lotostats-page .app-lotostats-shell :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),html.dark body.app-lotostats-page .app-head-tail-legend .app-head-tail-heat,html[data-ui-theme="dark"] body.app-lotostats-page .app-head-tail-legend .app-head-tail-heat{background:var(--app-hit-bg-dark,var(--ui-empty-bg));color:var(--app-hit-ink-dark,var(--ui-empty-ink))}
 body.app-lotostats-page .app-lotostats-shell .sp-table td.marked,body.app-lotostats-page .app-lotostats-shell .sp-table td.marked *{color:var(--ui-mark-ink)}

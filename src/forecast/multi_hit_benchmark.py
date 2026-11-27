@@ -139,12 +139,12 @@ def _learned(features: np.ndarray, labels: np.ndarray, start: int, kind: str) ->
         if kind == "logit":
             scaler = StandardScaler().fit(x_train)
             model = LogisticRegression(C=0.01, max_iter=500).fit(scaler.transform(x_train), y_train)
-            predict = lambda x, m=model, s=scaler: m.predict_proba(s.transform(x))[:, 1]  # noqa: E731
+            predict = lambda x, m=model, s=scaler: m.predict_proba(s.transform(x))[:, 1]
         else:
             model = HistGradientBoostingClassifier(max_iter=150, learning_rate=0.05, max_leaf_nodes=15,
                                                    min_samples_leaf=200, l2_regularization=1.0,
                                                    random_state=0).fit(x_train, y_train)
-            predict = lambda x, m=model: m.predict_proba(x)[:, 1]  # noqa: E731
+            predict = lambda x, m=model: m.predict_proba(x)[:, 1]
         stop = min(fit_at + REFIT_EVERY, n_rows)
         block = features[fit_at:stop]
         out[fit_at:stop] = predict(block.reshape(-1, block.shape[-1])).reshape(stop - fit_at, N_NUMBERS)

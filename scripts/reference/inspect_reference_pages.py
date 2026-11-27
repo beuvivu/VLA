@@ -96,7 +96,7 @@ def main() -> int:
         print(f"\n{'=' * 72}\n{url}\n{'=' * 72}")
         try:
             response = session.get(url, timeout=TIMEOUT)
-        except Exception as exc:  # noqa: BLE001 - một trang hỏng không dừng cả lô
+        except Exception as exc:
             print(f"  LỖI MẠNG: {type(exc).__name__}: {exc}")
             failures += 1
             continue

@@ -45,8 +45,6 @@ jobs:
 
           for attempt in 1 2 3 4; do
             if (( attempt > 1 )); then
-              # Bảng phụ thuộc dữ liệu: dựng lại trên main mới, không rebase
-              # bảng cũ lên kết quả vừa được workflow khác công bố.
               git fetch origin main
               git reset --hard origin/main
             fi

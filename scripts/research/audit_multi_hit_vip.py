@@ -12,8 +12,8 @@ from scipy.stats import binom
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from forecast.multi_hit_report import load_history  # noqa: E402
-from forecast.multi_hit_vip import (LOTO_PER_DRAW, N_NUMBERS, any_multi_chance, counts_matrix,  # noqa: E402
+from forecast.multi_hit_report import load_history
+from forecast.multi_hit_vip import (LOTO_PER_DRAW, N_NUMBERS, any_multi_chance, counts_matrix,
                                     random_any_hit)
 
 KS = (1, 3, 5, 10, 20, 50, 100)

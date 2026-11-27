@@ -226,7 +226,7 @@ def _declared_length(resp: object) -> int | None:
 def _request_page(http: HttpClient, url: str, *, timeout: int = 20) -> str:
     try:
         resp = http.get(url, timeout=timeout)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug("request failed %s: %s", url, exc)
         return ""
     if _get_status_code(resp) != 200:

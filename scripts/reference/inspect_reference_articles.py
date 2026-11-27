@@ -25,7 +25,7 @@ MAX_ROWS = int(os.environ.get("MAX_ROWS", "25"))
 def get(session: requests.Session, url: str) -> BeautifulSoup | None:
     try:
         response = session.get(url, timeout=TIMEOUT)
-    except Exception as exc:  # noqa: BLE001 - một trang hỏng không dừng cả lô
+    except Exception as exc:
         print(f"  LỖI MẠNG {url}: {type(exc).__name__}: {exc}")
         return None
     print(f"  HTTP {response.status_code}, {len(response.content) / 1024:.0f} KB  {url}")

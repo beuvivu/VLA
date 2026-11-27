@@ -29,7 +29,6 @@ function setup(t,fixture='history',query=''){
 }
 function choose(dom,value){const s=dom.window.document.getElementById('sp-tomorrow-number');assert.ok(s,'Thiếu bộ chọn 00–99');s.value=value;s.dispatchEvent(new dom.window.Event('change',{bubbles:true}));}
 function range(dom,from,to){
- // Trang dùng mốc nhanh; thêm đầu vào cho hợp đồng tra ngày ngoài dải của bộ máy chung.
  for(const [id,value] of [['sp-from',from],['sp-to',to]]){
   const input=dom.window.document.createElement('input');input.id=id;input.type='date';input.value=value;
   dom.window.document.querySelector('.app-tomorrow-controls').append(input);

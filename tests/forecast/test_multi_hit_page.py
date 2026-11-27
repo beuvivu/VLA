@@ -586,7 +586,7 @@ def test_sensitivity_is_the_power_over_many_histories_not_one_lucky_run(fair_vip
 @pytest.mark.parametrize(("passing", "sensitive"), [(8, True), (7, False)])
 def test_power_is_the_share_of_planted_histories_that_pass(passing, sensitive) -> None:
     seeds = tuple(range(10))
-    fake = lambda job: {"candidate_passes": job[1] < passing}  # noqa: E731
+    fake = lambda job: {"candidate_passes": job[1] < passing}
     runs, power = report.power_estimate(1000, seeds=seeds, run=fake, workers=1)
     assert len(runs) == 10 and power["passes"] == passing
     assert power["rate"] == pytest.approx(passing / 10)

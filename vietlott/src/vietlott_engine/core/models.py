@@ -27,7 +27,7 @@ class Draw(BaseModel):
     @field_validator("numbers", mode="before")
     @classmethod
     def _sort_numbers(cls, v: object) -> tuple[int, ...]:
-        return tuple(sorted(int(x) for x in v))  # type: ignore[union-attr]
+        return tuple(sorted(int(x) for x in v))
 
     @model_validator(mode="after")
     def _check_against_game(self) -> "Draw":
@@ -60,7 +60,7 @@ class Ticket(BaseModel):
     @field_validator("numbers", mode="before")
     @classmethod
     def _sort_numbers(cls, v: object) -> tuple[int, ...]:
-        return tuple(sorted(int(x) for x in v))  # type: ignore[union-attr]
+        return tuple(sorted(int(x) for x in v))
 
     @model_validator(mode="after")
     def _check(self) -> "Ticket":

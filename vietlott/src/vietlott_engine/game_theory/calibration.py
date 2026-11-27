@@ -714,7 +714,7 @@ def load_calibration(game: str | GameCode, directory: Path) -> BehaviourCalibrat
         return None
     try:
         return BehaviourCalibration.load(path)
-    except (ValueError, json.JSONDecodeError) as exc:  # pragma: no cover - corrupted file
+    except (ValueError, json.JSONDecodeError) as exc:
         log.warning("ignoring unreadable calibration %s: %s", path, exc)
         return None
 

@@ -11,9 +11,9 @@ from scipy.stats import binom
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla import backtest  # noqa: E402
-from research.vla.features import build_features, load_history  # noqa: E402
-from research.vla.models import BayesianLGBModel  # noqa: E402
+from research.vla import backtest
+from research.vla.features import build_features, load_history
+from research.vla.models import BayesianLGBModel
 
 TESTS_READ = 30
 

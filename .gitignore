@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.py[cod]
 *.so
@@ -12,70 +11,39 @@ venv/
 .coverage
 htmlcov/
 
-# Local environment / secrets
 .env
 .env.*
 !.env.example
 
-# OS / IDE
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# Runtime-only caches and logs
 data/cache/
 data/http_cache/
 data/tmp/
 data/excel/daily/
-# Bản xuất XLSX của sổ chuẩn: sinh mỗi lượt từ CSV, tải lên artifact của update-data.yml, không vào git
-# (phương án 2 của documentation/plans/2026-11-05-dung-luong-kho.md, 09-11-2026). XLSX là zip đã nén nên git
-# không lấy được delta giữa hai phiên bản; đo ngày 06-11-2026 chúng chiếm 13% phần tăng của kho. Dữ liệu
-# không mất: validate_excel_integrity buộc chúng trùng từng ô với data/xsmb*.csv, mà CSV vẫn nằm trong git.
 data/excel/*.xlsx
 logs/
 *.log
 
-# Bảng tần suất theo TỪNG NGÀY: ghi ra rồi không ai đọc.
-#
-# Đo trên main: 204 MB cho 10 tệp, và quy trình hàng ngày ghi đè toàn bộ mỗi
-# lần chạy — git thấy blob mới nên kho phình theo ngày chứ không theo dữ liệu.
-# Backfill làm nặng thêm 6 lần: period_frequency_loto_day.json đi từ 10,7 MB
-# lên 65,4 MB.
-#
-# Không nơi nào trong kho đọc chúng. Các trình dựng trang đọc bản
-# *_current.csv (nhỏ), còn statistics_ai_overlay tính lại trong bộ nhớ bằng
-# _period_frequency_from_sparse. Test cũng gọi hàm chứ không mở tệp.
-#
-# Vẫn được sinh ra mỗi lần chạy nên ai cần vẫn có; chỉ là không đưa vào lịch sử.
 data/stats/advanced/*_day.json
 data/stats/advanced/*_day.csv
 
-# Hai bảng nghiên cứu ĐẦY ĐỦ: sinh mỗi lượt, tải lên artifact của update-data.yml, không vào git
-# (phương án 3 của documentation/plans/2026-11-05-dung-luong-kho.md, 07-11-2026).
-#
-# Gần như mọi số trong hai bảng đổi mỗi kỳ, nên git không lấy được delta. Đo ngày 06-11-2026, chúng
-# chiếm 24% phần tăng của kho. Trang Phòng nghiên cứu đọc hai bản cắt mà git vẫn theo dõi:
-# crosslag_rules_top.csv và current_special_next_loto.csv.
 data/research/crosslag_positional/crosslag_rules.csv
 data/stats/conditional/loto_nextday_given_special_long.csv
 
-# Năm bảng chẩn đoán nữa theo cùng cách (11-11-2026). Không trang nào đọc chúng; git giữ bản cắt *_top.csv.
-# Danh sách cặp bảng đầy đủ → bản cắt khai một lần ở src/core/table_cuts.py (FULL_TABLE_CUTS);
-# tests/research/test_research_table_cuts.py buộc tệp này khớp danh sách ấy.
 data/research/research_firewall_loto.csv
 data/research/research_firewall_de.csv
 data/research/path_timelines/path_timeline_loto.csv
 data/research/path_timelines/path_timeline_de.csv
 data/research/legacy_extensions/pair_recency_loto.csv
 
-# Thư viện chỉ dùng cho kiểm thử tương tác giao diện.
 tests/frontend/node_modules/
 
-# Khoá tiến trình và tệp tạm của sổ học trực tuyến.
 data/forecast/online/*.lock
 data/forecast/online/.*
 data/forecast/agents/*.lock
 
-# Ảnh chụp và kết quả của scripts/browser/*: CI tải lên làm artifact, không commit.
 ui-browser-artifacts/

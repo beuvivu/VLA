@@ -43,7 +43,7 @@ def fetch_snapshot(
         try:
             http = requests.Session()
             prize_map = source.fetch_partial(now.date(), http, live=True)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             prize_map = {k: [] for k in PRIZE_ORDER}
             error = f"{type(exc).__name__}: {str(exc)[:120]}"
         if shows_previous_draw(prize_map, previous):

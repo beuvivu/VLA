@@ -114,7 +114,7 @@ def main() -> int:
                 print(f"=== {url}")
                 print(json.dumps(do, ensure_ascii=False, indent=1))
                 ok = True
-            except Exception as loi:  # noqa: BLE001 - in ra rồi đo URL kế
+            except Exception as loi:
                 print(f"LỖI {url}: {type(loi).__name__}: {loi}")
             finally:
                 trang.close()

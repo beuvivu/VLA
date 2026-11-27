@@ -33,7 +33,6 @@ for (const path of ['', 'index.html', 'landing.html', 'landing_desktop.html']) {
     emit(dom, 'number', 'click', { detail: 1 });
     assert.equal(dom.window.document.getElementById('calculator').textContent, '27');
     assert.equal(drawer(dom), null);
-    // Chuỗi sự kiện thật của trình duyệt: click thứ hai rồi mới dblclick.
     emit(dom, 'number', 'click', { detail: 2 });
     emit(dom, 'number', 'dblclick', { detail: 2 });
     assert.equal(dom.window.document.getElementById('calculator').textContent, '54');

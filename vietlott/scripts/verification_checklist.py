@@ -14,7 +14,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.products import read_jsonl  # noqa: E402
+from vietlott_engine.core.products import read_jsonl
 
 SEED = Path(os.environ.get("VQE_PRODUCT_SEED_DIR") or ROOT / "data" / "seed")
 OUT = Path(os.environ.get("VQE_REPORTS_DIR") or ROOT / "reports")

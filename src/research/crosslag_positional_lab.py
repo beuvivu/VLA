@@ -82,7 +82,7 @@ def _parse_ops(value: str) -> tuple[Operator, ...]:
         raise ValueError(f"Unknown operators: {bad}")
     if not ops:
         raise ValueError("At least one operator is required")
-    return ops  # type: ignore[return-value]
+    return ops
 
 
 def generate_rules(

@@ -45,11 +45,11 @@ def _dir(state: AppState) -> Path:
     return Path(s.forecast_dir or s.data_dir / "forecast")
 
 
-def _series(state: AppState, code: ProductCode):  # type: ignore[no-untyped-def]
+def _series(state: AppState, code: ProductCode):
     return load_series(code, repository=state.repository, store=state.product_store(), seed_dir=state.settings.product_seed_dir)
 
 
-def _refresh(state: AppState, code: ProductCode, refit: bool = False, last: int | None = None, series=None):  # type: ignore[no-untyped-def]
+def _refresh(state: AppState, code: ProductCode, refit: bool = False, last: int | None = None, series=None):
     series = series if series is not None else _series(state, code)
     with forecast_guard(_dir(state)):
         return refresh(code, series, _dir(state), refit=refit, last=last)

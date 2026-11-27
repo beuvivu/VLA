@@ -1,4 +1,3 @@
-/** Dựng vùng ngày đang xem khi dải lớn; khoảng cuộn vẫn bao phủ toàn bộ lịch sử. */
 function renderFrequencyWindow(el, headers, rows, opts) {
   if (el.id !== 'sp-matrix-grid' || Math.max(headers.length, rows.length) <= 400) return false;
   const horizontal = headers.length > 400;
@@ -56,7 +55,6 @@ function renderFrequencyWindow(el, headers, rows, opts) {
       if (start) el.tBodies[0].prepend(gap(start));
       if (end < total) el.tBodies[0].append(gap(total - end));
     }
-    // Lần đầu do bộ render chính trang trí; các lần cuộn chỉ cập nhật ô mới.
     if (!firstDraw) el.dispatchEvent(new Event('sp:matrix-window'));
     if (focusRow && focusCol) {
       const target = el.querySelector(`[aria-rowindex="${focusRow}"] [aria-colindex="${focusCol}"]`);
@@ -76,7 +74,6 @@ function renderFrequencyWindow(el, headers, rows, opts) {
   window.addEventListener('resize', schedule, {passive: true});
   el._spWindow = {
     move(cell, key) {
-      // Chỉ ngày mới trải qua nhiều vùng; trục số/cặp có thể đã sắp xếp hoặc ẩn.
       if (horizontal ? !['ArrowLeft', 'ArrowRight'].includes(key) : !['ArrowUp', 'ArrowDown'].includes(key)) return;
       const row = Number(cell.parentElement.getAttribute('aria-rowindex')) - 2;
       const col = Number(cell.getAttribute('aria-colindex')) - 1;

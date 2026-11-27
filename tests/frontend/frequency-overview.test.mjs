@@ -191,9 +191,6 @@ test('dải LOTO rỗng xóa tổng 00–99 và bảng xếp hạng rồi phục
 });
 
 test('bảng xếp hạng LOTO so số nháy với 27/100 nháy mỗi kỳ, không với tỉ lệ có mặt 1 − 0,99²⁷', t => {
-  // Bộ máy thống kê tự tính cột kỳ vọng; trước đây nó dùng 23,77% và một đoạn vá trong
-  // frequency_bento.js ghi đè lại sau mỗi lần dựng. Đoạn vá đã gỡ, nên phép kiểm này canh
-  // chính bộ máy: 3 kỳ → 0,81 nháy, số 55 về 29 nháy → 35,80×.
   const dom = setup(t, 'tan-suat-loto'), d = dom.window.document;
   const top = () => d.querySelector('#sp-grid tbody tr').cells;
   assert.deepEqual([...top()].map(cell => cell.textContent), ['1', '55', '29', '0.8', '35.80×']);
@@ -272,7 +269,6 @@ test('chu kỳ Đặc Biệt lấy cả lần về ngoài dải LOTO và vẫn g
   assert.match(drawer(dom).querySelector('.app-evidence-steps').textContent, /khoảng cách.*01.*1 kỳ/);
   assert.doesNotMatch(drawer(dom).querySelector('.app-evidence-steps').textContent, /tính lại theo bộ lọc/);
 });
-
 
 test('mobile mặc định Dọc là ma trận ngày theo hàng, giữ đủ số và nhớ chiều thủ công', t => {
   const dom = setup(t, 'tan-suat-loto', { mobile: true }), d = dom.window.document;
@@ -362,7 +358,6 @@ test('demo có hướng dẫn thao tác, bộ nhớ riêng và vẫn chạy khi 
   assert.equal(blocked.window.document.querySelectorAll('.app-frequency-spark').length, 100);
 });
 
-
 test('đổi30/60/90 kỳ đổi tổng badge thực tế và chart, giữ đúng counts ở cả hai chiều', t => {
   const history = Array.from({length: 95}, (_, i) => ({
     d: new Date(Date.UTC(2026, 5, i + 1)).toISOString().slice(0, 10), s: '00012',
@@ -387,7 +382,6 @@ test('đổi30/60/90 kỳ đổi tổng badge thực tế và chart, giữ đún
   }
   assert.ok(paths.size > 1, 'đường biểu đồ phải tính lại theo dải, không giữ30kỳ');
 });
-
 
 test('bàn phím từ vùng cuộn chỉ đánh dấu họ cặp đang hiện sau lọc', t => {
   const dom = setup(t, 'tan-suat-cap-loto'), d = dom.window.document;

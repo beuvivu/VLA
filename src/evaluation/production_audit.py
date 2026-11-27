@@ -179,7 +179,7 @@ def audit(
         try:
             dates = sorted(_dates_from_csv(raw_path))
             latest = dates[-1] if dates else None
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             critical.append(f"xsmb_csv_invalid={exc}")
 
     expected = expected_latest_draw(now, cutoff_t)
@@ -205,7 +205,7 @@ def audit(
                 critical.append(f"source_audit_not_accepted={latest}")
             if int(item.get("agreement", 0)) < 1:
                 critical.append(f"source_consensus_missing={latest}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             critical.append(f"source_audit_invalid={exc}")
 
         target = latest + timedelta(days=1)
@@ -225,7 +225,7 @@ def audit(
                 critical.append("fun_rows_not_27")
             if len(fun.get("top_loto", [])) < 10 or len(fun.get("top_de", [])) < 10:
                 critical.append("fun_top10_incomplete")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             critical.append(f"fun_prediction_invalid={exc}")
 
         for mode in ("loto", "de"):
@@ -259,7 +259,7 @@ def audit(
                 contract = str(cau.get("calendar_contract", ""))
                 if contract != "daily-contiguous raw and two-digit histories":
                     critical.append(f"cau_keo_{mode}_calendar_contract_missing")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 critical.append(f"cau_keo_{mode}_manifest_invalid={exc}")
 
             overlay_target = _single_csv_value(
@@ -290,7 +290,7 @@ def audit(
                 critical.append(
                     f"conditional_calendar_end={cond.get('calendar_end')} expected={latest}"
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             critical.append(f"conditional_diagnostics_invalid={exc}")
 
         try:
@@ -318,7 +318,7 @@ def audit(
                         )
                     if not attempts or attempts[-1].get("status") != "ok":
                         critical.append(f"ai_overlay_{mode}_accepted_without_ok")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             critical.append(f"ai_overlay_diagnostics_invalid={exc}")
 
         for mode in ("loto", "de"):
@@ -330,7 +330,7 @@ def audit(
                     critical.append(
                         f"dynamics_{mode}_anchor={dyn.get('anchor_date')} expected={latest}"
                     )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 critical.append(f"dynamics_{mode}_diagnostics_invalid={exc}")
 
         try:
@@ -345,7 +345,7 @@ def audit(
                 critical.append(
                     f"readme_prediction_target_missing={target_display}"
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             critical.append(f"readme_invalid={exc}")
 
         if check_docs:
@@ -366,7 +366,7 @@ def audit(
         health = _json("data/health.json")
         if health.get("ok") is False:
             critical.append("health_json_not_ok")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         critical.append(f"health_json_invalid={exc}")
 
     return {

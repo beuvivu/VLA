@@ -11,7 +11,7 @@ from vietlott_engine.core.history import DrawHistory
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _ignore_local_dotenv():  # type: ignore[no-untyped-def]
+def _ignore_local_dotenv():
     with pytest.MonkeyPatch.context() as patch:
         patch.setitem(_config.Settings.model_config, "env_file", None)
         patch.setenv('VQE_AUTO_UPDATE_ENABLED', 'false')

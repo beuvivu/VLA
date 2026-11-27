@@ -13,9 +13,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig  # noqa: E402
-from research.ml_engine.metrics import score_day  # noqa: E402
-from research.ml_engine.schema import ObservationMatrix  # noqa: E402
+from research.ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
+from research.ml_engine.metrics import score_day
+from research.ml_engine.schema import ObservationMatrix
 
 OUT = ROOT / "data" / "research" / "ml_engine_aggregation.json"
 BLOCK = 7

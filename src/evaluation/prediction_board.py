@@ -272,7 +272,7 @@ def _formed(values: list[str], a: int, b: int) -> int:
     return 10 * digits[a] + digits[b]
 
 
-def _arrays(draws: dict[str, list[str]]):  # type: ignore[no-untyped-def]
+def _arrays(draws: dict[str, list[str]]):
     import numpy as np
 
     dates = sorted(draws)
@@ -320,7 +320,7 @@ _RULE_MARK = {"loto": "loto-lon", "hai-nhay": "loto-lon", "bach-thu": "loto",
               "dac-biet": "special-touch", "bo-so": "bo"}
 
 
-def _recount(data: Path, key: str, target: str):  # type: ignore[no-untyped-def]
+def _recount(data: Path, key: str, target: str):
     report = _json(data / "soi_cau" / "bridge_pages" / "latest.json")
     embedded = dict(decode_draw(text) for text in report.get("draws", []))
     if not embedded:

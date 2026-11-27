@@ -13,7 +13,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "ops"))
-import purge_github_caches as purge  # noqa: E402
+import purge_github_caches as purge
 
 
 REPOSITORY = "beuvivu/VLA"

@@ -53,7 +53,7 @@ class FakeSource:
 
 def _lottery(tmp_path: Path, sources: list[FakeSource]) -> Lottery:
     paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
-    return Lottery(paths=paths, http=object(), sources=sources)  # type: ignore[arg-type]
+    return Lottery(paths=paths, http=object(), sources=sources)
 
 
 def test_consensus_accepts_two_matching_sources(tmp_path: Path) -> None:
@@ -153,7 +153,7 @@ def test_rejects_a_draw_identical_to_the_previous_day(tmp_path: Path) -> None:
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale)]
     assert lot.fetch(today, min_agreement=1) is False, "ngày không quay bị ghi thành kỳ"
     assert not lot.has_date(today)
 
@@ -164,12 +164,12 @@ def test_a_source_still_showing_the_stored_draw_hands_over_to_the_next(tmp_path:
     assert lot.fetch(yesterday, min_agreement=1) is True
 
     fresh = _result(today, special=22602)
-    lot._sources = [  # type: ignore[attr-defined]
+    lot._sources = [
         FakeSource("a", _result(today, special=22601)),
         FakeSource("b", fresh),
     ]
     assert lot.fetch(today, min_agreement=1) is True
-    assert lot._data[today].special == 22602  # type: ignore[attr-defined]
+    assert lot._data[today].special == 22602
     assert not lot.is_no_draw(today)
 
 
@@ -179,7 +179,7 @@ def test_only_when_every_answer_repeats_is_the_day_a_non_draw(tmp_path: Path) ->
     assert lot.fetch(yesterday, min_agreement=1) is True
 
     stale = _result(today, special=22601)
-    lot._sources = [FakeSource("a", stale), FakeSource("b", None), FakeSource("c", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale), FakeSource("b", None), FakeSource("c", stale)]
     assert lot.fetch(today, min_agreement=1) is False
     assert lot.is_no_draw(today)
     assert not lot.has_date(today)
@@ -192,7 +192,7 @@ def test_consensus_does_not_rescue_a_repeated_draw(tmp_path: Path) -> None:
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", stale), FakeSource("b", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale), FakeSource("b", stale)]
     assert lot.fetch(today, min_agreement=2) is False
     assert not lot.has_date(today)
     audit = lot._fetch_audit[today.isoformat()]
@@ -207,7 +207,7 @@ def test_looks_at_the_next_day_too_because_backfill_runs_backwards(tmp_path: Pat
     lot = _lottery(tmp_path, [FakeSource("a", shared)])
     assert lot.fetch(later, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", _result(earlier, special=22601))]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", _result(earlier, special=22601))]
     assert lot.fetch(earlier, min_agreement=1) is False
 
 
@@ -217,7 +217,7 @@ def test_a_genuinely_different_draw_is_still_accepted(tmp_path: Path) -> None:
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", _result(today, special=22602))]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", _result(today, special=22602))]
     assert lot.fetch(today, min_agreement=1) is True
     assert lot.has_date(today)
 
@@ -229,7 +229,7 @@ def test_rejects_a_repeat_even_when_the_days_between_were_removed(tmp_path: Path
     lot = _lottery(tmp_path, [FakeSource("a", _result(kept, special=22601))])
     assert lot.fetch(kept, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale)]
     assert lot.fetch(refetched, min_agreement=1) is False
     assert not lot.has_date(refetched)
 

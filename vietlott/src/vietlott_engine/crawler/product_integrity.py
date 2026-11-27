@@ -6,17 +6,17 @@ import contextvars
 from vietlott_engine.core.products import ProductCode, parse_product_rows
 
 
-def identities(history):  # type: ignore[no-untyped-def]
+def identities(history):
     return {int(did):(str(day), tuple(int(n) for n in values))
             for did,day,values in zip(history.draw_ids,history.dates,history.values)}
 
 
-def missing_ranges(ids, excluded=()):  # type: ignore[no-untyped-def]
+def missing_ranges(ids, excluded=()):
     ordered=sorted(set(ids) | set(excluded))
     return [[a+1,b-1] for a,b in zip(ordered,ordered[1:]) if b>a+1]
 
 
-def parse_fast_rows(product, rows, source):  # type: ignore[no-untyped-def]
+def parse_fast_rows(product, rows, source):
     seen, duplicates = {}, set()
     for row in rows:
         try:
@@ -32,7 +32,7 @@ def parse_fast_rows(product, rows, source):  # type: ignore[no-untyped-def]
     return parsed,rejected,sorted(duplicates)
 
 
-def contiguous_results(known, candidates, excluded):  # type: ignore[no-untyped-def]
+def contiguous_results(known, candidates, excluded):
     last=max(known,default=0)
     latest=max(candidates,default=last)
     anchor=last if known else min(candidates,default=1)-1
@@ -49,7 +49,7 @@ def contiguous_results(known, candidates, excluded):  # type: ignore[no-untyped-
                       'historical_missing_ranges':historical}
 
 
-async def finish_store_write(write):  # type: ignore[no-untyped-def]
+async def finish_store_write(write):
     task=asyncio.get_running_loop().run_in_executor(None,contextvars.copy_context().run,write)
     cancelled=None
     while True:

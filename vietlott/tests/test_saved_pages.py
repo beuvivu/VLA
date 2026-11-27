@@ -97,7 +97,7 @@ def test_har_without_result_pages_is_explained(tmp_path: Path) -> None:
 
 
 def test_classify_urls() -> None:
-    def c(url: str, ajax: bool = False, post: str | None = None):  # type: ignore[no-untyped-def]
+    def c(url: str, ajax: bool = False, post: str | None = None):
         return classify(SavedDoc("x", url, "", ajax=ajax, post=post))
 
     assert c("https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/max-3DPro?id=00786&nocatche=1") == (ProductCode.MAX3D_PRO, "detail")
@@ -155,7 +155,7 @@ def test_compare_with_data_and_cli_import(tmp_path: Path, monkeypatch: pytest.Mo
 def test_verification_checklist_is_reproducible() -> None:
     spec = importlib.util.spec_from_file_location("vc", ROOT / "scripts" / "verification_checklist.py")
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    spec.loader.exec_module(mod)
     a, b = mod.build(seed=7), mod.build(seed=7)
     assert a == b and a[0]["product"] == "lotto535" and a[0]["draw_id"] == 920
     assert sum(r["group"].startswith("2") for r in a) == 30 and all(r["url"].startswith("https://vietlott.vn/") for r in a)

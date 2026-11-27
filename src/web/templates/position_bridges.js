@@ -1,21 +1,10 @@
 (() => {
   "use strict";
 
-  // Soi cầu vị trí — bản trình duyệt của `src/soi_cau/position_bridges.py`.
-  //
-  // Hai bản PHẢI đếm ra cùng một con số: trang chủ in ba ô "đẹp nhất" từ bản
-  // Python, còn trang này tính lại từ đúng những kỳ đã nhúng. Phép kiểm
-  // `tests/frontend/position-bridges.test.mjs` chạy bản này trên dữ liệu thật
-  // và so từng cầu với bản Python.
-  //
-  // Mọi phần tử dựng bằng createElement + textContent; không gán chuỗi HTML.
-
   const DATA = document.getElementById("app-bridge-data");
   if (!DATA) return;
   const REPORT = JSON.parse(DATA.textContent);
 
-  // (mã giải, nhãn ngắn, nhãn Sổ kết quả, số giải, số chữ số) — cùng thứ tự
-  // với LAYOUT bên Python.
   const LAYOUT = [
     ["special", "ĐB", "Đặc Biệt", 1, 5],
     ["prize1", "G1", "Giải Nhất", 1, 5],
@@ -29,7 +18,6 @@
   const SHADOW = [5, 6, 7, 8, 9, 0, 1, 2, 3, 4];
   const WEEKDAYS = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
-  // Vị trí 0..106: thuộc giá trị nào trong 27 giải, chữ số thứ mấy.
   const POSITIONS = [];
   const VALUES = [];
   for (const [code, short, name, count, width] of LAYOUT) {
@@ -59,8 +47,6 @@
     return `${WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]}, ${text}`;
   }
 
-  // ---- Dữ liệu --------------------------------------------------------------
-
   function prepare(draws) {
     return draws.map((draw) => {
       const digits = new Int8Array(N_POS);
@@ -75,7 +61,6 @@
     });
   }
 
-  /** Mọi cặp vị trí: a < b khi lộn, a ≠ b khi không lộn — như `pair_index`. */
   function pairs(lon) {
     const a = [];
     const b = [];
@@ -87,7 +72,6 @@
     return { a: Int16Array.from(a), b: Int16Array.from(b) };
   }
 
-  /** Số cầu (a, b) dựng từ một kỳ báo cho kỳ sau. */
   function numbersOf(digits, a, b, lon) {
     const x = digits[a];
     const y = digits[b];
@@ -95,7 +79,6 @@
     return !lon || x === y ? [first] : [first, 10 * y + x];
   }
 
-  /** Kỳ `next` có trúng các số `nums` không, theo đúng luật của `hit_matrix`. */
   function hits(nums, next, params) {
     if (params.db) return nums.includes(next.two[0]);
     let total = 0;
@@ -103,7 +86,6 @@
     return total >= params.nhay;
   }
 
-  /** Độ dài cầu (số kỳ trúng liên tiếp) của mọi cặp vị trí tính đến kỳ cuối. */
   function streaks(prepared, params) {
     const { a, b } = pairs(params.lon);
     const runs = new Int16Array(a.length);
@@ -150,7 +132,6 @@
       if (!byPair.has(key)) byPair.set(key, []);
       byPair.get(key).push(bridge);
     }
-    // sort ổn định: hoà thì giữ thứ tự xuất hiện trong danh sách cầu.
     const repeats = [...byPair.entries()].sort((u, v) => v[1].length - u[1].length);
     return {
       count: bridges.length,
@@ -161,7 +142,6 @@
     };
   }
 
-  /** Đường cầu của một cặp vị trí qua mọi kỳ đã nhúng. */
   function pathOf(prepared, a, b, params) {
     const days = prepared.map((draw, t) => {
       const nums = numbersOf(draw.digits, a, b, params.lon);
@@ -177,7 +157,6 @@
     return { days, streak };
   }
 
-  /** Ô nào của kỳ này mang số mà cầu kỳ trước báo — tô cả khi chưa đủ nháy. */
   function foundCells(draw, nums, params) {
     const cells = [];
     const limit = params.db ? 1 : draw.two.length;
@@ -186,8 +165,6 @@
     }
     return cells;
   }
-
-  // ---- Tham số ----------------------------------------------------------
 
   const DEFAULTS = { limit: 5, exact: false, nhay: 1, db: false, lon: true };
 
@@ -235,7 +212,6 @@
     return params.lon ? kind : `${kind} (không lộn)`;
   }
 
-  /** Dòng lịch sử khớp chế độ đang xem, nếu chế độ ấy có trong ba ô mẫu. */
   function backtestFor(params) {
     for (const mode of Object.values(REPORT.backtests || {})) {
       if (mode.db === params.db && mode.lon === params.lon && (params.db || mode.nhay === params.nhay)) {
@@ -247,11 +223,8 @@
 
   const percent = (x) => `${(x * 100).toFixed(1).replace(".", ",")}%`;
 
-  // ---- Dựng giao diện ---------------------------------------------------
-
   function numberChips(bridge, big = false) {
     const box = el("span", big ? "app-bridge-numbers app-bridge-numbers--big" : "app-bridge-numbers");
-    // Mỗi số một phần tử: "67,76" viết liền đọc như số thập phân 67,76.
     const pair = el("b", "");
     bridge.numbers.forEach((n, i) => {
       if (i) pair.append(",");
@@ -343,7 +316,6 @@
     return article;
   }
 
-  /** Một ô giải: chữ số ở vị trí cầu tô xanh đậm, hai số cuối trúng tô vàng. */
   function renderValue(day, valueIndex, a, b, params) {
     const value = day.draw.values[valueIndex];
     const first = VALUES[valueIndex].first;
@@ -391,11 +363,8 @@
     host.append(head);
     renderPrediction(host, params, path, a, b);
 
-    // Tối thiểu 7 kỳ để thấy cả những kỳ cầu trượt trước khi chạy — cầu nào cũng
-    // "đẹp" nếu chỉ nhìn đúng đoạn nó đang trúng.
     const MIN_DAYS = 7;
     const maxDays = Math.max(1, Math.min(prepared.length - 1, Math.max(path.streak + 1, MIN_DAYS, params.days)));
-    // Mặc định cũng tối thiểu 7 kỳ (hoặc cả đoạn cầu nếu dài hơn); `days` tường minh thì theo đúng nó.
     let chosen = params.days || Math.max(MIN_DAYS, path.streak);
     chosen = Math.min(chosen, maxDays);
     const picker = el("div", "app-bridge-days-picker");
@@ -439,7 +408,6 @@
 
   function renderList(host, bridges, summary, params) {
     host.replaceChildren();
-    // Đoạn tóm tắt in kết quả tính được: khai để mỗi con số có bằng chứng.
     const summaryLine = (...parts) => {
       const p = el("p", "app-bridge-summary");
       p.setAttribute("data-evidence-split", "");
@@ -638,7 +606,6 @@
     for (const radio of form.querySelectorAll('input[name="lon"]')) radio.checked = radio.value === (params.lon ? "1" : "0");
   }
 
-  /** Truy vấn chuẩn hoá từ các ô của biểu mẫu — cùng luật kiểm như khi đọc URL. */
   function formQuery(form) {
     const q = new URLSearchParams();
     q.set("limit", form.elements.limit.value);
@@ -650,8 +617,6 @@
     return query(readParams(`?${q.toString()}`), null);
   }
 
-  // CSP của trang cấm gửi biểu mẫu (form-action 'none'), nên bấm "Soi cầu" không
-  // được để trình duyệt tự gửi: tự dựng truy vấn rồi chuyển trang bằng location.
   function bindForm(form) {
     if (!form) return;
     const syncMode = () => {

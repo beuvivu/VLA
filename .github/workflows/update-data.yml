@@ -1,8 +1,6 @@
 name: Hoàn tất XSMB, thống kê và AI/ML
 
 on:
-  # Bootstrap a freshly published repository and re-run the production pipeline
-  # whenever core code/config/data is intentionally changed on the default branch.
   push:
     branches: ["main", "master"]
     paths:
@@ -14,8 +12,6 @@ on:
       - "pyproject.toml"
       - ".github/workflows/update-data.yml"
   repository_dispatch:
-    # Đường chạy ĐÚNG GIỜ khi có bộ lập lịch bên ngoài gọi vào. Lịch của GitHub
-    # chỉ là "cố gắng tốt nhất": trên kho này đo được độ trễ 2,5–4 giờ.
     types: [daily-finalize]
   workflow_dispatch:
     inputs:
@@ -25,14 +21,6 @@ on:
         default: "manual"
         type: string
   schedule:
-    # Lịch tính theo UTC; Việt Nam là UTC+7. Giờ VN tương ứng: 18:33, 18:41,
-    # 18:53, 19:07, 19:19, 19:27, 19:39, 19:51, 20:09.
-    #
-    # Phút lẻ là có chủ đích. Hàng đợi lịch của GitHub dồn nặng nhất ở phút :00
-    # và :30, và độ trễ đo được trên kho này là 2,5–4 giờ (mốc 11:30 UTC thực
-    # tế nổ lúc 13:57–15:27 UTC trong năm ngày liên tiếp). Rải ở phút lẻ giảm
-    # bớt xác suất trượt chứ KHÔNG loại bỏ được độ trễ — đường chạy đúng giờ
-    # chắc chắn là repository_dispatch ở trên.
     - cron: "33 11 * * *"
     - cron: "41 11 * * *"
     - cron: "53 11 * * *"
@@ -51,12 +39,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Ba chặng, để trang kết quả không phải chờ phân tích:
-  #   canonical        lấy và commit kết quả chuẩn (vài chục giây sau khi live xác minh);
-  #   publish-results  dựng lại ngay các trang kết quả và triển khai Pages;
-  #   update           pipeline thống kê/AI/ML đầy đủ (~5 phút), rồi deploy-pages lần nữa.
-  # Đo ngày 12-10-2026 khi còn là MỘT job: live xác minh 18:31:48, trang chủ có kết quả lúc
-  # 18:41:20 — 3 phút chờ mốc 18:35 của sync.py, rồi 4,6 phút pipeline trước khi deploy.
   canonical:
     name: Chốt kết quả chuẩn
     permissions:
@@ -107,8 +89,6 @@ jobs:
           from zoneinfo import ZoneInfo
 
           now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
-          # A draw is considered complete only after the 18:35 VN cutoff.
-          # The live workflow can override this with reason=live_verified.
           target = now.date() if now.time() >= time(18, 35) else now.date() - timedelta(days=1)
           latest = ""
           try:
@@ -125,12 +105,6 @@ jobs:
               target = now.date()
           should_run = forced or latest != target.isoformat()
           reason = "forced-" + dispatch_reason if forced else "scheduled-staleness"
-          # Mỗi lượt live-results thấy kỳ đã xác minh đều gọi lại đây; ngày 12-10-2026 có SÁU
-          # lượt hoàn tất cho cùng một kỳ, mỗi lượt ~8 phút, ba lượt viết lại dự báo LOTO đã công
-          # bố. Kỳ hôm nay đã có trong sổ VÀ đã có dự báo cho kỳ kế tiếp thì pipeline không chạy
-          # lại; nhưng triển khai Pages và hậu kiểm VẪN chạy lại (rẻ, lũy đẳng), vì hai tệp dự
-          # báo chỉ chứng minh phân tích đã xong, không chứng minh hai chặng ấy đã thành công.
-          # Pipeline hỏng giữa chừng thì chưa có dự báo kỳ sau, nên lượt gọi lại chạy đủ.
           next_day = (target + timedelta(days=1)).isoformat()
           finalized = live_verified and latest == target.isoformat() and all(
               os.path.exists(f"data/forecast/predict/predict_next_{mode}_all_{next_day}.csv")
@@ -199,10 +173,6 @@ jobs:
               except Exception:
                   return False
 
-          # sync.py chỉ lấy kỳ hôm nay khi đã qua mốc cutoff. Lượt live_verified tới trước
-          # 18:35 (12-10-2026: 18:31:48) nên với mốc cố định nó quay khống ~3 phút. Live đã
-          # xác minh kỳ hôm nay xong, nên mốc 00:00 cho sync lấy ngay; sổ chuẩn vẫn chỉ nhận
-          # kết quả đủ 27 giải từ trang theo ngày.
           cutoff = "00:00" if live_verified else "18:35"
 
           while True:
@@ -279,9 +249,6 @@ jobs:
           fi
 
   publish-results:
-    # Chỉ DỰNG các trang kết quả trên dữ liệu vừa chốt, không commit: pipeline ở job update
-    # dựng lại chúng cùng mọi trang khác rồi deploy-pages triển khai bản đầy đủ. Phần dự báo
-    # trên trang chủ trong vài phút ấy vẫn là dự báo đã công bố cho kỳ vừa quay.
     name: Xuất bản trang kết quả ngay
     needs: canonical
     if: ${{ github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' && needs.canonical.outputs.finalized != 'true' }}
@@ -314,8 +281,6 @@ jobs:
         run: python -m pip install --no-cache-dir -r requirements.txt
 
       - name: Dựng các trang kết quả
-        # Thứ tự có ràng buộc thật: ô "cầu đẹp nhất" cạnh bảng LOTO đọc soi cầu vị trí của
-        # kỳ vừa quay, và bảng mô phỏng chèn vào trang chủ nên chạy SAU trang chủ.
         run: |
           set -euo pipefail
           python src/soi_cau/position_bridges.py
@@ -393,10 +358,6 @@ jobs:
             --strict
 
       - name: Lưu các bảng nghiên cứu đầy đủ
-        # Các bảng này không vào git (.gitignore; phương án 3 của documentation/plans/2026-11-05-dung-luong-kho.md).
-        # Git chỉ giữ bản cắt. Ai cần bảng đầy đủ thì tải artifact của lượt chạy.
-        # Danh sách phải trùng core.table_cuts.FULL_TABLE_CUTS (tests/research/test_research_table_cuts.py).
-        # Bước pipeline của chúng được phép hỏng (allow_fail), nên thiếu tệp không làm đỏ lượt chạy.
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -413,8 +374,6 @@ jobs:
           retention-days: 30
 
       - name: Lưu bản xuất Excel
-        # XLSX không vào git (.gitignore; phương án 2 của documentation/plans/2026-11-05-dung-luong-kho.md).
-        # Mỗi lượt dựng lại chúng từ CSV, và validate_excel_integrity đối chiếu từng ô.
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -427,7 +386,6 @@ jobs:
 
       - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
         env:
-          # Kỳ đích job canonical đã chốt, không tính lại theo đồng hồ lúc pipeline xong.
           TARGET_DATE: ${{ needs.canonical.outputs.target }}
         run: |
           python src/evaluation/monitor_health.py \
@@ -491,7 +449,6 @@ jobs:
   trigger-post-finalization:
     name: Kích hoạt kiểm toán và đối soát trực tiếp
     needs: [canonical, update]
-    # Lượt already-finalized bỏ pipeline (update = skipped) nhưng vẫn hậu kiểm lại.
     if: ${{ always() && needs.canonical.outputs.canonical_ready == 'true' && (needs.update.result == 'success' || (needs.update.result == 'skipped' && needs.canonical.outputs.finalized == 'true')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -536,8 +493,6 @@ jobs:
 
   deploy-pages:
     name: Triển khai bảng điều khiển đã làm mới (tùy chọn)
-    # Chờ cả publish-results (thường đã xong từ lâu) để hai lượt triển khai không chồng nhau
-    # và bản đầy đủ luôn là bản sau cùng; always() vì publish-results được phép hỏng.
     needs: [canonical, update, publish-results]
     if: ${{ always() && github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' && (needs.update.result == 'success' || (needs.update.result == 'skipped' && needs.canonical.outputs.finalized == 'true')) }}
     continue-on-error: true
@@ -576,14 +531,6 @@ jobs:
           artifact_name: github-pages-${{ github.run_attempt }}
 
   verify-published-pages:
-    # Bước "Xác minh các đầu ra" ở trên chỉ kiểm tệp CÓ TỒN TẠI. Ngày
-    # 24-09-2026, mười lượt liên tiếp commit một docs/live.html dày thêm một
-    # lớp khung mỗi lượt (1 → 11) mà không gì đỏ lên. Job này chạy các phép
-    # kiểm bất biến của trang ngay trên commit vừa đẩy.
-    #
-    # Nó CỐ Ý không chặn dữ liệu hay triển khai: dữ liệu kỳ mới quan trọng hơn
-    # hình dạng một trang, và deploy-pages không phụ thuộc job này. Việc của
-    # nó là làm lượt chạy ĐỎ để lỗi được thấy ngay trong ngày.
     name: Kiểm bất biến các trang vừa xuất bản
     needs: update
     if: ${{ needs.update.result == 'success' && needs.update.outputs.generated_changed == 'true' }}
@@ -605,9 +552,6 @@ jobs:
           python-version-file: .python-version
 
       - name: Cài bộ chạy kiểm thử
-        # Cùng mốc phiên bản với requirements.txt. scipy vì xsmb_domain nhập nó
-        # (lười, trong hàm) — phép kiểm cây import tính cả nhánh ấy.
-        # lxml: ý kiến thứ hai của phép kiểm CSP (test_published_page_policy).
         run: python -m pip install --no-cache-dir "pytest==9.2.0" "beautifulsoup4==4.15.0" "lxml==6.1.3" "numpy==2.5.4" "pandas==3.1.0" "scipy==1.18.1"
 
       - name: Một khung, không mã chết, không tham chiếu gãy, không lộ nguồn
@@ -619,9 +563,5 @@ jobs:
           tests/site/test_shipped_pages_are_clean.py
           tests/site/test_published_page_policy.py
 
-      # Chấm xác suất ĐÃ CÔNG BỐ với kết quả quay thật trên 60 kỳ gần nhất. Kỳ
-      # quay đã kiểm là ngẫu nhiên, nên kỹ năng ngoài mẫu phải nằm trong vùng 0;
-      # rời vùng theo hướng nào cũng làm lượt chạy đỏ — tệ hơn là hồi quy, tốt
-      # hơn thì phải kiểm lại trước khi tin. Xem src/evaluation/skill_monitor.py.
       - name: Kỹ năng ngoài mẫu LOTO và Đặc Biệt còn trong vùng 0
         run: python src/evaluation/skill_monitor.py

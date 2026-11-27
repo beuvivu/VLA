@@ -19,11 +19,11 @@ from vlm.database.schema import DrawRecord
 from pydantic import ValidationError
 
 
-def journal_path(state):  # type: ignore[no-untyped-def]
+def journal_path(state):
     return (state.settings.auto_update_dir or state.settings.data_dir / 'updates') / 'results.jsonl'
 
 
-def _read_journal(path) -> list[DrawRecord]:  # type: ignore[no-untyped-def]
+def _read_journal(path) -> list[DrawRecord]:
     if not path.exists():
         return []
     raw = path.read_bytes()
@@ -72,7 +72,7 @@ def _journal_identity(record: DrawRecord) -> tuple:
     return (*_identity(record), json.dumps(finance, sort_keys=True))
 
 
-def _fsync_directory(path):  # type: ignore[no-untyped-def]
+def _fsync_directory(path):
     if os.name == 'nt' or not hasattr(os, 'O_DIRECTORY'):
         return
     fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
@@ -82,11 +82,11 @@ def _fsync_directory(path):  # type: ignore[no-untyped-def]
         os.close(fd)
 
 
-def _pending_path(state, product):  # type: ignore[no-untyped-def]
+def _pending_path(state, product):
     return journal_path(state).parent / f'pending-{product}.json'
 
 
-def _read_pending(path):  # type: ignore[no-untyped-def]
+def _read_pending(path):
     raw = json.loads(path.read_text(encoding='utf-8'))
     if not isinstance(raw, dict) or raw.get('version') != 1 or not isinstance(raw.get('records'), list):
         raise ValueError('invalid pending results')
@@ -104,7 +104,7 @@ def _read_pending(path):  # type: ignore[no-untyped-def]
     return records
 
 
-def _stage_pending(state, records, previous):  # type: ignore[no-untyped-def]
+def _stage_pending(state, records, previous):
     changed = [r for r in records if previous.get((r.game_type,r.draw_id)) is None or
                _journal_identity(previous[(r.game_type,r.draw_id)]) != _journal_identity(r)]
     if not changed:
@@ -139,7 +139,7 @@ def _stage_pending(state, records, previous):  # type: ignore[no-untyped-def]
             os.unlink(name)
 
 
-def _clear_pending(state, product):  # type: ignore[no-untyped-def]
+def _clear_pending(state, product):
     path = _pending_path(state, product)
     if path.exists():
         with journal_path(state).open('ab') as out:
@@ -149,7 +149,7 @@ def _clear_pending(state, product):  # type: ignore[no-untyped-def]
         _fsync_directory(path.parent)
 
 
-def _matches_pending(cached, before, after):  # type: ignore[no-untyped-def]
+def _matches_pending(cached, before, after):
     if cached is None:
         return True
     actual, target = _journal_identity(cached), _journal_identity(after)
@@ -174,7 +174,7 @@ def _matches_pending(cached, before, after):  # type: ignore[no-untyped-def]
         actual[:3] in (expected[:3], target[:3]) and actual[3] in (expected[3], target[3]))
 
 
-def _replay_pending(state, product=None):  # type: ignore[no-untyped-def]
+def _replay_pending(state, product=None):
     directory = journal_path(state).parent
     paths = list(directory.glob('pending-*.json')) if product is None else [_pending_path(state, product)]
     pending = [(path,_read_pending(path)) for path in paths if path.exists()]
@@ -224,19 +224,19 @@ def _replay_pending(state, product=None):  # type: ignore[no-untyped-def]
     return pending_keys
 
 
-def _journal_index(state) -> dict:  # type: ignore[no-untyped-def]
+def _journal_index(state) -> dict:
     if state._journal_seen is None:
         state._journal_seen = {(r.game_type,r.draw_id):_journal_identity(r) for r in _read_journal(journal_path(state))}
     return state._journal_seen
 
 
-def _product_baseline(history) -> dict:  # type: ignore[no-untyped-def]
+def _product_baseline(history) -> dict:
     return {int(i):(str(day),tuple(values.tolist()))
             for i,day,values in zip(history.draw_ids,history.dates,history.values)}
 
 
 def _product_records(code, history, baseline: dict, journal_ids: set[int], source: str,
-                     *, keep_latest: bool = True) -> list[DrawRecord]:  # type: ignore[no-untyped-def]
+                     *, keep_latest: bool = True) -> list[DrawRecord]:
     newest = str(history.dates.max()) if keep_latest and len(history) else None
     records = []
     for i, day, values in zip(history.draw_ids,history.dates,history.values):
@@ -247,7 +247,7 @@ def _product_records(code, history, baseline: dict, journal_ids: set[int], sourc
     return records
 
 
-def _append(state, records: list[DrawRecord], *, baseline: dict | None = None) -> None:  # type: ignore[no-untyped-def]
+def _append(state, records: list[DrawRecord], *, baseline: dict | None = None) -> None:
     if not records:
         return
     path = journal_path(state)
@@ -289,12 +289,12 @@ def _matrix_record(draw: Draw, finance: PrizeRecord | None = None) -> DrawRecord
     return DrawRecord.from_legacy(draw.game.value, row)
 
 
-def _matrix_records(repository, spec) -> list[DrawRecord]:  # type: ignore[no-untyped-def]
+def _matrix_records(repository, spec) -> list[DrawRecord]:
     finance = {p.draw_id:p for p in repository.load_prizes(spec.code)}
     return [_matrix_record(d, finance.get(d.draw_id)) for d in repository.load(spec.code)]
 
 
-def replay_results(state) -> int:  # type: ignore[no-untyped-def]
+def replay_results(state) -> int:
     pending_keys = _replay_pending(state)
     path = journal_path(state)
     if not path.exists():
@@ -363,7 +363,7 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
 
 
 async def sync_matrix(state, spec, *, source: str | None = None, full_refresh: bool = False,
-                      learn: bool = True) -> dict:  # type: ignore[no-untyped-def]
+                      learn: bool = True) -> dict:
     async with state.sync_lock(spec.code.value):
         if _replay_pending(state, spec.code.value):
             raise ValueError('pending result conflicts with cache')
@@ -410,7 +410,7 @@ async def sync_matrix(state, spec, *, source: str | None = None, full_refresh: b
 
 
 async def sync_product(state, code, *, source: str = 'auto', max_pages: int | None = None, full: bool = False,
-                       learn: bool = True) -> dict:  # type: ignore[no-untyped-def]
+                       learn: bool = True) -> dict:
     async with state.sync_lock(code.value):
         if _replay_pending(state, code.value):
             raise ValueError('pending result conflicts with cache')
@@ -442,7 +442,7 @@ async def sync_product(state, code, *, source: str = 'auto', max_pages: int | No
     return {**report.to_dict(), 'learning':await _learn(state, code.value) if learn else None}
 
 
-async def _learn(state, product: str) -> dict:  # type: ignore[no-untyped-def]
+async def _learn(state, product: str) -> dict:
     if not state.settings.ml_auto_update_enabled:
         return {'enabled':False, 'error':None}
     from vlm.forecast.service import refresh_models
@@ -467,12 +467,12 @@ async def _learn(state, product: str) -> dict:  # type: ignore[no-untyped-def]
         return {'enabled':True, 'error':type(exc).__name__}
 
 
-async def finish_learning(state) -> None:  # type: ignore[no-untyped-def]
+async def finish_learning(state) -> None:
     if state._ml_jobs:
         await asyncio.gather(*list(state._ml_jobs.values()), return_exceptions=True)
 
 
-async def update_product(state, product: str, *, learn: bool = True) -> dict:  # type: ignore[no-untyped-def]
+async def update_product(state, product: str, *, learn: bool = True) -> dict:
     prize_error = None
     if product in GAMES:
         spec = get_game(product)
@@ -522,14 +522,14 @@ async def update_product(state, product: str, *, learn: bool = True) -> dict:  #
             'learning':await _learn(state, product) if learn else None}
 
 
-def make_runner(state):  # type: ignore[no-untyped-def]
+def make_runner(state):
     from vlm.updates.runner import UpdateRunner
     return UpdateRunner(journal_path(state).parent / 'status.json',
                         lambda product:update_product(state, product, learn=False),
                         learn=lambda product:_learn(state, product), timeout_s=state.settings.auto_update_timeout_s)
 
 
-async def periodic_updates(state) -> None:  # type: ignore[no-untyped-def]
+async def periodic_updates(state) -> None:
     replay_results(state)
     state.updater = make_runner(state)
     try:
@@ -538,7 +538,7 @@ async def periodic_updates(state) -> None:  # type: ignore[no-untyped-def]
         await finish_learning(state)
 
 
-def update_status(state) -> dict:  # type: ignore[no-untyped-def]
+def update_status(state) -> dict:
     status = state.updater.status() if state.updater is not None else {'products':{}}
     return {'enabled':state.settings.auto_update_enabled, 'running':state.updater is not None, 'timezone':'Asia/Ho_Chi_Minh',
             'observed_at':datetime.now(VN).isoformat(), 'replay_conflicts':state.replay_conflicts, **status}

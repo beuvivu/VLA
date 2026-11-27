@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ingest.sources import (  # noqa: E402
+from ingest.sources import (
     EXPECTED_COUNTS,
     PRIZE_ORDER,
     _label_key,
@@ -20,7 +20,7 @@ from ingest.sources import (  # noqa: E402
     default_sources,
     extract_partial_prize_map,
 )
-from core.time_policy import VIETNAM_TZ  # noqa: E402
+from core.time_policy import VIETNAM_TZ
 
 AFTER_G7_LINES = 30
 
@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         for source in default_sources():
             try:
                 parsed = source.fetch_partial(draw, http, live=True)
-            except Exception as exc:  # noqa: BLE001 — chẩn đoán: in lỗi rồi đi tiếp
+            except Exception as exc:
                 print(f"  {source.name}: lỗi {type(exc).__name__}")
                 continue
             received = sum(len(parsed.get(k, [])) for k in PRIZE_ORDER)

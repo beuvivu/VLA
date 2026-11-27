@@ -7,7 +7,6 @@ import { JSDOM } from 'jsdom';
 
 const root = new URL('../../', import.meta.url);
 const slugs = ['dau-duoi-loto', 'cap-lon-loto', 'lo-gan'];
-// Ngày nghỉ và hai nháy cùng kỳ phân biệt khoảng theo kỳ với số lượt.
 const draws = Array.from({length: 40}, (_, i) => {
   const number = [1, 5, 38].includes(i) ? '07' : [2, 10, 33].includes(i) ? '70'
     : [0, 39].includes(i) ? '00' : '99';
@@ -169,7 +168,6 @@ test('Lô gan: trần màu khoảng hiện tại độc lập với trần chu k
 test('Lô gan: màu tách số kỳ hiện tại, chu kỳ dài nhất và số kỳ có mặt', t => {
   const dom = setup(t, 'lo-gan'), d = dom.window.document;
   const row = rowFor(d, 'sp-grid', '07');
-  // 07 về ở chỉ số 5 rồi 38: chỉ số 6..37 là đúng 32 kỳ trượt.
   assert.deepEqual(values(row), ['07', viDate(draws[38].d), '1', '32', '3']);
   metric(row.cells[2], 'gap', 1, 'kỳ');
   metric(row.cells[3], 'cycle', 32, 'kỳ');
@@ -184,7 +182,6 @@ test('Lô gan: màu tách số kỳ hiện tại, chu kỳ dài nhất và số 
   metric(newest.cells[2], 'gap', 0, 'kỳ');
   assert.equal(newest.cells[2].dataset.statLevel, '0');
   const pair = rowFor(d, 'sp-pair-gan', '07 - 70');
-  // Cặp ngắt gan ở chỉ số 10 và 33, còn đúng 22 kỳ trượt giữa chúng.
   assert.deepEqual(values(pair), ['07 - 70', viDate(draws[38].d), '1', '22', '6']);
   metric(pair.cells[2], 'gap', 1, 'kỳ');
   metric(pair.cells[3], 'cycle', 22, 'kỳ');

@@ -11,7 +11,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 
-import ml.ml_models  # noqa: F401 - đăng ký tên module cũ mà pack joblib ghi trước đợt gom còn nhắc tới
+import ml.ml_models  # noqa: F401
 from core.atomic_io import atomic_write_text
 from core.paths import REPO_ROOT
 from ensemble.ensemble_components import COMPONENT_KEYS, COMPONENT_POLICY

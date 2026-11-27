@@ -175,13 +175,13 @@ def _clone(estimator: object) -> object:
 class LotoModel(StackedEnsemble):
 
     def __init__(self, **kwargs: object) -> None:
-        super().__init__(mode="loto", **kwargs)  # type: ignore[arg-type]
+        super().__init__(mode="loto", **kwargs)
 
 
 class DeModel(StackedEnsemble):
 
     def __init__(self, **kwargs: object) -> None:
-        super().__init__(mode="de", **kwargs)  # type: ignore[arg-type]
+        super().__init__(mode="de", **kwargs)
 
 
 _SHAPLEY_EPS = 1e-12

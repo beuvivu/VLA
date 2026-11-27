@@ -435,7 +435,7 @@ class _SilentlyFailingSource:
     def fetch_partial(self, selected_date, http, *, live=False):
         try:
             http.get("http://x", timeout=15)
-        except Exception:  # noqa: BLE001 - đúng như bản gốc vẫn làm
+        except Exception:
             pass
         return {k: [] for k in PRIZE_ORDER}
 

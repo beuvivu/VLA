@@ -1,12 +1,6 @@
 (() => {
   "use strict";
 
-  // Bảy trang cầu vị trí (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, theo thứ) —
-  // bản trình duyệt của `src/soi_cau/bridge_rules.py`, cùng luật và cùng cách đếm.
-  // `tests/frontend/bridge-pages.test.mjs` so từng ô với bản Python.
-  //
-  // Mọi phần tử dựng bằng createElement + textContent; không gán chuỗi HTML.
-
   const DATA = document.getElementById("app-cau-data");
   if (!DATA) return;
   const REPORT = JSON.parse(DATA.textContent);
@@ -36,7 +30,6 @@
   const N_POS = POSITIONS.length;
   const WIDTHS = VALUES.map((v) => v.width);
 
-  // Bộ số: {x, bóng x} × {y, bóng y}, cả hai chiều. Đại diện = số nhỏ nhất.
   const BO_MEMBERS = [];
   const BO_ID = new Int16Array(100);
   for (let n = 0; n < 100; n += 1) {
@@ -80,7 +73,6 @@
 
   const numberAt = (draw, a, b) => 10 * draw.digits[a] + draw.digits[b];
 
-  /** Bước từ kỳ `prev` sang kỳ `next` của cặp (a, b) có trúng không — như `step_matrix`. */
   function step(kind, prev, next, a, b, both) {
     const x = prev.digits[a];
     const y = prev.digits[b];
@@ -101,7 +93,6 @@
     throw new Error(`Kiểu cầu lạ: ${kind}`);
   }
 
-  /** Cầu chạy ≥ `count` bước tính đến kỳ cuối của `series`, và cầu dài nhất. */
   function scan(series, kind, count, both) {
     const draws = series.slice(-REPORT.window);
     const runs = new Int16Array(PAIRS.a.length);
@@ -139,7 +130,6 @@
     return { counts, total: bridges.length, groups: ranked.map(([key, n]) => ({ key, bridges: n })) };
   }
 
-  /** Ô nào của kỳ `draw` thể hiện điều cầu (a, b) dựng từ kỳ `prev` báo. */
   function fulfilled(kind, prev, draw, a, b, both) {
     const n1 = numberAt(prev, a, b);
     const n2 = 10 * prev.digits[b] + prev.digits[a];
@@ -150,8 +140,6 @@
     draw.two.forEach((n, j) => { if (wanted.includes(n)) cells.push(j); });
     return cells;
   }
-
-  // ---- Tham số ------------------------------------------------------------
 
   const ALL = REPORT.draws.map(decode);
 
@@ -170,8 +158,6 @@
     };
     const end = q.get("ngay");
     if (end && /^\d{4}-\d{2}-\d{2}$/.test(end)) params.end = end;
-    // Chọn sẵn một số (`so`) và một cầu (`vt` = a×b): trang Live mở thẳng cầu người đọc vừa xem, tô vị trí
-    // trên các bảng kết quả. Không phải tham số tính toán nên `query` không mang theo khi đổi bộ lọc.
     const so = q.get("so");
     params.so = so && /^\d{2}$/.test(so) ? so : null;
     const vt = /^(\d{1,3})x(\d{1,3})$/.exec(q.get("vt") || "");
@@ -179,8 +165,6 @@
     return params;
   }
 
-  /** Chuỗi kỳ tính đến biên ngày. Biên ngày không còn đủ `window` kỳ trước nó thì
-   *  KHÔNG được âm thầm đổi sang kỳ mới nhất: bỏ biên ấy và báo rõ (`params.rejected`). */
   function seriesFor(params) {
     const series = params.weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === params.weekday);
     if (!params.end) return series;
@@ -191,7 +175,6 @@
     return series;
   }
 
-  /** Các biên ngày chọn được: kỳ của chuỗi còn đủ `window` kỳ lịch sử trước nó. */
   function boundaries(series) {
     return series.slice(REPORT.window - 1).slice(-REPORT.window);
   }
@@ -205,11 +188,8 @@
     return `?${q.toString()}`;
   }
 
-  // ---- Dựng giao diện -------------------------------------------------------
-
   const percent = (x) => `${(x * 100).toFixed(1).replace(".", ",")}%`;
 
-  /** Xếp ba mức số đường cầu riêng từng số, đồng hạng cùng màu trên bảy kiểu cầu. */
   function numberRanks(counts, ruleKey) {
     if (!["loto", "hai-nhay", "bach-thu", "dac-biet", "bo-so", "dac-biet-theo-thu", "loto-theo-thu"].includes(ruleKey)) return {};
     const levels = [...new Set(Object.values(counts).filter((n) => n > 7))].sort((a, b) => b - a).slice(0, 3);
@@ -291,7 +271,6 @@
     host.append(list);
   }
 
-  /** Bảng kết quả kiểu Sổ kết quả; mỗi chữ số mang `data-pos` để tô vị trí cầu. */
   function renderDay(draw, facts) {
     const article = el("article", "tr-day app-cau-day");
     const header = el("header", "tr-day-head");
@@ -327,7 +306,6 @@
     return article;
   }
 
-  /** Nạp ô "Biên ngày" bằng các kỳ của chuỗi (theo thứ nếu có), mới nhất trước. */
   function fillDates(select, weekday, selected) {
     select.replaceChildren();
     const pool = weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === weekday);
@@ -376,12 +354,10 @@
       if (form.elements.thu) form.elements.thu.value = String(params.weekday);
       const dates = form.elements.ngay;
       fillDates(dates, params.weekday, last.date);
-      // Đổi thứ thì các biên ngày của thứ cũ không còn hợp lệ: nạp lại, chọn kỳ mới nhất.
       if (form.elements.thu) {
         form.elements.thu.addEventListener("change", () => fillDates(dates, Number(form.elements.thu.value), null));
       }
       form.addEventListener("submit", (event) => {
-        // CSP cấm gửi biểu mẫu (form-action 'none'): tự dựng truy vấn rồi chuyển trang.
         event.preventDefault();
         window.location.assign(formQuery(form));
       });
@@ -402,7 +378,6 @@
       }
     }
 
-    // Các bảng kết quả: count + 1 kỳ cuối của chuỗi, mới nhất trước.
     const shown = series.slice(-(params.count + 1)).reverse();
     const daysHost = document.getElementById("app-cau-days");
     const digitNodes = [];
@@ -441,8 +416,6 @@
           for (const j of cells) card.querySelector(`.tr-number[data-value="${j}"]`).classList.add("is-hit");
           const ok = step(rule.kind, prev, draw, single.a, single.b, params.both);
           if (rule.kind === "bo-so") {
-            // Bộ số có HAI điều khác nhau: cầu còn chạy (số giữ bộ) và điều cầu báo
-            // (ĐB rơi vào bộ). Không gộp làm một nhãn "trúng".
             const inSet = cells.length > 0;
             const set = pad(BO_ID[numberAt(prev, single.a, single.b)]);
             facts.append(el("span", ok ? "app-cau-fact-hit" : "app-cau-fact-miss",
@@ -479,7 +452,6 @@
         buttons.append(button);
       }
       detail.append(buttons);
-      // "Cả hai chữ số" là luật khác: dùng kiểm lịch sử của chính nó.
       const tested = params.both && REPORT.backtest_both ? REPORT.backtest_both : REPORT.backtest;
       const history = tested && tested.rows[Math.min(params.count, tested.rows.length - 1)];
       if (history && history.n >= 200) {
@@ -497,7 +469,6 @@
     const groups = document.getElementById("app-cau-groups");
     if (groups) renderGroups(groups, result, rule.kind);
 
-    // Mở từ liên kết có `vt`/`so`: cầu đúng cặp vị trí quyết định số; không có cầu ấy thì chọn theo số.
     const wanted = params.vt ? result.bridges.find((x) => x.a === params.vt.a && x.b === params.vt.b) : null;
     if (wanted) pick(wanted.number, wanted);
     else if (params.so) pick(params.so);

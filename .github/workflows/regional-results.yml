@@ -21,8 +21,6 @@ on:
         default: "365"
         type: string
   schedule:
-    # Chạy sau toàn bộ cửa sổ ưu tiên XSMB. GitHub cron là best-effort.
-    # 13:25 UTC = 20:25 Asia/Ho_Chi_Minh.
     - cron: "25 13 * * *"
 
 permissions:
@@ -68,9 +66,6 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then MANUAL_DAYS=30; fi
           python src/ingest/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15 --require-latest
 
-      # Thứ tự có ràng buộc: thống kê gắn cờ đài lệch → phép kiểm tiến cứu đăng ký/chấm đúng các đài ấy
-      # → phép chấm walk-forward. Sổ sai cấu trúc làm bước đầu dừng (không thống kê trên dữ liệu hỏng);
-      # khi ấy trang vẫn được dựng nhưng không in khối kiểm định, và lượt chạy đỏ ở bước cuối.
       - name: Thống kê, kiểm định và chấm tiến cứu từng đài
         id: analyse
         continue-on-error: true
@@ -109,8 +104,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/regions/xsmt.csv data/regions/xsmt.json data/regions/xsmn.csv data/regions/xsmn.json \
                   docs/*.html docs/assets
-          # Số đo từng đài của CÙNG lượt chạy. `git add` dừng ở đường dẫn không tồn tại, nên chỉ thêm thứ đã
-          # có: bước thống kê hỏng không được chặn việc ghi kết quả vừa thu thập.
           for path in data/stats/regional data/evaluation/regional_benchmark \
                       data/research/hypotheses/regional_cage_bias.json \
                       data/research/hypotheses/regional_cage_bias.csv; do

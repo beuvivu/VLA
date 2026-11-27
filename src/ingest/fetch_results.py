@@ -119,7 +119,7 @@ class _TimeoutCappedSession:
             self.attempts = attempt
             try:
                 response = self.inner.get(url, timeout=effective, **kwargs)
-            except Exception as exc:  # noqa: BLE001 - lỗi mạng là chuyện thường
+            except Exception as exc:
                 last_exc = exc
                 self.last_error = f"{type(exc).__name__}: {str(exc)[:120]}"
                 self.last_status = None
@@ -223,7 +223,7 @@ def _fetch_one(
     http = _TimeoutCappedSession(build_session(), timeout, max_attempts=max_attempts)
     try:
         prize_map = source.fetch_partial(target, http, live=True)
-    except Exception as exc:  # noqa: BLE001 - phải nuốt mọi lỗi mạng
+    except Exception as exc:
         error = f"{type(exc).__name__}: {str(exc)[:120]}"
     error = error or http.last_error
     if shows_previous_draw(prize_map, previous):
@@ -378,7 +378,7 @@ def _parse_hhmm(value: str) -> dtime:
     try:
         hh, mm = value.split(":")
         return dtime(int(hh), int(mm))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise argparse.ArgumentTypeError(f"giờ không hợp lệ: {value!r}") from exc
 
 

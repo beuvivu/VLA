@@ -32,15 +32,6 @@ jobs:
           python-version-file: .python-version
 
       - name: Cài đặt thư viện phụ thuộc
-        # Việc này TỪNG chạy không cần cài gì: cả hai kịch bản khi ấy chỉ dùng
-        # thư viện chuẩn. Hai thay đổi sau đó phá vỡ giả định im lặng ấy —
-        # `production_audit.py` nhận thêm pandas qua `calendar_alignment`
-        # (0f5f890), và `reconcile_live_canonical.py` nhận thêm bs4/requests
-        # qua `sources` (đợt đổi chính sách nguồn). Việc này đỏ 130 lượt liên
-        # tiếp kể từ 08/09 mà không ai thấy, vì nó chỉ chạy bằng dispatch.
-        #
-        # Cài thẳng `requirements.txt` chứ không chép một danh sách gọn hơn:
-        # một danh sách chép tay thứ ba sẽ lệch đúng như thế lần sau.
         run: |
           python -m pip install --upgrade --no-cache-dir pip wheel setuptools
           python -m pip install --no-cache-dir -r requirements.txt
@@ -71,10 +62,6 @@ jobs:
           blob="$(git hash-object -w "$LIVE_PATH")"
           tree="$(printf '100644 blob %s\tlive.json\n' "$blob" | git mktree)"
           commit="$(printf 'live: reconcile canonical result\n' | git commit-tree "$tree")"
-          # live-results.yml cũng ghi nhánh live trong khung quay. Lượt 45607100671 (25-11-2026)
-          # đỏ vì hai lần đẩy rơi trong cùng một giây: máy chủ so-và-đổi ref theo giá trị nó vừa
-          # quảng bá và từ chối «cannot lock ref», kể cả với --force. Đẩy lại thì ảnh chụp CHUẨN
-          # đè ảnh chụp trực tiếp, đúng thứ tự mong muốn. Hết lượt thì đỏ: không còn vòng nào sau.
           for attempt in 1 2 3 4; do
             if git push --force origin "$commit:refs/heads/live"; then
               exit 0

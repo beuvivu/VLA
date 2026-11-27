@@ -27,7 +27,7 @@ def _shard_states():
     function = next(node for node in ast.parse(source).body
                     if isinstance(node, ast.FunctionDef) and node.name == "shard_states")
     namespace: dict = {}
-    exec(compile(ast.Module([function], []), "shard_states", "exec"), namespace)  # noqa: S102
+    exec(compile(ast.Module([function], []), "shard_states", "exec"), namespace)
     return namespace["shard_states"]
 
 

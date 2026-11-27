@@ -490,13 +490,13 @@ def main() -> None:
         table, agreement, diversity = evaluate_lab(
             two,
             sparse,
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             warmup=max(30, args.warmup),
         )
         table.to_csv(out / f"strategy_lab_{mode}.csv", index=False)
         agreement.to_csv(out / f"strategy_agreement_{mode}.csv", index=False)
         diversity.to_csv(out / f"strategy_diversity_{mode}.csv", index=False)
-        manifest["modes"][mode] = {  # type: ignore[index]
+        manifest["modes"][mode] = {
             "research_gate_pass_count": int(table["research_gate_pass"].sum()),
             "best_holdout_lift": float(
                 pd.to_numeric(table["holdout_lift"], errors="coerce").max()

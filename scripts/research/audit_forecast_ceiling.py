@@ -109,7 +109,7 @@ def recency_digit_models(last_two: np.ndarray, hit: np.ndarray) -> list[dict]:
                 skill.append(_logloss(flat, hit[t]) - _logloss(p, hit[t]))
             d = np.array(skill)
             half = len(d) // 2
-            z = lambda v: float(v.mean() / v.std(ddof=1) * np.sqrt(len(v)))  # noqa: E731
+            z = lambda v: float(v.mean() / v.std(ddof=1) * np.sqrt(len(v)))
             out.append({"window": window, "strength": strength, "days": len(d),
                         "skill_per_draw": float(d.mean()), "z": z(d),
                         "halves_z": [z(d[:half]), z(d[half:])]})

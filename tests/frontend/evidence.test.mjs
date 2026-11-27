@@ -99,7 +99,6 @@ function start(t, options) {
   const dom = new JSDOM(page(options), { url: 'https://example.test/tan-suat-loto.html', runScripts: 'outside-only', pretendToBeVisual: true });
   dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; this.dispatchEvent(new dom.window.Event('close')); };
-  // Trình xử lý sẵn có của trang: nhấp ô [data-key] để đánh dấu.
   dom.window.document.addEventListener('click', event => {
     const cell = event.target.closest('td[data-key]');
     if (cell) cell.classList.toggle('marked');
@@ -125,18 +124,14 @@ test('Nhận diện đúng con số: số trong bảng, KPI; không phải ngày
 
 test('Không nhận hàng, khối hay hai số dính nhau làm "con số"; nhận số có đơn vị', t => {
   const dom = start(t), find = el => dom.window.appEvidence.find(el);
-  // Ô rỗng: không được leo lên hàng có chữ "10" do hai ô "1" và "0" nối lại.
   assert.equal(find($(dom, 'empty')), null);
   assert.equal(find($(dom, 'row')), null);
-  // Hàng chỉ có một ô số vẫn là hàng: con số là ô, không phải hàng.
   assert.equal(find($(dom, 'row1')), null);
   assert.equal(find($(dom, 'row1').firstElementChild), $(dom, 'row1').firstElementChild);
-  // Đoạn rỗng là biên: không leo lên khối chứa số 42 ở ngoài nó.
   assert.equal(find($(dom, 'blank')), null);
   assert.equal(find($(dom, 'pair')), null);
   assert.equal(find($(dom, 'pair-a')), $(dom, 'pair-a'));
   assert.equal(find($(dom, 'unit')), $(dom, 'unit'));
-  // Số dạng khoa học (chỉ số cổng mô hình trên trang bảng điều khiển).
   assert.equal(find($(dom, 'sci')), $(dom, 'sci'));
   assert.equal(find($(dom, 'sci2')), $(dom, 'sci2'));
 });
@@ -156,7 +151,6 @@ test('Nhấp một con số mở ngăn kéo: giá trị, nguồn của khối, b
   assert.equal(d.querySelector('.app-evidence-value').textContent, '23,936%');
   assert.deepEqual([...d.querySelectorAll('.app-evidence-source-title')].map(n => n.textContent),
     ['Dự báo đã công bố trước kỳ quay', 'Ngoài']);
-  // Liên kết lạ (javascript:) không bao giờ thành thẻ a.
   assert.equal(d.querySelectorAll('a.app-evidence-source-title').length, 0);
   const steps = [...d.querySelectorAll('.app-evidence-steps li')].map(n => n.textContent);
   assert.deepEqual(steps.slice(0, 2), ['Trộn các thành phần.', 'Hiệu chỉnh.']);
@@ -174,8 +168,6 @@ test('Hàng khai data-evidence-row dùng bằng chứng riêng, kèm độ tin c
   assert.equal(d.querySelector('.app-evidence-source-title').textContent, 'Mô hình ML thành phần');
   assert.equal(d.querySelector('.app-evidence-meter').getAttribute('aria-valuenow'), '35');
   assert.equal(dom.window.appEvidence.evidenceFor($(dom, 'num')).reasoningTrace.confidenceScore, 0.35);
-  // Cột hạng không nằm trong data-evidence-cols: không mượn bằng chứng xác suất,
-  // và cũng không mượn phép tính của khối — hạng là vị trí sau khi sắp xếp.
   const rank = dom.window.appEvidence.evidenceFor($(dom, 'rank'));
   assert.equal(rank.scope, 'Thứ hạng trong bảng');
   assert.match(rank.reasoningTrace.steps[0], /sắp xếp/);
@@ -393,7 +385,6 @@ test('Giải tách để tô (779<span>61</span>) vẫn là một giá trị 779
   click(dom, $(dom, 'tail'), { altKey: true });
   assert.equal(drawer(dom).open, true);
   assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '77961');
-  // Số liền nhau KHÔNG phải phần tử kết quả vẫn bị từ chối.
   assert.equal(dom.window.appEvidence.find($(dom, 'pair')), null);
 });
 
@@ -572,7 +563,6 @@ test('Cột «Số» không có bằng chứng hàng là định danh, không nh
   assert.equal(ident.value, '95');
   assert.equal(ident.scope, 'Định danh của hàng');
   assert.doesNotMatch(ident.reasoningTrace.steps.join(' '), /Trộn các thành phần/);
-  // Ô giá trị cùng hàng vẫn nhận phép tính của khối.
   assert.match(dom.window.appEvidence.evidenceFor($(dom, 'prob2')).reasoningTrace.steps.join(' '), /Trộn các thành phần/);
   const p = d.createElement('p');
   p.setAttribute('data-evidence-split', '');

@@ -1,18 +1,5 @@
 name: Đo khung ứng dụng trang tham chiếu
 
-# CHẠY TAY, KHÔNG CÓ LỊCH.
-#
-# Vì sao cần, dù đã có `inspect-reference-design.yml`: workflow kia đọc CSS
-# dạng VĂN BẢN. Cách ấy hỏng với một dashboard — đã đo trên NexLink: trang nạp
-# mười biểu định kiểu, tám cái đầu là thư viện icon, nên bản đọc thu về 0 biến
-# chủ đề, 0 quy tắc `body` và một bộ xương rỗng.
-#
-# Workflow này chạy Chromium thật và hỏi `getComputedStyle`: số đo là thứ
-# người dùng nhìn thấy sau khi mọi biểu định kiểu đã hoà vào nhau.
-#
-# Chỉ ĐỌC và in số đo ra log. Không commit, không tải hiện vật, không lưu
-# HTML/CSS/hình của trang vào kho.
-
 on:
   workflow_dispatch:
     inputs:

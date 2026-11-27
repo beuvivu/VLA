@@ -91,7 +91,7 @@ def make_archive(root: Path) -> Path:
 def test_archive_local_folder_all_formats(tmp_path: Path) -> None:
     a = NhanAZArchive(local_dir=make_archive(tmp_path))
 
-    async def run():  # type: ignore[no-untyped-def]
+    async def run():
         return await a.draws(ProductCode.KENO), await a.draws(ProductCode.MEGA_645), await a.draws(ProductCode.LOTTO_535), await a.draws(ProductCode.MAX4D), await a.exclusions(), await a.prize_rules()
 
     keno, mega, lotto, max4d, excl, rules = asyncio.run(run())
@@ -126,7 +126,7 @@ def test_archive_remote_months_and_missing_month(tmp_path: Path) -> None:
         f = base / rel
         return httpx.Response(200, text=f.read_text(encoding="utf-8")) if f.exists() else httpx.Response(404)
 
-    async def run():  # type: ignore[no-untyped-def]
+    async def run():
         async with _client(handler) as c:
             return await NhanAZArchive(c, "https://raw.example/datasets").draws(ProductCode.KENO, since=date(2026, 3, 15))
 
@@ -139,7 +139,7 @@ def test_archive_remote_months_and_missing_month(tmp_path: Path) -> None:
 class _Failing(DrawSource):
     name = "vietlott"
 
-    async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+    async def fetch(self, spec, since_id=None):
         raise SourceError("this network's HTTPS proxy does not allow www.vietlott.vn")
 
 
@@ -166,7 +166,7 @@ def test_product_sync_auto_falls_back_to_archive_and_records_exclusions(tmp_path
 
     store = ProductStore(tmp_path / "data", None)
 
-    async def run():  # type: ignore[no-untyped-def]
+    async def run():
         async with _client(handler) as c:
             pipe = ProductSyncPipeline(c, store, vietlott_base_url="https://www.vietlott.vn", mirror_base_url="https://m", canonical_base_url="https://c", nhanaz_base_url="https://raw.example/datasets", fallback_order=["vietlott", "nhanaz"])
             return await pipe.run(ProductCode.KENO, "auto")
@@ -217,10 +217,10 @@ def test_v130_missing_snapshot_is_reported(tmp_path: Path) -> None:
         products_dir(tmp_path)
 
 
-def _load_builder():  # type: ignore[no-untyped-def]
+def _load_builder():
     spec = importlib.util.spec_from_file_location("bod", ROOT / "scripts" / "build_official_dataset.py")
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    spec.loader.exec_module(mod)
     return mod
 
 

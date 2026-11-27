@@ -1,10 +1,3 @@
-/* Hành vi khung ứng dụng: thu/mở điều hướng, đổi nhóm và tìm
-   chức năng toàn ứng dụng. Chế độ màu do app-theme.js quản lý.
-
-   KHÔNG dùng bất kỳ cách ghi DOM nào nhận chuỗi rồi tự phân tích thành thẻ.
-   Mọi thay đổi ở đây là bật/tắt lớp, đặt thuộc tính, hoặc gán textContent.
-   Kho có phép kiểm dò việc này, và luật đứng ngay cả khi phép kiểm không phủ
-   tới tệp này. */
 (function () {
   "use strict";
 
@@ -26,8 +19,6 @@
   if (!rail || !panel || body.dataset.appShellReady) { return; }
   body.dataset.appShellReady = "true";
 
-  /* Giữ nội dung trợ năng nhưng không để trình duyệt bật tooltip native.
-     Theo dõi đúng nhánh mới/thuộc tính đổi, không quét lại toàn trang mỗi lần. */
   var titleDescriptions = new WeakMap();
   function retainTitleText(element, text, svgName) {
     text = (text || "").trim();
@@ -64,7 +55,6 @@
     if (element.namespaceURI === "http://www.w3.org/2000/svg" && element.localName === "title" && element.parentElement) {
       var parent = element.parentElement;
       retainTitleText(parent, element.textContent, true);
-      /* Giữ id của đích aria-labelledby/aria-describedby, không giữ SVG title. */
       var description = doc.createElementNS(element.namespaceURI, "desc");
       if (element.id) { description.id = element.id; }
       description.textContent = element.textContent;
@@ -123,11 +113,9 @@
   var hep = function () {
     try {
       if (typeof window.matchMedia === "function") { return window.matchMedia("(max-width:1199.98px)").matches; }
-    } catch (error) { /* Dùng chiều rộng thực khi truy vấn media bị chặn. */ }
+    } catch (error) {   }
     return window.innerWidth < 1200;
   };
-
-  /* --- Thu / mở --------------------------------------------------------- */
 
   var hoverTimer, leaveTimer;
   var preview = false, previewOriginal = null;
@@ -135,7 +123,6 @@
 
   function datTrangThai(mo, transient) {
     if (!transient) { cancelHover(); preview = false; }
-    /* Trả focus ra trước khi ẩn hoặc khóa vùng đang chứa nó. */
     if (!mo && toggle && (panel.contains(doc.activeElement) || (hep() && rail.contains(doc.activeElement)))) {
       toggle.focus();
     }
@@ -149,7 +136,7 @@
     if (toggle) { toggle.setAttribute("aria-expanded", mo ? "true" : "false"); }
     if (scrim) { scrim.hidden = !(mo && hep()); }
     if (!transient) {
-      try { localStorage.setItem(KHOA_PANEL, mo ? "1" : "0"); } catch (e) { /* chế độ riêng tư */ }
+      try { localStorage.setItem(KHOA_PANEL, mo ? "1" : "0"); } catch (e) {   }
     }
   }
 
@@ -160,7 +147,6 @@
   }
   if (scrim) {
     scrim.addEventListener("click", function () {
-      /* Nhấn chuột xuống nền phủ có thể đã bỏ focus khỏi menu trước click. */
       if (toggle) { toggle.focus(); }
       datTrangThai(false);
     });
@@ -188,14 +174,10 @@
     }
   });
 
-  /* Khôi phục lựa chọn cũ. Ở màn hẹp luôn bắt đầu ở trạng thái đóng: mở sẵn
-     một tấm phủ toàn màn khi vừa vào trang là chặn ngay nội dung người đọc
-     vừa bấm vào. */
   var luu = null;
   try { luu = localStorage.getItem(KHOA_PANEL); } catch (e) { luu = null; }
   datTrangThai(!hep() && luu === "1");
 
-  /* Đổi bề ngang qua mốc thì trạng thái phủ không còn nghĩa cũ. */
   var narrowBefore = hep();
   window.addEventListener("resize", function () {
     var narrowNow = hep();
@@ -204,8 +186,6 @@
       datTrangThai(false);
     }
   });
-
-  /* --- Chọn nhóm cấp một ------------------------------------------------ */
 
   var nutNhom = [].slice.call(doc.querySelectorAll(".app-rail-btn"));
   var nhomPanel = [].slice.call(doc.querySelectorAll(".app-panel-group"));
@@ -286,14 +266,12 @@
     });
   });
 
-  /* Chuẩn hóa nhãn cho tìm kiếm toàn ứng dụng. */
   var mucNav = [].slice.call(doc.querySelectorAll(".app-nav-item"));
 
   function chuanHoa(tu) {
     return (tu || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").trim().toLowerCase();
   }
 
-  /* --- Tìm kiếm toàn ứng dụng: trạng thái riêng, không mở/lọc sidebar. --- */
   var globalResults = globalDialog ? Array.from(globalDialog.querySelectorAll(".app-global-result")) : [];
   var globalMatches = [];
   var globalSelected = -1;
@@ -342,7 +320,6 @@
   }
 
   function restoreGlobalFocus() {
-    /* close có thể đến muộn sau một lần mở mới; không lấy focus khỏi modal ấy. */
     if (globalDialog.open || !previousFocus) { return; }
     body.classList.remove("app-global-search-open");
     globalInput.setAttribute("aria-expanded", "false");
@@ -403,7 +380,6 @@
       datTrangThai(false);
     });
   }
-  /* Đường dẫn neo phải phản ánh đúng phần đang xem và đóng menu trên điện thoại. */
   function dongBoDuongDan() {
     var file = location.pathname.split("/").pop() || "index.html";
     if (file === "landing.html" || file === "landing_desktop.html") { file = "index.html"; }

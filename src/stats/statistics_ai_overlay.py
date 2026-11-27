@@ -50,7 +50,7 @@ def _validated_probability_frame(
         return None, "missing"
     try:
         df = pd.read_csv(path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return None, f"read_error:{type(exc).__name__}"
 
     if len(df) != 100 or "number" not in df.columns or "prob" not in df.columns:
@@ -353,7 +353,7 @@ def write_overlays() -> list[Path]:
     }
     for mode, sparse in (("loto", sparse_loto), ("de", sparse_de)):
         table, diag = build_overlay(
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             sparse_df=sparse,
             data_dir=paths.data_dir,
             expected_target=expected_target,
@@ -361,7 +361,7 @@ def write_overlays() -> list[Path]:
         csv_path = out_dir / f"ai_ml_signal_{mode}.csv"
         write_code_csv(table, csv_path, index=False)
         created.append(csv_path)
-        diagnostics["modes"][mode] = diag  # type: ignore[index]
+        diagnostics["modes"][mode] = diag
 
     diag_path = out_dir / "ai_ml_signal_diagnostics.json"
     diag_path.write_text(

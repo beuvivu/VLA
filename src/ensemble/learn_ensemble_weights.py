@@ -142,7 +142,7 @@ def _optimize_weights_continuous(
 ) -> tuple[EnsembleWeights, float, float]:
     try:
         from scipy.optimize import minimize
-    except ImportError:  # pragma: no cover
+    except ImportError:
         minimize = None
 
     def eval_scores(w: np.ndarray) -> tuple[float, float]:

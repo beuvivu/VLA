@@ -182,7 +182,7 @@ def _last2_from_prize(col: str, value: Any) -> str:
 
 def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     color = hex_color.lstrip("#")
-    return tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+    return tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def _rgb_to_hex(rgb: Iterable[int]) -> str:
