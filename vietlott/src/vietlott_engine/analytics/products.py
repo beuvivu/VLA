@@ -177,10 +177,6 @@ def digit_tests(h: ProductHistory, n_digits: int = 3) -> list[ProductTest]:
     return tests
 
 
-def three_digit_tests(h: ProductHistory) -> list[ProductTest]:
-    return digit_tests(h, 3)
-
-
 class CellTest(BaseModel):
 
     product: str

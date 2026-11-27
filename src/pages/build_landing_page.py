@@ -28,12 +28,10 @@ from web.ui_locale import COLUMN_LABELS, mode_label, value_label
 from core.xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
 from stats.conditional_reading import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
 from stats.conditional_reading import reading_note as conditional_reading_note
-from web.ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
+from web.ui_theme import readable_ink, stylesheet_link, write_stylesheet
 from web.web_security import json_for_html_script, security_meta_tags
 from web.page_output import write_page
 
-
-NAV_ITEMS = LANDING_SECTIONS
 
 PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
     ("special", "Đặc Biệt", ["special"], "special"),

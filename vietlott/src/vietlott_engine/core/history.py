@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable, Sequence
+from typing import Iterable
 
 import numpy as np
 
@@ -158,8 +158,3 @@ def decay_weights(length: int, decay: float) -> np.ndarray:
     if length == 0:
         return np.zeros(0)
     return decay ** np.arange(length - 1, -1, -1, dtype=np.float64)
-
-
-def tickets_to_array(tickets: Sequence[Sequence[int]], k: int) -> np.ndarray:
-    arr = np.sort(np.asarray(tickets, dtype=np.int16).reshape(-1, k), axis=1)
-    return arr

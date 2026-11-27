@@ -117,14 +117,6 @@ def markov_log_wealth(h: DrawHistory, eps_grid: tuple[float, ...] = (0.1, 0.3, 1
     return logsumexp(np.vstack(log_ws), axis=0) - np.log(len(log_ws))
 
 
-def frequency_eprocess(h: DrawHistory, alpha: float = 0.05) -> EProcessResult:
-    return _result("frequency_bias", frequency_log_wealth(h), h, 0, alpha)
-
-
-def markov_eprocess(h: DrawHistory, alpha: float = 0.05) -> EProcessResult:
-    return _result("serial_dependence", markov_log_wealth(h), h, 0, alpha)
-
-
 def predictive_eprocess(name: str, probs: np.ndarray, draws: np.ndarray, n: int, alpha: float = 0.05, ids: np.ndarray | None = None, eps_grid: tuple[float, ...] = (0.1, 0.3, 1.0)) -> EProcessResult:
     k = draws.shape[1]
     log_w = mixture_log_wealth(subset_log_prob(probabilities_to_odds(probs), draws), n, k, eps_grid)

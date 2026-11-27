@@ -587,18 +587,6 @@ def _holdout_gain(model_train: BehaviourModel, theta: np.ndarray, test: Calibrat
     return float(gain.mean()), p
 
 
-def prior_from(other: "BehaviourCalibration", spec: GameSpec, strength: float = 8.0) -> Penalty:
-    b = np.asarray(other.beta[: spec.pool_size], dtype=np.float64)
-    return Penalty(
-        beta=strength,
-        gamma=4.0,
-        a_mean=float(logit(np.clip(other.quick_pick_share, 0.02, 0.98))),
-        a_sd=0.5,
-        beta_mean=b - b.mean(),
-        gamma_mean=np.array([other.gamma[f] for f in DYNAMIC_FEATURES]),
-    )
-
-
 def calibrate(
     h: DrawHistory,
     ph: PrizeHistory,

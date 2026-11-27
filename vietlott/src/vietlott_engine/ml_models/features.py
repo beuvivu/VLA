@@ -93,8 +93,3 @@ def build_snapshots(h: DrawHistory, half_lives: tuple[int, ...] = (10, 30, 100),
     for row in h.incidence:
         builder.update(row)
     return builder.snapshots()
-
-
-def spectral_embedding(a_hat: np.ndarray, dims: int = 4) -> np.ndarray:
-    vals, vecs = np.linalg.eigh(a_hat.astype(np.float64))
-    return vecs[:, np.argsort(-vals)[1 : dims + 1]]

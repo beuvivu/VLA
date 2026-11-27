@@ -529,15 +529,6 @@ def make_runner(state):
                         learn=lambda product:_learn(state, product), timeout_s=state.settings.auto_update_timeout_s)
 
 
-async def periodic_updates(state) -> None:
-    replay_results(state)
-    state.updater = make_runner(state)
-    try:
-        await state.updater.run_forever()
-    finally:
-        await finish_learning(state)
-
-
 def update_status(state) -> dict:
     status = state.updater.status() if state.updater is not None else {'products':{}}
     return {'enabled':state.settings.auto_update_enabled, 'running':state.updater is not None, 'timezone':'Asia/Ho_Chi_Minh',

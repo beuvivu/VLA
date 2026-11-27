@@ -35,7 +35,6 @@ class SideBet(BaseModel):
     source: str
 
 
-OFFICIAL_KENO_PAGE = "https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/view-detail-keno-result?id=0284640"
 KENO_SIDE_BETS: list[SideBet] = [
     SideBet(
         name="Lớn (hoặc Nhỏ)",

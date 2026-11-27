@@ -565,8 +565,3 @@ def backtest_rolldown_forecast(spec: GameSpec, h: DrawHistory, ph: PrizeHistory,
         "spearman_rho": float(stats.spearmanr(pred, act).statistic),
         "examples": [{"from_draw": r[0], "predicted": round(r[1], 1), "actual": r[2]} for r in rows[-8:]],
     }
-
-
-def tickets_sold_ci(n: float, rel_sd: float = 0.15) -> tuple[float, float]:
-    z = stats.norm.ppf(0.975)
-    return float(n * np.exp(-z * rel_sd)), float(n * np.exp(z * rel_sd))

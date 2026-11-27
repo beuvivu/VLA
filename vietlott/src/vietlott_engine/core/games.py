@@ -220,7 +220,6 @@ LOTTO_535 = GameSpec(
 )
 
 GAMES: dict[GameCode, GameSpec] = {g.code: g for g in (MEGA_645, POWER_655, LOTTO_535)}
-SIX_NUMBER_GAMES = (GameCode.MEGA_645, GameCode.POWER_655)
 DEFAULT_TAX = TaxRule()
 
 
