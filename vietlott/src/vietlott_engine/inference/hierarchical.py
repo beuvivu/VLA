@@ -1,24 +1,3 @@
-"""Hierarchical (random-effects) Bayesian model of per-number inclusion rates.
-
-    θ_i ~ Beta(μκ, (1−μ)κ),   μ = k/n,   x_i | θ_i ~ Binomial(D, θ_i)
-
-κ (concentration) controls the between-number spread τ = sd(θ) = √(μ(1−μ)/(κ+1));
-κ → ∞ is the perfectly fair machine. The marginal likelihood of κ is a product of
-Beta-Binomial terms (exact), so the posterior of κ — and therefore of τ — is computed
-on a log grid with a weakly-informative prior. Outputs:
-
-* posterior median and 95% upper credible bound of the *relative* spread τ/μ,
-* Bayes factor "some numbers differ" (κ < ∞, averaged over the prior) vs "fair" (κ = ∞),
-* partially-pooled (shrunk) estimates of every number's rate — the principled
-  replacement for raw hot/cold rankings: noise is pulled back toward k/n by exactly
-  the amount the data justify.
-
-The per-number marginal of the counts is exactly Binomial under a fair machine; the
-product over numbers ignores the (weak, negative) cross-number correlation from the
-fixed Σx_i = kD, i.e. it is a composite likelihood. The test suite checks the credible
-bound is calibrated on simulated fair histories.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -34,7 +13,6 @@ def _log_binom_coef(d: int, x: np.ndarray) -> np.ndarray:
 
 
 def log_marginal_kappa(counts: np.ndarray, draws: int, mu: float, kappa: np.ndarray) -> np.ndarray:
-    """log p(x | κ) for each κ in the grid (Beta-Binomial product)."""
     x = np.asarray(counts, dtype=np.float64)[None, :]
     a = (mu * kappa)[:, None]
     b = ((1 - mu) * kappa)[:, None]
@@ -50,7 +28,7 @@ class NumberShrinkage(BaseModel):
     number: int
     raw_rate: float
     pooled_rate: float
-    shrinkage: float  # 0 = no pooling, 1 = fully pulled to k/n
+    shrinkage: float
     posterior_sd: float
 
 
@@ -61,29 +39,27 @@ class HierarchicalReport(BaseModel):
     tau_relative_median: float
     tau_relative_upper95: float
     log10_bayes_factor_heterogeneous_vs_fair: float
-    log10_bayes_factor_material_vs_fair: float  # H1: spread ≥ ``material`` of k/n
+    log10_bayes_factor_material_vs_fair: float
     material_spread: float
     posterior_prob_fair_within_1pct: float
     fair_ticket_rtp: float
     pooled_best_ticket: list[int]
-    pooled_best_ticket_rtp: float  # six highest partially-pooled rates
-    upper95_best_ticket_rtp: float  # six largest order statistics at the 95% upper spread
+    pooled_best_ticket_rtp: float
+    upper95_best_ticket_rtp: float
     numbers: list[NumberShrinkage]
     interpretation: str
 
 
 def hierarchical_report(h: DrawHistory, grid_size: int = 400, material: float = 0.05) -> HierarchicalReport:
-    """Posterior over κ with a log-uniform prior on the relative spread τ/μ ∈ [0.1%, 100%]."""
     n, k, d = h.n, h.k, len(h)
     mu = k / n
     counts = h.counts()
-    # parameterise by relative spread r = τ/μ (log-uniform prior), κ = μ(1−μ)/(rμ)² − 1
     r = np.logspace(-3, 0, grid_size)
     kappa = mu * (1 - mu) / (r * mu) ** 2 - 1
     valid = kappa > 1e-6
     r, kappa = r[valid], kappa[valid]
     loglik = log_marginal_kappa(counts, d, mu, kappa)
-    log_prior = np.full(r.size, -np.log(r.size))  # uniform on the log-r grid
+    log_prior = np.full(r.size, -np.log(r.size))
     log_post = loglik + log_prior
     m = log_post.max()
     post = np.exp(log_post - m)
@@ -99,7 +75,6 @@ def hierarchical_report(h: DrawHistory, grid_size: int = 400, material: float = 
     log_evidence_mat = float(lm.max() + np.log(np.mean(np.exp(lm - lm.max()))))
     log10_bf_mat = (log_evidence_mat - log_fair) / np.log(10)
 
-    # partial pooling, averaging E[θ_i | x, κ] over the posterior of κ
     theta_mean = (counts[None, :] + mu * kappa[:, None]) / (d + kappa[:, None])
     a_post = counts[None, :] + mu * kappa[:, None]
     b_post = d - counts[None, :] + (1 - mu) * kappa[:, None]
@@ -115,12 +90,12 @@ def hierarchical_report(h: DrawHistory, grid_size: int = 400, material: float = 
         for i in np.argsort(-np.abs(raw - mu))
     ]
     p_within = float(post[r <= 0.01].sum())
-    from vietlott_engine.inference.power import ticket_rtp  # local import: power imports nothing from here
+    from vietlott_engine.inference.power import ticket_rtp
 
     best6 = np.argsort(-pooled)[:k]
     tgt = np.full(n, (k - pooled[best6].sum()) / (n - k))
     tgt[best6] = pooled[best6]
-    blom = stats.norm.ppf((n - np.arange(1, k + 1) + 1 - 0.375) / (n + 0.25))  # expected top-k normal order stats
+    blom = stats.norm.ppf((n - np.arange(1, k + 1) + 1 - 0.375) / (n + 0.25))
     tgt_hi = np.full(n, 0.0)
     top = mu * (1 + r_hi * blom)
     tgt_hi[:k] = top

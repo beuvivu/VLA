@@ -1,19 +1,3 @@
-"""Graph Convolutional Network over the number co-occurrence graph (pure NumPy).
-
-Architecture (Kipf & Welling 2017), per snapshot t:
-    H = ReLU(Â_t X_t W₁ + b₁)          (n × hidden)
-    z = Â_t H w₂ + b₂                  (n,)
-    P(number i in draw t) = σ(z_i)
-trained with binary cross-entropy + L2, Adam, mini-batches of snapshots and early
-stopping on a chronologically later validation block. Gradients are analytic and
-verified against finite differences in the test suite.
-
-A dependency-free NumPy implementation keeps the container small (no PyTorch /
-PyG) and is plenty for a 45/55-node graph. The point of the model is to *test*
-whether co-occurrence structure carries predictive information, measured by
-out-of-sample log-loss against the k/n baseline — not to assume that it does.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -68,14 +52,13 @@ class GCNPredictor:
         )
         self.history: list[dict] = []
 
-    # ------------------------------------------------------------ forward
     @staticmethod
     def _forward(p: GCNParams, a: np.ndarray, x: np.ndarray) -> tuple[np.ndarray, dict]:
-        u = a @ x  # (B, n, f)
-        z1 = u @ p.w1 + p.b1  # (B, n, h)
+        u = a @ x
+        z1 = u @ p.w1 + p.b1
         h1 = np.maximum(z1, 0.0)
-        v = a @ h1  # (B, n, h)
-        z = v @ p.w2 + p.b2[0]  # (B, n)
+        v = a @ h1
+        z = v @ p.w2 + p.b2[0]
         return z, {"u": u, "z1": z1, "h1": h1, "v": v}
 
     @staticmethod
@@ -89,19 +72,17 @@ class GCNPredictor:
         m = y.size
         loss = -np.sum(y * np.log(prob + eps) + (1 - y) * np.log(1 - prob + eps)) / m
         loss += 0.5 * self.cfg.l2 * (np.sum(p.w1**2) + np.sum(p.w2**2))
-        dz = (prob - y) / m  # (B, n)
+        dz = (prob - y) / m
         dw2 = np.einsum("bnh,bn->h", c["v"], dz) + self.cfg.l2 * p.w2
         db2 = np.array([dz.sum()])
-        dv = dz[..., None] * p.w2[None, None, :]  # (B, n, h)
+        dv = dz[..., None] * p.w2[None, None, :]
         dh1 = np.transpose(a, (0, 2, 1)) @ dv
         dz1 = dh1 * (c["z1"] > 0)
         dw1 = np.einsum("bnf,bnh->fh", c["u"], dz1) + self.cfg.l2 * p.w1
         db1 = dz1.sum(axis=(0, 1))
         return float(loss), [dw1, db1, dw2, db2]
 
-    # --------------------------------------------------------------- train
     def fit(self, snaps: Snapshots, t_start: int, t_end: int) -> "GCNPredictor":
-        """Train on snapshots t ∈ [t_start, t_end) — callers guarantee t_end ≤ first test index."""
         if not 0 <= t_start < t_end <= len(snaps.y):
             raise ValueError('Invalid chronological training interval')
         if not 0 < self.cfg.validation_fraction < 1:
@@ -139,7 +120,6 @@ class GCNPredictor:
         self.params = best
         return self
 
-    # ----------------------------------------------------------- predict
     def predict_proba(self, snaps: Snapshots, t: int | np.ndarray) -> np.ndarray:
         t = np.atleast_1d(t)
         z, _ = self._forward(self.params, snaps.a_hat[t].astype(np.float64), snaps.x[t].astype(np.float64))
@@ -156,20 +136,19 @@ class SkillReport(BaseModel):
     test_draws: int
     model_log_loss: float
     baseline_log_loss: float
-    skill_per_draw_nats: float  # positive = better than k/n baseline (Bernoulli log score)
-    standard_error: float  # HAC (Newey–West / Andrews)
-    t_statistic: float  # Diebold–Mariano with HLN correction
+    skill_per_draw_nats: float
+    standard_error: float
+    t_statistic: float
     dm_p_value_greater: float
-    mean_hits_top_k: float  # hits among the model's top-k numbers per draw
+    mean_hits_top_k: float
     expected_hits_random: float
-    calibration_z: float  # Spiegelhalter; |z| > 2 ⇒ miscalibrated probabilities
+    calibration_z: float
     calibration_p_value: float
-    eprocess_max_log10_wealth: float  # betting on the forecasts with exact subset probabilities
+    eprocess_max_log10_wealth: float
     eprocess_anytime_p_value: float
 
 
 def walk_forward_skill(snaps: Snapshots, k: int, first_test: int, refit_every: int = 100, config: GCNConfig | None = None, model: str = "gcn") -> SkillReport:
-    """Rolling-origin evaluation: refit on [warmup, T) and score (T, T+refit_every]."""
     d, n = snaps.y.shape
     base = k / n
     warmup = max(30, first_test // 5)
@@ -224,7 +203,6 @@ def walk_forward_skill(snaps: Snapshots, k: int, first_test: int, refit_every: i
 
 
 def _logistic_predict(snaps: Snapshots, t0: int, t1: int, t2: int) -> np.ndarray:
-    """Non-graph baseline: L2 logistic regression on the same node features."""
     from sklearn.linear_model import LogisticRegression
 
     n, f = snaps.x.shape[1], snaps.x.shape[2]

@@ -1,11 +1,3 @@
-"""Nhóm đặc trưng miền thử nghiệm cho mô hình cầu-kèo.
-
-Các phép biến đổi trong mô-đun này chỉ kết hợp thông tin đã biết tại cùng một
-ngày neo. Chúng mô tả quan hệ số học/nghiệp vụ, không tự tạo ra bằng chứng dự
-báo. Mỗi nhóm mặc định tắt và chỉ được phép vào production sau khi vượt qua
-gate kiểm định thời gian trong :mod:`cau_keo_domain_challenger`.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -31,7 +23,6 @@ _ANCHOR_COLUMN = "__domain_normalized_anchor"
 
 @dataclass(frozen=True)
 class FeatureGroupSpec:
-    """Hợp đồng bất biến của một nhóm đặc trưng thử nghiệm."""
 
     columns: tuple[str, ...]
     provenance: str
@@ -250,7 +241,6 @@ def _validate_anchor_layout(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def augment_domain_features(frame: pd.DataFrame) -> pd.DataFrame:
-    """Thêm quan hệ cùng ngày neo mà không đọc kết quả của ngày mục tiêu."""
 
     if frame.empty:
         return frame.copy()

@@ -61,7 +61,6 @@ def test_ai_judgement_adds_reason_and_probability_alias() -> None:
     assert "prob" in out.columns
     assert abs(float(out["prob"].sum()) - 1.0) < 1e-9
     assert out.iloc[0]["number_str"] == "00"
-    # Số 00 có path_support cao nhất: lý do in cho người đọc phải là lời đọc được, không phải tên biến.
     reasons = " | ".join(str(out.iloc[0][c]) for c in ("primary_reason", "reason_1", "reason_2", "reason_3"))
     assert cau_keo_ml.PATH_SUPPORT_REASON in reasons
     assert "rawdata" not in " ".join(out.astype(str).to_numpy().ravel()).lower()
@@ -96,7 +95,6 @@ def test_trusted_probability_shrinks_toward_the_base_rate_by_trust() -> None:
         trusted_probability(raw, mode="loto", trust=0.25, base_rate=0.24),
         0.25 * raw + 0.75 * 0.24,
     )
-    # Đặc Biệt: co rồi chuẩn hoá lại về tổng 1.
     shrunk = 0.25 * raw + 0.75 * 0.01
     np.testing.assert_allclose(
         trusted_probability(raw, mode="de", trust=0.25, base_rate=0.01),
@@ -109,9 +107,7 @@ def test_zero_trust_emits_the_base_rate_but_keeps_the_raw_ranking() -> None:
     out = _add_ai_judgement(_judgement_frame(raw), mode="loto", trust=0.0, base_rate=0.237)
     np.testing.assert_allclose(out["prob"].astype(float), 0.237)
     assert (out["model_trust"] == 0.0).all() and (out["base_rate"] == 0.237).all()
-    # Sổ lịch sử đọc phiên bản này để không trộn xác suất thô cũ với bản đã co.
     assert (out["trust_policy_version"] == TRUST_POLICY_VERSION).all()
-    # Xác suất thô vẫn được giữ và vẫn quyết định điểm, nên thứ tự không đổi.
     by_number = out.set_index("number")
     np.testing.assert_allclose(by_number.loc[[0, 1, 2], "ml_prob_raw"], raw)
     assert by_number.loc[0, "cau_score"] > by_number.loc[1, "cau_score"]
@@ -129,7 +125,6 @@ def _pack(**overrides: object) -> dict[str, object]:
     return {k: v for k, v in pack.items() if v is not None}
 
 
-# Số đo thẩm định mà gói mang theo để lượt dùng lại in được bảng kiểm định đủ cột.
 VALIDATION_FIELDS: dict[str, object] = {
     "val_brier": 0.1809,
     "val_logloss": 0.5477,
@@ -160,7 +155,6 @@ def test_trust_from_pack_has_no_default_for_a_pack_saved_before_the_policy() -> 
 
 
 def _synthetic_training(days: int, signal: float, seed: int) -> tuple[pd.DataFrame, pd.Series]:
-    """``days`` kỳ × 100 số; nhãn về với xác suất 0,24, cộng ``signal`` khi ``hit_today`` = 1."""
     rng = np.random.default_rng(seed)
     n = days * 100
     X = pd.DataFrame(rng.integers(0, 5, size=(n, len(FEATURE_COLS))).astype(float), columns=FEATURE_COLS)
@@ -173,7 +167,6 @@ def _synthetic_training(days: int, signal: float, seed: int) -> tuple[pd.DataFra
 
 
 def _fast_classifier(**_: object) -> LogisticRegression:
-    """Thay cây tăng cường bằng hồi quy logistic: phép kiểm canh luật tin, không canh mô hình."""
     return LogisticRegression(max_iter=200)
 
 
@@ -225,19 +218,16 @@ def test_training_measures_trust_against_the_base_rate_known_before_validation(
     pack, report, _ = _train_model("loto", X, y, tmp_path)
     val_start = pd.Timestamp(pack["val_start"])
     before = (X["anchor_date"] < val_start).to_numpy()
-    # Nền học CHỈ từ các kỳ trước khối thẩm định, không nhìn khối được chấm.
     assert pack["base_rate"] == pytest.approx(float(y[before].mean()), abs=0.0)
     assert pack["model_trust"] == model_trust(pack["logloss_skill"], pack["brier_skill"])
     assert pack["trust_policy_version"] == TRUST_POLICY_VERSION
     assert float(report["model_trust"].iloc[0]) == pack["model_trust"]
-    # Nhiễu thuần: không có kỹ năng để tin.
     assert pack["model_trust"] < 0.05
     saved = joblib.load(tmp_path / "cau_keo_loto.joblib")
     assert trust_from_pack(saved) == (pack["model_trust"], pack["base_rate"])
 
     X, y = _synthetic_training(120, signal=0.25, seed=7)
     planted, _, _ = _train_model("loto", X, y, tmp_path / "planted")
-    # Có tín hiệu thật thì kỹ năng thẩm định dương và luật tin cho nó vào.
     assert planted["model_trust"] > 0.5
 
 
@@ -261,13 +251,11 @@ def test_a_cached_pack_without_the_trust_policy_is_retrained(
     pack, _, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
     assert calls == ["loto"] and pack == {"retrained": True}
 
-    # Đối chứng: cùng gói nhưng mang luật tin hiện hành và đủ số đo thẩm định thì dùng lại, không học lại.
     joblib.dump({**stale, **_pack(), **VALIDATION_FIELDS}, tmp_path / "cau_keo_loto.joblib")
     pack, report, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
     assert calls == ["loto"] and trust_from_pack(pack) == (0.2, 0.238)
     assert float(report["val_brier"].iloc[0]) == VALIDATION_FIELDS["val_brier"]
 
-    # Gói có luật tin nhưng thiếu số đo thẩm định (không in được bảng kiểm định đủ cột): học lại.
     partial = {k: v for k, v in VALIDATION_FIELDS.items() if k != "val_logloss"}
     joblib.dump({**stale, **_pack(), **partial}, tmp_path / "cau_keo_loto.joblib")
     pack, _, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
@@ -277,11 +265,6 @@ def test_a_cached_pack_without_the_trust_policy_is_retrained(
 def test_reusing_the_cached_pack_reports_exactly_what_training_reported(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Pipeline chạy lại trong ngày (sau khi gộp PR) dùng lại gói: bảng kiểm định phải trùng lượt học.
-
-    Trước 06-11-2026 lượt dùng lại chỉ ghi tỉ lệ top-K, nên trang Thống kê và trang chủ mất cột Brier,
-    LogLoss và mốc kiểm định ở 6/11 phiên bản báo cáo trong 30 ngày.
-    """
     monkeypatch.setattr(cau_keo_ml, "HistGradientBoostingClassifier", _fast_classifier)
     X, y = _synthetic_training(120, signal=0.0, seed=7)
     monkeypatch.setattr(cau_keo_ml, "build_cau_keo_feature_frame", lambda *a, **k: (X, y))
@@ -298,7 +281,6 @@ def test_reusing_the_cached_pack_reports_exactly_what_training_reported(
 
 @pytest.mark.parametrize("anchor_t,weekday", [(0, 3), (5, 0), (200, 6), (499, 2), (499, 4)])
 def test_same_weekday_feature_equals_the_per_day_scan(anchor_t, weekday) -> None:
-    """Mặt nạ thứ vector hoá phải cộng đúng các ngày mà vòng duyệt từng ngày cộng."""
     rng = np.random.default_rng(anchor_t + weekday)
     hit = (rng.random((500, 100)) < .25).astype(np.int8)
     dates = pd.date_range("2025-01-01", periods=500, freq="D")

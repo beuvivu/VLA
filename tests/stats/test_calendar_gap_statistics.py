@@ -24,7 +24,7 @@ def test_cycle_between_hit_absence_uses_calendar_difference_minus_one():
     current, maximum, mean_gap, _ = _gap_series_calendar(hit_dates, all_dates)
     assert current == 1
     assert maximum == 2
-    assert mean_gap == 1.0  # mean of leading=0 and completed absence=2
+    assert mean_gap == 1.0
 
 
 def test_hazard_calendar_ordinals_do_not_collapse_missing_dates():

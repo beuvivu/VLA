@@ -1,5 +1,3 @@
-"""Mô hình xếp chồng, giải thích Shapley chính xác và lọc rủi ro."""
-
 from forecast.modeling.stacking import (
     DEFAULT_GAN_THRESHOLD_DAYS,
     SCHEMA_VERSION,

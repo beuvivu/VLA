@@ -23,11 +23,6 @@ def save_heatmap(
     cbar_label: str = "Giá trị",
     value_fmt: str = "d",
 ) -> None:
-    """Save a readable 10x10 matrix with a low→high color gradient.
-
-    The function uses matplotlib directly to avoid seaborn/pandas compatibility
-    edge cases in scheduled GitHub Actions runs.
-    """
     data = matrix.copy()
     if data.empty:
         return
@@ -49,7 +44,6 @@ def save_heatmap(
     ax.set_xticks(np.arange(data.shape[1]), labels=[str(c) for c in data.columns])
     ax.set_yticks(np.arange(data.shape[0]), labels=[str(i) for i in data.index])
 
-    # Gridlines make the matrix easier to scan.
     ax.set_xticks(np.arange(-0.5, data.shape[1], 1), minor=True)
     ax.set_yticks(np.arange(-0.5, data.shape[0], 1), minor=True)
     ax.grid(which="minor", color="white", linewidth=1.4)
@@ -83,7 +77,6 @@ def save_ranked_bar(
     cmap: str = "YlGnBu",
     ylabel: str | None = None,
 ) -> None:
-    """Save a ranked bar chart with value-based gradient colors."""
     if df.empty:
         return
 

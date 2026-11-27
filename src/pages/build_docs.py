@@ -50,7 +50,6 @@ class UiRow:
 
 
 def _position_info(index: int) -> dict[str, Any]:
-    """Vị trí 0-based của engine, nhãn chữ số 1-based cho người đọc."""
     start = 0
     for field, width in FIELD_WIDTHS:
         if start <= index < start + width:
@@ -70,7 +69,6 @@ def _position_info(index: int) -> dict[str, Any]:
 def _path_payload(
     ui_df: pd.DataFrame, raw_df: pd.DataFrame | None, *, anchor_date: str, mode: str, kind: str
 ) -> dict[str, Any]:
-    """Nối ngày nguồn D−lag với đúng ngày đích D, không tính lại dự báo."""
     raw_rows = {} if raw_df is None else {
         str(row["date"])[:10]: {field: str(int(row[field])).zfill(width)
                                 if field in row and pd.notna(row[field]) else None
@@ -129,7 +127,6 @@ def _path_payload(
 
 
 def _latest_anchor_date(path_ui_dir: Path, mode: str) -> str:
-    # files: ui_{mode}_{kind}_{YYYY-MM-DD}_{Nd}d.csv
     pat = re.compile(
         rf"ui_{re.escape(mode)}_(?:active|stable)_(\d{{4}}-\d{{2}}-\d{{2}})_(\d+)d\.csv$"
     )
@@ -162,10 +159,6 @@ def _load_picks_csv(path_ui_dir: Path, mode: str, kind: str, anchor_date: str) -
 
 
 def _empty_reason(path_ui_dir: Path, *, mode: str, kind: str, rows: int) -> dict[str, Any]:
-    """Vì sao trang này trống, và người đọc nên đi đâu tiếp.
-
-    Trả về rỗng khi trang có dữ liệu, nên template chỉ cần kiểm tra một biến.
-    """
     if rows:
         return {}
 
@@ -194,7 +187,6 @@ def _empty_reason(path_ui_dir: Path, *, mode: str, kind: str, rows: int) -> dict
 
 
 def _dec(value: float, digits: int = 2) -> str:
-    """Số thập phân kiểu Việt Nam: dấu phẩy thập phân."""
     return f"{value:.{digits}f}".replace(".", ",")
 
 
@@ -203,11 +195,9 @@ def _pct(value: float, digits: int = 2) -> str:
 
 
 def _int(value: int) -> str:
-    """Số nguyên kiểu Việt Nam: dấu chấm phân nghìn."""
     return f"{int(value):,}".replace(",", ".")
 
 
-#: Phạm vi vị trí của ``path_models.get_scope_indices``, in đúng cấu hình đã sinh dự báo.
 _SCOPE_TEXT = {
     "all": "mọi cặp vị trí",
     "near_special": "các cặp vị trí trong giải Đặc Biệt, giải nhất và giải nhì",
@@ -218,15 +208,6 @@ _SCOPE_TEXT = {
 def _bridge_experience(
     path_ui_dir: Path, *, mode: str, kind: str, anchor_date: str
 ) -> dict[str, Any]:
-    """Kinh nghiệm học từ MỌI đường cầu (``path_prob.BridgeEvidence``) và câu kết luận.
-
-    Câu kết luận suy TỪ số đo của ngày neo, không viết cứng: nếu một ngày các
-    cầu thật sự khác nhau, trang sẽ nói thế và in phần chênh được giữ lại.
-    Thiếu tệp (lượt dựng cũ) thì trả rỗng và trang bỏ khối này. Tệp là của MỘT
-    ngày neo: khác ngày neo của trang (chạy lại ``--bien-ngay`` cho ngày cũ, hay
-    lượt dựng hỏng giữa chừng) thì cũng bỏ khối, không ghép kinh nghiệm của
-    ngày này với bảng cầu của ngày khác.
-    """
     payload = read_json_or_empty(path_ui_dir / f"bridge_evidence_{mode}.json")
     if not isinstance(payload, dict) or "variance_ratio" not in payload:
         return {}
@@ -312,12 +293,9 @@ def _render_page(
 ) -> None:
     tpl = env.get_template("path_ui_page.html.j2")
 
-    # Identify day columns: *_num, *_hit, *_is_de
-    # run_path_ui exports daily cols as YYYY-MM-DD_num, etc.
     day_nums = [c for c in ui_df.columns if c.endswith("_num")]
-    days = [c[:-4] for c in day_nums]  # remove _num
+    days = [c[:-4] for c in day_nums]
 
-    # Prepare picks
     picks: list[PickRow] = []
     for _, r in picks_df.head(20).iterrows():
         picks.append(
@@ -328,7 +306,6 @@ def _render_page(
             )
         )
 
-    # Rows
     rows: list[UiRow] = []
     for _, r in ui_df.iterrows():
         lag = int(r.get("lag", 0))
@@ -339,10 +316,7 @@ def _render_page(
         j_label = _position_info(j)["label"]
 
         p_mean = float(r.get("p_mean", 0.0))
-        # ``p_next`` do ``path_prob.rule_next_probability`` tính ở bước dựng dữ
-        # liệu: cùng thiên lệch và chặn biên với bước gợi ý.
         p_next = float(r["p_next"]) if pd.notna(r.get("p_next")) else None
-        # show streaks
         if kind == "active":
             streak = (
                 f"hiện tại={int(r.get('current_streak', 0))} / "
@@ -428,11 +402,6 @@ def build_docs(*, repo_root: Path, display_days: int = 10, docs_dir: Path | None
             ui_df = _load_ui_csv(path_ui_dir, mode, kind, anchor_date, display_days)
             picks_df = _load_picks_csv(path_ui_dir, mode, kind, anchor_date)
 
-            # Một trang trống không kèm lời giải thích không phân biệt được với
-            # một trang hỏng. Với Đặc Biệt, tỉ lệ nền là 1% nên xác suất một đường cầu
-            # trúng ba kỳ liên tiếp là 1e-6: rỗng là trạng thái ĐÚNG và thường
-            # gặp, không phải sự cố. Thông điệp cũ ("hãy chạy lại bước tạo dữ
-            # liệu") hướng người đọc đi sửa một thứ không hỏng.
             empty_reason = _empty_reason(path_ui_dir, mode=mode, kind=kind, rows=len(ui_df))
             experience = _bridge_experience(
                 path_ui_dir, mode=mode, kind=kind, anchor_date=anchor_date
@@ -473,7 +442,6 @@ def build_docs(*, repo_root: Path, display_days: int = 10, docs_dir: Path | None
                 }
             )
 
-    # Simple index
     idx_html = [
         "<!doctype html><html lang='vi'><head><meta charset='utf-8'/>"
         "<meta name='viewport' content='width=device-width, initial-scale=1'/>"

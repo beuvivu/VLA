@@ -1,5 +1,3 @@
-"""Cỡ mẫu hiệu dụng thống nhất cho hậu nghiệm, khoảng khả tín và replay."""
-
 import importlib.util
 from pathlib import Path
 
@@ -12,7 +10,6 @@ from stats import statistical_signal as ss
 
 
 def _three_days():
-    """Ba kỳ có 20, 40, 60 số trúng để tách nền thường và nền có trọng số."""
     hit = np.zeros((3, 100))
     hit[0, :20] = 1
     hit[1, :40] = 1
@@ -23,7 +20,6 @@ def _three_days():
 
 @pytest.mark.parametrize("prior_strength,alpha,beta_shape", [(7.0, 568 / 105, 437 / 105), (None, 274 / 105, 101 / 105)])
 def test_loto_point_and_interval_use_one_effective_beta_posterior(monkeypatch, prior_strength, alpha, beta_shape):
-    """Tính tay: weights 1,2,3 có ESS=18/7, tâm7/15; κ học đúng bằng1."""
     hit, dates = _three_days()
     monkeypatch.setattr(ss, "_exp_weights", lambda n, half_life: np.array([1.0, 2.0, 3.0]))
     out = ss._loto_signal(hit, dates, 1, half_life=45, prior_strength=prior_strength)
@@ -36,7 +32,6 @@ def test_loto_point_and_interval_use_one_effective_beta_posterior(monkeypatch, p
 
 @pytest.mark.parametrize("prior_strength", [None, 7.0])
 def test_rescaling_weights_cannot_change_loto_predictions_or_intervals(monkeypatch, prior_strength):
-    """Dùng tổng trọng số làm số kỳ sẽ đổi kết quả dù trọng số tương đối giữ nguyên."""
     hit, dates = _three_days()
     columns = ["prob", "ewm_prob", "credible_low", "credible_high", "effective_sample_size"]
     values = []
@@ -49,7 +44,6 @@ def test_rescaling_weights_cannot_change_loto_predictions_or_intervals(monkeypat
 
 @pytest.mark.parametrize("prior_strength", [None, 7.0])
 def test_rescaling_weights_cannot_change_categorical_posterior_or_intervals(prior_strength):
-    """Đặc Biệt đổi đơn vị weights vẫn phải giữ phân phối và độ bất định."""
     onehot = np.zeros((3, 100))
     onehot[np.arange(3), [0, 1, 1]] = 1
     weights = np.array([1.0, 2.0, 3.0])
@@ -61,7 +55,6 @@ def test_rescaling_weights_cannot_change_categorical_posterior_or_intervals(prio
 
 
 def test_categorical_point_and_intervals_use_the_same_effective_dirichlet_counts():
-    """κ=7, ESS=18/7, số1 có count=15/7 nên alpha1=1549/700."""
     onehot = np.zeros((3, 100))
     onehot[np.arange(3), [0, 1, 1]] = 1
     point, low, high = ss._de_posterior(onehot, np.array([1.0, 2.0, 3.0]), 7.0)
@@ -72,7 +65,6 @@ def test_categorical_point_and_intervals_use_the_same_effective_dirichlet_counts
 
 @pytest.mark.parametrize("selector", ["half_life", "pool"])
 def test_selection_scores_are_invariant_to_the_units_of_recency_weights(monkeypatch, selector):
-    """Cổng lựa chọn phải chấm cùng ESS như khi công bố, kể cả khi đổi đơn vị weights."""
     rng = np.random.default_rng(421)
     hit = (rng.random((280, 100)) < np.linspace(0.03, 0.85, 100)).astype(float)
     dates = pd.Series(pd.date_range("2025-01-01", periods=280))
@@ -92,7 +84,6 @@ def test_selection_scores_are_invariant_to_the_units_of_recency_weights(monkeypa
 
 
 def test_backtest_uses_the_same_effective_posterior_as_publication(monkeypatch):
-    """Replay phải dùng công thức ESS đúng trên mẫu κ=1 đã tính độc lập."""
     path = Path(__file__).resolve().parents[2] / "scripts" / "research" / "backtest_pooling.py"
     spec = importlib.util.spec_from_file_location("backtest_pooling_effective_sample", path)
     module = importlib.util.module_from_spec(spec)

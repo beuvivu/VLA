@@ -1,4 +1,3 @@
-"""Kiểm giao thức đánh giá nhân quả và ghép benchmark cùng kỳ."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -33,14 +32,12 @@ def test_evaluation_scores_frozen_prefix_before_learning() -> None:
 
 
 def test_evaluation_scores_the_published_ticket_not_the_top_marginals(monkeypatch) -> None:
-    """Tái hiện lỗi 13-10-2026: benchmark chấm k số biên cao nhất trong khi vé công bố là Law.top."""
     from vlm.forecast.distribution import Law
 
     from vlm.forecast.distribution import PUBLISHED_TOP_N
 
     series = mega_series(8)
     published = [1, 2, 3, 4, 5, 6]
-    # Hết ngân sách nút thì bộ đầu của top phụ thuộc count: chỉ đúng count bảng điều khiển dùng mới ra vé đã phát.
     monkeypatch.setattr(Law, 'top', lambda self, count, max_nodes=20000: (
         [{'numbers': published if count == PUBLISHED_TOP_N else [7, 8, 9, 10, 11, 12]}], False))
     result = evaluate_series(series, MLConfig(bootstrap=8, backends=(), search_nodes=1), initial_draws=4)
@@ -115,7 +112,6 @@ def test_cli_rejects_overwriting_its_comparison_baseline(tmp_path, monkeypatch) 
 
 
 def test_cli_records_executable_source_manifest(tmp_path, monkeypatch) -> None:
-    """Removing automatic source provenance must make this test fail."""
     import hashlib
     import json
     import runpy
@@ -148,7 +144,6 @@ def test_cli_records_executable_source_manifest(tmp_path, monkeypatch) -> None:
 
 @pytest.mark.parametrize('changed', ['scorer', 'evaluation', 'new_module', 'runner'])
 def test_source_manifest_detects_changed_benchmark_code(tmp_path, changed) -> None:
-    """Omitting any scorer, evaluator, dependency or runner must be detected."""
     import runpy
     from pathlib import Path
 
@@ -173,7 +168,6 @@ def test_source_manifest_detects_changed_benchmark_code(tmp_path, changed) -> No
 
 
 def test_cli_does_not_complete_report_when_source_changes_during_run(tmp_path, monkeypatch) -> None:
-    """Removing the end-of-run source check must allow this test to catch it."""
     import json
     import runpy
     from pathlib import Path
@@ -201,7 +195,6 @@ def test_cli_does_not_complete_report_when_source_changes_during_run(tmp_path, m
 
 @pytest.mark.parametrize('problem', ['missing_root', 'file_root', 'unreadable_subtree'])
 def test_source_manifest_rejects_incomplete_source_tree(tmp_path, monkeypatch, problem) -> None:
-    """A scan that silently drops source files must never certify a benchmark."""
     import os
     import runpy
     from pathlib import Path

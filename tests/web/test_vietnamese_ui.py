@@ -43,8 +43,6 @@ def test_dashboard_builder_renders_vietnamese_without_shadowing_html_module(
         cwd=ROOT,
         check=True,
     )
-    # Trang Chất lượng mô hình đã tách sang builder riêng. Nó chỉ ĐỌC báo cáo
-    # chẩn đoán sẵn có trong data/ và ghi vào thư mục tạm, nên không làm bẩn kho.
     subprocess.run(
         [sys.executable, "src/pages/build_model_quality.py", "--docs-dir", str(tmp_path)],
         cwd=ROOT,

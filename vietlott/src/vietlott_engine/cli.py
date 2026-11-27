@@ -1,50 +1,3 @@
-"""Command-line interface.
-
-Examples
-    vietlott sync --game all                       # GitHub mirror → DuckDB + Parquet
-    vietlott sync --game mega645 --source vietlott # official site
-    vietlott sync --game all --source file --path ./seed
-    vietlott analyze --game power655
-    vietlott ev --game mega645 --ticket 3 17 22 35 41 44 --jackpot1 45e9
-    vietlott optimize --game power655 --n 5 --jackpot1 120e9
-    vietlott wheel --game mega645 --pool 3 7 11 15 19 23 27 31 35 39 --t 3 --m 4
-    vietlott backtest --game mega645 --tickets 5 --out reports/
-    vietlott serve --port 8000
-
-  Vietlott products / market (v3)
-    vietlott prizes --game all                     # winner counts + jackpot pots → store
-    vietlott market --out data/calibration         # payout share, sales, crowd calibration, rolldowns
-    vietlott odds --game lotto535
-    vietlott ev --game lotto535 --ticket 3 14 22 29 33 --special 7 --jackpot1 9e9
-    vietlott bao --game mega645 --numbers 5 12 19 26 33 40 44 45
-    vietlott coverage --game power655 --budget 20
-    vietlott rolldown --jackpot 20e9 --tickets-sold 2000000
-    vietlott rolldown --history                   # official series + next-rolldown forecast
-    vietlott bao --game power655 --catalog
-    vietlott bao --game power655 --table 7
-    vietlott bao --game mega645 --numbers 3 9 14 22 31 38 41 44 --compare
-    vietlott max3d --product max3dpro --kind bao_bo_so --numbers 123 456
-
-  All products / official data (v3.2)
-    vietlott products list                         # coverage of Keno, Bingo18, Max 3D, Max 3D Pro
-    vietlott products sync                         # auto: vietlott.vn → community archive → mirrors
-    vietlott products sync --source vietlott        # vietlott.vn directly (Vietnamese IP only)
-    vietlott products sync --source nhanaz --path ~/vietlott-data-collector   # local clone of branch datasets
-    vietlott products sync --source v130 --path ~/Vietlott-Quant-Engine-1.3.0
-    vietlott sync --game all --source auto         # Mega/Power/Lotto with the same fallback
-    vietlott products analyze --product all        # randomness tests + Max 3D digit cross-check
-    vietlott products odds --product keno
-    vietlott products import-pages --path ~/Downloads/vietlott --dry-run   # pages / HAR you saved
-    vietlott prizes --game all --source canonical  # official prize tables (detail pages)
-    vietlott prizes --game mega645 --source vietlott --last 10
-
-  Self-learning forecaster (v3.5)
-    vietlott forecast next --product all          # learn new draws, forecast, record in the ledger
-    vietlott forecast update                      # after a draw: learn it and score recorded forecasts
-    vietlott forecast scoreboard                  # live track record of recorded forecasts
-    vietlott forecast fit --product keno          # relearn from scratch
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -98,7 +51,7 @@ def cmd_sync(a: argparse.Namespace) -> int:
                 rep = (await SyncPipeline(src, repo).run(spec, full_refresh=a.full)).to_dict()
                 rep.update(_archive_extras(src, spec, repo))
                 prize_file = Path(a.path) / f"prizes_{spec.code.value}.jsonl" if a.source == "file" and a.path else None
-                if prize_file is not None and prize_file.exists():  # offline snapshot also carries prize data
+                if prize_file is not None and prize_file.exists():
                     rep["prize_records"] = repo.upsert_prizes(records_from_jsonl(prize_file.read_text(encoding="utf-8")))
                 out.append(rep)
         return out
@@ -108,7 +61,6 @@ def cmd_sync(a: argparse.Namespace) -> int:
 
 
 def _archive_extras(src, spec, repo) -> dict:  # type: ignore[no-untyped-def]
-    """Fallback attempts, and prize tables that came with archive draws (nhanaz / v130)."""
     from vietlott_engine.crawler.official_data import import_canonical
     from vietlott_engine.crawler.sources.fallback import ArchiveDrawSource, FallbackDrawSource
 
@@ -152,7 +104,6 @@ def cmd_analyze(a: argparse.Namespace) -> int:
 
 
 def _calculator(spec, quick_pick: float | None = None, use_history: bool = True):  # type: ignore[no-untyped-def]
-    """EV calculator with the calibrated crowd + sales model when ``calibration_dir`` has them."""
     from vietlott_engine.game_theory.calibration import load_calibration
     from vietlott_engine.game_theory.ev import EVCalculator
     from vietlott_engine.game_theory.market import load_sales_model
@@ -163,7 +114,7 @@ def _calculator(spec, quick_pick: float | None = None, use_history: bool = True)
     if use_history:
         try:
             history = _repo().load_history(spec.code)
-        except Exception:  # no data yet: no "copy last result" effect
+        except Exception:
             history = None
     cal = load_calibration(spec.code, s.calibration_dir)
     if cal is not None:
@@ -246,7 +197,6 @@ def cmd_ml(a: argparse.Namespace) -> int:
 
 
 def _print_forecast(rep) -> None:  # type: ignore[no-untyped-def]
-    """Human-readable forecast (Vietnamese number format)."""
     from vietlott_engine.forecast.engine import vn, vn_int
 
     head = f"dự báo kỳ #{rep.target_id:05d}" if rep.target_id is not None else "đã ngừng phát hành: chỉ phân tích lịch sử"
@@ -281,7 +231,6 @@ def _print_forecast(rep) -> None:  # type: ignore[no-untyped-def]
 
 
 def cmd_forecast(a: argparse.Namespace) -> int:
-    """Self-learning forecaster: fit / update / next / scoreboard (v3.5)."""
     from vietlott_engine.core.products import ProductCode, get_product
     from vietlott_engine.forecast.data import load_series
     from vietlott_engine.forecast.engine import record, refresh, scoreboard, vn, vn_int
@@ -420,7 +369,6 @@ def _row_id(r: dict) -> int:
 
 
 def _import_pages(a: argparse.Namespace, store) -> int:  # type: ignore[no-untyped-def]
-    """Pages saved by a person from vietlott.vn (HTML / MHTML / HAR) → verify, then import."""
     from vietlott_engine.core.games import GameCode
     from vietlott_engine.core.products import get_product
     from vietlott_engine.crawler.official_data import import_canonical
@@ -439,8 +387,6 @@ def _import_pages(a: argparse.Namespace, store) -> int:  # type: ignore[no-untyp
         "imported": {},
     }
     if not a.dry_run:
-        # A draw whose saved page disagrees with the data is only overwritten on request: the parsers
-        # read markup that can change, so a disagreement is shown first and resolved by a person.
         def keep(c: dict):  # type: ignore[no-untyped-def]
             held = set() if a.replace_mismatches else set(c.get("mismatch_ids", []))
             return lambda i: int(i) not in held
@@ -761,7 +707,6 @@ def cmd_rolldown(a: argparse.Namespace) -> int:
 
 
 def _load_bundled(repo, seed_dir: Path) -> list[dict]:  # type: ignore[no-untyped-def]
-    """Bundled JSONL snapshot (draws + prize tables) → the draw store. Idempotent."""
     from vietlott_engine.crawler.pipeline import SyncPipeline
     from vietlott_engine.crawler.prize_sources import records_from_jsonl
     from vietlott_engine.crawler.sources.mirror import JsonlFileSource
@@ -780,7 +725,6 @@ def _load_bundled(repo, seed_dir: Path) -> list[dict]:  # type: ignore[no-untype
 
 
 def cmd_init(a: argparse.Namespace) -> int:
-    """First run after installing: load the bundled data, optionally learn every forecaster, check."""
     from vietlott_engine.core.products import ProductCode
     from vietlott_engine.forecast.data import load_series
     from vietlott_engine.forecast.engine import refresh, vn, vn_int
@@ -812,7 +756,7 @@ def _check_url(url: str, timeout: float) -> tuple[bool, str]:
     from vietlott_engine.crawler.http import is_cloudflare_challenge
 
     try:
-        method = "HEAD" if "githubusercontent" in url else "GET"  # the data files are large: only ask whether they are there
+        method = "HEAD" if "githubusercontent" in url else "GET"
         r = httpx.request(method, url, timeout=timeout, follow_redirects=True, headers={"User-Agent": "vietlott-quant-engine doctor"})
     except httpx.ProxyError as exc:
         return False, f"proxy từ chối ({exc.__class__.__name__})"
@@ -828,7 +772,6 @@ def _check_url(url: str, timeout: float) -> tuple[bool, str]:
 
 
 def cmd_doctor(a: argparse.Namespace) -> int:
-    """Check Python, packages, bundled data, storage, forecaster state and (unless --offline) the sources."""
     import importlib
     import platform
 
@@ -836,7 +779,7 @@ def cmd_doctor(a: argparse.Namespace) -> int:
     from vietlott_engine.core.products import SEED_FILES, ProductCode
 
     s = get_settings()
-    rows: list[tuple[str, bool, str, bool]] = []  # (item, ok, detail, required)
+    rows: list[tuple[str, bool, str, bool]] = []
 
     def add(item: str, ok: bool, detail: str, required: bool = True) -> None:
         rows.append((item, ok, detail, required))
@@ -890,9 +833,6 @@ def cmd_doctor(a: argparse.Namespace) -> int:
 
 
 def cmd_serve(a: argparse.Namespace) -> int:
-    # Mỗi worker Uvicorn chạy lifespan riêng: trình cập nhật kết quả giành khoá ghi
-    # `writer.lock` (chỉ worker đầu được), còn kho DuckDB chỉ cho một tiến trình ghi.
-    # Nhiều worker thì từ worker thứ hai trở đi dừng ngay lúc khởi động.
     if a.workers != 1:
         print("✗ --workers phải là 1: trình cập nhật kết quả và kho DuckDB chỉ chạy trong một tiến trình.", file=sys.stderr)
         return 2
@@ -1095,7 +1035,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _utf8_console() -> None:
-    """Vietnamese output on any console: Windows code pages and pipes otherwise raise UnicodeEncodeError."""
     for stream in (sys.stdout, sys.stderr):
         enc = (getattr(stream, "encoding", "") or "").lower().replace("-", "")
         if enc != "utf8" and hasattr(stream, "reconfigure"):

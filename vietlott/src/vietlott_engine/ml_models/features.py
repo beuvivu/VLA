@@ -1,19 +1,3 @@
-"""Leak-free node features and co-occurrence graphs for every time step.
-
-``build_snapshots(h)`` returns tensors indexed by t = 0..D where snapshot t is
-computed **only from draws < t** (snapshot D is the "next draw" input). Every
-quantity is produced by a causal recursive filter, so there is no way for draw t
-to leak into its own features.
-
-Node features (per number i, per t):
-  rate_hl{10,30,100}  exponentially weighted appearance rate minus k/n, scaled
-  log_gap             log(1 + draws since last appearance), standardised
-  in_last_draw        1 if i appeared in draw t−1
-  markov_score        P(i ∈ draw t | draw t−1) from the transition counts so far
-Graph: decayed co-occurrence counts → positive PMI → symmetric normalisation
-Â = D^−½ (A + I) D^−½ (Kipf & Welling, 2017).
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,19 +8,13 @@ from vietlott_engine.core.history import DrawHistory
 
 @dataclass(frozen=True)
 class Snapshots:
-    x: np.ndarray  # (D+1, n, f) float32
-    a_hat: np.ndarray  # (D+1, n, n) float32
-    y: np.ndarray  # (D, n) float32 — y[t] = incidence of draw t
+    x: np.ndarray
+    a_hat: np.ndarray
+    y: np.ndarray
     feature_names: list[str]
 
 
 class SnapshotBuilder:
-    """Incremental, causal feature/graph builder.
-
-    ``update(row)`` ingests one draw (an incidence row); ``snapshots()`` returns
-    everything produced so far: snapshot t only depends on rows < t, and the last
-    snapshot is the input for the next, not-yet-drawn result.
-    """
 
     def __init__(self, n: int, k: int, half_lives: tuple[int, ...] = (10, 30, 100), graph_decay: float = 0.995, markov_smoothing: float = 10.0) -> None:
         self.n, self.k = n, k
@@ -82,7 +60,6 @@ class SnapshotBuilder:
             deg = self.cooc.sum(axis=1)
             observed = self.cooc > 0
             pmi = np.zeros_like(self.cooc)
-            # Cạnh chưa từng quan sát không có PMI; epsilon sẽ tạo cạnh giả ở node trống.
             rows, cols = np.nonzero(observed)
             pmi[observed] = np.log(self.cooc[observed]) + np.log(tot) - (np.log(deg[rows]) + np.log(deg[cols]))
             adj = np.maximum(pmi, 0.0) * (1 - self._eye)
@@ -112,7 +89,6 @@ class SnapshotBuilder:
 
 
 def build_snapshots(h: DrawHistory, half_lives: tuple[int, ...] = (10, 30, 100), graph_decay: float = 0.995, markov_smoothing: float = 10.0) -> Snapshots:
-    """Snapshots 0..D for a whole history (snapshot t uses draws < t only)."""
     builder = SnapshotBuilder(h.n, h.k, half_lives, graph_decay, markov_smoothing)
     for row in h.incidence:
         builder.update(row)
@@ -120,6 +96,5 @@ def build_snapshots(h: DrawHistory, half_lives: tuple[int, ...] = (10, 30, 100),
 
 
 def spectral_embedding(a_hat: np.ndarray, dims: int = 4) -> np.ndarray:
-    """Top eigenvectors of the normalised adjacency (community structure of the graph)."""
     vals, vecs = np.linalg.eigh(a_hat.astype(np.float64))
     return vecs[:, np.argsort(-vals)[1 : dims + 1]]

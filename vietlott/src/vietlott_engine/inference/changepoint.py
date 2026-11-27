@@ -1,17 +1,3 @@
-"""Change-point / regime detection.
-
-Vietlott rotates machines and ball sets; a *local* bias (one ball set, a few months)
-would be diluted in whole-history tests. Two scans look for it, both calibrated by
-Monte Carlo on simulated fair histories of the same length, so the p-values already
-account for scanning thousands of windows (no look-elsewhere bias):
-
-* **Window scan** — the covariance-corrected frequency χ² over sliding windows of
-  ~4 months to ~2 years; statistic = max over all windows.
-* **Per-number CUSUM bridge** — for each number, max_t |S_t − (t/D)·S_D| /
-  √(D·p(1−p)) with S_t the cumulative count; detects a number whose rate *shifted*
-  at some point. Statistic = max over numbers and time.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -36,7 +22,7 @@ def window_scan_stats(inc: np.ndarray, k: int, windows: list[tuple[int, int]]) -
     cum = np.vstack([np.zeros(n), np.cumsum(inc, axis=0)])
     s = np.array([w[0] for w in windows])
     e = np.array([w[1] for w in windows])
-    counts = cum[e] - cum[s]  # (W, n)
+    counts = cum[e] - cum[s]
     lengths = (e - s).astype(np.float64)
     exp = lengths * k / n
     ss = ((counts - exp[:, None]) ** 2).sum(axis=1)
@@ -44,7 +30,6 @@ def window_scan_stats(inc: np.ndarray, k: int, windows: list[tuple[int, int]]) -
 
 
 def cusum_bridge(inc: np.ndarray, k: int) -> np.ndarray:
-    """(D, n) standardised CUSUM bridge."""
     d, n = inc.shape
     p = k / n
     s = np.cumsum(inc, axis=0) - p * np.arange(1, d + 1)[:, None]
@@ -67,7 +52,7 @@ class CusumScan(BaseModel):
     p_value: float
     number: int
     change_date: str
-    direction: str  # "rate rose after" / "rate fell after"
+    direction: str
 
 
 class ChangepointReport(BaseModel):
@@ -110,7 +95,6 @@ def changepoint_report(h: DrawHistory, lengths: tuple[int, ...] = (52, 104, 156,
         hottest_numbers=[int(i + 1) for i in np.argsort(-wc)[:3]],
         coldest_numbers=[int(i + 1) for i in np.argsort(wc)[:3]],
     )
-    # bridge > 0 at t*: the number ran hot before t* relative to its overall rate, i.e. its rate fell after
     cs = CusumScan(
         statistic=cus_stat,
         p_value=monte_carlo_p(cus_stat, null_cus, "greater"),

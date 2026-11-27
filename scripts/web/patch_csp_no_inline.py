@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""CSP without unsafe-inline: externalize loaders + hash remaining style/script blocks."""
 from __future__ import annotations
 
 import base64

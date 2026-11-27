@@ -1,19 +1,3 @@
-"""Đo ngoài mẫu tầng trộn và tầng phán đoán của ``ml_engine``.
-
-Chạy ``ContinuousLearningPipeline`` (cấu hình mặc định, đủ sáu cánh tay) trên
-``--last`` kỳ cuối của ``data/xsmb.csv`` và ghi điểm từng kỳ của dự báo CUỐI
-(sau trộn và sau chế độ an toàn) cùng điểm của hằng số nền trên cùng kỳ.
-
-Luật quyết định chốt TRƯỚC khi đo (20-10-2026), khi thay bandit Thompson bằng
-trọng số mũ trên log-loss và cổng độ tin ``model_trust``: bản mới được nhận khi
-nó không kém hằng số với z ≤ −2 VÀ không kém bản cũ với z ≤ −2 (chênh log-loss
-ghép cặp theo kỳ, sai số lấy max(theo ngày, khối 7 kỳ) như cổng đề bạt của
-``online_learning``). Bản cũ đo bằng chính tệp này chạy trên mã của ``main``.
-
-    PYTHONPATH=src python3 scripts/research/benchmark_ml_engine_aggregation.py \\
-        --last 1000 --days-out /tmp/moi.csv [--against /tmp/cu.csv --against-label cu]
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -38,7 +22,6 @@ BLOCK = 7
 
 
 def paired(gain: np.ndarray) -> dict:
-    """Trung bình chênh và z, sai số lấy max(theo ngày, khối ``BLOCK`` kỳ liên tiếp)."""
     gain = np.asarray(gain, dtype=float)
     n = len(gain)
     day_se = float(gain.std(ddof=1) / np.sqrt(n))
@@ -83,7 +66,7 @@ def summary(days: pd.DataFrame) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", type=Path, default=ROOT / "data" / "xsmb.csv")
     parser.add_argument("--last", type=int, default=1000)
     parser.add_argument("--label", default="moi")

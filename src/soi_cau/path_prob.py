@@ -24,23 +24,11 @@ from core.xsmb_domain import TOTAL_DIGITS, baseline_rate, raw_digit_matrix
 Mode = Literal["loto", "de"]
 FilterKind = Literal["stable", "active"]
 
-#: Nhóm độ dài chuỗi khi học "kinh nghiệm cầu đang chạy": 0, 1, …, 7 và từ 8
-#: trở lên. Chuỗi dài hơn quá hiếm để đứng riêng (LOTO, 4 năm, mọi cầu: chuỗi
-#: 9 có 445 lần, chuỗi 11+ có 22 lần).
 STREAK_BUCKETS = 9
 
 
 @dataclass
 class PathStats:
-    """Một đường cầu (cặp vị trí, độ trễ) và các số đo của nó trong cửa sổ.
-
-    ``p_mean`` là tỉ lệ trúng TRONG MẪU (làm trơn Laplace), giữ cho cột "Tỷ lệ
-    lịch sử". ``p_post`` là xác suất trúng kỳ tới theo Bayes thực nghiệm: tỉ lệ
-    trung bình của mọi cầu cùng độ trễ, cộng phần riêng của cầu này co theo
-    mức chênh THẬT giữa các cầu (``BridgeEvidence.rule_prior_strength``).
-    ``streak_shift`` là phần kinh nghiệm theo chuỗi hiện tại, học từ mọi cầu;
-    nhánh "đang chạy" cộng nó vào, nhánh "ổn định" thì không.
-    """
 
     lag: int
     i: int
@@ -58,27 +46,6 @@ class PathStats:
 
 @dataclass(frozen=True)
 class BridgeEvidence:
-    """Kinh nghiệm cầu học từ MỌI đường cầu trong cửa sổ, không chỉ cầu được giữ.
-
-    Câu hỏi thứ nhất: các cầu có khác nhau thật không? Nếu mọi cầu cùng một tỉ
-    lệ thật, tỉ lệ quan sát của chúng vẫn tản ra đúng bằng dao động nhị thức;
-    ``variance_ratio`` là phương sai quan sát chia mức ấy. Chỉ phần VƯỢT mới cho
-    cầu tốt quyền giữ tỉ lệ riêng — ``hierarchical_pooling.fit_shrinkage_to_prior``.
-    Không có phần vượt thì κ chạm trần và mọi cầu co về nền: chọn top cầu từ
-    hàng nghìn cầu khi ấy chỉ là chọn nhiễu, và tỉ lệ lịch sử của cầu được chọn
-    mang lời nguyền người thắng.
-
-    Câu hỏi thứ hai: cầu đang chạy s kỳ có trúng tiếp nhiều hơn không?
-    ``streak_hits``/``streak_trials`` đếm, trên mọi cầu và mọi kỳ của cửa sổ,
-    lần trúng ở kỳ kế tiếp theo độ dài chuỗi NGAY TRƯỚC kỳ ấy; hậu nghiệm co
-    về tỉ lệ chung theo mô hình hiệu ứng ngẫu nhiên với phương sai theo cụm kỳ
-    quay (``streak_experience``), ``streak_between_variance``
-    là phương sai thật giữa các độ dài; bằng 0 thì mọi độ dài co hẳn về nền.
-
-    Các lần chấm của những cầu cùng kỳ tương quan với nhau qua chính kỳ quay ấy
-    (kỳ về nhiều con khác nhau thì mọi cầu LOTO cùng dễ trúng hơn), nên số lần
-    ở đây không phải số quan sát độc lập.
-    """
 
     mode: str
     scope: str
@@ -135,21 +102,6 @@ def _resolve_anchor_index(dates: list[date], anchor_date: date | None) -> int:
 def _streak_walk(
     hit_matrix: np.ndarray, *, buckets: int, rule_hits: np.ndarray | None = None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Chuỗi dài nhất/đang chạy của từng cầu, kèm số lần trúng/lần chấm theo chuỗi NGAY TRƯỚC kỳ.
-
-    Phép truy hồi buộc phải tuần tự nhưng không cần cấp phát: làm số học tại chỗ
-    nhanh ~7 lần so với ``np.where(...).astype(...)`` mỗi vòng và trùng từng bit.
-
-    Kỳ thứ t được xếp vào nhóm ``min(chuỗi sau kỳ t−1, buckets−1)``; chuỗi tính
-    từ đầu cửa sổ, giống hệt ``current_streak``. Số đếm trả về THEO TỪNG KỲ
-    (hình ``(kỳ, buckets)``) để phương sai tính được theo cụm kỳ quay
-    (``streak_experience``). ``rule_hits`` (số lần trúng của từng cầu trong cả cửa
-    sổ) thì cộng thêm, theo kỳ và nhóm, số lần trúng KỲ VỌNG theo tỉ lệ riêng
-    của từng cầu — ước lượng BỎ RA chính chuỗi đang chạy và kỳ đang chấm:
-    ``(trúng − chuỗi − trúng kỳ này) / (số kỳ − chuỗi − 1)``. Cầu không nhớ thì
-    phần trúng vượt kỳ vọng ấy bằng 0, dù cầu tốt hay chạy dài. ``buckets=0`` bỏ
-    phần đếm.
-    """
     n_rows = hit_matrix.shape[0] if hit_matrix.ndim == 2 else 0
     n_rules = hit_matrix.shape[1] if hit_matrix.ndim == 2 else 0
     row_hits = np.zeros((n_rows, max(buckets, 0)), dtype=np.int64)
@@ -172,7 +124,7 @@ def _streak_walk(
                 own = (rule_hits - cur - row) / np.maximum(n_trials - cur - 1.0, 1.0)
                 row_rate[t] = np.bincount(group, weights=own, minlength=buckets)
         cur += 1
-        cur *= row  # bool -> 0/1: resets every rule that missed
+        cur *= row
         np.maximum(max_streak, cur, out=max_streak)
     return max_streak, cur, row_hits, row_trials, row_rate
 
@@ -186,13 +138,6 @@ def _select_rule_indices(
     params: PathParams,
     mode: Mode,
 ) -> np.ndarray:
-    """Keep only statistically relevant path rules for a lag.
-
-    The legacy implementation retained every position pair for every lag, even
-    though only active/stable rules are used downstream.  Keeping a bounded set
-    prevents quadratic repository/runtime growth while preserving the strongest
-    rules under both current-streak and historical-streak criteria.
-    """
     eligible = (current_streak >= params.min_current_streak) | (max_streak >= params.min_max_streak)
     idx = np.flatnonzero(eligible)
     if idx.size == 0:
@@ -204,9 +149,6 @@ def _select_rule_indices(
 
     baseline = baseline_rate(mode)
     lift = np.log(np.clip(p_mean[idx] / max(baseline, 1e-9), 1e-6, 1e6))
-    # NOTE: despite the name this is hits normalised by the best rule's hits,
-    # not a rate.  Kept as-is to preserve the existing ranking; renamed so the
-    # next reader is not misled into treating it as a probability.
     hits_vs_best = hits[idx] / np.maximum(1.0, hits[idx].max(initial=1))
     score = (
         lift
@@ -214,36 +156,18 @@ def _select_rule_indices(
         + 0.025 * np.minimum(max_streak[idx], 20)
         + 0.08 * np.sqrt(np.clip(hits_vs_best, 0.0, 1.0))
     )
-    # Sắp xếp ỔN ĐỊNH, cầu hoà điểm giữ thứ tự chỉ số. ``argpartition``/``argsort`` mặc định dùng lệnh
-    # vector của CPU nên xếp các cầu hoà điểm khác nhau tuỳ máy: ngày 05-11-2026 hai lượt chạy trên CÙNG
-    # dữ liệu giữ hai tập top khác nhau 13 cầu, và xác suất soi đường ổn định công bố lệch tới 4,5·10⁻⁷.
     order = np.argsort(-score, kind="stable")[:cap]
     return idx[order]
 
 
 @dataclass
 class PreparedPathHistory:
-    """Scope-independent tensors derived once from a full history.
-
-    ``fit_paths`` rebuilt all of this on every call: the digit matrix, the
-    per-day target sets, and the ``days x pairs`` number table.  None of it
-    depends on the anchor date, so a walk-forward backtest that calls
-    ``fit_paths`` once per day was paying for the same work hundreds of times.
-    ``prepare_path_history`` computes it once; ``fit_paths(prepared=...)``
-    reuses it and slices to the anchor.
-
-    Slicing (not rebuilding) is leakage-safe because every consumer is bounded
-    by ``anchor_idx``: target rows are filtered to ``<= anchor_idx`` and each
-    rule's base row is strictly earlier still.  ``raw_by_date`` is truncated at
-    the anchor so no caller can reach a future draw.
-    """
 
     dates: list[date]
     date_index: pd.DatetimeIndex
     raw_matrix: np.ndarray
     target_loto: np.ndarray
     target_de: np.ndarray
-    # lag -> (source_idx, target_idx); filled lazily and shared across anchors.
     lag_pairs: dict[int, tuple[np.ndarray, np.ndarray]] = field(default_factory=dict)
 
     def pairs_for_lag(self, lag: int) -> tuple[np.ndarray, np.ndarray]:
@@ -292,7 +216,6 @@ def fit_paths(
     scope: str = "all",
     prepared: PreparedPathHistory | None = None,
 ) -> tuple[list[PathStats], dict[date, np.ndarray], list[date]]:
-    """``fit_paths_with_evidence`` bỏ phần kinh nghiệm cầu (giữ chữ ký cũ)."""
     stats, raw_by_date, dates, _ = fit_paths_with_evidence(
         df_raw=df_raw,
         df_2digits=df_2digits,
@@ -315,16 +238,6 @@ def fit_paths_with_evidence(
     scope: str = "all",
     prepared: PreparedPathHistory | None = None,
 ) -> tuple[list[PathStats], dict[date, np.ndarray], list[date], BridgeEvidence | None]:
-    """Fit path rules using history up to ``anchor_date`` (inclusive).
-
-    The implementation precomputes every position-pair number once per draw,
-    then evaluates each lag with vectorized target lookups.  This is materially
-    faster than recomputing all pair numbers inside the day×lag loop.
-
-    Pass ``prepared`` (from ``prepare_path_history``) to reuse the invariant
-    tensors across many anchor dates — this is what makes a walk-forward
-    backtest affordable.
-    """
     if prepared is None:
         if df_raw is None or df_2digits is None:
             raise ValueError("provide either prepared=... or df_raw and df_2digits")
@@ -345,7 +258,6 @@ def fit_paths_with_evidence(
     i_idx = i_all[pair_mask]
     j_idx = j_all[pair_mask]
 
-    # days × rules, each entry is the 00..99 number generated by the two positions.
     pair_nums = (10 * raw_matrix[:, i_idx] + raw_matrix[:, j_idx]).astype(np.uint8, copy=False)
 
     target_loto = prepared.target_loto
@@ -361,23 +273,10 @@ def fit_paths_with_evidence(
     idx_start = max(0, anchor_idx - params.window_days + 1)
 
     fitted_lags: list[tuple] = []
-    # Kinh nghiệm chuỗi cộng THEO KỲ ĐÍCH: mọi cầu của mọi độ trễ chấm trên cùng
-    # một kỳ quay thuộc cùng một cụm.
     day_hits = np.zeros((idx_end - idx_start + 1, STREAK_BUCKETS), dtype=np.int64)
     day_trials = np.zeros_like(day_hits)
-    # Số lần trúng kỳ vọng theo tỉ lệ riêng của từng cầu (bỏ chuỗi đang chạy):
-    # hiệu ứng chuỗi chỉ là phần trúng VƯỢT mức ấy.
     day_expected = np.zeros(day_hits.shape, dtype=np.float64)
     for lag in range(1, params.lag_max + 1):
-        # CRITICAL: ``lag`` must mean the same thing here as it does at
-        # prediction time.  ``predict_from_fitted_paths_full`` resolves a rule's
-        # base draw with ``next_date - timedelta(days=lag)`` — a *calendar* lag —
-        # while this loop previously used ``target_idx - lag``, a *row* lag.
-        # The two agree only while the history has no missing dates.  Because
-        # ``Lottery.fetch`` deliberately refuses to write a draw when sources
-        # disagree, gaps are an expected state, and every gap silently shifted
-        # training rules off the draws they are scored against at serve time.
-        # ``calendar_lag_pairs`` makes both sides calendar-exact.
         source_all, target_all = prepared.pairs_for_lag(lag)
         if source_all.size == 0:
             continue
@@ -389,10 +288,6 @@ def fit_paths_with_evidence(
         nums = pair_nums[base_idx]
 
         if mode == "loto":
-            # ``take_along_axis`` needs an intp index array, i.e. a 64-bit copy
-            # of the whole (days x rules) table on every lag.  Flat int32
-            # offsets into the raveled target matrix give the same booleans for
-            # half the memory traffic (~2x faster).
             offsets = (target_idx.astype(np.int32)[:, None] * 100) + nums
             hit_matrix = target_loto.reshape(-1)[offsets]
         else:
@@ -403,7 +298,6 @@ def fit_paths_with_evidence(
         max_streak, current_streak, row_hits, row_trials, row_expected = _streak_walk(
             hit_matrix, buckets=STREAK_BUCKETS, rule_hits=hits
         )
-        # ``target_idx`` không lặp trong một độ trễ nên cộng chỉ số trực tiếp là đúng.
         day_hits[target_idx - idx_start] += row_hits
         day_trials[target_idx - idx_start] += row_trials
         day_expected[target_idx - idx_start] += row_expected
@@ -425,7 +319,6 @@ def fit_paths_with_evidence(
     stats: list[PathStats] = []
     for lag, trials, hits, p_mean, max_streak, current_streak, selected in fitted_lags:
         center = evidence.base_rate
-        # Phần riêng giữ theo đúng số lần chấm của độ trễ này: N/(N + κ).
         keep = trials / (trials + evidence.rule_prior_strength)
         for k in selected:
             group = min(int(current_streak[k]), STREAK_BUCKETS - 1)
@@ -446,8 +339,6 @@ def fit_paths_with_evidence(
                 )
             )
 
-    # Truncated at the anchor: with a shared PreparedPathHistory the arrays
-    # span the whole dataset, and the prediction step looks rules up by date.
     raw_by_date = {dates[i]: raw_digits[i] for i in range(anchor_idx + 1)}
     return stats, raw_by_date, dates[: anchor_idx + 1], evidence
 
@@ -455,27 +346,6 @@ def fit_paths_with_evidence(
 def streak_experience(
     day_hits: np.ndarray, day_trials: np.ndarray, expected: np.ndarray | None = None
 ) -> tuple[np.ndarray, float, float]:
-    """Hậu nghiệm tỉ lệ trúng tiếp theo nhóm độ dài chuỗi, phương sai theo cụm kỳ quay.
-
-    Hàng nghìn đường cầu chấm trên CÙNG một kỳ quay không độc lập: kỳ về nhiều
-    con khác nhau thì mọi cầu LOTO cùng dễ trúng hơn. Coi ``n`` lượt chấm là
-    ``n`` phép thử nhị thức thì phương sai nhóm "chuỗi 0" bị đánh giá thấp hàng
-    trăm lần, và chênh lệch ngẫu nhiên rất nhỏ giữa các nhóm thành τ² dương. Ở
-    đây phương sai của nhóm s là ước lượng cụm (sandwich) theo kỳ, không nhỏ
-    hơn mức nhị thức. τ² học trên các nhóm có ít nhất hai kỳ; hậu nghiệm co về
-    tỉ lệ chung của MỌI lượt chấm.
-
-    ``expected`` (cùng hình): số lần trúng mà riêng tỉ lệ của từng cầu đã giải
-    thích (``_streak_walk(rule_hits=...)``). Khi các cầu khác nhau thật, cầu tốt
-    hay rơi vào nhóm chuỗi dài; ``p_post`` đã mang chất lượng cầu, nên hiệu ứng
-    chuỗi chỉ được là phần trúng VƯỢT tỉ lệ riêng — không thì tính chất lượng cầu
-    hai lần. Kỳ vọng dùng tỉ lệ THÔ bỏ chuỗi, không dùng ``p_post``: ``p_post`` đã
-    co về nền, và phần chất lượng bị co mất sẽ lại hiện ra thành "hiệu ứng chuỗi".
-    Bỏ trống thì kỳ vọng là tỉ lệ chung.
-
-    ``day_hits``/``day_trials`` hình ``(kỳ, nhóm)``. Trả ``(hậu nghiệm, m, τ²)``;
-    hậu nghiệm là ``m`` cộng hiệu ứng chuỗi đã co.
-    """
     day_hits = np.asarray(day_hits, dtype=float)
     day_trials = np.asarray(day_trials, dtype=float)
     hits = day_hits.sum(axis=0)
@@ -496,9 +366,6 @@ def streak_experience(
     factor = np.divide(clusters, clusters - 1, out=np.ones_like(trials), where=clusters > 1)
     cluster_var = factor * (resid**2).sum(axis=0) / safe_n**2
     variances = np.maximum(cluster_var, base * (1.0 - base) / safe_n)
-    # Nhóm chỉ xuất hiện trong MỘT kỳ quay chỉ có một quan sát độc lập: phương
-    # sai cụm không ước lượng được, và sàn nhị thức lại coi hàng nghìn lượt chấm
-    # của kỳ ấy là độc lập. Nhóm như thế co hẳn về tỉ lệ chung.
     reliable = used & (clusters >= 2)
     tau2 = dersimonian_laird_tau2(base + excess[reliable], variances[reliable])
     post = np.full(hits.size, base)
@@ -515,14 +382,6 @@ def _bridge_evidence(
     mode: str,
     scope: str,
 ) -> BridgeEvidence | None:
-    """Học kinh nghiệm cầu từ mọi cầu của mọi độ trễ — xem ``BridgeEvidence``.
-
-    Một tâm và một κ chung cho mọi độ trễ. Trên một trò chơi công bằng, mọi cầu
-    trúng với cùng một xác suất bất kể độ trễ hay con số nó báo; tỉ lệ chung của
-    từng độ trễ chỉ khác nhau vì cú sốc theo kỳ (kỳ gốc có nhiều chữ số 6 thì
-    nhiều cầu cùng báo 66), nên lấy tâm riêng từng độ trễ là đưa nhiễu vào. Gộp
-    30 độ trễ còn làm ước lượng phần vượt bớt nhiễu khoảng √30 lần.
-    """
     if not fitted_lags:
         return None
     succ = np.concatenate([f[2] for f in fitted_lags]).astype(float)
@@ -554,7 +413,6 @@ def _bridge_evidence(
     )
 
 
-
 def paths_to_dataframe(stats: list[PathStats]) -> pd.DataFrame:
     return pd.DataFrame(
         [
@@ -578,18 +436,6 @@ def paths_to_dataframe(stats: list[PathStats]) -> pd.DataFrame:
 
 
 def _empty_prediction(mode: Mode = "loto") -> pd.DataFrame:
-    """No eligible rule: fall back to the mode's no-information baseline.
-
-    This used to return an all-zero vector.  For ``mode="de"`` that is not a
-    probability distribution at all, and the case is not hypothetical: the
-    default ``min_current_streak=3`` is structurally unreachable for Đặc Biệt (a rule
-    would need three consecutive exact 1-in-100 hits), so ``kind="active"`` +
-    ``mode="de"`` returned zeros on every single run.  ``prob_eval`` consumed
-    that vector directly and scored a log-loss of ~27.6 per day against it.
-    Returning the baseline keeps the contract "this is always a usable
-    probability vector"; callers that need to know evidence was absent should
-    read ``support_paths_count``, which stays 0.
-    """
     base = baseline_rate(mode)
     return pd.DataFrame(
         {
@@ -609,14 +455,6 @@ def rule_next_probability(
     bias_special_touch: float = 1.0,
     bias_special_both: float = 1.0,
 ) -> np.ndarray:
-    """Xác suất trúng kỳ tới của từng đường cầu — đúng con số dùng để xếp hạng con số.
-
-    Theo kinh nghiệm học từ MỌI cầu (``BridgeEvidence``), không phải tỉ lệ lịch
-    sử của chính cầu đã được chọn ra từ hàng nghìn cầu. Nhánh "đang chạy" cộng
-    phần kinh nghiệm theo chuỗi; phạm vi gần Đặc Biệt nhân hệ số thiên lệch đã
-    cấu hình. ``predict_from_fitted_paths_full`` và cột «Dự báo kỳ tới» của trang
-    soi cầu cùng gọi hàm này, nên bảng và gợi ý không thể nói hai con số khác nhau.
-    """
     p = paths["p_post"].astype(float).to_numpy()
     if np.isnan(p).any():
         raise ValueError("đường cầu thiếu p_post: dựng lại bằng fit_paths")
@@ -642,14 +480,6 @@ def predict_from_fitted_paths_full(
     bias_special_touch: float = 1.0,
     bias_special_both: float = 1.0,
 ) -> pd.DataFrame:
-    """Return calibrated-style path evidence for all 00..99 values.
-
-    Path rules are highly correlated because many share digits, lags and source
-    draws.  Multiplying their complements (legacy noisy-OR) incorrectly treats
-    them as independent and quickly drives probabilities to 1.0.  We instead use
-    a reliability-weighted mean and Bayesian shrinkage toward the mode baseline.
-    This keeps path output numerically stable and better suited for ensembles.
-    """
     if not dates:
         return _empty_prediction(mode)
     if anchor_date is None:
@@ -668,9 +498,6 @@ def predict_from_fitted_paths_full(
     if paths.empty:
         return _empty_prediction(mode)
 
-    # Resolve every rule's firing number with array lookups instead of one
-    # ``iterrows`` step per rule (thousands of rules per call, and this runs
-    # once per backtest day).
     next_date = anchor_date + timedelta(days=1)
     lags = paths["lag"].astype(int).to_numpy()
     i_arr = paths["i"].astype(int).to_numpy()
@@ -684,7 +511,7 @@ def predict_from_fitted_paths_full(
     next_numbers = np.full(len(paths), -1, dtype=np.int16)
     for lag, digits in digits_by_lag.items():
         if digits is None:
-            continue  # base draw missing from history: rule cannot fire today
+            continue
         rows = lags == lag
         digits = np.asarray(digits)
         next_numbers[rows] = (
@@ -719,10 +546,6 @@ def predict_from_fitted_paths_full(
     weighted_p = np.bincount(nums, weights=weights * p, minlength=100).astype(np.float64)
 
     baseline = baseline_rate(mode)
-    # Hậu nghiệm của từng cầu đã co theo mức chênh thật giữa các cầu, nên không
-    # cần co thêm lần nữa ở đây: trung bình có trọng số của các cầu cùng báo
-    # một con là ước lượng cho con ấy. Các cầu cùng báo một con tương quan với
-    # nhau (chung chữ số, chung kỳ gốc), nên lấy TRUNG BÌNH chứ không cộng dồn.
     prob = np.divide(weighted_p, weight_sum, out=np.full(100, baseline), where=weight_sum > 0)
     prob = np.where(support > 0, prob, baseline)
     if mode == "de":
@@ -768,7 +591,6 @@ def predict_from_fitted_paths(
         ["prob", "evidence_weight", "support_paths_count"], ascending=[False, False, False], kind="stable"
     )
     return out.head(top_numbers).reset_index(drop=True)
-
 
 
 def predict_next_day(

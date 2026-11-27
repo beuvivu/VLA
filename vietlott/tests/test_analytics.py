@@ -27,8 +27,6 @@ def test_subset_sum_and_adjacency_exact_small_case() -> None:
 
 
 def test_corrected_chi_square_is_calibrated_under_h0() -> None:
-    """p-values of the covariance-corrected statistic are Uniform(0,1) under H0;
-    the naive Σ(O−E)²/E is not (it is too conservative)."""
     p_corr, p_naive = [], []
     for seed in range(300):
         h = make_history(MEGA_645, 200, seed=seed)
@@ -43,7 +41,7 @@ def test_battery_passes_fair_and_detects_biased_machine() -> None:
     fair = make_history(MEGA_645, 1200, seed=3)
     assert randomness_report(fair, mc_sims=200, seed=0).rejected == []
     w = np.ones(45)
-    w[:5] = 1.6  # five "heavy" balls
+    w[:5] = 1.6
     biased = make_history(MEGA_645, 1200, seed=3, weights=w)
     rep = randomness_report(biased, mc_sims=200, seed=0)
     assert "frequency_chi_square" in rep.rejected

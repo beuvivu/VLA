@@ -1,5 +1,3 @@
-"""Tóm tắt ML phải phân biệt xác suất dự báo và mức tin thành phần."""
-
 from pathlib import Path
 import json
 
@@ -15,7 +13,6 @@ from pages import build_docs_ml
 def test_forecast_summary_reads_trust_without_substituting_probability(
     tmp_path: Path, monkeypatch, trust, expected: str,
 ) -> None:
-    """Lấy nhầm prob=24% hoặc mặc định thiếu thành 0 đều phải bị phát hiện."""
     data = tmp_path / "ml"
     data.mkdir()
     count = len(trust) if isinstance(trust, list) else 1

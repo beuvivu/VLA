@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-"""Tổng hợp artifact ablation miền số thành báo cáo thí nghiệm máy đọc được."""
 
 import argparse
 import json
@@ -10,10 +9,6 @@ from pathlib import Path
 import pandas as pd
 
 
-# Domain challenger predictions are evaluated for the complete 00..99 universe.
-# Older committed ablation artifacts predate the explicit ``oos_*`` columns;
-# this constant lets the report reader recover their row cardinality from the
-# validation window without changing any metric values.
 NUMBER_UNIVERSE_SIZE = 100
 
 
@@ -40,13 +35,6 @@ def _rejection_reasons(
 
 
 def _oos_totals(rows: pd.DataFrame) -> tuple[int, int]:
-    """Return date/row totals while accepting legacy ablation schemas.
-
-    Current challenger runs persist ``oos_dates`` and ``oos_rows`` directly.
-    Some valid historical artifacts were generated before those observability
-    columns were added, so derive dates from the half-open validation interval
-    and rows from the canonical 00..99 candidate universe in that case.
-    """
 
     if "oos_dates" in rows.columns:
         dates = pd.to_numeric(rows["oos_dates"], errors="coerce").fillna(0)

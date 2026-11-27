@@ -1,10 +1,3 @@
-"""Top LOTO không được dồn quá ``MAX_PER_TAIL`` con vào cùng một đuôi.
-
-Ngày 28-09-2026 cả 10 con LOTO công bố đều đuôi 4 — mười con gần như là một
-lần đặt. Phép kiểm dựng lại đúng vector xác suất của hôm ấy (đọc từ artifact
-đã commit) cùng các vector dựng sẵn.
-"""
-
 from __future__ import annotations
 
 import subprocess
@@ -27,7 +20,6 @@ def _tail_counts(numbers) -> list[int]:
 
 
 def _clustered() -> np.ndarray:
-    """Mười con đuôi 4 cao nhất, rồi mọi con khác thấp dần."""
     probs = np.linspace(0.20, 0.10, 100)
     probs[4::10] = np.linspace(0.30, 0.25, 10)
     return probs
@@ -43,7 +35,7 @@ def test_the_cap_keeps_probability_order_within_the_limit() -> None:
 def test_without_clustering_the_order_is_the_pure_probability_order() -> None:
     rng = np.random.default_rng(3)
     probs = rng.random(100)
-    probs[[1, 12, 23, 34, 45, 56, 67, 78, 89, 90]] += 5  # mười đuôi khác nhau
+    probs[[1, 12, 23, 34, 45, 56, 67, 78, 89, 90]] += 5
     pure = list(np.lexsort((np.arange(100), -probs))[:10])
     assert pdv.diversified_order(probs, 10) == [int(n) for n in pure]
 
@@ -76,7 +68,6 @@ def test_the_home_page_picks_respect_the_cap() -> None:
 
 
 def test_the_published_top_files_respect_the_cap_on_the_real_28_09_vector() -> None:
-    """Chính vector xác suất đã công bố cho 28-09-2026 (10/10 con đuôi 4)."""
     commit = subprocess.run(
         ["git", "log", "--format=%H", "--diff-filter=A", "-1", "--",
          "data/forecast/predict/predict_next_loto_all_2026-09-28.csv"],

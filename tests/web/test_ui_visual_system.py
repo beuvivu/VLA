@@ -1,5 +1,3 @@
-"""The output boundary must preserve behavior while publishing the shared skin."""
-
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -21,10 +19,6 @@ def test_output_publishes_skin_after_page_styles_without_changing_hooks(tmp_path
     assert skin.name == "link"
     assert (tmp_path / urlsplit(skin["href"]).path).is_file()
     assert result.body["class"] == ["existing"]
-    # Soi trong VÙNG NỘI DUNG, không soi cả tài liệu. Khung ứng dụng chèn nút
-    # và kịch bản của chính nó vào trước nội dung trang, nên ``result.button``
-    # trả về nút của khung: phép kiểm đỏ trong khi cái nó đặt tên — móc nối của
-    # trang không đổi — vẫn đúng nguyên.
     noi_dung = result.select_one(".app-main") or result
     goc = BeautifulSoup(source, "html.parser")
     assert noi_dung.button.attrs == goc.button.attrs
@@ -41,11 +35,6 @@ def test_every_published_page_receives_same_skin(tmp_path: Path) -> None:
         write_page(target, original.read_text())
         result = BeautifulSoup(target.read_text(), "html.parser")
         links = result.select("link[data-ui-visual-system]")
-        # Một trang nhận ĐÚNG hai thẻ: thẻ tải không chặn, và bản dự phòng
-        # trong <noscript> cho trình duyệt tắt JavaScript. Đếm gộp rồi đòi
-        # bằng 1 là đếm sai thứ có thật — phép kiểm đỏ với một trang hoàn toàn
-        # đúng, và đồng thời không thấy trường hợp thật sự hỏng: một thẻ tải
-        # bị nhân đôi vẫn cho tổng bằng 2.
         direct = [link for link in links if link.find_parent("noscript") is None]
         fallback = [link for link in links if link.find_parent("noscript") is not None]
         assert len(direct) == 1, f"{original.name}: {len(direct)} thẻ tải"

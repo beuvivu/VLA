@@ -1,19 +1,3 @@
-"""Bảng nghiên cứu đầy đủ ra khỏi git; git giữ bản cắt (phương án 3, 07 → 11-11-2026).
-
-Đợt đầu (07-11) là `crosslag_rules.csv` (5 832 quy tắc) và `loto_nextday_given_special_long.csv`
-(10 000 ô): đo ngày 06-11-2026 chúng chiếm 24% phần tăng của kho. Đợt hai (11-11) là năm bảng chẩn đoán
-không trang nào đọc: tường lửa nghiên cứu (hai chế độ), dòng thời gian đường cầu (hai chế độ) và bảng cặp
-của `legacy_extensions` (`documentation/plans/2026-11-05-dung-luong-kho.md`). Gần như mọi số trong các
-bảng ấy đổi mỗi kỳ, nên git không lấy được delta.
-
-Chúng vẫn được ghi ra đĩa và lên artifact của `update-data.yml`, nhưng nằm trong `.gitignore`. Danh sách
-khai MỘT lần ở `core.table_cuts.FULL_TABLE_CUTS`. Các phép dưới đây buộc:
-- trang dựng từ bản cắt trùng trang dựng từ bảng đầy đủ;
-- bản cắt giữ mọi dòng đáng xem và là một phần của đúng bảng đầy đủ;
-- mỗi trình ghi ghi đúng cặp tệp đã khai, qua chính lối vào mà pipeline gọi;
-- `.gitignore` bỏ qua đúng các bảng đầy đủ đã khai, không hơn không kém;
-- workflow lưu đúng các bảng đầy đủ đã khai.
-"""
 from __future__ import annotations
 
 import json
@@ -45,7 +29,6 @@ CUT_TABLES = tuple(Path("data") / cut for cut in FULL_TABLE_CUTS.values())
 
 
 def _rules(n: int, seed: int, gate: int = 0) -> pd.DataFrame:
-    """Bảng quy tắc giả, đủ cột cho trang và cho bản cắt; độ nâng làm tròn để có nhiều dòng hoà."""
     rng = np.random.default_rng(seed)
     table = pd.DataFrame({
         "rule": [f"r{i:05d}" for i in range(n)],
@@ -65,7 +48,6 @@ def _rules(n: int, seed: int, gate: int = 0) -> pd.DataFrame:
 
 
 def _long(seed: int) -> pd.DataFrame:
-    """Bảng dài giả 100 × 100, làm tròn để có dòng hoà như bảng thật (cùng trials, cùng hits)."""
     rng = np.random.default_rng(seed)
     special, number = np.meshgrid(np.arange(100), np.arange(100), indexing="ij")
     hits = rng.integers(0, 20, special.size)
@@ -85,10 +67,8 @@ def test_the_crosslag_page_reads_the_same_rows_from_the_cut() -> None:
 
 
 def test_the_cut_keeps_every_gate_pass_and_the_strongest_training_rules() -> None:
-    """Quy tắc qua cổng giữ hết, kể cả khi nhiều hơn `CUT_ROWS`; p huấn luyện nhỏ nhất cũng giữ,
-    dù chúng nằm sâu trong thứ tự của trang."""
     full = _rules(2_000, seed=7, gate=crosslag.CUT_ROWS + 50)
-    full.loc[full["research_gate_pass"], "holdout_lift"] = 0.5   # qua cổng nhưng đứng cuối mọi thứ khác
+    full.loc[full["research_gate_pass"], "holdout_lift"] = 0.5
     cut = set(crosslag.cut_table(full)["rule"])
     assert set(full.loc[full["research_gate_pass"], "rule"]) <= cut
     strongest = full.sort_values("train_p_value", kind="stable")["rule"].head(crosslag.CUT_ROWS)
@@ -103,13 +83,12 @@ def test_the_crosslag_writer_puts_the_page_rows_in_the_tracked_file(tmp_path: Pa
     assert cut_path.name == crosslag.CUT_TABLE
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["cut_rows"] == len(pd.read_csv(cut_path)) < len(full)
-    full_path.unlink()   # bản checkout không có bảng đầy đủ: trang phải dựng từ tệp git theo dõi
+    full_path.unlink()
     page = build(tmp_path / "data", tmp_path / "docs").read_text(encoding="utf-8")
     assert _crosslag_table(full) in page
 
 
 def test_the_conditional_page_reads_the_same_rows_from_the_current_cut(tmp_path: Path) -> None:
-    """Trang chỉ hiện trạng thái Đặc Biệt hiện tại; bản cắt của trạng thái ấy cho đúng 10 dòng ấy."""
     long_df = _long(seed=11)
     for special in (0, 7, 77, 99):
         cut = conditional_nextday.current_special_rows(long_df, special, 20)
@@ -118,13 +97,12 @@ def test_the_conditional_page_reads_the_same_rows_from_the_current_cut(tmp_path:
     written = conditional_nextday.write_tables(long_df, out_dir=out, anchor_date="2026-11-06",
                                                current_special=77, top=20, prior_learned=False)
     (long_path,) = [path for path in written if path.name == conditional_nextday.LONG_TABLE]
-    long_path.unlink()   # bản checkout không có bảng dài: trang phải dựng từ tệp git theo dõi
+    long_path.unlink()
     page = build(tmp_path / "data", tmp_path / "docs").read_text(encoding="utf-8")
     assert _conditional_table(long_df, "77") in page
 
 
 class _History:
-    """Sổ kết quả giả, đủ ba dạng mà các trình ghi hỏi `Lottery`; ngày liền nhau, 27 giải mỗi kỳ."""
 
     def __init__(self, days: int, seed: int) -> None:
         rng = np.random.default_rng(seed)
@@ -153,7 +131,6 @@ class _History:
 
 
 def _position_evidence(n: int, seed: int) -> pd.DataFrame:
-    """Bảng đường cầu giả cho `path_timeline_evidence`: `n` cặp vị trí khác nhau, điểm quy tắc có dòng hoà."""
     rng = np.random.default_rng(seed)
     return pd.DataFrame({
         "rule_kind": "active", "lag_days": 1,
@@ -166,11 +143,6 @@ def _position_evidence(n: int, seed: int) -> pd.DataFrame:
 
 @pytest.fixture(scope="module")
 def written(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Thư mục `data/` tạm mà MỌI trình ghi đã ghi vào, qua chính lối vào mà pipeline gọi.
-
-    Ba trình ghi của đợt 11-11 chạy cả lượt (`main`, `run`, `run_extensions`) trên sổ giả: phép kiểm phải đỏ
-    khi lối vào thôi gọi hàm ghi cặp tệp, không chỉ khi hàm ghi sai tên.
-    """
     data = tmp_path_factory.mktemp("written") / "data"
     history = _History(days=240, seed=5)
     with pytest.MonkeyPatch.context() as patch:
@@ -197,15 +169,12 @@ def written(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 def test_every_writer_writes_the_full_table_and_the_cut_the_registry_declares(written: Path) -> None:
-    """Bảng khai là nguồn duy nhất: trình ghi đổi tên tệp, hay bảng khai thêm một cặp không ai ghi, đều đỏ."""
     assert len(FULL_TABLE_CUTS) >= 7
     assert not set(FULL_TABLE_CUTS) & set(FULL_TABLE_CUTS.values())
     for full, cut in FULL_TABLE_CUTS.items():
         assert (written / full).is_file(), f"không trình ghi nào ghi bảng đầy đủ {full}"
         assert (written / cut).is_file(), f"không trình ghi nào ghi bản cắt {cut}"
         assert 0 < (written / cut).stat().st_size < (written / full).stat().st_size, (full, cut)
-    # Mọi tệp `*_top.csv` các trình ghi sinh ra đều là bản cắt ĐÃ KHAI: bản cắt chưa khai thì bảng đầy đủ
-    # của nó không được `.gitignore` bỏ qua và cũng không lên artifact.
     cuts = {path.relative_to(written).as_posix() for path in written.rglob("*_top.csv")}
     assert cuts <= set(FULL_TABLE_CUTS.values()), cuts - set(FULL_TABLE_CUTS.values())
 
@@ -222,7 +191,6 @@ def test_the_firewall_cut_keeps_every_eligible_rule_and_the_strongest_training_r
         assert set(map(tuple, strongest[key].values)) <= set(map(tuple, cut[key].values))
         report = json.loads((written / "research" / "research_firewall_report.json").read_text(encoding="utf-8"))
         assert report["modes"][mode]["cut_rows"] == len(cut) < len(full)
-    # Giả thuyết đủ điều kiện vận hành giữ hết, kể cả khi nhiều hơn `CUT_ROWS` (sổ giả không có dòng nào).
     eligible = research_firewall.CUT_ROWS + 40
     table = full.assign(production_eligible=np.arange(len(full))[::-1] < eligible)
     kept = research_firewall.cut_table(table)
@@ -252,7 +220,6 @@ def test_the_timeline_and_pair_cuts_are_the_head_of_the_full_table(written: Path
 
 
 def _ignored_tables() -> set[str]:
-    """Các dòng `.gitignore` gọi đích danh một CSV trong `data/` (không ký tự đại diện)."""
     lines = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
     return {line.strip() for line in lines
             if line.startswith("data/") and line.strip().endswith(".csv") and "*" not in line}
@@ -269,8 +236,6 @@ def test_the_full_tables_stay_out_of_git_and_the_cuts_stay_in() -> None:
     for path in CUT_TABLES:
         assert git("check-ignore", "-q", str(path)).returncode != 0, f"{path} không được bị bỏ qua"
         assert git("ls-files", "--error-unmatch", str(path)).returncode == 0, f"{path} phải được git theo dõi"
-    # Chiều ngược lại: bảng bị bỏ qua mà không khai thì không trình ghi nào bị buộc ghi bản cắt cho nó
-    # và workflow không lưu nó — dữ liệu biến mất lặng lẽ.
     assert _ignored_tables() == {str(path) for path in FULL_TABLES}
 
 
@@ -286,5 +251,4 @@ def test_the_pipeline_run_uploads_every_full_table() -> None:
     (upload,) = uploads
     assert upload.get("if") == "always()"
     assert set(upload["with"]["path"].split()) == full
-    # Bước nghiên cứu được phép hỏng: thiếu tệp không được làm đỏ lượt chốt kết quả.
     assert upload["with"]["if-no-files-found"] == "ignore"

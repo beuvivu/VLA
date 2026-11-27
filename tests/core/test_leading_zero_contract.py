@@ -1,5 +1,3 @@
-"""Mã số phải giữ độ rộng qua bảng, CSV và lần cập nhật tiếp theo."""
-
 import csv
 
 import pandas as pd
@@ -167,7 +165,6 @@ def _slow_code_column(series, width):
     pd.Series([], dtype=object),
 ])
 def test_cached_code_column_equals_the_per_cell_formatter(column):
-    """Định dạng một lần cho mỗi giá trị khác nhau phải ra ĐÚNG từng ô như gọi từng ô."""
     from core.lottery_codes import code_column
     for width in (2, 3):
         fast = code_column(column, width)
@@ -176,7 +173,7 @@ def test_cached_code_column_equals_the_per_cell_formatter(column):
 
 
 @pytest.mark.parametrize("column", [
-    pd.Series([1, True], dtype=object),       # True == 1 nhưng không phải mã
+    pd.Series([1, True], dtype=object),
     pd.Series([True, 1], dtype=object),
     pd.Series([True, False]),
     pd.Series([3.0, 1.5]),

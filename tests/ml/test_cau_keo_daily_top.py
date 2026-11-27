@@ -1,6 +1,3 @@
-"""Trang trực tiếp hiện 10 số đứng đầu bảng Cầu Kèo — đúng bộ trang chủ hiện,
-đúng ngày quay đang diễn ra (yêu cầu 07-10-2026)."""
-
 from __future__ import annotations
 
 import re
@@ -41,10 +38,6 @@ def test_the_snapshot_is_the_top_ten_by_cau_score_keyed_to_its_target_day(tmp_pa
 
 
 def test_ties_keep_the_order_of_the_table(tmp_path: Path) -> None:
-    """Sắp xếp phải ỔN ĐỊNH: số hoà điểm giữ thứ tự trong bảng, để trang chủ và
-    trang trực tiếp không thể ra hai top-10 khác nhau từ cùng một bảng."""
-    # Đủ 100 dòng như bảng thật: mảng nhỏ được numpy xếp bằng sắp xếp chèn (tình
-    # cờ ổn định), nên mẫu ngắn không bắt được quicksort.
     order = [(37 * i + 11) % 100 for i in range(100)]
     rows = [("2026-10-07", f"{n:02d}", 50.0 if k % 3 else 60.0) for k, n in enumerate(order)]
     _table(tmp_path, "loto", rows)
@@ -65,14 +58,12 @@ def test_no_table_writes_nothing(tmp_path: Path) -> None:
 
 
 def test_the_home_page_ranks_with_the_same_function() -> None:
-    """Khối «ngày mai» của trang chủ và trang trực tiếp phải ra cùng bộ số."""
     assert build_landing_page.top_by_cau_score is daily.top_by_cau_score
     source = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     assert '_sort_top(\n        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_' not in source
 
 
 def test_the_pipeline_snapshots_after_the_challenger_rewrites_the_table() -> None:
-    """Domain challenger ghi đè bảng top20, nên bản chụp phải chạy SAU nó."""
     source = (ROOT / "src" / "pipeline.py").read_text(encoding="utf-8")
     assert source.index('"src/ml/cau_keo_domain_challenger.py"') < source.index('"src/ml/cau_keo_daily_top.py"')
 
@@ -84,13 +75,11 @@ def test_the_live_page_reads_the_daily_snapshot() -> None:
     assert "predict_next_" not in script
     live = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     assert "đứng đầu bảng Cầu Kèo" in live
-    # Trang gọi theo TRẠNG THÁI kỳ quay, để kỳ đã quay xong chuyển sang kỳ kế tiếp.
     assert "LivePredictions.loadForDraw(data.draw_date, status)" in live
     assert "không phải xác suất" in live
 
 
 def test_old_snapshots_are_pruned_with_the_other_dated_artifacts(tmp_path: Path, monkeypatch) -> None:
-    """Mỗi lượt pipeline thêm hai tệp; không dọn thì thư mục phình mãi."""
     import sys
 
     from evaluation import cleanup_artifacts

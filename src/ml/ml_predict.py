@@ -40,7 +40,6 @@ def _model_pack_issue(
     window_days: int,
     latest_data_date: str,
 ) -> str | None:
-    """Return why a base-model pack is unsafe/stale, or ``None`` if usable."""
     if not isinstance(pack, dict):
         return "invalid model-pack type"
     if pack.get("features") != FEATURE_COLUMNS:
@@ -76,8 +75,6 @@ def _model_pack_issue(
         or not isinstance(trust_policy, Integral)
         or trust_policy != TRUST_POLICY_VERSION
     ):
-        # model_trust đã lưu tính theo luật cũ (vd. sàn 0,35); dùng lại là
-        # phát xác suất theo công thức đã bỏ.
         return "trust policy changed"
     if str(pack.get("trained_through_date", "")) != latest_data_date:
         return (
@@ -96,7 +93,6 @@ def _load_or_train_model(
     window_days: int,
     latest_data_date: str,
 ) -> dict:
-    """Nạp pack hiện hành; học lại pack cũ/hỏng mà không xoá bản đương nhiệm."""
     if mode not in {"loto", "de"}:
         raise ValueError("mode must be 'loto' or 'de'")
     if (
@@ -143,11 +139,6 @@ def _load_or_train_model(
 
 
 def rank_predictions(df: pd.DataFrame) -> pd.DataFrame:
-    """Xếp theo ``prob`` giảm dần; hoà thì theo xác suất thô của mô hình.
-
-    Khi kỹ năng thẩm định bằng 0, ``model_trust`` = 0 và mọi ``prob`` bằng tỉ
-    lệ nền; không có tiêu chí phụ thì thứ hạng top-k là tuỳ ý.
-    """
     return df.sort_values(["prob", "raw_model_prob"], ascending=False, kind="mergesort")
 
 
@@ -190,7 +181,6 @@ def main() -> None:
         baseline_prob = float(pack.get("baseline_prob", np.mean(raw_proba)))
         proba = trust * raw_proba + (1.0 - trust) * baseline_prob
 
-        # Đặc Biệt is exactly one of 100 classes; normalize after shrinkage.
         if mode == "de":
             s = float(proba.sum())
             if s > 0:
@@ -204,8 +194,6 @@ def main() -> None:
                 "raw_model_prob": raw_proba,
                 "model_trust": trust,
                 "quality_pass": bool(pack.get("quality_pass", True)),
-                # Luật nào đã tính model_trust: trang bằng chứng dựa vào nó để
-                # không trình bày tệp tạo theo luật cũ như luật hiện hành.
                 "trust_policy_version": int(pack.get("trust_policy_version", 1)),
             }
         )

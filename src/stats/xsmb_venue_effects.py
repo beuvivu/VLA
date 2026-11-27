@@ -1,35 +1,3 @@
-"""Đài quay miền Bắc: kết quả có khác nhau theo đài không, và xác suất riêng từng đài có chuẩn hơn không.
-
-Câu hỏi
--------
-Mỗi ngày XSMB mang tên một «đài» theo lịch luân phiên (``core.xsmb_schedule``). Từ 01-09-2005 mọi đài
-dùng MỘT lần quay chung do Công ty XSKT Thủ Đô tổ chức, nên giả thuyết gốc là: tên đài không đổi cách
-ra số. Module này đo giả thuyết ấy trên sổ chuẩn và chỉ cho phép xác suất theo đài thay xác suất chung
-khi nó thắng ngoài mẫu.
-
-Ba phần, mỗi phần trả lời một câu
----------------------------------
-1. **Phân phối có khác nhau giữa các đài (và giữa các thứ) không?** Năm thống kê: số lần ra của 100 con
-   LOTO, 2 số cuối Đặc Biệt, chữ số ở từng vị trí trong 107 vị trí, chữ số theo lồng (cột đơn vị, chục,
-   trăm, nghìn, chục nghìn của mỗi giải), và số con LOTO khác nhau mỗi kỳ. Giá trị p bằng HOÁN VỊ nhãn
-   đài giữa các kỳ: giữ nguyên mọi phụ thuộc bên trong một kỳ, không cần giả định phân phối. Holm trên
-   cả họ (5 thống kê × 2 cách gom: theo đài, theo thứ).
-2. **Lồng cầu của từng đài có đều không, và có lúc nào lệch đi không?** Một quá trình e (e-process) cho
-   mỗi đài, tính từ kỳ đầu tiên của thời kỳ lịch: tỉ số giữa xác suất KT (Krichevsky–Trofimov, tự học
-   từ chính các kỳ của đài) và phân bố đều, trên 5 lồng × 10 chữ số. Dưới giả thuyết đều, xác suất nó
-   TỪNG vượt ``số đài / ALPHA`` không quá ``ALPHA`` (bất đẳng thức Ville), dù xem lúc nào. Vì tự học
-   theo thời gian, nó tự nhạy với một đài BẮT ĐẦU lệch (ví dụ đổi máy quay); lịch đổi thì đài của thời
-   kỳ mới bắt đầu một quá trình mới.
-3. **Xác suất riêng từng đài có dự báo tốt hơn không?** Walk-forward trên ``TEST_DRAWS`` kỳ cuối: mỗi kỳ
-   chỉ dùng các kỳ trước nó. Ba mô hình cho xác suất mỗi con về: hằng số (``1 − 0,99²⁷``), tần suất
-   gộp mọi kỳ, và tần suất riêng đài CO về tần suất gộp (Bayes thực nghiệm, độ co ``κ`` học bằng hợp lý
-   biên Dirichlet–đa thức trên các kỳ TRƯỚC cửa sổ kiểm). Điểm là log-loss; mô hình theo đài chỉ được
-   đề bạt khi thắng CẢ hằng số LẪN tần suất gộp với z ≥ ``PROMOTE_Z`` (một phía, α = 0,01).
-
-Hồ sơ từng đài (CSV) in tỉ lệ thô cạnh mức nền, z, q (BH trên mọi ô) và xác suất đã co: đó là "xác suất
-chuẩn cho từng đài" mà dữ liệu cho phép nói. Khi không có hiệu ứng, xác suất đã co trùng mức chung.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -51,33 +19,16 @@ from core.xsmb_schedule import ERAS, WEEKDAY_NAMES, era_for, venue_for
 from stats.statistical_corrections import holm
 
 SCHEMA_VERSION = 1
-#: Đổi định nghĩa thống kê, mô hình hay hằng số dưới đây thì tăng số này.
 STAT_VERSION = 1
 SEED = 20261123
-#: Số hoán vị. p nhỏ nhất đạt được là 1/(B+1), và sau Holm trên ``HETEROGENEITY_TESTS`` phép kiểm là
-#: ``HETEROGENEITY_TESTS/(B+1)``: với 999 hoán vị con số ấy là 0,01, KHÔNG BAO GIỜ nhỏ hơn ``ALPHA`` — module
-#: sẽ không bao giờ kết luận "khác nhau" dù hiệu ứng mạnh đến đâu. 1 999 cho mức nhỏ nhất 0,005.
 PERMUTATIONS = 1999
-#: 5 thống kê × 2 cách gom (theo đài, theo thứ).
 HETEROGENEITY_TESTS = 10
 ALPHA = 0.01
-#: Số kỳ cuối dùng để chấm walk-forward (≈ 2 năm).
 TEST_DRAWS = 730
-#: z một phía cho α = 0,01.
 PROMOTE_Z = 2.326
-#: Lưới độ co κ (số quan sát giả, đơn vị: số con LOTO) cho mô hình theo đài.
 KAPPA_GRID = tuple(10.0 ** k for k in np.arange(1.0, 8.01, 0.25))
-#: Trí nhớ của e-detector (số kỳ của MỘT đài, ≈ 2 năm với đài quay mỗi tuần).
 DETECTOR_MEMORY = 104.0
-#: Tầm hoạch định của e-detector, tính bằng NĂM. Một dãy quay ``k`` ngày mỗi tuần có ``H = năm · 52,18 · k``
-#: kỳ trong tầm ấy (đài quay mỗi tuần: ≈ 2 000 kỳ; toàn miền Bắc: ≈ 13 900). Vì ``E[R_t] = t`` dưới giả
-#: thuyết đều, bất đẳng thức Doob cho ``P(R vượt c trong H kỳ đầu) ≤ H / c``; ngưỡng ``c = H · số dãy /
-#: ALPHA`` chặn xác suất báo nhầm của CẢ họ trong tầm ấy ở ``ALPHA``. Đừng đặt ngưỡng bằng ARL mong muốn:
-#: ARL chỉ bảo đảm THỜI GIAN TRUNG BÌNH tới báo nhầm, và với ngưỡng 2 000 bản đầu báo động ở 3/6 đài trên
-#: lịch sử thật, khớp hoàn toàn với kỳ quay công bằng (n/c tới 0,6 mỗi đài).
 DETECTOR_YEARS = 38.0
-#: Nhãn của dãy giám sát gộp mọi kỳ: mọi đài dùng chung một lần quay, nên lỗi của bộ máy chung hiện ở dãy
-#: này nhanh gấp ≈ 7 lần (tính theo ngày) so với dãy của một đài.
 POOLED = "Toàn miền Bắc"
 CAGES = 5
 CAGE_NAMES = ("đơn vị", "chục", "trăm", "nghìn", "chục nghìn")
@@ -88,7 +39,6 @@ LEDGER = Path("xsmb.csv")
 
 
 def _cage_of_digit() -> np.ndarray:
-    """Lồng của từng vị trí trong 107: 0 = cột đơn vị của giải, 4 = cột chục nghìn."""
     out: list[int] = []
     for _, width in FIELD_WIDTHS:
         out.extend(width - 1 - k for k in range(width))
@@ -101,10 +51,9 @@ _TAIL_INDEX = np.cumsum([width for _, width in FIELD_WIDTHS]) - 1
 
 @dataclass(frozen=True)
 class Draws:
-    """Sổ chuẩn đã chuẩn hoá cho phép phân tích theo đài."""
 
     dates: tuple[date, ...]
-    digits: np.ndarray  # (n, 107), giá trị 0..9
+    digits: np.ndarray
     venue: tuple[str, ...]
 
     @property
@@ -117,7 +66,6 @@ class Draws:
 
     @property
     def loto(self) -> np.ndarray:
-        """27 con LOTO mỗi kỳ (hai chữ số cuối của từng giải)."""
         return self.digits[:, _TAIL_INDEX - 1].astype(np.int64) * 10 + self.digits[:, _TAIL_INDEX]
 
     @property
@@ -126,7 +74,6 @@ class Draws:
 
 
 def from_frame(frame: pd.DataFrame) -> Draws:
-    """Bảng sổ chuẩn (cột ``date`` và 27 giải) → ``Draws``; kỳ xếp theo ngày, nhãn đài theo lịch có hiệu lực."""
     frame = frame.assign(_day=pd.to_datetime(frame["date"]).dt.date).sort_values("_day", kind="stable")
     dates = tuple(frame["_day"])
     if len(set(dates)) != len(dates):
@@ -141,7 +88,6 @@ def load(repo_root: Path = REPO_ROOT) -> Draws:
     return from_frame(pd.read_csv(repo_root / "data" / LEDGER, dtype=str))
 
 
-# ---------------------------------------------------------------------------- đặc trưng mỗi kỳ
 def _one_hot_counts(values: np.ndarray, width: int) -> np.ndarray:
     out = np.zeros((values.shape[0], width), dtype=np.float64)
     rows = np.repeat(np.arange(values.shape[0]), values.shape[1])
@@ -150,7 +96,6 @@ def _one_hot_counts(values: np.ndarray, width: int) -> np.ndarray:
 
 
 def features(draws: Draws) -> dict[str, tuple[np.ndarray, list[np.ndarray]]]:
-    """Mỗi thống kê χ²: ma trận đếm theo kỳ và các khối cột là một phân phối riêng."""
     loto = _one_hot_counts(draws.loto, 100)
     special = _one_hot_counts(draws.special[:, None], 100)
     position = _one_hot_counts(draws.digits.astype(np.int64) + 10 * np.arange(TOTAL_DIGITS)[None, :], 10 * TOTAL_DIGITS)
@@ -191,7 +136,6 @@ def groupings(draws: Draws) -> dict[str, tuple[np.ndarray, list[str]]]:
 
 
 def _chi_square(sums: np.ndarray, blocks: list[np.ndarray]) -> float:
-    """Tổng χ² đồng nhất G × K trên các khối (mỗi khối một bảng ngẫu nhiên riêng)."""
     total = 0.0
     for block in blocks:
         observed = sums[:, block]
@@ -205,7 +149,6 @@ def _chi_square(sums: np.ndarray, blocks: list[np.ndarray]) -> float:
 
 
 def _between_groups(values: np.ndarray, membership: np.ndarray) -> float:
-    """Tổng bình phương giữa các nhóm của một đại lượng mỗi kỳ (thống kê của ANOVA một chiều)."""
     sizes = membership.sum(axis=1)
     means = membership @ values / np.where(sizes > 0, sizes, 1)
     return float((sizes * (means - values.mean()) ** 2).sum())
@@ -225,7 +168,6 @@ def _group_statistics(labels: np.ndarray, groups: int, feats: dict, distinct: np
 
 
 def heterogeneity_tests(draws: Draws, *, permutations: int = PERMUTATIONS, seed: int = SEED) -> list[dict]:
-    """Năm thống kê × hai cách gom, p bằng hoán vị nhãn giữa các kỳ (cùng một hoán vị cho mọi thống kê)."""
     feats = features(draws)
     distinct = (feats["loto"][0] > 0).sum(axis=1).astype(np.float64)
     results: list[dict] = []
@@ -261,9 +203,7 @@ def heterogeneity_tests(draws: Draws, *, permutations: int = PERMUTATIONS, seed:
     return results
 
 
-# ---------------------------------------------------------------------------- lồng cầu từng đài
 def _kt_log_e(counts: np.ndarray) -> np.ndarray:
-    """log e của KT (Dirichlet ½) so với phân bố đều, cho từng tiền tố. ``counts``: (t, lồng, 10) cộng dồn."""
     k = counts.shape[-1]
     totals = counts.sum(axis=-1)
     log_kt = (gammaln(k / 2) - gammaln(k / 2 + totals)
@@ -272,16 +212,6 @@ def _kt_log_e(counts: np.ndarray) -> np.ndarray:
 
 
 def change_detector(per_draw: np.ndarray, *, memory: float = DETECTOR_MEMORY) -> np.ndarray:
-    """log R_t của e-detector Shiryaev–Roberts cho một đài: ``R_t = (1 + R_{t−1}) · L_t``.
-
-    ``L_t = Π q_t(lồng, chữ số) / 0,1`` trên mọi chữ số của kỳ t, với ``q_t`` là ước lượng KT từ các kỳ
-    TRƯỚC t, đếm có quên dần (mỗi kỳ nhân ``1 − 1/memory``). ``q_t`` chỉ nhìn quá khứ nên dưới giả thuyết
-    đều ``E[L_t] = 1``, và ``R_t`` là tổng các quá trình e bắt đầu ở từng kỳ: thời gian trung bình tới
-    lần ``R`` vượt ``c`` đầu tiên không dưới ``c`` kỳ (ngưỡng thật dùng ``DETECTOR_HORIZON``, xem ở đó). Khi
-    đài bắt đầu lệch, ``q_t`` học lại trong vài
-    chục kỳ và ``R`` tăng theo cấp số nhân. Đó là phần "thích nghi" mà e-process tính từ đầu thời kỳ
-    không có: nó phải trả giá học của cả mười năm trước khi lệch.
-    """
     decay = 1.0 - 1.0 / memory
     counts = np.zeros(per_draw.shape[1:])
     log_r = np.empty(per_draw.shape[0])
@@ -296,8 +226,6 @@ def change_detector(per_draw: np.ndarray, *, memory: float = DETECTOR_MEMORY) ->
 
 
 def cage_monitor(draws: Draws, *, alpha: float = ALPHA) -> list[dict]:
-    """Mỗi (thời kỳ lịch, đài): χ² đều của 5 lồng (mô tả), e-process KT từ kỳ đầu của thời kỳ (đài có
-    từng lệch khỏi phân bố đều không) và e-detector có quên dần (đài có BẮT ĐẦU lệch không)."""
     per_draw = _cage_counts(draws)
     eras = [era_for(day) for day in draws.dates]
     starts = np.array([era.start.toordinal() for era in eras])
@@ -356,9 +284,7 @@ def cage_monitor(draws: Draws, *, alpha: float = ALPHA) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------------------- xác suất theo đài
 def _dirichlet_log_marginal(counts: np.ndarray, base: np.ndarray, kappa: float) -> float:
-    """log hợp lý biên Dirichlet–đa thức của các hàng ``counts`` với trung tâm ``base`` và độ co ``kappa``."""
     alpha = kappa * base
     totals = counts.sum(axis=1)
     return float((gammaln(kappa) - gammaln(kappa + totals)).sum()
@@ -366,7 +292,6 @@ def _dirichlet_log_marginal(counts: np.ndarray, base: np.ndarray, kappa: float) 
 
 
 def fit_kappa(group_counts: np.ndarray) -> float:
-    """Độ co κ chung cho mọi nhóm, cực đại hoá hợp lý biên quanh tần suất gộp của chính các nhóm ấy."""
     pooled = group_counts.sum(axis=0)
     base = (pooled + 0.5) / (pooled.sum() + 0.5 * pooled.size)
     scores = [_dirichlet_log_marginal(group_counts, base, kappa) for kappa in KAPPA_GRID]
@@ -390,7 +315,6 @@ def _paired(diff: np.ndarray) -> dict:
 
 def _score(mode: str, theta: np.ndarray, counts: np.ndarray, outcome: np.ndarray,
            constant: float | None = None) -> float:
-    """Log-loss của một kỳ: LOTO là trung bình 100 log-loss nhị phân, Đặc Biệt là −log xác suất số đã ra."""
     if mode == "loto":
         prob = np.full(100, constant) if constant is not None else _appear_prob(theta)
         return float(_bernoulli_loss(prob, outcome))
@@ -399,7 +323,6 @@ def _score(mode: str, theta: np.ndarray, counts: np.ndarray, outcome: np.ndarray
 
 
 def walk_forward(draws: Draws, *, test_draws: int = TEST_DRAWS, keep_losses: bool = False) -> dict:
-    """Chấm ba mô hình (và bản theo thứ) trên ``test_draws`` kỳ cuối; mỗi kỳ chỉ dùng kỳ trước nó."""
     test_draws = min(test_draws, draws.n - 365)
     if test_draws < 30:
         raise ValueError("sổ quá ngắn để chấm walk-forward")
@@ -464,13 +387,6 @@ def _cage_counts(draws: Draws) -> np.ndarray:
 
 def adaptive_cage_benchmark(draws: Draws, monitor: list[dict], *, warmup: int = 365,
                             memory: float = DETECTOR_MEMORY) -> dict:
-    """Mô hình THÍCH NGHI theo lồng có kiếm lời được không, chấm walk-forward từ kỳ ``warmup``.
-
-    ``q_t`` của lồng chục và lồng đơn vị (KT, quên dần như e-detector) cho xác suất một giải kết thúc bằng
-    ``ab`` là ``q_chục(a) · q_đơn vị(b)``; xác suất con về là ``1 − (1 − ·)²⁷``. Hai biến thể: luôn bật,
-    và chỉ bật khi e-detector của dãy gộp đang báo động ở kỳ TRƯỚC (không nhìn kỳ được chấm). Chỉ đề bạt
-    khi thắng hằng số với z ≥ ``PROMOTE_Z``.
-    """
     per_draw = _cage_counts(draws)
     outcome = (features(draws)["loto"][0] > 0).astype(np.float64)
     pooled = [row for row in monitor if row["pooled"]]
@@ -503,7 +419,6 @@ def adaptive_cage_benchmark(draws: Draws, monitor: list[dict], *, warmup: int = 
     return result
 
 
-# ---------------------------------------------------------------------------- hồ sơ từng đài
 def _bh(p_values: np.ndarray) -> np.ndarray:
     order = np.argsort(p_values, kind="stable")
     ranked = p_values[order] * p_values.size / np.arange(1, p_values.size + 1)
@@ -514,7 +429,6 @@ def _bh(p_values: np.ndarray) -> np.ndarray:
 
 
 def venue_profile(draws: Draws, kappas: dict[str, float]) -> pd.DataFrame:
-    """Mỗi (đài, con): tỉ lệ thô, mức nền, z, q và xác suất đã co về mức chung (Bayes thực nghiệm)."""
     feats = features(draws)
     codes, names = groupings(draws)["đài"]
     member = _membership(codes, len(names))
@@ -545,7 +459,6 @@ def venue_profile(draws: Draws, kappas: dict[str, float]) -> pd.DataFrame:
     return table
 
 
-# ---------------------------------------------------------------------------- tóm tắt
 def _num(value: float, digits: int) -> str:
     return f"{value:.{digits}f}".replace(".", ",").replace("-", "−")
 
@@ -559,7 +472,6 @@ def _day(iso: str) -> str:
 
 
 def reading(summary: dict) -> str:
-    """Câu kết luận in TỪ số đo của chính tệp."""
     tests = summary["heterogeneity"]
     smallest = min(tests, key=lambda row: row["p_holm"])
     rejected = [row for row in tests if row["rejected"]]
@@ -649,7 +561,7 @@ def run(repo_root: Path = REPO_ROOT, **kwargs) -> list[Path]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--permutations", type=int, default=PERMUTATIONS)
     args = parser.parse_args(argv)

@@ -1,5 +1,3 @@
-"""Hợp đồng đọc số liệu của trang chủ theo yêu cầu ngày 26-09-2026."""
-
 from pathlib import Path
 
 import pandas as pd

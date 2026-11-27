@@ -1,9 +1,3 @@
-"""Nguồn & bằng chứng của con số: danh mục, cách gắn vào trang, bằng chứng ML.
-
-Phần hành vi trên trình duyệt nằm ở ``tests/frontend/evidence.test.mjs`` và
-``scripts/browser/check_ui_browser.py``; ở đây là hợp đồng phía dựng trang.
-"""
-
 from __future__ import annotations
 
 import json
@@ -63,11 +57,6 @@ def test_the_published_script_is_the_source_script() -> None:
 
 @pytest.mark.parametrize("name", sorted(covered_pages()))
 def test_no_catalog_entry_spells_out_where_the_data_lives(name: str) -> None:
-    """Chặn ngay ở danh mục, trước cả khi trang được dựng.
-
-    Nguồn ở đây là bộ dữ liệu và phép tính mô tả bằng lời; liên kết chỉ được
-    trỏ tới trang nội bộ đã xuất bản.
-    """
     text = json.dumps(registry(name), ensure_ascii=False)
     for token in LEAK_TOKENS:
         assert token not in text, f"{name} lộ {token!r}"
@@ -84,7 +73,6 @@ def test_attaching_twice_gives_the_same_page_even_after_attribute_reordering(tmp
     html = "<html><head><title>x</title></head><body><main><p>27</p></main></body></html>"
     once = _attach_evidence(page, html)
     assert _attach_evidence(page, once) == once
-    # Lượt chuẩn hoá HTML có thể sắp lại thuộc tính; bản cũ vẫn phải bị bóc.
     reordered = once.replace(
         '<script src="assets/app-evidence.js" defer data-app-evidence></script>',
         '<script data-app-evidence="" defer="" src="assets/app-evidence.js"></script>',
@@ -117,7 +105,6 @@ def test_ml_evidence_writes_out_the_shrinkage_with_real_numbers() -> None:
     assert [ident for ident, _ in rows] == ["ml-loto-63", "ml-loto-05"]
     entry = rows[0][1]
     steps = " ".join(entry["reasoningTrace"]["steps"])
-    # Tỉ lệ nền suy ngược đúng từ p = trust·thô + (1 − trust)·nền.
     assert "0,350 × 24,213% + 0,650 × 23,797% = 23,943%" in steps
     assert "quality_pass = False" in steps
     assert entry["reasoningTrace"]["confidenceScore"] == pytest.approx(0.35)
@@ -153,7 +140,6 @@ def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
         assert len(rows) == 10, (mode, rows)
         values = json.loads(re.search(r"data-app-evidence-values>(.*?)</script>", html, re.S).group(1))
         assert set(rows) == set(values)
-        # Nguồn ML của mỗi chế độ trỏ về đúng trang top của chế độ ấy.
         page = f"ml_top10_{mode}.html"
         assert {v["sources"][0]["url"] for v in values.values()} == {page}
         ml = [src for src in _published_registry(ROOT / "docs" / page)["page"]["sources"] if src["title"] == "Mô hình ML thành phần"]
@@ -161,11 +147,8 @@ def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
 
 
 def test_ml_evidence_flags_files_made_under_the_old_trust_policy() -> None:
-    """Tệp tạo trước luật mới không được trình bày như luật hiện hành."""
     from ml.ml_train import TRUST_POLICY_VERSION
 
-    # Không ghi phiên bản: không được khẳng định luật cũ (review PR #113) —
-    # trust 0 hay 0,001 thì luật cũ có sàn 0,35 không thể sinh ra.
     for trust in (0.0, 0.001075):
         steps = " ".join(ml_row_evidence(_ml_frame(trust), "loto")[0][1]["reasoningTrace"]["steps"])
         assert "luật trust CŨ" not in steps and "không ghi phiên bản" not in steps, trust
@@ -180,7 +163,6 @@ def test_ml_evidence_flags_files_made_under_the_old_trust_policy() -> None:
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path) -> None:
-    """Khối khai trong danh mục phải có thật, nếu không con số rơi về bằng chứng của cả trang."""
     html = page.read_text(encoding="utf-8")
     for entry in _published_registry(page)["sections"]:
         if "heading" in entry:
@@ -198,8 +180,6 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
 
 
 def test_live_forecasts_cite_the_cau_keo_table_not_the_live_draw() -> None:
-    """Khối dự đoán trên trang trực tiếp là 10 số đứng đầu bảng Cầu Kèo (yêu cầu
-    07-10-2026), nên bằng chứng phải trích mô hình cầu-kèo và cách tính điểm."""
     sections = {s["match"]: s for s in registry("live.html")["sections"]}
     titles = [src["title"] for src in sections["#live-predictions"]["sources"]]
     assert "Mô hình cầu-kèo AI/ML" in titles
@@ -208,13 +188,11 @@ def test_live_forecasts_cite_the_cau_keo_table_not_the_live_draw() -> None:
     assert "không phải xác suất" in steps
     assert "Bảng kết quả đang quay" not in titles
     assert "Bảng kết quả đang quay" in [src["title"] for src in registry("live.html")["page"]["sources"]]
-    # Trang tải dự báo theo ngày quay lúc chạy: không được ghi ngày lúc dựng.
     snippets = " ".join(src["snippet"] for src in sections["#live-predictions"]["sources"])
     assert not re.search(r"cho kỳ \d\d-\d\d-\d{4}", snippets), snippets
 
 
 def test_mixed_forecast_blocks_cite_both_model_pages() -> None:
-    """Khối gộp LOTO lẫn Đặc Biệt trích mô hình ML của cả hai, trang riêng chỉ một."""
     def ml_links(entry: dict) -> set[str]:
         return {s["url"] for s in entry["sources"] if s["title"] == "Mô hình ML thành phần"}
 
@@ -233,7 +211,6 @@ def test_dashboard_diagnostics_have_their_own_derivations() -> None:
 
 
 def test_overview_evidence_separates_filtered_loto_from_global_special_cycles() -> None:
-    """Nguồn của nháy và kỳ vọng theo dải không gán bộ lọc cho chu kỳ toàn lịch sử."""
     data = registry("thong-ke-tong-hop.html")
     page_steps = " ".join(data["page"]["reasoningTrace"]["steps"])
     assert "toàn bộ lịch sử" in page_steps and "cùng một dải" not in page_steps
@@ -252,7 +229,6 @@ def test_overview_evidence_separates_filtered_loto_from_global_special_cycles() 
 
 
 def test_confidence_page_risk_numbers_get_the_simulation_derivation() -> None:
-    """Số ở khối rủi ro đến từ mô phỏng và phép hoà vốn, không từ luật ba tầng."""
     sections = {s.get("heading"): s for s in registry("do-tin-cay.html")["sections"]}
     risk = " ".join(sections["Rủi ro / lợi nhuận"]["reasoningTrace"]["steps"])
     assert "10 000 kỳ" in risk and "100/27" in risk
@@ -262,7 +238,6 @@ def test_confidence_page_risk_numbers_get_the_simulation_derivation() -> None:
 
 @pytest.mark.parametrize("page", ["index.html", "landing.html", "statistics.html"])
 def test_cau_keo_scores_get_the_score_formula_not_the_probability_derivation(page: str) -> None:
-    """Thanh «ngày mai» và bảng cầu-kèo in ``cau_score``: thứ hạng 0–100, không phải xác suất."""
     sections = {s.get("match"): s for s in registry(page)["sections"]}
     steps = " ".join(sections["#ai-ml"]["reasoningTrace"]["steps"])
     assert "0,38" in steps and "0,42" in steps, steps
@@ -275,18 +250,15 @@ def _card_headings(page: str) -> list[str]:
     html = (ROOT / "docs" / page).read_text(encoding="utf-8")
     body = html[re.search(r'class="(?:[^"]* )?ui-grid(?: [^"]*)?"', html).start():]
     heads = [re.sub(r"<[^>]+>", "", h).strip() for h in re.findall(r"<h[23][^>]*>(.*?)</h[23]>", body, re.S)]
-    assert len(heads) >= 8, heads  # trang rỗng thì phép kiểm không thể đỏ
+    assert len(heads) >= 8, heads
     return heads
 
 
 @pytest.mark.parametrize("page", ["do-tin-cay.html", "research-lab.html", "model-quality.html"])
 def test_every_block_of_the_research_pages_carries_its_own_derivation(page: str) -> None:
-    """Mỗi khối có phép tính riêng; bằng chứng cả trang chỉ nói điều đúng với MỌI khối."""
     reg = registry(page)
     prefixes = [s["heading"] for s in reg["sections"] if "heading" in s]
     for head in _card_headings(page):
-        # Thẻ «⚠ Báo cáo chẩn đoán đang cũ» chỉ hiện khi bước chẩn đoán hỏng và
-        # chỉ chứa NGÀY — mà ngày không bao giờ được nhận là con số.
         if head.startswith("⚠"):
             continue
         assert any(head.startswith(prefix) for prefix in prefixes), (page, head)
@@ -316,7 +288,6 @@ def test_sharpness_counts_get_the_histogram_not_the_brier_decomposition() -> Non
 
 @pytest.mark.parametrize("trust", [0.0, 1.0])
 def test_de_rows_at_trust_bounds_still_say_the_probabilities_are_normalised(trust: float) -> None:
-    """ml_predict chuẩn hoá Đặc Biệt sau khi trộn ở MỌI mức trust; LOTO thì không."""
     de = " ".join(ml_row_evidence(_ml_frame(trust), "de")[0][1]["reasoningTrace"]["steps"])
     assert "chuẩn hoá" in de and "dùng nguyên" not in de
     loto = " ".join(ml_row_evidence(_ml_frame(trust), "loto")[0][1]["reasoningTrace"]["steps"])
@@ -324,7 +295,6 @@ def test_de_rows_at_trust_bounds_still_say_the_probabilities_are_normalised(trus
 
 
 def test_raw_cau_keo_inputs_get_their_own_derivation_not_the_score_formula() -> None:
-    """``cầu=1635`` trong cột «Bằng chứng» là số đếm thô, không phải điểm 0–100."""
     by_match = {s.get("match"): s for s in registry("statistics.html")["sections"]}
     raw = next(s for m, s in by_match.items() if m and "data-col='evidence'" in m)
     steps = " ".join(raw["reasoningTrace"]["steps"])
@@ -338,7 +308,6 @@ def test_raw_cau_keo_inputs_get_their_own_derivation_not_the_score_formula() -> 
 
 
 def test_ledger_actual_results_and_scores_are_not_explained_as_simulated_draws() -> None:
-    """«Đặc Biệt thật» 77961 và «5/26» là kết quả và phép chấm, không phải số rút mô phỏng."""
     sections = {s.get("match"): s for s in registry("index.html")["sections"]}
     steps = lambda m: " ".join(sections[m]["reasoningTrace"]["steps"])  # noqa: E731
     actual = steps(".fun-ledger td[data-col='actual']")
@@ -351,7 +320,6 @@ def test_ledger_actual_results_and_scores_are_not_explained_as_simulated_draws()
 
 
 def test_bar_labels_are_identifiers_not_scores() -> None:
-    """Nhãn «54» trên biểu đồ ngày mai là tên số; điểm của nó là «59» ở cuối thanh."""
     sections = {s.get("match"): s for s in registry("index.html")["sections"]}
     label = " ".join(sections[".bar-label"]["reasoningTrace"]["steps"])
     assert "định danh" in label and "0,38" not in label
@@ -359,9 +327,7 @@ def test_bar_labels_are_identifiers_not_scores() -> None:
     assert re.search(r'class="bar-value"[^>]*data-evidence-primary', html), "điểm phải là số chính của nút thanh"
 
 
-
 def test_statistics_number_labels_are_identifiers_and_scores_are_primary() -> None:
-    """Ô «<b>00</b><span>32.3</span>»: 00 là tên số, 32.3 là điểm và là số chính của ô."""
     sections = {s.get("match"): s for s in registry("statistics.html")["sections"]}
     label = " ".join(sections[".matrix-cell > b, .num-pill"]["reasoningTrace"]["steps"])
     assert "định danh" in label and "0,38" not in label
@@ -369,19 +335,15 @@ def test_statistics_number_labels_are_identifiers_and_scores_are_primary() -> No
     assert re.search(r"<b>\d\d</b><span data-evidence-primary", html), "giá trị phải là số chính của ô ma trận"
 
 
-
 @pytest.mark.parametrize("page", ["soi-cau-vi-tri.html", "index.html"])
 def test_shadow_numbers_get_the_digit_mapping_not_the_bridge_derivation(page: str) -> None:
-    """Số bóng (44 → 99) chỉ hiện kèm; nó không phải số do cầu ghép ra."""
     sections = {s.get("match"): s for s in registry(page)["sections"]}
     steps = " ".join(sections["#app-main .app-bridge-shadow"]["reasoningTrace"]["steps"])
     assert "0↔5" in steps and "KHÔNG tham gia" in steps
     assert "10·d[a]" not in steps
 
 
-
 def test_home_matrix_cells_open_their_value_and_pair_labels_are_split() -> None:
-    """Ô ma trận in nhãn «00», giá trị gan nằm trong data-value; nhãn cặp «09-90» là hai số."""
     html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
     cell = re.search(r'<button class="matrix-cell"[^>]*>', html).group(0)
     value = re.search(r'data-value="([^"]*)"', cell).group(1)
@@ -390,21 +352,17 @@ def test_home_matrix_cells_open_their_value_and_pair_labels_are_split() -> None:
 
 
 def test_dashboard_suggestion_metadata_is_not_a_forecast_probability() -> None:
-    """«Trọng số áp dụng thực tế 0.125» trong thẻ gợi ý là siêu dữ liệu đã ghi, không phải xác suất."""
     sections = {s.get("heading"): s for s in registry("dashboard.html")["sections"]}
     steps = " ".join(sections["Danh sách gợi ý"]["reasoningTrace"]["steps"])
     assert "siêu dữ liệu" in steps and "không phải xác suất" in steps
 
 
-
 @pytest.mark.parametrize("page", ["index.html", "landing.html"])
 def test_calendar_values_cite_the_calendar_engine_and_only_results_cite_the_ledger(page: str) -> None:
-    """Ngày âm/dương do bộ tính lịch sinh ra; chỉ giải Đặc Biệt trong lịch đến từ sổ kết quả."""
     sections = {s.get("match"): s for s in registry(page)["sections"]}
     cal = sections["#app-calendar"]
     assert [src["title"] for src in cal["sources"]] == ["Bộ tính lịch âm dương Việt Nam"]
     assert "không đọc từ sổ kết quả" in " ".join(cal["reasoningTrace"]["steps"])
-    # Meeus chỉ cho điểm sóc; tiết khí/tháng nhuận theo kinh độ Mặt Trời, can chi là phép đếm chu kỳ.
     snippet = cal["sources"][0]["snippet"]
     assert "kinh độ Mặt Trời" in snippet and "Julius" in snippet and "địa chi" in snippet
     special = sections["#app-calendar .app-calendar-result, #app-calendar .app-calendar-special"]

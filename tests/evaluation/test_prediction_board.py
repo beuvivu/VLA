@@ -1,5 +1,3 @@
-"""Sổ phỏng đoán trong ngày (``src/evaluation/prediction_board.py``) cho bảng đối chiếu trang Live."""
-
 from __future__ import annotations
 
 import json
@@ -14,7 +12,7 @@ from core.paths import DATA_MOVES
 from core.xsmb_domain import LOTO_BASELINE_RATE
 
 ROOT = Path(__file__).resolve().parents[2]
-TARGET = "2026-10-22"  # thứ Năm: weekday() = 3
+TARGET = "2026-10-22"
 BEFORE = datetime(2026, 10, 21, 13, 0, tzinfo=UTC)
 
 
@@ -29,7 +27,6 @@ def _ranked_csv(rows: list[tuple[str, float]], date: str | None = None) -> str:
 
 
 def _data(tmp_path: Path, target: str = TARGET) -> Path:
-    """Đủ mọi nguồn của kỳ ``target``, mỗi nguồn đúng khuôn tệp thật của kho."""
     data = tmp_path / "data"
     loto = [("05", 0.24), ("75", 0.238)]
     de = [("07", 0.0104), ("54", 0.0103)]
@@ -37,7 +34,6 @@ def _data(tmp_path: Path, target: str = TARGET) -> Path:
         _write(data / "forecast" / "predict" / f"predict_next_{mode}_top10_{target}.csv", _ranked_csv(rows))
         _write(data / "ai_ml" / "daily" / f"cau_keo_{mode}_top10_{target}.csv", _ranked_csv(rows, target))
         _write(data / "ml" / f"predict_next_{mode}_ml_top10.csv", _ranked_csv(rows, target))
-        # Soi đường mang ngày DỮ LIỆU (kỳ trước), không phải ngày quay.
         anchor = (date.fromisoformat(target) - timedelta(days=1)).isoformat()
         _write(data / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json", json.dumps({"anchor_date": anchor}))
         for kind in ("active", "stable"):
@@ -88,7 +84,6 @@ def test_every_published_source_of_the_day_is_on_the_board(tmp_path: Path) -> No
     assert lists["cau-keo-de"]["items"][0]["rule"] == {"on": "special", "numbers": ["07"]}
     assert lists["vip"]["items"][0]["rule"]["need"] == 2
     assert lists["xien"]["items"][0]["rule"] == {"on": "loto", "numbers": ["34", "35"], "all": True}
-    # Cầu lộn cộng gộp nháy hai chiều; số bóng của số kép chỉ hiện kèm, không tính.
     assert lists["best-lo"]["items"][0]["rule"] == {"on": "loto", "numbers": ["29", "92"], "need": 1}
     assert lists["best-nhay2"]["items"][0]["rule"] == {"on": "loto", "numbers": ["66"], "need": 2}
     assert lists["best-db"]["items"][0]["rule"] == {"on": "special", "numbers": ["49", "94"]}
@@ -102,7 +97,6 @@ def test_every_published_source_of_the_day_is_on_the_board(tmp_path: Path) -> No
 
 
 def test_fair_draw_baselines_match_the_repository_constants() -> None:
-    """Mốc chọn bừa là xác suất CHÍNH XÁC của đúng sự kiện; đối chiếu với số đã có của kho."""
     vip = json.loads((ROOT / "data" / "forecast" / "multi_hit" / "vip.json").read_text(encoding="utf-8"))
     assert pb.base_probability({"on": "loto", "numbers": ["18"], "need": 1}) == pytest.approx(LOTO_BASELINE_RATE)
     assert pb.base_probability({"on": "loto", "numbers": ["18"], "need": 2}) == pytest.approx(vip["base_theory"])
@@ -119,7 +113,6 @@ def test_fair_draw_baselines_match_the_repository_constants() -> None:
     (("vip", "xien"), lambda d: (d / "forecast" / "multi_hit" / "vip.json").write_text(
         json.dumps({"target_date": "2026-10-21", "picks": [{"number": "18"}]}), encoding="utf-8")),
     (("path-loto-active",), lambda d: (d / "soi_cau" / "path_ui" / "predict_next_loto_active_2026-10-21.csv").unlink()),
-    # Tệp soi đường mang ngày trùng kỳ đích là dự báo cho kỳ SAU kỳ đích, dù tệp có đủ.
     (("path-de-active", "path-de-stable"), lambda d: (
         (d / "soi_cau" / "path_ui" / "path_manifest_de.json").write_text(json.dumps({"anchor_date": TARGET}), encoding="utf-8"),
         (d / "soi_cau" / "path_ui" / f"predict_next_de_active_{TARGET}.csv").write_text(
@@ -127,7 +120,6 @@ def test_fair_draw_baselines_match_the_repository_constants() -> None:
     )),
 ])
 def test_a_source_that_belongs_to_another_draw_is_left_out(tmp_path: Path, ids, break_source) -> None:
-    """Tệp không ghi ngày bị ghi đè cho kỳ sau: đặt nó cạnh kết quả là chấm danh sách của kỳ khác."""
     data = _data(tmp_path)
     break_source(data)
     board = pb.build_board(data, TARGET, now=BEFORE)
@@ -137,7 +129,6 @@ def test_a_source_that_belongs_to_another_draw_is_left_out(tmp_path: Path, ids, 
 
 
 def test_weekday_bridges_must_be_for_the_weekday_of_the_draw(tmp_path: Path) -> None:
-    """Sổ ghi đúng kỳ thứ Sáu nhưng bảng theo thứ dựng cho thứ Năm: hai trang theo thứ bị bỏ."""
     friday = "2026-10-23"
     board = pb.build_board(_data(tmp_path, friday), friday, now=BEFORE)
     missing = {entry["id"]: entry["reason"] for entry in board["missing"]}
@@ -162,7 +153,6 @@ def test_the_board_freezes_at_ten_past_six_on_the_draw_day(tmp_path: Path) -> No
 
 
 def test_the_board_holds_no_private_token(tmp_path: Path) -> None:
-    """Trang tải sổ lúc chạy: luật riêng tư của trang áp lên cả nội dung sổ."""
     from privacy_helpers import LEAK_TOKENS
 
     text = json.dumps(pb.build_board(_data(tmp_path), TARGET, now=BEFORE), ensure_ascii=False)
@@ -189,7 +179,6 @@ def test_the_live_page_loads_the_scorecard_and_feeds_it_every_snapshot() -> None
 
 
 def test_backfill_takes_the_last_commit_before_the_lock_and_never_overwrites(tmp_path: Path) -> None:
-    """Dựng lại một kỳ đã khoá từ git: đúng bản người đọc thấy trước 18:10, không phải bản sau."""
     import subprocess
 
     repo = tmp_path / "repo"
@@ -221,7 +210,6 @@ def test_backfill_takes_the_last_commit_before_the_lock_and_never_overwrites(tmp
 
 
 def test_backfill_reads_a_commit_from_before_the_data_regrouping(tmp_path: Path) -> None:
-    """Commit trước 24-10-2026 giữ nguồn ở ``data/<tên>/``; sổ dựng lại phải y như bố cục mới."""
     import subprocess
 
     repo = tmp_path / "repo"
@@ -246,11 +234,7 @@ def test_backfill_reads_a_commit_from_before_the_data_regrouping(tmp_path: Path)
     assert board["lists"] == expected["lists"]
 
 
-# --- Vị trí cầu (schema 2) ---------------------------------------------------------------
-
-
 def _real_bridge_data(tmp_path: Path) -> tuple[Path, str]:
-    """Ảnh chụp THẬT của các nguồn cầu trong kho, chép ra thư mục tạm để còn đột biến được."""
     import shutil
 
     data = tmp_path / "data"
@@ -269,14 +253,11 @@ def _formed(board: dict, day: str, a: int, b: int) -> int:
 
 
 def test_every_bridge_on_the_board_forms_the_number_its_list_published(tmp_path: Path) -> None:
-    """Trên dữ liệu thật: mỗi cầu ghép đúng số mà mục của nó in, ở đúng kỳ, và tổng cầu bằng số trang in."""
     from soi_cau import bridge_rules
 
     data, target = _real_bridge_data(tmp_path)
     board = pb.build_board(data, target, now=BEFORE)
     lists = {entry["id"]: entry for entry in board["lists"] if "bridge" in entry}
-    # MỌI danh sách sinh từ cặp vị trí có trên bảng phải mang vị trí: một kiểu bị bỏ lặng lẽ (lọc theo thứ sai,
-    # kỳ thiếu) thì người đọc bấm vào không thấy gì mà phép kiểm vẫn xanh.
     positional = {entry["id"] for entry in board["lists"] if entry["id"].startswith(("best-", "bridge-", "path-"))}
     assert positional == set(lists)
     assert {"best-lo", "best-db", "bridge-loto", "bridge-loto-theo-thu", "bridge-dac-biet",
@@ -297,7 +278,6 @@ def test_every_bridge_on_the_board_forms_the_number_its_list_published(tmp_path:
                     assert bridge["base"] == base.isoformat()
                     assert f"{_formed(board, bridge['base'], bridge['a'], bridge['b']):02d}" == item["rule"]["numbers"][0]
                     continue
-                # Mọi cầu của trang ghép a < b (``pair_index(True)``), số = 10·d[a] + d[b] của kỳ cuối.
                 assert bridge["a"] < bridge["b"]
                 n = _formed(board, cfg["series"][-1], bridge["a"], bridge["b"])
                 pair = {f"{n:02d}", f"{10 * (n % 10) + n // 10:02d}"}
@@ -316,7 +296,6 @@ def test_every_bridge_on_the_board_forms_the_number_its_list_published(tmp_path:
 
 
 def test_a_list_whose_bridges_do_not_recompute_carries_no_positions(tmp_path: Path) -> None:
-    """Số cầu tính lại lệch số trang in thì danh sách ấy KHÔNG mang vị trí; các danh sách khác giữ nguyên."""
     data, target = _real_bridge_data(tmp_path)
     clean = {e["id"]: e for e in pb.build_board(data, target, now=BEFORE)["lists"]}
     path = data / "soi_cau" / "bridge_pages" / "latest.json"
@@ -340,8 +319,6 @@ def test_a_list_whose_bridges_do_not_recompute_carries_no_positions(tmp_path: Pa
 
 
 def test_a_path_bridge_after_a_closed_day_names_the_real_target_draw(tmp_path: Path, monkeypatch) -> None:
-    """Ngày sau ngày dữ liệu là ngày nghỉ quay (Tết): kỳ gốc vẫn theo luật trang soi đường (ngày dữ liệu + 1 −
-    độ trễ), nhưng kỳ mà cầu báo là kỳ quay kế tiếp thật — chép ngày nghỉ vào khung là in một kỳ không có."""
     data, _ = _real_bridge_data(tmp_path)
     anchor = json.loads((data / "soi_cau" / "path_ui" / "path_manifest_loto.json").read_text(encoding="utf-8"))
     following = date.fromisoformat(str(anchor["anchor_date"])[:10]) + timedelta(days=1)
@@ -357,7 +334,6 @@ def test_a_path_bridge_after_a_closed_day_names_the_real_target_draw(tmp_path: P
 
 
 def test_each_bridge_source_embeds_the_draws_its_own_positions_need(tmp_path: Path) -> None:
-    """Cầu vị trí vẽ bằng kỳ của CHÍNH nguồn ấy: thiếu nguồn bảy kiểu cầu thì kỳ vẫn có, đúng từng giá trị."""
     data, target = _real_bridge_data(tmp_path)
     (data / "soi_cau" / "bridge_pages" / "latest.json").unlink()
     board = pb.build_board(data, target, now=BEFORE)
@@ -370,16 +346,11 @@ def test_each_bridge_source_embeds_the_draws_its_own_positions_need(tmp_path: Pa
         assert {day: board["draws"][day] for day in series} == {day: source[day] for day in series}
 
 
-# --- Cầu đang chạy (schema 3) -------------------------------------------------------------
-
-
 def _pair_key(n: int) -> str:
     return ",".join(sorted({f"{n:02d}", f"{10 * (n % 10) + n // 10:02d}"}))
 
 
 def test_the_running_table_recounts_every_group_the_two_pages_print(tmp_path: Path) -> None:
-    """Trên dữ liệu thật: bảng tra cầu đang chạy có ĐỦ mọi nhóm hai trang in, đúng số cầu từng nhóm, và mỗi cầu
-    ghép ra đúng cặp số của nhóm ở kỳ cuối — nên bấm số nào trên trang Live cũng tra được."""
     data, target = _real_bridge_data(tmp_path)
     board = pb.build_board(data, target, now=BEFORE)
     pages = json.loads((data / "soi_cau" / "bridge_pages" / "latest.json").read_text(encoding="utf-8"))
@@ -401,7 +372,6 @@ def test_the_running_table_recounts_every_group_the_two_pages_print(tmp_path: Pa
                 assert _pair_key(_formed(board, table["series"][-1], bridge["a"], bridge["b"])) == key_
                 checked += 1
     assert checked > 500
-    # Bảng tự nhúng kỳ nó cần, không trông vào danh sách cầu cùng sổ (danh sách có thể vắng hay bị bỏ).
     draws: dict = {}
     running = pb.running_bridges(data, target, draws)
     assert set(draws) == set(running["loto"]["series"]) | set(running["de"]["series"])
@@ -409,7 +379,6 @@ def test_the_running_table_recounts_every_group_the_two_pages_print(tmp_path: Pa
 
 
 def test_a_running_table_that_does_not_recount_is_dropped(tmp_path: Path) -> None:
-    """Một nhóm lệch số cầu, hay trang in thiếu một nhóm, là bỏ cả bảng của kiểu ấy; kiểu kia giữ nguyên."""
     data, target = _real_bridge_data(tmp_path)
     clean = pb.build_board(data, target, now=BEFORE)["running"]
     path = data / "soi_cau" / "bridge_pages" / "latest.json"
@@ -426,7 +395,6 @@ def test_a_running_table_that_does_not_recount_is_dropped(tmp_path: Path) -> Non
 
 
 def test_a_board_without_embedded_draws_still_publishes_every_list(tmp_path: Path) -> None:
-    """Nguồn cũ không nhúng kỳ quay: bảng vẫn đủ danh sách, chỉ thiếu vị trí cầu."""
     board = pb.build_board(_data(tmp_path), TARGET, now=BEFORE)
     assert board["schema"] == 3 and board["draws"] == {} and board["running"] == {}
     assert board["missing"] == []

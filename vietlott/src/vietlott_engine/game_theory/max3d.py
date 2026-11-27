@@ -1,36 +1,3 @@
-"""Max 3D, Max 3D+ and Max 3D Pro: exact prize mathematics and "bao" (system) plays.
-
-Draw (all three products): 20 three-digit numbers 000–999, drawn independently, in four
-groups — 2 + 4 + 6 + 8. Max 3D / Max 3D+ call them giải Nhất / Nhì / Ba / Khuyến khích;
-Max 3D Pro calls them Đặc biệt / Nhất / Nhì / Ba. A ticket wins **every** tier whose
-condition it meets (prizes are cumulative). One play costs 10,000 đ; prizes scale with
-the stake.
-
-Prize tables (per 10,000 đ; sources in README §Chơi bao):
-
-Max 3D (one number)            Max 3D+ (two numbers)                  Max 3D Pro (two numbers)
- Nhất  in the 2 Nhất  1,000,000  Nhất  = both Nhất (any order) 1 tỷ     ĐB    = both ĐB, in order    2 tỷ
- Nhì   in the 4 Nhì     350,000  Nhì   both in 4 Nhì          40 tr     Phụ ĐB both ĐB, reversed   400 tr
- Ba    in the 6 Ba      210,000  Ba    both in 6 Ba           10 tr     Nhất  both in 4 Nhất       30 tr
- KK    in the 8 KK      100,000  Tư    both in 8 KK            5 tr     Nhì   both in 6 Nhì        10 tr
-                                 Năm   both among all 20       1 tr     Ba    both in 8 Ba          4 tr
-                                 Sáu   one in the 2 Nhất     150,000    Tư    both among all 20     1 tr
-                                 Bảy   one in the other 18    40,000    Năm   one in the 2 ĐB     100,000
-                                                                        Sáu   one in the other 18  40,000
-
-Checks against published figures (tests): Max 3D Pro pays back ≈ 55 % and ≈ 4 % of plays
-win something; Max 3D+ first prize has probability 1/500,000.
-
-Bao (system) plays — each generated play costs one stake:
-* Max 3D Pro "bao bộ ba số": every digit permutation of the first number × every
-  permutation of the second (123-456 → 36 plays).
-* Max 3D Pro "bao nhiều bộ ba số": 3–20 numbers → every ordered pair of two different
-  numbers, n(n−1) plays (3 → 6, 20 → 380).
-* Max 3D / Max 3D+ "đảo số" (digit permutations) and "bao vị trí" (a wildcard digit
-  ``*`` → 10 plays, two wildcards → 100) — documented by resellers, not by a Vietlott page
-  we could read; flagged in the result.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -66,7 +33,7 @@ class Max3DProduct:
     tiers: tuple[Max3DTier, ...]
     price: int = 10_000
     identical_pair_multiplier: float = 1.0
-    top_prize_cap: int | None = None  # total payable for the top tier per draw
+    top_prize_cap: int | None = None
     draw_weekdays: tuple[int, ...] = ()
     bao_types: tuple[str, ...] = ()
     bao_documented: bool = True
@@ -103,7 +70,7 @@ MAX3D_PLUS = Max3DProduct(
         Max3DTier("sau", "one", ("D",), 150_000, "trùng 1 trong 2 số giải Nhất"),
         Max3DTier("bay", "one", ("G1", "G2", "G3"), 40_000, "trùng 1 số giải Nhì, Ba hoặc Khuyến khích"),
     ),
-    identical_pair_multiplier=2.0,  # "chọn hai số giống nhau, giải thưởng gấp đôi"
+    identical_pair_multiplier=2.0,
     draw_weekdays=(0, 2, 4),
     bao_types=("dao_so", "bao_vi_tri"),
     bao_documented=False,
@@ -140,7 +107,6 @@ def get_product(code: str) -> Max3DProduct:
     return PRODUCTS[aliases[key]]
 
 
-# ------------------------------------------------------------------ plays & bao
 def parse_number(x: int | str) -> int:
     v = int(str(x))
     if not 0 <= v <= 999:
@@ -149,13 +115,11 @@ def parse_number(x: int | str) -> int:
 
 
 def digit_permutations(x: int | str) -> list[int]:
-    """Distinct numbers obtained by permuting the three digits (123 → 6, 112 → 3, 111 → 1)."""
     s = f"{parse_number(x):03d}"
     return sorted({int("".join(p)) for p in permutations(s)})
 
 
 def expand_pattern(pattern: str) -> list[int]:
-    """'1*3' → 103, 113, …, 193 (``*`` = any digit)."""
     pat = str(pattern).strip()
     if len(pat) != 3 or any(c not in "0123456789*" for c in pat):
         raise ValueError(f"pattern {pattern!r} must be three characters of digits or '*'")
@@ -167,12 +131,6 @@ Play = tuple[int, ...]
 
 
 def bao_plays(prod: Max3DProduct, kind: str, numbers: list[str | int]) -> list[Play]:
-    """Expand a bao into individual plays.
-
-    * ``bao_bo_so`` / ``dao_so``: digit permutations of each number (pair products: product).
-    * ``bao_nhieu_bo_so`` (Pro): ordered pairs of two different numbers from 3–20 numbers.
-    * ``bao_vi_tri``: numbers may contain ``*`` wildcards (10 / 100 variants each).
-    """
     k = prod.numbers_per_play
     if kind in ("bao_bo_so", "dao_so"):
         if len(numbers) != k:
@@ -198,9 +156,7 @@ def bao_plays(prod: Max3DProduct, kind: str, numbers: list[str | int]) -> list[P
     raise ValueError(f"unknown bao kind {kind!r}")
 
 
-# ------------------------------------------------------------------ exact single play
 def _group_states(n: int, same: bool) -> list[tuple[int, int, float]]:
-    """Full occurrence counts and their probabilities for n independent draws."""
     p = P_NUM
     out: dict[tuple[int, int], float] = {}
     if same:
@@ -218,7 +174,6 @@ def _group_states(n: int, same: bool) -> list[tuple[int, int, float]]:
 
 
 def _d_states(same: bool) -> list[tuple[tuple[str, str], float]]:
-    """Ordered outcomes of the two D draws over symbols x, y, o (other)."""
     p = P_NUM
     sym = {"x": p, "o": 1 - p} if same else {"x": p, "y": p, "o": 1 - 2 * p}
     return [((a, b), sym[a] * sym[b]) for a in sym for b in sym]
@@ -242,7 +197,6 @@ def _tier_won(t: Max3DTier, d: tuple[str, str], cx: dict[str, int], cy: dict[str
 
 def _tier_awards(prod: Max3DProduct, t: Max3DTier, d: tuple[str, str], cx: dict[str, int],
                  cy: dict[str, int], single: bool, same: bool) -> int:
-    """Quantity won: each matching constituent number pays its single-number tier."""
     if not _tier_won(t, d, cx, cy, single, same):
         return 0
     if t.condition != "one":
@@ -261,12 +215,11 @@ class PlayDistribution(BaseModel):
     p_any_prize: float
     expected_payout: float
     return_to_player: float
-    tier_probabilities: dict[str, float]  # P(tier won), tiers are cumulative
-    distribution: list[tuple[float, float]]  # (payout, probability), payout > 0
+    tier_probabilities: dict[str, float]
+    distribution: list[tuple[float, float]]
 
 
 def play_distribution(prod: Max3DProduct, play: Play | list[int | str], stake_multiple: int = 1) -> PlayDistribution:
-    """Exact prize distribution of one play (all four groups, cumulative tiers)."""
     nums = tuple(parse_number(x) for x in play)
     if len(nums) != prod.numbers_per_play:
         raise ValueError(f"{prod.display_name} plays have {prod.numbers_per_play} number(s)")
@@ -306,7 +259,6 @@ def play_distribution(prod: Max3DProduct, play: Play | list[int | str], stake_mu
     )
 
 
-# ------------------------------------------------------------------ bao analysis
 class Max3DBaoAnalysis(BaseModel):
     product: str
     kind: str
@@ -314,20 +266,19 @@ class Max3DBaoAnalysis(BaseModel):
     plays: int
     cost: int
     documented: bool
-    p_any_prize: float  # exact: some chosen number appears among the 20
-    p_any_prize_same_budget_random: float  # same number of independent random plays
-    expected_payout: float  # exact, by linearity
+    p_any_prize: float
+    p_any_prize_same_budget_random: float
+    expected_payout: float
     return_to_player: float
-    p_profit: float  # Monte Carlo
-    p_top_prize: float  # exact: P(at least one play wins the top tier)
-    payout_quantiles: dict[str, float]  # Monte Carlo
+    p_profit: float
+    p_top_prize: float
+    payout_quantiles: dict[str, float]
     simulations: int
     sample_plays: list[list[str]]
     notes: list[str] = []
 
 
 def simulate_draws(sims: int, rng: np.random.Generator) -> np.ndarray:
-    """(sims, 20) numbers 0–999: columns 0–1 D, 2–5 G1, 6–11 G2, 12–19 G3."""
     return rng.integers(0, 1000, (sims, 20))
 
 
@@ -335,7 +286,6 @@ _SLICES = {"D": slice(0, 2), "G1": slice(2, 6), "G2": slice(6, 12), "G3": slice(
 
 
 def simulate_plays(prod: Max3DProduct, plays: list[Play], sims: int = 200_000, seed: int | None = 0, stake_multiple: int = 1) -> np.ndarray:
-    """Monte Carlo total payout per draw of a set of plays (cumulative tiers, no cap)."""
     rng = np.random.default_rng(seed)
     uniq = sorted({x for p in plays for x in p})
     pos = {u: i for i, u in enumerate(uniq)}
@@ -352,16 +302,16 @@ def simulate_plays(prod: Max3DProduct, plays: list[Play], sims: int = 200_000, s
     while done < sims:
         c = min(chunk, sims - done)
         dr_all = simulate_draws(c, rng)
-        eq = dr_all[:, :, None] == np.asarray(uniq)[None, None, :]  # (c, 20, U)
-        rows = eq.any(axis=(1, 2))  # draws where none of the chosen numbers appears pay 0
+        eq = dr_all[:, :, None] == np.asarray(uniq)[None, None, :]
+        rows = eq.any(axis=(1, 2))
         out[done : done + c] = 0.0
         dr, eq = dr_all[rows], eq[rows]
         c_all, c = c, int(rows.sum())
         if c == 0:
             done += c_all
             continue
-        cnt = {g: eq[:, _SLICES[g], :].sum(axis=1, dtype=np.int8) for g in GROUPS}  # (c, U)
-        cx = {g: cnt[g][:, xi] for g in GROUPS}  # (c, plays)
+        cnt = {g: eq[:, _SLICES[g], :].sum(axis=1, dtype=np.int8) for g in GROUPS}
+        cx = {g: cnt[g][:, xi] for g in GROUPS}
         cy = cx if single else {g: cnt[g][:, yi] for g in GROUPS}
         total = np.zeros(c)
         for t in prod.tiers:
@@ -369,7 +319,6 @@ def simulate_plays(prod: Max3DProduct, plays: list[Play], sims: int = 200_000, s
                 hit = sum(cx[g] for g in t.groups).astype(np.int64)
                 if not single:
                     additional = sum(cy[g] for g in t.groups)
-                    # Max 3D+ already doubles identical selections through mult.
                     additional = np.where(same[None, :] & (prod.identical_pair_multiplier == 2), 0, additional)
                     hit += additional
             elif t.condition == "both":
@@ -383,7 +332,7 @@ def simulate_plays(prod: Max3DProduct, plays: list[Play], sims: int = 200_000, s
                     hit = fwd
                 elif t.condition == "reversed":
                     hit = rev & ~same[None, :]
-                else:  # pair_exact
+                else:
                     hit = fwd | rev
             total += hit @ (t.value * mult)
         out[done : done + c_all][rows] = total
@@ -397,7 +346,6 @@ def analyse_bao(prod: Max3DProduct, kind: str, numbers: list[str | int], sims: i
     cost = n_plays * prod.price * stake_multiple
     uniq = {x for p in plays for x in p}
     p_any = 1 - (1 - len(uniq) / 1000) ** 20
-    # every play's distribution depends only on whether its two numbers are equal (symmetry)
     ev = 0.0
     cache: dict[bool, PlayDistribution] = {}
     for p in plays:
@@ -406,15 +354,14 @@ def analyse_bao(prod: Max3DProduct, kind: str, numbers: list[str | int], sims: i
             cache[same] = play_distribution(prod, p, stake_multiple)
         ev += cache[same].expected_payout
     top = prod.tiers[0]
-    # top tier: D (or the D pair) is fully determined by the two D draws → exact count
     if top.condition in ("ordered", "pair_exact"):
         winners = {(a, b) for a, b in plays} if prod.numbers_per_play == 2 else set()
         if top.condition == "pair_exact":
             winners |= {(b, a) for a, b in winners}
         p_top = len(winners) / 1_000_000
-    else:  # Max 3D: a number among the 2 Nhất numbers
+    else:
         p_top = 1 - (1 - len(uniq) / 1000) ** 2
-    sims = int(min(sims, max(20_000, 20_000_000 // n_plays)))  # keep large bao affordable
+    sims = int(min(sims, max(20_000, 20_000_000 // n_plays)))
     pay = simulate_plays(prod, plays, sims, seed, stake_multiple)
     notes = []
     if kind in prod.bao_types and not prod.bao_documented:

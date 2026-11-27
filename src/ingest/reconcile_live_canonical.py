@@ -18,19 +18,11 @@ from ingest.sources import (
 from core.time_policy import VIETNAM_TZ, iso_local, iso_utc
 
 TZ = VIETNAM_TZ
-#: Nhóm giải → các trường trong sổ chuẩn, và độ rộng mỗi giải: SUY từ ``sources`` (module nhẹ như module
-#: này, không cần pandas) chứ không chép tay; ``tests/core/test_xsmb_domain_parity.py`` buộc ``sources``
-#: khớp ``core.xsmb_domain``.
 FIELDS = {
     group: [group] if count == 1 else [f"{group}_{index}" for index in range(1, count + 1)]
     for group, count in EXPECTED_COUNTS.items()
 }
 WIDTHS = EXPECTED_WIDTHS
-#: Lấy từ ``sources`` chứ KHÔNG chép lại.
-#:
-#: Bản trước chép tay danh sách này. Một bản chép tay thì không bao giờ sai ở
-#: lúc viết — nó sai ở lần đổi chính sách nguồn tiếp theo, khi một bên đổi còn
-#: bên kia thì không, và không có gì báo.
 SOURCE_PRIORITY = list(PRIMARY_SOURCE_NAMES) + list(FALLBACK_SOURCE_NAMES)
 
 
@@ -62,9 +54,6 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
         prizes[group] = [_fmt(row[field], WIDTHS[group]) for field in fields]
 
     now_local = datetime.now(TZ)
-    # ``data/source_audit.json`` lưu MÃ ẩn danh chứ không lưu tên miền, nên
-    # phép so phải quy về mã — so thẳng tên sẽ luôn cho "không nguồn nào
-    # tham gia" mà không báo lỗi gì.
     accepted_codes = set(evidence.get("sources", []))
     source_status = []
     for idx, source in enumerate(SOURCE_PRIORITY, start=1):
@@ -104,7 +93,6 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
         "consensus": {
             "agreement": int(evidence.get("agreement", 0)),
             "source_agreement": int(evidence.get("source_agreement", 0)),
-            # Nhật ký đã lưu sẵn mã ẩn danh, không ánh xạ lại lần nữa.
             "independent_groups": list(evidence.get("independent_groups", [])),
         },
     }

@@ -1,4 +1,3 @@
-"""Independent probability, prequential scoring, and transaction counterexamples."""
 import asyncio
 import copy
 import itertools
@@ -17,8 +16,6 @@ class DistributionInvariants(unittest.TestCase):
         from vlm.multi_agent.meta import mixture_log_prob, mixture_marginals
         from vlm.multi_agent.models import SubsetDistribution
 
-        # The two components favor opposite pairs. Their mixture has uniform
-        # inclusion marginals, but almost all mass on just two of six subsets.
         components = [SubsetDistribution([5, 5, -5, -5], 2),
                       SubsetDistribution([-5, -5, 5, 5], 2)]
         marginals = mixture_marginals(components, [.5, .5])
@@ -34,7 +31,6 @@ class DistributionInvariants(unittest.TestCase):
 class MetaInvariants(unittest.TestCase):
     @staticmethod
     def oracle(logits, temperature, weights, outcome):
-        """Small-space enumeration independent of the production DP."""
         subsets = list(itertools.combinations(range(len(logits[0])), len(outcome)))
         probabilities = []
         expert_probabilities = []
@@ -63,8 +59,6 @@ class MetaInvariants(unittest.TestCase):
         meta.temperature_losses = previous_temperature_losses.copy()
         meta.losses = previous_expert_losses.copy()
         self.assertEqual(meta.temperature(), 2.)
-        # The pending forecast selected 4 before current meta state was updated.
-        # Current context weights also differ from these recorded weights.
         pending = {'weights': frozen_weights, 'logits': logits, 'temperature': 4., 'context': 1,
                    'public': {'mode': 'adaptive', 'marginals': candidates[2][2]}}
         summary = meta.update(pending, outcome)
@@ -144,8 +138,6 @@ class EngineInvariants(unittest.IsolatedAsyncioTestCase):
                 pending = await engine.predict(7)
                 self.assertEqual(await control.predict(7), pending)
                 checkpoint = copy.deepcopy(engine.store.load())
-                # This aborts after StateStore has updated its checkpoint inside
-                # the transaction, exercising SQLite rollback and live rollback.
                 engine.store.connection.execute('''
                     CREATE TRIGGER reject_feedback BEFORE INSERT ON outcomes
                     BEGIN SELECT RAISE(ABORT, 'injected disk constraint'); END
@@ -158,7 +150,6 @@ class EngineInvariants(unittest.IsolatedAsyncioTestCase):
                 engine.store.connection.execute('DROP TRIGGER reject_feedback')
                 self.assertEqual(await engine.observe(7, [1, 3]),
                                  await control.observe(7, [1, 3]))
-                # A missed neural update/RNG rollback may only appear next time.
                 self.assertEqual(await engine.predict(8), await control.predict(8))
             finally:
                 engine.close()
@@ -187,9 +178,6 @@ class EngineInvariants(unittest.IsolatedAsyncioTestCase):
                 control.close()
 
     async def test_shadow_likelihood_ratio_has_conditional_uniform_mean_one(self):
-        # Rebuild the exact same past, then integrate the issued shadow score
-        # over ALL possible next outcomes. Product-of-marginals scoring fails
-        # this martingale prerequisite even if its inclusion marginals sum k.
         ratios = []
         deployed_masses = []
         for outcome in itertools.combinations(range(4), 2):

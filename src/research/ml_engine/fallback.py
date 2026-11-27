@@ -1,36 +1,3 @@
-"""Cổng độ tin: chỉ tin phép trộn khi kỹ năng ngoài mẫu đo được của nó dương.
-
-Luật của kho, không phải ngưỡng chọn tay
------------------------------------------
-
-Dự báo công bố là ``p = trust·trộn + (1 − trust)·nền`` với
-``trust = ml_train.model_trust(s_logloss, s_brier) = clip(20·min(s), 0, 1)``, s là
-kỹ năng tương đối của phép trộn so với nền trên ``window`` kỳ gần nhất đã chấm.
-Đó là cùng luật của thành phần ML production, cầu-kèo và tác tử mẫu hình: không
-có kỹ năng thì không tin. Chưa đủ ``min_days`` kỳ đo thì trust = 0.
-
-Kỹ năng đo trên phép trộn TRƯỚC cổng. Đo trên dự báo đã qua cổng thì khi trust
-về 0 dự báo trùng nền, kỹ năng bằng 0 mãi mãi và cổng không bao giờ mở lại.
-
-Vì sao bỏ ngưỡng Hit-Rate 7 kỳ (20-10-2026)
--------------------------------------------
-
-Bản trước vào chế độ an toàn khi Hit-Rate@10 trung bình 7 kỳ dưới nền 0,2377.
-Với 70 lượt chọn, độ lệch chuẩn của tỉ lệ ấy là 0,051 — một mô hình đúng bằng
-nền rơi dưới ngưỡng khoảng một nửa số kỳ. Trên 192 kỳ thật nó bật 62% thời gian
-và vào ra 19 lần: phán đoán bằng tung đồng xu. Hit-Rate lại không phải quy tắc
-chấm chặt, nên nó còn bỏ qua đúng thứ cần canh — mức xác suất.
-
-Ba lối về nền
---------------
-
-1. **Không có kỹ năng** — s ≤ 0 trên cửa sổ, hoặc chưa đủ kỳ đo.
-2. **Trôi lệch khái niệm** — bằng chứng cũ mô tả một chế độ đã qua, nên bị xoá;
-   cổng đo lại từ đầu.
-3. **Lỗi khi khớp hoặc dự đoán** — bộ dự báo đang chạy không còn là bộ đã được
-   đo, nên bằng chứng cũng bị xoá.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -45,31 +12,18 @@ from ml.ml_train import model_trust
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
-#: Số kỳ gần nhất dùng để đo kỹ năng của phép trộn.
 DEFAULT_WINDOW: Final[int] = 60
 
-#: Số kỳ tối thiểu đã chấm trước khi cổng được phép mở.
 DEFAULT_MIN_DAYS: Final[int] = 30
 
 
 class Mode(str, Enum):
-    """Chế độ vận hành: ``SAFE`` khi trust = 0, tức dự báo đúng bằng nền."""
 
     NORMAL = "normal"
     SAFE = "safe"
 
 
 class SafeModeController:
-    """Quyết định mức tin phép trộn từ kỹ năng ngoài mẫu của chính nó.
-
-    Attributes:
-        window: Số kỳ gần nhất dùng để đo kỹ năng.
-        min_days: Số kỳ tối thiểu trước khi trust được dương.
-        trust: Mức tin hiện hành trong ``[0, 1]``.
-        mode: ``SAFE`` khi trust = 0.
-        reason: Lý do của mức tin hiện hành.
-        transitions: Nhật ký chuyển chế độ.
-    """
 
     def __init__(self, *, window: int = DEFAULT_WINDOW, min_days: int = DEFAULT_MIN_DAYS) -> None:
         if window < 1:
@@ -87,7 +41,6 @@ class SafeModeController:
 
     @property
     def is_safe(self) -> bool:
-        """Dự báo hiện hành có đúng bằng nền không."""
         return self.mode is Mode.SAFE
 
     def _set(self, trust: float, reason: str, day_index: int | None) -> None:
@@ -111,23 +64,6 @@ class SafeModeController:
         model_failed: bool = False,
         day_index: int | None = None,
     ) -> Mode:
-        """Nạp điểm một kỳ của phép trộn (trước cổng) và cập nhật mức tin.
-
-        Args:
-            logloss: Log-loss trung bình mỗi con của phép trộn.
-            brier: Brier trung bình mỗi con của phép trộn.
-            baseline_logloss: Log-loss của nền trên cùng kỳ.
-            baseline_brier: Brier của nền trên cùng kỳ.
-            drifted: Bộ phát hiện trôi lệch có báo động ở kỳ này không.
-            model_failed: Có cánh tay lỗi khi khớp hoặc dự đoán cho kỳ này không.
-            day_index: Chỉ số ngày, chỉ dùng để ghi nhật ký.
-
-        Returns:
-            Chế độ sau khi cập nhật.
-
-        Raises:
-            ValueError: Khi điểm không hữu hạn, âm, hoặc điểm nền bằng 0.
-        """
         scores = (logloss, brier, baseline_logloss, baseline_brier)
         if not all(np.isfinite(value) and value >= 0.0 for value in scores):
             raise ValueError("điểm phải hữu hạn và không âm")
@@ -166,12 +102,10 @@ class SafeModeController:
         return self.mode
 
     def apply(self, model_probabilities: np.ndarray) -> np.ndarray:
-        """Dự báo công bố: ``trust·trộn + (1 − trust)·nền``."""
         model = np.asarray(model_probabilities, dtype=float)
         return self.trust * model + (1.0 - self.trust) * BASELINE_RATE
 
     def state(self) -> dict[str, object]:
-        """Trạng thái hiện tại, để ghi vào báo cáo chạy."""
         return {
             "mode": self.mode.value,
             "trust": self.trust,

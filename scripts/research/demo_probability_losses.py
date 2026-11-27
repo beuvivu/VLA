@@ -1,22 +1,3 @@
-"""Demo ĐO ĐƯỢC: hàm mất mát tùy biến và hiệu chuẩn xác suất, trên dữ liệu thật.
-
-Vì sao là demo chứ không phải mã sản xuất
-==========================================
-Kho đã có lớp ML hoàn chỉnh (``src/research/ml_engine/``). Tệp này KHÔNG thay thế nó.
-Nó tồn tại để trả lời một câu hỏi cụ thể bằng số đo trên chính ``data/xsmb.csv``
-chứ không bằng lý thuyết:
-
-    Đổi hàm mất mát (Focal / Brier) và đổi cách hiệu chuẩn (Platt / Isotonic)
-    thì Brier, log-loss và ECE thay đổi bao nhiêu?
-
-Mọi con số nó in ra đều so với ĐƯỜNG NỀN (tần suất cơ sở). Một mô hình không
-có tín hiệu sẽ hội tụ về đúng đường nền, và skill score sẽ quanh 0 — đó là kết
-quả hợp lệ, không phải lỗi.
-
-Chạy:
-    PYTHONPATH=src python3 scripts/research/demo_probability_losses.py
-"""
-
 from __future__ import annotations
 
 import sys
@@ -32,9 +13,6 @@ from sklearn.isotonic import IsotonicRegression  # noqa: E402
 from sklearn.linear_model import LogisticRegression  # noqa: E402
 
 
-# --- Chỉ số ----------------------------------------------------------------
-
-
 def brier(y: np.ndarray, p: np.ndarray) -> float:
     return float(np.mean((p - y) ** 2))
 
@@ -45,11 +23,6 @@ def logloss(y: np.ndarray, p: np.ndarray) -> float:
 
 
 def expected_calibration_error(y: np.ndarray, p: np.ndarray, bins: int = 15) -> float:
-    """ECE: chênh lệch trung bình giữa xác suất DỰ BÁO và tần suất THỰC.
-
-    Đây là chỉ số quan trọng nhất cho bài toán này. Một mô hình có thể xếp hạng
-    tốt mà vẫn nói dối về mức độ chắc chắn; ECE bắt đúng điều đó.
-    """
     edges = np.linspace(0.0, 1.0, bins + 1)
     idx = np.clip(np.digitize(p, edges[1:-1]), 0, bins - 1)
     total = 0.0
@@ -63,25 +36,10 @@ def expected_calibration_error(y: np.ndarray, p: np.ndarray, bins: int = 15) -> 
 
 
 def skill(metric_model: float, metric_baseline: float) -> float:
-    """Skill score: >0 là hơn đường nền, <0 là kém hơn. 0 là ngang."""
     return 1.0 - metric_model / metric_baseline if metric_baseline > 0 else 0.0
 
 
-# --- Hàm mất mát tùy biến --------------------------------------------------
-
-
 def focal_loss_objective(gamma: float = 2.0, alpha: float = 0.25):
-    """Focal Loss cho bộ tăng cường gradient: trả về (grad, hess).
-
-    Focal Loss hạ trọng số các mẫu ĐÃ dễ, dồn sức vào mẫu khó. Nó sinh ra để
-    xử lý mất cân bằng lớp cực đoan trong phát hiện vật thể.
-
-    CẢNH BÁO nghiệp vụ, không phải cảnh báo kỹ thuật: focal loss KHÔNG phải
-    proper scoring rule. Nó tối ưu khả năng PHÂN BIỆT chứ không tối ưu tính
-    ĐÚNG của xác suất, nên nó làm hỏng hiệu chuẩn một cách có hệ thống. Với
-    bài toán ở đây — nơi giá trị nằm ở xác suất đúng chứ không ở nhãn đúng —
-    dùng focal loss thì BẮT BUỘC phải hiệu chuẩn lại ở tầng sau.
-    """
 
     def objective(y_true: np.ndarray, raw: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         p = 1.0 / (1.0 + np.exp(-raw))
@@ -89,7 +47,6 @@ def focal_loss_objective(gamma: float = 2.0, alpha: float = 0.25):
         y = y_true.astype(float)
         pt = np.where(y == 1, p, 1 - p)
         at = np.where(y == 1, alpha, 1 - alpha)
-        # d(FL)/d(raw), rút gọn từ FL = -at * (1-pt)^gamma * log(pt)
         common = at * (1 - pt) ** gamma
         grad = common * (gamma * pt * np.log(np.clip(pt, 1e-9, None)) / (1 - pt + 1e-9) - 1.0)
         grad = np.where(y == 1, grad, -grad) * -1.0
@@ -100,17 +57,6 @@ def focal_loss_objective(gamma: float = 2.0, alpha: float = 0.25):
 
 
 def brier_objective(y_true: np.ndarray, raw: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Brier score làm hàm mục tiêu trực tiếp: trả về (grad, hess).
-
-    Brier = (p - y)^2 với p = sigmoid(raw). Đây LÀ proper scoring rule, nên tối
-    ưu nó là tối ưu thẳng chất lượng xác suất — khác hẳn focal loss.
-
-        dB/dr  = 2(p-y) * p(1-p)
-        d2B/dr2 = 2 * p(1-p) * [ (1-2p)(p-y) + p(1-p) ]
-
-    Đạo hàm bậc hai có thể âm (Brier không lồi theo raw), nên phải kẹp sàn —
-    không kẹp thì bộ tăng cường đi ngược hướng ở đúng những mẫu khó nhất.
-    """
     p = 1.0 / (1.0 + np.exp(-raw))
     p = np.clip(p, 1e-9, 1 - 1e-9)
     y = y_true.astype(float)
@@ -120,11 +66,7 @@ def brier_objective(y_true: np.ndarray, raw: np.ndarray) -> tuple[np.ndarray, np
     return grad, np.clip(hess, 1e-6, None)
 
 
-# --- Hiệu chuẩn ------------------------------------------------------------
-
-
 def fit_platt(p_val: np.ndarray, y_val: np.ndarray):
-    """Platt scaling: hồi quy logistic một biến trên logit đầu ra."""
     z = np.log(np.clip(p_val, 1e-9, 1 - 1e-9) / np.clip(1 - p_val, 1e-9, 1 - 1e-9))
     model = LogisticRegression(C=1e6, solver="lbfgs")
     model.fit(z.reshape(-1, 1), y_val)
@@ -135,39 +77,23 @@ def fit_platt(p_val: np.ndarray, y_val: np.ndarray):
 
 
 def fit_isotonic(p_val: np.ndarray, y_val: np.ndarray):
-    """Isotonic: đơn điệu không tham số, mạnh hơn Platt nhưng dễ khớp quá mức.
-
-    Với ít dữ liệu hiệu chuẩn, isotonic bám theo nhiễu và trông rất đẹp trên
-    tập hiệu chuẩn trong khi tệ hơn trên tập kiểm. Vì thế phép so ở đây luôn
-    đo trên tập KIỂM tách riêng, không bao giờ trên tập đã dùng để hiệu chuẩn.
-    """
     model = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0)
     model.fit(p_val, y_val)
     return lambda p: np.clip(model.predict(p), 1e-6, 1 - 1e-6)
 
 
-# --- Dữ liệu ---------------------------------------------------------------
-
-
 def load_dataset() -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
-    """Bảng (ngày, con số) -> có về ở ngày KẾ TIẾP hay không.
-
-    Đặc trưng cố ý ĐƠN GIẢN và chỉ dùng quá khứ: đây là demo về hàm mất mát và
-    hiệu chuẩn, không phải về kỹ thuật đặc trưng. Lớp đặc trưng thật nằm ở
-    ``src/ml/ml_features.py``.
-    """
     sparse = pd.read_json(ROOT / "data" / "xsmb-sparse.json")
     sparse["date"] = pd.to_datetime(sparse["date"])
     sparse = sparse.sort_values("date").reset_index(drop=True)
     cols = [c for c in sparse.columns if c != "date"]
-    hit = (sparse[cols].to_numpy(dtype=float) > 0).astype(float)  # (T, 100)
+    hit = (sparse[cols].to_numpy(dtype=float) > 0).astype(float)
 
     rows, labels, dates = [], [], []
     windows = (7, 30, 90, 365)
     for t in range(max(windows), hit.shape[0] - 1):
         past = hit[:t + 1]
         feats = {f"rate_{w}": past[-w:].mean(axis=0) for w in windows}
-        # Gan: số kỳ kể từ lần về gần nhất.
         gap = np.full(100, t + 1, dtype=float)
         for n in range(100):
             idx = np.flatnonzero(past[:, n])
@@ -188,16 +114,7 @@ def load_dataset() -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
     return X, y, d
 
 
-# --- Chạy ------------------------------------------------------------------
-
-
 def _train(objective, X_fit, y_fit, X_cal, X_test):
-    """Huấn luyện LightGBM với hàm mục tiêu tùy biến (hoặc mặc định).
-
-    Khi truyền `objective` là một hàm, LightGBM bỏ qua liên kết sigmoid nội bộ
-    và trả về điểm THÔ, nên phải tự áp sigmoid. Quên bước này là lỗi im lặng
-    kinh điển: mô hình vẫn chạy, chỉ là "xác suất" nằm ngoài khoảng [0, 1].
-    """
     import lightgbm as lgb
 
     params = {
@@ -214,10 +131,6 @@ def _train(objective, X_fit, y_fit, X_cal, X_test):
         booster = lgb.train(params, lgb.Dataset(X_fit, label=y_fit), num_boost_round=150)
         to_p = lambda raw: raw
     else:
-        # LightGBM gọi hàm mục tiêu theo thứ tự (dự đoán_thô, Dataset), ngược
-        # với quy ước (y_thật, thô) quen thuộc của sklearn. Nhầm thứ tự này
-        # không nổ ngay mà nổ ở dòng đầu tiên chạm tới dữ liệu — dễ mất nửa
-        # tiếng để lần ra, nên bọc lại cho rõ ràng.
         def adapter(raw, dataset):
             return objective(dataset.get_label(), raw)
 
@@ -233,8 +146,6 @@ def main() -> None:
     X = X.iloc[order].reset_index(drop=True)
     y, dates = y[order], dates.iloc[order].reset_index(drop=True)
 
-    # Ba lát CẮT THEO THỜI GIAN, không bao giờ trộn ngẫu nhiên: huấn luyện ->
-    # hiệu chuẩn -> kiểm. Trộn ngẫu nhiên ở đây là rò rỉ nhìn-trước kinh điển.
     n = len(y)
     i_fit, i_cal = int(n * 0.70), int(n * 0.85)
     sl_fit, sl_cal, sl_test = slice(0, i_fit), slice(i_fit, i_cal), slice(i_cal, n)

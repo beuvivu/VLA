@@ -1,5 +1,3 @@
-"""Lịch năm giữ ngày thật, số gốc và trạng thái thiếu kết quả."""
-
 import pandas as pd
 from bs4 import BeautifulSoup
 

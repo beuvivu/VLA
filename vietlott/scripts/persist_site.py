@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""Publication barrier: fetch current main and durably push allowed result ledgers.
-
-Run ``sync`` after checkout (before restoring cache/updating), then ``persist``
-before any Pages build or cache save. A failed pull/rebase/push exits nonzero.
-"""
 from __future__ import annotations
 
 import argparse
@@ -35,13 +30,11 @@ def persist() -> None:
         stamp = datetime.now(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M')
         git('commit', '-m', f'data: kết quả và sổ dự báo {stamp} [skip ci]')
     for attempt in range(3):
-        # Unconditional even when no local result changed: queued jobs may be stale.
         sync()
         if git('rev-parse', 'HEAD') == git('rev-parse', 'origin/main'):
             return
         try:
             git('push', 'origin', 'HEAD:main')
-            # Confirm that the remote accepted precisely this publication commit.
             git('fetch', 'origin', 'main')
             if git('rev-parse', 'HEAD') != git('rev-parse', 'origin/main'):
                 raise RuntimeError('Remote advanced during publication; retry required')
@@ -53,7 +46,7 @@ def persist() -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=('sync', 'persist'))
     action = parser.parse_args().action
     try:

@@ -1,4 +1,3 @@
-"""Số khớp H: mốc siêu bội, khoảng tin cậy, công suất, danh mục nhiều vé."""
 from itertools import combinations, product
 from math import comb
 
@@ -71,7 +70,6 @@ def _power(p0: float, lift: float, draws: int) -> float:
 
 
 def test_draws_needed_is_the_smallest_sample_despite_the_sawtooth_power():
-    """Công suất phép kiểm rời rạc răng cưa: tìm nhị phân trả số kỳ quá lớn (Mega ×2: 6.899 thay vì 6.502)."""
     p0, lift = 0.05, 2.0
     needed = draws_needed(p0, lift)
     assert _power(p0, lift, needed) >= 0.8
@@ -108,7 +106,6 @@ def test_portfolio_separates_per_ticket_from_any_ticket_and_needs_fixed_size():
 
 
 def test_monte_carlo_error_accounts_for_simulations_shared_by_every_draw():
-    """Cùng một danh mục trên 30 kỳ: sai số của tổng là 30 × sai số một kỳ, không phải √30 ×."""
     rng = np.random.default_rng(9)
     drawn = [sorted(rng.choice(45, 6, replace=False) + 1) for _ in range(30)]
     one = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], drawn[:1], 45, simulations=20_000, exact_limit=0)
@@ -118,7 +115,6 @@ def test_monte_carlo_error_accounts_for_simulations_shared_by_every_draw():
 
 
 def test_draws_needed_scans_up_to_the_limit_before_giving_up():
-    """Mốc nhân đôi vượt ``limit`` không được bỏ đoạn giữa: p₀ = 0,1, ×2 cần 78 kỳ, ``limit`` = 100 (mốc 64 chưa đủ)."""
     p0, lift = 0.1, 2.0
     reached = [n for n in range(1, 201) if _power(p0, lift, n) >= 0.8]
     assert reached[0] == 78
@@ -128,7 +124,6 @@ def test_draws_needed_scans_up_to_the_limit_before_giving_up():
 
 
 def test_detectable_lift_reports_an_unattainable_sample_instead_of_lift_one_over_p0():
-    """Một kỳ với p₀ = 0,1 cần 2 kỳ đạt để bác bỏ: công suất bằng 0 ở mọi tỷ lệ, không phải "phát hiện ×10"."""
     out = detectable_lift(0.1, 1)
     assert out['critical_reached'] == 2 and out['attainable'] is False
     assert out['rate'] is None and out['lift'] is None
@@ -151,13 +146,11 @@ def _enumerated_tail(tickets, n, k):
     [[2, 4, 6, 8]] * 3,
 ])
 def test_any_ticket_tail_matches_enumeration_of_every_draw(tickets):
-    """Phân phối của số khớp TỐT NHẤT trong danh mục khớp liệt kê mọi C(12, 4) kết quả."""
     np.testing.assert_allclose(any_ticket_tail(tickets, 12, 4), _enumerated_tail(tickets, 12, 4), rtol=1e-12)
     assert any_ticket_tail(tickets, 12, 4, limit=1) is None
 
 
 def test_rare_portfolio_hits_get_their_exact_null_not_zero():
-    """Một vé trúng đủ 6 số: mốc là 1/C(45, 6), không phải 0 vì 20.000 mô phỏng chưa gặp lần nào."""
     six = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], [[1, 2, 3, 4, 5, 6]], 45)['any_ticket']['ge6']
     assert six['fair_rate'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
     assert six['p_value_fixed_portfolios'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
@@ -170,12 +163,10 @@ def test_rare_portfolio_hits_get_their_exact_null_not_zero():
     assert fallback['fair_rate'] == pytest.approx(5 / comb(45, 6), rel=1e-12) and fallback['p_value_greater'] > 0
 
 
-#: p_t phụ thuộc kỳ trước (danh mục học lại theo kết quả): sau một lần đạt, kỳ sau chắc chắn đạt.
 ADAPTIVE = {(): 0.08, (0,): 0.08, (1,): 1.0, (0, 0): 0.5, (0, 1): 0.25, (1, 0): 0.5, (1, 1): 0.5}
 
 
 def _exact_rejection(rule, design, horizon, alpha=0.05):
-    """P(rule ≤ α) dưới H₀, liệt kê mọi dãy kết quả: P(X_t = 1 | quá khứ) = design[quá khứ]."""
     total = 0.0
     for xs in product((0, 1), repeat=horizon):
         prob, ps = 1.0, []
@@ -188,7 +179,6 @@ def _exact_rejection(rule, design, horizon, alpha=0.05):
 
 
 def test_adaptive_portfolios_need_a_p_value_valid_for_predictable_probabilities():
-    """Poisson–nhị thức trên dãy p đã thực hiện bác bỏ 5,84% ở α = 5% khi p_t học theo kết quả; e-process không vượt α."""
     pb = _exact_rejection(lambda xs, ps: poisson_binomial_sf(sum(xs), ps), ADAPTIVE, 3)
     assert pb == pytest.approx(0.0584, abs=1e-4)
     assert _exact_rejection(predictable_p_value, ADAPTIVE, 3) <= 0.05
@@ -209,13 +199,11 @@ def test_the_predictable_p_value_detects_a_real_lift_and_impossible_hits():
         predictable_p_value([True], [0.1], lifts=[1.0])
 
 
-#: Sáu vé khác nhau, chồng lấn nhiều mức: H = 6 của danh mục đúng 6/C(45, 6).
 SIX = [[1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 7], [1, 2, 3, 4, 8, 9], [1, 2, 10, 11, 12, 13],
        [5, 6, 7, 8, 9, 10], [11, 12, 13, 14, 15, 16]]
 
 
 def test_the_monte_carlo_fallback_is_pinned_by_exact_bounds_not_by_one_ticket():
-    """20.000 mô phỏng không gặp H = 6: mốc dự phòng phải là 6/C(45, 6), không phải cận 1/C(45, 6) của một vé."""
     exact = any_ticket_tail(SIX, 45, limit=10**9)
     fallback = portfolio_summary([SIX], [[1, 2, 3, 4, 5, 6]], 45, exact_limit=0)
     assert fallback['monte_carlo_draws'] == 1
@@ -230,7 +218,6 @@ def test_the_monte_carlo_fallback_is_pinned_by_exact_bounds_not_by_one_ticket():
 
 
 def test_a_tiny_simulation_cannot_push_one_ticket_off_its_exact_null():
-    """Một vé: hai cận trùng giá trị siêu bội, nên mẫu mô phỏng nhỏ ước lượng thừa hay thiếu đều bị kẹp về đúng nó."""
     fair = fair_hit_pmf(45)
     for simulations in (10, 30, 100, 300):
         out = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], [[1, 2, 3, 4, 5, 6]], 45, simulations=simulations, exact_limit=0)
@@ -239,7 +226,6 @@ def test_a_tiny_simulation_cannot_push_one_ticket_off_its_exact_null():
 
 
 def test_fallback_p_values_use_an_exact_upper_bound_not_the_point_estimate():
-    """Ước lượng điểm Monte Carlo của SIX ở H ≥ 3 (0,1070) thấp hơn xác suất thật (0,1099): đưa nó vào phép kiểm làm p nhỏ đi."""
     drawn = [[1, 2, 3, 20, 21, 22]] * 6 + [[30, 31, 32, 33, 34, 35]] * 4
     fallback = portfolio_summary([SIX] * 10, drawn, 45, exact_limit=0)['any_ticket']
     exact = portfolio_summary([SIX] * 10, drawn, 45)['any_ticket']
@@ -250,4 +236,4 @@ def test_fallback_p_values_use_an_exact_upper_bound_not_the_point_estimate():
         assert fb['p_value_greater'] >= ex['p_value_greater'] - 1e-12
         assert fb['p_value_fixed_portfolios'] >= ex['p_value_fixed_portfolios'] - 1e-12
         assert fb['p_value_greater'] == pytest.approx(predictable_p_value([b >= level for b in best], [upper[level]] * 10), rel=1e-12)
-    assert fallback['ge3']['p_value_greater'] < 0.05  # cận trên vẫn đủ chặt để thấy tín hiệu cài sẵn
+    assert fallback['ge3']['p_value_greater'] < 0.05

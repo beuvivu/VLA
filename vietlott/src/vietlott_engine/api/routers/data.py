@@ -1,5 +1,3 @@
-"""Health, game metadata, stored draws and data sync."""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query

@@ -112,7 +112,6 @@ def test_max_permutations_and_cumulative_prizes():
 
 
 def test_max_pro_official_two_ordered_plays_have_four_fifth_prizes():
-    # Vietlott's 31/01/2026 announcement: 15 each special/aux, 30 fourth, 60 fifth.
     draw=['123','456']+['789']*18
     one=settle_max3d('max3dpro','co_ban',['123','456'],draw,stake_multiple=15)
     two=settle_max3d('max3dpro','co_ban',['456','123'],draw,stake_multiple=15)

@@ -1,5 +1,3 @@
-"""Miền của một đài XSMT/XSMN: mọi hằng số xác suất được đối chiếu với phép đếm độc lập."""
-
 from __future__ import annotations
 
 import itertools
@@ -20,7 +18,6 @@ def test_a_station_draw_has_eighteen_prizes_and_eighty_two_digits() -> None:
 
 
 def test_the_station_baseline_is_not_the_xsmb_baseline() -> None:
-    """18 giải, không phải 27: dùng hằng số của miền Bắc là sai mức nền 7 điểm phần trăm."""
     assert rd.LOTO_BASELINE_RATE == pytest.approx(1 - 0.99**18)
     assert rd.baseline_rate("loto") == rd.LOTO_BASELINE_RATE and rd.baseline_rate("de") == 0.01
     assert xsmb_domain.LOTO_BASELINE_RATE - rd.LOTO_BASELINE_RATE == pytest.approx(0.0722, abs=1e-4)
@@ -29,12 +26,11 @@ def test_the_station_baseline_is_not_the_xsmb_baseline() -> None:
 
 
 def test_pair_cooccurrence_is_inclusion_exclusion_not_the_square_of_the_baseline() -> None:
-    # Vét cạn trên bài toán nhỏ cùng công thức: 3 giải, 4 con, hai con chỉ định.
     outcomes = list(itertools.product(range(4), repeat=3))
     both = sum(1 for o in outcomes if 0 in o and 1 in o) / len(outcomes)
     assert 1 - 2 * (3 / 4) ** 3 + (2 / 4) ** 3 == pytest.approx(both)
     assert rd.PAIR_COOCCURRENCE_RATE == pytest.approx(1 - 2 * 0.99**18 + 0.98**18)
-    assert rd.PAIR_COOCCURRENCE_RATE < rd.LOTO_BASELINE_RATE**2  # hai con tranh nhau 18 giải
+    assert rd.PAIR_COOCCURRENCE_RATE < rd.LOTO_BASELINE_RATE**2
 
 
 def test_nhay_distribution_is_the_exact_binomial() -> None:
@@ -62,7 +58,6 @@ def test_distinct_count_distribution_sums_to_one_with_the_right_mean(slots: int,
 
 
 def test_every_printed_digit_belongs_to_the_cage_of_its_place_value() -> None:
-    """Chữ số cuối của mỗi giải là lồng hàng đơn vị; giải Đặc Biệt là giải duy nhất dùng lồng thứ sáu."""
     cages = np.array(rd.CAGE_OF_DIGIT)
     assert len(cages) == rd.TOTAL_DIGITS and rd.CAGES == 6 == len(rd.CAGE_NAMES)
     ends = np.cumsum(rd.SLOT_WIDTHS)

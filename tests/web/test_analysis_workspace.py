@@ -1,4 +1,3 @@
-"""Hợp đồng trình bày cho các trang phân tích, không thay nghiệp vụ."""
 from __future__ import annotations
 
 import re
@@ -62,8 +61,6 @@ def test_actual_pages_keep_ids_controls_data_scripts_and_existing_links(name):
     assert result == refine_page(name, result)
     assert result.count('data-app-workspace-guide') == 1
     assert result.count('id="app-analysis-workspace-style"') == 1
-    # Các trang có hướng dẫn riêng giữ khối gọn của mình, không bị thêm lại
-    # thẻ hướng dẫn chung. Những trang còn lại vẫn phải có đúng khối chung.
     guide_tag, guide_class = {
         'giai-db-ngay-mai.html': ('div', 'app-tomorrow-shell'),
         'ml_top10_de.html': ('details', 'app-lab-guide'),

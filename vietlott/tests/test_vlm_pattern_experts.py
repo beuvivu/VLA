@@ -1,4 +1,3 @@
-"""Chuyên gia mẫu hình phải học từ quá khứ và bỏ qua kỳ chưa quan sát."""
 from copy import deepcopy
 import importlib
 import json
@@ -64,7 +63,6 @@ def test_missing_ids_decay_observed_frequency_without_inventing_zero_outcomes():
     close.observe(np.zeros(1), 2)
     distant.observe(np.zeros(1), 1000)
     assert close.predict()[0, 0] > distant.predict()[0, 0]
-    # Một quan sát 0 sau khoảng mất rất dài: posterior = 16 / 33.
     assert distant.predict()[0, 0] == pytest.approx(16 / 33)
     assert distant.seen == 2
 
@@ -79,7 +77,7 @@ def test_missing_ids_skip_transitions_and_censor_gap_until_new_observed_hit():
     model.observe(np.ones(1), 22)
     assert model.predict()[3, 0] == .5
     model.observe(np.zeros(1), 23)
-    assert model.predict()[3, 0] == .5  # Chưa từng chấm tuổi 2.
+    assert model.predict()[3, 0] == .5
 
 
 def test_two_hits_separated_by_missing_ids_are_not_a_learned_repeat():

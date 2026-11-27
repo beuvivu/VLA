@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-"""Canonical lô-gan and recurrence statistics with explicit units."""
 
 import numpy as np
 import pandas as pd
@@ -106,12 +105,6 @@ def compute_gap_stats(
     lookback_draws: int | None = None,
     recent_intervals: int = 5,
 ) -> pd.DataFrame:
-    """Compute current gaps and completed recurrence summaries for 00..99.
-
-    ``current_gap_draws`` counts completed draws after the most recent hit and
-    strictly before the target date.  Long gaps are descriptive and are not
-    interpreted here as increased future probability.
-    """
     if recent_intervals < 2:
         raise ValueError("recent_intervals must be >= 2")
     window = history_before(
@@ -147,7 +140,6 @@ def compute_recurrence_intervals(
     lookback_days: int | None = None,
     lookback_draws: int | None = None,
 ) -> pd.DataFrame:
-    """Return each completed hit-to-hit interval for one number."""
     if not 0 <= int(number) <= 99:
         raise ValueError("number must be in 00..99")
     window = history_before(
@@ -185,7 +177,6 @@ def compute_group_gap_stats(
     lookback_days: int | None = None,
     lookback_draws: int | None = None,
 ) -> pd.DataFrame:
-    """Compute draw gaps for head, tail, total-mod-10, or chạm groups."""
     window = history_before(
         history,
         as_of_date,

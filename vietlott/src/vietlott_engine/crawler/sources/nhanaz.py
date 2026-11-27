@@ -1,26 +1,3 @@
-"""Community archive ``NhanAZ-Data/vietlott-data-collector`` (formerly ``vietlott-research``) — fallback when vietlott.vn is unreachable.
-
-The archive is updated by GitHub Actions — Keno/Bingo18 about every 10 minutes during the day,
-the other products several times a day — from vietlott.vn pages when they are reachable and
-from declared secondary result sites (xosominhngoc.net.vn, xoso.com.vn archive, onbit)
-otherwise; how each official row was obtained is the archive's own business. Every row keeps its
-``data_source`` and ``draw_status``; draws that Vietlott announced as *not confirmed* are listed
-in ``datasets/exclusions.csv``. MIT licence. Vietlott Quant Engine 1.3.0 imported a pinned
-revision of the same archive.
-
-Layout (repository root or the ``datasets`` folder; a ``git clone``, a downloaded ZIP or the
-product cache written by Vietlott Quant Engine 1.3.0 ``collect_product_history.py`` all work):
-
-    datasets/draws/<product>/all.csv            Mega, Power, Lotto, Max 3D, Max 3D Pro, Max 4D
-    datasets/draws/<product>/YYYY-MM.csv        Keno, Bingo18 (monthly partitions)
-    datasets/prizes/<product>/all.csv           prize tables
-    datasets/exclusions.csv                     not-confirmed draws
-    datasets/prize_rules.csv                    prize rules read from detail pages
-
-This module converts rows to the engine's formats: canonical records (schema 1.0, as in
-``crawler.official_data``) for the matrix games and product rows for the others.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -39,8 +16,6 @@ from vietlott_engine.core.products import FOUR_DIGIT_LAYOUT, THREE_DIGIT_LAYOUT,
 from vietlott_engine.crawler.official_data import fold
 from vietlott_engine.forecast.schedule import now_vn
 
-# Kho đổi tên (vietlott-research → vietlott-data-collector) và chuyển dữ liệu sang nhánh ``datasets``
-# khoảng 20-11-2026; địa chỉ cũ trả 404 cho mọi sản phẩm nên Keno/Bingo18 mất nguồn đối chiếu.
 NHANAZ_REPO = "NhanAZ-Data/vietlott-data-collector"
 NHANAZ_BRANCH = "datasets"
 NHANAZ_RAW_BASE = f"https://raw.githubusercontent.com/{NHANAZ_REPO}/{NHANAZ_BRANCH}/datasets"
@@ -53,7 +28,6 @@ _NUM = re.compile(r"\d{1,3}(?:\.\d{3})+|\d+")
 
 
 def _num(text: str | None) -> int | None:
-    """'1.234.567' → 1234567; None unless the whole cell is a number."""
     t = (text or "").strip()
     return int(t.replace(".", "")) if t and _NUM.fullmatch(t) else None
 
@@ -69,17 +43,13 @@ def _json(cell: str | None) -> dict | list:
         return {}
 
 
-# ------------------------------------------------------------------ draws
 @dataclass
 class ArchiveDraws:
     product: ProductCode
-    rows: list[dict] = field(default_factory=list)  # engine rows (product rows or canonical records)
+    rows: list[dict] = field(default_factory=list)
     not_confirmed: list[dict] = field(default_factory=list)
     rejected: list[dict] = field(default_factory=list)
     sources: Counter = field(default_factory=Counter)
-    # Kỳ Keno/Bingo18 đúng cấu trúc, đã «confirmed», chỉ bị loại vì xuất xứ KHÔNG chính thức
-    # (trang đăng lại). Không bao giờ được nhập; chỉ dùng làm phép đối chiếu ĐỘC LẬP cho nguồn
-    # khác (``ProductSyncPipeline._vet_fast_mirror``).
     secondary: list[dict] = field(default_factory=list)
 
 
@@ -95,8 +65,6 @@ def _digits_tiers(result: dict, layout: tuple[tuple[str, int], ...]) -> list[dic
 
 
 def convert_draws(product: ProductCode, csv_rows: list[dict], *, verified_only: bool = False) -> ArchiveDraws:
-    """Archive draw rows → engine rows. Matrix games become canonical records (prizes are
-    attached by :func:`attach_prizes`); the other products become ``{"id","date","result"}``."""
     out = ArchiveDraws(product)
     for r in csv_rows:
         try:
@@ -107,8 +75,6 @@ def convert_draws(product: ProductCode, csv_rows: list[dict], *, verified_only: 
             src = attrs.get("data_source", "unknown") if isinstance(attrs, dict) else "unknown"
             status = (r.get("draw_status") or "confirmed").strip()
             if verified_only:
-                # «confirmed» là trạng thái kỳ, «valid» chỉ là kiểm tra cấu trúc.
-                # Dữ liệu đăng lại còn pending không chứng minh kết quả chính thức.
                 verification = attrs.get('official_verification_status') if isinstance(attrs, dict) else None
                 structural = (r.get('product') == product.value and r.get('draw_status') == 'confirmed'
                               and r.get('validation_status') == 'valid' and did > 0)
@@ -152,12 +118,7 @@ def convert_draws(product: ProductCode, csv_rows: list[dict], *, verified_only: 
     return out
 
 
-# ------------------------------------------------------------------ prizes
 def prize_cells(r: dict) -> tuple[str, int, int] | None:
-    """(tier name, winners, value) of one archive prize row, or None for header/odd rows.
-
-    Two layouts exist: explicit ``winner_count``/``prize_value_vnd`` columns, and older Lotto
-    rows where the page header shifted the cells (``column_3`` = winners, ``column_4`` = value)."""
     name = (r.get("prize_tier") or "").strip()
     if not name or fold(name) == "giai thuong":
         return None
@@ -174,7 +135,6 @@ def prize_cells(r: dict) -> tuple[str, int, int] | None:
 
 
 def attach_prizes(records: list[dict], prize_rows: list[dict]) -> int:
-    """Add the prize table of each draw (canonical ``prizes`` list) in place → draws with prizes."""
     from vietlott_engine.crawler.official_data import slug
 
     by_draw: dict[int, list[dict]] = defaultdict(list)
@@ -192,7 +152,7 @@ def attach_prizes(records: list[dict], prize_rows: list[dict]) -> int:
         p = by_draw.get(int(rec["draw_id"]))
         if p:
             seen = {}
-            for x in p:  # one row per tier (archive may repeat a tier across page tables)
+            for x in p:
                 seen.setdefault(x["code"], x)
             rec["prizes"] = list(seen.values())
             n += 1
@@ -200,7 +160,6 @@ def attach_prizes(records: list[dict], prize_rows: list[dict]) -> int:
 
 
 def verified_exclusion(row: dict) -> bool:
-    """Chỉ thông báo loại kỳ có địa chỉ chính thức mới chứng minh được khoảng bỏ qua."""
     try:
         url=urlsplit(row.get('source_url') or '')
         return (row.get('draw_status')=='not_confirmed' and int(str(row.get('draw_id','')).lstrip('#'))>0
@@ -231,7 +190,6 @@ def parse_exclusions(csv_rows: list[dict], *, verified_only: bool = False) -> li
 
 
 def keno_rules(csv_rows: list[dict]) -> dict:
-    """Side-bet and per-bậc prize cells of a Keno detail page (``prize_rules.csv``)."""
     side, bac = {}, defaultdict(dict)
     for r in csv_rows:
         if r.get("product") != "keno":
@@ -241,15 +199,13 @@ def keno_rules(csv_rows: list[dict]) -> dict:
         ti = d.get("table_index") if isinstance(d, dict) else None
         m = re.match(r"Trùng (\d+) trong 20 số", name)
         if m and isinstance(ti, int) and 5 <= ti <= 14:
-            bac[15 - ti][int(m.group(1))] = v  # table 5 = bậc 10 … table 14 = bậc 1
+            bac[15 - ti][int(m.group(1))] = v
         elif v is not None:
             side[name] = v
     return {"side_bets": side, "bac": {k: dict(sorted(v.items())) for k, v in sorted(bac.items())}, "source_url": next((r.get("source_url") for r in csv_rows if r.get("product") == "keno"), None)}
 
 
-# ------------------------------------------------------------------ access
 class NhanAZArchive:
-    """Read the archive from a local folder or from GitHub (raw files)."""
 
     name = "nhanaz"
 
@@ -286,8 +242,6 @@ class NhanAZArchive:
             files = sorted(p.stem for p in (self.root / "draws" / product.value).glob("*.csv"))
             return [m for m in files if since is None or m >= f"{since.year:04d}-{since.month:02d}"]
         y, m = (since.year, since.month) if since else FIRST_MONTH[product]
-        # Tháng theo giờ VN, không theo đồng hồ máy: runner chạy UTC, nên 06:00–07:00 sáng ngày 1 (kỳ Keno/
-        # Bingo18 đầu tiên của tháng) nó còn ở tháng trước và bỏ sót tệp tháng mới (05-11-2026).
         today = now_vn().date()
         out = []
         while (y, m) <= (today.year, today.month):

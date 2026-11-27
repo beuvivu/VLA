@@ -1,6 +1,3 @@
-"""v3: Lotto 5/35 rules, prize data, market accounting, crowd calibration, bao tickets,
-coverage portfolios and rolldowns."""
-
 from __future__ import annotations
 
 import json
@@ -26,14 +23,12 @@ from vietlott_engine.game_theory.sales import estimate_payout_share, tickets_sol
 from tests.conftest import make_history
 
 
-# ------------------------------------------------------------------- helpers
 def _masks(arr: np.ndarray) -> np.ndarray:
     arr = np.atleast_2d(arr).astype(np.uint64)
     return np.bitwise_or.reduce(np.left_shift(np.uint64(1), arr - np.uint64(1)), axis=1)
 
 
 def _tier_table(spec: GameSpec) -> tuple[np.ndarray, np.ndarray]:
-    """index[m, hit] of the tier (−1 = no prize) and its position in spec.tiers."""
     names = [t.name for t in spec.tiers]
     idx = np.full((spec.pick + 1, 2), -1)
     for m in range(spec.pick + 1):
@@ -44,7 +39,6 @@ def _tier_table(spec: GameSpec) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _simulate_winners(spec: GameSpec, h: DrawHistory, sold: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-    """Winner counts of uniformly random tickets: multinomial over the exact tier probabilities."""
     probs = np.array([spec.tier_probabilities[t.name] for t in spec.tiers])
     out = np.zeros((len(h), len(probs)), dtype=np.int64)
     for t in range(len(h)):
@@ -69,7 +63,6 @@ def _records(spec: GameSpec, h: DrawHistory, winners: np.ndarray, pots: np.ndarr
     return recs
 
 
-# ------------------------------------------------------------------- rules
 def test_lotto_tier_probabilities_by_enumeration() -> None:
     spec = LOTTO_535
     win = np.array([3, 9, 17, 25, 33])
@@ -110,10 +103,9 @@ def test_power_cap_spills_into_jackpot2() -> None:
     below = {x.tier: x for x in calc.evaluate(t, 290e9, 5e9, tickets_sold=1_000_000).tiers}
     above = {x.tier: x for x in calc.evaluate(t, 350e9, 5e9, tickets_sold=1_000_000).tiers}
     assert below["jackpot2"].gross_prize == pytest.approx(5e9)
-    assert above["jackpot2"].gross_prize > 5e9 + 40e9  # ≈ (350 − 300) tỷ × P(JP1 not won)
+    assert above["jackpot2"].gross_prize > 5e9 + 40e9
 
 
-# ------------------------------------------------------------------- prize data
 def test_reconcile_prefers_verified_counts_and_realigns_pots() -> None:
     spec = POWER_655
     draws = [
@@ -124,7 +116,6 @@ def test_reconcile_prefers_verified_counts_and_realigns_pots() -> None:
         json.dumps({"id": d.draw_id, "date": d.draw_date.isoformat(), "result": [*d.numbers, 55], "winners": {"Jackpot 1": 0, "Jackpot 2": 0, "Giải nhất": d.draw_id, "Giải nhì": 500, "Giải ba": 9000}})
         for d in draws
     )
-    # leoodz: same counts but the pot of draw k is published one position later
     leo = []
     for d in draws:
         prev = d.draw_id - 1 if d.draw_id > 1 else 1
@@ -146,7 +137,7 @@ def test_reconcile_prefers_verified_counts_and_realigns_pots() -> None:
     assert rep.with_winners == 4 and not rep.number_mismatches
     assert all(r.source == "compal123" for r in records)
     pots = {r.draw_id: r.jackpot_pots for r in records}
-    assert pots[2]["jackpot1"] == 32_000_000_000  # matched to the leoodz row with the same counts (realigned)
+    assert pots[2]["jackpot1"] == 32_000_000_000
     assert rep.realigned >= 1
 
 
@@ -177,7 +168,6 @@ def test_payout_share_and_sales_identity_recovered() -> None:
     np.testing.assert_allclose(n_hat[ok], sold[ok], rtol=1e-6)
 
 
-# ------------------------------------------------------------------- calibration
 @pytest.mark.slow
 def test_behaviour_calibration_recovers_planted_crowd() -> None:
     from vietlott_engine.game_theory.calibration import calibrate, fitted_tickets_sold
@@ -212,7 +202,6 @@ def test_behaviour_calibration_recovers_planted_crowd() -> None:
     assert np.nanmedian(ratio) == pytest.approx(1.0, abs=0.12)
 
 
-# ------------------------------------------------------------------- bao
 def _mc_bao(spec: GameSpec, numbers: list[int], specials: list[int] | None, draws: int, rng: np.random.Generator) -> float:
     plays = bao_tickets(spec, numbers, specials)
     pm = _masks(np.array([p[0] for p in plays]))
@@ -239,22 +228,20 @@ def _mc_bao(spec: GameSpec, numbers: list[int], specials: list[int] | None, draw
 @pytest.mark.parametrize(
     "spec,numbers,specials",
     [
-        (MEGA_645, [2, 9, 14, 23, 31, 38, 44], None),  # Bao 7
-        (POWER_655, [4, 15, 26, 37, 48], None),  # Bao 5 (k−1)
-        (POWER_655, [1, 8, 15, 22, 29, 36, 43, 50], None),  # Bao 8, bonus inside the set possible
-        (LOTTO_535, [3, 8, 13, 21, 34, 35], [2, 7]),  # Lotto bao 6 with two specials
-        (LOTTO_535, [5, 10, 20, 30], [11]),  # Lotto bao 4 (k−1)
+        (MEGA_645, [2, 9, 14, 23, 31, 38, 44], None),
+        (POWER_655, [4, 15, 26, 37, 48], None),
+        (POWER_655, [1, 8, 15, 22, 29, 36, 43, 50], None),
+        (LOTTO_535, [3, 8, 13, 21, 34, 35], [2, 7]),
+        (LOTTO_535, [5, 10, 20, 30], [11]),
     ],
 )
 def test_bao_exact_matches_simulation(spec: GameSpec, numbers: list[int], specials: list[int] | None) -> None:
     res = analyse_bao(spec, numbers, specials)
     assert res.plays == len(bao_tickets(spec, numbers, specials))
     assert sum(o.probability for o in res.outcomes) == pytest.approx(1.0, abs=1e-12)
-    # linearity of the fixed prizes: E[fixed] = plays × single-ticket E[fixed]
     single_fixed = sum(spec.tier_probabilities[t.name] * t.fixed_amount for t in spec.tiers if t.fixed_amount is not None)
     exp_fixed = sum(o.probability * o.fixed_prizes for o in res.outcomes)
     assert exp_fixed == pytest.approx(res.plays * single_fixed, rel=1e-9)
-    # jackpots: own plays share one pot, so the bao gets at most the singles' jackpot EV
     single_jp = sum(spec.tier_probabilities[t.name] * spec.min_jackpots[t.name] for t in spec.tiers if t.is_jackpot)
     assert res.expected_payout - exp_fixed <= res.plays * single_jp * (1 + 1e-9)
     p_mc = _mc_bao(spec, numbers, specials, 200_000, np.random.default_rng(1))
@@ -267,12 +254,11 @@ def test_bao_validation() -> None:
     with pytest.raises(ValueError):
         analyse_bao(MEGA_645, [1, 2, 3, 4])
     with pytest.raises(ValueError):
-        analyse_bao(LOTTO_535, [1, 2, 3, 4, 5, 6])  # Lotto needs specials
+        analyse_bao(LOTTO_535, [1, 2, 3, 4, 5, 6])
     with pytest.raises(ValueError):
         analyse_bao(MEGA_645, [1, 2, 3, 4, 5, 6, 7], specials=[1])
 
 
-# ------------------------------------------------------------------- coverage
 def test_coverage_beats_random_and_respects_bound() -> None:
     res = optimise_coverage(MEGA_645, 12, sim_draws=6000, eval_draws=40_000, candidates=600, local_rounds=1, seed=3)
     assert len(res.tickets) == 12 and all(len(set(t)) == 6 for t in res.tickets)
@@ -280,13 +266,12 @@ def test_coverage_beats_random_and_respects_bound() -> None:
     assert res.p_at_least_one <= res.upper_bound + 0.01
     assert res.expected_prizes_per_draw == pytest.approx(12 * MEGA_645.p_any_prize)
     lotto = optimise_coverage(LOTTO_535, 12, sim_draws=4000, eval_draws=20_000, candidates=400, local_rounds=0, seed=1)
-    assert sorted(lotto.specials) == list(range(1, 13))  # one ticket per special number covers the consolation tier
+    assert sorted(lotto.specials) == list(range(1, 13))
     assert lotto.p_at_least_one > 0.99
     with pytest.raises(ValueError):
         optimise_coverage(MEGA_645, 3, min_tier="nope", sim_draws=2000, eval_draws=10_000, candidates=100)
 
 
-# ------------------------------------------------------------------- rolldown
 def test_rolldown_ev_monotone_and_break_even() -> None:
     lo = rolldown_ev(LOTTO_535, 20e9, 500_000)
     hi = rolldown_ev(LOTTO_535, 20e9, 4_000_000)
@@ -296,9 +281,8 @@ def test_rolldown_ev_monotone_and_break_even() -> None:
     at = rolldown_ev(LOTTO_535, 20e9, int(lo.break_even_tickets_sold))
     assert at.return_to_player == pytest.approx(1.0, abs=0.01)
     shares = LOTTO_535.rolldown.shares
-    # fractions are conditional on the tier having a winner: empty tiers top up the others
     assert all(lo.tier_fractions[t] >= f for t, f in shares.items())
-    assert sum(hi.tier_fractions.values()) == pytest.approx(1.0, abs=0.01)  # big sales: every tier is won
+    assert sum(hi.tier_fractions.values()) == pytest.approx(1.0, abs=0.01)
     with pytest.raises(ValueError):
         rolldown_ev(MEGA_645, 20e9, 1_000_000)
 
@@ -309,7 +293,7 @@ def test_realised_tier_prizes_redistribute_empty_tiers() -> None:
     assert "first" not in p
     paid = sum((p[t] - LOTTO_535.tier(t).fixed_amount) * w[t] for t in p)
     assert paid == pytest.approx(16.5e9)
-    assert p["second"] == pytest.approx(5e6 + 16.5e9 / 4 / 24)  # 1/6 + (1/3)/4 = 1/4 of the pot
+    assert p["second"] == pytest.approx(5e6 + 16.5e9 / 4 / 24)
 
 
 def _simulate_lotto_market(c: float, c_r: float, days: int, seed: int) -> tuple[DrawHistory, PrizeHistory, np.ndarray, list[int], dict[int, float]]:
@@ -325,7 +309,7 @@ def _simulate_lotto_market(c: float, c_r: float, days: int, seed: int) -> tuple[
     for t, d in enumerate(dates):
         rd_day = pending is not None and d == pending
         if rd_day and (t + 1 == len(dates) or dates[t + 1] != d):
-            sold[t] *= 8.0  # players pile into the rolldown draw
+            sold[t] *= 8.0
         j += (c_r if rd_day else c) * sold[t] * spec.ticket_price
         pot[t + 1] = j
         if rng.random() < 0.02:

@@ -68,30 +68,24 @@ def test_domain_feature_groups_are_unique_and_nonempty() -> None:
 def test_augment_domain_features_respects_partner_bo_bong_cham_tong_semantics() -> None:
     out = augment_domain_features(_base_frame()).set_index("number")
 
-    # 00 is paired with 55 in the 50-pair partition; this is the special kép-bóng case.
     assert out.loc[0, "cap50_partner"] == "55"
     assert out.loc[0, "cap50_pair_kind"] == "kep_bong"
     assert int(out.loc[0, "cap50_partner_freq_30d"]) == 55
     assert int(out.loc[0, "cap50_is_kep_bong"]) == 1
 
-    # A non-double uses its reverse as 50-pair partner.
     assert out.loc[12, "cap50_partner"] == "21"
     assert out.loc[12, "cap50_pair_kind"] == "reverse"
     assert int(out.loc[12, "cap50_partner_freq_30d"]) == 21
 
-    # Bóng dương/âm use the canonical ontology, not an inferred co-occurrence pair.
     assert out.loc[0, "bong_duong_partner"] == "55"
     assert out.loc[0, "bong_am_partner"] == "77"
     assert int(out.loc[0, "bong_duong_freq_30d"]) == 55
     assert int(out.loc[0, "bong_am_freq_30d"]) == 77
 
-    # Bộ 01 contains 01,06,10,15,51,56,60,65; group means are same-anchor only.
     expected_bo_mean = np.mean([1, 6, 10, 15, 51, 56, 60, 65])
     assert np.isclose(float(out.loc[1, "bo_freq_30d_mean"]), expected_bo_mean)
     assert int(out.loc[1, "bo_family_size"]) == 8
 
-    # Every chạm union has 19 numbers; every modulo-10 total has 10 numbers.
-    # Constant-one hit inputs make the group rate exactly one for both structures.
     all_hit = _base_frame()
     all_hit["hit_today"] = 1
     all_hit_out = augment_domain_features(all_hit)

@@ -1,22 +1,3 @@
-"""Lotto 5/35 "chia giải Độc đắc" (jackpot rolldown) — the one structural situation in
-Vietlott where the *whole* jackpot must be paid out to ordinary prize tiers.
-
-Rule: when the jackpot exceeds 12 tỷ with no winner, the 21:00 draw of the following
-day is a rolldown draw: unless someone wins the jackpot in that draw, 1/3 of it goes to
-the first-prize tier (5 main numbers) and 1/6 to each of tiers 2–5, shared equally among
-the winning tickets of each tier on top of the fixed prize. A tier with no winner has
-its share redistributed equally among the other tiers.
-
-Expected value per ticket in a rolldown draw (N other tickets, tier probabilities P_τ):
-
-    EV = Σ_τ P_τ · E[ net( fixed_τ + J·f_τ / (1 + K_τ) ) ],   K_τ ~ Poisson(N·P_τ)
-
-With many winners E[1/(1+K)] ≈ 1/(N·P_τ), so the rolldown adds ≈ J/N per ticket:
-the draw is favourable whenever sales stay below roughly J / (price·(1 − base RTP)).
-Historical rolldown draws are identified from sales surges and their pots rebuilt from the
-accrual rate implied by rolldown timing (see the history section).
-"""
-
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -31,19 +12,18 @@ from vietlott_engine.core.prizes import PrizeHistory
 
 
 def _share_factor(lam: float) -> float:
-    """E[1/(1+K)], K ~ Poisson(λ) = (1 − e^{−λ}) / λ."""
     return 1.0 if lam <= 1e-12 else float((1 - np.exp(-lam)) / lam)
 
 
 class RolldownEV(BaseModel):
     jackpot: float
     tickets_sold: int
-    p_jackpot_won: float  # someone hits 5+special → no rolldown
-    tier_fractions: dict[str, float]  # share of the pot for a tier *given it has a winner*, incl. expected top-up from empty tiers
+    p_jackpot_won: float
+    tier_fractions: dict[str, float]
     expected_value: float
     return_to_player: float
-    base_return_to_player: float  # same draw without rolldown
-    break_even_tickets_sold: float | None  # sales at which RTP = 1
+    base_return_to_player: float
+    break_even_tickets_sold: float | None
 
 
 def _ev_parts(spec: GameSpec, jackpot: float, sold: float, tax: TaxRule, popularity_ratio: float = 1.0) -> tuple[float, float, float, dict]:
@@ -53,7 +33,6 @@ def _ev_parts(spec: GameSpec, jackpot: float, sold: float, tax: TaxRule, popular
     base = sum(probs[t.name] * tax.after_tax(t.fixed_amount) for t in spec.tiers if t.fixed_amount is not None)
     jp_prob = probs["jackpot1"]
     p_jp_won = 1 - np.exp(-sold * jp_prob)
-    # expected redistribution: tiers that are empty pass their share to the others
     lam = {t: sold * probs[t] for t in rd.shares}
     p_empty = {t: np.exp(-lam[t]) for t in rd.shares}
     eff = {}
@@ -64,9 +43,7 @@ def _ev_parts(spec: GameSpec, jackpot: float, sold: float, tax: TaxRule, popular
     for t, f in eff.items():
         fixed = float(spec.tier(t).fixed_amount or 0)
         share_if_win = jackpot * f * _share_factor(lam[t])
-        # tax applies to the whole winning (fixed + share) — use the mean share (convex effect small)
         roll += probs[t] * (tax.after_tax(fixed + share_if_win) - tax.after_tax(fixed))
-    # jackpot tier itself (if won in this draw the winner takes the pot)
     jp_part = jp_prob * tax.after_tax(jackpot) * _share_factor(sold * jp_prob * popularity_ratio)
     ev_roll_draw = base + (1 - p_jp_won) * roll + jp_part
     return ev_roll_draw, base + jp_part, float(p_jp_won), eff
@@ -98,47 +75,28 @@ def rolldown_ev(spec: GameSpec, jackpot: float, tickets_sold: int, tax: TaxRule 
     )
 
 
-# ------------------------------------------------------------- history
-#
-# Reconstruction of past rolldowns (validated against press reports):
-#
-# 1. *Events* are read from the data, not from a model: the announced rolldown draw is the
-#    21:00 draw whose sales jump ≥ 3× the trailing median (players buy for the rolldown).
-#    Checked against the press: 5 rolldowns in the first 3 months (#38, #54, #96, #146,
-#    #168; #70 was announced but the jackpot was won), and the winner counts of #38, #54,
-#    #146 match the published per-tier rolldown prizes exactly.
-# 2. *Accrual*: the advertised jackpot grows at a rate c per đồng of sales. The rolldown
-#    timing pins c down for every segment: the pot crossed 12 tỷ during day d−1 but not
-#    before, so c ∈ (6 tỷ / R(→d−1), 6 tỷ / R(→d−2)]. Segments that ended in a jackpot win
-#    without an announcement give upper bounds. c is the robust centre of those intervals.
-# 3. The pot actually distributed is larger than c alone explains: sales on the rolldown day
-#    feed it at a higher rate c_r, estimated from published rolldown values. Accounting
-#    check: fixed prizes ≈ 17 % + visible accrual ≈ 16 % + 6-tỷ restarts ≈ 22 % ≈ the 54 %
-#    of sales Vietlott reported as prizes paid in 01–07/2026.
-
-
 class RolldownEvent(BaseModel):
     draw_id: int
     date: str
     tickets_sold: float
-    sales_multiple: float  # vs median of the previous 14 draws
-    executed: bool  # False: the jackpot was won in the announced draw (no rolldown)
+    sales_multiple: float
+    executed: bool
     jackpot_estimate: float
     jackpot_published: float | None = None
-    tier_prizes: dict[str, float]  # per winning ticket, fixed + share, from the actual winner counts
-    realised_rtp_pre_tax: float  # (pot + fixed prizes) / sales of that draw
-    realised_rtp_conservative: float  # same with rolldown-day sales feeding the pot only at c
-    model_rtp_after_tax: float  # expected-value model (rolldown_ev) at the same pot and sales
+    tier_prizes: dict[str, float]
+    realised_rtp_pre_tax: float
+    realised_rtp_conservative: float
+    model_rtp_after_tax: float
 
 
 class RolldownHistory(BaseModel):
     game: str
     announced: int
     executed: int
-    accrual_rate: float  # c: jackpot growth per đồng of sales (normal draws)
-    accrual_rate_range: tuple[float, float]  # 10–90 % of the per-segment interval midpoints
-    timing_consistency: float  # share of segments whose interval contains c (±10 %)
-    rolldown_day_rate: float  # c_r: growth per đồng of sales on the rolldown day
+    accrual_rate: float
+    accrual_rate_range: tuple[float, float]
+    timing_consistency: float
+    rolldown_day_rate: float
     anchors: list[dict]
     events: list[RolldownEvent]
     mean_realised_rtp: float | None
@@ -147,7 +105,6 @@ class RolldownHistory(BaseModel):
 
 
 def detect_rolldowns(h: DrawHistory, sold: np.ndarray, min_multiple: float = 3.0, window: int = 14) -> list[int]:
-    """Indices of announced rolldown draws: last draw of its day with a sales surge."""
     dates = [d.astype("datetime64[D]").astype(date) for d in h.dates]
     out = []
     for t in range(1, len(sold)):
@@ -161,8 +118,6 @@ def detect_rolldowns(h: DrawHistory, sold: np.ndarray, min_multiple: float = 3.0
 
 
 def realised_tier_prizes(spec: GameSpec, winners: dict[str, float], jackpot: float) -> dict[str, float]:
-    """Prize per winning ticket in a rolldown draw from the actual winner counts.
-    Shares of tiers without winners are split equally among the tiers that have winners."""
     rd = spec.rolldown
     assert rd is not None
     live = [t for t in rd.shares if winners.get(t, 0) > 0]
@@ -177,7 +132,6 @@ def realised_tier_prizes(spec: GameSpec, winners: dict[str, float], jackpot: flo
 
 
 def _interval_centre(lo: np.ndarray, hi: np.ndarray, upper_only: np.ndarray) -> float:
-    """c minimising the squared log-distance to every interval (robust 'consensus' rate)."""
     grid = np.exp(np.linspace(np.log(0.02), np.log(0.8), 1500))
     lg = np.log(grid)[:, None]
     d = np.maximum(np.log(lo)[None, :] - lg, 0) + np.maximum(lg - np.log(hi)[None, :], 0)
@@ -196,7 +150,6 @@ def rolldown_history(
     tax: TaxRule = DEFAULT_TAX,
     min_multiple: float = 3.0,
 ) -> RolldownHistory:
-    """Every announced rolldown with its estimated pot, per-tier prizes and realised return."""
     if spec.rolldown is None:
         raise ValueError(f"{spec.display_name} has no rolldown rule")
     ids = [int(x) for x in h.draw_ids]
@@ -206,7 +159,7 @@ def rolldown_history(
     n_t = np.where(np.isfinite(sold), sold, fill)
     rev = n_t * spec.ticket_price
     fixed = ph.fixed_prizes_paid()
-    fixed = np.nan_to_num(fixed, nan=0.0)  # unknown → 0 (one draw)
+    fixed = np.nan_to_num(fixed, nan=0.0)
     won = ph.jackpot_won()[:, 0]
     jmin = float(spec.min_jackpots["jackpot1"])
     gap = float(spec.rolldown.threshold) - jmin
@@ -215,7 +168,6 @@ def rolldown_history(
     executed = {t for t in ann if not won[t]}
     resets = sorted({t for t in range(len(ids)) if won[t]} | executed)
 
-    # ---- timing intervals per segment
     lo, hi, upper_only, mids = [], [], [], []
     seg_of: dict[int, tuple[int, int]] = {}
     start = 0
@@ -239,7 +191,6 @@ def rolldown_history(
     else:
         c, inside, c_rng = 0.15, float("nan"), (float("nan"), float("nan"))
 
-    # ---- rolldown-day rate from published pots
     anchors = anchors or []
     num = den = 0.0
     for a_id, a_val in anchors:
@@ -254,7 +205,6 @@ def rolldown_history(
         den += day * day
     c_r = float(num / den) if den > 0 else c
 
-    # ---- path
     rd_days = {(dates[r]) for r in ann}
     path = np.full(len(ids), np.nan)
     cur = jmin
@@ -334,28 +284,27 @@ def rolldown_history(
 
 
 class AccrualRegimes(BaseModel):
-    """Growth of the advertised Lotto jackpot per đồng of sales, from the official series."""
 
-    slow_rate: float  # pooled ΔJ / sales while the jackpot is in its slow phase
-    fast_rate: float  # pooled ΔJ / sales in the fast phase
-    slow_total_rate: float  # (ΔJ + fixed prizes) / sales, slow phase
-    fast_total_rate: float  # (ΔJ + fixed prizes) / sales, fast phase
-    switch_level_median: float  # jackpot level at which a segment turns fast
+    slow_rate: float
+    fast_rate: float
+    slow_total_rate: float
+    fast_total_rate: float
+    switch_level_median: float
     switch_level_range: tuple[float, float]
-    diverted_per_restart_median: float  # ≈ 6 tỷ if the slow phase refunds each restart
-    diverted_per_segment: list[dict]  # sales × (fast − slow rate) before the switch vs restarts paid
+    diverted_per_restart_median: float
+    diverted_per_segment: list[dict]
     note: str
 
 
 class OfficialRolldowns(BaseModel):
     game: str
     executed: int
-    pre_empted: int  # announced (pot > 12 tỷ the day before) but the jackpot was won
+    pre_empted: int
     events: list[RolldownEvent]
     mean_realised_rtp: float | None
     rtp_trend: dict
     accrual: AccrualRegimes
-    reconstruction_check: dict  # how the sales-surge reconstruction (no jackpot series) fared
+    reconstruction_check: dict
     note: str
 
 
@@ -367,11 +316,6 @@ def rolldown_history_official(
     tax: TaxRule = DEFAULT_TAX,
     reconstruction: RolldownHistory | None = None,
 ) -> OfficialRolldowns:
-    """Rolldowns read from the official jackpot series (vietlott.vn detail pages).
-
-    A rolldown is executed when the pot exceeded the threshold, nobody won it, and the
-    next pot restarts near the minimum. The pot on the page of the rolldown draw is the
-    amount distributed, so realised returns need no reconstruction."""
     if spec.rolldown is None:
         raise ValueError(f"{spec.display_name} has no rolldown rule")
     ids = [int(x) for x in h.draw_ids]
@@ -384,8 +328,6 @@ def rolldown_history_official(
     thr = float(spec.rolldown.threshold)
     jmin = float(spec.min_jackpots["jackpot1"])
     names = [t.name for t in spec.tiers]
-    # announcement: the pot exceeds the threshold after a draw of day d−1 → rolldown at the
-    # last draw of day d, unless the jackpot is won on day d (pre-empted)
     executed, pre_empted = [], []
     day_last: dict[date, int] = {}
     for t, d in enumerate(dates):
@@ -397,8 +339,6 @@ def rolldown_history_official(
             continue
         prev_idx = [t for t in range(len(ids)) if dates[t] == prev_d]
         last_prev = prev_idx[-1]
-        # the pot standing after the last draw of d−1 decides: it only grows within a day
-        # unless won (reset) or distributed by a rolldown executed at that draw (reset)
         if not (np.isfinite(pots[last_prev]) and pots[last_prev] > thr) or won[last_prev] or last_prev in executed:
             continue
         today = [t for t in range(len(ids)) if dates[t] == d]
@@ -445,7 +385,6 @@ def rolldown_history_official(
             "max": float(rtps.max()),
         }
 
-    # ---- accrual regimes
     resets = set(executed) | {t for t in range(len(ids)) if won[t]}
     rows = []
     for t in range(1, len(ids)):
@@ -461,7 +400,7 @@ def rolldown_history_official(
     switch_levels, diverted = [], []
     start = 0
     seg_resets = sorted(resets)
-    last_switch = -1  # restarts between two fast phases are funded in the slow phase
+    last_switch = -1
     for r in seg_resets + [len(ids)]:
         seg = [i for i, row in enumerate(rows) if start <= row[0] < r]
         if seg:
@@ -530,8 +469,8 @@ class RolldownForecast(BaseModel):
     last_draw_id: int
     last_date: str
     pot: float
-    phase: str  # "slow" | "fast"
-    refund_outstanding: float  # restarts × refund still to be collected before the fast phase
+    phase: str
+    refund_outstanding: float
     restarts_pending: int
     typical_sales_per_draw: float
     draws_to_fast_phase: float
@@ -541,7 +480,6 @@ class RolldownForecast(BaseModel):
 
 
 def forecast_next_rolldown(spec: GameSpec, h: DrawHistory, ph: PrizeHistory, sold: np.ndarray, official: OfficialRolldowns) -> RolldownForecast:
-    """When will the pot turn fast and cross the threshold? (official series + two-phase accrual)."""
     acc = official.accrual
     pots = ph.pots[:, 0]
     won = ph.jackpot_won()[:, 0]
@@ -577,7 +515,7 @@ def forecast_next_rolldown(spec: GameSpec, h: DrawHistory, ph: PrizeHistory, sol
         else:
             level_at_switch = pots[t] + to_fast * acc.slow_rate * r_typ
             to_thr = to_fast + max(0.0, (thr - level_at_switch) / (acc.fast_rate * r_typ))
-    days = to_thr / 2.0  # two draws a day
+    days = to_thr / 2.0
     return RolldownForecast(
         last_draw_id=ids[t],
         last_date=str(h.dates[t]),
@@ -594,9 +532,6 @@ def forecast_next_rolldown(spec: GameSpec, h: DrawHistory, ph: PrizeHistory, sol
 
 
 def backtest_rolldown_forecast(spec: GameSpec, h: DrawHistory, ph: PrizeHistory, sold: np.ndarray, official: OfficialRolldowns, start: int = 150, step: int = 10) -> dict:
-    """Forecast from every ``step``-th draw using only data up to it; compare with the draw at
-    which the pot really crossed the threshold (cases ended by a jackpot win are skipped).
-    The accrual rates come from the full series (a mild look-ahead on two constants)."""
     from vietlott_engine.core.prizes import PrizeHistory as _PH
 
     pots = ph.pots[:, 0]
@@ -633,6 +568,5 @@ def backtest_rolldown_forecast(spec: GameSpec, h: DrawHistory, ph: PrizeHistory,
 
 
 def tickets_sold_ci(n: float, rel_sd: float = 0.15) -> tuple[float, float]:
-    """Rough 95 % band for a sales estimate with relative error ``rel_sd``."""
     z = stats.norm.ppf(0.975)
     return float(n * np.exp(-z * rel_sd)), float(n * np.exp(z * rel_sd))

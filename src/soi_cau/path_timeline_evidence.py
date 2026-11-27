@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""Recent hit/miss timelines for VLA positional path evidence.
-
-The legacy ``xoso`` repository exposed a useful explainability primitive: for a
-specific path, show what number it generated on each recent target date and whether
-that number actually hit. VLA already has a materially stronger path engine; this
-module adds the missing timeline evidence *around that engine's selected paths*
-without changing path probabilities or prediction weights.
-"""
 
 import argparse
 import json
@@ -133,24 +125,16 @@ def build_timeline_table(
     return pd.DataFrame(rows)
 
 
-#: Bảng đầy đủ (mỗi dòng mang cả chuỗi trúng/trượt gần đây): ra đĩa và lên artifact, trong `.gitignore`.
 FULL_TABLE = "path_timeline_{mode}.csv"
-#: Bản cắt (`cut_table`): git theo dõi.
 CUT_TABLE = "path_timeline_{mode}_top.csv"
 CUT_ROWS = 50
 
 
 def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
-    """Bản cắt để ghi vào git (11-11-2026): `rows` đường cầu đầu bảng, tức điểm quy tắc cao nhất.
-
-    Không trang nào đọc bảng này. Chuỗi trúng/trượt của mọi dòng trượt đi một kỳ mỗi ngày, nên git
-    không lấy được delta của bảng đầy đủ.
-    """
     return cut_ranked(table, rows=rows)
 
 
 def write_timeline(table: pd.DataFrame, out: Path, mode: str) -> tuple[Path, Path, int]:
-    """Ghi bảng đầy đủ và bản cắt của một chế độ; trả hai đường dẫn và số dòng của bản cắt."""
     full_path = out / FULL_TABLE.format(mode=mode)
     cut_path = out / CUT_TABLE.format(mode=mode)
     cut = cut_table(table)
@@ -166,7 +150,7 @@ def run(
     out_dir: Path | str = "data/research/path_timelines",
     recent: int = 20,
 ) -> list[Path]:
-    _ = Path(data_dir)  # retained for CLI compatibility; Lottery resolves repository data.
+    _ = Path(data_dir)
     evidence_root = Path(evidence_dir)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)

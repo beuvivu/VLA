@@ -1,20 +1,3 @@
-"""Draw histories of Vietlott's non-matrix products: Keno, Bingo18, Max 3D, Max 3D Pro.
-
-The k-of-n games (Mega 6/45, Power 6/55, Lotto 5/35) live in ``core.games`` /
-``core.history``. The other products draw differently and are stored here as compact
-NumPy histories:
-
-* Keno       — 20 different numbers from 1–80; current published cadence ~8 minutes.
-* Bingo18    — three independent numbers 1–6 ("dice") every ~6 minutes.
-* Max 3D     — 20 three-digit numbers 000–999 in groups 2 / 4 / 6 / 8 (Max 3D+ uses the
-  same results); Max 3D Pro — the same layout, its own draw.
-* Max 4D     — archive (19/11/2016 – 31/08/2021): 6 four-digit numbers 0000–9999 (1 first,
-  2 second, 3 third); the two consolation prizes are the last 3 / 2 digits of the first.
-
-Draws that Vietlott announced as *not confirmed* (e.g. Keno/Bingo18 on 02/04/2026) are kept
-in ``exclusions.json`` and left out of every history unless explicitly requested.
-"""
-
 from __future__ import annotations
 
 import gzip
@@ -46,7 +29,7 @@ class ProductInfo:
     display_name: str
     draws: str
     schedule: str
-    results_path: str  # page on vietlott.vn
+    results_path: str
     matrix_game: bool
 
 
@@ -80,12 +63,6 @@ def get_product(code: str | ProductCode) -> ProductCode:
 
 @dataclass(frozen=True)
 class ProductHistory:
-    """Draws of one non-matrix product, oldest first.
-
-    ``values``: Keno (D, 20) sorted ints 1–80 · Bingo18 (D, 3) ints 1–6 in drawn order ·
-    Max 3D (D, 20) ints 0–999 in the official order (2 special, 4 first, 6 second, 8 third) ·
-    Max 4D (D, 6) ints 0–9999 (1 first, 2 second, 3 third).
-    """
 
     product: ProductCode
     draw_ids: np.ndarray
@@ -113,7 +90,6 @@ class ProductHistory:
         }
 
 
-# ------------------------------------------------------------------ parsing
 def _did(x: str | int) -> int:
     return int(str(x).strip().lstrip("#"))
 
@@ -129,21 +105,20 @@ def _validate(product: ProductCode, vals: list[int]) -> bool:
 
 
 def parse_product_rows(product: ProductCode, rows: list[dict], source: str) -> tuple[ProductHistory, list[dict]]:
-    """Rows from the mirror / canonical JSONL formats → history (+ rejected rows)."""
     seen: dict[int, tuple[date, list[int]]] = {}
     rejected = []
     for r in rows:
         try:
             if product in DIGIT_PRODUCTS:
                 res = r.get("result")
-                if isinstance(res, dict) and isinstance(res.get("tiers"), dict):  # {"first": [...], ...}
+                if isinstance(res, dict) and isinstance(res.get("tiers"), dict):
                     layout = FOUR_DIGIT_LAYOUT if product == ProductCode.MAX4D else THREE_DIGIT_LAYOUT
                     vals = [int(x) for code, _ in layout for x in res["tiers"][code]]
-                elif isinstance(res, dict) and "tiers" in res:  # canonical (official detail pages)
+                elif isinstance(res, dict) and "tiers" in res:
                     vals = [int(x) for t in res["tiers"] for x in t["numbers"]]
-                elif isinstance(res, dict):  # vietvudanh: {"Giải Đặc biệt": [...], ...}
+                elif isinstance(res, dict):
                     vals = [int(x) for k in ("Giải Đặc biệt", "Giải Nhất", "Giải Nhì", "Giải ba") for x in res[k]]
-                else:  # flattened list
+                else:
                     vals = [int(x) for x in res]
                 did = _did(r.get("draw_id", r.get("id")))
                 d = date.fromisoformat(str(r.get("draw_date", r.get("date")))[:10])
@@ -173,13 +148,6 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def write_text_atomic(path: Path, text: str) -> None:
-    """Thay cả tệp bằng ``text`` (nén gzip nếu tên kết thúc ``.gz``): ghi tệp tạm cùng thư mục, ``fsync``
-    rồi ``os.replace``. Chết giữa chừng thì tệp cũ còn nguyên, không bao giờ là tệp cụt.
-
-    Nén thì tất định: ``mtime=0`` và tên bên trong là tên thật (``keno.jsonl``). Trước 05-11-2026
-    ``GzipFile`` lấy tên từ tệp tạm, nên header mang một tên ngẫu nhiên (``tmp4novzukb.tmp``) và hai
-    lần ghi cùng nội dung ra hai tệp khác nhau.
-    """
     path.parent.mkdir(parents=True, exist_ok=True)
     data = text.encode("utf-8")
     name = None
@@ -200,7 +168,6 @@ def write_text_atomic(path: Path, text: str) -> None:
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
-    """Replace a complete history atomically; a failed write preserves the old file."""
     write_text_atomic(path, "\n".join(json.dumps(r, ensure_ascii=False, separators=(",", ":")) for r in rows) + "\n")
 
 
@@ -224,7 +191,6 @@ EXCLUSIONS_FILE = "exclusions.json"
 
 
 def load_exclusions(*directories: Path | None) -> dict[str, set[int]]:
-    """product → draw ids announced as not confirmed (merged over the given folders)."""
     out: dict[str, set[int]] = {}
     for d in directories:
         if d is None or not (Path(d) / EXCLUSIONS_FILE).exists():

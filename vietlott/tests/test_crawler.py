@@ -51,8 +51,8 @@ def test_retry_then_success_and_retry_after() -> None:
 
     assert asyncio.run(run()) == "ok"
     assert calls["n"] == 3
-    assert sleeps[0] == pytest.approx(0.03)  # Retry-After honoured
-    assert 0 <= sleeps[1] <= 0.02  # full-jitter backoff for attempt 1
+    assert sleeps[0] == pytest.approx(0.03)
+    assert 0 <= sleeps[1] <= 0.02
 
 
 def test_non_retryable_and_exhausted() -> None:
@@ -70,7 +70,7 @@ def test_rate_limiter_spacing(monkeypatch: pytest.MonkeyPatch) -> None:
     clock = {"t": 0.0}
     real_sleep = asyncio.sleep
 
-    async def advance(dt: float) -> None:  # virtual time: sleeping advances the clock
+    async def advance(dt: float) -> None:
         clock["t"] += dt
         await real_sleep(0)
 
@@ -93,7 +93,7 @@ def test_parse_jsonl_mirror_and_reject() -> None:
     text = "\n".join(
         [
             json.dumps({"date": "2017-08-01", "id": "00001", "result": [5, 10, 14, 23, 24, 38, 35]}),
-            json.dumps({"date": "2017-08-03", "id": "00002", "result": [1, 2, 3, 4, 5, 6]}),  # missing bonus
+            json.dumps({"date": "2017-08-03", "id": "00002", "result": [1, 2, 3, 4, 5, 6]}),
             "not json",
         ]
     )
@@ -215,13 +215,12 @@ def test_gap_repair_preserves_leading_gap_and_full_refresh_contracts(full_refres
 
 
 @pytest.mark.parametrize(("source_name", "full_refresh", "corrects"), [
-    ("github_mirror", True, False),   # bản sao tải lại toàn bộ: không được sửa
-    ("vietlott", True, True),         # chỉ --full từ vietlott.vn chính thức được sửa
-    ("vietlott", False, False),       # lượt thường: kỳ cũ lọt qua cursor không phải quyền sửa
+    ("github_mirror", True, False),
+    ("vietlott", True, True),
+    ("vietlott", False, False),
 ])
 def test_only_a_full_official_refresh_may_rewrite_a_stored_draw(source_name: str, full_refresh: bool,
                                                                 corrects: bool) -> None:
-    """Nguồn không được sửa kỳ đã lưu (cùng luật với Keno/Bingo18 và Max 3D/3D Pro/4D)."""
     def row(i: int, result: list[int]) -> str:
         return json.dumps({"date": f"2026-10-{i:02d}", "id": i, "result": result})
 
@@ -233,7 +232,7 @@ def test_only_a_full_official_refresh_may_rewrite_a_stored_draw(source_name: str
         name = source_name
 
         async def fetch(self, spec, since_id=None):
-            return await super().fetch(spec, None)  # trả cả lịch sử, như bản sao/kho lưu trữ
+            return await super().fetch(spec, None)
 
     async def run():
         async with _client(lambda request: httpx.Response(200, text=served)) as client:
@@ -243,7 +242,7 @@ def test_only_a_full_official_refresh_may_rewrite_a_stored_draw(source_name: str
     draws = {draw.draw_id: draw for draw in repo.load("mega645")}
     assert list(draws[2].numbers) == (wrong if corrects else good)
     assert report.conflicting_ids == ([] if corrects else [2])
-    assert sorted(draws) == [1, 2, 3, 4]  # kỳ mới vẫn vào, kỳ cũ trùng kết quả vẫn được làm mới
+    assert sorted(draws) == [1, 2, 3, 4]
 
 
 def test_duckdb_repository_roundtrip(tmp_path: Path) -> None:
@@ -255,7 +254,7 @@ def test_duckdb_repository_roundtrip(tmp_path: Path) -> None:
     repo = DuckDBRepository(tmp_path / "db.duckdb", tmp_path / "parquet")
     report = asyncio.run(SyncPipeline(JsonlFileSource(tmp_path), repo).run(POWER_655))
     assert report.inserted == 5 and repo.count("power655") == 5 and repo.max_draw_id("power655") == 5
-    assert repo.upsert(asyncio.run(JsonlFileSource(tmp_path).fetch(POWER_655)).draws) == 5  # idempotent upsert
+    assert repo.upsert(asyncio.run(JsonlFileSource(tmp_path).fetch(POWER_655)).draws) == 5
     assert repo.count("power655") == 5
     h = repo.load_history("power655")
     assert h.bonus.tolist() == [50] * 5 and h.numbers[0].tolist() == [1, 2, 3, 4, 5, 6]

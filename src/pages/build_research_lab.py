@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-"""Dựng phòng nghiên cứu tĩnh từ các artifact kiểm định khoa học."""
 
 import argparse
 import html
@@ -68,12 +67,10 @@ def _fmt(value, digits: int = 4) -> str:
 
 
 def _count(value) -> str:
-    """Giữ số thiếu là chưa biết, phân biệt với số đếm bằng không."""
     return f"{int(value):,}".replace(",", ".") if value is not None else "—"
 
 
 def _overview(report: dict) -> str:
-    """Bảng điều hành chỉ tổng hợp hai chế độ của cùng tường lửa vị trí."""
     modes = report.get("modes", {})
 
     def combined(key: str):
@@ -99,7 +96,6 @@ def _overview(report: dict) -> str:
 
 
 def _network() -> str:
-    """Sơ đồ trang trí biểu diễn các nhánh nghiên cứu, không giả lập tiến độ."""
     return (TEMPLATES / "research_network.html").read_text(encoding="utf-8")
 
 
@@ -119,7 +115,6 @@ def _primary_tests(diag: dict) -> str:
 
 
 def _venue_monitor_rows(venue: dict) -> str:
-    """Mỗi dãy giám sát của ``stats.xsmb_venue_effects``: đều theo lồng và bộ phát hiện thay đổi."""
     rows = []
     for item in venue.get("cage_monitor", []):
         if item.get("detector_alarm_on"):
@@ -141,7 +136,6 @@ def _venue_monitor_rows(venue: dict) -> str:
 
 
 def _venue_test_rows(venue: dict) -> str:
-    """Kết quả có khác nhau giữa các đài/các thứ không, rồi xác suất theo đài có thắng ngoài mẫu không."""
     rows = []
     for item in venue.get("heterogeneity", []):
         rows.append(
@@ -180,14 +174,12 @@ def _venue_test_rows(venue: dict) -> str:
 
 
 def _gain(block: dict) -> str:
-    """Tổng lợi (nat) so với dự báo đều và z của một thước chấm."""
     if not block or block.get("draws") is None:
         return "—"
     return f"{float(block['total']):+.2f} (z = {_fmt(block.get('z'), 2)})"
 
 
 def _cage_bayes_rows(cage: dict) -> str:
-    """Bộ máy Bayes theo đoạn: chấm walk-forward theo năm, toàn bộ, kỳ cuối, rồi phép kiểm tiến cứu."""
     rows = []
     windows = cage.get("windows", {})
     for item in [*cage.get("by_year", []), windows.get("all"), windows.get("last")]:
@@ -342,11 +334,6 @@ def _crosslag_table(df: pd.DataFrame, top: int = 10) -> str:
 
 
 def _bong_bridge_table(df: pd.DataFrame, top: int = 10) -> str:
-    """Các đường cầu mạnh nhất trên tập huấn luyện, kèm số phận ngoài mẫu.
-
-    Cột quan trọng nhất là hai cột cuối. Một đường cầu có thật thì độ nâng của
-    nó phải giữ được khi sang những kỳ chưa từng dùng để chọn nó.
-    """
     if df.empty:
         return '<tr><td colspan="5">Chưa có dữ liệu</td></tr>'
     rows = []
@@ -407,8 +394,6 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
     advanced = _read_json(research / "legacy_advanced" / "manifest.json")
     cross_report = _read_json(research / "crosslag_positional" / "report.json")
-    # Hai bảng đầy đủ không nằm trong git (phương án 3 của kế hoạch dung lượng kho, 07-11-2026):
-    # trang đọc bản cắt. Bản cắt chứa đúng những dòng hai bảng của trang hiện ra.
     cross_rules = _read_csv(research / "crosslag_positional" / "crosslag_rules_top.csv")
     bong_report = _read_json(research / "bong_bridge" / "report.json")
     bong_rules = _read_csv(research / "bong_bridge" / "top_rules_loto.csv")
@@ -617,7 +602,6 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     write_stylesheet(docs_dir)
     out = docs_dir / "research-lab.html"
     write_page(out, page)
-    # Liên kết phòng nghiên cứu lấy từ SITE_NAV trong khung điều hướng chung.
     return out
 
 

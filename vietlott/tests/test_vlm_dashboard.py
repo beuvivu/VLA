@@ -1,4 +1,3 @@
-"""Dashboard tests exercise draw pairing, frozen forecasts and nullable prize data."""
 import json
 from copy import deepcopy
 from datetime import datetime
@@ -53,7 +52,6 @@ def test_lotto_compares_special_number_from_the_frozen_forecast():
 
 
 def test_date_mismatch_keeps_frozen_main_and_special_numbers_without_scoring():
-    """Lệch ngày vẫn giữ bộ số đã đăng ký; không chấm với kết quả của ngày khác."""
     from vlm.web.dashboard import compare_prediction
     pred = prediction('lotto535', [1, 2, 3, 4, 5], target_date='2026-10-05')
     pred['components'].append({'name': 'special', 'kind': 'digit', 'top': [{'numbers': [9]}]})
@@ -66,7 +64,6 @@ def test_date_mismatch_keeps_frozen_main_and_special_numbers_without_scoring():
     assert result['made_at'] == original['made_at']
     assert result['engine'] == original['engine'] and result['registered'] is True
     assert pred == original
-    # Bản dùng để trình bày cũng không được giữ tham chiếu tới bộ số trong sổ.
     result['components'][0]['top'][0]['numbers'][0] = 35
     result['components'][1]['top'][0]['numbers'][0] = 12
     assert pred == original
@@ -91,7 +88,6 @@ def test_max_digits_match_full_padded_number_and_every_tier():
     ([f'{x:03d}' for x in range(200, 220)], 0, []),
 ])
 def test_pro_single_number_reports_matches_without_claiming_a_pair_prize(numbers, hits, groups):
-    """Một bộ ba Pro chỉ là tham chiếu; nhóm chứa nó không phải hạng giải của vé cặp."""
     from vlm.web.dashboard import compare_prediction
     pred = prediction('max3dpro')
     pred['components'] = [{'name': 'digits', 'kind': 'digit', 'top': [{'numbers': [0, 1, 6]}]}]

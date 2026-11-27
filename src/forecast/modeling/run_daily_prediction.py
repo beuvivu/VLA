@@ -1,18 +1,3 @@
-"""Sinh ``data/predictions_today.json`` cho kỳ kế tiếp.
-
-Bổ sung cho ``picks_loto.json`` / ``picks_de.json`` chứ không thay thế; các trang
-trong ``docs/`` vẫn đọc hai tệp cũ.
-
-Tệp này KHÔNG được nối vào trọng số sản xuất. Lý do nằm ngay trong dữ liệu mà
-chính nó mang theo: qua ba cổng đo, không có bằng chứng nào cho thấy đường soi
-cầu hơn được đường cơ sở. Trường ``evidence`` chở đúng các con số đó để người
-đọc tệp không phải đi tìm, và ``disclaimer`` nói thẳng điều đó bằng tiếng Việt.
-
-Tự khôi phục: nếu dữ liệu kỳ mới nhất chưa về, quy trình dừng sạch và báo lý do
-thay vì phát ra một dự đoán dựng trên lịch sử cũ — một dự đoán cũ mang dấu thời
-gian mới là dạng hỏng khó phát hiện nhất.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -45,8 +30,6 @@ from core.resilience import RetryPolicy, with_retry
 
 logger = logging.getLogger(__name__)
 
-# Hợp đồng với daily_prediction.yml: chỉ mã này được coi là bỏ qua hợp lệ.
-# Lỗi nhập, dữ liệu hỏng hoặc mô hình vẫn thoát khác 0 để workflow báo đỏ.
 PREDICTION_UNAVAILABLE = 3
 
 DISCLAIMER = (
@@ -58,7 +41,6 @@ DISCLAIMER = (
 
 
 def _research_evidence(research_dir: Path) -> dict[str, object]:
-    """Gom kết quả ba cổng đo, nếu đã chạy."""
     evidence: dict[str, object] = {}
     scan = research_dir / "bridge_scan_summary.json"
     if scan.exists():
@@ -68,10 +50,6 @@ def _research_evidence(research_dir: Path) -> dict[str, object]:
                 "hypotheses": item["hypotheses"],
                 "running_unscreened": item.get("running_at_least_5_unscreened"),
                 "survived_fdr": item["survived_fdr"],
-                # Con số chặt nhất trong khối: số đường cầu chứng minh lại được
-                # mình trên đoạn dữ liệu chưa từng tham gia vào việc chọn.
-                # Kèm theo mẫu số, vì "3 đường tái lập" mà không nói đã quét
-                # bao nhiêu giả thuyết là cách trình bày sai lệch nhất ở đây.
                 "replicated_out_of_sample": item.get("replication", {}).get("replicated"),
                 "replication_conclusive": item.get("replication", {}).get("conclusive"),
             }
@@ -92,7 +70,6 @@ def _research_evidence(research_dir: Path) -> dict[str, object]:
 
 
 def _special_axes(ctx: FeatureContext, probabilities: np.ndarray) -> dict[str, object]:
-    """Chạm, tổng và dàn đề rút ra từ phân phối Đặc Biệt."""
     extractor = SpecialSetExtractor()
     order = np.lexsort((np.arange(100), -probabilities))
     top = order[:10]
@@ -124,8 +101,6 @@ def build_bundle(tensor: DigitTensor, *, warmup_days: int, research_dir: Path) -
 
         if mode == "loto":
             explainer = Explainer.from_training(model, data.features)
-            # Tối đa MAX_PER_TAIL con cùng đuôi: mười con cùng đuôi gần như
-            # là MỘT lần đặt (28-09-2026: cả 10 con đuôi 4).
             order = diversified_order(probabilities, 10)
             reasons = {int(n): explainer.group_shares(matrix, int(n)) for n in order}
             picks = build_picks(
@@ -147,8 +122,6 @@ def build_bundle(tensor: DigitTensor, *, warmup_days: int, research_dir: Path) -
         generated_at_utc=utc_stamp(),
         top_lo_to=picks,
         top_dac_biet=special,
-        # Chưa đường cầu nào qua được cổng kiểm định, nên danh sách này rỗng —
-        # và rỗng là kết quả, không phải lỗi.
         active_bridges=[],
         disclaimer=DISCLAIMER,
         evidence=_research_evidence(research_dir),
@@ -158,7 +131,7 @@ def build_bundle(tensor: DigitTensor, *, warmup_days: int, research_dir: Path) -
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="data/xsmb.csv")
     parser.add_argument("--out", default="data/predictions_today.json")
     parser.add_argument("--research-dir", default="data/research")
@@ -181,7 +154,6 @@ def main() -> int:
     latest = tensor.dates[-1].date()
     staleness = (vietnam_date() - latest).days
     if staleness > args.max_staleness_days:
-        # Một dự đoán cũ mang dấu thời gian mới là dạng hỏng khó phát hiện nhất.
         logger.error(
             "kỳ mới nhất là %s, cũ hơn %d ngày so với hôm nay theo giờ Việt Nam; "
             "dừng thay vì phát ra dự đoán dựng trên lịch sử cũ",
@@ -190,9 +162,6 @@ def main() -> int:
         )
         return PREDICTION_UNAVAILABLE
 
-    # Kỳ được dự đoán là kỳ kế tiếp kỳ mới nhất đã có kết quả. Nếu kỳ đó đã
-    # quay xong rồi thì đây không còn là dự đoán — đó là hậu đoán mang nhãn dự
-    # đoán, dạng sai lệch nặng nhất mà một hệ thống như thế này có thể phát ra.
     target = latest + timedelta(days=1)
     now = now_vietnam()
     already_drawn = target < now.date() or (

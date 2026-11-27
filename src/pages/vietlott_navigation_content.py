@@ -1,11 +1,9 @@
-"""Các đích điều hướng Vietlott, tính từ bản dữ liệu đã xác thực của engine."""
 from collections import Counter
 from html import escape
 from itertools import combinations
 
 
 def statistics(draws: list[dict], maximum: int) -> dict:
-    """Đếm số chính theo kỳ; không trộn số đặc biệt hoặc các sản phẩm."""
     counts: Counter = Counter()
     pairs: Counter = Counter()
     for draw in draws:
@@ -19,7 +17,6 @@ def statistics(draws: list[dict], maximum: int) -> dict:
 
 
 def overview_sections(dashboard: dict) -> str:
-    """Tổng hợp thống kê, dự báo, đối soát và trạng thái; không gọi mạng."""
     from pages import build_vietlott_results as b
 
     def section(key, title, body, note=""):

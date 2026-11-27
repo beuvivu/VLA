@@ -23,7 +23,6 @@ def test_decayed_posterior_matches_manual(mega_history: DrawHistory) -> None:
 def test_marginal_likelihood_closed_form_small() -> None:
     counts = np.array([3.0, 1.0, 0.0])
     a0 = 0.7
-    # sequential predictive (Pólya urn) product must equal the closed form
     alpha = np.full(3, a0)
     logp = 0.0
     for cat, c in enumerate(counts):
@@ -57,7 +56,6 @@ def test_markov_transition_permutation_test_power() -> None:
     assert model.permutation_test(fair, sims=150, rng=np.random.default_rng(0)).p_value > 0.01
     assert model.predict(fair.numbers[-1]).sum() == pytest.approx(6.0)
 
-    # planted memory: each draw repeats 3 numbers of the previous one
     rng = np.random.default_rng(8)
     rows = [np.sort(rng.choice(np.arange(1, 46), 6, replace=False))]
     for _ in range(499):

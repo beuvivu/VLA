@@ -34,7 +34,6 @@ def _read_json(p: Path) -> dict:
 
 
 def _latest_date(data_dir: Path) -> str:
-    """Return latest draw date from known repository data files."""
     for cand in [
         data_dir / "xsmb.parquet",
         data_dir / "xsmb.csv",
@@ -59,7 +58,6 @@ def _latest_date(data_dir: Path) -> str:
 
 
 def _effective_weights(data_dir: Path, mode: str) -> dict:
-    """Ánh xạ provenance chuẩn sang nhãn UI tương thích; không tự đọc hồ sơ."""
     payload = weights_provenance(data_dir, mode)
     if payload['xuat_xu'] == 'khong_co_ho_so':
         learned = payload['weights'] != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()

@@ -1,19 +1,3 @@
-"""Cổng báo động khi mô hình sản xuất tệ hơn đường cơ sở quá ngưỡng.
-
-Lý do tồn tại: trong 12/2025–01/2026 mô hình LOTO cho logloss ~0,95 so với
-đường cơ sở ~0,55 (điểm kỹ năng khoảng −73%) và tình trạng đó kéo dài 22 ngày
-mà không ai phát hiện, suốt tám tháng. Không có gì đối chứng với baseline thì
-một hồi quy nghiêm trọng trông y hệt vận hành bình thường.
-
-Ngưỡng mặc định lấy từ số liệu thật của kho:
-
-* vận hành bình thường (197 ngày từ 02/2026): kỹ năng LOTO −0,82%, Đặc Biệt −0,09%
-* đợt hỏng (22 ngày 12/2025–01/2026): kỹ năng LOTO −72,6%, Đặc Biệt −5,14%
-
-Ngưỡng −10% nằm giữa hai vùng đó với biên rất rộng về cả hai phía, nên bắt được
-sự cố cỡ đó mà không báo giả khi hệ thống chạy bình thường.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -30,7 +14,6 @@ REQUIRED_COLUMNS = ("mode", "target_date", "logloss", "baseline_logloss")
 
 @dataclass(frozen=True)
 class SkillCheck:
-    """Kết quả kiểm tra kỹ năng của một chế độ."""
 
     mode: str
     days: int
@@ -58,7 +41,6 @@ def evaluate_history(
     window: int = DEFAULT_WINDOW,
     threshold: float = DEFAULT_THRESHOLD,
 ) -> list[SkillCheck]:
-    """Tính kỹ năng trung bình trên cửa sổ ngày gần nhất của từng chế độ."""
     missing = [c for c in REQUIRED_COLUMNS if c not in frame.columns]
     if missing:
         raise ValueError(
@@ -115,8 +97,6 @@ def main() -> int:
             frame, window=args.window, threshold=args.threshold
         )
     except ValueError as exc:
-        # Lịch sử cũ chưa mang cột baseline. Chưa đủ dữ liệu để kết luận, nên
-        # mặc định không chặn; bật --require-baseline khi đã sinh lại đủ.
         print(f"[BỎ QUA] {exc}")
         return 1 if args.require_baseline else 0
 

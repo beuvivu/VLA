@@ -1,5 +1,3 @@
-"""Khóa phiên bản tài nguyên theo nội dung và kiểm tra gói xuất bản thật."""
-
 import hashlib
 import json
 from pathlib import Path

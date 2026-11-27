@@ -28,11 +28,6 @@ COMPLETE = """
 
 
 def test_source_policy_exact_priority_and_no_removed_provider() -> None:
-    """Thứ tự ưu tiên là chính sách, không phải chi tiết cài đặt.
-
-    Từ 13-10-2026: một nguồn chính, hai nguồn dự phòng theo đúng thứ tự gọi. Đổi danh mục
-    phải là thay đổi CÓ CHỦ Ý và nhìn thấy được trong diff.
-    """
     assert [s.name for s in primary_sources()] == ["xoso.com.vn"]
     assert [s.name for s in fallback_sources()] == ["mketqua.net", "www.minhngoc.net.vn"]
     assert [s.name for s in default_sources()] == (
@@ -41,7 +36,6 @@ def test_source_policy_exact_priority_and_no_removed_provider() -> None:
 
 
 def test_retired_sources_are_neither_called_nor_printable() -> None:
-    """Nguồn đã nghỉ không còn trong danh mục gọi, nhưng tên vẫn bị cấm in ra."""
     from ingest.sources import RETIRED_SOURCE_NAMES, known_source_domains
 
     called = {s.name for s in default_sources()}
@@ -145,15 +139,13 @@ def test_slot_consensus_rejects_equal_two_group_tie_as_unverified() -> None:
 
     merged, meta = source_consensus_partial(maps, min_agreement=2)
     slot = meta["slot_meta"]["prize7[0]"]
-    assert merged["prize7"][0] == "11"  # priority display only
+    assert merged["prize7"][0] == "11"
     assert slot["verified"] is False
     assert slot["ambiguous_tie"] is True
     assert meta["verified_slots"] == 0
 
 
 def test_two_disagreeing_fallbacks_leave_the_slot_unverified() -> None:
-    """Nguồn chính hỏng, hai nguồn dự phòng nói khác nhau: với ngưỡng một nhóm, ô ấy là hoà
-    giữa hai nhóm — hiện tạm giá trị của nguồn ưu tiên hơn, không bao giờ đánh dấu xác minh."""
     maps = []
     for source, value in [("mketqua.net", "11"), ("www.minhngoc.net.vn", "22")]:
         p = {k: [] for k in PRIZE_ORDER}
@@ -169,7 +161,6 @@ def test_two_disagreeing_fallbacks_leave_the_slot_unverified() -> None:
 
 
 class _ManyCandidates:
-    """Nguồn giả có nhiều đường dẫn ứng viên — cơ chế dùng chung của ``_TextPageSource``."""
 
     def __new__(cls):
         from ingest.sources import _TextPageSource
@@ -187,11 +178,6 @@ class _ManyCandidates:
 
 
 def test_a_source_tries_every_candidate_url_until_one_parses() -> None:
-    """Nguồn có nhiều mẫu đường dẫn phải thử lần lượt, không dừng ở cái đầu.
-
-    Chốt cứng một phỏng đoán sẽ hỏng ÂM THẦM: trang trả 404, bộ bóc nhận chuỗi rỗng, nguồn
-    báo "không có gì" thay vì "sai địa chỉ".
-    """
     from datetime import date
 
     ngay = date(2026, 9, 5)
@@ -216,7 +202,6 @@ def test_a_source_tries_every_candidate_url_until_one_parses() -> None:
 
 
 def test_a_complete_first_candidate_stops_the_remaining_requests() -> None:
-    """Bóc đủ 27 giá trị thì dừng — không gọi thừa vào trang nguồn."""
     from datetime import date
 
     seen: list[str] = []
@@ -234,16 +219,6 @@ def test_a_complete_first_candidate_stops_the_remaining_requests() -> None:
 
 
 def test_the_richest_candidate_wins_even_when_a_later_one_also_parses() -> None:
-    """Giữ bản bóc được NHIỀU NHẤT, không phải bản cuối cùng bóc được.
-
-    Trang tường thuật trực tiếp thường mới có vài giải; trang theo ngày thì
-    đủ. Thứ tự ứng viên KHÔNG đảm bảo trang đầy đủ đứng cuối, nên "giữ bản
-    cuối khác rỗng" là sai — và nó sai âm thầm, vì kết quả vẫn hợp lệ, chỉ
-    thiếu giải.
-
-    Bản đầu của phép kiểm này đặt trang đầy đủ ở CUỐI, nên một đột biến đổi
-    "giữ bản nhiều nhất" thành "giữ bản cuối" vẫn xanh.
-    """
     from datetime import date
 
     ngay = date(2026, 9, 5)
@@ -259,7 +234,6 @@ def test_the_richest_candidate_wins_even_when_a_later_one_also_parses() -> None:
         def get(self, url, timeout=20):
             class R:
                 status_code = 200
-                # Ứng viên ĐẦU giàu nhất; các ứng viên sau vẫn bóc được nhưng ít hơn.
                 text = rich if url == urls[0] else "<div>Đặc Biệt 11111</div>"
             return R()
 

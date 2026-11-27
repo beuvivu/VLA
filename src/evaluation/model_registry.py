@@ -1,36 +1,3 @@
-"""Sổ đăng ký mô hình: MỘT tệp nói rõ mô hình nào đang chạy và nó có được phép đổi xác suất công bố không.
-
-Trước module này, câu hỏi "thành phần ML đang là bản nào, học tới ngày nào, số đo thẩm định bao
-nhiêu, có đang bị cổng giữ ở mức nền không" phải ghép từ sáu nơi: ba gói joblib, hai tệp trọng số
-và hiệu chỉnh, sổ học trực tuyến, báo cáo tác tử, kho tri thức, sổ kỹ năng đã công bố. Không nơi
-nào ghi lại lúc một mô hình ĐỔI ĐỊNH NGHĨA hay ĐỔI TRẠNG THÁI (từ bị cổng giữ sang có hiệu lực).
-
-Mỗi mục của sổ có:
-
-* ``definition`` — thứ ĐỊNH NGHĨA mô hình: loại, phiên bản lược đồ/chính sách, siêu tham số đặt
-  trước, dấu vân tay danh sách đặc trưng. ``fingerprint`` là SHA-256 của khối này. Kết quả của một
-  lần học (cấu hình được chọn, trọng số, ngày học) KHÔNG nằm ở đây: học lại mỗi ngày không phải là
-  đổi mô hình.
-* ``training`` — học tới ngày nào, cửa sổ, các lát thời gian.
-* ``validation`` — số đo ngoài mẫu mà chính mô hình ghi lúc học, hoặc sổ chấm của nó.
-* ``deployment`` — một trong ``DEPLOYMENTS``, đọc từ CỔNG của chính mô hình (trust, quality_pass,
-  promotion, gate), không suy từ giá trị xác suất:
-
-  - ``production``  đang góp vào xác suất công bố;
-  - ``gated``       nằm trong chuỗi nhưng cổng của nó đang giữ ở mức nền / mặc định;
-  - ``shadow``      chạy và được chấm mỗi kỳ, không bao giờ đổi xác suất công bố;
-  - ``missing``     không đọc được hồ sơ — phải xem, vì bước dự báo coi gói hỏng là "chưa có".
-
-Sổ lịch sử ``history.csv`` chỉ NỐI THÊM: một dòng mỗi lần ``(fingerprint, deployment)`` của một mô
-hình khác dòng cuối của chính nó. Đó là nhật ký đề bạt / hạ cổng / đổi định nghĩa, và là thứ để biết
-phải quay về bản nào khi cần lùi. Hai thành phần co theo ``trust`` LIÊN TỤC (ML, Cầu Kèo) chỉ được
-ghi khi đổi ĐỊNH NGHĨA: trust của chúng học lại mỗi ngày và dao động quanh 0, nên "vừa qua 0" không
-phải một lần đề bạt — giá trị trust từng ngày nằm trong ``registry.json`` và lịch sử git của nó.
-
-Engine Vietlott (`vietlott/`) giữ sổ riêng (checkpoint có phiên bản, sổ
-``ml-ledger.jsonl``, lệnh ``vietlott forecast scoreboard``); sổ này không chép lại nó.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -65,7 +32,6 @@ _SCALARS = (str, int, float, bool, type(None))
 
 
 def _json(value: object) -> object:
-    """Giá trị JSON thuần của một trường hồ sơ; kiểu numpy thành kiểu Python, số không hữu hạn thành ``None``."""
     if isinstance(value, np.generic):
         value = value.item()
     if isinstance(value, float):
@@ -80,7 +46,6 @@ def _json(value: object) -> object:
 
 
 def digest(value: object) -> str:
-    """SHA-256 của dạng JSON chuẩn (khoá đã xếp): cùng nội dung thì cùng mã trên mọi máy."""
     canonical = json.dumps(_json(value), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -113,7 +78,6 @@ def _entry(model_id: str, role: str, *, artifact: Path | None, root: Path, defin
         "validation": validation,
         "deployment": deployment,
         "deployment_reason": reason,
-        # Trạng thái suy từ một trust liên tục học lại mỗi ngày: sổ lịch sử không ghi mỗi lần nó qua 0.
         "continuous_trust": continuous_trust,
     }
 
@@ -124,7 +88,6 @@ def _missing(model_id: str, role: str, artifact: Path, root: Path, error: Except
 
 
 def _guarded(model_id: str, role: str, artifact: Path, root: Path, build: Callable[[], dict]) -> dict:
-    """Một hồ sơ hỏng không được làm mất cả sổ: mục ấy thành ``missing``, các mục khác vẫn được ghi."""
     try:
         return build()
     except (OSError, ValueError, KeyError, TypeError, EOFError, AttributeError, ImportError, IndexError) as error:
@@ -174,7 +137,7 @@ def cau_keo_component(root: Path, mode: str) -> dict:
 
     def build() -> dict:
         pack = joblib.load(path)
-        trust, base = trust_from_pack(pack)  # lối đọc DUY NHẤT của luật tin cầu-kèo
+        trust, base = trust_from_pack(pack)
         definition = {
             **_pick(pack, ("model_type", "neg_ratio", "calibration_prevalence", "calendar_contract",
                            "trust_policy_version")),
@@ -228,8 +191,6 @@ def ensemble_weights(root: Path, mode: str) -> dict:
     path = root / "data" / "ensemble" / f"weights_{mode}.json"
 
     def build() -> dict:
-        # Luật của kho: trọng số CHỈ qua load_ensemble_weights, xuất xứ và siêu dữ liệu học CHỈ qua
-        # weights_provenance. Sổ không tự mở tệp trọng số; tệp chỉ được băm để biết bản nào đang có hiệu lực.
         weights = load_ensemble_weights(root / "data", mode)
         provenance = weights_provenance(root / "data", mode)
         origin = provenance["xuat_xu"]
@@ -243,7 +204,6 @@ def ensemble_weights(root: Path, mode: str) -> dict:
             training={"weights": _json(weights.as_dict()), "days_used": provenance.get("days_used")},
             validation={"origin": origin, "gate_reason": provenance.get("ly_do"),
                         **_json(provenance.get("tham_dinh") or {})},
-            # Vector đang hiệu lực (đã học hay mặc định) luôn là vector tạo ra xác suất công bố.
             deployment="production" if origin != "khong_co_ho_so" else "missing",
             reason=words[origin],
         )
@@ -331,10 +291,6 @@ def knowledge_base(root: Path) -> dict:
 
 
 def cage_bayes(root: Path) -> dict:
-    """Bộ máy Bayes theo đoạn của lồng chục/đơn vị (``forecast.cage_bayes``): luôn chạy bóng.
-
-    Lý do triển khai không mang con số (z, e đổi mỗi kỳ, mà sổ lịch sử chỉ ghi khi trạng thái hay lý do đổi).
-    """
     model_id, role = "xsmb/cage_bayes", "Bộ máy Bayes theo đoạn (lồng chục, đơn vị)"
     path = root / "data" / "forecast" / "cage_bayes" / "summary.json"
 
@@ -375,7 +331,6 @@ def _count(values) -> dict[str, int]:
 
 
 def published_forecast(root: Path, mode: str) -> dict:
-    """Vector xác suất ĐÃ CÔNG BỐ — thứ người xem nhận — với sổ chấm ngoài mẫu của chính nó."""
     model_id, role = f"xsmb/published/{mode}", "Xác suất đã công bố"
     ledger = root / "data" / "evaluation" / "model_quality" / "published_skill.csv"
 
@@ -400,12 +355,6 @@ def published_forecast(root: Path, mode: str) -> dict:
 
 
 def regional_forecast(root: Path, region: str) -> dict:
-    """Miền Trung / miền Nam: luật đang "công bố" là dự báo đều; sổ ghi vì sao chưa mô hình nào được thay nó.
-
-    Phép chấm của miền được workflow đồng bộ miền dựng lại mỗi ngày, ngoài pipeline XSMB. Mục này vì thế
-    chỉ chép KẾT LUẬN (mô hình nào thắng, ở đài nào) — thứ hiếm khi đổi — và trỏ tới tệp phép chấm cho mọi
-    con số; nó không chép số đo từng ngày, vốn sẽ cũ đi giữa hai lượt pipeline.
-    """
     model_id, role = f"xs{region}/forecast", "Luật xác suất của đài miền"
     path = root / "data" / regional_benchmark.OUT
 
@@ -442,7 +391,6 @@ def collect(root: Path) -> list[dict]:
 
 
 def data_through(root: Path) -> str | None:
-    """Ngày kỳ XSMB mới nhất của sổ chuẩn: mốc thời gian của cả sổ đăng ký."""
     path = root / "data" / "xsmb-2-digits.csv"
     if not path.is_file():
         return None
@@ -452,10 +400,6 @@ def data_through(root: Path) -> str | None:
 
 
 def update_history(path: Path, entries: list[dict], as_of: str | None) -> list[dict]:
-    """Nối một dòng cho mỗi mô hình có ``(fingerprint, deployment)`` khác dòng cuối của chính nó.
-
-    Dòng cũ giữ nguyên từng byte. Trả các dòng vừa nối.
-    """
     existing = path.read_text(encoding="utf-8") if path.is_file() else ""
     last: dict[str, tuple[str, str]] = {}
     for row in csv.DictReader(io.StringIO(existing)):
@@ -493,7 +437,6 @@ def build(root: Path) -> dict:
 
 
 def run(root: Path) -> Path:
-    """Ghi ``data/evaluation/model_registry/registry.json`` và nối ``history.csv``. Không dấu giờ ghi."""
     registry = build(root)
     out = root / "data" / REGISTRY
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -1,16 +1,3 @@
-"""Vectorised, read-only draw history — the single input type of every model.
-
-``DrawHistory`` stores draws in chronological order as NumPy arrays:
-
-* ``numbers``   (D, k) int16 — sorted main numbers
-* ``incidence`` (D, n) bool  — incidence[d, i-1] is True if number i was drawn in draw d
-* ``bonus``     (D,)  int16 — Power 6/55 bonus ball (0 when absent)
-
-All arrays are flagged non-writeable. ``upto(t)`` returns the strict prefix of the
-first ``t`` draws; the backtest engine only ever hands strategies such prefixes, which
-is what makes look-ahead bias structurally impossible (see ``vietlott_engine.backtest.engine``).
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -31,16 +18,14 @@ def _readonly(a: np.ndarray) -> np.ndarray:
 
 @dataclass(frozen=True)
 class DrawHistory:
-    """Chronologically ordered draws of one game (immutable)."""
 
     spec: GameSpec
     draw_ids: np.ndarray
-    dates: np.ndarray  # datetime64[D]
+    dates: np.ndarray
     numbers: np.ndarray
     incidence: np.ndarray
     bonus: np.ndarray
 
-    # ----------------------------------------------------------- construction
     @classmethod
     def from_draws(cls, draws: Iterable[Draw], spec: GameSpec | None = None) -> "DrawHistory":
         draws = sorted(draws, key=lambda d: (d.draw_date, d.draw_id))
@@ -91,7 +76,6 @@ class DrawHistory:
             bonus=_readonly(np.asarray(bonus, dtype=np.int16).copy()),
         )
 
-    # ------------------------------------------------------------------ access
     def __len__(self) -> int:
         return int(self.numbers.shape[0])
 
@@ -108,7 +92,6 @@ class DrawHistory:
         return self.dates[-1].astype(date) if len(self) else None
 
     def upto(self, t: int) -> "DrawHistory":
-        """Strict prefix: draws with index < t (views, no copy)."""
         if not 0 <= t <= len(self):
             raise IndexError(f"t={t} outside 0..{len(self)}")
         return DrawHistory(
@@ -121,9 +104,6 @@ class DrawHistory:
         )
 
     def detached(self) -> "DrawHistory":
-        """Independent read-only copy. Slices share memory with the full history and
-        ``ndarray.base`` would expose future draws; the backtest hands strategies
-        detached prefixes so that is impossible."""
         return DrawHistory(
             spec=self.spec,
             draw_ids=_readonly(self.draw_ids.copy()),
@@ -149,12 +129,10 @@ class DrawHistory:
             raise InsufficientDataError(f"need at least {min_draws} draws, have {len(self)}")
 
     def counts(self, weights: np.ndarray | None = None) -> np.ndarray:
-        """Per-number (optionally weighted) appearance counts, shape (n,)."""
         inc = self.incidence.astype(np.float64)
         return inc.sum(axis=0) if weights is None else weights @ inc
 
     def id_gaps(self) -> list[tuple[int, int]]:
-        """Missing draw-id ranges ``(first_missing, last_missing)`` (data-quality check)."""
         ids = self.draw_ids
         out: list[tuple[int, int]] = []
         for a, b in zip(ids[:-1], ids[1:]):
@@ -175,7 +153,6 @@ class DrawHistory:
 
 
 def decay_weights(length: int, decay: float) -> np.ndarray:
-    """Exponential weights λ^(D-1-d): the most recent draw has weight 1."""
     if not 0 < decay <= 1:
         raise ValueError("decay must be in (0, 1]")
     if length == 0:

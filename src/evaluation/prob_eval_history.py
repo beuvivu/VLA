@@ -20,24 +20,12 @@ from ensemble.ensemble_utils import (
 from core.xsmb_domain import baseline_rate
 
 
-# Đơn vị của cột ``brier`` trong sổ, ghi ngay trên từng dòng. Ngày 05-09-2026
-# ``categorical_brier`` đổi từ TRUNG BÌNH sang TỔNG trên 100 lớp (định nghĩa
-# chuẩn), nên Brier Đặc Biệt trong sổ nhảy từ ~0,0099 lên ~0,99: đổi đơn vị,
-# không phải mô hình kém đi 100 lần. Giá trị cũ giữ nguyên — sổ là bằng chứng
-# ghi theo thời gian — còn nhãn cho người đọc tệp thô biết phải nhân 100.
 BRIER_UNIT = {"loto": "mean_100_bernoulli", "de": "sum_100_classes"}
 LEGACY_DE_BRIER_UNIT = "mean_100_classes"
 BRIER_UNIT_COLUMN = "brier_unit"
 
 
 def label_brier_units(frame: pd.DataFrame) -> pd.DataFrame:
-    """Điền ``brier_unit`` cho dòng chưa có nhãn; nhãn đã ghi không bị đè.
-
-    Dòng Đặc Biệt cũ được nhận ra bằng bất biến toán học
-    (:func:`backfill_baseline_skill.brier_is_comparable`), không bằng mốc ngày:
-    Brier theo quy ước tổng không bao giờ nhỏ hơn ``(1 − e^−logloss)²``.
-    Cột đứng ngay sau ``brier``.
-    """
     out = frame.copy()
     if BRIER_UNIT_COLUMN not in out.columns:
         out[BRIER_UNIT_COLUMN] = pd.Series(pd.NA, index=out.index, dtype="object")
@@ -91,12 +79,6 @@ def _load_exact_emitted_prediction(
     mode: str,
     target_date: str,
 ) -> np.ndarray | None:
-    """Load the exact ensemble artifact that was emitted for ``target_date``.
-
-    Historical evaluation must never reconstruct a prediction using today's
-    weights, a reduced component subset, or a different calibration contract.
-    If the exact artifact was not retained, the honest result is "not evaluable".
-    """
     pred_file = predict_dir / f"predict_next_{mode}_all_{target_date}.csv"
     if not pred_file.exists() or pred_file.stat().st_size == 0:
         return None
@@ -143,10 +125,6 @@ def evaluate_latest_emitted(
     sub = sub.sort_values("number", kind="stable")
     y = pd.to_numeric(sub["y"], errors="raise").astype(int).to_numpy()
 
-    # Đường cơ sở không thông tin, chấm bằng ĐÚNG các hàm đo dùng cho mô hình
-    # nên hai con số so sánh được trực tiếp. Thiếu nó thì không thể biết mô
-    # hình có hơn được một hằng số hay không — đợt hỏng 12/2025–01/2026 đã
-    # trôi qua tám tháng mà không ai phát hiện chính vì lý do này.
     const = np.full_like(p, baseline_rate(mode), dtype=np.float64)
 
     if mode == "de":
@@ -182,7 +160,6 @@ def evaluate_latest_emitted(
 
 
 def _same_metrics(previous: pd.Series, row: dict) -> bool:
-    """Dòng đã ghi trùng mọi số đo của dòng mới (bỏ qua giờ ghi). Số so đúng bằng nhau sau khi đọc lại CSV."""
     for key, value in row.items():
         if key == "updated_at_utc":
             continue
@@ -238,8 +215,6 @@ def main() -> None:
             old["target_date"].astype(str) == str(row["target_date"])
         )
         if same.any() and "updated_at_utc" in old.columns and _same_metrics(old[same].iloc[-1], row):
-            # Chạy lại trên cùng dữ liệu (pipeline chạy lại trong ngày) ra đúng số đo cũ: giữ giờ ghi
-            # đầu để sổ không đổi byte nào. Trước 06-11-2026 mỗi lượt chạy lại ghi lại dòng chỉ để đổi giờ.
             row["updated_at_utc"] = old[same].iloc[-1]["updated_at_utc"]
         result = pd.concat([old[~same], pd.DataFrame([row])], ignore_index=True)
     else:

@@ -2,17 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Normalize pair artifacts to the canonical VLA number ontology.
-
-Historically, the word ``pair`` was used for several different concepts:
-- an unordered pair of two loto numbers co-occurring in the same draw;
-- a deterministic reverse/lộn pair AB↔BA;
-- the common 50-cặp-loto partition (45 reverse + 5 kép-bóng);
-- two numbers related through bóng/bộ.
-
-This post-processor preserves old filenames for compatibility while adding
-explicit semantics and deterministic relation metadata.
-"""
 
 import argparse
 from pathlib import Path

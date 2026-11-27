@@ -19,7 +19,7 @@ from tests.test_vlm_forecast_pipeline import mega_series, config
 def test_snapshot_service_uses_first_issued_forecast_and_recovers_corruption(tmp_path):
     series = mega_series(40)
     f, learned, summary = refresh_snapshot('mega645', series, tmp_path, config=config())
-    assert learned == 40 and not summary['issued']  # January history is stale in October
+    assert learned == 40 and not summary['issued']
     path = tmp_path / 'ml' / 'mega645.json.gz'
     assert path.exists()
     path.write_bytes(b'torn state')
@@ -122,11 +122,10 @@ def test_new_results_keep_learning_after_process_restart(tmp_path):
     refresh_snapshot('mega645', series.head(40), tmp_path, config=config())
     f, learned, _ = refresh_snapshot('mega645', series, tmp_path)
     assert learned == 1 and f.last_id == 41
-    assert f.config.bootstrap == 100  # persisted training configuration, not a silent reset
+    assert f.config.bootstrap == 100
 
 
 def test_knowing_target_is_not_enough_when_latest_fast_day_is_incomplete(tmp_path):
-    # Existing schedule verifier refuses a partial last day; model state must not bypass it.
     from vietlott_engine.core.products import ProductCode
     from vietlott_engine.forecast.data import Series
     import numpy as np
@@ -185,7 +184,6 @@ def test_ml_event_ledger_recovers_a_crash_tail_and_preserves_first_issue(tmp_pat
     from vlm.forecast.service import _event
     first = {'event':'issue', 'product':'mega645', 'target_id':2, 'history_sha256':'hash', 'marker':'first'}
     path = tmp_path/'ml-ledger.jsonl'
-    # A complete final object can also lose just its newline at a crash.
     path.write_bytes(json.dumps(first).encode() + (b'\n'+tail if tail else b''))
     second = {**first, 'target_id':3, 'marker':'second'}
     assert _event(tmp_path, second) == second
@@ -211,7 +209,7 @@ def test_slow_learning_has_separate_budget_and_preserves_successful_result_statu
     monkeypatch.setattr(ProductSyncPipeline, 'fetch', fetch)
     @asynccontextmanager
     async def offline_client(settings):
-        yield None  # fetch is stubbed; constructing a real TLS client is unrelated
+        yield None
     monkeypatch.setattr('vlm.updates.service.build_http_client', offline_client)
     async def run():
         release = asyncio.Event()
@@ -229,7 +227,6 @@ def test_slow_learning_has_separate_budget_and_preserves_successful_result_statu
         result = (await runner.tick())['products']['bingo18']
         assert result['error'] is None and result['last_draw_id'] == 1
         assert result['learning']['error'] == 'TimeoutError'
-        # Source success must already be durable while the model is still blocked.
         saved = source_status_at_learning_start[0]
         assert saved['last_draw_id'] == 1 and saved['error'] is None and saved['last_success']
         assert not completed

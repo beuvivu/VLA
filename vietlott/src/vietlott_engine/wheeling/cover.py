@@ -1,26 +1,3 @@
-"""Wheeling system (bao lô tối ưu) via covering / lotto designs.
-
-Problem L(v, k, m, t). Given a pool P of v chosen numbers, find the fewest
-k-number tickets such that *whenever at least m of the drawn numbers lie in P,
-some ticket matches at least t of them*. With m = t this is the classical
-covering design C(v, k, t).
-
-Algorithm
-1. Greedy set cover over all m-subsets of the pool (bitmask + popcount,
-   vectorised); candidate tickets are all C(v, k) k-subsets when that is
-   tractable, otherwise a large random sample.
-2. Redundancy pruning.
-3. Simulated-annealing descent in the style of Nurmela & Östergård (1993): try to
-   reach full coverage with one ticket fewer by moving single numbers between
-   tickets, repeating while it keeps succeeding.
-4. Exhaustive verification of the guarantee, plus the Schönheim lower bound
-   when m = t so the gap to optimality is visible.
-
-A wheel does **not** change expected value — every ticket in it has the same EV as
-any other ticket. It reshapes the *distribution* of outcomes: it converts "the pool
-hit m numbers" into a guaranteed tier, at the cost of buying many tickets.
-"""
-
 from __future__ import annotations
 
 from itertools import combinations
@@ -58,24 +35,22 @@ class WheelResult(BaseModel):
     verified: bool
     uncovered: int
     schonheim_lower_bound: int | None
-    lower_bound: int  # best certified bound: max(Schönheim, counting bound, ILP dual bound)
-    optimality: str  # "proven_optimal" | "gap"
+    lower_bound: int
+    optimality: str
     optimality_gap: int
-    method: str  # "heuristic" | "ilp"
+    method: str
     ilp_status: str | None = None
     exhaustive_candidates: bool
     stats: WheelStats | None = None
 
 
 def schonheim_bound(v: int, k: int, t: int) -> int:
-    """Schönheim lower bound on the covering number C(v, k, t)."""
     if t == 0:
         return 1
     return ceil(v / k * schonheim_bound(v - 1, k - 1, t - 1)) if t > 1 else ceil(v / k)
 
 
 def counting_bound(v: int, k: int, t: int, m: int) -> int:
-    """Every m-subset must be hit; one ticket hits at most Σ_{j≥t} C(k,j)·C(v−k, m−j) of them."""
     per_ticket = sum(comb(k, j) * comb(v - k, m - j) for j in range(t, min(k, m) + 1))
     return ceil(comb(v, m) / per_ticket)
 
@@ -111,7 +86,6 @@ class CoveringDesigner:
     def covers(self, ticket_mask: int | np.uint64) -> np.ndarray:
         return _popcount(self.targets & np.uint64(ticket_mask)) >= self.t
 
-    # ------------------------------------------------------------ construction
     def greedy(self) -> list[int]:
         cover = _popcount(self.candidates[:, None] & self.targets[None, :]) >= self.t
         uncovered = np.ones(self.targets.size, dtype=bool)
@@ -119,7 +93,7 @@ class CoveringDesigner:
         while uncovered.any():
             gains = cover[:, uncovered].sum(axis=1)
             best = int(np.argmax(gains))
-            if gains[best] == 0:  # sampled candidates cannot finish the job: add a direct fix
+            if gains[best] == 0:
                 target = int(self.targets[np.flatnonzero(uncovered)[0]])
                 chosen.append(self._complete(target))
                 uncovered &= ~self.covers(chosen[-1])
@@ -144,7 +118,6 @@ class CoveringDesigner:
         return kept
 
     def anneal(self, tickets: list[int], iterations: int = 20_000, t0: float = 1.0, t1: float = 0.02) -> list[int] | None:
-        """Search for a full cover of size len(tickets) starting from ``tickets``. None if not found."""
         bits = [[i for i in range(self.v) if tk >> i & 1] for tk in tickets]
         cov = np.array([self.covers(tk) for tk in tickets])
         counts = cov.sum(axis=0)
@@ -153,7 +126,6 @@ class CoveringDesigner:
             if cost == 0:
                 return [int(sum(1 << i for i in b)) for b in bits]
             temp = t0 * (t1 / t0) ** (it / iterations)
-            # focus moves on an uncovered target (as in Nurmela–Östergård)
             target = int(self.targets[self.rng.choice(np.flatnonzero(counts == 0))])
             j = int(self.rng.integers(len(bits)))
             members = bits[j]
@@ -179,7 +151,6 @@ class CoveringDesigner:
             counts = np.sum([self.covers(tk) for tk in best], axis=0)
             unique = np.array([int(np.sum(self.covers(tk) & (counts == 1))) for tk in best])
             improved = None
-            # drop the ticket(s) with the least unique coverage and try to repair
             for drop in np.argsort(unique)[: restarts]:
                 start = [tk for i, tk in enumerate(best) if i != int(drop)]
                 improved = self.anneal(start, anneal_iterations)
@@ -191,11 +162,6 @@ class CoveringDesigner:
         return best
 
     def solve_ilp(self, time_limit: float = 10.0) -> tuple[list[int] | None, float | None, str]:
-        """Exact set-cover ILP over the candidate tickets (HiGHS branch-and-cut).
-
-        Returns (tickets or None, dual bound, status). The dual bound is a certified
-        lower bound on the covering number only when the candidates are exhaustive.
-        """
         from scipy import sparse
         from scipy.optimize import Bounds, LinearConstraint, milp
 
@@ -224,14 +190,13 @@ class CoveringDesigner:
 
 
 def simulate_wheel(tickets: list[list[int]], pool: list[int], condition: int, spec: GameSpec, sims: int = 100_000, seed: int | None = None) -> WheelStats:
-    """Monte Carlo outcome distribution of a wheel under uniformly random draws."""
     rng = np.random.default_rng(seed)
     n, k = spec.pool_size, spec.pick
     draws = np.argpartition(rng.random((sims, n)), k, axis=1)[:, :k]
     inc = np.zeros((sims, n + 1), dtype=bool)
     inc[np.arange(sims)[:, None], draws + 1] = True
     tk = np.asarray(tickets, dtype=int)
-    matches = inc[:, tk].sum(axis=2)  # (sims, b)
+    matches = inc[:, tk].sum(axis=2)
     in_pool = inc[:, np.asarray(pool)].sum(axis=1)
     fixed = {t.main_matches: t for t in spec.tiers if t.fixed_amount is not None}
     payout = np.zeros(sims)
@@ -259,8 +224,6 @@ def build_wheel(
     time_limit: float = 10.0,
     max_ilp_size: int = 3_000_000,
 ) -> WheelResult:
-    """Heuristic design, then (optionally) an exact ILP that either improves it, proves it
-    optimal, or at least certifies a lower bound."""
     pool = sorted(set(req.pool))
     if len(pool) != len(req.pool):
         raise ValueError("pool contains duplicates")

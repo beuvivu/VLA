@@ -1,16 +1,3 @@
-"""Fallback when vietlott.vn is unreachable (or a source has gaps).
-
-``FallbackDrawSource`` tries its sources in order and keeps the first that answers; every
-attempt (source, error, rows) is recorded so a sync report shows *where* the data came from.
-Default order for ``--source auto``:
-
-    vietlott (direct, Vietnamese IP) → nhanaz (community archive, ~10-minute updates)
-    → github_mirror (vietvudanh) → v130 (local Vietlott Quant Engine 1.3.0 snapshot, if set)
-
-``ArchiveDrawSource`` adapts the community archive (remote or local folder) and the 1.3.0
-snapshot to the ``DrawSource`` interface used by ``SyncPipeline`` for Mega / Power / Lotto.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +35,6 @@ class FallbackLog:
 
 
 class ArchiveDrawSource(DrawSource):
-    """Mega / Power / Lotto draws from the community archive or a 1.3.0 snapshot."""
 
     def __init__(self, archive=None, v130_dir=None) -> None:  # type: ignore[no-untyped-def]
         if (archive is None) == (v130_dir is None):
@@ -56,7 +42,7 @@ class ArchiveDrawSource(DrawSource):
         self.archive = archive
         self.v130_dir = v130_dir
         self.name = "nhanaz" if archive is not None else "v130"
-        self.last_records: list[dict] = []  # canonical records (with prize tables) of the last fetch
+        self.last_records: list[dict] = []
 
     async def fetch(self, spec: GameSpec, since_id: int | None = None) -> FetchResult:
         product = ProductCode(spec.code.value)
@@ -87,15 +73,6 @@ class FallbackDrawSource(DrawSource):
         self.log = FallbackLog()
 
     async def fetch(self, spec: GameSpec, since_id: int | None = None) -> FetchResult:
-        """Nguồn đứng trước quyết định các kỳ nó đưa, kể cả khi đang chờ lấp khoảng hở.
-
-        Khi có cursor, chỉ phát đoạn liền mạch ngay sau cursor. Nguồn sau được hỏi từ cuối đoạn
-        ấy để lấp chỗ thiếu, không nhảy tới kỳ cao nhất còn nằm trong bộ đệm. Khởi động không có
-        cursor vẫn giữ toàn bộ lô đầu, vì nguồn có thể chỉ giữ một phần lịch sử.
-
-        Dừng ở nguồn đầu tiên thì một bản sao bắt kịp một phần (có #927, chưa có #928) che mất kỳ mà
-        nguồn sau đã có, và kho trễ thêm một lượt chạy — đúng lúc đang bù các lượt bị lỡ.
-        """
         self.log = FallbackLog()
         empty = None
         result: FetchResult | None = None
@@ -103,8 +80,6 @@ class FallbackDrawSource(DrawSource):
         rejected_by_attempt: dict[int, list[tuple[str, str]]] = {}
         used: list[str] = []
         for src in self.sources:
-            # Nguồn sau được hỏi từ đuôi kết quả đã gộp: trang chỉ giữ vài kỳ gần nhất (xskt) vẫn
-            # nối được khi các nguồn trước đã lấp đoạn giữa.
             cursor = result.draws[-1].draw_id if result is not None else since_id
             try:
                 res = await asyncio.wait_for(src.fetch(spec, cursor), self.source_timeout_s)
@@ -149,7 +124,7 @@ class FallbackDrawSource(DrawSource):
                 if draw.draw_id < nxt:
                     continue
                 if draw.draw_id != nxt:
-                    break  # khoảng hở: không nối, kẻo lượt sau (since_id đã vượt) không bù được
+                    break
                 extra.append(draw)
                 nxt += 1
             if extra:
@@ -169,5 +144,5 @@ class FallbackDrawSource(DrawSource):
         if pending:
             raise SourceError(f"all sources exhausted with missing draw #{since_id + 1}")
         if empty is not None:
-            return empty  # empty is legitimate, but must not hide a newer fallback
+            return empty
         raise SourceError("all sources failed: " + "; ".join(f"{a.source}: {a.error}" for a in self.log.attempts))

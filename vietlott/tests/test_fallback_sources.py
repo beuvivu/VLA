@@ -1,7 +1,3 @@
-"""v3.3: fallback when vietlott.vn is unreachable — community archive (NhanAZ-Data/vietlott-research),
-Vietlott Quant Engine 1.3.0 snapshot import, ordered fallback, exclusions, merge layers,
-Max 4D, official Keno table."""
-
 from __future__ import annotations
 
 import asyncio
@@ -92,7 +88,6 @@ def make_archive(root: Path) -> Path:
     return root
 
 
-# ------------------------------------------------------------------ archive parsing
 def test_archive_local_folder_all_formats(tmp_path: Path) -> None:
     a = NhanAZArchive(local_dir=make_archive(tmp_path))
 
@@ -104,7 +99,7 @@ def test_archive_local_folder_all_formats(tmp_path: Path) -> None:
     assert keno.sources == {"xosominhngoc_net_vn": 1, "official_vietlott": 1}
     imp = import_canonical(mega.rows, MEGA_645.code)
     assert imp.prizes[0].jackpot_pots == {"jackpot1": 2 * 79_409_173_250} and imp.prizes[0].winners["third"] == 35877
-    lp = import_canonical(lotto.rows, LOTTO_535.code).prizes[0]  # shifted header columns
+    lp = import_canonical(lotto.rows, LOTTO_535.code).prizes[0]
     assert lp.winners == {"jackpot1": 0, "first": 0, "second": 13, "third": 118, "fourth": 285, "fifth": 2921, "consolation": 19563}
     assert lp.jackpot_pots == {"jackpot1": 6_112_312_500}
     h, rej = parse_product_rows(ProductCode.MAX4D, max4d.rows, "t")
@@ -138,10 +133,9 @@ def test_archive_remote_months_and_missing_month(tmp_path: Path) -> None:
     got = asyncio.run(run())
     months = [a for a in asked if a.startswith("draws/keno/")]
     assert months[0] == "draws/keno/2026-03.csv" and "draws/keno/2026-04.csv" in months
-    assert [r["id"] for r in got.rows] == [275900, 275985]  # later months 404 → skipped
+    assert [r["id"] for r in got.rows] == [275900, 275985]
 
 
-# ------------------------------------------------------------------ fallback
 class _Failing(DrawSource):
     name = "vietlott"
 
@@ -180,8 +174,8 @@ def test_product_sync_auto_falls_back_to_archive_and_records_exclusions(tmp_path
     rep = asyncio.run(run())
     assert rep.source_used == "nhanaz" and [a["source"] for a in rep.attempts] == ["vietlott", "nhanaz"] and not rep.attempts[0]["ok"]
     assert (rep.inserted, rep.total_after, rep.exclusions_added) == (1, 1, 1)
-    assert rep.rejected >= 1  # dòng đăng lại chưa có xác thực chính thức không vào kho live
-    store.upsert(ProductCode.KENO, [{"id": 275986, "date": "2026-04-02", "result": KENO_A}], "test")  # a not-confirmed draw reaches the store
+    assert rep.rejected >= 1
+    store.upsert(ProductCode.KENO, [{"id": 275986, "date": "2026-04-02", "result": KENO_A}], "test")
     assert 275986 not in store.load(ProductCode.KENO).draw_ids and 275986 in store.load(ProductCode.KENO, include_unconfirmed=True).draw_ids
 
 
@@ -192,7 +186,6 @@ def test_bundled_exclusions_are_applied() -> None:
     assert len(excluded) == 31 and not set(h.draw_ids.tolist()) & excluded and set(full.draw_ids.tolist()) & excluded
 
 
-# ------------------------------------------------------------------ 1.3.0 snapshot
 def _duckdb_cli() -> str | None:
     return os.environ.get("VQE_DUCKDB_CLI") or shutil.which("duckdb")
 
@@ -224,7 +217,6 @@ def test_v130_missing_snapshot_is_reported(tmp_path: Path) -> None:
         products_dir(tmp_path)
 
 
-# ------------------------------------------------------------------ merge layers
 def _load_builder():  # type: ignore[no-untyped-def]
     spec = importlib.util.spec_from_file_location("bod", ROOT / "scripts" / "build_official_dataset.py")
     mod = importlib.util.module_from_spec(spec)
@@ -237,13 +229,12 @@ def test_merge_layers_priority_and_conflicts() -> None:
     hi = [{"id": 1, "date": "2026-01-01", "result": [1, 2, 3]}, {"id": 2, "date": "2026-01-01", "result": [4, 5, 6]}]
     lo = [{"id": 2, "date": "2026-01-01", "result": [6, 6, 6], "data_source": "xoso"}, {"id": 3, "date": "2026-01-02", "result": [1, 1, 2], "data_source": "xoso"}]
     out, stats = mod.merge_layers(ProductCode.BINGO18, [("vietlott.vn/list", hi), ("nhanaz", lo)])
-    assert [r["result"] for r in out] == [[1, 2, 3], [4, 5, 6], [1, 1, 2]]  # higher layer wins on id 2
+    assert [r["result"] for r in out] == [[1, 2, 3], [4, 5, 6], [1, 1, 2]]
     L = stats["layers"][1]
     assert (L["overlap_with_higher_layers"], L["identical"], L["conflicts"], L["added"]) == (1, 0, 1, 1)
     assert out[2]["src"] == "nhanaz:xoso" and stats["origin_mix"] == {"vietlott.vn/list": 2, "nhanaz:xoso": 1}
 
 
-# ------------------------------------------------------------------ Max 4D + digits
 def test_max4d_digit_tests_size_and_power() -> None:
     rng = np.random.default_rng(2)
     fair = rng.integers(0, 10000, (2000, 6))
@@ -266,13 +257,12 @@ def test_bundled_max4d_history() -> None:
     assert str(h.dates.min()) == "2016-11-19" and str(h.dates.max()) == "2021-08-31"
 
 
-# ------------------------------------------------------------------ official Keno table
 def test_keno_table_matches_official_detail_page() -> None:
     rules = json.loads((SEED / "keno_rules_official.json").read_text(encoding="utf-8"))
     for bac, cells in rules["bac"].items():
         for hits, value in cells.items():
             if (int(bac), int(hits)) == (5, 4):
-                assert value == 0 and KENO_TABLE[5][4] == 150_000  # page shows "0 đ"; advertised 150.000 kept
+                assert value == 0 and KENO_TABLE[5][4] == 150_000
                 continue
             assert KENO_TABLE[int(bac)].get(int(hits)) == value, (bac, hits)
     side = {sb.name: sb for sb in KENO_SIDE_BETS}
@@ -281,7 +271,6 @@ def test_keno_table_matches_official_detail_page() -> None:
     assert all(sb.verified for sb in KENO_SIDE_BETS)
 
 
-# ------------------------------------------------------------------ CLI / API
 def test_cli_sync_from_local_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     from vietlott_engine.cli import main
     from vietlott_engine.core.config import get_settings
@@ -316,7 +305,6 @@ def test_api_max4d(tmp_path: Path) -> None:
 
 
 def test_duckdb_cli_fallback_escapes_quotes_in_paths(tmp_path, monkeypatch):
-    """Đường dẫn có dấu nháy đơn không được cắt câu SQL gửi cho DuckDB CLI (thoát như ``storage``)."""
     import subprocess
     import sys
 
@@ -327,7 +315,7 @@ def test_duckdb_cli_fallback_escapes_quotes_in_paths(tmp_path, monkeypatch):
     folder.mkdir()
     parquet = folder / "draws.parquet"
     parquet.write_bytes(b"PAR1")
-    monkeypatch.setitem(sys.modules, "duckdb", None)          # import duckdb → ImportError
+    monkeypatch.setitem(sys.modules, "duckdb", None)
     monkeypatch.setitem(sys.modules, "pyarrow.parquet", None)
     monkeypatch.setenv("VQE_DUCKDB_CLI", "/fake/duckdb")
     seen = []
@@ -345,10 +333,6 @@ def test_duckdb_cli_fallback_escapes_quotes_in_paths(tmp_path, monkeypatch):
 
 
 def test_every_default_archive_address_points_at_the_renamed_repository() -> None:
-    """Kho cộng đồng đổi tên (``vietlott-research`` → ``vietlott-data-collector``) và chuyển dữ liệu sang
-    nhánh ``datasets`` khoảng 20-11-2026: địa chỉ cũ trả 404 cho mọi sản phẩm, Keno/Bingo18 mất nguồn đối
-    chiếu và đứng ở kỳ 19-11. Ba chỗ khai mặc định (cấu hình, nguồn của engine, nguồn của gói ``vlm``) phải
-    trùng nhau và trỏ đúng nhánh; lệch một chỗ là một đường đồng bộ lặng lẽ quay về địa chỉ chết."""
     import inspect
 
     from vietlott_engine.core.config import Settings

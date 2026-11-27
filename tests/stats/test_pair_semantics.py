@@ -70,7 +70,6 @@ def test_bong_am_relation_metadata_is_explicit_but_not_a_50_pair() -> None:
     row = out.iloc[0]
     assert bool(row["reverse_related"]) is True
     assert bool(row["bong_am_related"]) is True
-    # 14-41 is also a reverse pair, therefore it is in the 50-pair partition.
     assert bool(row["cap_loto_50_related"]) is True
     assert "bong_am" in row["relation_tags"]
 

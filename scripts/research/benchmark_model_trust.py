@@ -1,16 +1,3 @@
-"""Đo ngoài mẫu các luật ``model_trust`` của thành phần ML production.
-
-Walk-forward trên ``--last`` kỳ cuối (học lại mỗi ``--refit-every`` kỳ) bằng
-bản tái dựng ``ProductionMLModel``. Mỗi lần học ghi xác suất THÔ và kỹ năng
-thẩm định, nên mọi luật trust được chấm trên CÙNG một bộ dự báo thô mà không
-phải học lại. Kỳ ngay sau quãng nghỉ (Tết) bị loại như trong benchmark chính.
-
-Luật quyết định chốt TRƯỚC khi đo (03-10-2026): chỉ đổi khi luật mới không kém
-luật hiện hành ở cả hai chế độ và thắng với z ≥ 2 ở ít nhất một chế độ.
-
-    PYTHONPATH=src python3 scripts/research/benchmark_model_trust.py --last 1000
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -42,7 +29,6 @@ CURRENT, CANDIDATE = "san_035", "khong_san"
 
 
 class RawRecorder(ProductionMLModel):
-    """Phát xác suất thô (−1 ở số không có hàng) và ghi kỹ năng thẩm định từng lần học."""
 
     def __init__(self, mode: str, history: History):
         super().__init__(mode, history)
@@ -102,7 +88,7 @@ def run_mode(mode: str, history: History, last: int, refit_every: int) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", default=str(ROOT / "data"))
     ap.add_argument("--last", type=int, default=1000)
     ap.add_argument("--refit-every", type=int, default=50)

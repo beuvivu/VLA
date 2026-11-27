@@ -1,5 +1,3 @@
-"""Thẻ dự báo chỉ nhận đúng kỳ và xác suất đã công bố nguyên vẹn."""
-
 from __future__ import annotations
 
 import json
@@ -19,7 +17,6 @@ def _fixture(root: Path, *, target: str = TARGET) -> dict[str, np.ndarray]:
     pred.mkdir(parents=True)
     de = np.full(100, 0.008)
     de[[7, 3, 24, 8, 92]] = [0.08, 0.06, 0.04, 0.03, 0.03]
-    # Sai số nhỏ hợp lệ vẫn phải được giữ, không chuẩn hoá lại khi hiển thị.
     de *= 1.0 + 5e-9
     loto = np.full(100, 0.2)
     loto[[7, 3, 24, 8, 92]] = [0.42, 0.41, 0.4, 0.39, 0.38]

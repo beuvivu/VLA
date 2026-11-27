@@ -116,11 +116,6 @@ def test_meta_pack_cannot_expand_the_production_feature_allowlist() -> None:
         predict_meta(pack, "loto", "2026-09-01", p, p, p, p, p)
 
 
-# ---------------------------------------------------------------------------
-# Cổng thẩm định: phải thắng CẢ dự báo hằng số, không chỉ tổ hợp tuyến tính
-# ---------------------------------------------------------------------------
-
-
 def _metrics(logloss: float, brier: float):
     from forecast.meta_predictor import MetaMetrics
 
@@ -128,10 +123,6 @@ def _metrics(logloss: float, brier: float):
 
 
 def test_beating_a_broken_linear_baseline_alone_does_not_switch_meta_on() -> None:
-    """Đúng các con số của lượt 25-09-2026 (LOTO): tổ hợp tuyến tính hiệu chỉnh
-    làm nhọn xác suất và cho logloss 1,0157; mô hình xếp chồng 0,5456 "thắng
-    46%" — nhưng dự báo hằng số trên cùng lát đạt 0,54566. Không hơn hằng số
-    thì không có gì để trộn vào production."""
     from forecast.meta_predictor import quality_gate
 
     gate = quality_gate(
@@ -147,7 +138,6 @@ def test_beating_a_broken_linear_baseline_alone_does_not_switch_meta_on() -> Non
 
 
 def test_a_real_edge_over_both_opponents_still_switches_meta_on() -> None:
-    """Cổng chặt hơn không được thành cổng đóng cứng."""
     from forecast.meta_predictor import quality_gate
 
     gate = quality_gate(
@@ -158,7 +148,6 @@ def test_a_real_edge_over_both_opponents_still_switches_meta_on() -> None:
     )
 
     assert gate["quality_pass"] is True
-    # Độ tin cậy tính theo đối thủ MẠNH hơn (kỹ năng nhỏ hơn).
     assert gate["gate_skill"] == pytest.approx(1 - 0.5400 / 0.5460)
 
 
@@ -177,8 +166,6 @@ def test_losing_to_the_constant_forecast_fails_even_when_linear_is_worse() -> No
 
 
 def test_the_constant_opponent_never_looks_at_the_validation_days() -> None:
-    """Tần suất của mốc hằng số LOTO lấy từ ngày TRƯỚC lát thẩm định. Lát
-    thẩm định ở đây toàn 1: nếu mốc nhìn vào nó, tần suất sẽ khác 0,25."""
     from forecast.meta_predictor import _constant_validation
 
     rows = []
@@ -206,7 +193,6 @@ def test_the_constant_opponent_never_looks_at_the_validation_days() -> None:
 
 
 def test_the_stacker_and_the_weight_learner_read_one_component_list() -> None:
-    """``COMPONENT_COLS`` từng viết tay ở đây trong khi bộ học trọng số suy nó từ ``COMPONENT_KEYS``."""
     from ensemble import learn_ensemble_weights
     from ensemble.ensemble_components import COMPONENT_KEYS
     from forecast import meta_predictor

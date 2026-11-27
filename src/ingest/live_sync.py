@@ -1,18 +1,5 @@
 from __future__ import annotations
 
-"""Near-live multi-source XSMB snapshot for GitHub-only hosting.
-
-Lịch sử chuẩn KHÔNG bị sửa ở đây; ``sync.py`` mới ghi lịch sử, từ trang theo ngày.
-
-Chính sách nguồn (từ 13-10-2026): gọi MỘT nguồn chính; hai nguồn dự phòng chỉ được gọi khi
-nguồn chính gặp sự cố — không trả giá trị nào, hoặc đã quá giờ quay xong mà còn thiếu ô.
-Khi ấy chỉ dữ liệu dự phòng được hợp nhất, và hai dự phòng nói khác nhau ở một ô thì ô ấy
-là xung đột, không được xác minh. Xem ``sources.fetch_with_failover``.
-
-Bản chụp ghi ra đĩa đã được ẩn danh: không tên miền, không thông điệp lỗi,
-không khoá nhóm nhà cung cấp. Tệp này đi thẳng ra trình duyệt nên nó là ranh
-giới công khai.
-"""
 
 import argparse
 import json
@@ -46,12 +33,6 @@ def fetch_snapshot(
     min_agreement: int = 1,
     previous: dict[str, list[str]] | None = None,
 ) -> dict:
-    """Bản chụp live của kỳ hôm nay.
-
-    ``previous`` là bảng giải của kỳ đã lưu gần nhất. Nguồn nào còn hiện đúng kỳ ấy bị coi là
-    chưa có gì (``sources.shows_previous_draw``) — TRƯỚC khi quyết định chuyển nguồn, nên nguồn
-    chính còn hiện kỳ trước cũng kích hoạt dự phòng.
-    """
     now = now or datetime.now(TZ)
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
@@ -60,8 +41,6 @@ def fetch_snapshot(
         started = time.perf_counter()
         error: str | None = None
         try:
-            # Mỗi luồng một phiên riêng: tránh bất ngờ về an toàn luồng, và để
-            # một lượt chụp bị chặn bởi nguồn CHẬM NHẤT chứ không phải tổng.
             http = requests.Session()
             prize_map = source.fetch_partial(now.date(), http, live=True)
         except Exception as exc:  # noqa: BLE001
@@ -85,15 +64,12 @@ def fetch_snapshot(
         with ThreadPoolExecutor(max_workers=min(6, len(jobs))) as pool:
             futures = [pool.submit(fetch_one, *job) for job in jobs]
             done = [future.result() for future in as_completed(futures)]
-        # Thứ tự ưu tiên quyết định giá trị nào được hiển thị tạm khi chưa đủ
-        # đồng thuận, nên KHÔNG được để thứ tự hoàn thành quyết định thay.
         return sorted(done, key=lambda o: o.priority)
 
     observations, failover_log = fetch_with_failover(
         fetch_one, target=now.date(), now=now, run_batch=run_batch, min_agreement=min_agreement
     )
 
-    # Nguồn chính đã hỏng thì bản rỗng hay kẹt của nó không được che giá trị của dự phòng.
     partials = [
         (o.name, o.prize_map)
         for o in observations
@@ -177,9 +153,6 @@ def main() -> None:
         min_agreement=max(1, args.min_agreement),
         previous=load_previous_draw(Path(args.history), before=today),
     )
-    # Ranh giới công khai. Tệp này đi thẳng ra trình duyệt, nên ẩn danh ở ĐÂY
-    # chứ không phải ở chỗ hiển thị: chỉ cần một trang khác đọc cùng tệp mà
-    # quên ẩn là lộ hết.
     public = anonymise_snapshot(payload)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

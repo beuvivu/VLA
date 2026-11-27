@@ -1,5 +1,3 @@
-"""Lịch Đặc Biệt phải dùng kết quả gốc và giữ nguyên năm chữ số."""
-
 from pathlib import Path
 
 import pandas as pd
@@ -11,7 +9,6 @@ from pages import build_statistics_dashboard as dashboard
 def test_dashboard_calendar_reads_full_prizes_instead_of_statistical_tails(
     tmp_path: Path, monkeypatch,
 ) -> None:
-    """Hai nguồn khác nhau phải hiện kết quả thật, kể cả giá trị 00001."""
     advanced = tmp_path / "data" / "stats" / "advanced"
     advanced.mkdir(parents=True)
     (tmp_path / "data" / "xsmb.csv").write_text(
@@ -37,7 +34,6 @@ def test_dashboard_calendar_reads_full_prizes_instead_of_statistical_tails(
 
 
 def test_result_calendar_formatting_preserves_five_digits_and_empty_days() -> None:
-    """Số nhỏ vẫn đủ năm chữ số; không biến ô trống thành kết quả 00000."""
     week = BeautifulSoup(dashboard._board_week_table(pd.DataFrame({
         "week_key": ["2026-W01"], "T2": ["00001"], "T3": ["00000"],
         "T4": [""], "T5": ["04789"], "T6": [""], "T7": [""], "CN": ["12345"],
@@ -53,7 +49,6 @@ def test_result_calendar_formatting_preserves_five_digits_and_empty_days() -> No
 
 
 def test_full_result_boards_use_iso_weeks_and_calendar_days() -> None:
-    """Đổi năm ISO, tháng nhuận và hàng lỗi không được làm lệch ngày kết quả."""
     week, month = dashboard._full_special_boards(pd.DataFrame({
         "date": ["2026-01-01", "2025-12-29", "2024-02-29", "bad", "2026-01-02", "2026-01-03"],
         "special": ["04789", "1", "00000", "12345", "", "broken"],

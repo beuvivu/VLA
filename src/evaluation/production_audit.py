@@ -120,10 +120,6 @@ def _field(obj: dict, *keys: str) -> str:
     return str(obj or "")[:10]
 
 
-#: Bộ TỰ HỌC của chuỗi dự báo và ngày dữ liệu cuối cùng mỗi bộ ghi lại: (tên, tệp, khoá lồng nhau).
-#: Mỗi bộ học lại trên MỌI kỳ quay mới (15-11-2026: trên 33 commit chốt từ 06-10, không bộ nào trễ
-#: một kỳ). Trọng số tổ hợp không có ở đây: nó CỐ Ý đứng yên khi sổ đủ năm thành phần chưa đủ ngày
-#: (đổi `COMPONENT_POLICY` thì sổ bắt đầu lại), và bước học hỏng thì lượt `--strict` đã đỏ.
 ADAPTIVE_LEARNERS = (
     ("online_loto", "data/forecast/online/loto.json", ("history", "last_date")),
     ("online_de", "data/forecast/online/de.json", ("history", "last_date")),
@@ -135,11 +131,6 @@ ADAPTIVE_LEARNERS = (
 
 
 def stale_learners(latest: date) -> list[str]:
-    """Bộ tự học nào chưa học tới kỳ ``latest``: thoát mã 0 mà bỏ qua kỳ mới là tự điều chỉnh đã dừng.
-
-    Hedge, sổ ba tác tử và kho tri thức phải ghi đúng ngày kỳ mới nhất. Mô hình xếp chồng chỉ bị đòi
-    khi nó đang ở trạng thái đã học (`status = trained`); lúc lịch sử chưa đủ, nó ghi lý do và đứng yên.
-    """
     expected = latest.isoformat()
     found: list[str] = []
     for name, path, keys in ADAPTIVE_LEARNERS:
@@ -202,9 +193,6 @@ def audit(
     if dates:
         if len(dates) != len(set(dates)):
             critical.append("duplicate_canonical_dates")
-        # Ngày Tết và đợt giãn cách 2020 vốn không có kỳ quay. Trước đây kiểm
-        # tra này chỉ xanh vì 50 bản ghi bịa lấp vào chỗ trống — bất biến được
-        # bảo đảm bởi chính dữ liệu sai. Xem calendar_alignment.
         missing_days = unexpected_gap_dates(pd.to_datetime(list(dates)))
         if missing_days:
             critical.append("canonical_gaps=" + ",".join(missing_days[-10:]))
@@ -215,8 +203,6 @@ def audit(
             item = source_audit.get(latest.isoformat(), {})
             if not item.get("accepted"):
                 critical.append(f"source_audit_not_accepted={latest}")
-            # Một nguồn chính, dự phòng chỉ khi nguồn chính hỏng (sources.py): kết quả chuẩn
-            # có đúng một nguồn ủng hộ là bình thường, KHÔNG có nguồn nào mới là lỗi.
             if int(item.get("agreement", 0)) < 1:
                 critical.append(f"source_consensus_missing={latest}")
         except Exception as exc:  # noqa: BLE001
@@ -284,9 +270,6 @@ def audit(
                     f"ai_overlay_{mode}_target={overlay_target} expected={target}"
                 )
 
-        # Chỉ ở kiểm toán đầy đủ sau khi chốt (post-finalization, watchdog). `--consistency-only` chạy trên mọi
-        # commit của PR (release_check.sh), kể cả lúc kết quả chuẩn đã commit mà phân tích chưa: bộ học còn ở
-        # kỳ trước là trạng thái hợp lệ ở khoảng ấy, và release_check không dựng lại bộ học.
         if check_freshness:
             critical.extend(stale_learners(latest))
 
@@ -296,12 +279,6 @@ def audit(
                 critical.append(
                     f"conditional_calendar_rows={cond.get('calendar_rows')} expected={len(dates)}"
                 )
-            # XSMB nghỉ quay dịp Tết và suốt đợt giãn cách 01-22/4/2020, nên
-            # chuỗi ngày CÓ ranh giới không liền kề — thực tế, không phải lỗi.
-            # Hai khẳng định cũ đòi đúng 0 ranh giới; chúng chỉ xanh chừng nào
-            # 50 bản ghi bịa còn lấp vào chỗ trống. Điều đáng kiểm là mỗi ranh
-            # giới đều được ghi nhận: cặp đếm được cộng ranh giới bỏ qua phải
-            # bằng tổng số chuyển tiếp có thể.
             pairs = int(cond.get("exact_next_day_pairs", -1))
             skipped = int(cond.get("skipped_nonconsecutive_boundaries", -1))
             if pairs + skipped != max(0, len(dates) - 1):

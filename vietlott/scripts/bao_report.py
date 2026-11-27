@@ -1,10 +1,3 @@
-"""Regenerate ``reports/bao_vietlott.{md,json}``: every bao option Vietlott sells, exact
-prize tables, bao vs bao rút gọn vs single tickets, bao EV with co-winners and taxes, and
-the Max 3D family.
-
-    python scripts/bao_report.py [--sims 100000]
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -97,7 +90,6 @@ def main() -> int:
     md += ["| Vé | Jackpot | Vé bán (mô hình doanh số) | RTP không ai trúng chung | RTP có người trúng chung | Thuế theo vé vs theo lượt (kỳ vọng sau thuế) |", "|---|---:|---:|---:|---:|---:|"]
 
     def sold_at(spec: GameSpec, jackpot: float, fallback: int) -> int:
-        """Tickets sold at this jackpot from the calibrated sales model (data/calibration)."""
         from vietlott_engine.game_theory.market import load_sales_model
 
         sm = load_sales_model(spec.code, Path(os.environ.get("VQE_CALIBRATION_DIR") or ROOT / "data" / "calibration"))

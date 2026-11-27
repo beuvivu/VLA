@@ -2,11 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Period matrices, boards, and AI/ML-assisted statistical signals for XSMB.
-
-The tables in this module are descriptive analytics derived from historical
-results. The ML-assisted scores are calibrated ranking signals, not guarantees.
-"""
 
 import argparse
 import csv
@@ -68,7 +63,6 @@ def _minmax(s: pd.Series) -> pd.Series:
 
 
 def _prepare_sparse(sparse_df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize sparse columns to 0..99 integer labels."""
     if sparse_df.empty:
         return pd.DataFrame(columns=["date", *NUMBER_COLS])
 
@@ -177,8 +171,6 @@ def _period_frequency_from_sparse(sparse_df: pd.DataFrame, *, period: PeriodKind
     out["hit_rate"] = np.where(out["draws"] > 0, out["days_hit"] / out["draws"], 0.0)
     out["avg_per_draw"] = np.where(out["draws"] > 0, out["freq"] / out["draws"], 0.0)
 
-    # Approximation: each draw has 27 two-digit positions for loto and one
-    # position for de/prize1. This z-score is a comparison indicator only.
     positions_per_draw = 27 if mode == "loto" else 1
     n_positions = out["draws"].astype(float) * positions_per_draw
     expected = n_positions * 0.01
@@ -252,7 +244,6 @@ def _rhythm_from_sparse(sparse_df: pd.DataFrame, *, mode: str) -> pd.DataFrame:
     for n in NUMBER_COLS:
         idx = np.where(mat[:, n] > 0)[0]
         if idx.size == 0:
-            # Chưa từng về: gan bằng trọn số kỳ đã quan sát.
             current_gap = int(mat.shape[0])
             rows.append(
                 {
@@ -273,17 +264,6 @@ def _rhythm_from_sparse(sparse_df: pd.DataFrame, *, mode: str) -> pd.DataFrame:
             continue
 
         hit_dates = pd.to_datetime(dates[idx]).normalize()
-        # Gan đếm theo KỲ QUAY, không theo ngày lịch.
-        #
-        # ``idx`` là chỉ số hàng, mà mỗi hàng là một kỳ, nên hiệu của chúng
-        # chính là số kỳ. Bản cũ lấy hiệu của NGÀY (np.diff(hit_dates)) nên mọi
-        # đợt nghỉ đều cộng thẳng vào gan: lịch sử có 8 đợt, và đo trên chính
-        # data/xsmb.csv thì mốc 2020-04-23 cho con 00 gan thật 6 kỳ nhưng đếm
-        # theo lịch ra 29. Trang lo-gan.html đã đếm theo kỳ và nói rõ trên
-        # trang; bảng này nuôi bốn builder khác nên hai mặt từng lệch định nghĩa.
-        #
-        # rhythm_pressure là tỉ số current_gap / mean_gap: chỉ có nghĩa khi hai
-        # vế CÙNG đơn vị, nên nó cũng phải đi theo.
         gaps = np.diff(idx).astype(int) if idx.size >= 2 else np.array([], dtype=int)
         current_gap = int(mat.shape[0] - 1 - idx[-1])
         mean_gap = float(np.mean(gaps)) if gaps.size else None
@@ -408,14 +388,6 @@ def _head_tail_total_by_period(two_digit_df: pd.DataFrame, *, period: PeriodKind
 
 
 def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> pd.DataFrame:
-    """Aggregate the canonical 50 cặp-loto families by period.
-
-    The historical implementation generated ``AB-BA`` directly.  That is
-    correct for 45 non-double reverse pairs, but it creates invalid self-pairs
-    such as ``77-77`` for doubles.  Doubles belong to the five kép-bóng
-    families (``00-55``, ..., ``44-99``), so the display and aggregation must
-    come from the canonical ontology rather than from ad-hoc reversal logic.
-    """
     df = _prepare_sparse(sparse_df)
     if df.empty:
         return pd.DataFrame()
@@ -424,9 +396,6 @@ def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> p
     count_by_period = df.groupby("period_key", sort=True)[NUMBER_COLS].sum()
     draws = df.groupby("period_key", sort=True)["date"].nunique()
 
-    # ``all_cap_loto_50`` is the single source of truth for cặp lộn/reverse
-    # families plus kép-bóng doubles.  It guarantees 50 disjoint pairs and
-    # therefore prevents a self-pair from ever reaching the dashboard.
     pairs = [
         tuple(sorted(int(member) for member in family))
         for family in all_cap_loto_50()
@@ -435,14 +404,6 @@ def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> p
     if len(pairs) != 50 or any(a == b for a, b in pairs):
         raise RuntimeError("canonical cặp-loto ontology must contain 50 distinct pairs")
 
-    # Bản trước lồng hai vòng `kỳ × 50 cặp` và MỖI lượt quét lại toàn bảng bằng
-    # `df.loc[df["period_key"] == period_key, a]`. Với P kỳ và N hàng, chi phí là
-    # O(P · 50 · N); ở period="day" thì P ≈ N nên nó là O(50 · N²). Profile trên
-    # lịch sử 4 207 kỳ: hàm này chiếm 606,8s trong 630,8s (96,2%), 151,7s mỗi
-    # lần gọi, phần lớn nằm ở so sánh CHUỖI của `period_key`.
-    #
-    # Ở đây gom một lần rồi tính cả 50 cặp cùng lúc trên ma trận boolean
-    # (hàng × 50), nên chi phí là O(N · 50) — một lượt duy nhất qua dữ liệu.
     a_index = np.fromiter((a for a, _ in pairs), dtype=np.intp, count=len(pairs))
     b_index = np.fromiter((b for _, b in pairs), dtype=np.intp, count=len(pairs))
     pair_labels = [f"{a:02d}-{b:02d}" for a, b in pairs]
@@ -491,24 +452,16 @@ def _first_prize_stats(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame
 
 
 def _conditional_tables(raw_df: pd.DataFrame, sparse_df: pd.DataFrame, *, top: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Ba bảng có điều kiện hôm trước → hôm sau, dựng bằng bản chuẩn ``conditional_matrices``.
-
-    Bản cũ ở đây đếm theo HÀNG kề nhau (nối cả hai kỳ hai bên một ngày nghỉ) và xếp theo tỉ lệ
-    thô; pipeline ghi đè nó bằng ``conditional_matrices`` ngay sau đó, nhưng bước ấy được phép
-    lỗi mềm và khi ấy bảng sai sẽ được xuất bản. Gọi chung một hàm thì hai nơi không thể lệch.
-    """
     de_loto, de_de, loto_loto, _diagnostics = build_conditional_tables(raw_df, sparse_df, top=top)
     return de_loto, de_de, loto_loto
 
 
 def _load_ml_probs(data_dir: Path, mode: str) -> pd.DataFrame:
     candidates = [
-        # Prefer the newest explainable cầu-kèo AI/ML layer when available.
         data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv",
         data_dir / "ml" / f"predict_next_{mode}_ml_all.csv",
         data_dir / "forecast" / "predict" / f"predict_next_{mode}_all.csv",
     ]
-    # Also support date-stamped ensemble predictions.
     candidates.extend(sorted((data_dir / "forecast" / "predict").glob(f"predict_next_{mode}_all_*.csv"), reverse=True))
 
     for path in candidates:
@@ -523,8 +476,6 @@ def _load_ml_probs(data_dir: Path, mode: str) -> pd.DataFrame:
             out["ml_prob"] = pd.to_numeric(out["prob"], errors="coerce").fillna(0.0)
             return out[["number_str", "ml_prob"]].groupby("number_str", as_index=False)["ml_prob"].max()
         except (OSError, ValueError) as exc:
-            # Tệp hỏng không được làm sập bảng thống kê, nhưng cũng không được im lặng: cột ml_prob
-            # sẽ bằng 0 cho mọi con, nên phải hiện ở mức cảnh báo.
             logger.warning("Không đọc được xác suất ML từ %s: %s", path, exc)
     return pd.DataFrame({"number_str": [_fmt2(i) for i in NUMBER_COLS], "ml_prob": np.zeros(100)})
 
@@ -569,7 +520,6 @@ def _ai_ml_signal(
     out = out.merge(rhythm_df[["number", "current_gap", "mean_gap", "rhythm_pressure"]], on="number", how="left")
     out = out.merge(ml, on="number_str", how="left")
 
-    # Year frequency from current/latest year for prior strength.
     if not year_freq_table.empty:
         latest_year = sorted(year_freq_table["period_key"].astype(str).unique())[-1]
         yf = year_freq_table[year_freq_table["period_key"].astype(str) == latest_year][["number", "freq", "z_score"]].copy()
@@ -608,10 +558,6 @@ def _ai_ml_signal(
 
 
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> Path:
-    """Chỉ ghi CSV. Bản JSON ``orient=records, indent=2`` từng được ghi kèm mọi bảng (52 tệp, 64 MB, riêng
-    ``period_frequency_loto_week.json`` 18,5 MB) mà không trang, Worker hay mã nào đọc; mỗi lượt chốt
-    viết lại chúng vào git. Trang và manifest đọc CSV.
-    """
     _ensure_dir(out_dir)
     path = out_dir / f"{name}.csv"
     write_code_csv(df, path, index=False, quoting=csv.QUOTE_NONNUMERIC)
@@ -663,13 +609,6 @@ def _write_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
         ws.freeze_panes = "A2"
         ws.auto_filter.ref = ws.dimensions
         for col_idx, col in enumerate(df.columns, start=1):
-            # pandas 3.0 GIỮ giá trị thiếu là NaN qua astype(str) thay vì tạo
-            # chuỗi "nan" như 2.x, nên .tolist() trả về lẫn float. Mã cũ giả
-            # định mọi phần tử đều là chuỗi và vỡ bằng
-            # "TypeError: object of type 'float' has no len()".
-            #
-            # Ô thiếu hiển thị trống trong Excel nên nó đóng góp 0 vào bề rộng
-            # cột; đếm nó thành "nan" dài 3 ký tự là sai kể cả trên pandas 2.
             column = df.iloc[:500, col_idx - 1]
             lengths = [
                 0 if value is None or value != value else len(str(value))
@@ -717,7 +656,6 @@ def generate_statistics(
     latest_iso = latest_date.date().isoformat()
     created: list[Path] = []
 
-    # 1) Period frequency tables and matrices: loto + de.
     freq_loto: dict[PeriodKind, pd.DataFrame] = {}
     freq_de: dict[PeriodKind, pd.DataFrame] = {}
     for period in ["day", "week", "month", "year"]:
@@ -745,11 +683,7 @@ def generate_statistics(
         created.append(_dump_table(m_loto.reset_index(), out_dir=out.data_dir, name=f"period_matrix_loto_{period}_{suffix}"))
         created.append(_dump_table(m_de.reset_index(), out_dir=out.data_dir, name=f"period_matrix_de_{period}_{suffix}"))
 
-    # 2) Ảnh nhiệt/thanh của bước này (12 tệp trong ``images/``) đã gỡ 04-11-2026: thư mục ấy nằm ngoài
-    #    ``docs/`` nên không lên trang, không trang hay README nào nhúng chúng, mà mỗi lượt chốt commit lại
-    #    trọn bộ JPEG (git không nén delta được). Mọi bảng CSV vẫn ghi như cũ.
 
-    # 3) Rhythm/gan, head-tail-total, cặp lộn.
     rhythm_loto = _rhythm_from_sparse(sparse_loto, mode="loto")
     rhythm_de = _rhythm_from_sparse(sparse_de, mode="de")
     created.append(_dump_table(rhythm_loto, out_dir=out.data_dir, name="loto_rhythm"))
@@ -787,7 +721,6 @@ def generate_statistics(
     created.append(_dump_table(pair_current, out_dir=out.data_dir, name="reverse_pair_frequency_current"))
     created.append(_dump_table(sg_current, out_dir=out.data_dir, name="special_group_frequency_current"))
 
-    # 4) Special prize boards and first prize.
     week_board, month_board, special_year_freq, special_month_freq = _special_boards(raw)
     created.append(_dump_table(week_board, out_dir=out.data_dir, name="special_week_board"))
     created.append(_dump_table(month_board, out_dir=out.data_dir, name="special_month_board"))
@@ -798,13 +731,11 @@ def generate_statistics(
     created.append(_dump_table(first_freq, out_dir=out.data_dir, name="first_prize_year_frequency"))
     created.append(_dump_table(first_overdue, out_dir=out.data_dir, name="first_prize_overdue"))
 
-    # 5) Conditional tables: loto theo Đặc Biệt, Đặc Biệt theo Đặc Biệt, loto theo loto.
     cond_de_loto, cond_de_de, cond_loto_loto = _conditional_tables(raw, sparse_loto, top=top_conditional)
     created.append(_dump_table(cond_de_loto, out_dir=out.data_dir, name="conditional_loto_after_special_top500"))
     created.append(_dump_table(cond_de_de, out_dir=out.data_dir, name="conditional_special_after_special_top500"))
     created.append(_dump_table(cond_loto_loto, out_dir=out.data_dir, name="conditional_loto_after_loto_top500"))
 
-    # 6) AI/ML signal overlays. Uses ML output when present; otherwise zeros.
     signal_loto = _ai_ml_signal(
         data_dir=paths.data_dir,
         mode="loto",
@@ -822,7 +753,6 @@ def generate_statistics(
     created.append(_dump_table(signal_loto, out_dir=out.data_dir, name="ai_ml_signal_loto"))
     created.append(_dump_table(signal_de, out_dir=out.data_dir, name="ai_ml_signal_de"))
 
-    # 7) Excel-safe workbook for analysts.
     _write_excel(
         out.excel_dir / "statistics_matrices.xlsx",
         {

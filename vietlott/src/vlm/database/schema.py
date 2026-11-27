@@ -1,8 +1,3 @@
-"""Transactional storage. Date-only archives use midnight with time_precision=day.
-
-Missing financial fields remain NULL. Midnight on a date-only record does not
-assert the actual draw time. Conflicting results never silently overwrite data.
-"""
 from __future__ import annotations
 import json
 import re
@@ -121,11 +116,9 @@ class DrawRecord(BaseModel):
 
     @classmethod
     def from_legacy(cls, game: str, row: dict[str, Any]) -> DrawRecord:
-        """Adapt seed/mirror/AjaxPro/canonical records without inventing values."""
         g = game_code(game)
         for field in ("game", "game_type", "product"):
             if row.get(field) is not None and game_code(row[field]) != g:
-                # Max 3D+ uses the published Max 3D draw, with different tickets.
                 if not (g == "max3dplus" and game_code(row[field]) == "max3d"):
                     raise ValueError("source row declares a different product")
         if row.get("draw_status", "confirmed") != "confirmed":
@@ -159,8 +152,6 @@ class DrawRecord(BaseModel):
         pots, winners = dict(row.get("jackpot_pots") or {}), dict(row.get("winners") or {})
         if any(type(n) is not int or n < 0 for n in [*pots.values(), *winners.values()]):
             raise ValueError("financial amounts/counts must be nonnegative integers")
-        # Canonical/detail-page amounts are per winning unit when winners > 0.
-        # Reuse the engine's tier mapping; never treat that amount as the pool.
         from vietlott_engine.crawler.official_data import CANONICAL_GAMES, tier_of
         if g in CANONICAL_GAMES:
             for prize in row.get("prizes") or []:
@@ -231,11 +222,10 @@ DrawsMax3d, DrawsKeno, DrawsBingo18 = ORM_MODELS["max3d"], ORM_MODELS["keno"], O
 
 
 class DataConflict(ValueError):
-    """A source disagrees with an existing result."""
+    pass
 
 
 def _merge_metadata(old: Any, new: Any) -> Any:
-    """Fill nested unknown values; retain observed data on partial updates."""
     if new is None or new == {} or new == []:
         return old
     if old is None or old == {} or old == []:
@@ -284,7 +274,6 @@ def _values(r: DrawRecord) -> dict[str, Any]:
 
 class _ParquetMixin:
     def export_parquet(self, path: Path | str) -> None:
-        """Export queryable flat columns, using DuckDB without pandas/pyarrow."""
         import duckdb
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -1,26 +1,3 @@
-"""Dựng các trang thống kê riêng biệt có bộ lọc thời gian tùy biến.
-
-Vì sao tính ở trình duyệt chứ không dựng sẵn
---------------------------------------------
-Người dùng cần chọn dải ngày/tháng/năm tùy ý. Dựng sẵn mọi tổ hợp là không
-khả thi, còn gọi API thì cần server — mà kho này phát hành site tĩnh trên
-GitHub Pages, không có tiến trình nào chạy.
-
-Lối thoát nằm ở kích thước dữ liệu. Đo thực tế: **172 byte mỗi kỳ**, tức 66 KB
-thô cho 393 kỳ và khoảng 410 KB cho 2442 kỳ; qua gzip còn 16 KB và 99 KB
-(nén 4,1 lần). Nhúng thẳng vào trang rồi tính bằng JavaScript cho ra bộ lọc
-tức thì, không server, không độ trễ mạng. Đây là cách duy nhất thoả cả hai
-ràng buộc.
-
-Ngưỡng cần theo dõi: nhúng dữ liệu bắt đầu bất tiện quanh mốc vài MB thô. Với
-một kỳ mỗi ngày thì từ 2442 kỳ còn khoảng 25 năm nữa mới chạm mốc đó.
-
-Cảnh báo đi kèm: mọi **mốc so sánh** hiển thị trên trang đều phải tính theo
-số kỳ đang chọn, không phải theo hằng số. Trang có bộ lọc 30/60/90/180/365
-kỳ, nên một con số đóng cứng sai ngay lần bấm đầu tiên — xem
-:func:`pair_chance_grid`.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -49,37 +26,16 @@ from core.paths import REPO_ROOT, TEMPLATES
 
 logger = logging.getLogger(__name__)
 
-#: Hai mốc ngẫu nhiên lấy từ ``xsmb_domain`` chứ không tự tính lại: bản chép
-#: riêng ở đây từng khiến mốc cực đại 39,8 (đo trên 393 kỳ) nằm lại trong khi
-#: lịch sử đã dài ra.
 LOTO_BASELINE = LOTO_BASELINE_RATE
 PAIR_BASELINE = PAIR_COOCCURRENCE_RATE
 
-#: Dải mặc định khi mở trang, tính theo SỐ KỲ. Giá trị thật nằm trong
-#: ``stat_pages.js`` (``DRAWS.length - 90``); ở đây chỉ để tô sáng đúng nút.
-#: ``test_default_range_chip_matches_the_javascript_default`` giữ hai bên khớp
-#: nhau, vì lệch thì thanh điều khiển nói một đằng còn ô ngày một nẻo — đúng
-#: trạng thái trước đây, khi không nút nào sáng cả.
 DEFAULT_RANGE_DRAWS = 90
 
-#: Độ rộng chữ số của từng giải. CSV lưu kiểu số nguyên nên mất số 0 ở đầu;
-#: đo được 10,3% số ô ngắn hơn độ rộng đúng. Thiếu bảng này thì mọi phép cắt
-#: chữ số theo vị trí đều lệch.
 PRIZE_WIDTH: dict[str, int] = PRIZE_GROUP_WIDTHS
 
 
 @dataclass(frozen=True)
 class StatPage:
-    """Mô tả một trang thống kê.
-
-    Attributes:
-        slug: Tên tệp không kèm ``.html``.
-        title: Tiêu đề trang.
-        subtitle: Mô tả ngắn dưới tiêu đề.
-        controls: HTML của thanh điều khiển bộ lọc.
-        body: HTML phần thân (thường là khung rỗng cho JS đổ vào).
-        render: Tên hàm JavaScript vẽ lại trang khi bộ lọc đổi.
-    """
 
     slug: str
     title: str
@@ -90,18 +46,6 @@ class StatPage:
 
 
 def load_draws(repo_root: Path) -> list[dict[str, object]]:
-    """Đọc lịch sử và trả về dạng gọn để nhúng vào trang.
-
-    Args:
-        repo_root: Thư mục gốc của kho.
-
-    Returns:
-        Danh sách kỳ quay, mỗi phần tử ``{"d": ngày, "s": Đặc Biệt 5 chữ số,
-        "n": [27 số hai chữ số]}``, sắp xếp tăng dần theo ngày.
-
-    Raises:
-        FileNotFoundError: Nếu thiếu ``data/xsmb.csv``.
-    """
     path = repo_root / "data" / "xsmb.csv"
     if not path.exists():
         raise FileNotFoundError(f"thiếu {path}")
@@ -117,7 +61,6 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
         for col in prize_cols:
             base = col.split("_")[0]
             width = PRIZE_WIDTH[base]
-            # zfill là bắt buộc: CSV lưu số nguyên nên "05225" thành "5225".
             digits = str(row[col]).strip().zfill(width)
             if len(digits) != width or not digits.isdigit():
                 continue
@@ -130,23 +73,6 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
 
 
 def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = False) -> str:
-    """Thanh chọn dải thời gian.
-
-    Args:
-        mode: ``day`` cho hai ô chọn ngày, ``preset`` cho các nút nhanh.
-        pairs: Có ô tick "Tự động đánh dấu cặp trùng" hay không. Đặt ``False``
-            cho trang mà không ô nào mang số hai chữ số.
-        weekday: Thêm bộ lọc thứ trong dải ngày cho trang tổng hợp.
-
-    Returns:
-        Chuỗi HTML.
-    """
-    # Nút nào đang thật sự có hiệu lực phụ thuộc vào kiểu thanh điều khiển.
-    # Trang kiểu ``day`` có hai ô ngày, và stat_pages.js đặt sẵn chúng ở
-    # ``DRAWS.length - 90``. Trang kiểu ``preset`` đọc mốc từ nút đang chọn,
-    # mặc định là toàn bộ lịch sử.
-    # Tô sáng 90 kỳ ở cả hai kiểu thì trang preset sẽ khoe "90 kỳ" trong khi
-    # đang hiển thị 2 396 kỳ.
     active = DEFAULT_RANGE_DRAWS if mode == "day" else 0
     presets = "".join(
         f'<button class="sp-chip{" on" if d == active else ""}"'
@@ -157,9 +83,6 @@ def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = Fa
         )
     )
     if mode == "preset":
-        # Thanh đánh dấu phải có ở MỌI trang, không chỉ trang dùng bộ chọn
-        # ngày: ô vẫn bấm được nên thiếu nút xoá là người dùng đánh dấu xong
-        # không gỡ ra được.
         return (
             '<div class="sp-controls"><div class="sp-chips">'
             f'{presets}</div><span class="sp-count" id="sp-count" data-evidence-split></span>'
@@ -181,23 +104,6 @@ def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = Fa
 
 
 def _mark_tools(*, pairs: bool = True) -> str:
-    """Thanh đánh dấu ô, dùng chung cho mọi trang.
-
-    Bảng ở đây dài hàng chục hàng và người đọc thường dõi theo vài ô rời rạc —
-    ví dụ cùng một ngày qua nhiều tháng. Không có cách đánh dấu thì chỉ cần
-    cuộn một cái là mất dấu.
-
-    Args:
-        pairs: Có ô tick "Tự động đánh dấu cặp trùng" hay không.
-
-            Ô tick ấy đánh dấu MỌI ô mang cùng số hai chữ số. Trang Đầu/Đuôi
-            và trang theo Tổng chỉ có chữ số đơn 0-9, nên ở đó nó không thể
-            làm gì — và một nút bấm vào không thấy gì xảy ra thì tệ hơn là
-            không có nút. Bày ra ở đó chính là lỗi người dùng đã báo.
-
-    Returns:
-        Chuỗi HTML của thanh công cụ.
-    """
     pair_box = (
         '<label class="sp-chip sp-chip-check">'
         '<input type="checkbox" id="sp-pair-mode">'
@@ -213,9 +119,6 @@ def _mark_tools(*, pairs: bool = True) -> str:
     )
 
 
-#: Lọc theo thứ trong tuần. Giá trị là chỉ số thứ chuẩn JavaScript
-#: (Chủ nhật = 0); thứ tự hiển thị bắt đầu từ Thứ hai vì tuần của người Việt
-#: bắt đầu từ đó — hai chuyện ấy không cần trùng nhau.
 WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
     ("all", "Tất cả các thứ"),
     ("1", "Thứ hai"), ("2", "Thứ ba"), ("3", "Thứ tư"), ("4", "Thứ năm"),
@@ -223,14 +126,12 @@ WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
 )
 
 
-#: Mốc ngày nhanh, gồm dải ngắn và trọn năm cho bảng co giãn.
 QUICK_RANGES: tuple[tuple[str, str], ...] = (
     ("10", "10 ngày"), ("30", "30 ngày"), ("60", "60 ngày"), ("90", "90 ngày"),
     ("100", "100 ngày"), ("200", "200 ngày"), ("300", "300 ngày"),
     ("365", "365 ngày"),
 )
 
-#: Thứ tự sắp xếp con số trên ma trận.
 SORT_CHOICES: tuple[tuple[str, str], ...] = (
     ("num", "00 → 99"),
     ("hit-desc", "Về nhiều nhất"),
@@ -241,18 +142,12 @@ SORT_CHOICES: tuple[tuple[str, str], ...] = (
 
 
 def _gan_picker() -> str:
-    """Ô chọn số để mở popup chu kỳ gan.
-
-    Trang tần suất cặp không có lưới 00-99, nên nếu chỉ gắn popup vào lưới ấy
-    thì tính năng chỉ tồn tại ở một trong hai trang.
-    """
     options = "".join(f'<option value="{n:02d}">{n:02d}</option>' for n in range(100))
     return ('<label>Chu kỳ gan <select id="sp-gan-pick">'
             f'<option value="">Chọn số…</option>{options}</select></label>')
 
 
 def _gan_modal() -> str:
-    """Khung popup chu kỳ gan. MỘT hàm cho mọi trang, không chép hai bản."""
     return (
         '<dialog class="sp-gan-modal" id="sp-gan-modal" aria-labelledby="sp-gan-title" hidden>'
         '<div class="sp-modal-card">'
@@ -286,20 +181,12 @@ def _weekday_filter() -> str:
     return f'<label>Thứ <select id="sp-weekday">{options}</select></label>'
 
 
-#: Chú giải ô + hộp bật/tắt sáu trường trong mỗi ô bảng Đặc Biệt.
-#:
-#: Trang tham chiếu có đúng sáu ô đánh dấu này nhưng không giải thích trường
-#: nào đứng ở đâu. Người đọc phải hỏi mới biết chữ nhỏ dưới mỗi giải là gì, nên
-#: ở đây đặt thêm hàng chú giải phía trên. Cả hai khối đều rỗng trong HTML:
-#: JavaScript dựng chúng từ DE_FIELDS, một nguồn duy nhất cho cả ô lẫn chú
-#: giải — chép nhãn sang Python là tạo bản thứ hai sẽ trôi khỏi bản gốc.
 FIELD_TOGGLE = (
     '<div class="sp-legend" id="sp-legend"></div>'
     '<div class="sp-fields-toggle" id="sp-fields-toggle"></div>'
 )
 
 def _tomorrow_controls() -> str:
-    """Chọn đúng hai số cuối và phạm vi các ngày từng xuất hiện."""
     options = "".join(f'<option value="{n:02d}">{n:02d}</option>' for n in range(100))
     ranges = _range_controls(mode="preset").split('<p class="sp-note">', 1)[0]
     return ('<section class="app-tomorrow-controls" aria-label="Tra cứu Đặc Biệt hôm sau">'
@@ -325,21 +212,18 @@ LOTO_STAT_PAGES = (
 
 
 def _loto_table(ident: str, label: str) -> str:
-    """Tên vùng cuộn giữ ngữ cảnh của bảng khi dùng bàn phím."""
     return (f'<div class="sp-scroll" tabindex="0" role="region" aria-label="{html.escape(label)}">'
             f'<table class="sp-table sp-grid-lines sp-crosshair" id="{ident}" '
             f'aria-label="{html.escape(label)}"></table></div>')
 
 
 def _loto_panel(ident: str, title: str, description: str, body: str, *, extra_class: str = "") -> str:
-    """Đặt định nghĩa và phạm vi ngay trước những con số cần đọc."""
     return (f'<section class="app-lotostats-panel{(" " + extra_class) if extra_class else ""}" '
             f'aria-labelledby="{ident}"><header><h2 id="{ident}">{title}</h2>'
             f'<p>{description}</p></header>{body}</section>')
 
 
 def _loto_stat_layout(page: StatPage) -> str:
-    """Ba lối đọc LOTO dùng cùng đường đi từ bộ lọc đến bảng dữ liệu."""
     nav = ''.join(
         f'<a href="{slug}.html"' + (' aria-current="page"' if slug == page.slug else '')
         + f'>{label}</a>' for slug, label in LOTO_STAT_PAGES
@@ -370,7 +254,6 @@ def _loto_stat_layout(page: StatPage) -> str:
 
 
 def _special_table(ident: str, label: str, *, matrix: bool = False) -> str:
-    """Bảng thật có vùng cuộn mang tên và nhận được tiêu điểm bàn phím."""
     return (f'<div class="sp-scroll{" app-special-matrix" if matrix else ""}" tabindex="0" '
             f'role="region" aria-label="{html.escape(label)}">'
             f'<table class="sp-table sp-grid-lines sp-crosshair" id="{ident}" '
@@ -378,13 +261,11 @@ def _special_table(ident: str, label: str, *, matrix: bool = False) -> str:
 
 
 def _special_panel(ident: str, title: str, description: str, body: str) -> str:
-    """Tiêu đề và đơn vị luôn đứng cùng bảng mà chúng giải thích."""
     return (f'<section class="app-specialstats-panel" aria-labelledby="{ident}">'
             f'<header><h2 id="{ident}">{title}</h2><p>{description}</p></header>{body}</section>')
 
 
 def _special_stat_layout(page: StatPage, note_html: str) -> str:
-    """Bốn lối xem cùng một miền dữ liệu; hướng dẫn chi tiết đứng sau bảng."""
     nav = ''.join(
         f'<a href="{slug}.html"' + (' aria-current="page"' if slug == page.slug else '')
         + f'>{label}</a>' for slug, label in SPECIAL_STAT_PAGES
@@ -422,21 +303,6 @@ PAGES: tuple[StatPage, ...] = (
              + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialByWeek",
     ),
-    # HAI TRANG NÀY TỪNG HIỆN ĐÚNG CÙNG MỘT BẢNG.
-    #
-    # Cả hai gọi `table($("sp-grid"), MONTH_HEAD, monthGrid(year))` — cùng lưới
-    # ngày × tháng, cùng năm, cùng từng ô. Người dùng mở hai đường dẫn khác
-    # nhau và thấy hai trang y hệt. Trang "theo năm" còn có bộ chọn Kiểu mà
-    # nhánh "Kiểu tuần" của nó lại dựng đúng cùng một lệnh với trang "theo
-    # tuần", nên nó là hai trang kia mặc áo khác.
-    #
-    # Nay mỗi trang mang tên đúng TRỤC mà bảng trải ra:
-    #
-    #     theo tuần   hàng = tuần   cột = thứ trong tuần   (dải ngày tuỳ chọn)
-    #     theo tháng  hàng = ngày   cột = THÁNG 1-12       (chọn năm)
-    #     theo năm    hàng = NĂM    cột = ngày 1-31        (chọn tháng)
-    #
-    # Ba trục, ba trang, không chồng lấn.
     StatPage(
         slug="bang-dac-biet-thang",
         title="Bảng Đặc Biệt theo tháng",
@@ -677,14 +543,6 @@ PAGES: tuple[StatPage, ...] = (
 )
 
 
-#: Ghi chú mốc ngẫu nhiên cho từng trang. Trang xếp hạng nào cũng phải có,
-#: nếu không bảng trông như quy luật trong khi đó là mức ngẫu nhiên thường
-#: tạo ra. Cách suy ra ghi trong
-#: documentation/architecture/soi-cau-ml-mapping.md.
-#:
-#: Các chuỗi này là **khuôn ``str.format``**: mốc nào co giãn theo độ dài lịch
-#: sử thì để chỗ trống cho :func:`chance_note_context` điền, không đóng cứng.
-#: Ghi chú không có chỗ trống vẫn đi qua ``format`` nguyên vẹn.
 CHANCE_NOTES: dict[str, str] = {
     "tan-suat-loto": (
         "Kỳ vọng tổng số nháy mỗi con là <b>27/100 = 0,27 nháy/kỳ</b>. "
@@ -692,9 +550,6 @@ CHANCE_NOTES: dict[str, str] = {
         "trong 100 con luôn cao hơn kỳ vọng kể cả khi dữ liệu hoàn toàn ngẫu "
         "nhiên — cột “So kỳ vọng” là để so, không phải để chọn."
     ),
-    # ``sp-chance`` được JavaScript viết lại theo dải ngày đang chọn. Nội dung
-    # dựng sẵn ở đây là bản dự phòng cho toàn bộ lịch sử, đúng khi chưa ai bấm
-    # bộ lọc và khi JavaScript không chạy.
     "tan-suat-cap-loto": (
         "Có <b>4 950</b> cặp số. <span id=\"sp-chance\">Trên lịch sử ngẫu nhiên "
         "dài đúng {n_draws} kỳ, cực đại trung bình là {chance_max} lần (khoảng "
@@ -719,23 +574,9 @@ CHANCE_NOTES: dict[str, str] = {
 
 
 def _asset(name: str) -> str:
-    """Đọc tệp tài nguyên đi kèm mô-đun.
-
-    Args:
-        name: Tên tệp trong ``src/web/templates``.
-
-    Returns:
-        Nội dung tệp.
-    """
     return (TEMPLATES / name).read_text(encoding="utf-8")
 
 
-#: Các mốc số kỳ để dựng sẵn cực đại ngẫu nhiên cho trình duyệt tra.
-#:
-#: Trang cho phép lọc theo dải ngày, nên mốc phải đổi theo tập ĐANG CHỌN chứ
-#: không theo toàn bộ lịch sử. Công thức đóng cần hàm phân phối nhị thức, quá
-#: nặng để cài lại trong JavaScript; lưới này cho nội suy tuyến tính sai số
-#: tối đa 0,67%, và dưới 0,15% với mọi N >= 30.
 PAIR_CHANCE_GRID_POINTS: tuple[int, ...] = (
     10, 20, 30, 45, 60, 90, 120, 180, 270, 365, 550,
     730, 1100, 1460, 1825, 2200, 2600, 3000, 3700, 4400, 5500, 7300,
@@ -743,43 +584,16 @@ PAIR_CHANCE_GRID_POINTS: tuple[int, ...] = (
 
 
 def cap_loto_50() -> list[list[int]]:
-    """50 họ cặp LOTO, lấy từ ``number_reference.all_cap_loto_50``.
-
-    Trang tham chiếu dùng đúng bộ này: 45 cặp lộn thật cộng 5 cặp ghép hai số
-    kép qua bóng (``00-55``, ``11-66``, ``22-77``, ``33-88``, ``44-99``). Đọc
-    được từ chính trang họ nên đây là bằng chứng chứ không phải suy đoán.
-
-    Returns:
-        50 cặp ``[nhỏ, lớn]``, sắp theo phần tử nhỏ.
-    """
     pairs = [sorted(int(m) for m in family) for family in all_cap_loto_50()]
     pairs.sort()
     return pairs
 
 
 def bo_lookup() -> list[str]:
-    """Bảng tra họ **bộ số** cho 00-99, dựng sẵn cho trình duyệt.
-
-    Bộ số gom một con với bóng-dương và số lộn của nó: 68 thuộc bộ 13 vì
-    6 có bóng 1 và 8 có bóng 3. Có 15 họ, nhãn là phần tử nhỏ nhất.
-
-    Trang tham chiếu hiển thị cột này trong mỗi ô bảng Đặc Biệt; đo trên 24 ô
-    thật thì :func:`number_reference.bo_family_id` khớp 100%, nên dựng sẵn từ
-    chính hàm đó thay vì cài lại công thức trong JavaScript — một bản chép
-    thứ hai là một bản sẽ trôi.
-
-    Returns:
-        Danh sách 100 nhãn, chỉ số là con số 00-99.
-    """
     return [bo_family_id(f"{n:02d}") for n in range(100)]
 
 
 def pair_chance_grid() -> list[list[float]]:
-    """Bảng tra ``[số kỳ, cực đại, cận dưới, cận trên]`` cho trình duyệt.
-
-    Returns:
-        Danh sách theo thứ tự số kỳ tăng dần, để nội suy tuyến tính.
-    """
     grid: list[list[float]] = []
     for n in PAIR_CHANCE_GRID_POINTS:
         mean, (low, high) = pair_chance_maximum(n)
@@ -788,14 +602,6 @@ def pair_chance_grid() -> list[list[float]]:
 
 
 def chance_note_context(n_draws: int) -> dict[str, str]:
-    """Các mốc ngẫu nhiên co giãn theo độ dài lịch sử, để điền vào ghi chú.
-
-    Args:
-        n_draws: Số kỳ trong lịch sử đang dựng.
-
-    Returns:
-        Từ điển thay thế cho ``str.format`` trên :data:`CHANCE_NOTES`.
-    """
     chance_max, (low, high) = pair_chance_maximum(n_draws)
     return {
         "n_draws": f"{n_draws:,}".replace(",", " "),
@@ -806,9 +612,7 @@ def chance_note_context(n_draws: int) -> dict[str, str]:
     }
 
 
-
 def _statistics_tabs(active: str) -> str:
-    """Ba trang thống kê cùng một lối đi, giữ rõ trang đang xem."""
     links = (
         ("thong-ke-tong-hop", "Tổng hợp", "Đa chiều"),
         ("tan-suat-loto", "Tần suất LOTO", "00–99"),
@@ -824,7 +628,6 @@ def _statistics_tabs(active: str) -> str:
 
 
 def overview_layout(page: StatPage) -> str:
-    """Tổng hợp theo luồng đọc: dải dữ liệu, phân bố, rồi chi tiết từng số."""
     distribution = "".join(
         f'<section class="bf-card bf-distribution" aria-labelledby="bf-{key}-title">'
         '<header class="bf-card-heading"><div>'
@@ -875,7 +678,6 @@ def overview_layout(page: StatPage) -> str:
 
 
 def frequency_bento_layout(page: StatPage, note_html: str) -> str:
-    """Hai trang tần suất theo luồng dọc, giữ các định danh điều khiển sẵn có."""
     pairs = page.slug == "tan-suat-cap-loto"
     label = "cặp số" if pairs else "số lô tô"
     picker = (
@@ -962,16 +764,6 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
 """
 
 def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: str) -> str:
-    """Dựng HTML hoàn chỉnh cho một trang thống kê.
-
-    Args:
-        page: Mô tả trang.
-        draws: Lịch sử đã nạp, sẽ được nhúng vào trang.
-        generated: Dấu thời gian dựng, hiển thị ở chân trang.
-
-    Returns:
-        Chuỗi HTML đầy đủ.
-    """
     note = CHANCE_NOTES.get(page.slug, "").format(**chance_note_context(len(draws)))
     note_html = f'<p class="sp-note">{note}</p>' if note else ""
     bento = page.slug in {"tan-suat-loto", "tan-suat-cap-loto"}
@@ -1040,15 +832,6 @@ boot({json.dumps(page.render)});
 
 
 def build(repo_root: Path, docs_dir: Path) -> list[Path]:
-    """Dựng toàn bộ trang thống kê.
-
-    Args:
-        repo_root: Thư mục gốc của kho.
-        docs_dir: Thư mục đầu ra.
-
-    Returns:
-        Danh sách tệp đã ghi.
-    """
     draws = load_draws(repo_root)
     if not draws:
         raise SystemExit("không nạp được kỳ nào từ data/xsmb.csv")
@@ -1065,14 +848,6 @@ def build(repo_root: Path, docs_dir: Path) -> list[Path]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Điểm vào dòng lệnh.
-
-    Args:
-        argv: Tham số dòng lệnh.
-
-    Returns:
-        Mã thoát 0.
-    """
     parser = argparse.ArgumentParser(description="Dựng các trang thống kê riêng biệt.")
     parser.add_argument("--docs-dir", default="docs")
     args = parser.parse_args(argv)

@@ -17,7 +17,6 @@ from forecast.predict_nextday_2d import _meta_prediction
 
 
 def _history(mode: str, days: int, valid_days: int | None = None) -> pd.DataFrame:
-    """Đủ 100 số mỗi kỳ; cờ nguồn cũ không được biến thành bằng chứng mới."""
     rng = np.random.default_rng(413)
     rows = []
     for i, day in enumerate(pd.date_range("2025-01-01", periods=days)):
@@ -43,7 +42,6 @@ def _train(tmp_path: Path, mode: str, frame: pd.DataFrame, **kwargs) -> dict:
 
 @pytest.mark.parametrize("mode", ["loto", "de"])
 def test_short_valid_history_replaces_stale_model_with_disabled_artifacts(tmp_path, mode):
-    """Bắt lỗi dừng pipeline hoặc giữ challenger cũ khi chỉ còn 28 kỳ thật."""
     models, reports = tmp_path / "models", tmp_path / "reports"
     models.mkdir()
     reports.mkdir()
@@ -69,7 +67,6 @@ def test_short_valid_history_replaces_stale_model_with_disabled_artifacts(tmp_pa
 
 
 def test_a_rerun_on_the_same_short_history_keeps_the_disabled_pack(tmp_path, monkeypatch):
-    """Lượt chạy lại (11-11-2026) ghi lại `meta_loto.joblib` chỉ để đổi `evaluated_at_utc`."""
     frame = _history("loto", 120, valid_days=28)
     _train(tmp_path, "loto", frame)
     path = tmp_path / "models" / "meta_loto.joblib"
@@ -86,7 +83,6 @@ def test_a_rerun_on_the_same_short_history_keeps_the_disabled_pack(tmp_path, mon
 
 
 def test_disabled_model_returns_exact_linear_vector_and_shortage_reason(tmp_path):
-    """Bắt nhầm trạng thái thiếu lịch sử thành thiếu component hoặc model hoạt động."""
     pack = {"schema_version": meta.META_SCHEMA_VERSION, "mode": "de", "model": None,
             "status": "insufficient_history", "meta_trust": 0.0, "quality_pass": False,
             "component_cols": [], "history_days": 28, "minimum_history_days": 100}
@@ -106,7 +102,6 @@ def test_disabled_model_returns_exact_linear_vector_and_shortage_reason(tmp_path
 
 @pytest.mark.parametrize("mode", ["loto", "de"])
 def test_mature_history_trains_real_model_and_keeps_chronological_validation(tmp_path, mode):
-    """Nhánh luôn vô hiệu hóa không được làm cả bộ kiểm phát hành xanh."""
     pack = _train(tmp_path, mode, _history(mode, 100))
     assert pack["status"] == "trained"
     assert pack["model"] is not None
@@ -115,8 +110,6 @@ def test_mature_history_trains_real_model_and_keeps_chronological_validation(tmp
     assert all(max(left) < min(right) for left, right in zip(blocks[:-1], blocks[1:], strict=True))
     assert len(pack["validation_days"]) >= 20
     assert np.isfinite(pack["validation_logloss"])
-    # Lượt chạy lại học ra đúng pack này (chỉ khác giờ học) thì giữ nguyên tệp. Pack trong bộ nhớ vừa học
-    # phải được coi là trùng bản đọc từ tệp: numpy đặt bước nhảy tuỳ ý cho chiều dài 1.
     path = tmp_path / "models" / f"meta_{mode}.joblib"
     before = path.read_bytes()
     relearned = {**pack, "trained_at_utc": "2099-01-01T00:00:00Z"}
@@ -132,7 +125,6 @@ def test_mature_history_trains_real_model_and_keeps_chronological_validation(tmp
 
 @pytest.mark.parametrize("stage", ["_fit_candidate", "_select_component_tier"])
 def test_training_error_is_not_reclassified_as_insufficient_history(tmp_path, monkeypatch, stage):
-    """Chỉ thiếu dữ liệu được fallback; lỗi estimator phải làm lượt đỏ."""
     def fail_fit(*args, **kwargs):
         raise RuntimeError("estimator failed")
 
@@ -143,7 +135,6 @@ def test_training_error_is_not_reclassified_as_insufficient_history(tmp_path, mo
 
 
 def test_cli_shortage_succeeds_but_malformed_history_still_fails(tmp_path):
-    """Chạy đúng entrypoint dùng bởi pipeline --strict và script phát hành."""
     history = tmp_path / "pred_loto.csv"
     _history("loto", 28).to_csv(history, index=False)
     root = Path(__file__).resolve().parents[2]
@@ -159,7 +150,6 @@ def test_cli_shortage_succeeds_but_malformed_history_still_fails(tmp_path):
 
 
 def test_release_check_accepts_truthful_shortage_but_rejects_enabled_pack(tmp_path):
-    """Thực thi nguyên khối Python của shell, không kiểm chuỗi mã nguồn."""
     for mode in ("loto", "de"):
         _train(tmp_path, mode, _history(mode, 28))
     root = Path(__file__).resolve().parents[2]

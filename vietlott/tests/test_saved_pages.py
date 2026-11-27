@@ -1,6 +1,3 @@
-"""v3.4: Cloudflare challenge handling (detect, never bypass) and import of pages a person
-saved from vietlott.vn (HTML, MHTML, HAR) with comparison against the engine's data."""
-
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +45,6 @@ def keno_detail_html(did: int, nums: list[int]) -> str:
     return f"<html><body><h5>Kỳ quay thưởng #{did:07d} ngày 01/10/2026</h5><div class='day_so_ket_qua'>{balls}</div><table>{bac5}</table><table>{bac1}</table><table>{side}</table></body></html>"
 
 
-# ------------------------------------------------------------------ Cloudflare
 def test_cloudflare_challenge_is_detected_and_not_retried() -> None:
     calls = []
 
@@ -66,14 +62,12 @@ def test_cloudflare_challenge_is_detected_and_not_retried() -> None:
 
     raw, mapped = asyncio.run(run())
     assert CF_CHALLENGE_PREFIX in raw and mapped == CLOUDFLARE_HINT
-    assert len(calls) == 2  # one request each: never retried
+    assert len(calls) == 2
     assert is_cloudflare_challenge(httpx.Response(503, headers={"server": "cloudflare"}, text=CF_PAGE))
-    assert not is_cloudflare_challenge(httpx.Response(503, headers={"server": "nginx"}, text="busy"))  # ordinary 503s are still retried
+    assert not is_cloudflare_challenge(httpx.Response(503, headers={"server": "nginx"}, text="busy"))
 
 
-# ------------------------------------------------------------------ saved pages
 def test_import_pages_all_formats(tmp_path: Path) -> None:
-    # MHTML already has CRLF; text-mode Windows output would turn it into CRCRLF.
     (tmp_path / "mega.mhtml").write_bytes(_mhtml(MEGA_URL, DETAIL_645).encode("ascii"))
     (tmp_path / "keno_list.har").write_text(_har([(KENO_AJAX, json.dumps({"value": {"HtmlContent": _keno_html([("01/10/2026", 297700, list(range(1, 21)))])}}), {"GameId": "6", "PageIndex": 1})]), encoding="utf-8")
     nums = [3, 7, 11, 15, 19, 22, 26, 30, 33, 38, 41, 44, 47, 52, 56, 60, 63, 69, 72, 80]
@@ -96,7 +90,6 @@ def test_import_pages_all_formats(tmp_path: Path) -> None:
 
 
 def test_har_without_result_pages_is_explained(tmp_path: Path) -> None:
-    # what an export with the Network filter on "Other" looks like: favicon, Cloudflare beacon, widget preflights
     (tmp_path / "x.har").write_text(_har([("https://vietlott.vn/favicon.ico", "", None), ("https://widget.chat.zalo.me/login-tab", "", None)]), encoding="utf-8")
     imp = import_pages(tmp_path)
     (problem,) = [p["problem"] for p in imp.pages if p["kind"] == "unreadable"]
@@ -151,10 +144,10 @@ def test_compare_with_data_and_cli_import(tmp_path: Path, monkeypatch: pytest.Mo
             h = store.load(ProductCode.BINGO18)
             return h.values[list(h.draw_ids).index(11)].tolist()
 
-        assert draw11() == [4, 5, 6]  # a disagreeing page is shown, not written, by default
+        assert draw11() == [4, 5, 6]
         assert main(["products", "import-pages", "--path", str(pages), "--replace-mismatches", "--json"]) == 0
         rep = json.loads(capsys.readouterr().out)
-        assert rep["imported"]["bingo18"]["held_back_mismatches"] == 0 and draw11() == [6, 6, 6]  # on request, the official page wins
+        assert rep["imported"]["bingo18"]["held_back_mismatches"] == 0 and draw11() == [6, 6, 6]
     finally:
         get_settings.cache_clear()
 

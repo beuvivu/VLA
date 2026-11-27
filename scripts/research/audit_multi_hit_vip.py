@@ -1,21 +1,3 @@
-"""Kiểm toán tính khả thi của Lô VIP nhiều nháy: trần xác suất theo kỳ và cấu trúc có khai thác được không.
-
-Ba phần, chỉ đọc ``data/xsmb-2-digits.csv`` (và ``vip.json`` cho số đo của mô hình đang chạy):
-
-* **Trần theo kỳ**: tỉ lệ kỳ có ít nhất một trong k con về ≥ 2 nháy khi quay công bằng
-  (``multi_hit_vip.any_multi_chance``, chính xác) và khi chọn bừa trên lịch sử thật, k = 1 … 100;
-  cùng tỉ lệ kỳ không con nào về ≥ 2 nháy (bài toán ngày sinh).
-* **Cấu trúc**: số con ≥ 2 nháy mỗi kỳ so với lý thuyết (từng năm, sai số theo cụm kỳ); độ tản giữa
-  100 con so với nhị thức và tương quan nửa đầu – nửa sau; kỳ sau ≥ 2 nháy theo số nháy kỳ này ở
-  độ trễ 1, 2, 3, 7.
-* **Mô hình đang chạy**: số kỳ đạt của top-k đã chấm walk-forward (từ ``vip.json``) so với chọn bừa.
-
-    python3 scripts/research/audit_multi_hit_vip.py            # in bảng
-    python3 scripts/research/audit_multi_hit_vip.py --json out.json
-
-Kết quả 31-10-2026: ``documentation/research/2026-10-31-kiem-toan-lo-vip-nhieu-nhay.md``.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -39,14 +21,12 @@ LAGS = (1, 2, 3, 7)
 
 
 def ceiling(multi: np.ndarray) -> list[dict]:
-    """Từng k: tỉ lệ kỳ đạt khi quay công bằng và khi chọn bừa k con trên chính lịch sử thật."""
     n_multi = multi.sum(axis=1)
     return [{"k": k, "fair": any_multi_chance(k), "random_on_history": float(random_any_hit(n_multi, k).mean()),
              "expected_hits": k * float(binom.sf(1, LOTO_PER_DRAW, 1 / N_NUMBERS))} for k in KS]
 
 
 def repeat_level(multi: np.ndarray, labels: list[str]) -> dict:
-    """Số con ≥ 2 nháy mỗi kỳ so với lý thuyết 100·P(X ≥ 2); z theo cụm kỳ (mỗi kỳ một quan sát)."""
     theory = N_NUMBERS * float(binom.sf(1, LOTO_PER_DRAW, 1 / N_NUMBERS))
     per_draw = multi.sum(axis=1).astype(float)
 
@@ -61,7 +41,6 @@ def repeat_level(multi: np.ndarray, labels: list[str]) -> dict:
 
 
 def heterogeneity(multi: np.ndarray) -> dict:
-    """Con nào "hay về nhiều nháy" hơn con khác không: độ tản / nhị thức và tương quan hai nửa lịch sử."""
     rate = multi.mean(axis=0)
     half = len(multi) // 2
     binomial = rate.mean() * (1 - rate.mean()) / len(multi)
@@ -70,7 +49,6 @@ def heterogeneity(multi: np.ndarray) -> dict:
 
 
 def lag_dependence(counts: np.ndarray) -> list[dict]:
-    """Kỳ sau (độ trễ ``lag``) về ≥ 2 nháy, theo số nháy của con ấy ở kỳ này."""
     multi = counts >= 2
     base = multi.mean()
     out = []
@@ -124,7 +102,7 @@ def _print(result: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
     parser.add_argument("--json", type=Path, default=None, help="ghi kết quả ra tệp JSON")
     args = parser.parse_args(argv)

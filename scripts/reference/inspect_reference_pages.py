@@ -1,18 +1,3 @@
-"""In cấu trúc bảng và điều khiển của các trang tham chiếu.
-
-Vì sao tồn tại: sandbox của môi trường phát triển chặn toàn bộ HTTP ra ngoài
-(kiểm chứng: cả ``example.com`` cũng không tới được), nên không đối chiếu được
-thiết kế với trang gốc. Runner của Actions thì gọi được — kho vẫn cào
-``hainhay.net`` hằng ngày qua chính đường này.
-
-Script chỉ ĐỌC và in **cấu trúc**: nhan đề bảng, vài hàng mẫu, và các phần tử
-điều khiển. Không lưu nội dung trang vào kho: nội dung là của họ, ta chỉ cần
-biết bố cục có những cột nào để dựng cho khớp.
-
-Mỗi trang gọi đúng một lần, có nhịp chờ giữa các lần — hai nghìn yêu cầu liên
-tiếp vào một trang tin là hành vi lạm dụng.
-"""
-
 from __future__ import annotations
 
 import os
@@ -37,7 +22,6 @@ HTML_CHARS = int(os.environ.get("HTML_CHARS", "6000"))
 
 
 def summarise_table(table, index: int) -> None:
-    """In nhan đề và vài hàng đầu của một bảng."""
     headers = [th.get_text(" ", strip=True) for th in table.select("thead th")]
     if not headers:
         first = table.find("tr")
@@ -54,7 +38,6 @@ def summarise_table(table, index: int) -> None:
 
 
 def summarise_controls(soup) -> None:
-    """In các phần tử người dùng bấm/chọn được."""
     selects = soup.find_all("select")
     for sel in selects[:6]:
         opts = [o.get_text(strip=True) for o in sel.find_all("option")]
@@ -80,11 +63,6 @@ def summarise_controls(soup) -> None:
 
 
 def summarise_links(soup, base: str) -> None:
-    """Liệt kê đường dẫn nội bộ, để biết site có những trang nào.
-
-    Dò cấu trúc mà không biết đường dẫn thì phải đoán, và đoán sai thì tốn
-    thêm một lượt gọi vào trang tin của người ta.
-    """
     host = base.split("/")[2]
     seen: dict[str, str] = {}
     for a in soup.find_all("a", href=True):
@@ -125,8 +103,6 @@ def main() -> int:
 
         print(f"  HTTP {response.status_code}, {len(response.content) / 1024:.0f} KB")
         if response.status_code != 200:
-            # Trang lỗi cũng là bằng chứng: tường lửa, chặn theo vùng hay thách
-            # thức trình duyệt mỗi loại để lại header và thân trang khác nhau.
             for key in ("server", "content-type", "cf-ray", "x-cache", "via", "x-powered-by"):
                 if key in response.headers:
                     print(f"    {key}: {response.headers[key]}")
@@ -144,9 +120,6 @@ def main() -> int:
         if heads:
             print(f"  tiêu đề: {heads[:8]}")
 
-        # Điều hướng lặp lại y hệt trên mọi trang của cùng một site, nên in
-        # cho từng trang là tự đẩy phần cấu trúc bảng ra khỏi cửa sổ log. Chỉ
-        # in ở trang ĐẦU, hoặc khi được yêu cầu rõ.
         if i == 0 or os.environ.get("DUMP_LINKS") == "1":
             print("  --- liên kết ---")
             summarise_links(soup, url)
@@ -160,8 +133,6 @@ def main() -> int:
         for index, table in enumerate(tables[:MAX_TABLES], start=1):
             summarise_table(table, index)
 
-        # Tuỳ chọn: in nguyên HTML của các phần tử khớp bộ chọn CSS, để viết
-        # bộ phân tích theo đúng cấu trúc thật chứ không đoán từ bản tóm tắt.
         selector = os.environ.get("HTML_SELECTOR", "").strip()
         if selector:
             limit = int(os.environ.get("HTML_COUNT", "2"))

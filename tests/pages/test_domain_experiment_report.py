@@ -14,8 +14,6 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_domain_experiment_report_matches_current_gated_artifacts(tmp_path: Path) -> None:
-    # Ghi ra tệp tạm: dựng thẳng vào data/research/ thì mỗi lần chạy pytest là
-    # cây làm việc bẩn.
     output = tmp_path / "experiment_results.json"
     subprocess.run(
         [

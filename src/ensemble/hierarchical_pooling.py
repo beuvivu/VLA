@@ -1,32 +1,3 @@
-"""Gộp thông tin có phân cấp: học độ co ngót thay vì đặt tay.
-
-Vì sao đây là hướng DUY NHẤT nâng được công suất
-================================================
-``data/research/randomness_report.json`` đo được (23-11-2026, 4 273 kỳ): với 100
-giả thuyết độc lập (một cho mỗi con số), hiệu ứng tối thiểu phát hiện được là
-+11,8 % tương đối; với một giả thuyết duy nhất, chỉ +7,7 % (bản 08-09-2026 trên
-2 392 kỳ: +15,8 % và +10,3 %). Khoảng cách ấy là cái giá của việc ước lượng 100
-tham số rời rạc.
-
-Mô hình phân cấp không thêm sức chứa — nó **bớt** đi. Mỗi con số vay mượn
-thông tin từ 99 con còn lại, nên số tham số HIỆU DỤNG nằm giữa 1 và 100 thay vì
-đúng bằng 100. Ít tham số hiệu dụng nghĩa là ngưỡng phát hiện thấp hơn. Đó là
-lý do mọi kiến trúc "thêm tầng" đi ngược hướng, còn cái này đi đúng hướng.
-
-Quan hệ với mã hiện có
-======================
-``statistical_signal.py`` VỐN ĐÃ là Beta-Binomial phân cấp: nó dựng tiên nghiệm
-Beta quanh tần suất nền với ``prior_strength = 80``. Vấn đề duy nhất là con số
-80 được đặt tay. Module này ước lượng nó từ chính dữ liệu bằng phương pháp
-Bayes thực nghiệm, và trả về kèm mọi con số cần để kiểm chứng lựa chọn ấy.
-
-Điều quan trọng phải nói trước: nếu các con số thực sự đồng nhất — tức không có
-con nào "về nhiều hơn" con nào ngoài dao động ngẫu nhiên — thì ước lượng đúng
-là co ngót GẦN NHƯ HOÀN TOÀN về trung bình chung. Đó không phải mô hình thất
-bại; đó là mô hình nói đúng sự thật, và nó tốt hơn hẳn việc giữ 100 ước lượng
-rời rạc mỗi cái đầy nhiễu.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -34,21 +5,12 @@ from typing import Final
 
 import numpy as np
 
-#: Trên ngưỡng này coi như co ngót hoàn toàn. Không phải để làm đẹp số: với
-#: κ lớn hơn vài nghìn lần số kỳ, hậu nghiệm của mọi con số đã trùng nhau tới
-#: mức không phân biệt được bằng số thực dấu chấm động.
 MAX_PRIOR_STRENGTH: Final[float] = 1e6
 MIN_NUMBERS: Final[int] = 3
 
 
 @dataclass(frozen=True)
 class PoolingFit:
-    """Kết quả gộp, kèm mọi con số cần để KIỂM CHỨNG lựa chọn.
-
-    ``fully_pooled`` là kết luận đáng chú ý nhất: nó nói rằng dữ liệu không
-    phân biệt được các con số với nhau, và mọi bảng xếp hạng theo tần suất
-    riêng của từng con đều đang xếp hạng nhiễu.
-    """
 
     pooled_rate: float
     prior_strength: float
@@ -69,9 +31,6 @@ class PoolingFit:
                 f"Co ngót HOÀN TOÀN: {self.n_units} đơn vị không phân biệt được nhau "
                 f"trên {self.n_trials:.0f} kỳ (phương sai giữa các đơn vị {self.between_variance:.3e} "
                 f"không vượt phương sai trong nội bộ {self.within_variance:.3e}). "
-                # In số THẬT chứ không in cứng "1,00": ở mức trần κ vẫn còn một
-                # phần tự do nhỏ (κ/(κ+n) < 1), và thông điệp nói khác con số
-                # thật là cách một sai lệch nhỏ sống sót qua mọi lần đọc.
                 f"Tham số hiệu dụng: {self.effective_parameters:.2f} trên {self.n_units}."
             )
         return (
@@ -84,7 +43,6 @@ class PoolingFit:
 def _validate_counts(
     counts: np.ndarray, n: np.ndarray, *, allow_zero: bool
 ) -> np.ndarray:
-    """Kiểm miền nhị thức, giữ dung sai cộng số thực cho số đếm có trọng số."""
     if n.shape != counts.shape:
         raise ValueError("successes và trials phải cùng hình dạng")
     if not np.all(np.isfinite(counts)) or not np.all(np.isfinite(n)):
@@ -99,31 +57,11 @@ def _validate_counts(
 
 
 def _validate_prior_mean(m: np.ndarray) -> None:
-    """Tiên nghiệm phải là xác suất hợp lệ trước khi tính mô men."""
     if not np.all(np.isfinite(m)) or np.any(m < 0.0) or np.any(m > 1.0):
         raise ValueError("prior_mean phải hữu hạn và nằm trong [0, 1]")
 
 
 def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit:
-    """Ước lượng độ co ngót bằng Bayes thực nghiệm (phương pháp mô men).
-
-    Ý tưởng, phát biểu bằng phương sai:
-
-    * Nếu mọi đơn vị có cùng tỉ lệ thật, thì tỉ lệ QUAN SÁT của chúng vẫn khác
-      nhau — nhưng chỉ khác đúng bằng dao động nhị thức ``m(1-m)/n``.
-    * Phần phương sai VƯỢT quá mức ấy mới là bằng chứng các đơn vị thật sự khác
-      nhau. Không có phần vượt thì không có gì để phân biệt.
-    * Phần vượt bằng ``Var(p) · (1 - mean(1/n))``. Chia cho hệ số này mới
-      thu được phương sai tiềm ẩn; bỏ nó sẽ co quá mạnh khi ít phép thử.
-
-    Khi phần vượt ``≤ 0``, hàm trả về co ngót hoàn toàn thay vì một κ âm vô
-    nghĩa. Đây là trường hợp thường gặp nhất với dữ liệu ở đây, và nó là câu
-    trả lời ĐÚNG chứ không phải trường hợp suy biến cần né.
-
-    Nếu caller dùng dữ liệu có trọng số, ``trials`` phải là cỡ mẫu hiệu dụng
-    và ``successes`` là tần suất có trọng số nhân cỡ mẫu ấy. Khi đó đây là
-    xấp xỉ khớp mô men, không phải likelihood Beta-Binomial chính xác.
-    """
     counts = np.asarray(successes, dtype=float).reshape(-1)
     n_units = counts.size
     if n_units < MIN_NUMBERS:
@@ -131,22 +69,15 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
     n = np.asarray(trials, dtype=float)
     if n.ndim == 0:
         n = np.full(n_units, float(n))
-    # Với số lần thành công CÓ TRỌNG SỐ, ``counts`` và ``trials`` được cộng
-    # theo hai thứ tự khác nhau, nên một đơn vị trúng MỌI kỳ có thể cho
-    # ``counts`` nhỉnh hơn ``trials`` ở chữ số cuối; validation giữ dung sai.
     counts = _validate_counts(counts, n, allow_zero=False)
 
     rates = counts / n
-    # Trung bình CÓ TRỌNG SỐ theo số phép thử: đơn vị được thử nhiều hơn mang
-    # nhiều thông tin hơn, và trung bình thường sẽ để một đơn vị hiếm kéo lệch.
     pooled = float(counts.sum() / n.sum())
     harmonic_n = float(n_units / np.sum(1.0 / n))
 
     observed_variance = float(np.var(rates, ddof=1))
     within = float(pooled * (1.0 - pooled) / harmonic_n)
     finite_trial_factor = 1.0 - 1.0 / harmonic_n
-    # Mỗi đơn vị chỉ có một phép thử thì κ không nhận diện được. Số phép thử
-    # hiệu dụng nhỏ hơn một cũng không cung cấp mô men Beta-Binomial hợp lệ.
     between = (
         (observed_variance - within) / finite_trial_factor
         if finite_trial_factor > 0.0 else 0.0
@@ -163,7 +94,6 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
         pooled_rate=pooled,
         prior_strength=kappa,
         shrinkage=shrinkage,
-        # Một tham số chung, cộng phần tự do còn lại của các đơn vị sau co ngót.
         effective_parameters=1.0 + (n_units - 1.0) * (1.0 - shrinkage),
         between_variance=max(between, 0.0),
         within_variance=within,
@@ -175,7 +105,6 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
 def pooled_posterior(
     successes: np.ndarray, trials: np.ndarray | float, fit: PoolingFit
 ) -> np.ndarray:
-    """Hậu nghiệm Beta-Binomial; ô không có phép thử giữ nguyên tiên nghiệm."""
     counts = np.asarray(successes, dtype=float).reshape(-1)
     n = np.asarray(trials, dtype=float)
     if n.ndim == 0:
@@ -209,27 +138,6 @@ def fit_shrinkage_to_prior(
     trials: np.ndarray | float,
     prior_mean: np.ndarray | float,
 ) -> float:
-    """Học κ khi TÂM co ngót đã cho trước theo từng đơn vị.
-
-    ``fit_pooling`` giả định mọi đơn vị co về một tỉ lệ chung duy nhất. Năm
-    ước lượng có điều kiện trong ``number_dynamics`` không như vậy: chúng co
-    về đường nền RIÊNG của từng con số. Câu hỏi ở đây khác hẳn — không phải
-    "các con số có khác nhau không" mà "điều kiện hoá có dịch chuyển được con
-    số khỏi đường nền của chính nó không".
-
-    Vẫn là phương pháp mô men, chỉ đổi tâm:
-
-    * Nếu điều kiện hoá không mang thông tin, độ lệch ``rᵢ - mᵢ`` chỉ phản ánh
-      dao động nhị thức ``mᵢ(1-mᵢ)/nᵢ``.
-    * Phần vượt quá mức ấy mới là bằng chứng điều kiện hoá có tác dụng.
-
-    Không có phần vượt thì trả ``MAX_PRIOR_STRENGTH`` — nghĩa là bỏ hẳn ước
-    lượng có điều kiện và giữ nguyên đường nền. Đó là câu trả lời đúng chứ
-    không phải trường hợp suy biến.
-
-    Đơn vị không có phép thử nào bị loại: chúng không nói được gì, và để
-    chúng vào thì ``0/0`` sẽ giả vờ là một độ lệch bằng không.
-    """
     counts = np.asarray(successes, dtype=float).reshape(-1)
     n = np.asarray(trials, dtype=float)
     if n.ndim == 0:
@@ -257,8 +165,6 @@ def fit_shrinkage_to_prior(
     within = float(np.mean(m * (1.0 - m) / n))
     between = deviation - within
 
-    # Mỗi tâm có phương sai Beta riêng mᵢ(1−mᵢ)/(κ+1), nên phải lấy trung
-    # bình TÍCH với hệ số hữu hạn, không lấy phương sai tại trung bình tâm.
     latent_scale = float(np.mean(m * (1.0 - m) * (1.0 - 1.0 / n)))
     if not np.isfinite(between) or between <= 0.0 or latent_scale <= 0.0:
         return MAX_PRIOR_STRENGTH
@@ -273,37 +179,6 @@ def fit_shrinkage_to_prior_rows(
     trials: np.ndarray,
     prior_mean: np.ndarray,
 ) -> np.ndarray:
-    """Như ``fit_shrinkage_to_prior`` nhưng học κ RIÊNG cho từng hàng.
-
-    Vì sao phải tách hàng, nói bằng con số đã đo: ma trận chuyển trạng thái có
-    100×100 ô. Gộp cả 10 000 ô vào một κ duy nhất thì một quan hệ TẤT ĐỊNH
-    12 → 34 chỉ là 1 phần 10 000 của mô men bậc hai — nó chìm nghỉm, κ sập về
-    co ngót hoàn toàn, và tín hiệu thật bị xoá sạch. Một phép kiểm tiêm tín
-    hiệu đã bắt đúng chuyện này.
-
-    Tách theo hàng nguồn thì cùng quan hệ ấy là 1 phần 100, đủ để nhô lên khỏi
-    dao động nhị thức. Câu hỏi cũng đúng hơn về mặt thống kê: mỗi hàng là một
-    câu hỏi riêng — "con số này về thì nó kéo theo gì" — nên nó phải có độ co
-    ngót riêng.
-
-    Phải đọc kết quả cho đúng — đây là chỗ dễ nhầm nhất: κ HỮU HẠN KHÔNG PHẢI
-    một phát hiện. Ước lượng mô men của phương sai vượt là không chệch quanh
-    giá trị thật bằng không, nên dưới giả thuyết vô hiệu nó rơi về phía dương
-    khoảng một nửa số lần. Đo trực tiếp, 40 lần bốc mỗi cỡ mẫu, dữ liệu nhị
-    thức thuần:
-
-        số kỳ mỗi hàng      5     12     24     60    240
-        tỉ lệ hàng κ hữu hạn   0,472  0,485  0,475  0,481  0,490
-
-    Tỉ lệ ấy KHÔNG giảm khi thêm dữ liệu, vì nó là phân phối dấu của một ước
-    lượng không chệch ở biên, chứ không phải sai số thống kê. Chỉ ĐỘ LỚN của κ
-    mới mang thông tin: phương sai vượt bé tí thì κ khổng lồ và hậu nghiệm vẫn
-    nằm nguyên trên tiên nghiệm. Đừng bao giờ báo cáo "hàng này có κ hữu hạn"
-    như một kết luận.
-
-    ``successes`` hình ``(n_rows, n_units)``; ``trials`` hình ``(n_rows,)``
-    hoặc ``(n_rows, n_units)``; ``prior_mean`` hình ``(n_units,)``.
-    """
     counts = np.asarray(successes, dtype=float)
     if counts.ndim != 2:
         raise ValueError("successes phải có hai chiều (n_rows, n_units)")
@@ -353,26 +228,6 @@ def fit_shrinkage_to_prior_rows(
 def random_effects_posterior(
     successes: np.ndarray, trials: np.ndarray, *, variances: np.ndarray | None = None
 ) -> tuple[np.ndarray, float, float]:
-    """Hậu nghiệm từng nhóm theo mô hình hiệu ứng ngẫu nhiên DerSimonian–Laird.
-
-    Dùng khi cỡ mẫu các nhóm chênh nhau rất xa (nhóm "chuỗi 0" của kinh nghiệm
-    cầu có hàng chục triệu lần chấm, nhóm "chuỗi 8+" vài trăm). Phương pháp mô
-    men KHÔNG trọng số của ``fit_shrinkage_to_prior`` khi ấy bị chính các nhóm
-    nhiễu nhất chi phối: đo trên lịch sử công bằng giả định, nó giữ lại tới 1,4
-    điểm phần trăm nhiễu ở nhóm ít dữ liệu. Ở đây mỗi nhóm nặng theo độ chính
-    xác ``1/vᵢ``, ``vᵢ = m(1−m)/nᵢ``:
-
-    * ``Q = Σ wᵢ(rᵢ − r̄_w)²``, ``r̄_w`` là trung bình theo trọng số ``wᵢ`` — không
-      có khác biệt thật thì ``E[Q] = k − 1``;
-    * ``τ² = max(0, (Q − (k − 1)) / (Σw − Σw²/Σw))`` — phương sai THẬT giữa nhóm;
-    * hậu nghiệm ``m + τ²/(τ² + vᵢ)·(rᵢ − m)``, co về tỉ lệ chung ``m`` (tổng lần
-      thành công / tổng phép thử) — mức mà dự báo neo vào.
-
-    ``τ² = 0`` thì mọi nhóm co hẳn về ``m``. Nhóm không có lần thử nào nhận ``m``.
-    ``variances`` (cùng hình) thay ``vᵢ`` khi các phép thử trong một nhóm không
-    độc lập — ví dụ phương sai theo cụm của ``path_prob.streak_experience``.
-    Trả về ``(hậu nghiệm, m, τ²)``.
-    """
     counts = np.asarray(successes, dtype=float).reshape(-1)
     n = np.asarray(trials, dtype=float).reshape(-1)
     counts = _validate_counts(counts, n, allow_zero=True)
@@ -397,12 +252,6 @@ def random_effects_posterior(
 
 
 def dersimonian_laird_tau2(rates: np.ndarray, variances: np.ndarray) -> float:
-    """Phương sai THẬT giữa các nhóm theo DerSimonian–Laird (xem ``random_effects_posterior``).
-
-    Q đo quanh trung bình nghịch đảo phương sai: chỉ tâm ấy làm E[Q] = k − 1 khi
-    không có khác biệt thật. Với phương sai nhị thức nó trùng tỉ lệ chung; với
-    phương sai theo cụm thì không, và đo quanh tỉ lệ chung sẽ thổi Q lên.
-    """
     r = np.asarray(rates, dtype=float).reshape(-1)
     v = np.asarray(variances, dtype=float).reshape(-1)
     if r.size < 2:

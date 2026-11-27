@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-"""Validate persisted cầu-kèo domain challenger artifacts and rollback invariants."""
 
 import argparse
 import json
@@ -56,9 +55,6 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
         if not set(confirmed).issubset(DOMAIN_FEATURE_GROUPS):
             raise RuntimeError(f"{mode}: unknown confirmed feature group")
 
-        # Two date contracts coexist intentionally:
-        # - prediction anchor = latest canonical draw T, used to predict T+1;
-        # - supervised-through anchor = T-1, because its known label is draw T.
         if str(gate.get("anchor_date")) != prediction_anchor:
             raise RuntimeError(
                 f"{mode}: prediction anchor {gate.get('anchor_date')} != {prediction_anchor}"
@@ -141,15 +137,11 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
             raise RuntimeError(f"{mode}: inactive challenger changed baseline probabilities")
 
         pack = joblib.load(model_path)
-        # Xác suất đưa vào tổ hợp phải là bản đã co về nền theo kỹ năng của mô
-        # hình nền, đúng trust và nền lưu trong gói — không phải bản thô.
         model_trust, base_rate = trust_from_pack(pack)
-        # Bộ đọc CSV mặc định của pandas có thể lệch ở chữ số cuối, nên so tương đối 1e-12.
         if not np.allclose(pred["model_trust"].astype(float), model_trust, atol=1e-15, rtol=1e-12):
             raise RuntimeError(f"{mode}: persisted model_trust differs from the model pack")
         if not np.allclose(pred["base_rate"].astype(float), base_rate, atol=1e-15, rtol=1e-12):
             raise RuntimeError(f"{mode}: persisted base_rate differs from the model pack")
-        # Sổ lịch sử dựa vào cột này để không trộn định nghĩa cũ với định nghĩa mới.
         if not (pd.to_numeric(pred["trust_policy_version"], errors="coerce") == TRUST_POLICY_VERSION).all():
             raise RuntimeError(f"{mode}: persisted trust_policy_version is not the current policy")
         trusted = trusted_probability(production, mode=mode, trust=model_trust, base_rate=base_rate)

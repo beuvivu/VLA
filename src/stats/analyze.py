@@ -42,14 +42,12 @@ def main() -> None:
     ]
     small_results = small_results.reset_index(drop=True)
 
-    # Loto "Đầu/đuôi" table for the most recent draw
     recent_results = (small_results.iloc[-1].values[1:] % 100).astype(int)
     loto_result: list[str] = []
     for tens in range(10):
         category = sorted([d for d in recent_results if d // 10 == tens])
         loto_result.append(", ".join([f"{d % 10:d}" for d in category]) if category else "-")
 
-    # One-year distribution for loto
     if sparse_results.empty:
         logger.warning("Sparse results are empty; cannot compute distribution charts.")
         return
@@ -67,7 +65,6 @@ def main() -> None:
     mean = float(counts.mean().round(2))
     std = float(counts.std().round(2))
 
-    # Render README from template
     render = Render(template_dir=TEMPLATES)
     content = render(
         "README.j2",
@@ -80,7 +77,6 @@ def main() -> None:
     )
     (paths.root / "README.md").write_text(content, encoding="utf-8")
 
-    # Detail plots
     detail = counts.reset_index()
     detail.columns = ["value", "freq"]
     detail = detail.astype({"value": int})
@@ -97,12 +93,10 @@ def main() -> None:
     )
     _save_heatmap(heatmap, title="Tần suất loto 1 năm", out_path=paths.images_dir / "heatmap.jpg", cmap="YlGnBu")
 
-    # Top 10
     top10 = detail.head(10).copy()
     top10["value"] = top10["value"].apply(lambda r: f"{int(r):02d}")
     _save_top10_bar(top10, x_col="value", y_col="freq", title="Top 10 tần suất loto", out_path=paths.images_dir / "top-10.jpg", cmap="YlGnBu")
 
-    # Distribution
     save_distribution(
         detail["freq"].to_numpy(),
         title="Phân bổ tần suất loto 1 năm",

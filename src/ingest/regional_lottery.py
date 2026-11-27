@@ -1,9 +1,3 @@
-"""Thu thập và lưu kết quả xổ số Miền Trung/Miền Nam từ xskt.com.vn.
-
-Miền Bắc vẫn là miền phân tích chính của VLA. Module này tách dữ liệu XSMT/XSMN
-khỏi data/xsmb.csv để không làm thay đổi hợp đồng thống kê/AI hiện hữu.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -24,8 +18,6 @@ from bs4 import BeautifulSoup
 from core.atomic_io import atomic_write_text
 from ingest.sources import REGIONAL_SOURCE_NAMES
 from core.paths import REPO_ROOT
-# Bố cục 18 giải khai MỘT lần ở ``core.regional_domain``: bộ thu thập, bộ thống kê và bộ chấm
-# cùng đọc nó, nên đổi cấu trúc giải không thể làm chúng lệch nhau.
 from core.regional_domain import PRIZE_SPECS, REGIONS
 
 VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
@@ -85,7 +77,6 @@ def _cell_values(cell, *, width: int, count: int) -> list[str]:
 
 
 def parse_xskt_html(html_text: str, *, region: str, selected_date: date) -> list[RegionalPrize]:
-    """Bóc bảng kết quả; chỉ nhận khi đủ toàn bộ 18 giá trị cho mỗi đài."""
     soup = BeautifulSoup(html_text or "", "lxml")
     stamp = datetime.now(VN_TZ).isoformat(timespec="seconds")
     date_tokens = {
@@ -187,7 +178,6 @@ def write_dataset(path: Path, rows: Iterable[RegionalPrize]) -> None:
 
 
 def complete_dates(rows: Iterable[RegionalPrize], region: str) -> set[str]:
-    """Ngày có đủ bộ giải hợp lệ cho mọi đài đã lưu của miền đang xét."""
     grouped: dict[str, dict[str, list[RegionalPrize]]] = {}
     for row in rows:
         grouped.setdefault(row.date, {}).setdefault(row.province, []).append(row)
@@ -246,7 +236,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     now = datetime.now(VN_TZ)
-    # Mốc vận hành bảo thủ để kiểm độ mới, không phải giờ quay của từng đài.
     expected = now.date() - timedelta(days=int(now.hour < 18)) if args.require_latest else now.date()
     end = date.fromisoformat(args.end_date) if args.end_date else expected
     start = date.fromisoformat(args.start_date) if args.start_date else (

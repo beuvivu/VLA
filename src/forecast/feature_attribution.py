@@ -1,25 +1,5 @@
 from __future__ import annotations
 
-"""Log tầm quan trọng đặc trưng: thành phần nào thật sự lái quyết định, và có ích không.
-
-Hai đại lượng KHÁC NHAU, và trộn chúng là cách một bảng "feature importance"
-trở thành vô nghĩa:
-
-**Đóng góp vào QUYẾT ĐỊNH** (``decision_share``) — thành phần nào làm các con
-số khác nhau. Trọng số hiệu dụng một mình không nói được điều này: cả năm thành
-phần đều có trung bình xấp xỉ tần suất nền, nên thứ quyết định con nào được
-chọn là ĐỘ LỆCH khỏi nền, không phải mức tuyệt đối. Đo bằng
-``|w_i · (v_i − nền)|`` chuẩn hoá theo tổng.
-
-**Đóng góp vào KỸ NĂNG** (``skill_delta``) — bỏ thành phần ấy ra thì mô hình
-tệ đi bao nhiêu. Đây là leave-one-out có chuẩn hoá lại trọng số, kèm khoảng tin
-bootstrap ghép cặp theo NGÀY (ngày là đơn vị độc lập, không phải con số).
-
-Một thành phần có thể lái phần lớn quyết định mà đóng góp kỹ năng bằng 0 — trên
-xổ số công bằng đó là trường hợp ĐƯỢC KỲ VỌNG. Bảng này nói thẳng điều đó bằng
-nhãn ``distinguishable_from_zero``, thay vì in một con số phần trăm trông như
-bằng chứng.
-"""
 
 import argparse
 import json
@@ -36,13 +16,9 @@ SCHEMA_VERSION: Final[int] = 1
 MODES: Final[tuple[str, ...]] = ("loto", "de")
 BOOTSTRAP_DRAWS: Final[int] = 2000
 
-#: Sàn ý nghĩa THỰC TIỄN: |Δ| phải đạt 0,1% của chính metric mới đáng gọi
-#: là có ích. Không có sàn này thì một Δ cỡ 1e-8 vẫn được dán nhãn "có ích
-#: rõ rệt" chỉ vì khoảng tin bootstrap hẹp hơn nó.
 MATERIAL_EFFECT_FLOOR: Final[float] = 0.001
 COMPONENT_COLUMN: Final[dict[str, str]] = {key: f"p_{key}" for key in COMPONENT_KEYS}
 
-#: Nhãn tiếng Việt cho từng thành phần, dùng chung với trang hiển thị.
 COMPONENT_LABEL: Final[dict[str, str]] = {
     "ml": "Học máy (GBM)",
     "cau": "Cầu kèo AI/ML",
@@ -53,7 +29,6 @@ COMPONENT_LABEL: Final[dict[str, str]] = {
 
 
 def _usable_days(history: pd.DataFrame, mode: str) -> list[tuple[str, pd.DataFrame]]:
-    """Các kỳ có đủ 100 con, có nhãn, và qua cổng canh thành phần."""
     out: list[tuple[str, pd.DataFrame]] = []
     for day, group in history.groupby("target_date", sort=True):
         sub = group.sort_values("number", kind="stable")
@@ -66,15 +41,12 @@ def _usable_days(history: pd.DataFrame, mode: str) -> list[tuple[str, pd.DataFra
 def _day_matrices(
     history: pd.DataFrame, mode: str
 ) -> tuple[list[str], np.ndarray, np.ndarray, np.ndarray]:
-    """Trả về ``(ngày, vectors[ngày, thành phần, 100], mask[ngày, thành phần], nhãn)``."""
     days: list[str] = []
     vectors: list[np.ndarray] = []
     masks: list[np.ndarray] = []
     labels: list[np.ndarray] = []
 
     for day, sub in _usable_days(history, mode):
-        # Bảng này công bố đóng góp của ĐỊNH NGHĨA hiện hành, nên dòng ghi theo
-        # định nghĩa cũ (p_cau thô trước 04-10-2026) không được tính là cầu-kèo.
         available = availability_from_history_day(sub, mode=mode, current_policy=True)
         per_component = np.zeros((len(COMPONENT_KEYS), 100), dtype=np.float64)
         mask = np.zeros(len(COMPONENT_KEYS), dtype=np.float64)
@@ -93,7 +65,6 @@ def _day_matrices(
 
 
 def _effective_weights(raw: np.ndarray, mask: np.ndarray) -> np.ndarray:
-    """Trọng số chuẩn hoá lại trên các thành phần CÓ MẶT của một kỳ."""
     effective = raw * mask
     total = float(effective.sum())
     return effective / total if total > 0.0 else effective
@@ -107,11 +78,6 @@ def _blend(vectors: np.ndarray, effective: np.ndarray, mode: str) -> np.ndarray:
 def decision_share(
     vectors: np.ndarray, masks: np.ndarray, raw: np.ndarray, *, base_rate: float
 ) -> dict[str, float]:
-    """Tỉ lệ ĐỘ LỆCH khỏi nền mà mỗi thành phần đóng góp.
-
-    Trọng số hiệu dụng không trả lời được "thành phần nào chọn con số": cả năm
-    đều có trung bình xấp xỉ nền, nên chỉ ĐỘ LỆCH mới tạo ra thứ hạng.
-    """
     totals = np.zeros(len(COMPONENT_KEYS), dtype=np.float64)
     for day in range(len(vectors)):
         effective = _effective_weights(raw, masks[day])
@@ -124,11 +90,9 @@ def decision_share(
 
 
 def _logloss(probabilities: np.ndarray, labels: np.ndarray, mode: str) -> np.ndarray:
-    """Logloss THEO TỪNG NGÀY, để bootstrap ghép cặp được theo ngày."""
     eps = 1e-12
     clipped = np.clip(probabilities, eps, 1.0 - eps)
     if mode == "de":
-        # Phân phối phân loại: chỉ con thật sự về mới vào logloss.
         picked = np.where(labels > 0.5, clipped, 1.0)
         return -np.log(picked).sum(axis=1)
     return -(labels * np.log(clipped) + (1.0 - labels) * np.log(1.0 - clipped)).mean(axis=1)
@@ -147,19 +111,12 @@ def leave_one_out(
     mode: str,
     rng: np.random.Generator,
 ) -> list[dict[str, object]]:
-    """Bỏ từng thành phần, đo mô hình tệ đi bao nhiêu, kèm khoảng tin.
-
-    Bootstrap GHÉP CẶP và lấy mẫu theo NGÀY: ngày là đơn vị độc lập, còn 100
-    con trong cùng một kỳ thì không (tổng số con về mỗi kỳ bị luật chơi chặn).
-    Lấy mẫu theo con số sẽ cho khoảng tin hẹp giả tạo.
-    """
     n_days = len(vectors)
     full = np.asarray([_blend(vectors[d], _effective_weights(raw, masks[d]), mode)
                        for d in range(n_days)])
     full_logloss = _logloss(full, labels, mode)
     full_brier = _brier(full, labels)
 
-    # Preserve the seeded RNG sequence used by existing published reports.
     rng.integers(0, n_days, size=(BOOTSTRAP_DRAWS, n_days))
     rows: list[dict[str, object]] = []
 
@@ -176,12 +133,6 @@ def leave_one_out(
             })
             continue
 
-        # Chỉ so trên những kỳ mà việc bỏ thành phần này CÒN LẠI ít nhất một
-        # thành phần khác. Không lọc thì trên các kỳ chỉ có `ml` (212/231 kỳ
-        # loto, vì cầu/thống kê chỉ có từ 2026-08-12), bỏ `ml` ra làm tổng
-        # trọng số về 0, vector về 0, và logloss nổ — đo được Δ = +2,51 trong
-        # khi cả metric chỉ ~0,546. Đó là hiện vật của phép đo, không phải
-        # đóng góp của thành phần.
         comparable = np.asarray([
             float((raw * masks[d]).sum()) > 0.0 and float((dropped * masks[d]).sum()) > 0.0
             for d in range(n_days)
@@ -202,7 +153,6 @@ def leave_one_out(
 
         reduced = np.asarray([_blend(vectors[d], _effective_weights(dropped, masks[d]), mode)
                               for d in range(n_days)])
-        # Dương = bỏ thành phần ra thì TỆ HƠN, tức thành phần có ích.
         logloss_gain = (_logloss(reduced, labels, mode) - full_logloss)[comparable]
         brier_gain = (_brier(reduced, labels) - full_brier)[comparable]
 
@@ -225,9 +175,6 @@ def leave_one_out(
             "logloss_relative": relative,
             "brier_delta": float(brier_gain.mean()),
             "distinguishable_from_zero": bool(low > 0.0 or high < 0.0),
-            # Ý nghĩa THỐNG KÊ không phải ý nghĩa THỰC TIỄN. Một Δ cỡ 1e-8 có
-            # thể loại được 0 khỏi khoảng tin mà vẫn không đổi một quyết định
-            # nào. Ngưỡng 0,1% của chính metric là mức tối thiểu đáng gọi tên.
             "materially_useful": bool(
                 (low > 0.0 or high < 0.0) and relative >= MATERIAL_EFFECT_FLOOR
             ),
@@ -244,7 +191,6 @@ def per_number_attribution(
     base_rate: float,
     top: int = 10,
 ) -> list[dict[str, object]]:
-    """Với các con được xếp cao nhất của MỘT kỳ, thành phần nào đẩy chúng lên."""
     effective = _effective_weights(raw, masks[day_position])
     contribution = effective[:, None] * (vectors[day_position] - base_rate)
     ranking = np.argsort(-contribution.sum(axis=0), kind="stable")[:top]
@@ -271,7 +217,6 @@ def per_number_attribution(
 
 
 def build(data_dir: Path, *, seed: int = 20260918) -> Path:
-    """Tính log quy trách cho mọi chế độ và ghi ``data/forecast/feature_attribution/report.json``."""
     rng = np.random.default_rng(seed)
     modes: dict[str, object] = {}
 

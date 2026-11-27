@@ -181,12 +181,6 @@ def test_normalization_rejects_dirty_tokens_but_accepts_numpy_integers() -> None
 
 @pytest.mark.parametrize("n", range(100))
 def test_every_number_has_exactly_one_partner_and_never_itself(n: int) -> None:
-    """Luật cặp, đo trên cả 100 con chứ không trên vài mẫu chọn tay.
-
-    Số kép (00, 11, …, 99) KHÔNG có số lộn khác chính nó, nên họ của nó là
-    số kép qua bóng: 77 ghép 22 thành ``22-77``, không bao giờ ``77-77``.
-    Mọi số còn lại ghép với số lộn của nó.
-    """
     value = f"{n:02d}"
     partner = cap_loto_50_partner(value)
 
@@ -204,9 +198,6 @@ def test_every_number_has_exactly_one_partner_and_never_itself(n: int) -> None:
 
 
 def test_the_pairs_published_to_the_browser_are_the_source_partition() -> None:
-    """Trang đọc ``window.__D_CAP50__``, không đọc hàm Python. Một bản dựng cũ
-    hoặc một bản chép tay trong trang có thể trôi khỏi nguồn mà không phép
-    kiểm hàm nào thấy — nên đo chính thứ trình duyệt nhận."""
     import json
     import re
 
@@ -224,5 +215,4 @@ def test_the_pairs_published_to_the_browser_are_the_source_partition() -> None:
         published = json.loads(found.group(1))
         assert published == want, f"{page.name}: CAP50 trên trang lệch nguồn"
         assert not [p for p in published if p[0] == p[1]], f"{page.name}: có cặp tự lặp"
-    # Tập quét rỗng thì phép kiểm không thể đỏ: bắt buộc phải thấy trang.
     assert seen >= 10, f"chỉ thấy CAP50 trên {seen} trang — mẫu tìm đã hỏng?"

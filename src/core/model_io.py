@@ -1,5 +1,3 @@
-"""Đọc và ghi pack mô hình: ghi nguyên tử, và giữ tệp cũ khi pack học lại tương đương."""
-
 from __future__ import annotations
 
 import io
@@ -15,8 +13,6 @@ import numpy as np
 
 from core.atomic_io import FLOAT_NOISE_ABSOLUTE, FLOAT_NOISE_RELATIVE, atomic_write_bytes, floats_close
 
-# Joblib hỗ trợ cả pickle thuần và các codec nén. Chỉ bắt lỗi đọc pack;
-# lỗi huấn luyện/lập trình bên ngoài thao tác load vẫn phải nổi lên.
 MODEL_LOAD_ERRORS = (AttributeError, EOFError, ImportError, IndexError, KeyError,
                      OSError, TypeError, ValueError, pickle.UnpicklingError,
                      zlib.error, lzma.LZMAError)
@@ -26,7 +22,6 @@ Predict = Callable[[Any], Any]
 
 
 def _close_arrays(old: np.ndarray, new: np.ndarray) -> bool:
-    """Mọi phần tử của hai mảng số thực chỉ khác nhau ở nhiễu (cùng luật `core.atomic_io.floats_close`)."""
     old, new = np.asarray(old, dtype=float), np.asarray(new, dtype=float)
     if old.shape != new.shape:
         return False
@@ -37,7 +32,6 @@ def _close_arrays(old: np.ndarray, new: np.ndarray) -> bool:
 
 
 def _same_value(old: Any, new: Any) -> bool:
-    """Hai giá trị trong pack trùng nhau, trừ nhiễu ở số thực; đối tượng khác (mô hình…) so bằng ``joblib.hash``."""
     if isinstance(old, dict) and isinstance(new, dict):
         return old.keys() == new.keys() and all(_same_value(old[key], new[key]) for key in old)
     if isinstance(old, (list, tuple)) and isinstance(new, (list, tuple)):
@@ -59,7 +53,6 @@ def _equivalent(current: dict[str, Any], fresh: dict[str, Any], *, stamp_keys: f
     if keys != fresh.keys() - stamp_keys:
         return False
     models = [key for key in keys if key in predictions and current[key] is not None and fresh[key] is not None]
-    # Khoá thường trước: đặc trưng đổi thì mô hình cũ không dự báo được trên dữ liệu mới.
     if not all(_same_value(current[key], fresh[key]) for key in keys - set(models)):
         return False
     for key in models:
@@ -75,27 +68,6 @@ def _equivalent(current: dict[str, Any], fresh: dict[str, Any], *, stamp_keys: f
 
 def dump_pack_unless_equivalent(pack: dict[str, Any], path: Path, *, stamp_keys: frozenset[str] = frozenset(),
                                 predictions: Mapping[str, Predict] | None = None) -> bool:
-    """Ghi pack, TRỪ khi pack đang có trên đĩa tương đương nó: khi ấy giữ tệp cũ. Trả về ``True`` khi đã ghi.
-
-    Tương đương nghĩa là cùng khoá, và mọi khoá ngoài ``stamp_keys`` trùng nhau: số thực tới mức nhiễu
-    dấu phẩy động (``core.atomic_io``, ≤ 10⁻⁹ tương đối), mảng số thực từng phần tử như thế, còn lại
-    tuyệt đối. Mô hình ở khoá có trong ``predictions`` ({khoá: hàm(mô hình) → mảng dự báo}) trùng khi hai
-    bản cho cùng dự báo tới mức nhiễu trên đúng dữ liệu hàm ấy dùng; mô hình không có hàm dự báo thì so
-    ``joblib.hash``.
-
-    Hai lý do pack học lại trên CÙNG dữ liệu vẫn khác bản cũ (11 → 15-11-2026):
-
-    - Pickle khác cách chia sẻ chuỗi giữa các đối tượng, dù mọi tham số trùng từng bit. ``joblib.hash``
-      băm theo GIÁ TRỊ (cố ý không ghi nhớ chuỗi), nhưng tính bước nhảy bộ nhớ của mảng, mà numpy đặt tuỳ
-      ý cho chiều dài 1 (``coef_`` hình (1, 3) vừa học có bước nhảy 0, đọc từ tệp thì 24). Nên pack mới
-      được tuần tự hoá rồi đọc lại TRƯỚC khi so: hai bên cùng là đối tượng đọc từ pickle.
-    - Runner khác CPU: đặc trưng float32 (`log1p` của khoảng cách) lệch một ULP float32, nên ngưỡng chia
-      bin của cây lệch tới 9·10⁻⁸ tương đối, hệ số Platt lệch 10⁻¹⁴. Tham số không so được bằng một
-      ngưỡng chung; dự báo thì so được: dữ liệu và ngưỡng cùng lệch nên mọi mẫu rơi đúng bin cũ. Lượt
-      chạy lại 09-11 và 06-11-2026 ghi lại cả hai ``ml_<mode>.joblib`` chỉ vì thế.
-
-    Đọc pack cũ hỏng thì ghi pack mới.
-    """
     path = Path(path)
     buffer = io.BytesIO()
     joblib.dump(pack, buffer)

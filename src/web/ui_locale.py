@@ -1,10 +1,3 @@
-"""Từ điển Việt hóa dùng chung cho lớp trình bày.
-
-Tên cột, khóa JSON và định danh mô hình vẫn giữ nguyên để bảo toàn hợp đồng
-dữ liệu. Chỉ nhãn hiển thị cho người dùng được chuyển sang tiếng Việt tại
-biên dựng báo cáo/trang web.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -39,8 +32,6 @@ GROUP_LABELS = {
 }
 
 COLUMN_LABELS = {
-    # Khóa của các khối JSON từng bị đổ thô ra trang Bảng điều khiển. Thiếu
-    # nhãn ở đây là lý do trang hiện "w_cau" cạnh "Ngày neo" — nửa dịch nửa không.
     "w_cau": "Trọng số cầu",
     "w_stat": "Trọng số thống kê",
     "effective_weights": "Trọng số áp dụng thực tế",
@@ -57,8 +48,6 @@ COLUMN_LABELS = {
     "params": "Tham số",
     "metric": "Chỉ số",
     "temperature": "Nhiệt độ hiệu chỉnh",
-    # Giá trị này do learn_ensemble_weights sinh ra và nó đếm theo SỐ KỲ
-    # quay, không theo ngày lịch — xem chú thích của _day_weights.
     "half_life_days": "Chu kỳ bán rã (kỳ)",
     "window_days": "Cửa sổ (ngày)",
     "days_used": "Số ngày đã dùng",
@@ -265,7 +254,6 @@ STRATEGY_LABELS = {
 
 
 def column_label(column: str) -> str:
-    """Trả về nhãn tiếng Việt nhưng không làm thay đổi tên cột gốc."""
 
     return COLUMN_LABELS.get(column, column)
 
@@ -279,7 +267,6 @@ def path_kind_label(kind: object) -> str:
 
 
 def value_label(value: Any) -> Any:
-    """Việt hóa giá trị phân loại đơn; giữ nguyên số và giá trị chưa biết."""
 
     if not isinstance(value, str):
         return value
@@ -291,7 +278,6 @@ def strategy_label(value: object) -> str:
 
 
 def localize_mapping_for_display(payload: Mapping[str, Any]) -> dict[str, Any]:
-    """Tạo bản sao đã Việt hóa để hiển thị; không sửa artifact nguồn."""
 
     localized: dict[str, Any] = {}
     for key, value in payload.items():

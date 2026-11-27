@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""Write ``reports/verification_checklist.{md,csv}``: the vietlott.vn pages worth opening by hand.
-
-The engine does not get past vietlott.vn's Cloudflare "verify you are human" check — a person
-does, in a normal browser. This list keeps that manual work small and useful: pages where the
-bundled data rests on a secondary source or on a single source, plus a reproducible random
-sample of the Keno draws that only the xoso.com.vn archive has. Save the pages (Ctrl+S →
-"Webpage, Single File" / .mhtml) or a DevTools HAR, then:
-
-    vietlott products import-pages --path <folder> --dry-run   # compare only
-    vietlott products import-pages --path <folder>             # compare and import
-
-    python scripts/verification_checklist.py [--keno-sample 30] [--seed 20261002]
-"""
 
 from __future__ import annotations
 

@@ -1,5 +1,3 @@
-"""Ba trang LOTO có đường đọc chung và giữ đủ bảng, bộ lọc hiện có."""
-
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -20,7 +18,6 @@ DRAWS = [{"d": "2026-10-01", "s": "00007", "n": ["07"] * 27}]
 
 @pytest.mark.parametrize("slug", SLUGS)
 def test_loto_statistics_owns_filters_and_all_accessible_tables(tmp_path: Path, slug: str) -> None:
-    """Bỏ sót bảng hoặc để lớp bọc chèn hero/hướng dẫn lặp phải làm đỏ."""
     spec = next(page for page in PAGES if page.slug == slug)
     target = tmp_path / f"{slug}.html"
     write_page(target, render_page(spec, DRAWS, generated="2026-10-25T00:00:00Z"))
@@ -54,7 +51,6 @@ def test_loto_statistics_owns_filters_and_all_accessible_tables(tmp_path: Path, 
 
 
 def test_loto_statistics_keeps_existing_range_and_pair_modes() -> None:
-    """Đổi bố cục không đổi mặc định của bộ chọn ngày và preset."""
     for slug in SLUGS:
         spec = next(page for page in PAGES if page.slug == slug)
         page = BeautifulSoup(render_page(spec, DRAWS, generated=""), "html.parser")
@@ -65,7 +61,6 @@ def test_loto_statistics_keeps_existing_range_and_pair_modes() -> None:
 
 
 def test_loto_gap_panels_explain_selected_and_full_history_scopes() -> None:
-    """Các bảng cực đại toàn lịch sử cần tên miền số riêng, không dùng phạm vi lọc."""
     spec = next(page for page in PAGES if page.slug == "lo-gan")
     page = BeautifulSoup(render_page(spec, DRAWS, generated=""), "html.parser")
     history = page.select_one(".app-lotostats-history")
@@ -79,7 +74,6 @@ def test_loto_gap_panels_explain_selected_and_full_history_scopes() -> None:
 
 @pytest.mark.parametrize("slug", ["cau-giai-dac-biet", "giai-db-ngay-mai", "tan-suat-loto"])
 def test_loto_overlay_is_scoped_to_the_three_pages(slug: str) -> None:
-    """Các trang đã thiết kế trước không nhận bố cục hay CSS LOTO mới."""
     spec = next(page for page in PAGES if page.slug == slug)
     page = BeautifulSoup(render_page(spec, DRAWS, generated=""), "html.parser")
     assert page.select_one(".app-lotostats-shell, #app-lotostats-style") is None

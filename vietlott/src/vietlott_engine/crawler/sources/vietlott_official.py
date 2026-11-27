@@ -1,30 +1,3 @@
-"""Official vietlott.vn source for every product.
-
-Access
-------
-vietlott.vn serves **Vietnamese IP addresses only**: requests from data centres abroad
-(cloud machines, GitHub-hosted runners) get HTTP 403. Run this crawler from a machine in
-Vietnam (a home/office PC, a VPS in Vietnam, a self-hosted runner) — or set
-``HTTPS_PROXY`` to a proxy you operate in Vietnam. Everything else (the GitHub mirrors
-and the official-record dataset) works from anywhere.
-
-Protocol (as used by the maintained open-source crawlers vietvudanh/vietlott-data and
-pqminh-4/vietlott-data, MIT)
----------------------------------------------------------------------------
-* History lists — POST ``/ajaxpro/Vietlott.PlugIn.WebParts.<Part>,Vietlott.PlugIn.WebParts.ashx``
-  with header ``X-AjaxPro-Method: ServerSideDrawResult`` and a JSON body carrying
-  ``PageIndex``; the answer is ``{"value": {"HtmlContent": "<table>…"}}``.
-  Mega/Power/Lotto bodies carry a per-game ``Key``; Max 3D / Max 3D Pro / Keno / Bingo18
-  carry a ``GameId`` (5 / 7 / 6 / 8).
-* Some edges require a first-party cookie that ``GET /ajaxpro/`` sets through
-  ``document.cookie="…"``; it is bootstrapped once per client.
-* Draw details — GET ``<results page>?id=<draw id>&nocatche=1``: result, prize table
-  (tier, matches, winners, value), official PDF link on media.vietlott.vn.
-
-Markup and keys belong to the website and can change; parsers are defensive and every
-row that fails validation is reported, never silently kept.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -66,7 +39,6 @@ PROXY_BLOCK_HINT = (
 
 
 def _access_error(exc: SourceError) -> SourceError:
-    """Translate a 403 into an actionable message: proxy policy vs. vietlott.vn's geo-block."""
     from vietlott_engine.crawler.http import CF_CHALLENGE_PREFIX, PROXY_BLOCK_PREFIX
 
     msg = str(exc)
@@ -100,8 +72,8 @@ _RENDER_INFO = {
 
 @dataclass(frozen=True)
 class OfficialEndpoint:
-    part: str  # AjaxPro web part
-    detail_path: str  # results / detail page
+    part: str
+    detail_path: str
     body: Callable[[int], dict[str, Any]]
 
     @property
@@ -167,22 +139,19 @@ def _draw_id(text: str) -> int | None:
     return int(t) if t.isdigit() else None
 
 
-# ------------------------------------------------------------------ list parsers
 def parse_results_html(html: str) -> list[OfficialRow]:
-    """Mega / Power / Lotto history rows: ``date | id | numbers`` (header row skipped)."""
     soup = BeautifulSoup(html, "html.parser")
     rows: list[OfficialRow] = []
     for tr in soup.select("table tr"):
         tds = tr.find_all("td")
         if len(tds) < 3:
-            continue  # header (th) or malformed row
+            continue
         values = [int(s.get_text(strip=True)) for s in tds[2].find_all("span") if _INT.match(s.get_text(strip=True))]
         rows.append(OfficialRow(date_text=tds[0].get_text(strip=True), id_text=tds[1].get_text(strip=True), values=values))
     return rows
 
 
 def parse_keno_html(html: str) -> list[dict]:
-    """Keno rows: ``[date, #id] | 20 numbers | lớn/nhỏ | chẵn/lẻ``."""
     soup = BeautifulSoup(html, "html.parser")
     out = []
     for tr in soup.select("table tr"):
@@ -203,7 +172,6 @@ def parse_keno_html(html: str) -> list[dict]:
 
 
 def parse_bingo18_html(html: str) -> list[dict]:
-    """Bingo18 rows: ``[date, #id] | 3 numbers | total | lớn/nhỏ/hòa``."""
     soup = BeautifulSoup(html, "html.parser")
     out = []
     for tr in soup.select("table tr"):
@@ -221,8 +189,6 @@ def parse_bingo18_html(html: str) -> list[dict]:
 
 
 def parse_three_digit_html(html: str) -> list[dict]:
-    """Max 3D / Max 3D Pro rows: 20 three-digit numbers in ``.tong_day_so_ket_qua``
-    (one digit per ``span.bong_tron`` or one number per span), ordered 2 / 4 / 6 / 8."""
     soup = BeautifulSoup(html, "html.parser")
     out = []
     for box in soup.select(".tong_day_so_ket_qua"):
@@ -247,9 +213,7 @@ def parse_three_digit_html(html: str) -> list[dict]:
     return out
 
 
-# ------------------------------------------------------------------ detail page
 def _cell_int(cells: list, i: int | None) -> int | None:  # type: ignore[type-arg]
-    """Digits of cell ``i`` as an int ("1.234.567 đ" → 1234567); None if absent/empty."""
     if i is None or i >= len(cells):
         return None
     digits = re.sub(r"\D", "", cells[i].get_text(" ", strip=True))
@@ -257,10 +221,6 @@ def _cell_int(cells: list, i: int | None) -> int | None:  # type: ignore[type-ar
 
 
 def parse_prize_table(html: str) -> list[dict]:
-    """Prize table of a detail page → ``[{code, name, winner_count, amount_vnd, jackpot_vnd}]``.
-
-    The header row is located by its labels (``Giải thưởng`` / ``Số lượng giải`` /
-    ``Giá trị giải``), so column order and extra columns do not matter."""
     soup = BeautifulSoup(html, "html.parser")
     prizes: dict[str, dict] = {}
     for table in soup.find_all("table"):
@@ -292,7 +252,6 @@ def parse_prize_table(html: str) -> list[dict]:
 
 
 def parse_detail_page(html: str, url: str) -> dict:
-    """Draw id, date, prize table and official PDF link of a draw-detail page."""
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text(" ", strip=True)
     pdf = None
@@ -317,7 +276,6 @@ def parse_detail_page(html: str, url: str) -> dict:
     }
 
 
-# ------------------------------------------------------------------ client
 class VietlottClientMixin:
     client: AsyncHttpClient
     base_url: str
@@ -377,7 +335,6 @@ class VietlottClientMixin:
 
 
 class VietlottOfficialSource(VietlottClientMixin, DrawSource):
-    """Mega / Power / Lotto: pages backwards through the results list until ``since_id``."""
 
     name = "vietlott"
 
@@ -425,7 +382,6 @@ class VietlottOfficialSource(VietlottClientMixin, DrawSource):
         return result
 
     async def fetch_canonical(self, spec: GameSpec, draw_ids: list[int]) -> list[dict]:
-        """Detail pages of the given draws → canonical records (result + prize table + provenance)."""
         product = _GAME_TO_PRODUCT[spec.code]
         details = await asyncio.gather(*(self.fetch_detail(product, i) for i in draw_ids))
         out = []
@@ -450,7 +406,6 @@ class VietlottOfficialSource(VietlottClientMixin, DrawSource):
 
 
 class VietlottProductSource(VietlottClientMixin):
-    """Keno, Bingo18, Max 3D and Max 3D Pro history lists (newest page first)."""
 
     PARSERS: dict[ProductCode, Callable[[str], list[dict]]] = {
         ProductCode.KENO: parse_keno_html,
@@ -467,7 +422,6 @@ class VietlottProductSource(VietlottClientMixin):
         self._cookie_ready = False
 
     async def fetch_pages(self, product: ProductCode, max_pages: int, since_id: int | None = None, first_page: int = 1) -> list[dict]:
-        """Rows from the newest page backwards; stops at ``since_id`` or an empty page."""
         if product not in self.PARSERS:
             raise SourceError(f"{product.value} is a matrix game: use VietlottOfficialSource")
         parser = self.PARSERS[product]

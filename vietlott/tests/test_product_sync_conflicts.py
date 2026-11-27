@@ -1,12 +1,3 @@
-"""Max 3D / 3D Pro / 4D: nguồn không được sửa kỳ đã lưu (05-11-2026).
-
-Bản sao và kho canonical trả CẢ lịch sử. Trước bản vá, ``ProductSyncPipeline.run`` gửi mọi dòng ấy vào
-``ProductStore.upsert``, và kỳ trùng mã bị ghi đè lặng lẽ bằng bản của nguồn — khác với luật của
-Keno/Bingo18 (``_run_fast``) và Mega/Power/Lotto (``SyncPipeline``). Luật chung: ``auto`` bỏ nguồn mâu
-thuẫn và hỏi nguồn kế tiếp; chọn đích danh một nguồn thì chỉ bỏ kỳ mâu thuẫn; chỉ ``--full`` từ
-vietlott.vn chính thức được sửa kỳ cũ.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -16,7 +7,7 @@ from vietlott_engine.core.products import ProductCode
 from vietlott_engine.crawler.product_store import ProductStore, ProductSyncPipeline
 
 GOOD = {did: [f"{(did * 37 + i * 11) % 1000:03d}" for i in range(20)] for did in range(1, 6)}
-WRONG_2 = ["999"] * 20  # kỳ 2 do một nguồn đăng sai
+WRONG_2 = ["999"] * 20
 
 
 def _row(did: int, values: list[str] | None = None) -> dict:
@@ -24,7 +15,6 @@ def _row(did: int, values: list[str] | None = None) -> dict:
 
 
 class _Pipeline(ProductSyncPipeline):
-    """Mỗi nguồn trả đúng dòng dựng sẵn; không gọi mạng."""
 
     def __init__(self, store: ProductStore, served: dict[str, list[dict]], order: list[str]) -> None:
         super().__init__(None, store, vietlott_base_url="https://v", mirror_base_url="https://m",  # type: ignore[arg-type]

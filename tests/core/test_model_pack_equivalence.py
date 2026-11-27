@@ -1,8 +1,3 @@
-"""Pack mô hình học lại y hệt thì giữ tệp cũ (`core.model_io.dump_pack_unless_equivalent`, 11-11-2026).
-
-Lượt chạy lại trên cùng dữ liệu ghi lại `models/meta_<mode>.joblib` dù mô hình trùng từng bit: khác giờ học,
-và pickle khác cả cách chia sẻ chuỗi giữa các đối tượng.
-"""
 from __future__ import annotations
 
 import pickle
@@ -36,7 +31,6 @@ def test_a_pack_that_only_differs_in_training_time_keeps_the_file(tmp_path: Path
 
 
 def test_shared_and_unshared_strings_are_the_same_pack(tmp_path: Path) -> None:
-    """Hai pack bằng nhau theo giá trị nhưng pickle khác nhau: một pack dùng chung đối tượng chuỗi."""
     word = "".join(["log_", "loss"])
     shared = _pack(_model(), "a", names=[word, word])
     separate = _pack(_model(), "a", names=["log_loss", "".join(["log", "_loss"])])
@@ -71,7 +65,6 @@ def _hgb(features: np.ndarray, labels: np.ndarray):
 
 
 def _gap_features(shift_ulp: bool) -> tuple[np.ndarray, np.ndarray]:
-    """Đặc trưng float32 kiểu `log1p(khoảng cách)`; ``shift_ulp`` = runner khác CPU lệch một ULP float32."""
     rng = np.random.default_rng(7)
     gaps = rng.integers(0, 60, size=(3000, 2)).astype(np.float32)
     values = np.log1p(gaps)
@@ -81,10 +74,6 @@ def _gap_features(shift_ulp: bool) -> tuple[np.ndarray, np.ndarray]:
 
 
 def test_a_model_retrained_on_another_cpu_keeps_the_file_when_it_predicts_the_same(tmp_path: Path) -> None:
-    """Lượt chạy lại 09-11-2026 trên runner khác CPU: ngưỡng bin lệch 10⁻⁸, hệ số Platt 10⁻¹⁴, số đo 10⁻¹³.
-
-    Tham số khác (``joblib.hash`` khác) mà dự báo trùng: giữ tệp cũ khi có hàm dự báo, ghi khi không có.
-    """
     old_x, labels = _gap_features(shift_ulp=False)
     new_x, _ = _gap_features(shift_ulp=True)
     old_model, new_model = _hgb(old_x, labels), _hgb(new_x, labels)
@@ -99,7 +88,7 @@ def test_a_model_retrained_on_another_cpu_keeps_the_file_when_it_predicts_the_sa
     probe = {"model": lambda model: model.predict_proba(new_x)[:, 1]}
     assert dump_pack_unless_equivalent(new_pack, path, predictions=probe) is False
     assert path.read_bytes() == before
-    assert dump_pack_unless_equivalent(new_pack, path) is True          # không có hàm dự báo: so tuyệt đối
+    assert dump_pack_unless_equivalent(new_pack, path) is True
     joblib.dump(old_pack, path)
     for key, value in (("val_logloss", 0.0561), ("window_days", 1461), ("features", ["gap"]),
                        ("rows", np.array([0.1, 0.21])), ("model", _hgb(new_x, 1 - labels))):
@@ -111,7 +100,7 @@ def test_an_old_model_that_cannot_predict_on_the_new_data_is_replaced(tmp_path: 
     features, labels = _gap_features(shift_ulp=False)
     path = tmp_path / "cau_keo_de.joblib"
     joblib.dump({"model": _hgb(features[:, :1], labels)}, path)
-    probe = {"model": lambda model: model.predict_proba(features)[:, 1]}   # hai cột: mô hình cũ chỉ biết một
+    probe = {"model": lambda model: model.predict_proba(features)[:, 1]}
     assert dump_pack_unless_equivalent({"model": _hgb(features, labels)}, path, predictions=probe) is True
     assert joblib.load(path)["model"].n_features_in_ == 2
 
@@ -124,8 +113,6 @@ def _calls_without_predictions(source: str) -> list[int]:
 
 
 def test_every_model_pack_writer_says_how_to_compare_its_models() -> None:
-    """Mỗi chỗ ghi pack khai ``predictions`` (kể cả ``{}`` cho pack không có mô hình): thiếu nó thì mô hình học
-    lại trên runner khác CPU bị so tuyệt đối và tệp bị ghi lại dù dự báo trùng."""
     root = Path(__file__).resolve().parents[2] / "src"
     writers = {path: path.read_text(encoding="utf-8") for path in root.rglob("*.py")
                if "dump_pack_unless_equivalent(" in path.read_text(encoding="utf-8") and path.name != "model_io.py"}

@@ -1,5 +1,3 @@
-"""Bộ chấm walk-forward của đài XSMT/XSMN: không nhìn trước, không khen nhiễu, không mù trước tín hiệu thật."""
-
 from __future__ import annotations
 
 import json
@@ -37,7 +35,6 @@ def test_station_state_only_counts_draws_before_the_one_it_describes() -> None:
 
 @pytest.mark.parametrize("mode", rb.MODES)
 def test_no_forecast_reads_a_draw_on_or_after_its_target(mode: str) -> None:
-    """Cắt sổ ở một ngày bất kỳ: dự báo cho mọi kỳ còn lại phải trùng từng bit với bản có đủ tương lai."""
     rows = fair_region("mn", stations=5, draws=44, seed=2)
     full_stations = build_stations(rows, "mn")
     days = sorted({day for s in full_stations for day in s.dates})
@@ -59,7 +56,6 @@ def test_no_forecast_reads_a_draw_on_or_after_its_target(mode: str) -> None:
 
 @pytest.mark.parametrize("mode", rb.MODES)
 def test_the_target_draw_itself_never_enters_its_own_forecast(mode: str) -> None:
-    """Thay kết quả của KỲ ĐÍCH bằng kết quả khác: dự báo cho kỳ ấy không được nhúc nhích ở mô hình nào."""
     rows = fair_region("mn", stations=4, draws=42, seed=21)
     last = {r["province"]: max(x["date"] for x in rows if x["province"] == r["province"]) for r in rows}
     changed = [dict(r) for r in rows]
@@ -78,7 +74,6 @@ def test_the_target_draw_itself_never_enters_its_own_forecast(mode: str) -> None
 
 
 def test_two_stations_drawing_on_the_same_day_cannot_see_each_other() -> None:
-    """Đổi kết quả của đài B ở ngày d không được đổi dự báo của đài A cho chính ngày d."""
     rng = np.random.default_rng(3)
     a = station_rows("mn", "Đài A", 40, rng, weekday=0)
     b = station_rows("mn", "Đài B", 40, rng, weekday=0)
@@ -119,7 +114,6 @@ def test_log_loss_matches_the_textbook_formula() -> None:
 
 
 def test_cage_models_put_the_short_ball_numbers_below_baseline() -> None:
-    """Lồng đơn vị thiếu quả 6, lồng chục thiếu quả 4: con 46 phải thấp nhất, con không dính quả nào cao hơn nền."""
     rng = np.random.default_rng(5)
     rows = station_rows("mn", "Đài Lệch", 60, rng, law=biased_law({0: 6, 1: 4}))
     (state,) = _states(rows, "loto")
@@ -129,7 +123,6 @@ def test_cage_models_put_the_short_ball_numbers_below_baseline() -> None:
         assert p[46] < 0.5 * LOTO_BASELINE_RATE < LOTO_BASELINE_RATE < p[17]
         special = model(state, "de")[-1]
         assert special.sum() == pytest.approx(1.0) and special.argmin() == 46
-    # Chưa có kỳ nào: cả hai mô hình trùng dự báo đều.
     assert rb.cage_digits(state, "loto")[0] == pytest.approx(np.full(100, LOTO_BASELINE_RATE))
     assert rb.cage_empirical_bayes(state, "loto")[0] == pytest.approx(np.full(100, LOTO_BASELINE_RATE))
 
@@ -151,7 +144,6 @@ def test_a_fair_region_shows_no_edge_and_says_so() -> None:
         assert all(not block["models"][name]["edge"] for name in rb.PROBABILITY_MODELS if name != "deu")
         assert all(not row["edge"] for row in block["rankings"].values())
         assert all(block["models"][name]["stations_with_edge"] == [] for name in rb.PROBABILITY_MODELS if name != "deu")
-        # Tần suất thô là mô hình "số nóng": trên lịch sử công bằng nó phải KÉM dự báo đều rõ rệt.
         assert block["models"]["tan_suat_truot"]["mean_gain"] < 0
     assert modes["de"]["models"]["deu"]["log_loss"] == pytest.approx(np.log(100))
     assert modes["de"]["models"]["deu"]["ranking"]["mrr"] == pytest.approx(
@@ -163,7 +155,6 @@ def test_a_fair_region_shows_no_edge_and_says_so() -> None:
 
 
 def test_a_planted_cage_bias_wins_out_of_sample_at_that_station_only() -> None:
-    """Công cụ đo không mù: đài có lồng lệch thật thì mô hình theo lồng thắng ngoài mẫu, và chỉ ở đài ấy."""
     rng = np.random.default_rng(8)
     rows = fair_region("mn", stations=6, draws=60, seed=9)
     rows += station_rows("mn", "Đài Lệch", 60, rng, weekday=2, law=biased_law({0: 6, 1: 4, 2: 1}))
@@ -174,7 +165,6 @@ def test_a_planted_cage_bias_wins_out_of_sample_at_that_station_only() -> None:
     assert block["long_bayes"]["post_hoc"] and not block["long_chu_so"]["post_hoc"]
     assert block["tan_suat"]["stations_with_edge"] == []
     (edge,) = rb.station_edges(modes)
-    # Nhiều mô hình cùng thắng ở một đài: báo MỘT dòng, là mô hình khai TRƯỚC có lợi lớn nhất.
     winners = {
         name: next(r["mean_gain"] for r in model["stations"] if r["province"] == "Đài Lệch")
         for name, model in block.items()
@@ -182,7 +172,6 @@ def test_a_planted_cage_bias_wins_out_of_sample_at_that_station_only() -> None:
     }
     assert (edge["province"], edge["post_hoc"]) == ("Đài Lệch", False)
     assert edge["model"] == max(winners, key=winners.get) == "long_chu_so"
-    # Mô hình thêm sau có lợi lớn hơn cũng không được báo thay mô hình khai trước.
     boosted = json.loads(json.dumps(modes))
     for row in boosted["loto"]["models"]["long_bayes"]["stations"]:
         row["mean_gain"] = 9.0
@@ -190,8 +179,6 @@ def test_a_planted_cage_bias_wins_out_of_sample_at_that_station_only() -> None:
     for name in winners:
         boosted["loto"]["models"][name]["stations_with_edge"] = []
     assert [(e["model"], e["post_hoc"]) for e in rb.station_edges(boosted)] == [("long_bayes", True)]
-    # Holm trên MỌI cặp (đài, mô hình): ``station_edges`` chọn mô hình thắng ở mỗi đài, nên phép chọn
-    # ấy thuộc họ. Hiệu chỉnh riêng từng mô hình (bản 1) cho p nhỏ hơn ở ít nhất một dòng.
     candidates = [name for name in rb.PROBABILITY_MODELS if name != "deu"]
     family = [row for name in candidates for row in block[name]["stations"]]
     assert len(family) == len(candidates) * 7
@@ -203,12 +190,10 @@ def test_a_planted_cage_bias_wins_out_of_sample_at_that_station_only() -> None:
     assert "Riêng từng đài" in text and "Đài Lệch — Chữ số theo lồng cho lô" in text
     assert "hiệu chỉnh Holm trên mọi cặp đài × mô hình" in text
     assert "chỉ thành lợi thế khi phép kiểm tiến cứu đã đăng ký xác nhận" in text
-    # Số in cho người đọc dùng dấu phẩy thập phân.
     assert f"(lợi +{edge['mean_gain']:.4f}".replace(".", ",") in text
 
 
 def test_a_planted_hot_number_in_every_station_gives_a_regional_edge() -> None:
-    """Một con về gấp ba mức nền ở mọi đài: Bayes thực nghiệm phải thắng dự báo đều ở cấp miền."""
     rng = np.random.default_rng(10)
     rows = []
     for index in range(8):
@@ -250,11 +235,6 @@ def test_run_writes_a_deterministic_report_with_its_frozen_configuration(tmp_pat
 
 
 def test_the_committed_report_matches_the_committed_ledgers() -> None:
-    """Báo cáo đã commit phải là báo cáo của ĐÚNG sổ miền (tới ngày nó ghi) và ĐÚNG cấu hình hiện hành.
-
-    Báo cáo được phép cũ hơn sổ một lượt (bước chấm hỏng thì trang ẩn khối kiểm định), nhưng không
-    được nói về những kỳ không có trong sổ, và số kỳ được chấm phải đếm lại được từ sổ.
-    """
     root = Path(__file__).resolve().parents[2]
     report = json.loads((root / "data" / rb.OUT).read_text(encoding="utf-8"))
     assert report["config"] == rb.CONFIG and set(report["regions"]) == {"mt", "mn"}

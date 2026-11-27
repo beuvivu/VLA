@@ -1,5 +1,3 @@
-"""Bố cục Dashboard phải giữ đủ số, chỉ số và dữ liệu kiểm chứng."""
-
 import json
 
 from bs4 import BeautifulSoup

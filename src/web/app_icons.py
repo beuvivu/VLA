@@ -1,10 +1,3 @@
-"""Canonical Lucide SVG for page content and global search results.
-
-The rail, expanded navigation and header use exact Nexlink assets through
-nexlink_icons.py per the user's updated request on 2026-09-26.
-Assets here retain their pinned upstream provenance and ISC/MIT notices.
-"""
-
 from __future__ import annotations
 
 from functools import cache
@@ -19,7 +12,6 @@ LUOI: Final[str] = "0 0 24 24"
 NET: Final[str] = "2"
 _THU_MUC: Final[Path] = ASSETS / "icons"
 
-#: Ánh xạ ý nghĩa trong ứng dụng sang tên chính thức ở kho Lucide.
 BIEU_TUONG: Final[dict[str, str]] = {
     "tim-kiem": "search",
     "che-do": "sun-moon",
@@ -78,13 +70,11 @@ BIEU_TUONG: Final[dict[str, str]] = {
 
 @cache
 def _noi_dung_svg(ten: str) -> str:
-    """Đọc nguyên các phần tử hình học của asset đã ghim, chỉ một lần mỗi tên."""
     svg = (_THU_MUC / f"{ten}.svg").read_text(encoding="utf-8")
     return svg.split(">", 1)[1].rsplit("</svg>", 1)[0].strip()
 
 
 def icon_svg(khoa: str, lop: str = "app-ic") -> str:
-    """Dựng SVG 20px; khóa lạ dùng vòng tròn Lucide, không trở thành đường dẫn."""
     ten = BIEU_TUONG.get(khoa, "circle")
     ve = _noi_dung_svg(ten)
     return (

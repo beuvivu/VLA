@@ -1,4 +1,3 @@
-"""Bộ đa thuật toán phải tham gia luật thật và giữ nguyên thứ tự chấm trước học."""
 from copy import deepcopy
 from itertools import combinations
 
@@ -111,8 +110,6 @@ def test_disabling_multi_agent_removes_stale_public_summary(tmp_path):
 
 
 def test_refreshing_with_nothing_new_keeps_the_committed_summary_byte_for_byte(tmp_path):
-    """Tệp tóm tắt được commit vào kho. Làm mới không có kỳ mới chỉ đổi `generated_at`, nên không được ghi lại;
-    có kỳ mới thì phải ghi, kèm dấu giờ mới."""
     from vlm.forecast.service import refresh_snapshot
     cfg = MLConfig(backends=(), multi_agent=True, bootstrap=8, search_nodes=1)
     path = tmp_path / 'multi-agent-summary.json'
@@ -127,7 +124,6 @@ def test_refreshing_with_nothing_new_keeps_the_committed_summary_byte_for_byte(t
 
 
 def _nudged(value, factor=None):
-    """Mọi số thực của cây JSON dịch một bước: một ULP (như hai CPU), hoặc nhân `factor`."""
     import math
     if isinstance(value, dict):
         return {key: _nudged(item, factor) for key, item in value.items()}
@@ -139,9 +135,6 @@ def _nudged(value, factor=None):
 
 
 def test_refreshing_on_another_cpu_keeps_the_committed_summary_byte_for_byte(tmp_path):
-    """`np.exp`/`np.dot` lệch bit cuối giữa các CPU của runner. Tuần 03 → 10-11-2026 có 40/64 commit chạm
-    tệp tóm tắt chỉ mang kiểu lệch ấy. Tệp trên đĩa lệch một ULP so với số vừa tính thì phải giữ nguyên;
-    lệch ở mức có nghĩa thì phải ghi lại."""
     import json
     from vlm.forecast.service import refresh_snapshot
     cfg = MLConfig(backends=(), multi_agent=True, bootstrap=8, search_nodes=1)
@@ -150,7 +143,7 @@ def test_refreshing_on_another_cpu_keeps_the_committed_summary_byte_for_byte(tmp
     computed = json.loads(path.read_bytes())
 
     other_cpu = _nudged(computed)
-    assert other_cpu != computed   # mẫu thật sự có số thực bị dịch
+    assert other_cpu != computed
     path.write_text(json.dumps(other_cpu, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     kept = path.read_bytes()
     refresh_snapshot('mega645', mega_series(8), tmp_path, config=cfg, issue=False)
@@ -164,16 +157,14 @@ def test_refreshing_on_another_cpu_keeps_the_committed_summary_byte_for_byte(tmp
 
 
 def test_only_floats_may_differ_and_only_by_noise():
-    """Ghim chính luật so: chỉ số thực được nới, và chỉ ở mức nhiễu."""
     from vlm.forecast.service import _same_up_to_float_noise as same
-    # Cặp trọng số thật của hai commit liền nhau 047bb1b05 / 476d933e9.
     assert same({'w': 0.29001380630159374}, {'w': 0.2900138063015937})
-    assert same([0.0, 1.0], [1e-15, 1.0])                       # gần 0: dung sai tuyệt đối
-    assert not same({'w': 0.29001380}, {'w': 0.29001381})       # đổi ở chữ số thứ tám là đổi thật
+    assert same([0.0, 1.0], [1e-15, 1.0])
+    assert not same({'w': 0.29001380}, {'w': 0.29001381})
     assert not same({'observations': 2042}, {'observations': 2071})
     assert not same({'a': 1.0}, {'a': 1.0, 'b': 2.0})
     assert not same([1.0, 2.0], [1.0])
-    assert not same({'a': 1}, {'a': 1.0})                       # kiểu khác nhau là khác
+    assert not same({'a': 1}, {'a': 1.0})
     assert not same({'a': True}, {'a': 1})
     assert not same({'context': 'shift'}, {'context': 'stable'})
     assert not same({'a': None}, {'a': 0.0})

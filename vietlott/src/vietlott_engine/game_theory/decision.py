@@ -1,18 +1,3 @@
-"""Decision layer on top of the EV engine.
-
-1. ``payout_distribution`` — the full distribution of one ticket's after-tax payout
-   (fixed tiers plus the jackpot split K ~ Poisson(λ) among co-winners), not just its mean.
-2. ``kelly`` — growth-optimal staking. With outcomes X_o (per 1 VND staked) the expected
-   log-growth of betting a fraction f of bankroll is G(f) = Σ p_o log(1 + f(X_o − 1)).
-   G'(0) = RTP − 1, so the optimal stake is exactly zero whenever RTP ≤ 1; when RTP > 1
-   the optimum is found numerically and converted into "bankroll needed to justify one
-   ticket".
-3. ``ev_uncertainty`` — the EV depends on unobserved crowd behaviour and sales, so the
-   point estimate is replaced by a distribution: parameters are drawn from explicit
-   priors, the EV is recomputed for each draw, and the result reports quantiles,
-   P(RTP > 1) and a Spearman sensitivity ranking of the inputs.
-"""
-
 from __future__ import annotations
 
 from dataclasses import replace
@@ -26,11 +11,9 @@ from vietlott_engine.game_theory.ev import EVCalculator
 from vietlott_engine.game_theory.popularity import PopularityModel, PopularityParams
 
 
-# ------------------------------------------------------------- distribution
 def payout_distribution(
     calc: EVCalculator, ticket: list[int] | tuple[int, ...], jackpot1: float | None, jackpot2: float | None, tickets_sold: int | None, special: int | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
-    """(values, probabilities) of the after-tax payout of one play, including 0."""
     spec, tax = calc.spec, calc.tax
     combo = calc._combo(ticket)
     j1, j2 = calc._jackpots(jackpot1, jackpot2)
@@ -84,11 +67,10 @@ def payout_profile(values: np.ndarray, probs: np.ndarray, price: float) -> Payou
     )
 
 
-# -------------------------------------------------------------------- Kelly
 class KellyResult(BaseModel):
     return_to_player: float
-    optimal_fraction: float  # of bankroll per ticket
-    growth_per_ticket_at_optimum: float  # expected log-growth (nats)
+    optimal_fraction: float
+    growth_per_ticket_at_optimum: float
     tickets_for_bankroll: int
     bankroll: float
     min_bankroll_for_one_ticket: float | None
@@ -96,7 +78,7 @@ class KellyResult(BaseModel):
 
 
 def kelly(values: np.ndarray, probs: np.ndarray, price: float, bankroll: float) -> KellyResult:
-    x = values / price  # gross return per 1 VND staked
+    x = values / price
     rtp = float(np.sum(probs * x))
 
     def neg_growth(f: float) -> float:
@@ -128,7 +110,6 @@ def kelly(values: np.ndarray, probs: np.ndarray, price: float, bankroll: float) 
     )
 
 
-# -------------------------------------------------------------- uncertainty
 class EVUncertainty(BaseModel):
     game: str
     ticket: list[int]
@@ -139,7 +120,7 @@ class EVUncertainty(BaseModel):
     rtp_p95: float
     prob_rtp_above_one: float
     co_winners_median: float
-    sensitivity: dict[str, float]  # Spearman correlation of each input with RTP
+    sensitivity: dict[str, float]
     priors: dict[str, str]
 
 
@@ -166,12 +147,6 @@ def ev_uncertainty(
     special: int | None = None,
     calibration=None,
 ) -> EVUncertainty:
-    """EV as a distribution over what is not known about the crowd and the sales.
-
-    Without a calibration the crowd parameters are drawn from wide literature priors.
-    With a ``BehaviourCalibration`` they are drawn from its sampling distribution
-    (q ~ N(q̂, se), β_i ~ N(β̂_i, se_i)); only the uncalibrated combination-pattern
-    factors keep a wide prior."""
     rng = np.random.default_rng(seed)
     base = PopularityParams()
     lo, hi = tickets_sold_range

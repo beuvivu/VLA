@@ -1,14 +1,3 @@
-"""Forecast evaluation with correct inference.
-
-* ``newey_west_variance`` — HAC long-run variance (Bartlett kernel, Newey–West 1994
-  automatic lag), because walk-forward loss differentials are serially correlated
-  (models refit on overlapping windows).
-* ``diebold_mariano`` — test of equal predictive accuracy with the Harvey–Leybourne–
-  Newbold small-sample correction and Student-t reference.
-* ``spiegelhalter_z`` — calibration test for probability forecasts.
-* ``reliability_table`` — binned predicted vs observed frequencies.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -21,7 +10,6 @@ def newey_west_lag(t: int) -> int:
 
 
 def andrews_lag(x: np.ndarray) -> int:
-    """Andrews (1991) AR(1) plug-in bandwidth for the Bartlett kernel."""
     x = np.asarray(x, dtype=np.float64) - np.mean(x)
     t = x.size
     rho = float(np.dot(x[1:], x[:-1]) / max(np.dot(x[:-1], x[:-1]), 1e-300))
@@ -31,7 +19,6 @@ def andrews_lag(x: np.ndarray) -> int:
 
 
 def newey_west_variance(x: np.ndarray, lag: int | None = None) -> float:
-    """HAC estimate of the long-run variance of a mean-stationary series."""
     x = np.asarray(x, dtype=np.float64) - np.mean(x)
     t = x.size
     lag = newey_west_lag(t) if lag is None else lag
@@ -47,13 +34,12 @@ class DMResult(BaseModel):
     hac_standard_error: float
     statistic: float
     p_value_two_sided: float
-    p_value_greater: float  # H1: first forecaster better (positive differential)
+    p_value_greater: float
     lag: int
     observations: int
 
 
 def diebold_mariano(differential: np.ndarray, horizon: int = 1, lag: int | None = None) -> DMResult:
-    """DM test on d_t = score_model − score_benchmark (higher = better)."""
     d = np.asarray(differential, dtype=np.float64)
     t = d.size
     if d.ndim != 1 or t < 2 or not np.isfinite(d).all():
@@ -85,11 +71,6 @@ class CalibrationResult(BaseModel):
 
 
 def spiegelhalter_z(p: np.ndarray, y: np.ndarray) -> tuple[float, float]:
-    """Vector dùng Bernoulli; ma trận (kỳ, số) dùng covariance nội kỳ và HAC theo kỳ.
-
-    Tổng residual trong mỗi kỳ giữ phụ thuộc do lấy k số không hoàn lại.
-    HAC Bartlett trên chuỗi tổng này còn xử lý phụ thuộc thời gian của dự báo.
-    """
     p = np.asarray(p, dtype=np.float64)
     y = np.asarray(y, dtype=np.float64)
     if (p.shape != y.shape or p.ndim not in (1, 2) or not p.size
@@ -101,7 +82,6 @@ def spiegelhalter_z(p: np.ndarray, y: np.ndarray) -> tuple[float, float]:
             raise ValueError('Draw-level calibration needs at least two draws')
         terms = (y - p) * (1 - 2 * p)
         residual = terms.sum(axis=1)
-        # Tổng triệt tiêu đúng ở law uniform k/n; HAC không được phóng đại roundoff thành tín hiệu.
         roundoff = np.finfo(float).eps * p.shape[1] * np.maximum(1, np.abs(terms).sum(axis=1))
         residual = np.where(np.abs(residual) <= roundoff, 0, residual)
         se = np.sqrt(newey_west_variance(residual) / len(residual))

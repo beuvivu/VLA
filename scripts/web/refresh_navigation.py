@@ -1,4 +1,3 @@
-"""Dựng lại shell từ nguồn chuẩn, giữ nguyên dữ liệu bên trong mọi trang."""
 from pathlib import Path
 import subprocess
 import sys
@@ -11,7 +10,6 @@ def main():
     from web.ui_theme import write_stylesheet
     write_stylesheet(ROOT / 'docs')
     subprocess.run([sys.executable, str(ROOT / 'scripts/web/extract_critical_css.py')], check=True)
-    # Process mới sau khi critical CSS được sinh, tránh cache module cũ.
     subprocess.run([sys.executable, '-c', '''
 from pathlib import Path
 from web.page_output import write_page

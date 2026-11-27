@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-"""Availability-aware helpers for ensemble component probability artifacts.
-
-A missing, malformed, or stale component must never be represented as a
-legitimate probability vector. These helpers keep availability explicit and
-only normalize/weight artifacts that satisfy the 00..99 and date contracts.
-"""
 
 from dataclasses import dataclass
 from datetime import date
@@ -19,13 +13,6 @@ from ensemble.ensemble_utils import EnsembleWeights, normalize_distribution
 Mode = Literal["loto", "de"]
 COMPONENT_KEYS = ("ml", "cau", "stat", "active", "stable")
 
-#: Phiên bản ĐỊNH NGHĨA xác suất của thành phần, cho thành phần từng đổi định
-#: nghĩa. Sổ ``data/evaluation/history/pred_<mode>.csv`` ghi số này vào cột
-#: ``policy_<key>`` của mỗi dòng; dòng cũ không có cột ấy.
-#:
-#: Cầu-kèo: 1 = co về nền theo kỹ năng thẩm định (04-10-2026). Trước đó cột
-#: ``p_cau`` là xác suất THÔ — một thành phần khác — nên bộ học trọng số và tầng
-#: xếp chồng không được học trên hỗn hợp hai định nghĩa.
 COMPONENT_POLICY: Final[dict[str, int]] = {"cau": 1}
 
 
@@ -33,19 +20,14 @@ def policy_column(key: str) -> str:
     return f"policy_{key}"
 
 
-#: Phiên bản PHÉP CHỐT tổ hợp (``ensemble_utils.finalize_blend``) đã dùng khi
-#: công bố ngày ấy, ghi vào cột ``policy_blend`` của sổ lịch sử. 1 = neo mức
-#: LOTO (04-10-2026); dòng cũ không có cột đã được công bố bằng ``clip01``.
 BLEND_POLICY: Final[int] = 1
 BLEND_POLICY_COLUMN: Final[str] = "policy_blend"
 
 
 def published_with_level_anchor(sub: pd.DataFrame) -> bool:
-    """Ngày này đã được CÔNG BỐ với phép neo mức LOTO hay chưa."""
     if BLEND_POLICY_COLUMN not in sub.columns:
         return False
     versions = pd.to_numeric(sub[BLEND_POLICY_COLUMN], errors="coerce").to_numpy(dtype=float)
-    # Phiên bản 1 trở đi đều neo mức; NaN (dòng ghi trước khi có cột) thì không.
     return bool(versions.size and np.all(versions >= float(BLEND_POLICY)))
 
 
@@ -100,44 +82,14 @@ def _artifact_date_reason(
     return None
 
 
-#: Số giải trong một kỳ XSMB. Đây là trần CỨNG cho số con phân biệt: 27 giải
-#: thì nhiều nhất cũng chỉ ra 27 con khác nhau.
 LOTO_PRIZE_SLOTS: Final[int] = 27
 
-#: Số con PHÂN BIỆT kỳ vọng: 27 giải rút từ 100 số hai chữ số, nên
-#: ``100 · (1 − (99/100)^27) = 23,7657``. Tổng xác suất biên của một mô hình
-#: loto đúng phải bằng chính đại lượng này.
 LOTO_EXPECTED_MARGINAL_SUM: Final[float] = 100.0 * (
     1.0 - (99.0 / 100.0) ** LOTO_PRIZE_SLOTS
 )
 
 
 def loto_marginal_sum_is_plausible(total: float) -> bool:
-    """Tổng xác suất biên loto có vượt trần luật chơi hay không.
-
-    Trần là 27, suy thẳng từ luật chơi: một kỳ có 27 giải nên nhiều nhất cũng
-    chỉ ra 27 con phân biệt, tức tổng ``P(con i về)`` không thể vượt 27.
-
-    CHỈ chặn phía TRÊN, và đó là điều đã cân nhắc. Bản đầu của hàm này còn đặt
-    ngưỡng dưới bằng một nửa giá trị kỳ vọng — con số ấy tôi TỰ ĐẶT, không suy
-    ra từ đâu, và nó loại oan một mô hình thiếu tự tin (phép kiểm
-    ``test_ensemble_renormalizes_weights_over_available_components_only`` với
-    vector tổng 10 đã bắt đúng chỗ đó). Tổng THẤP là một lựa chọn mô hình;
-    tổng vượt 27 là bất khả thi về mặt vật lý.
-
-    Lỗi cần chặn nằm ở phía trên: 212 trong 231 ngày lịch sử loto ghi
-    ``p_active``/``p_stable`` ở thang "gần 1,0 cho mọi con", tổng ≈ 100. Cổng
-    canh cũ chỉ kiểm từng phần tử trong ``[0, 1]`` nên vector ấy qua sạch.
-
-    Hệ quả đo được: trang Chất lượng mô hình báo Brier 0,3133 cho loto, trong
-    khi trên dữ liệu sạch con số thật là 0,1802.
-
-    Args:
-        total: Tổng của vector 100 phần tử.
-
-    Returns:
-        ``True`` nếu tổng không vượt trần luật chơi.
-    """
     return bool(float(total) <= float(LOTO_PRIZE_SLOTS))
 
 
@@ -148,13 +100,6 @@ def probability_component(
     expected_target_date: str | date | None = None,
     expected_anchor_date: str | date | None = None,
 ) -> ComponentVector:
-    """Validate one full 00..99 probability artifact.
-
-    Missing, partial, duplicate, stale-date, non-finite, out-of-range,
-    non-integer-number, or all-zero artifacts are unavailable. For De, a valid
-    vector is normalized to a categorical distribution. For Loto, Bernoulli
-    marginals are kept as-is.
-    """
     missing = np.full(100, np.nan, dtype=np.float64)
     if df is None or df.empty:
         return ComponentVector(missing, False, "missing_or_empty")
@@ -201,13 +146,6 @@ def probability_component(
 def availability_from_history_day(
     sub: pd.DataFrame, *, mode: Mode | None = None, current_policy: bool = False
 ) -> dict[str, bool]:
-    """Thành phần nào của một ngày trong sổ lịch sử là vector xác suất hợp lệ.
-
-    ``current_policy=True`` dành cho nơi HỌC từ lịch sử (trọng số, hiệu chỉnh,
-    tầng xếp chồng): thành phần có trong ``COMPONENT_POLICY`` chỉ được tính khi
-    mọi dòng của ngày ghi đúng phiên bản hiện hành. Nơi dựng lại thứ ĐÃ công bố
-    (trang Chất lượng) giữ mặc định, vì ngày cũ đã công bố theo định nghĩa cũ.
-    """
     if len(sub) != 100 or "number" not in sub.columns:
         return {key: False for key in COMPONENT_KEYS}
 

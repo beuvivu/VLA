@@ -1,32 +1,3 @@
-"""Trần dự báo của XSMB: dữ liệu có cấu trúc nào để học không? (16-10-2026)
-
-Yêu cầu của chủ dự án: "tăng tính phỏng đoán và thông minh khi suy luận cầu kèo
-và xác suất cho toàn hệ thống lên mức cao nhất có thể". Mức cao nhất có thể do
-DỮ LIỆU quyết định, không do mô hình: nếu kỳ quay độc lập và đều, mọi dự báo
-khác hằng số đều có logloss kỳ vọng KÉM hơn hằng số, và trần là chính hằng số.
-
-Kịch bản này dò những dạng cấu trúc có thể có thật trên một trò quay lồng cầu,
-mỗi dạng một phép thử, rồi đặt kỹ năng ĐÃ CÔNG BỐ của hệ thống cạnh trần ấy.
-
-1. Lệch chữ số theo vị trí (bi lệch, lồng lệch) có ỔN ĐỊNH giữa hai nửa lịch
-   sử không — lệch thật thì tương quan dương giữa hai nửa.
-2. Các chữ số trong CÙNG một kỳ có độc lập không (phương sai số đếm theo ngày
-   so với nhị thức).
-3. Lô về hôm nay có làm đổi khả năng về ở kỳ sau không (độ trễ 1, 2, 3, 7); sai số theo
-   cụm kỳ đích.
-4. Mô hình tần suất chữ số gần đây (cửa sổ W kỳ, co về đều với độ mạnh k):
-   walk-forward so với dự báo đều — dạng duy nhất khai thác được lệch vật lý
-   nếu lệch ấy trôi theo thời gian.
-5. Kỹ năng ngoài mẫu của vector ĐÃ CÔNG BỐ (``data/evaluation/model_quality/report.json``).
-6. Chữ số theo LỒNG trong từng QUÝ (thêm 16-11-2026): mỗi hàng (đơn vị … chục nghìn) gộp mọi giải
-   dùng hàng ấy, kiểm đều trên mười chữ số cho từng quý, hiệu chỉnh đa kiểm trên mọi (quý × lồng).
-   Phép 1 so hai NỬA lịch sử theo từng (giải, hàng) nên không thấy một độ lệch chỉ kéo dài vài
-   tháng ở cả một lồng; phép 4 hỏi độ lệch ấy có KHAI THÁC được không. Hai câu trả lời khác nhau
-   được: lệch tạm thời có thật mà không đủ bền để dự báo.
-
-    PYTHONPATH=src python3 scripts/research/audit_forecast_ceiling.py
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -52,13 +23,11 @@ WARMUP = 400
 def _load(data_dir: Path) -> tuple[np.ndarray, list[str]]:
     raw = pd.read_csv(data_dir / "xsmb.csv", dtype=str).sort_values("date")
     cols = [c for c in raw.columns if c != "date"]
-    # Hai chữ số cuối của từng giải: ngày × 27.
     last_two = np.stack([raw[c].str.zfill(2).str[-2:].astype(int).to_numpy() for c in cols], axis=1)
     return last_two, cols
 
 
 def digit_stability(last_two: np.ndarray, cols: list[str]) -> dict:
-    """Lệch chữ số theo (giải, hàng) ở hai nửa lịch sử và tương quan giữa hai nửa."""
     half = len(last_two) // 2
     rows = []
     for k, col in enumerate(cols):
@@ -81,7 +50,6 @@ def digit_stability(last_two: np.ndarray, cols: list[str]) -> dict:
 
 
 def within_day_independence(last_two: np.ndarray) -> dict:
-    """Phương sai số lần một chữ số xuất hiện trong một kỳ, so với nhị thức(27; 0,1)."""
     out = {}
     for name, digits in (("chuc", last_two // 10), ("don_vi", last_two % 10)):
         counts = np.stack([(digits == d).sum(axis=1) for d in range(10)], axis=1)
@@ -98,18 +66,11 @@ def _appearance(last_two: np.ndarray) -> np.ndarray:
 
 
 def lag_dependence(hit: np.ndarray) -> list[dict]:
-    """P(về | đã về trước đó ``lag`` kỳ) − P(về | chưa về), sai số theo cụm KỲ ĐÍCH.
-
-    100 chỉ báo của một kỳ đích cùng sinh ra từ 27 giải nên không độc lập; coi
-    chúng là 100 phép thử Bernoulli thì sai số không có phân phối đã nêu. Mỗi
-    kỳ đích là một cụm: phương sai của hai tỉ lệ (ước lượng tỉ số) và hiệp
-    phương sai giữa chúng tính từ phần dư theo kỳ.
-    """
     out = []
     for lag in (1, 2, 3, 7):
         x, y = hit[:-lag], hit[lag:]
-        a = (x & y).sum(axis=1).astype(float)      # trúng sau khi đã về, theo kỳ đích
-        b = x.sum(axis=1).astype(float)            # số con đã về, theo kỳ đích
+        a = (x & y).sum(axis=1).astype(float)
+        b = x.sum(axis=1).astype(float)
         c = (~x & y).sum(axis=1).astype(float)
         d = (~x).sum(axis=1).astype(float)
         p1, p0 = a.sum() / b.sum(), c.sum() / d.sum()
@@ -129,7 +90,6 @@ def _logloss(p: np.ndarray, y: np.ndarray) -> float:
 
 
 def recency_digit_models(last_two: np.ndarray, hit: np.ndarray) -> list[dict]:
-    """Walk-forward: P(chục=a)·P(đơn vị=b) từ W kỳ gần nhất, co về 0,1 với độ mạnh k."""
     tens = np.stack([(last_two // 10 == d).sum(axis=1) for d in range(10)], axis=1).astype(float)
     units = np.stack([(last_two % 10 == d).sum(axis=1) for d in range(10)], axis=1).astype(float)
     cum_t = np.vstack([np.zeros(10), np.cumsum(tens, axis=0)])
@@ -160,7 +120,6 @@ CAGE_NAMES = ("đơn vị", "chục", "trăm", "nghìn", "chục nghìn")
 
 
 def cage_counts(frame: pd.DataFrame) -> np.ndarray:
-    """(5, 10): số lần mỗi chữ số ra ở từng hàng, gộp mọi giải có hàng ấy (``frame``: các cột giải dạng chuỗi)."""
     table = np.zeros((len(CAGE_NAMES), 10), dtype=np.int64)
     for name, width in FIELD_WIDTHS:
         values = frame[name].astype(str).str.zfill(width)
@@ -170,12 +129,6 @@ def cage_counts(frame: pd.DataFrame) -> np.ndarray:
 
 
 def cage_windows(raw: pd.DataFrame, top: int = 8) -> dict:
-    """χ²(9) của từng (quý, lồng), với q Benjamini–Hochberg trên MỌI ô và phép KS của các p so với đều.
-
-    Mỗi ô có kỳ vọng ≥ 90 quan sát mỗi chữ số ở quý đủ kỳ (lồng chục nghìn: 10 giải × ~90 kỳ / 10), nên
-    đuôi χ² dùng được. Quý chưa đủ 30 kỳ bị bỏ. ``min_p_bonferroni`` trả lời "ô lệch nhất có phải may
-    rủi của việc nhìn vào nhiều ô không".
-    """
     dates = pd.to_datetime(raw["date"])
     quarter = dates.dt.year.astype(str) + "Q" + dates.dt.quarter.astype(str)
     rows = []
@@ -233,7 +186,7 @@ def run(data_dir: Path) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", default=str(ROOT / "data"))
     args = ap.parse_args()
     report = {"generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),

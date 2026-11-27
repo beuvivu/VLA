@@ -1,18 +1,3 @@
-"""Cho biết lần dựng lại trang có CHỈ đổi dấu giờ dựng hay không, để workflow bỏ commit thừa.
-
-Đo 01-11-2026: 78/100 commit «docs: dựng lại trang Vietlott từ engine» chỉ đổi câu «Bản dữ liệu
-được dựng lúc HH:MM dd/mm/yyyy» trong `docs/vietlott.html` cùng mã băm kéo theo trong
-`docs/assets/release.json`; tháng 10 tệp ấy bị commit 548 lần. Mỗi commit thừa là một lần đua đẩy
-với bot khác và thêm dung lượng kho, trong khi người đọc không thấy gì mới.
-
-Đọc thay đổi ĐÃ STAGE so với HEAD. Mã thoát:
-
-* 0 — không có gì, hoặc mọi trang đổi chỉ khác nhau ở dấu giờ dựng (manifest được phép đổi theo):
-  workflow khôi phục bản HEAD và không commit. Câu trên trang vẫn đúng, vì nó nói «đây là bản chụp
-  tại lần dựng trang» và nội dung bản chụp ấy không đổi.
-* 1 — có thay đổi nội dung (trang khác ngoài dấu giờ, tệp không phải trang, trang mới hoặc bị xoá,
-  hoặc manifest đổi một mình): commit như cũ. Lỗi bất ngờ cũng ra 1, tức mặc định là GHI.
-"""
 from __future__ import annotations
 
 import argparse
@@ -46,7 +31,7 @@ def only_stamp_changed() -> bool:
     if not paths:
         return True
     if not pages:
-        return False  # manifest đổi một mình không phải hệ quả của dấu giờ
+        return False
     for path in pages:
         if not path.endswith(".html"):
             return False
@@ -57,7 +42,7 @@ def only_stamp_changed() -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    argparse.ArgumentParser(description=__doc__.splitlines()[0]).parse_args(argv)
+    argparse.ArgumentParser().parse_args(argv)
     return 0 if only_stamp_changed() else 1
 
 

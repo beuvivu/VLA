@@ -1,5 +1,3 @@
-"""Pydantic domain models: validated draws and tickets."""
-
 from __future__ import annotations
 
 from datetime import date
@@ -13,12 +11,6 @@ Number = Annotated[int, Field(ge=1, le=99)]
 
 
 class Draw(BaseModel):
-    """One official draw result.
-
-    ``numbers`` are the six main numbers (sorted). ``bonus`` is the Power 6/55
-    special ball and must be ``None`` for Mega 6/45. Jackpot values and winner counts
-    are optional because not every source publishes them.
-    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -59,7 +51,6 @@ class Draw(BaseModel):
 
 
 class Ticket(BaseModel):
-    """One play: k distinct numbers in 1..n (sorted on construction)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -78,7 +69,6 @@ class Ticket(BaseModel):
 
 
 def validate_numbers(numbers: tuple[int, ...] | list[int], spec: GameSpec) -> None:
-    """Raise ``ValueError`` unless ``numbers`` is a valid k-subset of 1..n."""
     if len(numbers) != spec.pick:
         raise ValueError(f"{spec.display_name} needs exactly {spec.pick} numbers, got {len(numbers)}")
     if len(set(numbers)) != len(numbers):

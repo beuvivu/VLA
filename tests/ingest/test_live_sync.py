@@ -18,11 +18,6 @@ class FakeSource:
 
 
 def _use(monkeypatch, primary, fallback) -> None:
-    """Thay hai TẦNG nguồn, không phải danh sách phẳng.
-
-    ``fetch_with_failover`` tra ``primary_sources``/``fallback_sources`` ngay
-    tại lúc gọi, nên vá ở module ``sources`` là đủ cho cả hai bên.
-    """
     monkeypatch.setattr(sources, "primary_sources", lambda: list(primary))
     monkeypatch.setattr(sources, "fallback_sources", lambda: list(fallback))
     monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
@@ -55,7 +50,6 @@ EMPTY = {k: [] for k in PRIZE_ORDER}
 
 
 def test_a_complete_primary_is_verified_and_the_fallbacks_stay_untouched(monkeypatch) -> None:
-    """Chính sách từ 13-10-2026: nguồn chính đủ 27 giá trị là đủ; dự phòng không bị gọi."""
     backups = [CountingSource("mketqua.net", _map()), CountingSource("www.minhngoc.net.vn", _map())]
     _use(monkeypatch, [FakeSource("xoso.com.vn", _map())], backups)
     out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 33, tzinfo=VN))
@@ -95,8 +89,6 @@ def test_a_dead_primary_is_replaced_by_the_fallbacks(monkeypatch) -> None:
 
 
 def test_a_stuck_primary_does_not_mask_the_fallback_values(monkeypatch) -> None:
-    """Sau 18:40 nguồn chính còn thiếu ô là sự cố: chỉ dữ liệu dự phòng được hợp nhất,
-    nên giá trị kẹt của nguồn chính không thành "xung đột" che mất kết quả."""
     stuck = {**_map(), "special": ["99999"], "prize7": []}
     _use(monkeypatch, [FakeSource("xoso.com.vn", stuck)], [FakeSource("mketqua.net", _map())])
     out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 45, tzinfo=VN))
@@ -114,10 +106,6 @@ def test_two_disagreeing_fallbacks_are_a_conflict_not_a_verified_result(monkeypa
     assert out["verified_complete"] is False
     assert out["status"] == "complete_conflict"
     assert out["conflicts"] == ["special[0]"]
-
-
-# --- Nguồn còn hiện kỳ trước -------------------------------------------------
-# Đo trên runner lúc 00:37 ngày 13-10-2026: trang live của cả ba nguồn hiện trọn kỳ 12-10.
 
 
 def _other_map() -> dict[str, list[str]]:
@@ -140,7 +128,6 @@ def test_a_page_still_showing_the_previous_draw_is_not_todays_result(monkeypatch
 
 
 def test_a_new_draw_coming_in_is_not_mistaken_for_the_previous_one(monkeypatch) -> None:
-    """Kỳ mới về dần: ô nào đã về mà khác kỳ trước là đủ để không phải trang cũ."""
     drawing = {k: [] for k in PRIZE_ORDER}
     drawing["prize1"] = ["12345"]
     _use(monkeypatch, [FakeSource("xoso.com.vn", drawing)], [])
@@ -167,7 +154,6 @@ def test_one_differing_value_is_enough_to_be_a_new_draw() -> None:
 
 
 def test_the_previous_draw_is_read_from_the_canonical_ledger(tmp_path) -> None:
-    """Kỳ gần nhất TRƯỚC hôm nay, và số 0 đầu mà CSV có thể đã mất được trả lại đúng độ rộng."""
     header = (
         "date,special,prize1,prize2_1,prize2_2,prize3_1,prize3_2,prize3_3,prize3_4,prize3_5,"
         "prize3_6,prize4_1,prize4_2,prize4_3,prize4_4,prize5_1,prize5_2,prize5_3,prize5_4,"
@@ -214,7 +200,6 @@ def test_the_command_line_passes_the_previous_draw_to_the_snapshot(tmp_path, mon
 
 
 def test_a_two_group_threshold_calls_the_fallbacks_and_keeps_a_healthy_primary(monkeypatch) -> None:
-    """Nguồn chính là MỘT nhóm: ngưỡng 2 cần nhân chứng, và nguồn chính lành vẫn được tính."""
     backups = [CountingSource("mketqua.net", _map()), CountingSource("www.minhngoc.net.vn", EMPTY)]
     _use(monkeypatch, [FakeSource("xoso.com.vn", _map())], backups)
     payload = live_sync.fetch_snapshot(now=datetime(2026, 10, 13, 18, 33, tzinfo=VN), min_agreement=2)

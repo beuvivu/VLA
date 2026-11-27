@@ -82,32 +82,17 @@ def test_clickable_matrix_and_payload_include_position_evidence() -> None:
     assert payload["loto"]["00"]["positions"][0]["pos_i_label"] == "Giải Đặc Biệt · số 1"
 
 
-# --- Banner, thẻ AI/ML và chân trang ---------------------------------------
-
 import re
 from pathlib import Path
 
 BUILDER = (Path(__file__).resolve().parents[2] / "src" / "pages" / "build_statistics_dashboard.py"
            ).read_text(encoding="utf-8")
-#: Mã đã bỏ chú thích. Các phép kiểm bên dưới hỏi "chuỗi X còn/không còn trong
-#: tệp" — mà chú thích của chính bản sửa lại NHẮC TỚI chuỗi cũ để giải thích vì
-#: sao nó bị bỏ. Không cắt chú thích thì phép kiểm khớp vào lời giải thích và
-#: xanh vĩnh viễn.
 from pages import build_statistics_dashboard as bsd
 
-#: Biểu định kiểu đã trích khỏi f-string: quy tắc CSS ở đây mang cú pháp CSS
-#: THẬT (một lớp ngoặc), nên phép kiểm không còn phụ thuộc chỗ đặt khối.
 DASHBOARD_CSS = bsd._DASHBOARD_CSS
 
 
 def _without_comments(code: str) -> str:
-    """Bỏ chú thích trước khi quét, đúng như ``BUILDER_CODE`` vẫn làm.
-
-    Phép kiểm ở đây đòi những chuỗi KHÔNG được xuất hiện ("as_of",
-    "Dữ liệu đến"). Một chú thích nhắc tới chúng là hợp lệ — chính khối JS này
-    có một chú thích giải thích vì sao mốc dựng thật được giữ lại — nên quét cả
-    chú thích sẽ báo lỗi cho một đoạn mã đúng.
-    """
     return "\n".join(
         line for line in code.splitlines() if not line.lstrip().startswith("//")
     )
@@ -122,19 +107,6 @@ BUILDER_CODE = "\n".join(
 
 
 def test_the_banner_uses_the_same_content_column_as_the_page_body() -> None:
-    """Hero và thân trang phải tính từ CÙNG hai biến, không phải hai bộ số.
-
-    Trước đây `main` dùng cột có `max-width` còn `.hero` canh lề bằng `margin`,
-    nên độ lệch đổi dấu theo bề rộng — đo được: hero thò ra 168px mỗi bên ở
-    1920px, nhưng thụt vào 72px mỗi bên ở 1440px. Trang không hề cuộn ngang ở
-    bất kỳ mức nào, nên đây không phải lỗi tràn khung; nó là hai hệ toạ độ
-    không nói chuyện với nhau.
-    """
-    # Đòi quy tắc CSS, không đòi cách nó được MÃ HOÁ. Bản trước regex nguồn
-    # builder tìm ".hero {{...}}" với dấu ngoặc viết đôi — đúng chỉ khi khối CSS
-    # còn nằm trong f-string của `main`. Sau khi CSS được trích ra hằng số
-    # `_DASHBOARD_CSS`, dấu ngoặc trở lại đơn và phép kiểm đỏ oan dù quy tắc vẫn
-    # nằm nguyên trong trang dựng ra.
     assert "--page-max:" in DASHBOARD_CSS and "--page-gutter:" in DASHBOARD_CSS
     hero = re.search(r"\.hero \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
     main = re.search(r"\.statistics-content \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
@@ -143,7 +115,6 @@ def test_the_banner_uses_the_same_content_column_as_the_page_body() -> None:
     for block, name in ((hero.group(1), "hero"), (main.group(1), "main")):
         assert "var(--page-max)" in block, f"{name} phải dùng biến chung"
         assert "var(--page-gutter)" in block, f"{name} phải dùng biến chung"
-    # Con số cứng quay lại là bệnh cũ tái phát.
     assert "1440px" not in hero.group(1), hero.group(1)
     assert "clamp(16px, 5vw, 72px)" not in hero.group(1), hero.group(1)
     assert "margin: 18px auto 0" in hero.group(1), hero.group(1)
@@ -159,13 +130,6 @@ def test_the_banner_heading_is_the_short_title_with_no_blurb_under_it() -> None:
 
 
 def test_every_metric_card_holds_a_value_not_a_section_name() -> None:
-    """Ô lớn của thẻ số liệu là chỗ cho MỘT GIÁ TRỊ.
-
-    Thẻ AI/ML từng đặt vào đó một cái tên mục ("Cầu - Kèo & Xếp Hạng"). Nó
-    không phải giá trị nào cả, nên xuống hai dòng và phá nhịp cả hàng trong
-    khi ba thẻ kia chỉ một dòng. Bỏ nền thẻ đi không chữa được chuyện ấy — nó
-    chỉ làm thẻ trông như bị lỗi dựng hình.
-    """
     block = BUILDER_CODE[BUILDER_CODE.index("    metrics = ["):]
     block = block[: block.index("\n    ]")]
     assert "Cầu - Kèo & Xếp Hạng" not in block, block
@@ -175,18 +139,12 @@ def test_every_metric_card_holds_a_value_not_a_section_name() -> None:
 
 
 def test_the_metric_row_keeps_one_single_surface_treatment() -> None:
-    """Bốn thẻ cùng một hàng thì phải cùng một bề mặt.
-
-    Một thẻ thiếu nền giữa ba thẻ có nền đọc như lỗi dựng hình, không phải
-    như một lựa chọn thiết kế.
-    """
     assert "metric-card-plain" not in BUILDER_CODE, "biến thể phẳng đã bỏ"
     assert "plain=True" not in BUILDER_CODE
     assert "plain: bool" not in BUILDER_CODE, "tham số chết còn sót lại"
 
 
 def test_a_long_metric_value_shrinks_instead_of_wrapping() -> None:
-    """Xuống dòng làm lệch nhịp hàng; co chữ thì không."""
     rule = re.search(r"\.metric-card strong \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
     assert rule is not None
     assert "clamp(" in rule.group(1), rule.group(1)
@@ -202,35 +160,14 @@ def test_the_footer_keeps_only_the_two_timestamps() -> None:
 
 
 def test_the_footer_clock_never_rewrites_the_data_date() -> None:
-    """Đồng hồ chỉ được chạm vào "Tạo lúc".
-
-    Cho "Dữ liệu đến" chạy theo đồng hồ máy sẽ là một lời khẳng định SAI về độ
-    mới của dữ liệu — mỗi lần mở trang, ngày ấy lại nhảy lên hôm nay dù kho
-    không hề có thêm kỳ nào. Đó đúng là loại sai lầm mà cả bộ kiểm toán của
-    kho này sinh ra để chặn.
-    """
-    # Đọc thẳng khối JS của đồng hồ chân trang. Bản trước cắt nguồn builder từ
-    # dòng getElementById("footerBuilt") tới "</script>"; sau khi JS được trích
-    # ra hằng số, thẻ đóng không còn trong cùng chuỗi nên phép cắt tràn sang
-    # khối JS thứ hai (_DASHBOARD_SCRIPT_EVIDENCE, có 9 lần getElementById) và
-    # phép đếm "chỉ MỘT phần tử bị ghi đè" đỏ oan.
     script = DASHBOARD_SCRIPT_MAIN
     assert "footerBuilt" in script
-    # Chỉ MỘT phần tử được ghi đè, và nó là phần tử "Tạo lúc".
     assert len(re.findall(r"getElementById\(", script)) == 1, script
     assert "as_of" not in script and "Dữ liệu đến" not in script, script
-    # Mốc dựng thật phải còn đọc được, không bị xoá.
     assert "node.dataset.built" in script, script
 
 
 def test_the_footer_clock_shows_local_time_not_utc() -> None:
-    """`toISOString()` quy về UTC, nên máy ở Việt Nam hiện lùi 7 tiếng.
-
-    Đã đo trong Chromium: cùng một thời điểm, trang hiện
-    ``2026-09-15T09:37:11+07:00`` còn ``toISOString()`` cho
-    ``2026-09-15T02:37:12Z``. Ở ``America/Los_Angeles`` nó còn sai cả NGÀY
-    (15/09 thay vì 14/09).
-    """
     script = BUILDER_CODE[BUILDER_CODE.index('var node = document.getElementById("footerBuilt")'):]
     script = script[: script.index("</script>")]
     assert "toISOString" not in script, script
@@ -240,8 +177,6 @@ def test_the_footer_clock_shows_local_time_not_utc() -> None:
 
 
 def test_highlighted_tables_keep_tied_rows_in_file_order() -> None:
-    # quicksort của numpy xếp dòng hoà theo lệnh vector của CPU: cùng dữ liệu, runner CI và máy
-    # khác in thứ tự khác nhau. Ổn định nghĩa là trong mỗi mức điểm, dòng giữ thứ tự của tệp.
     pairs = [f"{i:02d}-{i:02d}" for i in range(100)] * 3
     df = pd.DataFrame({"pair": pairs, "freq": [1, 2, 3] * 100})
     page = _table(df, title="t", columns=["pair", "freq"], max_rows=300, highlight_col="freq")

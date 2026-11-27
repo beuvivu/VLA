@@ -31,12 +31,6 @@ def build_markov_chain(
     alpha: float = 1.0,
     states: Sequence[int] = tuple(range(100)),
 ) -> MarkovChain:
-    """Fit an exclusive-state first-order Markov chain with additive smoothing.
-
-    This implements ``(count(i,j)+alpha)/(count(i,*)+alpha*|S|)``.  It is a
-    statistical estimator, not evidence that lottery states are predictively
-    Markovian; it must be compared with marginal and rolling baselines OOS.
-    """
     if (
         isinstance(alpha, bool)
         or not isinstance(alpha, Real)
@@ -86,15 +80,6 @@ def build_markov_chain(
 
 
 def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float = 1.0) -> pd.DataFrame:
-    """Estimate same-number next-calendar-day transition probabilities.
-
-    For each number x in 00..99:
-      p_hit_given_hit = P(hit_t=1 | hit_{t-1 calendar day}=1)
-      p_hit_given_miss = P(hit_t=1 | hit_{t-1 calendar day}=0)
-
-    Missing dates are skipped rather than collapsing a multi-day jump into a
-    one-day Markov transition. Probabilities use Beta smoothing.
-    """
     if (
         isinstance(alpha, bool)
         or isinstance(beta, bool)

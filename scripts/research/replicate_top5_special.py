@@ -1,12 +1,3 @@
-"""Kiểm lặp lại: Top-5 Đặc Biệt của mô hình mới trên hai khối 1 000 kỳ liền nhau.
-
-Chạy:  PYTHONPATH=src python3 scripts/research/replicate_top5_special.py
-
-Cùng mã, cùng luật với ``benchmark_probability_models.py``: học lại mỗi 50 kỳ,
-loại các kỳ ngay sau một quãng nghỉ. Ghi
-``data/research/model_overhaul/top5_replication.json``.
-"""
-
 from __future__ import annotations
 
 import json
@@ -24,7 +15,7 @@ from research.vla import backtest  # noqa: E402
 from research.vla.features import build_features, load_history  # noqa: E402
 from research.vla.models import BayesianLGBModel  # noqa: E402
 
-TESTS_READ = 30  # 5 mô hình × 3 mức K × 2 kiểu, đọc sau khi chạy
+TESTS_READ = 30
 
 
 def main() -> None:

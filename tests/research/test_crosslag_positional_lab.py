@@ -86,6 +86,5 @@ def test_crosslag_next_payload_uses_only_dates_before_target():
     target = pd.Timestamp(row["next_target_date"])
     latest = pd.to_datetime(two["date"]).max()
     assert target == latest + pd.Timedelta(days=1)
-    # With lag 1/2, both source dates are strictly before the target.
     assert target - pd.Timedelta(days=int(row["lag_a_days"])) <= latest
     assert target - pd.Timedelta(days=int(row["lag_b_days"])) <= latest

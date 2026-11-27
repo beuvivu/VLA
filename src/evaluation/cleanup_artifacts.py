@@ -10,8 +10,6 @@ import pandas as pd
 from evaluation.skill_monitor import update_ledger
 
 DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
-#: Thư mục chứa tệp mang ngày trong tên, giữ ``--retention-days`` ngày. Bản chụp
-#: Cầu Kèo theo ngày (``cau_keo_daily_top``) chỉ cần cho phiên quay đang diễn ra.
 DATED_DIRS = ("soi_cau/path_ui", "forecast/predict", "ai_ml/daily")
 
 
@@ -52,15 +50,12 @@ def main() -> None:
     latest = _latest_date(data_dir / "xsmb.csv")
     cutoff = latest - timedelta(days=max(1, args.retention_days))
 
-    # Ghi kỹ năng của mọi artifact đã chấm được vào sổ cái TRƯỚC khi xoá: sau
-    # bước này tệp biến mất, và nếu chưa ghi thì kỳ ấy mất khỏi bộ theo dõi.
     update_ledger(data_dir)
 
     removed = 0
     for rel in DATED_DIRS:
         removed += _prune_dated_files(data_dir / rel, cutoff)
 
-    # Excel daily files are convenience exports; keep only the current one.
     daily_dir = data_dir / "excel" / "daily"
     if daily_dir.exists():
         for path in daily_dir.glob("xsmb_*.xlsx"):

@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""Chụp danh sách cache Actions, xóa từng ID và kiểm chứng sau khi xóa.
-
-Dùng REST API để runner và máy bảo trì đều chạy được mà không cần ``gh``.
-Chỉ xóa các ID đã chụp khi có ``--confirm``; cache mới sinh trong lúc chạy
-được báo riêng và không bị cuốn vào lượt xóa này.
-"""
 
 from __future__ import annotations
 
@@ -22,7 +16,6 @@ API_ROOT = "https://api.github.com/repos"
 
 
 class GitHubAPIError(RuntimeError):
-    """Giữ mã HTTP để chỉ bỏ qua cache vừa hết hạn ở bước DELETE theo ID."""
 
     def __init__(self, status: int, method: str, url: str) -> None:
         self.status = status
@@ -44,7 +37,6 @@ def _request(token: str, url: str, *, method: str = "GET") -> tuple[int, bytes]:
         with urllib.request.urlopen(request, timeout=20) as response:
             return int(response.status), response.read()
     except urllib.error.HTTPError as exc:
-        # Không in nội dung lỗi bên ngoài: máy chủ có thể phản chiếu bí mật.
         exc.close()
         raise GitHubAPIError(exc.code, method, url) from exc
     except OSError as exc:
@@ -73,7 +65,6 @@ def list_caches(token: str, repository: str) -> list[dict[str, object]]:
 
 
 def _cache_ids(caches: list[dict[str, object]]) -> list[int]:
-    """Kiểm toàn bộ ID trước khi xóa; loại trùng nhưng giữ thứ tự ảnh chụp."""
     cache_ids: dict[int, None] = {}
     for item in caches:
         cache_id = item.get("id")
@@ -116,7 +107,7 @@ def purge(token: str, repository: str, *, confirm: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--repo",
         default=os.environ.get("GITHUB_REPOSITORY", "beuvivu/VLA"),

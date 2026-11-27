@@ -110,8 +110,6 @@ def test_production_uses_three_component_model_when_unused_components_are_missin
     assert picks["meta"]["active"] is True
     assert picks["calibration"]["active"] is False
     published = pd.read_csv(output / "predict_next_loto_all_2026-01-02.csv")
-    # Tổ hợp tuyến tính được neo tổng về 100·nền trước khi trộn 15% mô hình
-    # xếp chồng (phát đúng tỉ lệ tiên nghiệm 0,2 của bộ phân loại giả).
     np.testing.assert_allclose(published["prob"], 0.85 * LOTO_BASELINE_RATE + 0.15 * 0.2)
 
 
@@ -158,8 +156,6 @@ def test_meta_baseline_replays_default_weights_and_categorical_floor() -> None:
         history, [f"2026-01-{day:02d}" for day in range(1, 11)],
         ["2026-01-11", "2026-01-12"], "de", meta.COMPONENT_COLS, 45,
     )
-    # Mười kỳ chưa đủ học trọng số: mặc định 0,25/0,30/0,20/0,125/0,125;
-    # production dành 5% khối lượng cho phân phối đều trước hiệu chuẩn.
     expected = np.full(100, 0.0005)
     expected[:5] = [0.238, 0.2855, 0.1905, 0.11925, 0.11925]
     np.testing.assert_allclose(prediction, np.tile(expected, (2, 1)), rtol=1e-12)
@@ -183,9 +179,6 @@ def test_meta_baseline_respects_each_validation_days_available_components() -> N
         history, ["2026-01-01"], ["2026-01-02"], "loto",
         ["p_ml", "p_active", "p_stable"], 45,
     )
-    # Trọng số mặc định có hiệu lực là 0,50/0,25/0,25, không phải 1/3: con 00
-    # nhận 0,26, con 01 nhận 0,21, còn lại 0,16 — rồi neo tổng về 100·nền. Với
-    # 1/3, con 00 và 01 bằng nhau nên tỉ lệ giữa chúng phân biệt hai cách.
     expected = np.full(100, 0.16)
     expected[:2] = [0.26, 0.21]
     np.testing.assert_allclose(prediction, anchor_loto_level(expected)[None, :], rtol=1e-12)

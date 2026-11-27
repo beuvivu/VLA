@@ -9,14 +9,9 @@ import pandas as pd
 
 from core.xsmb_domain import FIELD_WIDTHS as XSMB_FIELD_WIDTHS
 
-# Build a stable "rawdata digit stream" from ALL prizes each day.
-# We reconstruct each field with zero-fill to keep positions stable.
-# This makes "paths" reproducible even when source stores numbers as int.
 
-#: Bố cục 27 giải: lấy từ ``core.xsmb_domain``, không khai lại.
 FIELD_WIDTHS = XSMB_FIELD_WIDTHS
 
-# Precompute position metadata: index -> (field, digit_index_in_field)
 _POSITION_LABELS: list[str] | None = None
 _SCOPE_INDICES: dict[str, list[int]] | None = None
 
@@ -24,7 +19,6 @@ _SCOPE_INDICES: dict[str, list[int]] | None = None
 def _build_position_labels() -> list[str]:
     labels: list[str] = []
     for field, width in FIELD_WIDTHS:
-        # digit order: d0..d{width-1} (left->right)
         for k in range(width):
             labels.append(f"{field}.d{k}")
     return labels
@@ -45,13 +39,6 @@ def index_to_label(idx: int) -> str:
 
 
 def get_scope_indices(scope: str) -> list[int]:
-    """Return allowed indices for a given scope.
-
-    scope:
-      - all: all digits from all prizes
-      - near_special: digits from special + prize1 + prize2
-      - special_only: digits from special only
-    """
     global _SCOPE_INDICES
     if _SCOPE_INDICES is None:
         labels = get_position_labels()
@@ -68,7 +55,6 @@ def get_scope_indices(scope: str) -> list[int]:
 
 
 def build_rawdata_digits_from_row(row: pd.Series) -> np.ndarray:
-    """Flatten all prizes into a digit array (0..9) with stable positions."""
     parts: list[str] = []
     for field, width in FIELD_WIDTHS:
         v = int(row[field])
@@ -78,24 +64,14 @@ def build_rawdata_digits_from_row(row: pd.Series) -> np.ndarray:
 
 
 def enumerate_position_pairs(P: int) -> tuple[np.ndarray, np.ndarray]:
-    """Unique pairs i<j."""
     I, J = np.triu_indices(P, k=1)
     return I.astype(np.int16), J.astype(np.int16)
 
 
 def build_daily_targets(df_2digits: pd.DataFrame) -> tuple[list[date], list[set[int]], list[int]]:
-    """Build day-level targets.
-
-    - loto_targets[t]: set of 2-digit numbers appearing in that day (00..99)
-    - de_targets[t]: 2-digit special (00..99)
-    """
     dates: list[date] = [d.to_pydatetime().date() for d in pd.to_datetime(df_2digits["date"])]
     cols = [c for c in df_2digits.columns if c != "date"]
 
-    # ``iterrows`` materialised a pandas Series per draw and then indexed it 27
-    # times by label.  One numpy conversion plus per-row set() over the array is
-    # the same result with a fraction of the overhead — and this function is on
-    # the hot path of nearly every statistics module.
     values = df_2digits[cols].to_numpy(dtype=np.int64, copy=False) % 100
     special = (df_2digits["special"].to_numpy(dtype=np.int64, copy=False) % 100)
 
@@ -107,24 +83,17 @@ def build_daily_targets(df_2digits: pd.DataFrame) -> tuple[list[date], list[set[
 
 @dataclass(frozen=True)
 class PathParams:
-    # Similar to website controls:
-    # - "Biên ngày cầu chạy": anchor date (handled in run_path_ui)
-    # - "Số ngày cầu chạy": window_days (training window) and display_days (UI)
     lag_max: int = 30
     window_days: int = 365
 
-    # Bayesian smoothing for hit probability per day
     alpha: float = 1.0
     beta: float = 1.0
 
-    # Ignore rules with too few trials
     min_trials: int = 60
 
-    # Two streak filters:
-    min_max_streak: int = 3        # ever had a 3+ hit streak
-    min_current_streak: int = 3    # currently running 3+ hit streak up to anchor day
+    min_max_streak: int = 3
+    min_current_streak: int = 3
 
-    # Cap per lag to keep runtime stable
     top_rules_per_lag: int = 300
 
     def __post_init__(self) -> None:

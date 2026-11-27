@@ -1,4 +1,3 @@
-"""Tra cứu hôm sau phải giải thích đúng phép đối chiếu lịch sử."""
 import json
 import re
 from pathlib import Path

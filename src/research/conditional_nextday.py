@@ -17,29 +17,6 @@ from core.path_models import build_daily_targets
 from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 
-#: ``None`` nghĩa là HỌC độ co ngót theo từng con đề, thay cho hằng số 60.
-#:
-#: Số đo của PHIÊN BẢN TRƯỚC hiệu chỉnh mô men mẫu nhỏ (khớp 1 792 cặp đầu,
-#: chấm điểm 598 cặp đuôi mà phép
-#: khớp chưa từng thấy):
-#:
-#:     κ = 60 (đặt tay)    Brier 0,18208903   log-loss 0,550738
-#:     co ngót hoàn toàn   Brier 0,18162217   log-loss 0,549427   t = -6,02
-#:     HỌC κ               Brier 0,18166797   log-loss 0,549560   t = -6,15
-#:
-#: Bảng này là bằng chứng mô tả, không vào bộ hợp thành, nên không có Brier
-#: của bộ hợp thành để gác — phải chấm điểm chính ``p_eb`` trên phần đuôi.
-#:
-#: Trung vị κ học được là 1 000 000, tức co ngót HOÀN TOÀN. Nói thẳng điều đó
-#: nghĩa là gì: với dữ liệu hiện có, "đề về s hôm nay" KHÔNG phân biệt được
-#: phân phối LOTO ngày mai so với phân phối chung. Cả bảng 10 000 dòng là
-#: nhiễu, và hằng số 60 đã khiến nó trông như có nội dung. Giữ nguyên phép
-#: học chứ không chốt cứng co ngót hoàn toàn, để nếu về sau có tín hiệu thật
-#: thì nó tự nổi lên.
-#: Hiệu chỉnh mô men đúng không bảo đảm rủi ro dự báo thấp hơn mọi κ cố định.
-#: Khi mỗi hàng chỉ có vài kỳ và không có tín hiệu, κ học có thể thua κ=60;
-#: tests/research/test_conditional_nextday.py kiểm riêng co nhiễu và giữ tín hiệu tiêm
-#: trên nhiều seed, thay vì đòi thắng một baseline ở một mẫu ngẫu nhiên.
 LEARN_CONDITIONAL_PRIOR: float | None = None
 
 
@@ -48,18 +25,6 @@ def compute_loto_nextday_given_special(
     *,
     prior_strength: float | None = LEARN_CONDITIONAL_PRIOR,
 ) -> pd.DataFrame:
-    """Estimate P(Loto=x at t+1 | De_2d at t=s) for all observed s,x.
-
-    Improvements over the legacy implementation:
-    - only exact next-calendar-day pairs are eligible;
-    - probabilities are reported both raw and empirical-Bayes shrunk toward the
-      unconditional next-day number prevalence;
-    - effect/lift and one-sided p-values are measured against that marginal
-      baseline, with BH-FDR across the full conditional matrix.
-
-    The table is research/descriptive evidence and is not consumed by the
-    production ensemble.
-    """
     df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True).copy()
     dates, loto_targets, de_targets = build_daily_targets(df_2d)
     n = len(dates)
@@ -109,9 +74,6 @@ def compute_loto_nextday_given_special(
 
     baseline = global_hits.astype(float) / float(eligible_pairs)
     if prior_strength is None:
-        # Mỗi con đề là một câu hỏi riêng — "đề về s thì kéo theo gì" — nên
-        # nó phải có độ co ngót riêng. Gộp cả 10 000 ô vào một κ sẽ dìm chết
-        # một quan hệ thật nếu chỉ vài hàng có tín hiệu.
         row_prior = fit_shrinkage_to_prior_rows(
             hits.astype(float), np.maximum(trials, 1).astype(float), baseline
         )
@@ -144,7 +106,6 @@ def compute_loto_nextday_given_special(
                     "number_str": f"{x:02d}",
                     "trials": tr,
                     "hits": h,
-                    # Backward-compatible alias: legacy consumers used `p`.
                     "p": p_raw,
                     "p_raw": p_raw,
                     "p_eb": float(p_eb),
@@ -165,23 +126,13 @@ def compute_loto_nextday_given_special(
 
 
 def current_special_rows(long_df: pd.DataFrame, current_special: int, top: int) -> pd.DataFrame:
-    """`top` con LOTO kỳ sau của trạng thái Đặc Biệt hiện tại, theo thứ tự của trang Phòng nghiên cứu.
-
-    Trang đọc tệp `current_special_next_loto.csv` do hàm này tạo, không đọc bảng dài 10 000 dòng
-    (`loto_nextday_given_special_long.csv`). Bảng dài vẫn được ghi ra đĩa và lên artifact, nhưng không
-    vào git (07-11-2026): mọi số trong nó đổi mỗi kỳ, nên đo ngày 06-11-2026 nó chiếm 9% phần tăng của
-    kho. Thứ tự phải trùng `build_research_lab._conditional_table`, để 10 dòng trang hiện là 10 dòng
-    đầu của tệp này.
-    """
     rows = long_df[long_df["special"] == current_special]
     return rows.sort_values(["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]).head(
         max(1, int(top))
     )
 
 
-#: Bảng đầy đủ 10 000 dòng: ra đĩa và lên artifact, nằm trong `.gitignore`.
 LONG_TABLE = "loto_nextday_given_special_long.csv"
-#: Bản cắt của trạng thái Đặc Biệt hiện tại (`current_special_rows`): git theo dõi, trang đọc.
 CURRENT_TABLE = "current_special_next_loto.csv"
 
 
@@ -194,7 +145,6 @@ def write_tables(
     top: int,
     prior_learned: bool,
 ) -> list[Path]:
-    """Ghi bảng dài, top-N mỗi trạng thái, bản cắt của trạng thái hiện tại và manifest."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     long_path = out_dir / LONG_TABLE

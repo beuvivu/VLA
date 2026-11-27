@@ -1,4 +1,3 @@
-"""Score-before-learn ensemble; retrospective skill is never live certification."""
 from __future__ import annotations
 
 import gzip
@@ -26,18 +25,10 @@ from vlm.forecast.multi_agent import MultiAgentExpert
 from vlm.forecast.bayes_expert import NAME as BAYES_NAME, BayesMixtureExpert
 from vlm.forecast.patterns import PatternExperts
 
-# 3 (13-10-2026): pair_link/triple_link không còn gộp đường chéo (tần suất của chính số ấy).
-# 5 (31-10-2026): bộ chữ số có thêm chuyên gia hỗn hợp Bayes (``bayes_expert``). Checkpoint 3/4 của
-# sản phẩm CHỈ có bộ số (Mega, Power, Keno) vẫn nạp được vì kiến trúc của chúng không đổi; sản phẩm có
-# thành phần chữ số (Lotto, Max 3D, Max 3D Pro, Max 4D, Bingo18) học lại và bằng chứng live bắt đầu lại.
-#    Khoá ``patterns`` (challenger mẫu hình, 24-10-2026) là TUỲ CHỌN trong cùng phiên bản: tắt thì nó là
-#    ``None``/vắng mặt, nên checkpoint v5 production đã có vẫn nạp nguyên vẹn; bật thì phải fit lại
-#    (``refresh_snapshot`` coi đổi cấu hình là nâng cấp chính sách).
 VERSION = 5
-#: Phiên bản checkpoint còn nạp được cho sản phẩm chỉ có bộ số.
 SET_ONLY_VERSIONS = (3, 4)
 PATTERN_POLICY = 'bayes-transition-hazard-v1'
-LIVE_THRESHOLD = float(np.log(140))  # seven active products, family alpha .05
+LIVE_THRESHOLD = float(np.log(140))
 
 
 class MLConfig(BaseModel):
@@ -112,13 +103,10 @@ class MLComponent:
         self.names = ['uniform', 'logistic_l2_.001', 'logistic_l2_.01',
                       *(['adaptive_logistic'] if config.adaptive else []), 'gru', *config.backends]
         self.base_expert_count = len(self.names)
-        # Bộ chữ số: thêm luật hậu nghiệm của hỗn hợp Bayes (engine cũ); cần biết sản phẩm để lấy
-        # tốc độ chia sẻ cố định và cỡ lô như engine cũ.
         self.bayes = (BayesMixtureExpert(get_product(product), name or 'digits', spec)
                       if isinstance(spec, DigitSpec) and product is not None else None)
         if self.bayes is not None:
             self.names.append(BAYES_NAME)
-        # Thứ tự tên PHẢI trùng thứ tự xác suất trong ``predict``: cơ sở → bayes → mẫu hình.
         self.patterns = PatternExperts(self.features.nodes, self.features.base) if config.patterns else None
         if self.patterns is not None:
             self.names.extend(self.patterns.names)
@@ -137,7 +125,7 @@ class MLComponent:
         self.log_gain = 0.
         self.expert_nll = np.zeros(len(self.names))
         self.brier = self.brier_fair = 0.
-        self.reliability = np.zeros((10, 3))  # count, sum predicted, sum observed
+        self.reliability = np.zeros((10, 3))
         self.recent_gain: list[float] = []
 
     def _input(self, next_date: str | None = None) -> tuple[np.ndarray, np.ndarray]:
@@ -174,7 +162,6 @@ class MLComponent:
             probabilities.extend(self.patterns.predict(next_id=next_id))
         p = np.clip(np.stack(probabilities), .001, .999)
         if isinstance(self.spec, SetSpec):
-            # Bounded log odds prevent a neural overfit from assigning near-zero support.
             z = np.log(p) - np.log1p(-p)
             z = np.clip(z - z.mean(axis=1, keepdims=True), -2, 2)
             values = np.exp(z)
@@ -188,7 +175,6 @@ class MLComponent:
         return Law(self.spec, values, mixture)
 
     def observe(self, row: np.ndarray, draw_id: int, draw_date: str, bonus: int = 0) -> float:
-        """Commit đúng một observation; lỗi ngoài phạm vi phục hồi giữ component cũ."""
         self.features.validate(row)
         candidate = deepcopy(self)
         gain = candidate._observe_staged(row, draw_id, draw_date, bonus)
@@ -196,7 +182,6 @@ class MLComponent:
         return gain
 
     def _observe_staged(self, row: np.ndarray, draw_id: int, draw_date: str, bonus: int = 0) -> float:
-        """Học trên candidate riêng; forecaster chỉ commit khi mọi component thành công."""
         row = self.features.validate(row)
         x = self.features.snapshot(draw_id, draw_date)
         frames = (self.frames + [x])[-8:]
@@ -225,7 +210,6 @@ class MLComponent:
             np.add.at(self.reliability[:, 1], bins, marginals)
             np.add.at(self.reliability[:, 2], bins, target)
             self.recent_gain = (self.recent_gain + [gain])[-500:]
-        # Full-information policy feedback, proper reward; no draw can affect its own score.
         posterior = np.exp(parent_log_mix + ll - mix_ll)
         self.weights = .999 * posterior + .001 * self.prior
         for name, model in zip(self.names[1:1+len(self.logistics)], self.logistics):
@@ -249,7 +233,6 @@ class MLComponent:
 
     def _learn_safely(self, model: OnlineLogistic | GRU, name: str, x: np.ndarray,
                       target: np.ndarray, draw_id: int) -> None:
-        """Giữ optimizer tốt trước lỗi; rate backoff có sàn, không học lại nhãn vô hạn."""
         try:
             model.learn(x, target)
         except (MemoryError, FloatingPointError) as error:
@@ -257,7 +240,6 @@ class MLComponent:
             self.recovery.record('training_skip', name, draw_id, error)
 
     def _fit_tree_safely(self, tree: TreeExpert, draw_id: int) -> None:
-        """Tree OOM thử lại một lần với nửa số draw; fit lỗi vẫn giữ model cũ."""
         replay = self.buffer
         def reduce_replay(error: MemoryError | FloatingPointError, attempt: int) -> bool:
             nonlocal replay
@@ -426,7 +408,6 @@ class MLForecaster:
                 score = None
                 warnings = list(self.warnings)
                 consume_pending = self.pending is not None and did >= self.pending['target_id']
-                # Chấm law frozen trước khi candidate nào thấy kết quả, nhưng chưa commit score.
                 if consume_pending:
                     if not self.pending_valid():
                         warnings.append('unverified_issued_target')
@@ -454,7 +435,6 @@ class MLForecaster:
                     row = obs['X'][t] if isinstance(comp.spec, SetSpec) else obs['C'][t].ravel()
                     bonus = int(obs['bonus'][t]) if isinstance(comp.spec, SetSpec) and comp.spec.bonus_same_drum else 0
                     comp._observe_staged(row, did, day, bonus)
-                # Commit mọi component/cursor/evidence đúng một lần; lỗi trên giữ trạng thái cũ.
                 self.components.update(candidates)
                 if score is not None:
                     if score['counts_toward_live']:
@@ -474,8 +454,6 @@ class MLForecaster:
                 self.learned += 1
                 learned += 1
         finally:
-            # Hash đúng prefix đã commit kể cả khi batch sau lỗi; retry không replay prefix.
-            # Chỉ hash một lần/call, tránh quét lịch sử Keno hàng trăm nghìn kỳ mỗi draw.
             if learned:
                 self.prefix_hash = _prefix_digest(series, self.prefix_count)
                 self.available = len(series)
@@ -492,7 +470,6 @@ class MLForecaster:
         return learned
 
     def _verified_target(self, target: datetime, made: datetime) -> bool:
-        """Core invariant shared by issue, restore and scoring; dates alone cannot verify fast draws."""
         if (self.last_id is None or self.last_date is None or self.product in (*FAST, ProductCode.MAX4D)
             or target.tzinfo is None or made.tzinfo is None):
             return False
@@ -532,7 +509,7 @@ class MLForecaster:
             return False
         target_id = self.last_id + 1
         if self.pending is not None and self.pending_valid():
-            return True  # retain the first issued distribution for honest live scoring
+            return True
         day = target.astimezone(VN).date().isoformat()
         self.pending = {'target_id':target_id, 'target_date':day, 'target_time':target.isoformat(),
                         'based_on_id':self.last_id, 'based_on_date':self.last_date,
@@ -547,20 +524,16 @@ class MLForecaster:
         return True
 
     def policy_id(self) -> str:
-        """Dấu vân tay cấu hình khóa trước kỳ, tách bằng chứng giữa các chính sách."""
         payload = {'recipe':f'ml-v{VERSION}-patterns-v1', 'config':self.config.model_dump(mode='json')}
         return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
     def pending_policy_matches(self, pending: dict) -> bool:
-        """Luật cũ vẫn được chấm, nhưng chỉ luật đúng chính sách nhận điểm live."""
         if 'model_policy' in pending:
             return pending['model_policy'] == self.policy_id()
-        # Luật trước phiên bản 5 chưa có fingerprint; pattern chưa tồn tại khi ấy.
         current_multi_agent = any(c.multi_agent is not None for c in self.components.values())
         return not self.config.patterns and bool(pending.get('multi_agent')) == current_multi_agent
 
     def _target_context(self) -> dict:
-        """Một ngữ cảnh cho law và features; ngày riêng lẻ không xác minh slot FAST."""
         if not self.pending_valid():
             raise ValueError('Unverified issued checkpoint')
         if self.pending is not None:
@@ -574,7 +547,6 @@ class MLForecaster:
                 'target_time':target.isoformat() if target else None}
 
     def _target_law(self, name: str, context: dict) -> Law:
-        """Đọc law đã issue đầu tiên, hoặc dự báo với ngày/ID đã phân giải."""
         comp = self.components[name]
         if self.pending is not None:
             issued = self.pending['laws'][name]

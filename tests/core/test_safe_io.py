@@ -1,11 +1,3 @@
-"""Đọc tệp của trình dựng trang: thiếu thì rỗng im lặng, hỏng thì cảnh báo, lỗi mã thì nổ.
-
-Trước ``safe_io``, mười một trình dựng tự viết ``_read_csv``/``_read_json`` với
-``except Exception``. Ngay lần chuyển đầu tiên, một ``NameError`` của chính lần
-sửa ấy suýt bị nuốt thành ô "—" trên trang chủ; các phép kiểm dưới đây ghim cả
-ba nhánh để luật không trôi về chỗ cũ.
-"""
-
 from __future__ import annotations
 
 import ast
@@ -50,7 +42,6 @@ def test_a_present_file_is_read_with_the_given_options(tmp_path: Path) -> None:
 def test_a_corrupt_file_is_empty_but_named_in_a_warning(
     tmp_path: Path, caplog, name, payload, reader
 ) -> None:
-    """Tệp có mặt mà hỏng là sự cố dữ liệu: trang vẫn dựng, nhưng log phải nói."""
     path = tmp_path / name
     path.write_bytes(payload)
     with caplog.at_level(logging.WARNING, logger="safe_io"):
@@ -61,18 +52,15 @@ def test_a_corrupt_file_is_empty_but_named_in_a_warning(
 
 
 def test_a_programming_error_is_not_swallowed(tmp_path: Path) -> None:
-    """Truyền sai tham số là lỗi của MÃ: phải nổ, không được thành 'chưa có dữ liệu'."""
     path = tmp_path / "x.csv"
     path.write_text("a\n1\n", encoding="utf-8")
     with pytest.raises(TypeError):
         safe_io.read_csv_or_empty(path, no_such_option=True)
-    # ValueError trần của pandas cũng là lỗi tham số, không phải tệp hỏng.
     with pytest.raises(ValueError, match="engine"):
         safe_io.read_csv_or_empty(path, engine="no-such-engine")
 
 
 def test_the_page_builders_read_through_safe_io(tmp_path: Path, caplog) -> None:
-    """Trình dựng thật: JSON hỏng thì ra trạng thái trống KÈM cảnh báo."""
     from pages import build_landing_page as landing
 
     research = tmp_path / "data" / "research"
@@ -92,7 +80,6 @@ _FILE_READERS = {"read_csv", "loads", "load", "read_text"}
 
 
 def _swallowing_readers(tree: ast.AST) -> list[int]:
-    """Dòng của mọi ``try`` đọc tệp mà ``except Exception`` nuốt im lặng."""
     hits = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Try):
@@ -113,7 +100,6 @@ def _swallowing_readers(tree: ast.AST) -> list[int]:
 
 
 def test_the_rule_itself_catches_a_swallowing_reader() -> None:
-    """Ghim chính LUẬT trên mẫu dựng sẵn, để một lần quét hỏng không thành tập rỗng."""
     sample = ast.parse(
         "def f(p):\n"
         "    try:\n"

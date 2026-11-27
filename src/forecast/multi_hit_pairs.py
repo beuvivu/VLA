@@ -1,24 +1,3 @@
-"""Cặp xiên 2 — hai con cùng về trong một kỳ XSMB — chọn bằng một luật chốt trước, có kiểm chứng.
-
-Mức nền trước tiên. Một kỳ có 27 lô gần như đều trên 00–99. Hai con định trước cùng về (mỗi con
-≥ 1 nháy) với xác suất
-
-    P = 1 − 2 · 0,99²⁷ + 0,98²⁷ ≈ 5,49 %.
-
-Luật (chốt ngày 13-10-2026, TRƯỚC khi chạy kiểm chứng; đổi luật thì đăng ký ngày chốt mới):
-
-1. Điểm của cặp (a, b) ở kỳ t = số kỳ trong ``WINDOW`` kỳ ngay trước t mà cả a lẫn b cùng về.
-2. Hoà điểm thì cặp cùng về GẦN đây hơn đứng trước; còn hoà nữa thì phá bằng một hoán vị cố định
-   theo kỳ (``tie_keys``), không thiên về cặp số nhỏ.
-3. Lấy ``TOP_K`` cặp theo thứ tự ấy, mỗi con nằm trong tối đa ``MAX_PER_NUMBER`` cặp: năm cặp cùng
-   chứa một con gần như là MỘT lần đặt.
-
-Kiểm chứng walk-forward trên mọi kỳ: điểm của kỳ t chỉ đọc các kỳ trước t. Mốc so là chọn bừa
-cùng số cặp trong CÙNG kỳ: kỳ t có dₜ con khác nhau về thì Mₜ = C(dₜ, 2) trong 4 950 cặp cùng về,
-nên một cặp bất kỳ (chọn trước kỳ quay) trúng với xác suất Mₜ / 4 950. Các cặp chung một con thì
-trúng/trượt cùng nhau, nên sai số lấy từ hiệu từng kỳ chứ không giả định các cặp độc lập.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -29,26 +8,21 @@ WINDOW = 100
 TOP_K = 5
 MAX_PER_NUMBER = 2
 TIE_SEED = 20261013
-#: Luật được thiết kế với lịch sử đến ngày này; chỉ các kỳ SAU ngày này là tiến cứu.
 FROZEN_AT = "2026-10-12"
 
-#: Hai con của cặp thứ i: ``PAIR_A[i] < PAIR_B[i]``.
 PAIR_A, PAIR_B = np.triu_indices(N_NUMBERS, k=1)
 
 
 def base_rate(per_draw: int = 27) -> float:
-    """P(hai con định trước cùng về) khi 27 lô đều và độc lập trên 00–99."""
     return float(1 - 2 * 0.99 ** per_draw + 0.98 ** per_draw)
 
 
 def tie_keys(t: int) -> np.ndarray:
-    """Hoán vị 4 950 cặp cố định theo kỳ t: phá hoà không thiên về cặp số nhỏ."""
     return np.random.default_rng([TIE_SEED, t]).permutation(N_PAIRS)
 
 
 def pick_pairs(together: np.ndarray, last: np.ndarray, t: int, k: int = TOP_K,
                max_per_number: int = MAX_PER_NUMBER) -> list[int]:
-    """Chỉ số ``k`` cặp theo luật: điểm giảm dần, rồi lần cùng về gần nhất, rồi khoá phá hoà."""
     order = np.lexsort((tie_keys(t), -last, -together))
     used = np.zeros(N_NUMBERS, dtype=int)
     chosen: list[int] = []
@@ -66,17 +40,6 @@ def pick_pairs(together: np.ndarray, last: np.ndarray, t: int, k: int = TOP_K,
 
 def walk_forward(present: np.ndarray, window: int = WINDOW, k: int = TOP_K,
                  max_per_number: int = MAX_PER_NUMBER) -> dict:
-    """Chạy luật trên mọi kỳ t ∈ [window, T] (t = T là kỳ kế tiếp, chưa quay).
-
-    ``present`` là ma trận (T, 100) đúng/sai: con j về ít nhất một nháy ở kỳ t. Trả về:
-
-    * ``rows``: các kỳ đã chấm (window … T − 1);
-    * ``picks``: (len(rows) + 1, k) chỉ số cặp, hàng cuối là cho kỳ kế tiếp;
-    * ``hits``: số cặp trúng của từng kỳ đã chấm;
-    * ``expected``: kỳ vọng của chọn bừa k cặp trong CÙNG kỳ, k·C(dₜ, 2)/4 950;
-    * ``together`` / ``last``: điểm và lần cùng về gần nhất (chỉ số kỳ, −1 nếu chưa) của các cặp
-      đã chọn cho kỳ kế tiếp.
-    """
     present = np.asarray(present, dtype=bool)
     total = len(present)
     if total < window:
@@ -99,7 +62,6 @@ def walk_forward(present: np.ndarray, window: int = WINDOW, k: int = TOP_K,
         hits.append(int((row[PAIR_A[chosen]] & row[PAIR_B[chosen]]).sum()))
         d = int(row.sum())
         expected.append(k * d * (d - 1) / 2 / N_PAIRS)
-        # Trượt cửa sổ: thêm kỳ t, bỏ kỳ t − window. Lần cùng về gần nhất thì không bỏ.
         both = np.outer(as_int[t], as_int[t])
         co += both
         last[both.astype(bool)] = t
@@ -117,5 +79,3 @@ def walk_forward(present: np.ndarray, window: int = WINDOW, k: int = TOP_K,
 
 def pair_label(i: int) -> list[str]:
     return [f"{int(PAIR_A[i]):02d}", f"{int(PAIR_B[i]):02d}"]
-
-

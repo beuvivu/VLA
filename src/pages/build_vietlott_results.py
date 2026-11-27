@@ -1,22 +1,3 @@
-"""Trang Vietlott của VLA, dựng từ engine Vietlott ``vietlott/`` (từ 07-10-2026).
-
-Trước đây VLA tự cào một trang tin và lưu vào SQLite riêng: chỉ có số quay và
-một con số jackpot bóc từ chữ, không Keno/Bingo18, không bảng giải, không số
-người trúng. Nay mọi dữ liệu đi qua engine:
-
-* ``vlm.web.dashboard.build_dashboard`` — kết quả đã xác thực của 7 sản phẩm
-  đang phát hành, bảng giải đúng mã kỳ, cơ cấu giải, dự báo ĐĂNG KÝ TRƯỚC kỳ
-  quay và đối chiếu với kết quả thật. Hàm ấy không gọi mạng, không sửa sổ.
-* ``vietlott_engine.forecast`` — kết luận của bộ tự học (e-value hợp lệ ở mọi
-  thời điểm) và sổ chấm dự báo.
-
-Luật riêng của trang (CLAUDE.md): không vẽ danh tính nguồn dữ liệu ra trình
-duyệt. Dữ liệu engine mang trường ``source``, ``source_url``, ``official_url``
-và cảnh báo nhắc tên nguồn; trang KHÔNG in trường nào trong số đó — mọi chữ ra
-trang đi qua các hàm dựng dưới đây, đọc đúng trường đã liệt kê. Giá trị khuyết
-(jackpot, số người trúng chưa công bố) in "—", không lấy của kỳ trước.
-"""
-
 from __future__ import annotations
 
 import contextlib
@@ -39,7 +20,6 @@ from core.paths import REPO_ROOT, TEMPLATES
 ROOT = REPO_ROOT
 ENGINE = ROOT / "vietlott"
 
-#: Tên trang của từng sản phẩm — giữ nguyên địa chỉ đã xuất bản.
 PRODUCTS: dict[str, tuple[str, str, str]] = {
     "lotto535": ("Lotto 5/35", "vietlott-lotto-535.html", "5 số + số đặc biệt"),
     "mega645": ("Mega 6/45", "vietlott-mega-645.html", "6 số"),
@@ -51,10 +31,7 @@ PRODUCTS: dict[str, tuple[str, str, str]] = {
 }
 MATRIX = ("mega645", "power655", "lotto535")
 MAX = ("max3d", "max3dpro")
-#: Tỷ lệ một số trên vé trùng kết quả khi chọn bừa = số được quay / số trong lồng (Bingo18: mỗi vị trí 1/6).
-#: Không có mốc này thì "13,3% trùng" của vé Mega trông như dự báo tốt, dù đó đúng bằng ngẫu nhiên.
 FAIR_MATCH_RATE = {"mega645": 6 / 45, "power655": 6 / 55, "lotto535": 5 / 35, "keno": 20 / 80, "bingo18": 1 / 6}
-#: Số đối chiếu hiện trên trang sản phẩm (engine giữ 30).
 COMPARISONS_SHOWN = 10
 
 
@@ -71,7 +48,6 @@ def money(value: int | None) -> str:
 
 
 def day_label(value: str | None) -> str:
-    """``2026-10-04T00:00:00+07:00`` → ``04/10/2026``; khuyết thì "—"."""
     if not value:
         return "—"
     try:
@@ -93,16 +69,8 @@ def _two(value: object) -> str:
     return f"{int(value):02d}"
 
 
-# ---------------------------------------------------------------- nạp engine
-
-
 @contextlib.contextmanager
 def _engine_importable():
-    """Cho phép ``import vietlott_engine`` / ``vlm`` và chạy trong thư mục engine.
-
-    Engine đọc một số đường dẫn tương đối (``data/``, ``data/seed``) như khi
-    chạy trong kho riêng của nó, nên phải đổi thư mục làm việc trong lúc gọi.
-    """
     src = str(ENGINE / "src")
     added = src not in sys.path
     if added:
@@ -116,12 +84,6 @@ def _engine_importable():
 
 
 def _states_dir(work: Path, cache_states: Path | None) -> Path:
-    """Thư mục sổ + trạng thái bộ dự báo để đọc (KHÔNG ghi gì vào sổ thật).
-
-    Hai sổ dự báo đã commit được chép sang thư mục tạm; trạng thái lấy từ cache
-    của workflow engine nếu có (đã đồng bộ tới kỳ mới nhất), không thì để
-    trống — phần phân tích tự học lại từ dữ liệu đi kèm.
-    """
     forecast = ENGINE / "data" / "forecast"
     work.mkdir(parents=True, exist_ok=True)
     for name in ("ledger.jsonl", "ml-ledger.jsonl"):
@@ -136,11 +98,6 @@ def _states_dir(work: Path, cache_states: Path | None) -> Path:
 
 
 def _analysis(directory: Path, products: tuple[str, ...] = tuple(PRODUCTS)) -> dict[str, dict]:
-    """Kết luận của bộ tự học + sổ chấm, theo sản phẩm.
-
-    Dùng trạng thái có sẵn trong ``directory``; sản phẩm nào chưa có thì học
-    lại từ dữ liệu đi kèm (vài giây) — kết luận ghi rõ học tới kỳ nào.
-    """
     from vietlott_engine.core.products import ProductCode
     from vietlott_engine.forecast.data import load_series
     from vietlott_engine.forecast.engine import Forecaster, scoreboard, state_path
@@ -169,26 +126,19 @@ def _analysis(directory: Path, products: tuple[str, ...] = tuple(PRODUCTS)) -> d
 
 
 def _max_rtp(components: list[dict]) -> float | None:
-    """RTP cao nhất theo mô hình trong mọi cửa của một sản phẩm (None khi không có cửa)."""
     rtps = [b["rtp_model"] for c in components for kind in ("digit", "set") if c.get(kind)
             for b in (c[kind].get("bets") or []) + (c[kind].get("keno") or [])]
     return max(rtps) if rtps else None
 
 
-#: α của CẢ HỌ phép kiểm e-value trên trang: bảy sản phẩm cùng được kết luận một lúc, nên mỗi sản phẩm
-#: cần e-value ≥ số sản phẩm / α (Bonferroni cho e-value; với 7 sản phẩm là 140, đúng ngưỡng cổng live
-#: của bộ ML ``vlm.forecast.pipeline.LIVE_THRESHOLD``). Engine kiểm TỪNG sản phẩm ở 1/α = 20: đúng cho
-#: một sản phẩm, nhưng khi bảy sản phẩm cùng được xét thì chừng ấy sẽ sớm muộn vượt 20 do may rủi.
 FAMILY_ALPHA = 0.05
 
 
 def family_threshold_log10(products: int | None = None) -> float:
-    """log10 của ngưỡng e-value cho cả họ ``products`` sản phẩm (mặc định: mọi sản phẩm trên trang)."""
     return math.log10((products or len(PRODUCTS)) / FAMILY_ALPHA)
 
 
 def family_signal(entry: dict | None) -> bool:
-    """Sản phẩm có tín hiệu SAU KHI tính đủ cả họ: engine báo bằng chứng VÀ e-value cao nhất ≥ ngưỡng họ."""
     ev = (entry or {}).get("evidence") or {}
     try:
         best = float(ev.get("max_log10_wealth"))
@@ -198,7 +148,6 @@ def family_signal(entry: dict | None) -> bool:
 
 
 def evidence_text(entry: dict | None) -> str:
-    """Câu bằng chứng của MỘT sản phẩm, khớp với kết luận theo họ của trang."""
     ev = (entry or {}).get("evidence") or {}
     text = str(ev.get("text") or "")
     if not ev.get("found"):
@@ -214,7 +163,6 @@ def evidence_text(entry: dict | None) -> str:
 
 
 def verdict_text(entry: dict) -> str:
-    """Câu kết luận của engine, trừ khi nó dựa trên ngưỡng 20 của riêng sản phẩm mà ngưỡng họ chưa đạt."""
     ev = (entry or {}).get("evidence") or {}
     if ev.get("found") and not family_signal(entry):
         return (f"Mô hình tự học chưa có bằng chứng lệch khỏi máy quay công bằng khi xét cả "
@@ -223,20 +171,12 @@ def verdict_text(entry: dict) -> str:
 
 
 def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
-    """Kết luận về độ ngẫu nhiên in TỪ SỐ ĐO của engine, không viết cứng.
-
-    Max 3D / Max 3D Pro từng mâu thuẫn với câu viết cứng "kỳ quay đã kiểm là ngẫu
-    nhiên": cả hai lệch thật ở chữ số hàng đơn vị (số 6 ≈ 11% thay vì 10%, ổn định
-    qua thời gian, lặp lại trên hai sản phẩm độc lập), e-value vượt ngưỡng 20.
-    """
     if not analysis:
         return "Chưa có phân tích độ ngẫu nhiên của kỳ quay."
     found = [code for code in names if family_signal(analysis.get(code))]
     if not found:
         return ("Phép kiểm e-value của engine chưa thấy sản phẩm nào lệch khỏi máy quay công bằng; "
                 "dự báo không làm tăng xác suất trúng.")
-    # Chỉ nói về những sản phẩm mà mô hình TÍNH được RTP. Mega/Power/Lotto không có RTP
-    # trong phân tích, mà jackpot dồn hay chia giải có thể đẩy RTP của chúng vượt 1.
     priced = [c for c in names if (analysis.get(c) or {}).get("max_rtp") is not None]
     money = ""
     if priced and max(analysis[c]["max_rtp"] for c in priced) < 1:
@@ -254,9 +194,6 @@ def _join(labels: list[str]) -> str:
 
 
 def load(cache_states: Path | None = None, products: tuple[str, ...] = tuple(PRODUCTS)) -> dict[str, Any]:
-    """Bảng điều khiển của engine + phân tích, đọc từ dữ liệu ``vietlott/`` đã commit."""
-    # Phân giải TRƯỚC khi chuyển vào thư mục engine: workflow truyền đường dẫn tính từ
-    # gốc kho (``vietlott/data/forecast``), sau chdir nó thành ``vietlott/vietlott/...``.
     cache_states = Path(cache_states).resolve() if cache_states else None
     with tempfile.TemporaryDirectory() as tmp, _engine_importable():
         from vlm.web.dashboard import build_dashboard
@@ -266,9 +203,6 @@ def load(cache_states: Path | None = None, products: tuple[str, ...] = tuple(PRO
         dashboard = build_dashboard(data, data / "seed", directory, data / "results" / "results.jsonl")
         dashboard["analysis"] = _analysis(directory, products)
     return dashboard
-
-
-# ---------------------------------------------------------------- khối hiển thị
 
 
 def balls(values: list, bonus: object = None, *, product: str = "") -> str:
@@ -282,7 +216,6 @@ def balls(values: list, bonus: object = None, *, product: str = "") -> str:
 
 
 def _max_result_markup(product: str, draw: dict, *, matched_symbol: str | None = None) -> str:
-    """Giữ từng giải trên một hàng; tô Đặc biệt theo nhóm, không theo tập bộ ba."""
     groups = [p for p in draw.get("prizes") or [] if isinstance(p, dict) and "numbers" in p]
     if not groups:
         numbers = draw.get("numbers") or []
@@ -301,7 +234,6 @@ def _max_result_markup(product: str, draw: dict, *, matched_symbol: str | None =
 
 
 def result_markup(product: str, draw: dict) -> str:
-    """Bộ số của một kỳ, đúng hình dạng từng sản phẩm."""
     if product in MAX:
         return _max_result_markup(product, draw)
     out = balls(draw.get("numbers") or [], draw.get("bonus"), product=product)
@@ -315,7 +247,6 @@ def result_markup(product: str, draw: dict) -> str:
 
 
 def prize_table(product: str, draw: dict) -> str:
-    """Bảng giải của ĐÚNG kỳ ấy (Mega/Power/Lotto): giá trị và số người trúng."""
     rows = [p for p in draw.get("prizes") or [] if isinstance(p, dict) and "code" in p]
     if product not in MATRIX or not rows:
         return ""
@@ -354,7 +285,6 @@ def _symbol(product: str, numbers: list) -> str:
 
 
 def _drawn(target_time: object, now: object) -> bool | None:
-    """Kỳ đã tới giờ quay lúc dựng trang chưa; None khi thiếu hay không đọc được một trong hai mốc."""
     try:
         return datetime.fromisoformat(str(now)) >= datetime.fromisoformat(str(target_time))
     except (TypeError, ValueError):
@@ -362,14 +292,6 @@ def _drawn(target_time: object, now: object) -> bool | None:
 
 
 def shown_forecast(data: dict, now: str | None = None) -> dict | None:
-    """Dự báo cần hiện: kỳ kế tiếp; nếu kỳ ấy đã qua mốc khoá mà kết quả chưa vào dữ liệu thì chính
-    bộ số đã ghi trước giờ quay, gắn ``awaiting_result`` và ``drawn`` (so ``now`` — giờ dựng trang —
-    với giờ quay: engine chuyển dự báo sang "chờ" từ 5 phút TRƯỚC giờ quay, khi kỳ chưa quay).
-
-    Engine bỏ dự báo khỏi ``next_forecast`` khi đã qua giờ quay; kỳ sau chỉ ghi được khi có kết quả.
-    Kết quả Vietlott vào kho trễ trung vị 5,6–8,6 giờ (đo 15-10-2026), nên trước đây thẻ trống
-    "Chưa có dự báo hợp lệ" gần như suốt thời gian ấy — nhất là Lotto 5/35, hai kỳ mỗi ngày.
-    """
     if data.get("next_forecast"):
         return data["next_forecast"]
     latest = data.get("latest") or {}
@@ -382,7 +304,6 @@ def shown_forecast(data: dict, now: str | None = None) -> dict | None:
 
 
 def forecast_markup(product: str, forecast: dict | None) -> str:
-    """Bộ số engine đề xuất cho kỳ kế tiếp, kèm trạng thái đăng ký."""
     if not forecast:
         return '<p class="vl-muted">Chưa có dự báo hợp lệ cho kỳ kế tiếp.</p>'
     if forecast.get("awaiting_result"):
@@ -408,7 +329,7 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
     specials = per_ticket_specials(forecast)
     for comp in forecast.get("components") or []:
         if specials and comp.get("name") == "special":
-            continue  # coverage-v2: số đặc biệt đã in ngay trên vé của nó
+            continue
         rows = []
         for index, t in enumerate((comp.get("top") or [])[:5]):
             numbers = t["numbers"]
@@ -434,7 +355,6 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
 
 
 def per_ticket_specials(forecast: dict | None) -> list[int]:
-    """Số đặc biệt của TỪNG vé Lotto khi lần ghi theo ``coverage-v2`` (vé j mang số j); rỗng nếu dùng chung."""
     for comp in (forecast or {}).get("components") or []:
         if comp.get("name") == "special" and comp.get("per_ticket"):
             return [int((row.get("numbers") or [0])[0]) for row in comp.get("top") or []]
@@ -446,7 +366,6 @@ def _pct(value: float) -> str:
 
 
 def coverage_note(coverage: dict | None, tickets: int) -> str:
-    """Mốc chính xác của danh mục rời nhau, in TỪ số engine tính (``coverage_summary``), không viết cứng."""
     if not coverage:
         return ""
     try:
@@ -470,7 +389,6 @@ def coverage_note(coverage: dict | None, tickets: int) -> str:
 
 
 def _ticket_score(product: str, ticket: dict) -> tuple[int, int] | None:
-    """Số trùng và mẫu số của từng vé, giữ cách chấm riêng của engine."""
     if product in MAX:
         return None
     key = "position_hits" if product == "bingo18" else "hits"
@@ -487,7 +405,6 @@ def _hit_percent(hits: int, denominator: int) -> str:
 def _comparison_balls(product: str, values: list, *, matched: list[bool] | None = None,
                       bonus: object = None, bonus_hit: bool = False, bonus_main: object = None,
                       label: str = "", special: bool = False, sequence_class: str = "vl-comparison-balls") -> str:
-    """Đánh dấu theo từng vị trí; bộ ba Max giữ nguyên chuỗi và số 0 đầu."""
     fmt = str if product in MAX else (lambda x: str(int(x))) if product == "bingo18" else _two
     marks = matched or []
     spans = []
@@ -511,7 +428,6 @@ def _comparison_balls(product: str, values: list, *, matched: list[bool] | None 
 
 
 def _stored_tickets(product: str, comparison: dict) -> list[dict]:
-    """Giữ bộ số đã ghi khi kỳ đang chờ; không dựng dự báo mới để lấp chỗ trống."""
     if comparison.get("tickets"):
         return comparison["tickets"]
     components = {c.get("name"): c for c in comparison.get("components") or []}
@@ -525,7 +441,6 @@ def _stored_tickets(product: str, comparison: dict) -> list[dict]:
 
 
 def _ticket_prize(product: str, ticket: dict) -> str:
-    """Chỉ hiện phân hạng có sẵn trong kết quả engine, không suy từ phần trăm."""
     if product == "max3dpro":
         return "Chưa phân hạng: cần vé cặp"
     if product in MAX:
@@ -558,7 +473,6 @@ def _comparison_summary(product: str, comparisons: list[dict]) -> str:
     covered = [c for c in comparisons if c.get("status") == "matched"
                and any(comp.get("coverage") for comp in c.get("components") or [])]
     if covered and product in MATRIX:
-        # Chấm đúng danh mục đã phát; mốc kỳ vọng là tổng xác suất CHÍNH XÁC của từng kỳ.
         reached = sum(max((t.get("hits") or 0 for t in c.get("tickets") or []), default=0) >= 2 for c in covered)
         expected = sum(next(comp["coverage"]["any_ticket_ge"]["2"] for comp in c["components"] if comp.get("coverage"))
                        for c in covered)
@@ -570,7 +484,6 @@ def _comparison_summary(product: str, comparisons: list[dict]) -> str:
 
 
 def comparisons_markup(product: str, comparisons: list[dict]) -> str:
-    """Dự báo đã đăng ký đối chiếu từng vé với kết quả đúng kỳ, đúng ngày."""
     if not comparisons:
         return '<p class="vl-muted">Chưa có dự báo đăng ký trước kỳ nào để đối chiếu.</p>'
     shown = comparisons[:COMPARISONS_SHOWN]
@@ -578,7 +491,6 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
     rows = []
     for c in shown:
         scored = c.get("status") == "matched"
-        # Mã kỳ đúng mà ngày khác là lỗi ghép, không phải đang chờ kết quả.
         status = {"matched": "Đã chấm", "pending": "Chờ kết quả", "date_mismatch": "Lệch ngày"}.get(c.get("status"), "Chờ kết quả")
         state_class = " vl-badge--ok" if scored else " vl-badge--warn" if c.get("status") == "date_mismatch" else ""
         tickets = _stored_tickets(product, c)
@@ -716,7 +628,6 @@ def _by_code(dashboard: dict) -> dict[str, dict]:
 
 
 def jackpot_card(product: str, data: dict | None) -> str:
-    """Jackpot đúng kỳ mới nhất; pool chưa công bố vẫn hiện dấu gạch."""
     latest = (data or {}).get("latest") or {}
     pools = {p.get("code"): p for p in latest.get("prizes") or [] if p.get("pool")}
     labels = [("jackpot1", "Jackpot 1"), ("jackpot2", "Jackpot 2")] if product == "power655" else [("jackpot1", "Jackpot")]
@@ -735,7 +646,6 @@ def jackpot_card(product: str, data: dict | None) -> str:
 
 
 def pick_board(product: str) -> str:
-    """Bộ chọn cục bộ; không ghi sổ dự báo và không tạo giao dịch."""
     if product not in ("mega645", "power655"):
         return ""
     maximum = 45 if product == "mega645" else 55
@@ -769,7 +679,6 @@ def pick_board(product: str) -> str:
 
 
 def comparison_widget(product: str) -> str:
-    """Đối chiếu bộ số người dùng nhập, độc lập với sổ dự báo đã đăng ký."""
     if product not in MATRIX:
         return ""
     count, maximum = (5, 35) if product == "lotto535" else (6, 45 if product == "mega645" else 55)
@@ -802,7 +711,6 @@ def comparison_widget(product: str) -> str:
 
 
 def multi_agent_markup(data: dict | None, *, section_id: str = "app-multi-agent") -> str:
-    """Chỉ in các số đo được cho phép; không in nguyên văn cảnh báo hay nguồn của engine."""
     main = ((data or {}).get("components") or {}).get("main")
     if not main:
         return ""
@@ -841,7 +749,6 @@ def multi_agent_markup(data: dict | None, *, section_id: str = "app-multi-agent"
 
 
 def multi_agent_overview(analysis: dict) -> str:
-    """Đường dẫn tới các mô hình đã có trạng thái thật, dùng trên trang tổng quan."""
     rows = []
     for code in MATRIX:
         data = (analysis.get(code) or {}).get("multi_agent")
@@ -953,7 +860,6 @@ def overview(dashboard: dict) -> str:
 
 
 def build(root: Path = ROOT, *, dashboard: dict | None = None, cache_states: Path | None = None) -> list[Path]:
-    """Dựng đủ 8 trang qua ``write_page``; ``dashboard`` truyền sẵn để kiểm thử."""
     if dashboard is None:
         dashboard = load(cache_states)
     docs = root / "docs"
@@ -976,7 +882,7 @@ def build(root: Path = ROOT, *, dashboard: dict | None = None, cache_states: Pat
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--cache-states", type=Path, default=None,
                         help="Thư mục trạng thái bộ dự báo khôi phục từ cache của workflow engine.")
     parser.add_argument("--dump-json", type=Path, default=None, help="Ghi thêm bảng điều khiển ra tệp (gỡ lỗi).")

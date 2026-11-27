@@ -1,9 +1,3 @@
-"""Phân tích theo đài quay miền Bắc: phải thấy hiệu ứng cài sẵn, không được thấy hiệu ứng khi kỳ quay công bằng.
-
-Mỗi phép kiểm dựng lịch sử giả lập: kỳ công bằng (mọi chữ số đều), hoặc cài tín hiệu cho đúng một đài
-(thứ Ba = Quảng Ninh) hay cho một đoạn thời gian. Đảo hành vi được canh (bỏ hoán vị, bỏ quên dần, đề bạt
-không cần thắng…) thì phép kiểm tương ứng đỏ.
-"""
 from __future__ import annotations
 
 import math
@@ -17,7 +11,7 @@ from core.xsmb_domain import FIELD_WIDTHS
 from core.xsmb_schedule import ERAS, ScheduleEra
 from stats import xsmb_venue_effects as v
 
-UNITS = v._TAIL_INDEX  # chữ số hàng đơn vị của 27 giải
+UNITS = v._TAIL_INDEX
 
 
 def _frame(digits: np.ndarray, start: date = date(2020, 1, 1)) -> pd.DataFrame:
@@ -34,7 +28,6 @@ def _fair(n: int, seed: int) -> np.ndarray:
 
 def _venue_bias(digits: np.ndarray, start: date = date(2020, 1, 1), weekday: int = 1, share: float = 0.4,
                 seed: int = 5) -> np.ndarray:
-    """Đài của ``weekday``: chữ số hàng đơn vị của mỗi giải là 7 với xác suất ``share`` (ngoài phần đều)."""
     rng = np.random.default_rng(seed)
     out = digits.copy()
     days = np.array([(start + timedelta(days=i)).weekday() for i in range(out.shape[0])])
@@ -59,7 +52,6 @@ def biased_draws() -> v.Draws:
 def test_draws_follow_the_schedule_and_rebuild_every_digit(fair_draws: v.Draws) -> None:
     assert fair_draws.n == 840 and fair_draws.digits.shape == (840, 107)
     assert fair_draws.venue[:7] == ("Bắc Ninh", "Hà Nội", "Hải Phòng", "Nam Định", "Thái Bình", "Hà Nội", "Quảng Ninh")
-    # Con LOTO là hai chữ số cuối của từng giải; Đặc Biệt là con đầu tiên.
     assert int(fair_draws.loto[0, 0]) == fair_draws.digits[0, 3] * 10 + fair_draws.digits[0, 4]
     assert np.array_equal(fair_draws.special, fair_draws.loto[:, 0])
     assert v.CAGE_OF_DIGIT[:5].tolist() == [4, 3, 2, 1, 0] and v.CAGE_OF_DIGIT[-2:].tolist() == [1, 0]
@@ -73,8 +65,6 @@ def test_fair_history_shows_no_venue_effect(fair_draws: v.Draws) -> None:
 
 
 def test_the_default_permutations_can_reach_significance_after_holm() -> None:
-    """Với B hoán vị, p Holm nhỏ nhất là HETEROGENEITY_TESTS/(B+1); nó phải nhỏ hơn ALPHA, nếu không
-    module không bao giờ kết luận được gì (999 hoán vị cho đúng 0,01 = ALPHA)."""
     assert v.HETEROGENEITY_TESTS / (v.PERMUTATIONS + 1) < v.ALPHA
     assert v.HETEROGENEITY_TESTS / (999 + 1) >= v.ALPHA
 
@@ -85,7 +75,6 @@ def test_a_planted_venue_bias_is_found_by_permutation(biased_draws: v.Draws) -> 
     for key in (("đài", "loto"), ("đài", "cage_digits"), ("thứ", "cage_digits")):
         assert rows[key]["p_value"] == pytest.approx(1 / (v.PERMUTATIONS + 1)) and rows[key]["rejected"], key
     assert all(row["min_attainable_p_holm"] < v.ALPHA for row in rows.values())
-    # Holm trên cả họ: p sau hiệu chỉnh không nhỏ hơn p thô.
     assert all(row["p_holm"] >= row["p_value"] for row in rows.values())
 
 
@@ -103,15 +92,10 @@ def test_cage_monitor_flags_only_the_biased_venue(biased_draws: v.Draws, fair_dr
     assert biased["Quảng Ninh"]["largest_deviation"]["cage"] == "đơn vị"
     assert biased["Quảng Ninh"]["largest_deviation"]["digit"] == 7
     assert not biased["Hải Phòng"]["flagged_on"] and not biased["Hải Phòng"]["detector_alarm_on"]
-    # Dãy gộp (mọi đài dùng chung một lần quay) cũng có mặt và cũng thấy.
     assert biased[v.POOLED]["pooled"] and biased[v.POOLED]["draws"] == biased_draws.n
 
 
 def test_the_detector_adapts_to_a_change_that_starts_late() -> None:
-    """Lỗi bắt đầu sau 600 kỳ công bằng: e-process tính từ đầu không kịp vượt ngưỡng, e-detector thì báo.
-
-    Đây là lý do có e-detector: bỏ quên dần (``memory`` rất lớn) thì nó cũng chìm như e-process.
-    """
     rng = np.random.default_rng(8)
     counts = np.zeros((900, v.CAGES, 10))
     for t in range(900):
@@ -149,7 +133,7 @@ def test_monitor_keys_split_by_era(monkeypatch: pytest.MonkeyPatch) -> None:
     pooled = [row for row in rows if row["pooled"]]
     assert [row["era_start"] for row in pooled] == [ERAS[0].start.isoformat(), renamed.start.isoformat()]
     assert sum(row["draws"] for row in pooled) == draws.n
-    assert len(rows) == 2 * 7  # mỗi thời kỳ: dãy gộp + 6 đài
+    assert len(rows) == 2 * 7
 
 
 def test_the_venue_model_is_promoted_only_when_it_wins(fair_draws: v.Draws, biased_draws: v.Draws) -> None:
@@ -159,11 +143,10 @@ def test_the_venue_model_is_promoted_only_when_it_wins(fair_draws: v.Draws, bias
     venue = biased["modes"]["loto"]["comparisons"]["đài"]
     assert venue["promoted"]
     assert venue["vs_pooled"]["z"] >= v.PROMOTE_Z and venue["vs_constant"]["z"] >= v.PROMOTE_Z
-    assert venue["kappa"] < max(v.KAPPA_GRID)  # dữ liệu có hiệu ứng thì không gộp hết về một
+    assert venue["kappa"] < max(v.KAPPA_GRID)
 
 
 def test_walk_forward_never_reads_the_draw_it_scores(biased_draws: v.Draws) -> None:
-    """Đổi kết quả của kỳ CUỐI: điểm của mọi kỳ trước phải giữ nguyên (không mô hình nào nhìn trước)."""
     altered_digits = biased_draws.digits.copy()
     altered_digits[-1] = (altered_digits[-1] + 1) % 10
     altered = v.Draws(dates=biased_draws.dates, digits=altered_digits, venue=biased_draws.venue)
@@ -185,7 +168,6 @@ def test_reading_is_written_from_the_numbers(biased_draws: v.Draws) -> None:
 
 
 def test_the_real_ledger_runs_and_is_deterministic(tmp_path) -> None:
-    """Chạy trên sổ chuẩn thật (bớt hoán vị cho nhanh): hai lượt cho cùng tệp."""
     from core.paths import REPO_ROOT
     import shutil
     (tmp_path / "data").mkdir()

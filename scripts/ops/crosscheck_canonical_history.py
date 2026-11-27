@@ -1,26 +1,3 @@
-"""Đối chiếu một dải kỳ của sổ chuẩn XSMB với nơi ghi KHÁC, từng ô một.
-
-Vì sao cần: các kỳ 2015 → 08-2026 của ``data/xsmb.csv`` vào kho qua đợt bổ sung lịch sử tháng
-9-2026, với ``min_agreement = 1``. Mỗi kỳ chỉ cần MỘT nguồn bóc được, và nguồn đầu danh sách khi
-ấy là ``xoso.com.vn`` (thứ tự ``default_sources`` lúc đó: xoso.com.vn, mketqua.net, Minh Ngọc,
-…). Một độ lệch thống kê tìm thấy trên những kỳ ấy (đợt lệch lồng đơn vị 2024 của
-``stats.xsmb_venue_effects``) có thể là đặc tính của kết quả công bố, hoặc lỗi của đúng một nơi
-ghi. Đọc lại các kỳ ấy từ nơi ghi khác thì phân biệt được hai trường hợp.
-
-Máy phiên làm việc không gọi được trang ngoài, nên script chạy trên runner
-(``.github/workflows/diagnose-live-sources.yml``, khi khai ``crosscheck_start``). Nó chỉ ĐỌC:
-không ghi gì vào kho, không lưu trang. Log chỉ in số ô trùng, từng ô khác, các kỳ không đọc
-được, và số đếm chữ số lồng đơn vị trên chính bản ghi của nơi ghi kia.
-
-Nơi ghi
--------
-``minhngoc``  Trang theo ngày của Minh Ngọc hiện BẢY kỳ liền (ngày chọn và sáu ngày trước). Script
-              gọi một trang cho mỗi bảy ngày, tách từng kỳ theo dòng «Ngày: dd/mm/yyyy».
-``mketqua``   Một trang cho mỗi kỳ; khối giải bắt đầu ở dòng mang «ngày dd-mm-yyyy».
-
-Mỗi trang gọi đúng một lần, chờ 1,5–3 giây giữa hai lần gọi.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -51,7 +28,6 @@ from ingest.sources import (  # noqa: E402
     extract_partial_prize_map,
 )
 
-#: Tên cột của sổ chuẩn theo đúng thứ tự giải: special, prize1, prize2_1, prize2_2, …
 FIELDS: tuple[str, ...] = tuple(
     key if EXPECTED_COUNTS[key] == 1 else f"{key}_{i}"
     for key in PRIZE_ORDER
@@ -60,26 +36,20 @@ FIELDS: tuple[str, ...] = tuple(
 WIDTHS: dict[str, int] = {field: EXPECTED_WIDTHS[field.split("_")[0]] for field in FIELDS}
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 DELAY_RANGE = (1.5, 3.0)
-#: Trần thời gian TỔNG cho một trang, tính bằng giây.
 REQUEST_DEADLINE = 45.0
-#: Minh Ngọc in bảy kỳ trên một trang theo ngày.
 MINHNGOC_DAYS_PER_PAGE = 7
 
-#: Minh Ngọc mở mỗi kỳ bằng «KẾT QUẢ XỔ SỐ Miền Bắc - dd/mm/yyyy» rồi «Ngày: dd/mm/yyyy»; khối của dòng
-#: đầu không có giải nên bị bỏ, khối của dòng sau mang trọn 27 ô.
 _MN_DAY = re.compile(r"(?:Ngày:|Miền Bắc\s*-)\s*(\d{2})/(\d{2})/(\d{4})")
 _MK_DAY = re.compile(r"ngày\s+(\d{2})-(\d{2})-(\d{4})", re.IGNORECASE)
 
 
 def text_lines(html: str) -> list[str]:
-    """Các dòng văn bản của trang, đúng như bộ bóc giải nhìn thấy."""
     soup = BeautifulSoup(html or "", "lxml")
     lines = [re.sub(r"\s+", " ", line).strip() for line in soup.get_text("\n", strip=True).splitlines()]
     return [line for line in lines if line]
 
 
 def flatten(prize_map: dict[str, list[str]]) -> dict[str, str] | None:
-    """Bảng giải bóc được → một hàng theo tên cột của sổ; ``None`` khi thiếu ô."""
     if any(len(prize_map.get(key, [])) != EXPECTED_COUNTS[key] for key in PRIZE_ORDER):
         return None
     values = [value for key in PRIZE_ORDER for value in prize_map[key]]
@@ -87,13 +57,8 @@ def flatten(prize_map: dict[str, list[str]]) -> dict[str, str] | None:
 
 
 def split_days(lines: list[str], marker: re.Pattern[str]) -> dict[date, dict[str, str]]:
-    """Tách trang thành từng kỳ: khối của một kỳ chạy từ dòng mang ngày của nó tới dòng mang ngày kế.
-
-    Kỳ nào bóc không đủ 27 ô thì bỏ (không đoán). Một ngày xuất hiện hai lần thì giữ lần đầu.
-    """
     starts: list[tuple[int, date]] = []
     for index, line in enumerate(lines):
-        # Nhãn và ngày có thể nằm ở hai phần tử («Ngày:» rồi một liên kết ngày), tức hai dòng.
         joined = f"{line} {lines[index + 1]}" if index + 1 < len(lines) else line
         match = marker.search(line) or marker.search(joined)
         if match and match.start() < len(line):
@@ -107,7 +72,6 @@ def split_days(lines: list[str], marker: re.Pattern[str]) -> dict[date, dict[str
         if day in found:
             continue
         stop = starts[position + 1][0] if position + 1 < len(starts) else len(lines)
-        # Dòng văn bản như «<<<<» của thanh chuyển trang phải về lại là chữ, không thành thẻ.
         row = flatten(extract_partial_prize_map(html.escape("\n".join(lines[index:stop]), quote=False)))
         if row is not None:
             found[day] = row
@@ -115,7 +79,6 @@ def split_days(lines: list[str], marker: re.Pattern[str]) -> dict[date, dict[str
 
 
 def read_ledger(path: Path, start: date, end: date) -> dict[date, dict[str, str]]:
-    """Các kỳ của sổ chuẩn trong dải, mỗi ô đệm số 0 đầu theo độ rộng giải."""
     rows: dict[date, dict[str, str]] = {}
     with path.open(encoding="utf-8", newline="") as handle:
         for raw in csv.DictReader(handle):
@@ -126,7 +89,6 @@ def read_ledger(path: Path, start: date, end: date) -> dict[date, dict[str, str]
 
 
 def minhngoc_anchors(days: Iterable[date]) -> list[date]:
-    """Ngày cần gọi để phủ mọi kỳ: mỗi trang phủ ngày gọi và sáu ngày trước nó."""
     pending = sorted(set(days), reverse=True)
     anchors: list[date] = []
     while pending:
@@ -138,7 +100,6 @@ def minhngoc_anchors(days: Iterable[date]) -> list[date]:
 
 
 def _page_days(url: str, get: Callable[[str], str], marker: re.Pattern[str]) -> dict[date, dict[str, str]]:
-    """Các kỳ bóc được trên một trang; trang không cho kỳ nào thì in vài dòng mang ngày để chẩn đoán."""
     began = time.monotonic()
     lines = text_lines(get(url))
     days = split_days(lines, marker)
@@ -150,11 +111,6 @@ def _page_days(url: str, get: Callable[[str], str], marker: re.Pattern[str]) -> 
 
 
 def fetch_with_deadline(session: requests.Session, url: str, *, deadline: float = REQUEST_DEADLINE) -> str:
-    """Đọc một trang theo luồng, bỏ khi quá ``deadline`` giây TỔNG hoặc quá trần kích thước.
-
-    ``timeout`` của requests chỉ chặn từng lần chờ một mẩu dữ liệu: máy chủ nhỏ giọt vài byte mỗi
-    lúc giữ được kết nối mãi. Trả chuỗi rỗng khi hỏng, như ``ingest.sources._request_page``.
-    """
     began = time.monotonic()
     try:
         with session.get(url, timeout=(10, 20), stream=True) as response:
@@ -171,7 +127,6 @@ def fetch_with_deadline(session: requests.Session, url: str, *, deadline: float 
     except requests.RequestException as exc:
         print(f"   lỗi mạng {type(exc).__name__}: {url}", flush=True)
         return ""
-    # Các trang kết quả đều là UTF-8; requests đoán ISO-8859-1 khi tiêu đề không khai charset.
     try:
         return body.decode("utf-8")
     except UnicodeDecodeError:
@@ -203,7 +158,6 @@ READERS: dict[str, Callable[..., dict[date, dict[str, str]]]] = {"minhngoc": rea
 
 
 def compare(ledger: dict[date, dict[str, str]], other: dict[date, dict[str, str]]) -> dict[str, object]:
-    """So từng ô; trả số kỳ/ô trùng, danh sách ô khác và các kỳ nơi ghi kia không có."""
     differences = [(day, field, ledger[day][field], other[day][field])
                    for day in sorted(other) if day in ledger
                    for field in FIELDS if ledger[day][field] != other[day][field]]
@@ -218,7 +172,6 @@ def compare(ledger: dict[date, dict[str, str]], other: dict[date, dict[str, str]
 
 
 def units_digits(rows: dict[date, dict[str, str]]) -> tuple[list[int], float]:
-    """Số đếm chữ số hàng đơn vị của 27 giải trên mọi kỳ, và χ² so với phân bố đều (9 bậc tự do)."""
     counts = Counter(row[field][-1] for row in rows.values() for field in FIELDS)
     observed = [counts.get(str(digit), 0) for digit in range(10)]
     expected = sum(observed) / 10
@@ -241,7 +194,7 @@ def report(name: str, ledger: dict[date, dict[str, str]], other: dict[date, dict
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--start", required=True, type=date.fromisoformat, help="ngày đầu YYYY-MM-DD")
     parser.add_argument("--end", required=True, type=date.fromisoformat, help="ngày cuối YYYY-MM-DD")
     parser.add_argument("--source", action="append", choices=sorted(READERS), required=True,

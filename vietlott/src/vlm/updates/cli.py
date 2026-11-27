@@ -1,4 +1,3 @@
-"""Once for cron/Actions; continuous for a machine without the API."""
 import argparse
 import asyncio
 import json
@@ -35,7 +34,6 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         with WriterLease(directory / 'writer.lock'):
-            # A locked DuckDB file is an error, never an implicit memory fallback.
             repo = InMemoryRepository() if settings.storage_backend == 'memory' else DuckDBRepository(settings.duckdb_path, settings.parquet_dir)
             try:
                 state = AppState(settings, repo)
@@ -67,7 +65,6 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         return 0
     except Exception as exc:
-        # Do not print a proxy URL/token embedded in a network exception.
         print(json.dumps({'error':type(exc).__name__}, ensure_ascii=False))
         return 1
     return 0

@@ -1,43 +1,3 @@
-"""Lọc "lô nhiều nháy" — con số về ≥ 2 nháy trong một kỳ XSMB — bằng VIP Score có kiểm chứng.
-
-Mức nền trước tiên. Một kỳ XSMB có 27 lô (hai số cuối của 27 giải), gần như đều trên 00–99.
-Nếu các giải độc lập và đều, số nháy của một con số định trước là X ~ Binomial(27, 1/100), nên
-
-    P(X ≥ 2) = 1 − 0,99²⁷ − 27 · 0,01 · 0,99²⁶ ≈ 2,975 %.
-
-Đó là xác suất trúng "nhiều nháy" khi chọn BỪA một con. 4 228 kỳ thật của kho cho 2,916 %.
-Một bộ lọc chỉ có giá trị khi tỉ lệ trúng NGOÀI MẪU của nó vượt mức nền một cách có ý nghĩa
-thống kê. Module này ĐO điều đó trên chính dữ liệu được đưa vào, không giả định nó.
-
-Bốn lớp đặc trưng; đặc trưng của kỳ t chỉ đọc các kỳ 0..t−1:
-
-1. Tần suất & điểm rơi: tần suất trong cửa sổ, đà về (EWMA ngắn − EWMA dài), độ dài chuỗi
-   trúng, độ gan (số kỳ kể từ lần về gần nhất).
-2. Dị thường Poisson: số kỳ về ≥ 2 nháy trong cửa sổ so với kỳ vọng nhị thức (điểm z), và chỉ
-   số phân tán var/mean của số nháy trừ 1 (Poisson cho 0, nhiều nháy dồn cục cho > 0).
-3. Đồng xuất hiện: P(i về ≥ 2 nháy ở kỳ t | j về ở kỳ t − 1), làm trơn Beta về mức nền, lấy
-   log-lift trung bình theo số nháy của các con đã về kỳ trước.
-4. Cầu nhịp: con số đã về 3–5 lần liên tiếp theo cùng một khoảng cách d, và kỳ t đúng là kỳ
-   tiếp theo của nhịp ấy. Độ mạnh là số lần trong nhịp.
-
-VIP_Score(i) = Σ wₖ · thành phầnₖ(i). Mỗi thành phần được chuẩn hoá chéo 100 số trong cùng một
-kỳ (z-score hoặc min-max), nên các trọng số so được với nhau. Trọng số chọn trên lưới đơn hình
-(bước 0,1) bằng backtest ``weight_window`` kỳ NGAY TRƯỚC kỳ dự báo: tối đa số lần trúng top-k,
-hoà thì lấy AUC. Đánh giá là walk-forward LỒNG NHAU: kỳ t được chấm bằng trọng số chọn trên
-[t − weight_window, t), nên tỉ lệ trúng báo ra không mang thiên lệch của chính phép chọn.
-
-Xác suất in ra là hiệu chỉnh Platt (hồi quy logistic có điều chuẩn) khớp trên các cặp (điểm,
-kết quả) NGOÀI MẪU của walk-forward. Không có tín hiệu thì hệ số về 0 và xác suất về mức nền:
-đó là câu trả lời đúng, không phải lỗi. Confidence Index suy từ phép so một phía của số lượt
-trúng top-k ngoài mẫu với CHỌN BỪA trên chính các kỳ ấy (``random_pick_null``), không đặt tay.
-
-Chạy thử:
-
-    python3 src/forecast/multi_hit_vip.py --mock                 # 100 kỳ giả định, quay công bằng
-    python3 src/forecast/multi_hit_vip.py --mock --plant         # cài sẵn tín hiệu: bộ lọc phải bắt được
-    python3 src/forecast/multi_hit_vip.py --csv data/xsmb-2-digits.csv
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -73,19 +33,10 @@ TIE_SEED = 20261008
 
 
 def base_rate(per_draw: int = LOTO_PER_DRAW, p: float = 1 / N_NUMBERS) -> float:
-    """P(X ≥ 2) với X ~ Binomial(per_draw, p): một con số định trước về ≥ 2 nháy khi quay công bằng."""
     return float(binom.sf(1, per_draw, p))
 
 
 def any_multi_chance(k: int, per_draw: int = LOTO_PER_DRAW, n: int = N_NUMBERS) -> float:
-    """P(ít nhất một trong ``k`` con định trước về ≥ 2 nháy) khi quay công bằng.
-
-    Đây là tỉ lệ KỲ ĐẠT của MỌI cách chọn ``k`` con, kể cả cách chọn dựa trên lịch sử: kỳ quay công
-    bằng không phụ thuộc kỳ trước. Không con nào trong ``k`` con về ≥ 2 nháy ⇔ đúng j lô rơi vào
-    ``k`` con ấy, mỗi lô một con khác nhau, còn ``per_draw − j`` lô rơi ngoài:
-    Σⱼ C(per_draw, j)·k·(k − 1)…(k − j + 1)·(n − k)^(per_draw − j) / n^per_draw (số nguyên, chính xác).
-    ``k = 1`` cho lại ``base_rate``; ``k = n`` là bài toán ngày sinh.
-    """
     if not 0 <= k <= n:
         raise ValueError("cần 0 ≤ k ≤ n")
     none = sum(math.comb(per_draw, j) * math.perm(k, j) * (n - k) ** (per_draw - j)
@@ -94,30 +45,24 @@ def any_multi_chance(k: int, per_draw: int = LOTO_PER_DRAW, n: int = N_NUMBERS) 
 
 
 def random_any_hit(n_multi: np.ndarray, k: int) -> np.ndarray:
-    """Từng kỳ: P(chọn BỪA ``k`` trong 100 con có ít nhất một con thuộc ``n_multi`` con về ≥ 2 nháy).
-
-    Mốc của tỉ lệ kỳ đạt trên CHÍNH các kỳ đã chấm: 1 − C(100 − m, k) / C(100, k) với m con về
-    ≥ 2 nháy ở kỳ ấy (siêu bội, như ``random_pick_null``).
-    """
     total = math.comb(N_NUMBERS, k)
     return np.array([1 - math.comb(N_NUMBERS - int(m), k) / total for m in n_multi], dtype=float)
 
 
 @dataclass(frozen=True)
 class VIPConfig:
-    """Tham số của bộ lọc. Mặc định khớp yêu cầu: cửa sổ 30 kỳ, chọn trọng số trên 30 kỳ."""
 
-    window: int = 30              # cửa sổ tần suất và dị thường Poisson
-    short_span: int = 5           # EWMA ngắn của đà về
-    long_span: int = 30           # EWMA dài của đà về
-    weight_window: int = 30       # số kỳ backtest ngay trước kỳ dự báo để chọn trọng số
-    weight_step: float = 0.1      # bước lưới đơn hình của trọng số
+    window: int = 30
+    short_span: int = 5
+    long_span: int = 30
+    weight_window: int = 30
+    weight_step: float = 0.1
     top_k: int = 5
-    prior_strength: float = 50.0  # độ mạnh tiên nghiệm Beta khi làm trơn xác suất điều kiện
-    pattern_min_len: int = 3      # cầu nhịp: tối thiểu 3 lần cùng khoảng cách
+    prior_strength: float = 50.0
+    pattern_min_len: int = 3
     pattern_max_len: int = 5
-    normalisation: str = "zscore"  # "zscore" hoặc "minmax"
-    calibration_c: float = 0.1    # điều chuẩn L2 của hiệu chỉnh Platt (nhỏ = co mạnh về mức nền)
+    normalisation: str = "zscore"
+    calibration_c: float = 0.1
 
     def __post_init__(self) -> None:
         if self.normalisation not in {"zscore", "minmax"}:
@@ -134,19 +79,14 @@ class VIPConfig:
 
     @property
     def warmup(self) -> int:
-        """Kỳ đầu tiên được chấm: trước đó cửa sổ tần suất chưa đầy."""
         return self.window
 
     @property
     def first_evaluated(self) -> int:
-        """Kỳ đầu tiên có đủ ``weight_window`` kỳ đã chấm phía trước để chọn trọng số."""
         return self.warmup + self.weight_window
 
 
-# --------------------------------------------------------------------------- dữ liệu
-
 def draws_from_frame(frame: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
-    """Ma trận (kỳ × 27) số nguyên 00–99 và nhãn kỳ (cột ``date`` nếu có)."""
     labels = (frame["date"].astype(str).tolist() if "date" in frame.columns
               else [str(k) for k in range(len(frame))])
     values = frame.drop(columns=["date"], errors="ignore").astype(int).to_numpy()
@@ -154,8 +94,6 @@ def draws_from_frame(frame: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
 
 
 def until(frame: pd.DataFrame, last_date: str) -> pd.DataFrame:
-    """Các kỳ có ``date`` ≤ ``last_date``: CSV lịch sử dài thêm mỗi ngày, nên một phép đo đã
-    công bố chỉ tái lập được khi chốt ngày cuối."""
     cutoff = pd.Timestamp(last_date)
     kept = frame[pd.to_datetime(frame["date"]) <= cutoff]
     if kept.empty:
@@ -173,7 +111,6 @@ def validate_draws(draws: np.ndarray | list) -> np.ndarray:
 
 
 def counts_matrix(draws: np.ndarray) -> np.ndarray:
-    """C[t, i] = số nháy của con i ở kỳ t (tổng mỗi hàng = 27)."""
     draws = validate_draws(draws)
     counts = np.zeros((len(draws), N_NUMBERS), dtype=int)
     rows = np.repeat(np.arange(len(draws)), LOTO_PER_DRAW)
@@ -183,13 +120,6 @@ def counts_matrix(draws: np.ndarray) -> np.ndarray:
 
 def mock_history(n_draws: int = 100, seed: int = 2026, planted: tuple[int, ...] = (),
                  plant_rate: float = 0.3) -> pd.DataFrame:
-    """Lịch sử giả định cùng khuôn với ``data/xsmb-2-digits.csv``.
-
-    Mặc định: 27 lô độc lập, đều trên 00–99, tức đúng mô hình quay công bằng; một bộ lọc trung
-    thực KHÔNG được báo tin cậy cao trên dữ liệu này. ``planted`` CÀI tín hiệu: mỗi kỳ, mỗi con
-    trong ``planted`` với xác suất ``plant_rate`` được ghi đè vào hai vị trí ngẫu nhiên (thành
-    ≥ 2 nháy). Dùng để chứng minh bộ lọc không mù.
-    """
     rng = np.random.default_rng(seed)
     draws = rng.integers(0, N_NUMBERS, size=(n_draws, LOTO_PER_DRAW))
     for t in range(n_draws):
@@ -201,14 +131,7 @@ def mock_history(n_draws: int = 100, seed: int = 2026, planted: tuple[int, ...] 
     return frame
 
 
-# --------------------------------------------------------------------------- đặc trưng
-
 def build_raw_features(counts: np.ndarray, cfg: VIPConfig) -> np.ndarray:
-    """Đặc trưng thô ``F[t, i, f]`` cho t = 0..T; hàng T là kỳ KẾ TIẾP chưa quay.
-
-    Mọi thống kê ở hàng t chỉ dùng các kỳ < t: trạng thái được cập nhật bằng kỳ t SAU khi hàng t
-    đã ghi xong.
-    """
     n_draws = counts.shape[0]
     p2 = base_rate()
     multi = (counts >= 2).astype(float)
@@ -224,8 +147,8 @@ def build_raw_features(counts: np.ndarray, cfg: VIPConfig) -> np.ndarray:
     streak = np.zeros(N_NUMBERS)
     last_seen = np.full(N_NUMBERS, -1)
     occurrences: list[list[int]] = [[] for _ in range(N_NUMBERS)]
-    pair_multi = np.zeros((N_NUMBERS, N_NUMBERS))   # [i, j]: j về ở s−1 và i ≥ 2 nháy ở s
-    pair_base = np.zeros(N_NUMBERS)                 # [j]: số kỳ s−1 có j về (với s đã quay)
+    pair_multi = np.zeros((N_NUMBERS, N_NUMBERS))
+    pair_base = np.zeros(N_NUMBERS)
 
     out = np.zeros((n_draws + 1, N_NUMBERS, len(RAW_FEATURES)))
     for t in range(n_draws + 1):
@@ -254,7 +177,6 @@ def build_raw_features(counts: np.ndarray, cfg: VIPConfig) -> np.ndarray:
             row[i, _F["pattern_interval"]] = interval
         if t == n_draws:
             break
-        # Cập nhật trạng thái bằng kỳ t — chỉ ảnh hưởng hàng t + 1 trở đi.
         c = counts[t]
         ewma_s = alpha_s * c + (1 - alpha_s) * ewma_s
         ewma_l = alpha_l * c + (1 - alpha_l) * ewma_l
@@ -270,7 +192,6 @@ def build_raw_features(counts: np.ndarray, cfg: VIPConfig) -> np.ndarray:
 
 
 def _rhythm(occ: list[int], t: int, cfg: VIPConfig) -> tuple[int, int]:
-    """Cầu nhịp dài nhất (cfg.pattern_min_len..max_len lần) cùng khoảng cách và đúng nhịp ở kỳ t."""
     for length in range(min(cfg.pattern_max_len, len(occ)), cfg.pattern_min_len - 1, -1):
         seq = occ[-length:]
         gaps = np.diff(seq)
@@ -280,7 +201,6 @@ def _rhythm(occ: list[int], t: int, cfg: VIPConfig) -> tuple[int, int]:
 
 
 def normalise(values: np.ndarray, method: str) -> np.ndarray:
-    """Chuẩn hoá chéo 100 số trong từng kỳ (trục cuối). Hằng số thì thành 0 (không thông tin)."""
     if method == "zscore":
         mean = values.mean(axis=-1, keepdims=True)
         std = values.std(axis=-1, keepdims=True)
@@ -291,7 +211,6 @@ def normalise(values: np.ndarray, method: str) -> np.ndarray:
 
 
 def build_components(raw: np.ndarray, method: str) -> np.ndarray:
-    """Bốn thành phần VIP ``[t, i, k]`` (thứ tự ``COMPONENTS``), mỗi thành phần đã chuẩn hoá."""
     def z(name: str, sign: float = 1.0) -> np.ndarray:
         return normalise(sign * raw[:, :, _F[name]], method)
 
@@ -306,48 +225,24 @@ def build_components(raw: np.ndarray, method: str) -> np.ndarray:
 
 
 def weight_grid(step: float) -> np.ndarray:
-    """Mọi vector trọng số không âm, tổng 1, là bội của ``step`` (bốn thành phần)."""
     units = round(1 / step)
     rows = [(a, b, c, units - a - b - c)
             for a in range(units + 1) for b in range(units + 1 - a) for c in range(units + 1 - a - b)]
     return np.array(rows, dtype=float) / units
 
 
-# --------------------------------------------------------------------------- xếp hạng
-
 def tie_keys(t: int, n: int = N_NUMBERS) -> np.ndarray:
-    """Khoá phá hoà của kỳ t: một hoán vị 00–99 cố định theo kỳ, không thiên về con nào.
-
-    Thành phần thưa (cầu nhịp: phần lớn 100 con cùng điểm) làm hoà rất thường. Phá hoà bằng thứ
-    tự số thì hoà nào cũng chọn 00–04, và phép chọn trọng số sẽ thưởng cho một chiến lược "chọn
-    00–04" không ai khai báo: đo trên 4 228 kỳ, ở các kỳ trọng số dồn hết vào cầu nhịp, 52% lượt
-    chọn rơi vào 00–04.
-    """
     return np.random.default_rng([TIE_SEED, t]).permutation(n)
 
 
 def rank_order(scores: np.ndarray, t: int) -> np.ndarray:
-    """Chỉ số theo điểm GIẢM dần dọc trục 0; hoà phá bằng ``tie_keys(t)``.
-
-    ``scores`` là (100,) hoặc (100, G). Chọn trọng số, backtest và dự báo đều xếp qua hàm này,
-    nên cả ba thấy cùng một thứ tự.
-    """
     keys = tie_keys(t, scores.shape[0])
     if scores.ndim == 2:
         keys = np.broadcast_to(keys[:, None], scores.shape)
     return np.lexsort((keys, -scores), axis=0)
 
 
-# --------------------------------------------------------------------------- backtest
-
 def random_pick_null(n_multi: np.ndarray, k: int) -> tuple[float, float]:
-    """Kỳ vọng và phương sai số lượt trúng khi chọn BỪA k trong 100 con ở từng kỳ, cộng qua các kỳ.
-
-    ``n_multi[t]`` là số con về ≥ 2 nháy ở kỳ t. Chọn bừa k con trong 100 thì số lượt trúng của
-    kỳ ấy theo phân phối siêu bội. So với mức nền LÝ THUYẾT (2,975%) thì sai: lịch sử thật có tỉ lệ
-    riêng (4 168 kỳ chấm: 2,914%), và một lịch sử có tỉ lệ cao hơn lý thuyết sẽ làm cả chọn bừa
-    trông như "hơn nền".
-    """
     share = np.asarray(n_multi, dtype=float) / N_NUMBERS
     expected = float((k * share).sum())
     variance = float((k * share * (1 - share) * (N_NUMBERS - k) / (N_NUMBERS - 1)).sum())
@@ -356,11 +251,6 @@ def random_pick_null(n_multi: np.ndarray, k: int) -> tuple[float, float]:
 
 @dataclass
 class Backtest:
-    """Kết quả walk-forward lồng nhau trên các kỳ đã quay.
-
-    ``base`` là mức nền lý thuyết, chỉ để hiển thị. ``expected``, lift và p so với chọn bừa trên
-    CHÍNH các kỳ đã chấm (``random_pick_null``).
-    """
 
     top_k: int
     base: float
@@ -384,7 +274,6 @@ class Backtest:
 
     @property
     def random_rate(self) -> float:
-        """Tỉ lệ trúng kỳ vọng của chọn bừa trên chính các kỳ đã chấm."""
         return self.expected / self.picks if self.picks else float("nan")
 
     @property
@@ -393,7 +282,6 @@ class Backtest:
 
 
 class VIPMultiHitModel:
-    """Toàn bộ quy trình: đặc trưng → thành phần → chọn trọng số → walk-forward → dự báo."""
 
     def __init__(self, draws: np.ndarray, labels: list[str] | None = None,
                  config: VIPConfig | None = None) -> None:
@@ -411,13 +299,12 @@ class VIPMultiHitModel:
         self.grid = weight_grid(self.cfg.weight_step)
         self._hits, self._auc = self._score_all_weights()
 
-    # -- chấm mọi vector trọng số trên mọi kỳ đã quay (một lần, dùng lại khi chọn)
     def _score_all_weights(self) -> tuple[np.ndarray, np.ndarray]:
         n_draws, k = len(self.draws), self.cfg.top_k
         hits = np.zeros((n_draws, len(self.grid)))
         auc = np.full((n_draws, len(self.grid)), np.nan)
         for t in range(self.cfg.warmup, n_draws):
-            scores = self.components[t] @ self.grid.T            # (100, G)
+            scores = self.components[t] @ self.grid.T
             y = self.labels_y[t]
             top = rank_order(scores, t)[:k]
             hits[t] = y[top].sum(axis=0)
@@ -428,7 +315,6 @@ class VIPMultiHitModel:
         return hits, auc
 
     def select_weights(self, t: int) -> int:
-        """Chỉ số vector trọng số tốt nhất trên [t − weight_window, t): trúng top-k, hoà thì AUC."""
         lo = t - self.cfg.weight_window
         if lo < self.cfg.warmup:
             raise ValueError(f"kỳ {t} chưa đủ {self.cfg.weight_window} kỳ đã chấm phía trước")
@@ -444,7 +330,6 @@ class VIPMultiHitModel:
         return self.components[t] @ self.grid[weight_index]
 
     def backtest(self) -> Backtest:
-        """Walk-forward lồng nhau trên mọi kỳ từ ``first_evaluated`` tới kỳ cuối đã quay."""
         k = self.cfg.top_k
         rows, oos_s, oos_y = [], [], []
         for t in range(self.cfg.first_evaluated, len(self.draws)):
@@ -468,7 +353,6 @@ class VIPMultiHitModel:
                         np.concatenate(oos_y) if oos_y else np.empty(0, dtype=bool))
 
     def calibrator(self, bt: Backtest):
-        """Hiệu chỉnh Platt trên (điểm, kết quả) NGOÀI MẪU; quá ít ca dương thì trả mức nền."""
         if bt.oos_labels.sum() < 5 or bt.oos_labels.all():
             return lambda s: np.full(np.shape(s), self.base)
         model = LogisticRegression(C=self.cfg.calibration_c)
@@ -476,7 +360,6 @@ class VIPMultiHitModel:
         return lambda s: model.predict_proba(np.asarray(s, dtype=float).reshape(-1, 1))[:, 1]
 
     def predict_next(self) -> VIPReport:
-        """Dự báo kỳ KẾ TIẾP (hàng T của đặc trưng) kèm bằng chứng walk-forward."""
         bt = self.backtest()
         t = len(self.draws)
         g = self.select_weights(t)
@@ -498,14 +381,10 @@ class VIPMultiHitModel:
                          weight_window=self.cfg.weight_window)
 
 
-# --------------------------------------------------------------------------- tin cậy
-
-#: Ngưỡng p một phía của từng mức tin bộ lọc (kèm lift > 1); trang Lô VIP in đúng các ngưỡng này.
 CONFIDENCE_P = {"High": 0.01, "Medium": 0.05}
 
 
 def model_confidence(p_value: float, lift: float) -> str:
-    """Mức tin của CẢ bộ lọc, từ phép so một phía của top-k ngoài mẫu với chọn bừa cùng kỳ."""
     for level in ("High", "Medium"):
         if lift > 1 and p_value < CONFIDENCE_P[level]:
             return level
@@ -513,15 +392,12 @@ def model_confidence(p_value: float, lift: float) -> str:
 
 
 def number_confidence(model_level: str, probability: float, base: float) -> str:
-    """Một con chỉ tin được tới mức bộ lọc đã chứng minh, và khi xác suất hiệu chỉnh vượt nền."""
     if model_level == "High" and probability >= 2 * base:
         return "High"
     if model_level in {"High", "Medium"} and probability >= 1.5 * base:
         return "Medium"
     return "Low"
 
-
-# --------------------------------------------------------------------------- báo cáo
 
 @dataclass
 class Pick:
@@ -535,7 +411,6 @@ class Pick:
     weights: dict[str, float]
 
     def reasons(self, n: int = 2) -> list[str]:
-        """Các thành phần (trọng số > 0) đóng góp lớn nhất, kèm số đo thô giải thích nó."""
         active = {k: v for k, v in self.contributions.items() if self.weights[k] > 0}
         ranked = sorted(active.items(), key=lambda kv: kv[1], reverse=True)[:n]
         return [f"{COMPONENT_LABELS[name]} {value:+.2f} ({_explain(name, self.raw)})"
@@ -611,10 +486,8 @@ class VIPReport:
         return "\n".join(lines)
 
 
-# --------------------------------------------------------------------------- CLI
-
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--mock", action="store_true", help="dữ liệu giả định")
     source.add_argument("--csv", type=Path, help="CSV cùng khuôn data/xsmb-2-digits.csv")

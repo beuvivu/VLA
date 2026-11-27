@@ -1,34 +1,3 @@
-"""Các bộ học đứng sau một giao diện chung.
-
-Vì sao cần giao diện chung
----------------------------
-
-Tầng điều phối và tầng bandit không được biết mô hình nào đang chạy: bandit chỉ
-cần một tên và một véc-tơ xác suất. Nhờ vậy thêm hoặc bỏ một họ mô hình không
-chạm tới phần còn lại của hệ thống, và mọi mô hình đều bị chấm bằng đúng một
-thước đo.
-
-Ba họ được cài
----------------
-
-* ``TabularBooster`` — cây tăng cường gradient trên đặc trưng bảng. Ưu tiên
-  LightGBM, rồi CatBoost, cuối cùng ``HistGradientBoosting`` của sklearn (dùng
-  cùng thuật toán lược đồ như LightGBM).
-* ``RankingBooster`` — LambdaMART: mỗi ngày là một nhóm gồm 100 ứng viên, mô
-  hình học *thứ tự* trong nhóm thay vì xác suất từng con.
-* ``TemporalSequenceModel`` — GRU trên chuỗi véc-tơ kết quả theo ngày, nắm phụ
-  thuộc thời gian mà đặc trưng cửa sổ trượt không diễn đạt được.
-
-Về xác suất và thứ hạng
-------------------------
-
-``RankingBooster`` tối ưu một mục tiêu xếp hạng nên đầu ra **không phải xác
-suất** — nó chỉ đúng về thứ tự. Trả thẳng điểm số ra ngoài sẽ phá hỏng mọi phép
-đo log-loss phía sau. Vì vậy lớp này hiệu chỉnh điểm về thang xác suất bằng hồi
-quy đẳng hướng khớp trên các ngày cuối được giữ riêng, và ghi rõ trong ``is_calibrated``
-để tầng trên biết nó đã được hiệu chỉnh chứ không phải xác suất tự nhiên.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -46,15 +15,12 @@ LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 _EPSILON: Final[float] = 1e-6
 
-#: Lưới λ của đường lui ridge, xét từ mạnh tới yếu; hoà thì giữ λ mạnh hơn.
 RIDGE_PENALTIES: Final[tuple[float, ...]] = (1e6, 1e5, 1e4, 1e3, 1e2, 1e1)
 
-#: Phần cửa sổ cuối (theo thời gian) dùng để chọn λ.
 RIDGE_VALIDATION_FRACTION: Final[float] = 0.2
 
 
 def _clip(values: np.ndarray) -> np.ndarray:
-    """Chặn đầu ra hỏng trước khi kẹp về miền xác suất."""
     if not np.isfinite(values).all():
         raise ValueError("đầu ra mô hình phải hữu hạn")
     return np.clip(values, _EPSILON, 1.0 - _EPSILON)
@@ -62,27 +28,17 @@ def _clip(values: np.ndarray) -> np.ndarray:
 
 @runtime_checkable
 class Learner(Protocol):
-    """Hợp đồng tối thiểu mà tầng điều phối yêu cầu ở một bộ học."""
 
     name: str
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> None:
-        """Khớp mô hình trên đặc trưng ``x`` và nhãn nhị phân ``y``."""
         ...
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
-        """Trả xác suất nhãn dương, mảng một chiều cùng số hàng với ``x``."""
         ...
 
 
 class TabularBooster:
-    """Cây tăng cường gradient trên đặc trưng bảng.
-
-    Attributes:
-        name: Tên hiển thị của bộ học.
-        params: Siêu tham số; khóa dùng chung cho cả ba backend.
-        backend: Thư viện thực sự được dùng, xác định lúc khớp.
-    """
 
     def __init__(self, name: str = "tabular_boosting", **params: Any) -> None:
         self.name = name
@@ -97,7 +53,6 @@ class TabularBooster:
         self._model: Any = None
 
     def _build(self) -> tuple[Any, str]:
-        """Chọn cài đặt tốt nhất hiện có và dựng mô hình chưa khớp."""
         depth = int(self.params["max_depth"])
         trees = int(self.params["n_estimators"])
         rate = float(self.params["learning_rate"])
@@ -146,16 +101,6 @@ class TabularBooster:
         )
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> None:
-        """Khớp mô hình.
-
-        Args:
-            x: Đặc trưng ``(n, d)``.
-            y: Nhãn nhị phân ``(n,)``.
-
-        Raises:
-            ValueError: Khi nhãn chỉ có một lớp — khi đó không có gì để học và
-                một mô hình khớp được sẽ chỉ mã hóa hằng số.
-        """
         if len(np.unique(y)) < 2:
             raise ValueError("cần cả hai lớp trong nhãn để khớp")
         candidate, backend = self._build()
@@ -163,30 +108,12 @@ class TabularBooster:
         self._model, self.backend = candidate, backend
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
-        """Xác suất nhãn dương.
-
-        Args:
-            x: Đặc trưng ``(n, d)``.
-
-        Returns:
-            Mảng ``(n,)`` xác suất đã kẹp khỏi 0 và 1.
-
-        Raises:
-            RuntimeError: Khi gọi trước lúc khớp.
-        """
         if self._model is None:
             raise RuntimeError(f"{self.name}: phải gọi fit() trước predict_proba()")
         return _clip(np.asarray(self._model.predict_proba(x))[:, 1])
 
 
 class RankingBooster:
-    """LambdaMART: học thứ tự trong nhóm 100 ứng viên của mỗi ngày.
-
-    Attributes:
-        name: Tên hiển thị.
-        group_size: Số ứng viên mỗi nhóm; ở miền này luôn là 100.
-        is_calibrated: Điểm xếp hạng đã được đưa về thang xác suất hay chưa.
-    """
 
     def __init__(self, name: str = "ranking_lambdamart", **params: Any) -> None:
         self.name = name
@@ -203,15 +130,6 @@ class RankingBooster:
         self._fallback: TabularBooster | None = None
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> None:
-        """Khớp mô hình xếp hạng theo nhóm ngày.
-
-        Args:
-            x: Đặc trưng ``(n_days*100, d)``, các hàng của cùng một ngày liền kề.
-            y: Nhãn nhị phân ``(n_days*100,)``.
-
-        Raises:
-            ValueError: Khi số hàng không chia hết cho kích thước nhóm.
-        """
         if x.shape[0] % self.group_size != 0:
             raise ValueError(
                 f"số hàng ({x.shape[0]}) phải chia hết cho kích thước nhóm ({self.group_size})"
@@ -221,9 +139,6 @@ class RankingBooster:
         self._fallback = None
         self.is_calibrated = False
         if CAPABILITIES.lightgbm is None:
-            # Không có LightGBM thì không có LambdaMART; lui về phân loại rồi
-            # xếp hạng theo xác suất. Thứ tự vẫn có, chỉ là không tối ưu trực
-            # tiếp cho thứ tự.
             LOGGER.warning("%s: thiếu lightgbm, lui về phân loại bảng", self.name)
             self._fallback = TabularBooster(name=f"{self.name}_fallback", **self.params)
             self._fallback.fit(x, y)
@@ -243,32 +158,19 @@ class RankingBooster:
             n_estimators=int(self.params["n_estimators"]),
             learning_rate=float(self.params["learning_rate"]),
             num_leaves=max(2, 2 ** int(self.params["max_depth"])),
-            label_gain=[0, 1],  # nhãn nhị phân: chỉ hai mức liên quan
+            label_gain=[0, 1],
             random_state=0,
             verbose=-1,
             n_jobs=1,
         )
         self._model.fit(x[:boundary], y[:boundary], group=groups)
 
-        # Giữ nguyên nhóm ngày; mô hình chưa thấy nhãn của lát hiệu chuẩn.
-        # Không fit lại ranker trên cả hai lát sau đó vì sẽ đổi thang điểm.
         raw = np.asarray(self._model.predict(x[boundary:]), dtype=float)
         self._calibrator = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0)
         self._calibrator.fit(raw, y[boundary:].astype(float))
         self.is_calibrated = True
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
-        """Xác suất đã hiệu chỉnh từ điểm xếp hạng.
-
-        Args:
-            x: Đặc trưng ``(n, d)``.
-
-        Returns:
-            Mảng ``(n,)`` xác suất.
-
-        Raises:
-            RuntimeError: Khi gọi trước lúc khớp.
-        """
         if self._fallback is not None:
             return self._fallback.predict_proba(x)
         if self._model is None or self._calibrator is None:
@@ -277,31 +179,6 @@ class RankingBooster:
 
 
 class TemporalSequenceModel:
-    """Mô hình chuỗi trên véc-tơ kết quả theo ngày.
-
-    Dùng GRU khi có PyTorch. Không có thì lui về hồi quy ridge đa nhãn trên
-    cửa sổ trễ — vẫn là mô hình chuỗi, chỉ là tuyến tính và không có trạng thái.
-
-    Đường lui ridge dùng đặc trưng đã căn giữa và hệ số chặn bằng tỉ lệ nền, với λ
-    chọn trên 20% cửa sổ cuối theo log-loss (``RIDGE_PENALTIES``). Bản trước (tới
-    20-10-2026) cố định λ = 10 cho 1 401 tham số mỗi đầu ra trên ~226 mẫu và phạt
-    cả hệ số chặn: nó gần như nội suy tập huấn luyện, 9,5% dự báo ngoài mẫu bị kẹp
-    ở 10⁻⁶, và trên 1 000 kỳ thật log-loss kém nền 61,5% (t = −58,8). Khi λ lớn,
-    bản này co đúng về nền thay vì về 0.
-
-    Cảnh báo về dung lượng, và đây là điểm quan trọng nhất của lớp này: một GRU
-    64 chiều trên đầu vào 100 chiều có 38 372 tham số, trong khi lịch sử 391 kỳ
-    chỉ cho 39 100 quan sát nhị phân. Tỉ lệ tham số trên quan sát xấp xỉ 1:1.02. Ở tỉ lệ đó mô hình ghi nhớ tập huấn luyện chứ không học quy luật, và
-    không có mức chính quy hóa nào sửa được — vấn đề nằm ở lượng thông tin trong
-    dữ liệu, không phải ở siêu tham số. Lớp này giữ ``hidden_size`` nhỏ mặc định
-    vì lý do đó.
-
-    Attributes:
-        name: Tên hiển thị.
-        hidden_size: Số chiều trạng thái ẩn.
-        lookback: Số ngày lịch sử đưa vào mỗi mẫu.
-        backend: ``"torch"`` hoặc ``"linear"``.
-    """
 
     def __init__(
         self,
@@ -328,37 +205,17 @@ class TemporalSequenceModel:
 
     @staticmethod
     def gru_parameter_count(hidden_size: int) -> int:
-        """Số tham số của một GRU một lớp cộng đầu ra tuyến tính.
-
-        Là hàm số học thuần, **không** phụ thuộc việc môi trường có PyTorch hay
-        không. Cảnh báo về dung lượng trong tài liệu lớp này là một khẳng định
-        về kiến trúc GRU, nên nó phải kiểm chứng được ở mọi môi trường — kể cả
-        nơi mô hình đang chạy bằng đường lui tuyến tính.
-
-        Args:
-            hidden_size: Số chiều trạng thái ẩn.
-
-        Returns:
-            Tổng số tham số: ba cổng × (trọng số vào + trọng số hồi tiếp + hai
-            véc-tơ chệch), cộng lớp tuyến tính đầu ra.
-        """
         gates = 3 * (hidden_size * (NUMBER_SPACE + hidden_size) + 2 * hidden_size)
         head = hidden_size * NUMBER_SPACE + NUMBER_SPACE
         return int(gates + head)
 
     @property
     def parameter_count(self) -> int:
-        """Số tham số của mô hình **đang thực sự chạy**, để so với lượng dữ liệu.
-
-        Đường lui ridge có một vector trọng số riêng cho mỗi trong 100 đầu ra;
-        đếm chỉ một vector sẽ đánh giá thấp dung lượng đúng 100 lần.
-        """
         if self.backend == "torch":
             return self.gru_parameter_count(self.hidden_size)
         return int((self.lookback * NUMBER_SPACE + 1) * NUMBER_SPACE)
 
     def _windows(self, hits: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Cắt lịch sử thành các cặp (cửa sổ quá khứ, kết quả ngày kế tiếp)."""
         n = hits.shape[0]
         if n <= self.lookback:
             raise ValueError(f"cần hơn {self.lookback} ngày, chỉ có {n}")
@@ -368,14 +225,6 @@ class TemporalSequenceModel:
         return sequences, targets
 
     def fit_sequence(self, hits: np.ndarray) -> None:
-        """Khớp trên ma trận nhị phân theo ngày.
-
-        Args:
-            hits: Ma trận ``(n_days, 100)`` giá trị 0/1.
-
-        Raises:
-            ValueError: Khi lịch sử ngắn hơn cửa sổ nhìn lại.
-        """
         if not np.isfinite(hits).all():
             raise ValueError("lịch sử chuỗi phải hữu hạn")
         sequences, targets = self._windows(hits)
@@ -385,7 +234,6 @@ class TemporalSequenceModel:
             self._fit_linear(sequences, targets)
 
     def _fit_torch(self, sequences: np.ndarray, targets: np.ndarray) -> None:
-        """Huấn luyện GRU một lớp bằng PyTorch trên CPU."""
         torch = CAPABILITIES.torch
         assert torch is not None
         torch.manual_seed(self.seed)
@@ -402,18 +250,6 @@ class TemporalSequenceModel:
 
         model = _Net(self.hidden_size)
         optimiser = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
-        # KHÔNG dùng pos_weight ở đây, dù nhãn dương chỉ chiếm ~24%.
-        #
-        # Cân lại lớp là phản xạ đúng khi thước đo là độ chính xác hoặc F1, vì
-        # khi đó mô hình có thể ăn điểm bằng cách luôn nói "không về". Nhưng
-        # thước đo của hệ thống này là log-loss — một quy tắc chấm điểm *chặt*,
-        # đạt cực trị khi và chỉ khi mô hình khai báo đúng xác suất thật. Dưới
-        # quy tắc chặt, "luôn nói không về" không ăn được điểm nào.
-        #
-        # Ngược lại, pos_weight làm hỏng đúng thứ quy tắc chặt bảo vệ: bản đầu
-        # tiên của lớp này khai báo xác suất trung bình 0.4892 trong khi tỉ lệ
-        # về thật là 0.2377 — sai gấp đôi, và log-loss phạt rất nặng. Cân lại
-        # lớp tối ưu cho một phân phối không tồn tại.
         loss_function = torch.nn.BCEWithLogitsLoss()
 
         x = torch.from_numpy(sequences)
@@ -429,13 +265,6 @@ class TemporalSequenceModel:
 
     @staticmethod
     def _ridge_paths(x: np.ndarray, y: np.ndarray, penalties: tuple[float, ...]):
-        """Trọng số ridge cho từng λ trên đặc trưng đã căn giữa.
-
-        Một lần SVD cho cả lưới: ``W(λ) = V·diag(s/(s² + λ))·Uᵀ·y``. Đặc trưng căn
-        giữa nên ``Uᵀ·1 = 0``: trọng số không phụ thuộc mức của đích, và mức nằm trọn
-        ở hệ số chặn, đặt bằng NỀN chứ không bằng trung bình mẫu của từng con. Dự báo
-        là ``nền + (x − trung bình)·W``, nên λ → ∞ cho đúng tỉ lệ nền.
-        """
         mean = x.mean(axis=0)
         u, singular, vt = np.linalg.svd(x - mean, full_matrices=False)
         projected = u.T @ y
@@ -444,13 +273,11 @@ class TemporalSequenceModel:
             yield penalty, mean, vt.T @ (shrink[:, None] * projected)
 
     def _fit_linear(self, sequences: np.ndarray, targets: np.ndarray) -> None:
-        """Đường lui: ridge đa nhãn trên cửa sổ trễ, λ chọn ngoài mẫu theo thời gian."""
         if not np.isfinite(sequences).all() or not np.isfinite(targets).all():
             raise ValueError("đặc trưng và nhãn chuỗi phải hữu hạn")
         flat = sequences.reshape(sequences.shape[0], -1).astype(np.float64)
         labels = targets.astype(np.float64)
         split = int(len(flat) * (1.0 - RIDGE_VALIDATION_FRACTION))
-        # Không đủ dữ liệu để thẩm định thì không tin: giữ λ mạnh nhất (≈ nền).
         penalty, best = RIDGE_PENALTIES[0], np.inf
         if split >= 2:
             for candidate, mean, weights in self._ridge_paths(
@@ -468,17 +295,6 @@ class TemporalSequenceModel:
         self.ridge_penalty = penalty
 
     def predict_sequence(self, hits: np.ndarray) -> np.ndarray:
-        """Xác suất cho ngày ngay sau ``hits``.
-
-        Args:
-            hits: Ma trận ``(n_days, 100)``; chỉ ``lookback`` hàng cuối được dùng.
-
-        Returns:
-            Mảng ``(100,)`` xác suất.
-
-        Raises:
-            RuntimeError: Khi gọi trước lúc khớp.
-        """
         window = hits[-self.lookback :].astype(np.float32)
         if window.shape[0] < self.lookback:
             return np.full(NUMBER_SPACE, BASELINE_RATE)

@@ -1,5 +1,3 @@
-"""Chú thích kỳ quay phải bám đúng ngày và đúng kết quả đã xác thực."""
-
 import json
 from datetime import date
 

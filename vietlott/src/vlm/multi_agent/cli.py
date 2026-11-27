@@ -1,4 +1,3 @@
-'Demo ngoại tuyến, replay CSV theo thời gian và các lệnh dự báo/phản hồi bền vững.'
 from __future__ import annotations
 
 import argparse
@@ -26,7 +25,6 @@ def _labels(value: str, n: int, k: int, separator: str = ';') -> tuple[int, ...]
 
 
 def read_csv(path: Path, n: int, k: int) -> list[tuple[int, tuple[int, ...]]]:
-    'Kiểm tra toàn bộ CSV trước khi mở cơ sở dữ liệu.'
     records = []
     with path.open(encoding='utf-8-sig', newline='') as handle:
         reader = csv.DictReader(handle)
@@ -90,7 +88,7 @@ async def _execute(args: argparse.Namespace) -> dict:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest='command', required=True)
     for name in ('demo', 'replay', 'predict', 'observe', 'status'):
         command = subparsers.add_parser(name)

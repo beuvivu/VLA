@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""Leakage-safe nonlinear stacking for production prediction components.
-
-Prediction history evolves as new components are introduced. The stacked learner
-therefore trains on the richest component tier with enough fully labeled history
-instead of fabricating old values. A mature three-component model can run today
-with a small trust cap; richer four/five-component tiers activate automatically
-only after enough genuine walk-forward observations accumulate.
-"""
 
 import argparse
 import json
@@ -42,13 +34,8 @@ from ensemble.ensemble_utils import (
 from ml.ml_models import PlattCalibratedClassifier
 
 META_SCHEMA_VERSION = 3
-#: Cột xác suất của năm thành phần, SUY từ ``ensemble_components.COMPONENT_KEYS`` như bộ học trọng số
-#: (``learn_ensemble_weights.COMPONENT_COLS``): thêm thành phần mà quên bản viết tay ở đây thì tầng xếp chồng
-#: lặng lẽ bỏ sót nó.
 COMPONENT_COLS = [f"p_{key}" for key in COMPONENT_KEYS]
 
-# Richer tiers are preferred, but only when every selected component has genuine
-# labeled walk-forward history. Smaller tiers have lower production trust caps.
 COMPONENT_TIERS = [
     ("five_component", ["p_ml", "p_cau", "p_stat", "p_active", "p_stable"], 0.40),
     ("four_with_cau", ["p_ml", "p_cau", "p_active", "p_stable"], 0.25),
@@ -58,7 +45,6 @@ COMPONENT_TIERS = [
 
 
 class InsufficientMetaHistory(RuntimeError):
-    """Không tầng nào đủ kỳ hợp lệ; khác với lỗi đọc dữ liệu hoặc khớp model."""
 
     def __init__(self, maturity: dict[str, int], minimum_days: int) -> None:
         self.maturity = dict(maturity)
@@ -73,19 +59,9 @@ class InsufficientMetaHistory(RuntimeError):
 class MetaMetrics:
     logloss: float
     brier: float
-    # AUC-ROC là chỉ số PHỤ, và phải đọc đúng vai trò ấy.
-    #
-    # Nó đo khả năng XẾP HẠNG và bất biến với MỌI phép biến đổi đơn điệu —
-    # nghĩa là một mô hình hiệu chuẩn sai bét vẫn có thể đạt AUC hoàn hảo. Với
-    # bài toán mà giá trị nằm ở độ ĐÚNG của xác suất, `brier` và `logloss` mới
-    # là chỉ số quyết định; AUC chỉ trả lời câu hỏi khác: "thứ tự có đúng
-    # không". Giữ riêng và ghi rõ để không ai dùng nó thay hai chỉ số kia.
-    #
-    # NaN khi không tính được (một lớp vắng mặt hoàn toàn trong đoạn đánh giá).
     auc_roc: float = float("nan")
 
 
-#: Khoá ghi giờ học/đánh giá của pack: lượt chạy lại học ra đúng pack cũ thì giữ tệp cũ (kể cả giờ cũ).
 PACK_STAMP_KEYS = frozenset({"trained_at_utc", "evaluated_at_utc"})
 
 
@@ -160,7 +136,6 @@ def build_meta_features(
     mode: str,
     component_cols: list[str] | None = None,
 ) -> pd.DataFrame:
-    """Create features available at prediction time; target ``y`` is never read."""
     selected = list(component_cols or COMPONENT_COLS)
     required = ["target_date", "number", *selected]
     missing = [c for c in required if c not in df.columns]
@@ -256,8 +231,6 @@ def _complete_days_for_components(
             continue
         if mode == "de" and labels.sum() != 1.0:
             continue
-        # Cùng hợp đồng với production: cờ thiếu, vector rỗng và số trùng
-        # không được biến thành lịch sử đủ trưởng thành cho tầng xếp chồng.
         available = availability_from_history_day(sub, mode=mode, current_policy=True)
         if all(available.get(column.removeprefix("p_"), False) for column in component_cols):
             days.append(str(day))
@@ -326,12 +299,6 @@ def _candidate_configs() -> list[dict[str, object]]:
 
 
 def _recency_row_weights(dates: pd.Series, half_life_days: float) -> np.ndarray:
-    """Trọng số giảm dần theo NGÀY LỊCH thật, không phải theo số kỳ.
-
-    Khác với ``learn_ensemble_weights._day_weights`` vốn nhận tham số cùng tên
-    nhưng đếm theo chỉ số hàng, tức số kỳ. Hai đơn vị lệch nhau trung vị 12 và
-    tối đa 50 trên lịch sử hiện có. Đừng sao chép công thức giữa hai nơi.
-    """
     d = pd.DatetimeIndex(pd.to_datetime(dates))
     latest = pd.Timestamp(d.max())
     ages = np.asarray((latest - d).days, dtype=np.float64)
@@ -396,14 +363,6 @@ def _fit_candidate(
 
 
 def _day_number_grid(df: pd.DataFrame, column: str, days: list[str]) -> pd.DataFrame:
-    """Pivot ``(target_date, number) -> column`` once and reindex onto ``days``.
-
-    The previous implementation scanned and sorted the entire frame once per
-    day (``df[day_key == day].sort_values(...)``), i.e. O(days x rows).  With a
-    240-day window that is 240 full passes over 24,000 rows for *each* of the
-    ~12 matrices ``train_meta`` builds.  One pivot is ~19x faster and returns
-    the identical matrix.
-    """
     work = pd.DataFrame(
         {
             "day": _date_strings(df["target_date"]),
@@ -432,24 +391,15 @@ def _matrix_by_day(df: pd.DataFrame, column: str, days: list[str]) -> np.ndarray
 
 
 def _roc_auc(probs: np.ndarray, labels: np.ndarray) -> float:
-    """AUC-ROC bằng thứ hạng Mann-Whitney, xử lý hoà bằng thứ hạng trung bình.
-
-    Tự tính thay vì gọi sklearn: hàm này chạy trên mảng đã phẳng sẵn ở đây, và
-    một phụ thuộc thêm cho mười dòng số học là không đáng. Công thức thứ hạng
-    cho đúng kết quả của `sklearn.metrics.roc_auc_score`, kể cả khi có hoà.
-    """
     p = np.asarray(probs, dtype=float).reshape(-1)
     y = np.asarray(labels, dtype=float).reshape(-1) > 0.5
     positives = int(y.sum())
     negatives = int(y.size - positives)
     if positives == 0 or negatives == 0:
-        # Chỉ một lớp: AUC không xác định. Trả NaN thay vì 0.5 — 0.5 đọc thành
-        # "đoán mò", còn sự thật là "không đo được".
         return float("nan")
     order = np.argsort(p, kind="mergesort")
     ranks = np.empty(p.size, dtype=float)
     ranks[order] = np.arange(1, p.size + 1, dtype=float)
-    # Hoà nhận thứ hạng trung bình, nếu không AUC phụ thuộc thứ tự sắp xếp.
     sorted_p = p[order]
     start = 0
     while start < sorted_p.size:
@@ -504,8 +454,6 @@ def _row_probs_to_day_matrix(
     return np.vstack([_safe_prob(row, mode) for row in matrix])
 
 
-
-
 def _baseline_validation(
     history: pd.DataFrame,
     pre_val_days: list[str],
@@ -514,12 +462,6 @@ def _baseline_validation(
     component_cols: list[str],
     half_life_days: int,
 ) -> tuple[np.ndarray, dict[str, float], dict]:
-    """Dựng lại policy tuyến tính từ dữ liệu trước lát kiểm.
-
-    Dùng chung bộ học production, mặc định và phép đặt sàn. Trọng số và
-    hiệu chuẩn được đóng băng trước lát kiểm; availability vẫn xét riêng
-    từng ngày, gồm cả thành phần ngoài tầng của mô hình xếp chồng.
-    """
     from ensemble.learn_ensemble_weights import learn_chronological_stack
 
     work = history.copy()
@@ -565,18 +507,6 @@ def _constant_validation(
     val_days: list[str],
     mode: str,
 ) -> np.ndarray:
-    """Dự báo KHÔNG THÔNG TIN trên lát thẩm định: cùng một xác suất cho mọi con.
-
-    Đặc Biệt: 1/100. LOTO: tần suất về của một con trên các ngày TRƯỚC lát
-    thẩm định — không nhìn vào lát ấy, nên đây là đối thủ ngoài mẫu thật.
-
-    Vì sao phải có mốc này bên cạnh tổ hợp tuyến tính: ngày 25-09-2026, tổ
-    hợp tuyến tính hiệu chỉnh của LOTO chọn a=4,89 trên chính các ngày nó được
-    khớp — tức LÀM NHỌN xác suất gần năm lần — và trên lát thẩm định cho logloss
-    1,0157, tệ gần gấp đôi dự báo hằng số (≈0,545). Mô hình xếp chồng đạt
-    0,5456, KHÔNG hơn hằng số, nhưng vẫn "thắng 46%" và được trộn vào
-    production. Thắng một đối thủ hỏng không chứng minh được gì.
-    """
     if mode == "de":
         return np.full((len(val_days), 100), 0.01)
     pre = history[_date_strings(history["target_date"]).isin(pre_val_days)]
@@ -590,14 +520,6 @@ def quality_gate(
     linear: MetaMetrics,
     constant: MetaMetrics,
 ) -> dict[str, float | bool]:
-    """Mô hình xếp chồng chỉ được bật khi thắng CẢ HAI đối thủ ngoài mẫu.
-
-    - tổ hợp tuyến tính hiệu chỉnh — thứ production sẽ dùng nếu không có nó;
-    - dự báo hằng số — mốc không thông tin, không thể hỏng theo kiểu khớp quá.
-
-    Kỹ năng NHỎ HƠN được ghi lại để một đối thủ hỏng không thổi phồng báo
-    cáo. Cổng ngoài mẫu bổ sung xét độ bất định và mức trộn cố định theo tầng.
-    """
 
     def skill(model: float, baseline: float) -> float:
         return 1.0 - model / baseline if baseline > 0 else 0.0
@@ -627,12 +549,6 @@ def holdout_quality_gate(
     labels: np.ndarray,
     trust: float,
 ) -> dict[str, float | bool | int]:
-    """Chấm chính xác suất sẽ công bố, với mức trộn chốt trước lát kiểm.
-
-    Lấy mẫu theo khối ngày giữ nguyên phụ thuộc trong một kỳ và một phần
-    phụ thuộc giữa các kỳ liên tiếp. Khoảng tin cậy là bằng chứng của lát
-    kiểm hiện tại, không phải bảo đảm cho chuỗi tái kiểm định vô hạn.
-    """
     y = np.asarray(labels, dtype=float)
     if y.ndim != 2 or y.shape[1] != 100 or y.shape[0] == 0:
         raise ValueError("Nhãn thẩm định phải có dạng (số ngày, 100)")
@@ -708,8 +624,6 @@ def train_meta(
     if missing := required.difference(history.columns):
         raise ValueError(f"Lịch sử stacking thiếu cột: {sorted(missing)}")
     _date_strings(history["target_date"])
-    # Bốn lát train/calibrate/select/validate cần ít nhất 100 kỳ ngay cả
-    # khi tham số CLI thấp hơn; không nới sàn để làm kiểm phát hành xanh.
     minimum_days = max(100, min_days)
     try:
         tier, component_cols, trust_cap, days, maturity = _select_component_tier(
@@ -733,12 +647,10 @@ def train_meta(
             "evaluated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
             "reason": str(exc),
         }
-        # Ghi đè pack cũ bằng trạng thái vô hiệu hóa: không giữ một model
-        # đang bật khi bằng chứng hiện tại không còn đủ điều kiện.
         models_dir.mkdir(parents=True, exist_ok=True)
         report_dir.mkdir(parents=True, exist_ok=True)
         dump_pack_unless_equivalent(pack, models_dir / f"meta_{mode}.joblib", stamp_keys=PACK_STAMP_KEYS,
-                                    predictions={})   # pack vô hiệu hoá: không có mô hình
+                                    predictions={})
         report = {key: value for key, value in pack.items() if key != "model"}
         (report_dir / f"meta_report_{mode}.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
@@ -818,8 +730,6 @@ def train_meta(
     p_constant = _constant_validation(history, pre_val_days, val_days, mode)
     constant_metrics = _evaluate(mode, p_constant, y_matrix)
 
-    # Mức trộn cố định theo tầng được khai trước khi nhìn nhãn thẩm định.
-    # Không tăng trust theo chính biên thắng trên lát quyết định đề bạt.
     gate = holdout_quality_gate(mode, p_meta, p_baseline, p_constant, y_matrix, trust_cap)
     logloss_skill = float(gate["logloss_skill"])
     brier_skill = float(gate["brier_skill"])
@@ -939,8 +849,6 @@ def predict_meta(
     expected_features = meta_feature_columns(component_cols)
     if list(pack.get("features") or []) != expected_features:
         raise ValueError("Stacked-ML feature allowlist mismatch")
-    # Mốc này bao gồm mọi nhãn dùng cho fit, chọn và duyệt mô hình. Ngày
-    # đích phải đứng sau cả lát thẩm định, kể cả khi chạy lại một ngày cũ.
     try:
         if not isinstance(pack.get("trained_through_target_date"), str) or not isinstance(target_date, str):
             raise ValueError("mốc ngày phải là chuỗi ngày có nguồn gốc")

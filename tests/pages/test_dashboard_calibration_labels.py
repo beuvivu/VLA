@@ -1,5 +1,3 @@
-"""New calibration metadata must not leak raw keys into visible cards."""
-
 import json
 
 from bs4 import BeautifulSoup

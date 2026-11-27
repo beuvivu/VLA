@@ -1,7 +1,3 @@
-"""Join immutable pre-draw predictions to exact, validated results for the static site.
-
-No fitting, network calls, ledger edits, or fabricated financial values occur here.
-"""
 from __future__ import annotations
 
 import gzip
@@ -130,7 +126,6 @@ def _valid_issue(code: ProductCode, entry: dict, now: datetime) -> bool:
 
 
 def coverage_summary(spec: SetSpec, tickets: list[list[int]], rule: str = COVERAGE_RULE) -> dict:
-    """Mốc CHÍNH XÁC của danh mục khi quay ngẫu nhiên: ít nhất một vé trúng ≥ L số, so với một vé."""
     tail = any_ticket_tail(tickets, spec.n, spec.k)
     one = fair_hit_pmf(spec.n, spec.k, spec.k)
     return {'rule': rule, 'covered': len({v for t in tickets for v in t}), 'pool': spec.n,
@@ -139,13 +134,6 @@ def coverage_summary(spec: SetSpec, tickets: list[list[int]], rule: str = COVERA
 
 
 def prize_coverage(code: ProductCode, tickets: list[list[int]], specials: int) -> dict:
-    """Mốc CHÍNH XÁC "ít nhất một vé trúng giải" của danh mục Lotto 5/35 khi quay ngẫu nhiên.
-
-    Một vé Lotto trúng giải khi trùng ≥ 3 số chính HOẶC trùng số đặc biệt (giải Khuyến khích nhận
-    0–2 số chính cộng số đặc biệt) — điều kiện ấy đọc thẳng từ bảng giải, không viết cứng. Số đặc
-    biệt quay từ lồng riêng, độc lập với bộ chính, nên P(không vé nào trúng) = P(mọi vé < 3 số chính)
-    × P(số đặc biệt nằm ngoài ``specials`` số mà các vé mang).
-    """
     game = get_game(code.value)
     if not game.separate_special:
         raise ValueError('Mốc trúng giải theo số đặc biệt chỉ dành cho trò có lồng số đặc biệt riêng')
@@ -161,12 +149,10 @@ def prize_coverage(code: ProductCode, tickets: list[list[int]], specials: int) -
 
 
 def _covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-untyped-def]
-    """Bộ số chính của Mega/Power/Lotto: các vé công bố là danh mục rời nhau (``coverage_tickets``)."""
     return name == 'main' and isinstance(spec, SetSpec) and code.value in GAMES
 
 
 def _special_covered(code: ProductCode, name: str, spec) -> bool:  # type: ignore[no-untyped-def]
-    """Số đặc biệt Lotto 5/35 (lồng riêng): từ ``coverage-v2`` mỗi vé mang một số khác nhau."""
     return name == 'special' and isinstance(spec, DigitSpec) and spec.positions == 1 and code.value in GAMES
 
 
@@ -177,13 +163,11 @@ def _coverage_component(name: str, spec: SetSpec, law: Law, rule: str = COVERAGE
 
 
 def _special_component(name: str, spec: DigitSpec, law: Law) -> dict:
-    """Năm số đặc biệt khác nhau, vé thứ j mang số thứ j (``per_ticket``)."""
     return {'name': name, 'kind': spec.kind, 'top': [{'numbers': [s]} for s in coverage_specials(law)],
             'ranking_exact': True, 'per_ticket': True}
 
 
 def _with_prize_coverage(code: ProductCode, components: list[dict]) -> list[dict]:
-    """Gắn mốc "ít nhất một vé trúng giải" vào bộ chính khi số đặc biệt được chia theo vé."""
     by_name = {c['name']: c for c in components}
     main, special = by_name.get('main'), by_name.get('special')
     if main and special and special.get('per_ticket') and main.get('coverage'):
@@ -205,8 +189,6 @@ def _from_issue(code: ProductCode, event: dict, now: datetime) -> dict | None:
     for name, spec in cfg.components.items():
         raw = p['laws'][name]
         law = Law(spec, np.array(raw['values']), np.array(raw['mixture']))
-        # Quy tắc dựng vé đọc từ CHÍNH lần ghi: dự báo ghi trước 15-10-2026 không có khoá này và
-        # giữ đúng các vé đã phát lúc ấy (Law.top), không bị chấm lại bằng quy tắc mới.
         if rule in COVERAGE_RULES and _covered(code, name, spec):
             components.append(_coverage_component(name, spec, law, rule))
             continue
@@ -269,7 +251,6 @@ def _predictions(directory: Path, now: datetime, warnings: list[str]) -> dict[tu
 
 
 def compare_prediction(prediction: dict, draw: DrawRecord) -> dict:
-    """Compare the stored candidate numbers, never a newly fitted forecast."""
     code = draw.game_type.value
     if (prediction['product'], prediction['target_id']) != (code, draw.draw_id):
         raise ValueError('Prediction product/draw does not match this result')
@@ -286,7 +267,6 @@ def compare_prediction(prediction: dict, draw: DrawRecord) -> dict:
         for index, row in enumerate(components['main']['top']):
             nums = row['numbers']
             hits = sorted(set(nums) & set(draw.winning_numbers))
-            # coverage-v2: vé thứ j mang số đặc biệt thứ j; quy tắc cũ: cả năm vé mang số hạng nhất.
             chosen = specials[index] if per_ticket and index < len(specials) else specials[0]
             special = (chosen.get('numbers') or [None])[0]
             bonus_hit = draw.bonus_number in nums if code == 'power655' else special == draw.bonus_number if code == 'lotto535' else False
@@ -302,7 +282,6 @@ def compare_prediction(prediction: dict, draw: DrawRecord) -> dict:
             ticket = {'numbers': row['numbers'], 'symbol': symbol, 'tiers': groups,
                       'hits': draw.winning_numbers.count(symbol)}
             if prod.numbers_per_play == 2:
-                # Mỗi gợi ý chỉ có một bộ ba; chưa có vé cặp để phân hạng Pro.
                 ticket.update(tiers=[], matched_groups=groups, prize_status='requires_pair')
             out['tickets'].append(ticket)
     else:

@@ -1,7 +1,3 @@
-"""Phép kiểm tiến cứu "đuôi nóng 7 kỳ": chấm đúng, chỉ chấm kỳ SAU ngày đăng ký,
-sổ cái giữ lần ghi đầu, và tham số đã đăng ký không bị sửa lặng lẽ.
-"""
-
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -15,8 +11,6 @@ from research import hot_tail_test as ht
 
 
 def test_the_registered_parameters_are_not_edited_to_fit_the_result() -> None:
-    """Sửa bất kỳ tham số nào sau khi thấy kết quả là phá phép kiểm tiến cứu.
-    Muốn đổi thì đăng ký giả thuyết MỚI với ngày bắt đầu mới."""
     assert (ht.REGISTERED_ON, ht.FIRST_TARGET) == ("2026-09-28", "2026-09-29")
     assert (ht.WINDOW, ht.MIN_DRAWS, ht.ALPHA, ht.Z_CRITICAL) == (7, 180, 0.01, 2.326)
     assert ht.FIRST_TARGET > ht.REGISTERED_ON, "kỳ đầu được chấm phải SAU ngày đăng ký"
@@ -28,10 +22,9 @@ def _draw(numbers: list[int]) -> np.ndarray:
 
 
 def test_one_draw_is_scored_against_the_same_draw_average() -> None:
-    history = np.stack([_draw([4, 14, 24, 34]) for _ in range(7)])  # đuôi 4 và 9 (số 99)
+    history = np.stack([_draw([4, 14, 24, 34]) for _ in range(7)])
     today = _draw([4, 14, 1])
     out = ht.score_draw(history, today)
-    # đuôi 9 chỉ có con 99 (27−4 = 23 lần/kỳ nhưng tính theo KỲ-VỀ: 1/kỳ) — đuôi 4 có 4
     assert out["hot_tails"] == "4"
     rate4 = 2 / 10
     rates = np.zeros(10)
@@ -41,8 +34,8 @@ def test_one_draw_is_scored_against_the_same_draw_average() -> None:
 
 
 def test_tied_hot_tails_are_averaged() -> None:
-    history = np.stack([_draw([3, 13, 7, 17]) for _ in range(7)])  # đuôi 3 và 7 hoà
-    today = _draw([3, 13, 23])  # đuôi 3 về 3 con, đuôi 7 không con nào
+    history = np.stack([_draw([3, 13, 7, 17]) for _ in range(7)])
+    today = _draw([3, 13, 23])
     out = ht.score_draw(history, today)
     assert out["hot_tails"] == "37"
     assert out["hot_rate"] == pytest.approx((3 / 10 + 0) / 2)
@@ -60,8 +53,6 @@ def _store(root: Path, start: str, days: int, seed: int = 1) -> list[str]:
 
 
 def test_only_draws_after_registration_are_scored(tmp_path: Path) -> None:
-    """Kỳ trước ngày đăng ký đã được nhìn khi đặt giả thuyết — chấm chúng là
-    chấm lại chính bằng chứng hồi cứu."""
     dates = _store(tmp_path, "2026-09-01", 40)
     ht.update_ledger(tmp_path)
     ledger = pd.read_csv(tmp_path / ht.LEDGER, dtype={"date": str})
@@ -93,10 +84,10 @@ def _ledger(root: Path, diffs: list[float]) -> None:
 @pytest.mark.parametrize(
     ("diffs", "state"),
     [
-        ([0.05] * 50 + [0.0] * 50, "dang_thu"),          # chưa đủ MIN_DRAWS
-        ([0.04, -0.02] * 100, "xac_nhan"),               # trung bình +0,01, rõ rệt
-        ([0.02, -0.02] * 100, "bac_bo"),                 # trung bình 0
-        ([-0.04, 0.02] * 100, "bac_bo"),                 # tệ hơn cũng là bác bỏ (một phía)
+        ([0.05] * 50 + [0.0] * 50, "dang_thu"),
+        ([0.04, -0.02] * 100, "xac_nhan"),
+        ([0.02, -0.02] * 100, "bac_bo"),
+        ([-0.04, 0.02] * 100, "bac_bo"),
     ],
 )
 def test_the_verdict_follows_the_registered_rule(tmp_path: Path, diffs, state) -> None:

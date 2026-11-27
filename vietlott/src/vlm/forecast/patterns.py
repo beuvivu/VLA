@@ -1,4 +1,3 @@
-"""Bốn chuyên gia thống kê nhân quả, co về nền khi chưa đủ quan sát."""
 from __future__ import annotations
 
 from numbers import Integral, Real
@@ -7,12 +6,6 @@ import numpy as np
 
 
 class PatternExperts:
-    """Học tần suất, chuyển trạng thái và hazard; không coi số vắng là đến hạn.
-
-    Mỗi vector biểu diễn tỷ lệ xuất hiện của từng node, kể cả tỷ lệ phân số
-    từ nhiều bộ số trong cùng kỳ. Chỉ điều kiện hiện diện dùng ``target > 0``.
-    Trọng số prior và nhóm tuổi cố định, không chọn lại bằng kỳ đang chấm.
-    """
 
     names = ('bayes_short', 'bayes_long', 'markov_repeat', 'gap_hazard')
     _half_lives = np.array([16., 128.])
@@ -44,13 +37,11 @@ class PatternExperts:
         self.gap_known = np.zeros(self.nodes, dtype=bool)
 
     def predict(self, next_id: int | None = None) -> np.ndarray:
-        """Đọc posterior; target qua kỳ thiếu không dùng điều kiện một bước cũ."""
         if next_id is not None and (isinstance(next_id, (bool, np.bool_))
                 or not isinstance(next_id, Integral) or next_id < 1
                 or self.last_id is not None and next_id <= self.last_id):
             raise ValueError('Target phải có ID nguyên dương sau kỳ đã học.')
         horizon = int(next_id) - self.last_id if next_id is not None and self.last_id is not None else 1
-        # Thời gian chưa có nhãn chỉ làm quên trọng số cũ, không thêm nhãn 0.
         decay = np.exp2(-min(horizon - 1, 1_000_000) / self._half_lives)
         frequency = ((self.frequency_success * decay[:, None] + self._frequency_prior[:, None] * self.base)
                      / (self.frequency_mass[:, None] * decay[:, None] + self._frequency_prior[:, None]))
@@ -67,7 +58,6 @@ class PatternExperts:
         return np.vstack((frequency, markov, gap))
 
     def observe(self, target: np.ndarray, draw_id: int) -> None:
-        """Xác thực trước khi ghi; kỳ thiếu không sinh nhãn hay chuyển trạng thái."""
         raw = np.asarray(target)
         if raw.dtype.kind not in 'biuf' or raw.shape != (self.nodes,):
             raise ValueError('Target phải là vector số đúng số node.')
@@ -83,7 +73,6 @@ class PatternExperts:
         success = self.frequency_success * decay[:, None] + row
         mass = self.frequency_mass * decay + 1
         present = row > 0
-        # Các mảng candidate tách rời; nhãn đầu vào lỗi không ghi một phần state.
         markov_success, markov_total = self.markov_success.copy(), self.markov_total.copy()
         gap_success, gap_total = self.gap_success.copy(), self.gap_total.copy()
         known, age = self.gap_known.copy(), self.gap_age.copy()
@@ -100,7 +89,6 @@ class PatternExperts:
         else:
             known[:] = False
             age[:] = 0
-        # Chỉ một lần hiện diện đã quan sát mới khôi phục tuổi sau kiểm duyệt.
         known[present] = True
         age[present] = 0
         self.frequency_success, self.frequency_mass = success, mass
@@ -110,13 +98,11 @@ class PatternExperts:
         self.seen, self.last_id = self.seen + 1, draw_id
 
     def to_dict(self) -> dict:
-        """Checkpoint chỉ gồm JSON dữ liệu và bản sao độc lập của các mảng."""
         return {'version': 1, 'nodes': self.nodes, 'base': self.base, 'seen': self.seen,
                 'last_id': self.last_id, **{name: getattr(self, name).tolist() for name in self._arrays}}
 
     @classmethod
     def from_dict(cls, data: dict, *, nodes: int, base: float) -> PatternExperts:
-        """Chỉ phục hồi sau kiểm cấu hình, hình dạng, miền giá trị và bộ đếm."""
         out = cls(nodes, base)
         keys = {'version', 'nodes', 'base', 'seen', 'last_id', *cls._arrays}
         if not isinstance(data, dict) or set(data) != keys:

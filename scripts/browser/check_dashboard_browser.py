@@ -1,5 +1,3 @@
-"""Đo khoảng đệm, cột và mã số Dashboard trên HTML đã xuất bản."""
-
 from functools import partial
 from http.server import ThreadingHTTPServer
 import json
@@ -42,7 +40,6 @@ MEASURE = """() => {
 
 
 def check_layout(page):
-    """Không coi overflow:hidden là bằng chứng nội dung đã vừa khung."""
     result = page.evaluate(MEASURE)
     assert result["cards"] == 8 and len(result["tables"]) >= 8, result
     assert result["overflow"] <= 1, result
@@ -64,7 +61,6 @@ def check_layout(page):
 
 
 def check_padding_regression_is_detected(page):
-    """Tái tạo lỗi sát viền để xác nhận phép đo thật sự phát hiện hồi quy."""
     style = page.add_style_tag(content=".app-lab-dashboard .app-dash-group .ui-card-body{padding:0!important}")
     detected = False
     try:
@@ -100,12 +96,10 @@ def main():
                         results.append({"width": width, "dark": dark, "opened": opened, **result})
                     if width == 1440 and not dark:
                         check_padding_regression_is_detected(page)
-                    # Kiểm các con số vẫn mở được bằng chứng sau đổi bố cục.
                     check_evidence(page, "dashboard.html", width, dark)
                     if width in (390, 1440):
                         page.locator("#app-lab-picks").scroll_into_view_if_needed()
                         page.screenshot(path=str(OUT / f"dashboard-{width}-{'dark' if dark else 'light'}.png"))
-                    # Bảng có tên truy cập được; không mất vùng focus khi thêm khoảng đệm.
                     expect(page.locator("#app-lab-loto > .ui-card-body > [role=region]")).to_have_count(1)
                 page.close()
             browser.close()

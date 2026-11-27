@@ -1,4 +1,3 @@
-"""Trainable bounded experts. All checkpoints are data, never executable pickle."""
 from __future__ import annotations
 
 import importlib.util
@@ -35,7 +34,6 @@ class OnlineLogistic:
 
     @np.errstate(over='raise', invalid='raise', divide='raise')
     def learn(self, x: np.ndarray, y: np.ndarray) -> None:
-        """AdaGrad staging: batch hoặc optimizer lỗi không thay trọng số đang dùng."""
         x, y = self._input(x), np.asarray(y, dtype=float)
         if y.shape != (len(x),) or not np.isfinite(y).all() or ((y < 0) | (y > 1)).any():
             raise ValueError('Invalid logistic target')
@@ -75,11 +73,6 @@ class OnlineLogistic:
 
 
 class GRU:
-    """Shared node GRU, reset-before projection, eight-step truncated BPTT + Adam.
-
-    Hidden state is rebuilt from the causal window, not carried across optimizer
-    updates. This makes reload/chunk behavior deterministic and bounds memory.
-    """
     def __init__(self, features: int, hidden: int = 8, base: float = .5,
                  seed: int = 20261003, l2: float = .001, lr: float = .006) -> None:
         if (type(features) is not int or features < 1 or type(hidden) is not int or hidden < 1
@@ -156,7 +149,6 @@ class GRU:
 
     @np.errstate(over='raise', invalid='raise', divide='raise')
     def learn(self, x: np.ndarray, y: np.ndarray) -> None:
-        """Adam staging, kiểm loss/gradient và clip norm không tự overflow."""
         loss, gradients = self.loss_and_gradients(x, y)
         require_finite(loss, 'GRU loss')
         for gradient in gradients.values():
@@ -211,7 +203,6 @@ class GRU:
 
 
 class TreeExpert:
-    """Periodic bounded tree fit; RF prediction is persisted as JSON tree arrays."""
     def __init__(self, backend: str, base: float, seed: int = 20261003, depth: int = 4) -> None:
         if backend not in ('rf', 'xgb', 'lgb'):
             raise ValueError('Unknown tree backend')
@@ -253,7 +244,6 @@ class TreeExpert:
                 'num_leaves':2 ** self.depth, 'learning_rate':.05, 'lambda_l2':10,
                 'min_data_in_leaf':max(4, min(64, len(y)//20)), 'feature_fraction':.7,
                 'seed':self.seed, 'num_threads':1, 'verbosity':-1}, lgb.Dataset(x, label=y), num_boost_round=24)
-        # Chỉ thay expert đang chạy sau khi candidate vượt kiểm tra state và prediction.
         candidate = object.__new__(TreeExpert)
         candidate.__dict__ = {**self.__dict__, 'trees':trees, 'booster':booster, 'constant':constant}
         if self.backend == 'rf':
@@ -312,7 +302,6 @@ class TreeExpert:
 
     @staticmethod
     def _validate_rf(trees: list[dict], depth_limit: int, features: int | None) -> None:
-        """Kiểm cấu trúc và giá trị RF cho cả candidate lẫn checkpoint."""
         if len(trees) > 24:
             raise ValueError('Invalid RF count')
         for tree in trees:
@@ -360,6 +349,5 @@ class TreeExpert:
             else:
                 import lightgbm as lgb
                 out.booster = lgb.Booster(model_str=data['booster'])
-        # Reject NaN/Infinity even in unused tree fields.
         json.dumps(data, allow_nan=False)
         return out

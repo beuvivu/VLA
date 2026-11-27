@@ -1,16 +1,3 @@
-"""Regenerate ``reports/vietlott_v3.md`` / ``.json`` from the bundled data:
-
-official prize-data coverage (vietlott.vn detail pages) and how it compares with the
-third-party tables used before v3.2, market calibration (payout share, sales, crowd
-behaviour), EV with the calibrated crowd and sales response, bao tickets vs single tickets,
-coverage portfolios, and Lotto 5/35 rolldowns read from the official jackpot series
-(two-phase accrual, next-rolldown forecast and its backtest).
-
-    python scripts/market_report.py            # uses data/calibration (builds it if missing)
-    python scripts/market_report.py --rebuild  # refit the market models first (~1 min)
-    python scripts/market_report.py --fast     # smaller Monte Carlo for the coverage table
-"""
-
 from __future__ import annotations
 
 import argparse

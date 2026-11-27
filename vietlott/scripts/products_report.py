@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""Regenerate ``reports/products.{md,json}``: coverage of all seven Vietlott products, exact
-odds and return to player of Keno / Bingo18 / Max 3D, randomness tests of the Keno, Bingo18
-and Max 3D histories, and the Max 3D ↔ Max 3D Pro digit cross-check.
-
-    python scripts/products_report.py
-"""
 
 from __future__ import annotations
 

@@ -1,27 +1,3 @@
-"""Store and sync for Keno, Bingo18, Max 3D, Max 3D Pro and Max 4D histories, and official
-prize tables of Mega / Power / Lotto — with a fallback chain for when vietlott.vn is out of reach.
-
-Layout: ``<data_dir>/products/<file>`` (same file names as ``data/seed``) plus
-``exclusions.json``. Reading merges the bundled seed with the local store (store rows win on
-equal draw ids) and leaves out draws Vietlott announced as *not confirmed*.
-
-Sources (``--source``):
-
-* ``vietlott``  — vietlott.vn results lists (AjaxPro). Vietnamese IPs only.
-* ``nhanaz``    — community archive ``NhanAZ-Data/vietlott-data-collector`` (branch ``datasets``) (GitHub raw, or a local
-  folder via ``VQE_NHANAZ_DIR``); Keno/Bingo18 updated about every 10 minutes in the day;
-  all 8 products + exclusions.
-* ``mirror``    — ``vietvudanh/vietlott-data`` JSONL (Keno, Bingo18, Max 3D, Max 3D Pro). Với
-  Keno/Bingo18 chỉ được nhập qua cổng hồ sơ :meth:`ProductSyncPipeline._vet_fast_mirror`
-  (01-11-2026): trùng tuyệt đối mọi kỳ seed có xuất xứ chính thức mà nó chồng lên
-  (≥ ``MIRROR_TRACK_RECORD_MIN``) và mọi kỳ đăng lại độc lập của kho cộng đồng mà nó chồng lên
-  (≥ ``MIRROR_CROSS_CHECK_MIN``).
-* ``canonical`` — ``pqminh-4/vietlott-data`` canonical records (Max 3D, Max 3D Pro).
-* ``v130``      — the snapshot of Vietlott Quant Engine 1.3.0 (``VQE_V130_DIR``).
-* ``auto``      — the first of ``VQE_FALLBACK_ORDER`` that answers (default vietlott → nhanaz →
-  mirror/canonical → v130); every attempt is in the report.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -62,30 +38,9 @@ CANONICAL_FILES = {ProductCode.MAX3D: "max3d.jsonl", ProductCode.MAX3D_PRO: "max
 SOURCE_ALIASES = {"github_mirror": "mirror"}
 FAST_PRODUCTS = {ProductCode.KENO, ProductCode.BINGO18}
 
-# Cổng hồ sơ kiểm chứng của bản sao cộng đồng cho Keno/Bingo18 (01-11-2026).
-#
-# Từ 19-10-2026 vietlott.vn trả thử thách Cloudflare cho runner và kho cộng đồng chỉ còn đăng lại
-# kết quả từ trang thứ cấp, nên không nguồn nào mang dấu «chính thức» và hai sản phẩm đứng yên.
-# Bản sao chỉ được nhận khi chính nó chứng minh độ tin, đo lại MỖI lượt:
-#
-# * Hồ sơ: trùng tuyệt đối mọi kỳ của seed có xuất xứ chính thức mà nó chồng lên, ít nhất
-#   ``MIRROR_TRACK_RECORD_MIN`` kỳ, không lệch kỳ nào. Không lệch trong n kỳ ⇒ cận trên 95% của tỉ lệ
-#   sai mỗi kỳ là 3/n («quy tắc ba»): 10 000 kỳ ⇒ ≤ 3·10⁻⁴. Đo 01-11-2026: 86 462 kỳ Keno và
-#   92 954 kỳ Bingo18 chồng nhau, 0 lệch. CHỈ đếm seed: kho sản phẩm không lưu xuất xứ từng dòng,
-#   và sau lần nhập đầu nó chứa chính dòng của bản sao — đếm vào là tự chứng nhận.
-# * Đối chiếu độc lập trên phần MỚI: hồ sơ cũ không thấy được lỗi vừa phát sinh (đổi khuôn trang,
-#   lệch mã kỳ), nên bản sao còn phải trùng tuyệt đối mọi kỳ «trang đăng lại» của kho cộng đồng
-#   (nguồn thu thập khác) mà nó chồng lên, ít nhất ``MIRROR_CROSS_CHECK_MIN`` kỳ. Lỗi hệ thống làm
-#   lệch gần như mọi kỳ chồng nhau, nên 50 kỳ đủ để thấy. Đo 01-11-2026: 1 509 kỳ Keno và 1 558 kỳ
-#   Bingo18 tháng 10, 0 lệch.
-# * Một kỳ lệch ở bất kỳ phép so nào ⇒ loại CẢ bản sao lượt ấy. Mọi phép kiểm sẵn có của đường
-#   nhập (mâu thuẫn với kỳ đã lưu, ngày tương lai, mã kỳ liên tục, thông báo loại kỳ) vẫn áp dụng.
 KNOWN_GAPS_FILE = "known_gaps.json"
 MIRROR_TRACK_RECORD_MIN = 10_000
 MIRROR_CROSS_CHECK_MIN = 50
-# Cửa sổ đối chiếu NEO THEO NGÀY MỚI NHẤT CỦA BẢN SAO, không theo ngày của kho: sau lần nhập đầu, kho
-# cộng đồng tải từ ngày của kho chỉ còn các kỳ MỚI HƠN bản sao (nó đăng lại mỗi 10 phút, bản sao chỉ
-# cập nhật lúc ~00:00 và ~12:00 UTC), nên phép đối chiếu ra 0 và cổng từ chối mọi lượt sau (01-11-2026).
 MIRROR_CROSS_CHECK_DAYS = 31
 OFFICIAL_SEED_SOURCES = frozenset({'vietlott.vn/list', 'nhanaz:official_vietlott'})
 
@@ -102,11 +57,6 @@ class ProductStore:
         return load_exclusions(self.seed_dir, self.dir)
 
     def known_gaps(self) -> dict[str, list[tuple[int, int]]]:
-        """Khoảng hở lịch sử đã kiểm là không nguồn nào có (``seed/known_gaps.json``, 01-11-2026).
-
-        Chỉ đổi BÁO CÁO: khoảng hở nằm trọn trong danh sách không còn là lỗi đồng bộ. Không phải
-        thông báo loại kỳ, không thêm hay suy ra kết quả nào; khoảng hở mới vẫn là lỗi.
-        """
         path = self.seed_dir / KNOWN_GAPS_FILE if self.seed_dir else None
         if path is None or not path.exists():
             return {}
@@ -131,7 +81,6 @@ class ProductStore:
         return h.dates.max().astype("datetime64[D]").astype(date) if len(h) else None
 
     def upsert(self, product: ProductCode, rows: list[dict], source: str) -> tuple[int, int]:
-        """Validate and merge ``rows`` into the store file → (new draw ids, rejected)."""
         new, rejected = parse_product_rows(product, rows, source)
         if not len(new):
             return 0, len(rejected)
@@ -144,7 +93,6 @@ class ProductStore:
         return len(set(new.draw_ids.tolist()) - known), len(rejected)
 
     def add_exclusions(self, items: list[dict]) -> int:
-        """Record not-confirmed draws (issuer notices) in the store → number added."""
         if not items:
             return 0
         path = self.dir / EXCLUSIONS_FILE
@@ -152,8 +100,6 @@ class ProductStore:
         known = {(e["product"], int(e["draw_id"])) for e in current} | {(p, i) for p, ids in load_exclusions(self.seed_dir).items() for i in ids}
         added = [e for e in items if (e["product"], int(e["draw_id"])) not in known]
         if added:
-            # Nguyên tử: mọi lần nạp sản phẩm đều đọc tệp này (``load_exclusions``), nên một tệp cụt
-            # do chết giữa lúc ghi làm hỏng việc nạp của MỌI sản phẩm cho tới khi có người sửa tay.
             write_text_atomic(path, json.dumps(current + added, ensure_ascii=False, indent=1))
         return len(added)
 
@@ -185,8 +131,6 @@ class ProductSyncReport:
     exclusions_added: int = 0
     attempts: list[dict] = field(default_factory=list)
     continuity: dict = field(default_factory=dict)
-    # Nguồn của kỳ có mã LỚN NHẤT vừa nhận (``source_used`` ghép mọi nguồn có góp dòng): độ mới đo theo
-    # nhịp của chính nguồn đã đưa kho tới kỳ mới nhất (`vlm.updates.runner`).
     latest_source: str | None = None
 
     def to_dict(self) -> dict:
@@ -244,7 +188,6 @@ class ProductSyncPipeline:
         return NhanAZArchive(local_dir=self.nhanaz_dir) if self.nhanaz_dir else NhanAZArchive(self.client, self.nhanaz_base_url)
 
     def _official_seed_identities(self, product: ProductCode) -> dict[int, tuple]:
-        """Kỳ của seed có xuất xứ chính thức → (ngày, kết quả) theo đúng chuẩn của ``identities``."""
         if self.store.seed_dir is None:
             return {}
         rows = [r for r in self.store._rows(self.store.seed_dir / SEED_FILES[product])
@@ -253,11 +196,6 @@ class ProductSyncPipeline:
         return identities(parsed)
 
     def _vet_fast_mirror(self, product: ProductCode, rows: list[dict], secondary_rows: list[dict]) -> None:
-        """Cổng hồ sơ kiểm chứng của bản sao Keno/Bingo18; ném ``SourceError`` khi chưa đủ tin.
-
-        Luật và lý do: chú thích ở ``MIRROR_TRACK_RECORD_MIN``. Kết quả đo ghi vào
-        ``self._source_audit`` để báo cáo đồng bộ in ra từng lượt.
-        """
         parsed, _, duplicates = parse_fast_rows(product, rows, 'mirror')
         mirror = identities(parsed)
         official = self._official_seed_identities(product)
@@ -284,15 +222,14 @@ class ProductSyncPipeline:
                               f'{MIRROR_CROSS_CHECK_MIN} draws; not imported')
 
     def chain(self, product: ProductCode) -> list[str]:
-        """Sources of ``auto`` that can serve this product."""
         out = []
         for s in self.fallback_order:
             if (s == "mirror" and product not in MIRROR_FILES) or (s == "canonical" and product not in CANONICAL_FILES) or (s == "v130" and self.v130_dir is None):
                 continue
             if s == "vietlott" and product == ProductCode.MAX4D:
-                continue  # discontinued: no live list
+                continue
             if s == "xskt":
-                continue  # chỉ có Mega/Power/Lotto (đường SyncPipeline), không có sản phẩm này
+                continue
             out.append(s)
         return out
 
@@ -310,8 +247,6 @@ class ProductSyncPipeline:
                                       verified_only=product in FAST_PRODUCTS)
             self._fetch_rejected = got.rejected
             if product in FAST_PRODUCTS:
-                # Chỉ kỳ đăng lại ĐÚNG LUẬT trò chơi và không tự mâu thuẫn mới được coi là «chờ xác minh»:
-                # ``validation_status=valid`` của kho cộng đồng là lời tự khai, không phải phép kiểm của engine.
                 parsed, _, conflicting = parse_fast_rows(product, got.secondary, 'nhanaz')
                 self._secondary_ids[product] = set(identities(parsed)) - set(conflicting)
             self._pending_exclusions += [e for e in await archive.exclusions(verified_only=product in FAST_PRODUCTS)
@@ -371,11 +306,6 @@ class ProductSyncPipeline:
                 continue
             attempts.append({"source": s, "ok": True, "rows": len(rows), "error": None})
             parsed, _ = await asyncio.to_thread(parse_product_rows, product, rows, s)
-            # Cùng luật với Keno/Bingo18 (`_run_fast`) và Mega/Power/Lotto (`SyncPipeline`): nguồn không
-            # được sửa kỳ đã lưu. Bản sao và kho canonical trả CẢ lịch sử, nên trước 05-11-2026 mọi kỳ
-            # trùng mã bị `store.upsert` ghi đè lặng lẽ bằng bản của nguồn. Chỉ `--full` từ vietlott.vn
-            # chính thức được sửa. `auto` bỏ cả nguồn mâu thuẫn (một kỳ cũ sai là dấu nguồn không đáng
-            # tin); chọn đích danh một nguồn thì chỉ bỏ kỳ mâu thuẫn.
             bad = [] if (full and s == 'vietlott') else sorted(
                 did for did, value in identities(parsed).items() if did in known and known[did] != value)
             if bad:
@@ -396,14 +326,12 @@ class ProductSyncPipeline:
             used = s
             break
         if used is None:
-            # Chỉ ghi dòng của nguồn đã chọn: ``rows`` có thể còn giữ dòng của nguồn vừa bị bỏ vì mâu thuẫn.
             rows, used, parsed = (best_rows, best_source, best_parsed) if best_source is not None else ([], None, None)
         error = None if used else "; ".join(f"{a['source']}: {a['error']}" for a in attempts)
         if conflicts:
             note = 'conflicting source results kept out: ' + str(sorted(conflicts)[:20])
             error = f"{error}; {note}" if error else note
         if rows and before_upsert is not None:
-            # Hook nhận đúng dòng đã xác thực, bỏ cả thông báo loại kỳ mới tải.
             excluded = self.store.exclusions().get(product.value, set()) | {
                 int(e['draw_id']) for e in self._pending_exclusions if e['product'] == product.value}
             before_upsert(drop_ids(parsed, excluded), used or source)
@@ -438,7 +366,6 @@ class ProductSyncPipeline:
         validation_errors = []
         today = datetime.now(VN).date().isoformat()
         for s in self.chain(product) if source == 'auto' else [source]:
-            # Bản sao tải cả lịch sử (~13 MB) và có thể phải tải kho đối chiếu: ngân sách như kho.
             budget = self.archive_timeout_s if s in ('nhanaz', 'mirror') else self.source_timeout_s
             started = time.perf_counter()
             self._fetch_rejected = []
@@ -470,8 +397,6 @@ class ProductSyncPipeline:
                     if (previous is not None and previous != value and not correction) or did in conflicts:
                         bad.append(did)
                 if rejected or invalid or bad:
-                    # Không báo thành công khi có dòng sai. Vẫn giữ được đoạn
-                    # liên tục đã xác thực trước lỗi; nguồn mâu thuẫn bị loại.
                     attempt.update(rejected=attempt['rejected']+len(invalid),
                                    conflicting_ids=sorted(set(bad))[:20],
                                    conflicting_count=len(set(bad)),error='source rows failed validation or conflict checks')
@@ -531,15 +456,10 @@ class ProductSyncPipeline:
         if not used:
             errors.append('; '.join(f"{a['source']}: {a['error'] or 'no verified results'}" for a in attempts))
         continuity['unverified_rows'] = len(blocked_ids)
-        # Cursor cũ không phải chứng nhận nguồn chính thức cho lịch sử đã nhập.
         continuity['latest_verified'] = max(candidates,default=None)
         continuity['latest_observed'] = max(continuity['latest_observed'] or 0,max(blocked_ids,default=0)) or None
-        # Một số kỳ đã xác thực không được che các kỳ mới hơn còn pending.
         pending_new = blocked_ids - set(candidates) - excluded
         through = continuity['contiguous_through'] or 0
-        # Kỳ đúng cấu trúc của kho cộng đồng chỉ bị chặn vì xuất xứ thứ cấp là kỳ CHỜ XÁC MINH: chúng luôn
-        # đi trước bản sao (đăng lại mỗi 10 phút, bản sao 12 giờ một lần). Độ trễ ấy do quy tắc độ mới
-        # (`vlm.updates.runner`) canh. Kỳ bị chặn vì lý do khác (sai cấu trúc, mâu thuẫn) vẫn là lỗi.
         secondary_ids = self._secondary_ids.get(product, set())
         awaiting = {i for i in pending_new if i > through and i in secondary_ids}
         continuity['awaiting_verification'] = len(awaiting)
@@ -552,8 +472,6 @@ class ProductSyncPipeline:
             inserted, rejected = self.store.upsert(product, delta, used or source) if delta else (0,0)
             h = self.store.load(product)
             return inserted, rejected, len(h), h.coverage()
-        # Tệp loại kỳ được chia sẻ giữa sản phẩm: ghi nhỏ này ở cùng event loop
-        # để hai thread không đọc-sửa-ghi đè thông báo của nhau.
         added = self.store.add_exclusions(self._pending_exclusions)
         inserted, rejected, total, cov = await finish_store_write(persist)
         return ProductSyncReport(product=product.value, source=source, fetched=sum(a['rows'] for a in attempts),
@@ -564,13 +482,7 @@ class ProductSyncPipeline:
             latest_source=origins.get(max(r['id'] for r in delta)) if delta else None)
 
 
-# ----------------------------------------------------------------- official prize data
 def _prefer_prize_record(current, incoming):  # type: ignore[no-untyped-def]
-    """Chọn nguyên bảng giải, không ghép giá trị rồi đổi nhãn nguồn của chúng.
-
-    Nguồn ưu tiên chỉ thay thế bảng cũ nếu không làm mất trường đã biết. Nguồn
-    phụ được bổ sung trường thiếu khi mọi trường chung khớp bảng đang có.
-    """
     rank = lambda origin: 3 if origin.startswith('vietlott') else 2 if origin.startswith('canonical') else 1
     pairs = ((current.winners, incoming.winners),
              (current.jackpot_pots or {}, incoming.jackpot_pots or {}))
@@ -640,12 +552,6 @@ async def sync_canonical_prizes(
     fallback_order: list[str] | None = None,
     before_upsert: Callable[[list[Draw], list[PrizeRecord]], None] | None = None,
 ) -> CanonicalPrizeReport:
-    """Official prize tables → repository.
-
-    ``canonical``: the ``pqminh-4`` record file. ``vietlott``: detail pages of the ``last`` most
-    recent stored draws (from Vietnam). ``nhanaz`` / ``v130``: community archive / 1.3.0
-    snapshot. ``auto`` tiếp tục đến khi các kỳ gần nhất có bảng giải đúng kỳ,
-    thay vì dừng ở một kho lịch sử còn thiếu dữ liệu tài chính mới."""
     from vietlott_engine.crawler.official_data import import_canonical
 
     t0 = time.perf_counter()
@@ -676,7 +582,6 @@ async def sync_canonical_prizes(
                                                 for key in ('game', 'game_type', 'product')):
                 rejected += 1
                 continue
-            # Nhập từng row để bảng giải không mất liên kết với chính bộ số của nó.
             try:
                 imp = import_canonical([row], spec.code)
             except (ValueError, TypeError, KeyError):
@@ -702,7 +607,6 @@ async def sync_canonical_prizes(
                 prizes[prize.draw_id] = prize
                 imported_prizes[prize.draw_id] = prize
                 accepted.append(prize)
-        # Đồng bộ bảng giải không được sửa số quay để tự làm cho bảng giải khớp.
         if before_upsert is not None:
             before_upsert(additions, accepted)
         draws_inserted += repository.upsert(additions) if additions else 0

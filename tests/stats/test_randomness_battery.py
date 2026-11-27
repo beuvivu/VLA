@@ -1,11 +1,3 @@
-"""Kiểm thử bộ kiểm định cấu trúc và phân tích công suất.
-
-Nguyên tắc chung của tệp này: một phép kiểm chỉ có giá trị nếu nó *phân biệt
-được* hai trường hợp. Vì vậy mỗi thống kê được kiểm hai chiều — phải im lặng
-trên dữ liệu ngẫu nhiên và phải kêu lên trên dữ liệu có cấu trúc cấy sẵn.
-Kiểm một chiều thôi thì một hàm trả hằng số cũng qua được.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -34,7 +26,6 @@ def fair_counts() -> np.ndarray:
 
 
 def biased_counts(n_days: int, *, favoured: range, seed: int = 11) -> np.ndarray:
-    """Chuỗi có một nhóm con được ưu ái, dùng làm đối chứng dương."""
     rng = np.random.default_rng(seed)
     weights = np.ones(NUMBER_SPACE)
     weights[favoured] = 4.0
@@ -53,7 +44,6 @@ class TestSimulator:
         assert np.all(counts.sum(axis=1) == LOTO_DRAWS_PER_DAY)
 
     def test_draws_are_with_replacement(self) -> None:
-        """Miền cho phép hai giải trùng con, nên phải có kỳ đếm ≥ 2."""
         counts = simulate_draws(400, np.random.default_rng(3))
         assert counts.max() >= 2
 
@@ -64,7 +54,6 @@ class TestSimulator:
 
 
 class TestStatisticsDiscriminate:
-    """Mỗi thống kê phải tách được chuỗi có cấu trúc khỏi chuỗi ngẫu nhiên."""
 
     def test_chi_square_rises_under_a_biased_urn(self, fair_counts: np.ndarray) -> None:
         biased = biased_counts(240, favoured=range(0, 10))
@@ -74,15 +63,6 @@ class TestStatisticsDiscriminate:
         assert 50.0 < marginal_chi_square(fair_counts) < 160.0
 
     def test_mutual_information_rises_when_yesterday_is_copied(self) -> None:
-        """Cấy phụ thuộc trực tiếp: một phần hôm nay lặp lại hôm qua.
-
-        Ngưỡng đặt ở 1.4× chứ không phải 2×, và đó là điều đáng ghi lại: thống
-        kê này lấy trung bình trên cả 10 000 cặp con, nên ngay cả khi ép 20 con
-        của hôm qua chắc chắn về lại hôm nay — một mức phụ thuộc mạnh hơn bất
-        cứ thứ gì có thể tồn tại thật — nó cũng chỉ nhích lên khoảng 1.65×. Độ
-        nhạy thấp đó là lý do một giá trị z dương nhỏ trên dữ liệu thật tương
-        ứng với hiệu ứng gần như bằng không.
-        """
         rng = np.random.default_rng(13)
         counts = simulate_draws(240, rng)
         copied = counts.copy()
@@ -92,7 +72,6 @@ class TestStatisticsDiscriminate:
         assert lag1_mutual_information(copied) > 1.4 * lag1_mutual_information(counts)
 
     def test_mutual_information_test_rejects_planted_carryover(self) -> None:
-        """Điều thật sự quan trọng: phép kiểm hoàn chỉnh có bác bỏ được không."""
         rng = np.random.default_rng(67)
         counts = simulate_draws(200, rng)
         for day in range(1, counts.shape[0]):
@@ -128,18 +107,12 @@ class TestStatisticsDiscriminate:
         assert weekday_effect(skewed) > weekday_effect(counts) + 3.0
 
     def test_weekday_effect_uses_real_weekdays_across_a_gap(self) -> None:
-        """Sau một khoảng ngày vắng (Tết), chỉ số hàng chia 7 trộn các thứ; nhãn thật thì không.
-
-        Cài hiệu ứng vào đúng một thứ THẬT trên một chuỗi có 3 ngày vắng giữa chừng: tính theo nhãn thật
-        thấy rõ, tính theo chỉ số hàng thì hiệu ứng bị rải ra các nhóm và yếu hẳn.
-        """
         counts = simulate_draws(280, np.random.default_rng(29))
-        day_index = np.concatenate([np.arange(140), np.arange(143, 283)])  # vắng 3 ngày ở giữa
+        day_index = np.concatenate([np.arange(140), np.arange(143, 283)])
         weekdays = day_index % 7
         skewed = counts.copy()
         skewed[weekdays == 2] = 0
         skewed[weekdays == 2, :LOTO_DRAWS_PER_DAY] = 1
-        # Một khoảng vắng ở giữa chia hiệu ứng làm hai nhóm chỉ số: thống kê còn khoảng một nửa.
         assert weekday_effect(skewed, weekdays) > 1.5 * weekday_effect(skewed)
         assert weekday_effect(skewed, weekdays) > weekday_effect(counts, weekdays) + 2.0
         with pytest.raises(ValueError):
@@ -149,19 +122,13 @@ class TestStatisticsDiscriminate:
         counts = simulate_draws(240, np.random.default_rng(23))
         clumped = counts.copy()
         clumped[::2] = 0
-        clumped[::2, :5] = 5  # rất ít con phân biệt vào ngày chẵn
+        clumped[::2, :5] = 5
         assert dispersion_index(clumped) > 5 * dispersion_index(counts)
 
 
 class TestGapDistribution:
-    """Phép kiểm khoảng cách từng hỏng vì scipy giả định biến liên tục."""
 
     def test_statistic_is_not_constant(self) -> None:
-        """Hồi quy: bản cũ trả đúng ``p`` với mọi chuỗi nên vô dụng.
-
-        Phân phối rỗng có độ lệch chuẩn bằng 0 thì mọi giá trị p đều bằng 1 —
-        phép kiểm không bao giờ bác bỏ được gì.
-        """
         rng = np.random.default_rng(29)
         values = [gap_distribution_distance(simulate_draws(200, rng)) for _ in range(5)]
         assert np.std(values, ddof=1) > 0.0
@@ -171,7 +138,6 @@ class TestGapDistribution:
         assert gap_distribution_distance(fair_counts) < 0.05
 
     def test_rises_when_gaps_are_forced_regular(self) -> None:
-        """Chuỗi 'điểm rơi' hoàn hảo: mọi con về đúng mỗi 4 ngày."""
         counts = np.zeros((200, NUMBER_SPACE), dtype=np.int16)
         counts[::4] = 1
         assert gap_distribution_distance(counts) > 0.5
@@ -182,12 +148,6 @@ class TestGapDistribution:
 
 class TestMonteCarloCalibration:
     def test_p_value_is_never_zero(self) -> None:
-        """Ước lượng (extreme+1)/(sims+1) không bao giờ khẳng định quá dữ liệu.
-
-        Bình thiên lệch mạnh cho thống kê cao hơn mọi lần mô phỏng, nên tử số
-        đếm được 0 — giá trị p rơi về sàn 1/(sims+1) chứ không phải 0. Trả về 0
-        là khẳng định mạnh hơn mức số lần mô phỏng cho phép.
-        """
         result = monte_carlo_test(
             "chi-square",
             "?",
@@ -212,7 +172,6 @@ class TestMonteCarloCalibration:
         assert result.p_value == pytest.approx(1.0)
 
     def test_fair_data_is_not_flagged(self) -> None:
-        """Đối chứng âm: chuỗi ngẫu nhiên không được bác bỏ ở mức 0.05."""
         result = monte_carlo_test(
             "chi-square",
             "?",
@@ -225,7 +184,6 @@ class TestMonteCarloCalibration:
         assert result.p_value > 0.05
 
     def test_planted_structure_is_flagged(self) -> None:
-        """Đối chứng dương: bình có thiên lệch phải bị bác bỏ."""
         result = monte_carlo_test(
             "chi-square",
             "?",
@@ -273,7 +231,6 @@ class TestPowerAnalysis:
         assert large.detectable_lift < small.detectable_lift
 
     def test_scales_as_inverse_square_root_of_days(self) -> None:
-        """Kiểm đúng dạng công thức, không chỉ đúng chiều."""
         a = minimum_detectable_lift(400, baseline=0.2377)
         b = minimum_detectable_lift(1600, baseline=0.2377)
         assert a.detectable_lift / b.detectable_lift == pytest.approx(2.0, rel=1e-9)
@@ -284,7 +241,6 @@ class TestPowerAnalysis:
         assert family.detectable_lift > single.detectable_lift
 
     def test_repository_history_needs_a_large_relative_lift(self) -> None:
-        """Kết quả đóng khung mọi lựa chọn mô hình phía sau."""
         single = minimum_detectable_lift(391, baseline=0.23765728565289646, hypotheses=1)
         assert single.relative_lift > 0.20
 

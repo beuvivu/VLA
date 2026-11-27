@@ -1,34 +1,3 @@
-"""Kho tri thức có kiểm chứng: luật, bộ nhớ ngữ cảnh, và lời giải thích cho từng con số.
-
-Yêu cầu ngày 13-10-2026 (thiết kế hệ suy luận và tự học) có bốn phần. Ba phần đã có trong kho:
-truyền kết quả thống kê làm tiên nghiệm cho mô hình xác suất và bầu chọn có trọng số
-(``online_learning``: Bayes tần suất 30/180/toàn bộ, điều kiện trễ, Hedge hai trí nhớ), vòng
-phản hồi tự chỉnh trọng số (``online_learning.advance``, ``skill_monitor``), suy luận Bayes/Markov
-có độ tin cậy hiệu chỉnh đa kiểm (``confidence_matrix``). Module này lấp phần còn thiếu:
-
-1. **Kho luật (rule-based).** Mọi quy luật — đã đo ở nơi khác hay vừa tự khai phá — có một mục
-   chung: định nghĩa, ngày đăng ký, số đo và TRẠNG THÁI suy từ số đo.
-2. **Tự khai phá tri thức.** Mỗi ``DISCOVERY_EVERY`` kỳ, khai phá một lô luật trễ "a về hôm nay
-   → b về ngày mai" có lift cao nhất trên lịch sử đến ngày đăng ký. Lift trong mẫu KHÔNG phải
-   bằng chứng (chọn 20 trong 10 000 luật thì luật đẹp nhất luôn đẹp). Luật chỉ được chấm trên
-   các kỳ SAU ngày đăng ký, bằng e-process; "có bằng chứng" khi e-value đạt ngưỡng RIÊNG của
-   luật, ghi lúc đăng ký: lô thứ k được α·6/(π²k²), chia đều cho các luật trong lô, nên tổng mọi
-   lô không vượt α dù xem lại mỗi ngày (``batch_alpha``). Quá ``HORIZON`` kỳ chưa đạt thì "hết hạn".
-3. **Bộ nhớ ngữ cảnh (vector memory).** Mỗi kỳ là một vectơ ngữ cảnh (tần suất 30 kỳ, độ gan,
-   kỳ trước). Truy vấn ``NEIGHBOURS`` ngữ cảnh quá khứ giống nhất (cosine) và xem kỳ ngay sau
-   chúng ra gì: chuyên gia "tương tự quá khứ" (dự báo tương tự — analog forecasting). Được chấm
-   walk-forward so với hằng số trước khi được tin.
-4. **Giải thích từng con (``explain``).** Xác suất đã công bố, đóng góp của từng chuyên gia theo
-   trọng số Hedge hiện hành, mức tin đã hiệu chỉnh đa kiểm, luật đang "bắn" và ngữ cảnh tương tự.
-
-Với máy quay công bằng không thuật toán nào nâng được xác suất trúng; số đo của kho (03-10, 04-10,
-08-10, 12-10-2026) đều ra ngang hằng số. Vì thế mọi "độ tin cậy" ở đây suy từ phép kiểm, và mặc
-định là THẤP cho tới khi dữ liệu tiến cứu nói khác. Module là KHUNG THÁCH ĐẤU: không đổi tổ hợp
-xác suất của pipeline.
-
-    python src/forecast/knowledge_base.py            # cập nhật data/forecast/knowledge/
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -48,21 +17,17 @@ from core.xsmb_domain import baseline_rate
 OUT_DIR = "forecast/knowledge"
 KB_FILE = "kb.json"
 VERSION = 1
-#: Vectơ ngữ cảnh: cửa sổ tần suất, số ngữ cảnh láng giềng, độ mạnh tiên nghiệm kéo về nền.
 WINDOW = 30
 NEIGHBOURS = 50
 PRIOR = 50.0
-#: Kiểm walk-forward chuyên gia tương tự-quá-khứ trên chừng này kỳ cuối; top-k để đếm trúng.
 EVAL_DRAWS = 1000
 TOP_K = 10
-#: Khai phá: một lô mới khi lô gần nhất cũ hơn chừng này kỳ; mỗi lô chừng này luật.
 DISCOVERY_EVERY = 30
 RULES_PER_BATCH = 20
-MIN_SUPPORT = 200          # số lần tiền đề "a về" tối thiểu trong lịch sử khai phá
-SHRINK = 100.0             # độ mạnh Beta khi ước lượng tỉ lệ điều kiện trong mẫu
-HORIZON = 180              # số kỳ tiến cứu tối đa của một luật
+MIN_SUPPORT = 200
+SHRINK = 100.0
+HORIZON = 180
 ALPHA = 0.01
-#: Lưới cược của e-process cho luật: y − μ ≥ −μ > −0,3, nên mọi λ ≤ 2 giữ vốn dương.
 RULE_BETS = (0.1, 0.25, 0.5, 1.0, 2.0)
 
 EXPERT_LABELS = {
@@ -77,18 +42,10 @@ EXPERT_LABELS = {
 TIER_WORD = {"High": "Cao", "Medium": "Trung bình", "Low/Noise": "Thấp / nhiễu"}
 
 
-# --------------------------------------------------------------------------- dữ liệu
-
-
 def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
-    """(ma trận có mặt T × 100, nhãn ngày): con j về ít nhất một nháy ở kỳ t."""
     frame = pd.read_csv(Path(data_dir) / "xsmb-2-digits.csv", dtype=str)
     draws, labels = draws_from_frame(frame)
     return counts_matrix(draws) >= 1, list(labels)
-
-
-
-# --------------------------------------------------------------------------- bộ nhớ ngữ cảnh
 
 
 def _zscore_rows(block: np.ndarray) -> np.ndarray:
@@ -98,12 +55,6 @@ def _zscore_rows(block: np.ndarray) -> np.ndarray:
 
 
 def context_vectors(present: np.ndarray, window: int = WINDOW) -> np.ndarray:
-    """Vectơ ngữ cảnh của mọi kỳ t = 0..T (hàng T là kỳ kế tiếp), chỉ đọc các kỳ trước t.
-
-    Ba khối 100 chiều, mỗi khối chuẩn hoá chéo 100 con rồi ghép và chuẩn hoá độ dài 1 (để tích
-    vô hướng là cosine): tần suất trong ``window`` kỳ trước, độ "nóng" exp(−gan/window), và con
-    đã về ở kỳ ngay trước.
-    """
     present = np.asarray(present, dtype=float)
     total, n = present.shape
     cum = np.vstack([np.zeros((1, n)), np.cumsum(present, axis=0)])
@@ -124,13 +75,6 @@ def context_vectors(present: np.ndarray, window: int = WINDOW) -> np.ndarray:
 
 
 class ContextMemory:
-    """Kho vectơ ngữ cảnh và kết quả ngay sau mỗi ngữ cảnh; truy vấn láng giềng gần nhất.
-
-    Ngữ cảnh s có "kết quả" là chính kỳ s (vectơ s chỉ đọc các kỳ trước s). Khi dự báo kỳ t, chỉ
-    các s < t mới có kết quả đã biết. Láng giềng lấy trong [window, t − window): ngữ cảnh của
-    ``window`` kỳ ngay trước t chung phần lớn cửa sổ tần suất với t, nên "giống" chỉ vì gần về
-    thời gian. Bỏ chúng thì láng giềng là những giai đoạn độc lập thật sự tương tự.
-    """
 
     def __init__(self, present: np.ndarray, window: int = WINDOW):
         self.present = np.asarray(present, dtype=bool)
@@ -138,19 +82,15 @@ class ContextMemory:
         self.ctx = context_vectors(self.present, window)
 
     def neighbours(self, t: int, k: int = NEIGHBOURS) -> tuple[np.ndarray, np.ndarray]:
-        """(chỉ số, độ tương tự) của ``k`` ngữ cảnh quá khứ giống kỳ t nhất, giảm dần."""
         pool = np.arange(self.window, max(self.window, t - self.window))
         if pool.size == 0:
             return pool, np.zeros(0, dtype=np.float32)
         sims = self.ctx[pool] @ self.ctx[t]
         k = min(k, pool.size)
-        # Sắp đủ rồi cắt k, hoà điểm theo chỉ số kỳ: ``argpartition`` chọn phần tử hoà ở ranh giới theo
-        # lệnh vector của CPU, nên hai máy có thể lấy hai tập láng giềng khác nhau.
         order = np.lexsort((pool, -sims))[:k]
         return pool[order], sims[order]
 
     def predict(self, t: int, k: int = NEIGHBOURS, prior: float = PRIOR) -> tuple[np.ndarray, np.ndarray]:
-        """P(con về ở kỳ t) theo các kỳ ngay sau ngữ cảnh tương tự, co về nền bằng ``prior`` kỳ ảo."""
         base = baseline_rate("loto")
         idx, _ = self.neighbours(t, k)
         hits = self.present[idx].sum(axis=0) if idx.size else np.zeros(self.present.shape[1])
@@ -158,7 +98,6 @@ class ContextMemory:
 
 
 def _vn(x: float, digits: int = 2) -> str:
-    """Số kiểu Việt Nam: dấu phẩy thập phân."""
     return f"{x:.{digits}f}".replace(".", ",")
 
 
@@ -172,11 +111,6 @@ def _bernoulli_logloss(p: np.ndarray, y: np.ndarray) -> float:
 
 
 def evaluate_analog(present: np.ndarray, labels: list[str], last: int = EVAL_DRAWS) -> dict:
-    """Walk-forward: chuyên gia tương tự-quá-khứ so với hằng số và Bayes tần suất 30 kỳ.
-
-    Mỗi kỳ t chấm log-loss Bernoulli trên 100 con (tổng). Kỹ năng = 1 − LL/LL(hằng số); z từ hiệu
-    từng kỳ. Top-k trúng so với chọn bừa k con trong CÙNG kỳ (k·dₜ/100).
-    """
     memory = ContextMemory(present)
     total = len(present)
     first = max(3 * memory.window, total - last)
@@ -197,7 +131,7 @@ def evaluate_analog(present: np.ndarray, labels: list[str], last: int = EVAL_DRA
     n = len(arr)
 
     def versus(col: int) -> dict:
-        diff = arr[:, 2] - arr[:, col]                   # dương = tốt hơn hằng số
+        diff = arr[:, 2] - arr[:, col]
         se = float(diff.std(ddof=1) / math.sqrt(n)) if n > 1 else float("nan")
         return {"logloss": float(arr[:, col].mean()), "skill": float(1 - arr[:, col].sum() / arr[:, 2].sum()),
                 "gain_per_draw": float(diff.mean()), "z": _finite(diff.mean() / se) if se > 0 else None}
@@ -215,19 +149,11 @@ def evaluate_analog(present: np.ndarray, labels: list[str], last: int = EVAL_DRA
     }
 
 
-# --------------------------------------------------------------------------- luật: khai phá và chấm
-
-
 def mine_lag_rules(present: np.ndarray, upto: int, k: int = RULES_PER_BATCH,
                    min_support: int = MIN_SUPPORT) -> list[dict]:
-    """Khai phá ``k`` luật "a về kỳ t−1 → b về kỳ t" có lift cao nhất trên các kỳ < ``upto``.
-
-    Tỉ lệ điều kiện được co Beta về tỉ lệ nền của b (``SHRINK`` lần quan sát ảo), để luật có ít
-    lần xảy ra không nổi lên chỉ nhờ may.
-    """
     x = present[: upto - 1].astype(float)
     y = present[1:upto].astype(float)
-    co = x.T @ y                                        # co[a, b] = số lần a về rồi b về kỳ sau
+    co = x.T @ y
     support = x.sum(axis=0)
     rate_b = y.mean(axis=0)
     shrunk = (co + SHRINK * rate_b[None, :]) / (support[:, None] + SHRINK)
@@ -237,7 +163,7 @@ def mine_lag_rules(present: np.ndarray, upto: int, k: int = RULES_PER_BATCH,
     rules = []
     for idx in flat:
         if not np.isfinite(lift.flat[idx]):
-            break                                       # hết luật đủ số lần xảy ra: thà ít còn hơn bịa
+            break
         a, b = divmod(int(idx), present.shape[1])
         rules.append({"if": a, "then": b, "support": int(support[a]), "together": int(co[a, b]),
                       "rate": float(co[a, b] / support[a]), "base": float(rate_b[b]), "lift": float(lift[a, b])})
@@ -245,12 +171,6 @@ def mine_lag_rules(present: np.ndarray, upto: int, k: int = RULES_PER_BATCH,
 
 
 def score_rule(rule: dict, present: np.ndarray, labels: list[str], horizon: int = HORIZON) -> dict:
-    """Chấm TIẾN CỨU một luật trên các kỳ sau ngày đăng ký, bằng e-process một phía.
-
-    Luật "bắn" ở kỳ t khi a về ở kỳ t−1. Khi máy quay công bằng, biết dₜ con khác nhau về ở kỳ t
-    thì P(b về) = dₜ/100 đúng, nên tích các hệ số cược 1 + λ·(1[b về] − dₜ/100) là martingale
-    không âm; trung bình trên lưới λ cũng vậy. Ville: P(có lúc e ≥ 1/α) ≤ α.
-    """
     after = [t for t, d in enumerate(labels) if d > rule["registered_at"]]
     window = after[:horizon]
     a, b = rule["if"], rule["then"]
@@ -272,18 +192,10 @@ def score_rule(rule: dict, present: np.ndarray, labels: list[str], horizon: int 
 
 
 def batch_alpha(k: int, alpha: float = ALPHA) -> float:
-    """Phần α của lô thứ k (k = 1, 2, …): α·6/(π²k²). Tổng trên mọi lô bằng đúng α (chuỗi Basel).
-
-    Phần ấy được chia đều cho các luật của lô và GHI vào từng luật lúc đăng ký, nên ngưỡng của một
-    luật không bao giờ đổi khi có lô mới. Ngưỡng N/α tính theo số luật HIỆN CÓ thì lô k bị xét ở
-    α/k: tổng α·(1 + 1/2 + 1/3 + …) không bị chặn, và một kết luận đã báo có thể bị rút lại chỉ vì
-    đăng ký thêm luật.
-    """
     return alpha * 6.0 / (math.pi ** 2 * k * k)
 
 
 def rule_status(score: dict, threshold_e: float, horizon: int = HORIZON) -> str:
-    """Trạng thái suy từ số đo: có bằng chứng / đang kiểm / hết hạn. Ngưỡng e-value là của RIÊNG luật."""
     if score["e_max"] >= threshold_e:
         return "co-bang-chung"
     if score["draws_after"] >= horizon:
@@ -292,24 +204,16 @@ def rule_status(score: dict, threshold_e: float, horizon: int = HORIZON) -> str:
 
 
 STATUS_WORD = {"co-bang-chung": "Có bằng chứng", "dang-kiem": "Đang kiểm tiến cứu", "het-han": "Hết hạn, không đạt"}
-#: Trạng thái của phép kiểm tiến cứu đã đăng ký → trạng thái trong kho.
 HYPOTHESIS_STATUS = {"dang_thu": "dang-kiem", "xac_nhan": "co-bang-chung", "bac_bo": "khong-dat"}
 
 
 def rule_config() -> dict:
-    """Mọi tham số định nghĩa một luật và cách chấm nó. Khác bản đã ghi thì đó là một thí nghiệm KHÁC."""
     return {"version": VERSION, "discovery_every": DISCOVERY_EVERY, "rules_per_batch": RULES_PER_BATCH,
             "min_support": MIN_SUPPORT, "shrink": SHRINK, "horizon": HORIZON,
             "alpha_spending": "6/(pi^2 k^2)", "rule_bets": list(RULE_BETS)}
 
 
 def alpha_budget(previous: dict | None) -> float:
-    """Ngân sách α của CẢ kho, ghi lần tạo đầu và giữ qua mọi thí nghiệm.
-
-    Chỉ số lô đếm tiếp qua các thí nghiệm, nên tổng mọi lô ≤ ngân sách chỉ khi ngân sách không đổi:
-    hạ ``ALPHA`` sau khi lô 1 đã tiêu α·6/π² thì tổng đã vượt ngân sách mới, không lô nào gỡ lại được.
-    Vì thế đổi ``ALPHA`` trên một kho đã có bị từ chối; muốn đổi thì bắt đầu kho mới.
-    """
     budget = float((previous or {}).get("alpha_budget", ALPHA))
     if budget != ALPHA:
         raise ValueError(f"kho tri thức đã chốt ngân sách α = {budget}, ALPHA hiện là {ALPHA}: "
@@ -318,12 +222,6 @@ def alpha_budget(previous: dict | None) -> float:
 
 
 def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
-    """Tách kho đã ghi thành (phần được chấm tiếp, các thí nghiệm đã nghỉ).
-
-    Luật của kho ghi bằng phiên bản hay cấu hình khác KHÔNG được chấm lại bằng cách chấm mới: ngưỡng,
-    lưới cược hay chân trời đổi giữa chừng là xem dữ liệu rồi mới chọn phép kiểm. Chúng được cất
-    nguyên vẹn vào ``retired`` (với cấu hình và kỳ chấm cuối của chúng) và lô mới đăng ký ngay.
-    """
     if not previous:
         return None, []
     retired = list(previous.get("retired", []))
@@ -337,16 +235,10 @@ def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
 
 
 def batches_spent(retired: list[dict]) -> int:
-    """Số lô các thí nghiệm đã nghỉ từng đăng ký: chúng đã tiêu phần α của mình, lô mới đếm tiếp."""
     return sum(len(r.get("batches", [])) for r in retired)
 
 
 def update_rules(previous: dict | None, present: np.ndarray, labels: list[str], spent_before: int = 0) -> dict:
-    """Giữ nguyên mọi luật đã đăng ký (định nghĩa, ngày, số trong mẫu), chấm lại, thêm lô mới khi đến hạn.
-
-    ``spent_before`` là số lô đã đăng ký ở các thí nghiệm đã nghỉ. Chỉ số lô k đếm tiếp từ đó, không
-    về 1 khi đổi cấu hình: nếu không, mỗi lần đổi lại tiêu gần trọn α.
-    """
     batches = list((previous or {}).get("batches", []))
     rules = list((previous or {}).get("rules", []))
     index = {d: t for t, d in enumerate(labels)}
@@ -375,9 +267,6 @@ def update_rules(previous: dict | None, present: np.ndarray, labels: list[str], 
     return {"batches": batches, "rules": rules}
 
 
-# --------------------------------------------------------------------------- tri thức đã đo ở nơi khác
-
-
 def _read(path: Path) -> dict | None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -387,16 +276,10 @@ def _read(path: Path) -> dict | None:
 
 
 def measured_knowledge(data_dir: Path) -> list[dict]:
-    """Gom kết luận của các phép đo đã có trong kho thành mục tri thức có trạng thái."""
     data_dir = Path(data_dir)
     out = []
     conf = _read(data_dir / "evaluation" / "confidence" / "report.json")
     if conf:
-        # Các họ của confidence_matrix là ẢNH CHỤP: p tính lại mỗi ngày trên lịch sử dồn, nên xem
-        # lại hằng ngày thì xác suất có lúc vượt ngưỡng lớn hơn α nhiều, và một lần vượt có thể biến
-        # mất hôm sau. Vì thế chúng không bao giờ là "có bằng chứng" — muốn thế phải đăng ký phép kiểm
-        # tiến cứu (như hot_tail_test). Holm trên mọi họ chỉ để phân loại ảnh chụp: mỗi p chỉ hiệu
-        # chỉnh TRONG họ của nó, 15 họ ở α = 0,01 cho ~14% có ít nhất một họ vượt dưới giả thuyết không.
         families = conf.get("families", [])
         adjusted = holm([float(fam["p"]) for fam in families])
         for fam, p_holm in zip(families, adjusted, strict=True):
@@ -410,9 +293,6 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
                         "status": status, "p": float(fam["p"]), "p_holm": p_holm,
                         "summary": f"tín hiệu mạnh nhất so với lịch sử công bằng: p = {fam['p']:.3g}; "
                                    f"sau Holm trên {len(families)} họ: {p_holm:.3g}"})
-        # Hai phép kiểm TIẾN CỨU đã đăng ký tự chốt trạng thái (hot_tail_test, digit_sum_hypothesis);
-        # kho chỉ đọc lại, không tự suy. Tiến độ tính theo cỡ mẫu đã đăng ký (min_draws), không theo
-        # cửa sổ đặc trưng (window).
         for key, ident, title in (("hot_tail", "gia-thuyet-duoi-nong", "Giả thuyết đuôi nóng"),
                                   ("digit_sum", "gia-thuyet-tong-bong-cham", "Giả thuyết tổng – bóng – chạm")):
             hyp = conf.get(key) or {}
@@ -445,9 +325,6 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
     return out
 
 
-# --------------------------------------------------------------------------- dự đoán kèm độ tin cậy và giải thích
-
-
 def _latest_record(data_dir: Path, mode: str) -> dict | None:
     state = _read(Path(data_dir) / "forecast" / "online" / f"{mode}.json")
     if not state or not state.get("records"):
@@ -457,13 +334,6 @@ def _latest_record(data_dir: Path, mode: str) -> dict | None:
 
 def explain(number: int, mode: str, *, record: dict, confidence_row: dict | None,
             rules: list[dict], analog: dict | None) -> dict:
-    """Dự đoán chuyên sâu cho MỘT con: xác suất, đóng góp từng chuyên gia, độ tin cậy, lý do.
-
-    * Xác suất là đúng con số đã công bố (``record["published"]``), không tính lại.
-    * Đóng góp của chuyên gia e = wₑ·(pₑ − nền): phần nó kéo hỗn hợp khỏi mức nền. Tổng đóng góp
-      cộng nền bằng đúng hỗn hợp Hedge (``record["mixture"]``).
-    * Độ tin cậy là tầng đã hiệu chỉnh đa kiểm của ``confidence_matrix``, không phải hậu nghiệm thô.
-    """
     base = baseline_rate(mode)
     weights = record["weights"]
     contributions = []
@@ -502,7 +372,6 @@ def explain(number: int, mode: str, *, record: dict, confidence_row: dict | None
 
 def insights(data_dir: Path, mode: str, rules: list[dict], memory: ContextMemory | None,
              labels: list[str], k: int = TOP_K) -> dict | None:
-    """Lời giải thích cho ``k`` con xác suất cao nhất của bản công bố hiện hành."""
     record = _latest_record(data_dir, mode)
     if record is None:
         return None
@@ -528,9 +397,6 @@ def insights(data_dir: Path, mode: str, rules: list[dict], memory: ContextMemory
         items.append(explain(int(number), mode, record=record, confidence_row=rows.get((mode, int(number))),
                              rules=firing, analog=analog))
     return {"mode": mode, "target_date": record["target_date"], "items": items}
-
-
-# --------------------------------------------------------------------------- ghi
 
 
 def run(data_dir: Path) -> Path:
@@ -563,7 +429,7 @@ def run(data_dir: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     args = parser.parse_args(argv)
     print("[OK] kho tri thức ->", run(Path(args.data_dir)))

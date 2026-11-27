@@ -1,5 +1,3 @@
-"""Giữ số nháy cho tiền thưởng, còn xác suất và Hit-Rate chấm nhị phân."""
-
 from dataclasses import replace
 
 import numpy as np
@@ -77,7 +75,6 @@ def test_economics_uses_expected_occurrences_instead_of_hit_probability():
 
 
 class _FixedLearner:
-    """Bộ học cố định để theo dõi số nháy qua đường cuốn chiếu thật."""
 
     def fit(self, x, y):
         pass
@@ -101,7 +98,6 @@ def test_pipeline_preserves_occurrences_for_payout(observations, monkeypatch):
     pipeline = ContinuousLearningPipeline(
         observations, PipelineConfig(warmup=60, use_temporal=False, use_ranking=False)
     )
-    # Giữ đường dự báo/chấm/học thật, chỉ thay bộ học bằng dự báo cố định.
     pipeline.arm_builders = {name: _FixedLearner for name in pipeline.arm_builders}
     booster = learners.TabularBooster
     monkeypatch.setattr(orchestration, "TabularBooster", lambda: booster(n_estimators=2))

@@ -1,4 +1,3 @@
-"""Xác suất biên bộ số phải ổn định cả khi một số có trọng số lớn hơn hẳn."""
 from itertools import combinations
 
 import numpy as np
@@ -28,7 +27,6 @@ def test_small_biased_mixture_marginals_match_enumerated_subset_probabilities():
 
 def test_keno_one_heavy_number_has_the_analytic_inclusion_probability():
     weights = np.exp(np.array([[2., *([-2.] * 79)]]))
-    # Chia hai nhánh có/không có số nặng: r*C(79,19) và C(79,20).
     ratio = np.exp(4.)
     heavy = ratio * 20 / (60 + ratio * 20)
     expected = np.array([heavy, *([(20 - heavy) / 79] * 79)])
@@ -73,5 +71,5 @@ def test_legacy_keno_forecast_keeps_probability_bounds_after_learning_a_bias():
     forecast = model.forecast().components[0].set
     marginals = np.array([number.p for number in forecast.numbers])
     assert np.isfinite(marginals).all() and np.all((0 <= marginals) & (marginals <= 1))
-    assert marginals.sum() == pytest.approx(20, abs=5e-5)  # Bản công bố làm tròn sáu chữ số.
+    assert marginals.sum() == pytest.approx(20, abs=5e-5)
     assert forecast.numbers[0].symbol == '1' and .95 < forecast.numbers[0].p < 1

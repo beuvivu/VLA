@@ -1,27 +1,3 @@
-"""Per-draw prize data: parsers for public sources and a reconciliation step.
-
-Sources (both public GitHub repositories, MIT-licensed, auto-updated by their owners):
-
-* **leoodz/vn-vietlott** — ``results/power6x55.json``: every Power 6/55 draw since
-  01/08/2017, scraped from minhngoc.net.vn: winning numbers, winner counts and prize
-  value per tier (jackpot values *per winner* when shared).
-* **Compal123/vietlot-ai** — ``data/{power645,power655,power535}.jsonl``: draws with a
-  ``winners`` block (counts per tier) for Mega 6/45 (since 09/2025), Power 6/55
-  (since 09/2025) and Lotto 5/35 (since launch, 06/2025).
-
-Data-quality issues found and handled (``reconcile_power``):
-
-1. leoodz contains records for dates with no draw (Tết, 2020/2021 COVID pauses): the
-   page then shows the previous draw. Dropped by joining on the official draw list.
-2. Some daily updates captured the previous draw's prize table (records shifted by one
-   draw for weeks in 2025–26). Detected by fingerprint (counts + jackpot values equal
-   to the previous record) and repaired by matching each draw's winner counts —
-   taken from Compal123 when available — to the record that carries them.
-3. Jackpot values with several winners are per-winner amounts → converted to pots.
-4. Amount strings concatenated with older values (``"31,024,813,350đ30,528,…"``):
-   only the first amount is used.
-"""
-
 from __future__ import annotations
 
 import json
@@ -62,7 +38,6 @@ _AMOUNT = re.compile(r"([\d,.]+)\s*đ")
 
 
 def parse_amount(text: str | None) -> int | None:
-    """First VND amount in a (possibly concatenated) string: ``"31,024,813,350đ30,5…"`` → 31024813350."""
     if not text:
         return None
     m = _AMOUNT.match(text.strip())
@@ -75,7 +50,7 @@ class RawPrize:
     numbers: tuple[int, ...]
     bonus: int | None
     winners: dict[str, int]
-    amounts: dict[str, int | None]  # per-winner value for jackpots
+    amounts: dict[str, int | None]
     source: str
     stale: bool = False
     draw_id: int | None = None
@@ -94,7 +69,6 @@ class ReconcileReport:
     sources: dict[str, int] = field(default_factory=dict)
 
 
-# --------------------------------------------------------------------- parsers
 def parse_leoodz_power(text: str) -> list[RawPrize]:
     out: list[RawPrize] = []
     prev_fp = None
@@ -148,7 +122,6 @@ def parse_compal_winners(text: str, game: GameCode) -> list[RawPrize]:
     return out
 
 
-# ------------------------------------------------------------------ reconcile
 def _pots(spec: GameSpec, raw: RawPrize, winners: dict[str, int]) -> dict[str, int] | None:
     pots: dict[str, int] = {}
     for t in spec.tiers:
@@ -162,13 +135,6 @@ def _pots(spec: GameSpec, raw: RawPrize, winners: dict[str, int]) -> dict[str, i
 
 
 def reconcile(spec: GameSpec, draws: list[Draw], compal: list[RawPrize], leoodz: list[RawPrize] | None = None) -> tuple[list[PrizeRecord], ReconcileReport]:
-    """Merge sources into one validated ``PrizeRecord`` per official draw.
-
-    Winner counts: Compal123 (keyed by draw id, verified against the winning numbers)
-    first, then the leoodz record of the same date if it is not stale. Jackpot pots:
-    the leoodz record (within ±3 positions of the date) whose winner counts equal the
-    chosen counts — this repairs the one-draw shifts in leoodz.
-    """
     leoodz = leoodz or []
     names = {t.name for t in spec.tiers}
     by_id = {d.draw_id: d for d in draws}

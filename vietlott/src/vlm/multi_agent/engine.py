@@ -1,4 +1,3 @@
-'Điều phối dự báo trước phản hồi, giao dịch nguyên tử và khôi phục trạng thái.'
 from __future__ import annotations
 
 import asyncio
@@ -16,7 +15,6 @@ from .store import StateStore
 
 
 class PredictiveEngine:
-    'Mỗi engine ứng với một không gian kết quả; nhãn đánh số từ 0.\n\nMỗi kỳ chỉ có một dự báo chờ kết quả. Writer cũ phải nạp lại trạng thái và thử lại.'
 
     def __init__(self, n: int, k: int, database: str = ':memory:', seed: int = 42) -> None:
         if (isinstance(n, bool) or isinstance(k, bool) or not isinstance(n, Integral)
@@ -107,7 +105,6 @@ class PredictiveEngine:
                 evidence = self.meta.evidence()
                 mode = 'adaptive' if evidence['adaptive_enabled'] else 'uniform_baseline'
                 marginals = shadow_marginals if mode == 'adaptive' else np.full(self.n, self.k / self.n)
-                # Selection maximizes expected overlap; it need not be the joint MAP subset.
                 selected = sorted(np.argsort(-marginals, kind='stable')[:self.k].tolist())
                 log_probability = (mixture_log_prob(distributions, weights, selected)
                                    if mode == 'adaptive' else -self.meta.uniform_log_loss)

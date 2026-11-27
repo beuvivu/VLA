@@ -1,64 +1,3 @@
-"""Sổ phỏng đoán trong ngày: mọi danh sách số hệ thống công bố cho MỘT kỳ, đóng băng trước giờ quay.
-
-Trang Live đọc sổ này để đặt từng danh sách cạnh kết quả đang về và trả lời câu hỏi
-"hôm nay các phỏng đoán thực tế trúng bao nhiêu so với xác suất đã công bố".
-
-Vì sao phải có sổ riêng
-------------------------
-
-Nhiều tệp nguồn KHÔNG mang ngày trong tên (``data/ml/predict_next_*_ml_top10.csv``,
-``data/forecast/multi_hit/vip.json``, ``data/forecast/agents/report.json``…) và bị ghi đè ngay khi pipeline
-chạy cho kỳ sau, khoảng 19 giờ — tức trong lúc người đọc còn đang đối chiếu kỳ vừa quay.
-Đọc thẳng các tệp ấy sau giờ quay là chấm danh sách của kỳ KHÁC. Sổ chụp đúng thứ đang
-hiện trên các trang, chỉ được ghi TRƯỚC 18:10 giờ Việt Nam của kỳ đích
-(``fun_draw_ledger.cutoff_utc``, cùng giờ khoá với bảng mô phỏng) và đóng băng từ đó.
-
-Mỗi nguồn phải tự khai đúng kỳ đích (cột ``predict_for_date``, khoá ``target_date`` hay
-ngày trong tên tệp). Nguồn nói kỳ khác thì bị BỎ, ghi lý do vào ``missing`` — thà thiếu
-một hàng còn hơn đặt danh sách hôm qua cạnh kết quả hôm nay.
-
-Luật trúng của từng mục
-------------------------
-
-Mỗi mục mang ``rule`` mà trang chấm trên kết quả đang về (``src/web/assets/live-scorecard.js``):
-
-* ``{"on": "loto", "numbers": S, "need": t}`` — tổng số nháy của các số trong S ≥ t.
-  Một số LOTO là ``S = {n}, t = 1``; Lô VIP là ``t = 2``; cầu lộn cộng gộp nháy hai chiều.
-* ``{"on": "loto", "numbers": S, "all": true}`` — mọi số trong S cùng về (xiên).
-* ``{"on": "special", "numbers": S}`` — hai số cuối giải Đặc Biệt thuộc S.
-* ``{"on": "special_digit", "digits": D}`` — hàng chục hoặc hàng đơn vị của hai số cuối
-  Đặc Biệt thuộc D (cầu Đặc Biệt "chạm" của ``bridge_rules``).
-
-``base`` là xác suất CHÍNH XÁC của đúng sự kiện ấy khi kỳ quay công bằng (27 giải, hai số
-cuối đều trên 00–99; Đặc Biệt đều trên 100 số) — mốc "chọn bừa". ``prob`` là xác suất mà
-nguồn đã công bố cho sự kiện ấy, hoặc ``None`` khi nguồn chỉ xếp hạng.
-
-Vị trí cầu (schema 2, 02-11-2026)
----------------------------------
-
-Mười bốn danh sách sinh ra từ CẶP VỊ TRÍ chữ số trên bảng kết quả — ba ô "cầu đẹp nhất", bảy trang
-soi cầu, bốn bảng soi đường. Mỗi mục của chúng mang ``bridges`` (các cầu báo mục ấy: vị trí ``a``,
-``b`` theo cách đánh số 0–106 của ``position_bridges``, độ dài ``streak``; soi đường thêm ``lag`` và
-kỳ gốc ``base``) và ``bridge_total`` (tổng số cầu, vì một số soi đường có tới ~100 đường). Danh
-sách mang ``bridge`` (kiểu, luật tô ô về, chuỗi kỳ để vẽ đường cầu) và sổ mang ``draws`` — kết quả
-đúng các kỳ ấy — để trang Live vẽ lại đường cầu khi người đọc bấm vào một số.
-
-Cầu được TÍNH LẠI từ chính ảnh chụp mà trang đã dựng (``draws`` trong ``latest.json``) và phải ra
-đúng số cầu trang đã công bố; lệch thì danh sách ấy không mang vị trí — thà không vẽ còn hơn vẽ
-một cầu trang không hề in. Cầu Kèo KHÔNG có vị trí riêng: đặc trưng "cầu" của nó đếm số lần một số
-được ghép từ MỌI cặp vị trí trong 30 kỳ (``ml_features._path_support_matrix``), không phải một cầu cụ thể.
-
-Cầu đang chạy (schema 3, 03-11-2026)
-------------------------------------
-
-Danh sách KHÔNG sinh từ cặp vị trí (tổ hợp, Cầu Kèo, ML, tác tử, Lô VIP, xiên, bảng mô phỏng) vẫn bấm
-được trên trang Live: sổ mang ``running`` — mọi cầu đang chạy của hai trang in ĐỦ mọi nhóm, trang Cầu
-LOTO (≥ 3 kỳ, lộn) cho số LOTO và trang Cầu Đặc Biệt (chạm, ≥ 2 kỳ) cho số Đặc Biệt, xếp theo cặp số
-ghép ``{n, lộn n}``. Đó là phép TRA "cầu nào đang ghép ra số này", không phải lý do danh sách chọn số,
-và trang nói đúng như thế. Cùng luật tính lại: MỌI nhóm phải trùng số cầu trang đã in, lệch thì bỏ
-cả bảng của kiểu ấy.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -83,19 +22,11 @@ from soi_cau import bridge_rules
 from soi_cau.position_bridges import WIDTHS
 
 LOGGER = logging.getLogger(__name__)
-#: 2 (02-11-2026): danh sách cầu mang vị trí cầu và sổ mang ``draws``; 3 (03-11-2026): sổ mang
-#: ``running`` — cầu đang chạy tra theo số cho danh sách không sinh từ cặp vị trí (xem docstring).
 SCHEMA = 3
 OUT = Path("evaluation") / "prediction_board"
-#: Số mục tối đa lấy từ một bảng xếp hạng (các trang soi cầu liệt kê theo số cầu).
 TOP = 10
-#: Số cầu tối đa ghi cho MỘT mục (cầu dài nhất trước); tổng thật ghi ở ``bridge_total``.
 BRIDGES_PER_ITEM = 12
-#: Số kỳ cuối của chuỗi mà trang Live vẽ được đường cầu: cầu chạy dài hơn thì vẽ đoạn cuối.
 PATH_DRAWS = 8
-
-
-# --- Mốc chọn bừa ------------------------------------------------------------------
 
 
 def _binomial_tail(trials: int, p: float, need: int) -> float:
@@ -103,17 +34,14 @@ def _binomial_tail(trials: int, p: float, need: int) -> float:
 
 
 def base_probability(rule: dict) -> float:
-    """Xác suất chính xác của sự kiện ``rule`` dưới kỳ quay công bằng."""
     if rule["on"] == "special":
         return len(set(rule["numbers"])) / 100
     if rule["on"] == "special_digit":
         return 1 - (1 - len(set(rule["digits"])) / 10) ** 2
     size = len(set(rule["numbers"]))
     if rule.get("all"):
-        # Bao hàm – loại trừ: P(mọi số trong S cùng về) với 27 lượt rút độc lập.
         return float(sum((-1) ** j * comb(size, j) * (1 - j / 100) ** LOTO_DRAWS_PER_DAY
                          for j in range(size + 1)))
-    # Tổng số nháy của S là nhị thức(27, |S|/100).
     return _binomial_tail(LOTO_DRAWS_PER_DAY, size / 100, int(rule["need"]))
 
 
@@ -150,15 +78,12 @@ def _float(value: Any) -> float | None:
 
 
 class Skip(Exception):
-    """Nguồn không có danh sách của đúng kỳ đích."""
+    pass
 
 
 def _require(found: str | None, target: str, what: str) -> None:
     if found != target:
         raise Skip(f"{what} ghi kỳ {found or 'không rõ'}, không phải {target}")
-
-
-# --- Các nguồn ----------------------------------------------------------------------
 
 
 def _ranked(path: Path, target: str, mode: str, *, date_column: str | None) -> list[dict]:
@@ -187,8 +112,6 @@ def _ml(data: Path, target: str, mode: str) -> list[dict]:
 
 
 def _path(data: Path, target: str, mode: str, kind: str) -> list[dict]:
-    # Tệp soi đường mang NGÀY DỮ LIỆU (``anchor_date`` của manifest) và dự báo kỳ kế tiếp của
-    # ngày ấy — khác các tệp ``predict_next_*`` khác, vốn mang ngày quay.
     manifest = _json(data / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json")
     anchor = str(manifest.get("anchor_date", ""))[:10]
     if not anchor:
@@ -241,7 +164,6 @@ def _best_bridges(data: Path, target: str, key: str) -> list[dict]:
         if mode.get("db"):
             rule = {"on": "special", "numbers": numbers}
         else:
-            # Lộn thì CỘNG GỘP nháy của cả hai chiều; số bóng của số kép chỉ hiện kèm.
             rule = {"on": "loto", "numbers": numbers, "need": int(mode.get("nhay", 1))}
         items.append(_item(f"{label} ({bridge['streak']} ngày)", rule))
     return items
@@ -269,7 +191,6 @@ def _bridge_page(data: Path, target: str, key: str) -> list[dict]:
             rule = {"on": "special", "numbers": numbers}
         else:
             label = " · ".join(numbers)
-            # ``hai-nhay``: n về ≥ 2 nháy HOẶC n và số lộn cùng về — đúng bằng tổng nháy ≥ 2.
             rule = {"on": "loto", "numbers": numbers, "need": 2 if kind == "hai-nhay" else 1}
         items.append(_item(f"{label} ({count} cầu)", rule))
     return items
@@ -286,7 +207,6 @@ def _fun_draw(data: Path, target: str) -> list[dict]:
     return items
 
 
-#: (mã, nhóm, tiêu đề, trang, loại, nguồn). Thứ tự là thứ tự hiện trên trang Live.
 SOURCES: tuple[tuple[str, str, str, str, str, Callable[[Path, str], list[dict]]], ...] = (
     ("ensemble-de", "Trang chủ", "Tổ hợp xác suất · Top 10 Đặc Biệt", "index.html", "de",
      lambda d, t: _ensemble(d, t, "de")),
@@ -332,11 +252,7 @@ SOURCES: tuple[tuple[str, str, str, str, str, Callable[[Path, str], list[dict]]]
 )
 
 
-# --- Vị trí cầu ---------------------------------------------------------------------
-
-
 def decode_draw(text: str) -> tuple[str, list[str]]:
-    """``YYYY-MM-DD`` + 27 giải nối liền (đúng độ rộng ``WIDTHS``) → (ngày, 27 giá trị)."""
     day, rest = text[:10], text[10:]
     if len(rest) != sum(WIDTHS) or not rest.isdigit():
         raise ValueError(f"kỳ đã nhúng sai khuôn: {text[:24]!r}")
@@ -357,7 +273,6 @@ def _formed(values: list[str], a: int, b: int) -> int:
 
 
 def _arrays(draws: dict[str, list[str]]):  # type: ignore[no-untyped-def]
-    """Như ``position_bridges.load_draws`` nhưng từ kỳ đã nhúng: ngày, chữ số (T, 107), giá trị (T, 27)."""
     import numpy as np
 
     dates = sorted(draws)
@@ -393,7 +308,6 @@ def _position_bridges(data: Path, entry: dict, key: str, draws: dict[str, list[s
         if {_number(x) for x in bridge["numbers"]} != {f"{n:02d}", f"{rev:02d}"}:
             raise Skip(f"cầu {a}x{b} không ghép ra {bridge['numbers']} ở kỳ {series[-1]}")
         _attach(item, [{"a": a, "b": b, "streak": int(bridge["streak"])}])
-    # ``query``: đúng tham số trang soi cầu vị trí đọc (``readParams``), để liên kết mở đúng chế độ ấy.
     entry["bridge"] = {"type": "position", "mark": "special-lon" if mode.get("db") else "loto-lon",
                        "series": series[-PATH_DRAWS:],
                        "query": {"limit": int(mode.get("limit", 5)), "exactlimit": 0,
@@ -402,16 +316,11 @@ def _position_bridges(data: Path, entry: dict, key: str, draws: dict[str, list[s
     draws.update({d: embedded[d] for d in entry["bridge"]["series"]})
 
 
-#: Luật tô ô "về" ở kỳ sau của từng kiểu cầu trang soi cầu (``bridge_rules``).
 _RULE_MARK = {"loto": "loto-lon", "hai-nhay": "loto-lon", "bach-thu": "loto",
               "dac-biet": "special-touch", "bo-so": "bo"}
 
 
 def _recount(data: Path, key: str, target: str):  # type: ignore[no-untyped-def]
-    """Tính lại MỌI cầu của kiểu ``key`` từ kỳ đã nhúng trong ``bridge_pages/latest.json``.
-
-    Trả về (báo cáo, luật, ngày các kỳ đã lọc theo thứ, kỳ đã nhúng, cầu xếp theo khoá nhóm của trang).
-    """
     report = _json(data / "soi_cau" / "bridge_pages" / "latest.json")
     embedded = dict(decode_draw(text) for text in report.get("draws", []))
     if not embedded:
@@ -457,9 +366,6 @@ def _path_bridges(data: Path, entry: dict, mode: str, kind: str, target: str,
                     .get("draws", []))
     support = {_number(row["number"]): int(float(row.get("support_paths_count") or -1)) for row in _csv(
         data / "soi_cau" / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv").to_dict("records")}
-    # Cùng luật với ``path_prob.predict_from_fitted_paths_full``: kỳ gốc = ngày dữ liệu + 1 − độ trễ (lịch).
-    # Ngày ``following`` ấy KHÔNG phải kỳ đích khi nó là ngày nghỉ quay (Tết): ``_path`` nhận danh sách cho
-    # kỳ quay kế tiếp ``target``, nên khung chi tiết phải ghi ``target``, còn kỳ gốc vẫn theo luật của trang.
     following = date.fromisoformat(anchor) + timedelta(days=1)
     by_number: dict[str, list[dict]] = {}
     for row in _csv(paths_file).to_dict("records"):
@@ -479,17 +385,10 @@ def _path_bridges(data: Path, entry: dict, mode: str, kind: str, target: str,
     entry["bridge"] = {"type": "path", "mark": "loto" if mode == "loto" else "special", "next": target}
 
 
-#: Bảng tra "cầu đang chạy ghép ra số này": số LOTO theo trang Cầu LOTO, số Đặc Biệt theo trang Cầu Đặc
-#: Biệt (chạm). Hai trang ấy in ĐỦ mọi nhóm (tổng nhóm = ``total``), nên tra được bất kỳ số nào.
 RUNNING = {"loto": "loto", "de": "dac-biet"}
 
 
 def running_bridges(data_dir: Path, target: str, draws: dict[str, list[str]]) -> dict:
-    """Mọi cầu đang chạy của trang Cầu LOTO và Cầu Đặc Biệt, xếp theo cặp số ghép ``{n, lộn n}``.
-
-    MỌI nhóm tính lại phải trùng số cầu trang đã in và ngược lại; lệch thì bỏ bảng của kiểu ấy (trang Live
-    khi đó để số ở dạng thường). Kỳ cần vẽ được thêm vào ``draws``.
-    """
     running: dict[str, dict] = {}
     for mode, key in RUNNING.items():
         try:
@@ -514,10 +413,6 @@ def running_bridges(data_dir: Path, target: str, draws: dict[str, list[str]]) ->
 
 
 def attach_bridges(data_dir: Path, target: str, lists: list[dict]) -> dict[str, list[str]]:
-    """Gắn vị trí cầu cho các danh sách cầu; trả về kết quả các kỳ cần để vẽ đường cầu.
-
-    Lỗi ở một danh sách chỉ làm danh sách ấy không có vị trí (bảng đối chiếu vẫn đủ).
-    """
     draws: dict[str, list[str]] = {}
     for entry in lists:
         kept = {d: v for d, v in draws.items()}
@@ -551,7 +446,6 @@ def _vector(data: Path, target: str, mode: str) -> list[float] | None:
 
 
 def build_board(data_dir: Path, target: str, *, now: datetime) -> dict:
-    """Gom mọi danh sách của kỳ ``target`` đang có trong ``data_dir``."""
     lists, missing = [], []
     for key, group, title, page, kind, source in SOURCES:
         try:
@@ -580,11 +474,6 @@ def build_board(data_dir: Path, target: str, *, now: datetime) -> dict:
 
 
 def write_board(data_dir: Path, target: str, *, now: datetime) -> Path | None:
-    """Ghi sổ của kỳ ``target`` nếu còn TRƯỚC giờ khoá; sau giờ khoá sổ đóng băng.
-
-    Sau giờ khoá không ghi đè sổ đã có, cũng không tạo sổ mới: một sổ dựng khi kỳ quay đã
-    bắt đầu không còn là phỏng đoán "trước khi có kết quả".
-    """
     path = data_dir / OUT / f"{target}.json"
     if now >= cutoff_utc(target):
         LOGGER.info("Sổ phỏng đoán kỳ %s đã khoá lúc %s; giữ nguyên", target, cutoff_utc(target))
@@ -598,7 +487,6 @@ def write_board(data_dir: Path, target: str, *, now: datetime) -> Path | None:
 
 
 def source_files(target: str) -> list[str]:
-    """Mọi tệp (tương đối ``data/``) mà các nguồn của kỳ ``target`` đọc."""
     files = [
         "forecast/multi_hit/vip.json", "forecast/agents/report.json", "soi_cau/position_bridges/latest.json",
         "soi_cau/bridge_pages/latest.json", "forecast/predict/fun_draw_next.json",
@@ -616,7 +504,6 @@ def source_files(target: str) -> list[str]:
 
 
 def _anchored_files(root: Path) -> list[str]:
-    """Tệp soi đường của ngày dữ liệu ghi trong manifest đã lấy về (xem ``_path``)."""
     files = []
     for mode in ("loto", "de"):
         manifest = root / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json"
@@ -632,12 +519,6 @@ def _git(repo: Path, *args: str) -> str:
 
 
 def backfill_from_git(repo: Path, data_dir: Path, target: str, ref: str = "HEAD") -> Path | None:
-    """Dựng lại sổ của một kỳ ĐÃ khoá từ đúng các tệp đã commit TRƯỚC giờ khoá của nó.
-
-    Cùng luật với ``fun_draw_ledger.backfill_from_git``: bản cuối cùng commit trước 18:10 là
-    bản người đọc đã thấy trước kỳ quay. Sổ dựng lại mang ``backfilled_from`` (commit nguồn)
-    và không bao giờ đè sổ đã có.
-    """
     path = data_dir / OUT / f"{target}.json"
     if path.exists():
         return None
@@ -668,7 +549,7 @@ def backfill_from_git(repo: Path, data_dir: Path, target: str, ref: str = "HEAD"
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--target", default=None, help="kỳ đích; mặc định kỳ quay kế tiếp sau dữ liệu")
     parser.add_argument("--backfill-from-git", action="store_true",

@@ -2,9 +2,6 @@ from datetime import date
 
 from pydantic import BaseModel, RootModel, model_validator
 
-#: Độ rộng từng giải. Bản NHẸ: ``ingest.sources`` import module này trong job live chỉ cài pydantic, nên
-#: không lấy được từ ``core.xsmb_domain`` (numpy, pandas). ``tests/core/test_xsmb_domain_parity.py`` buộc hai
-#: bên khớp nhau.
 FIELD_WIDTHS: dict[str, int] = {
     "special": 5,
     "prize1": 5,
@@ -37,13 +34,6 @@ FIELD_WIDTHS: dict[str, int] = {
 
 
 class Result(BaseModel):
-    """A single XSMB draw result.
-
-    All prize fields are stored as integers (leading zeros are preserved when
-    rendering via formatting).  Prize ranges are enforced at the domain-model
-    boundary so malformed source/import data cannot create an invalid draw even
-    when it bypasses the normal HTML parser.
-    """
     date: date
 
     special: int

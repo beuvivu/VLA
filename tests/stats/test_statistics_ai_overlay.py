@@ -84,7 +84,6 @@ def test_missing_ml_weight_is_renormalized_not_zero_padded() -> None:
 
 
 def test_the_committed_diagnostics_never_carry_the_machine_working_directory(tmp_path: Path) -> None:
-    """Chẩn đoán được commit; đường dẫn tuyệt đối (`/home/runner/work/…`) đổi theo máy chạy."""
     data_dir = tmp_path / "somewhere" / "data"
     (data_dir / "ai_ml").mkdir(parents=True)
     _prediction(data_dir / "ai_ml" / "cau_keo_loto_all.csv", target="2026-09-02")

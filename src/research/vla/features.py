@@ -1,26 +1,3 @@
-"""Ma trận đặc trưng cho bài toán "con số n có về ở kỳ t+1 không".
-
-Quy ước DUY NHẤT của module: hàng ``t`` của mọi ma trận chỉ dùng các kỳ
-``0..t`` (kỳ ``t`` đã quay xong), và dự báo kỳ ``t+1``. Nhãn của hàng ``t`` là
-kết cục của kỳ ``t+1`` (``targets``); hàng cuối không có nhãn. Phép kiểm
-``test_features_never_look_at_the_draw_they_predict`` đổi mọi kỳ sau ``t`` rồi
-đòi hàng ``0..t`` giữ nguyên từng bit.
-
-Các nhóm đặc trưng:
-
-* Nhịp & gan: số kỳ chưa về, điểm z của gan so với chu kỳ đã hoàn tất của
-  chính con số (co về lý thuyết hình học khi còn ít chu kỳ), chuỗi về liên tiếp.
-* Tần suất suy giảm ``w = 2^{-(T-t)/h}`` với chu kỳ bán rã 7/30/90/180 kỳ,
-  chia cho tỉ lệ nền tích luỹ (1 = đúng mức nền).
-* Cầu vị trí: số cặp vị trí (a < b) đang chạy liên tiếp ≥ k kỳ và báo đúng
-  con số, cùng độ dài cầu dài nhất (luật ``bridge_rules``).
-* Đồ thị đồng xuất hiện: PMI cùng kỳ (mức "hợp nhau" với các con vừa về), PMI
-  trễ 1 kỳ (con j về hôm nay thì con n về ngày mai nhiều hơn nền?), và nhiệt
-  của cộng đồng Louvain chứa con số.
-* Riêng Đặc Biệt: tần suất suy giảm của đầu, đuôi, tổng, bộ, lớn/nhỏ, chẵn/lẻ;
-  xác suất chuyển Markov bậc 1 của tổng/đầu/đuôi từ kỳ t sang t+1.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -42,18 +19,16 @@ NUMBERS = np.arange(100)
 
 @dataclass(frozen=True)
 class History:
-    """Lịch sử theo thứ tự kỳ quay."""
 
     dates: tuple[str, ...]
-    digits: np.ndarray  # (T, 107) chữ số theo thứ tự in
-    values: np.ndarray  # (T, 27) giá trị đầy đủ của từng giải
+    digits: np.ndarray
+    values: np.ndarray
 
     def __len__(self) -> int:
         return len(self.dates)
 
     @property
     def counts(self) -> np.ndarray:
-        """(T, 100): số nháy của mỗi con trong 27 giải."""
         two = (self.values % 100).astype(np.int64)
         out = np.zeros((len(self), 100), dtype=np.int16)
         np.add.at(out, (np.arange(len(self))[:, None], two), 1)
@@ -61,11 +36,9 @@ class History:
 
     @property
     def special(self) -> np.ndarray:
-        """(T,): hai số cuối giải Đặc Biệt."""
         return (self.values[:, 0] % 100).astype(np.int64)
 
     def hits(self, mode: Mode) -> np.ndarray:
-        """(T, 100) bool: con số "về" theo nghĩa của ``mode``."""
         if mode == "loto":
             return self.counts > 0
         out = np.zeros((len(self), 100), dtype=bool)
@@ -86,7 +59,6 @@ def load_history(data_dir: Path) -> History:
 
 
 def targets(history: History, mode: Mode) -> np.ndarray:
-    """(T, 100) float: nhãn của hàng t là kết cục kỳ t+1; hàng cuối là NaN."""
     hit = history.hits(mode).astype(np.float32)
     out = np.full(hit.shape, np.nan, dtype=np.float32)
     out[:-1] = hit[1:]
@@ -96,13 +68,8 @@ def targets(history: History, mode: Mode) -> np.ndarray:
 @dataclass(frozen=True)
 class FeatureParams:
     half_lives: tuple[int, ...] = (7, 30, 90, 180)
-    #: Cầu LOTO đếm khi đã chạy ≥ 3 kỳ (mặc định trang tham chiếu); cầu Đặc
-    #: Biệt "cả hai chữ số" hiếm nên đếm từ 1 kỳ.
     bridge_min_streak: dict[str, int] = field(default_factory=lambda: {"loto": 3, "de": 1})
-    #: Tính lại cộng đồng Louvain sau mỗi ngần này kỳ, CHỈ trên dữ liệu đến
-    #: mốc ấy — cộng đồng dùng ở kỳ t là cộng đồng của mốc gần nhất ≤ t.
     community_every: int = 250
-    #: Số chu kỳ ảo theo lý thuyết hình học dùng để co trung bình/phương sai gan.
     gap_prior_cycles: float = 3.0
     seed: int = 7
 
@@ -110,19 +77,13 @@ class FeatureParams:
 @dataclass(frozen=True)
 class FeatureTensor:
     names: tuple[str, ...]
-    X: np.ndarray  # (T, 100, F) float32
+    X: np.ndarray
 
     def column(self, name: str) -> np.ndarray:
         return self.X[:, :, self.names.index(name)]
 
 
-# --------------------------------------------------------------------------
-# Khối tính toán dùng chung
-# --------------------------------------------------------------------------
-
-
 def decayed_sum(x: np.ndarray, half_life: float) -> np.ndarray:
-    """``S_t = Σ_{s≤t} 2^{-(t-s)/h} x_s`` theo trục 0 (bộ lọc IIR bậc 1)."""
     if not np.isfinite(half_life):
         return np.cumsum(x, axis=0, dtype=np.float64)
     decay = float(2.0 ** (-1.0 / max(float(half_life), 1e-9)))
@@ -130,27 +91,18 @@ def decayed_sum(x: np.ndarray, half_life: float) -> np.ndarray:
 
 
 def expanding_rate(hit: np.ndarray) -> np.ndarray:
-    """(T,) tỉ lệ nền tích luỹ tới hết kỳ t (trung bình trên mọi con số)."""
     per_day = hit.mean(axis=1, dtype=np.float64)
     return np.cumsum(per_day) / np.arange(1, len(hit) + 1)
 
 
 def gap_matrix(hit: np.ndarray) -> np.ndarray:
-    """Số kỳ kể từ lần về gần nhất, tính tới hết kỳ t (0 = về đúng kỳ t)."""
     n = len(hit)
     index = np.arange(n, dtype=np.int64)[:, None]
     last = np.maximum.accumulate(np.where(hit, index, -1), axis=0)
-    # Chưa về lần nào: đếm từ đầu chuỗi.
     return np.where(last >= 0, index - last, index + 1).astype(np.float64)
 
 
 def gap_zscore(hit: np.ndarray, base_rate: np.ndarray, prior_cycles: float) -> np.ndarray:
-    """z của gan hiện tại so với các chu kỳ ĐÃ HOÀN TẤT của chính con số.
-
-    Chu kỳ = số kỳ giữa hai lần về liên tiếp (≥ 1). Trung bình và phương sai co
-    về phân phối hình học với tỉ lệ nền ``p``: trung bình ``1/p``, phương sai
-    ``(1-p)/p²``, nặng ``prior_cycles`` chu kỳ ảo.
-    """
     n, m = hit.shape
     gaps = gap_matrix(hit)
     out = np.zeros((n, m), dtype=np.float64)
@@ -186,12 +138,6 @@ def hit_streak(hit: np.ndarray) -> np.ndarray:
 
 
 def bridge_features(history: History, mode: Mode, min_streak: int) -> tuple[np.ndarray, np.ndarray]:
-    """(số cầu đang chạy ≥ min_streak báo con n, cầu dài nhất báo con n) tại mỗi kỳ.
-
-    Cầu (a, b) "báo" ở kỳ t số ``10·d[a]+d[b]`` (và số lộn của nó). Độ dài cầu
-    là số bước kỳ-sang-kỳ liên tiếp gần nhất đã trúng tính tới kỳ t, theo luật
-    LOTO (lô) hoặc Đặc Biệt "cả hai chữ số" của ``bridge_rules.step_matrix``.
-    """
     T = len(history)
     count = np.zeros((T, 100))
     longest = np.zeros((T, 100))
@@ -199,7 +145,7 @@ def bridge_features(history: History, mode: Mode, min_streak: int) -> tuple[np.n
         return count, longest
     kind = "loto" if mode == "loto" else "dac-biet"
     steps = step_matrix(kind, history.digits, history.values, both=(mode == "de"))
-    runs = run_lengths(steps)  # runs[t-1] = độ dài cầu tính tới kỳ t
+    runs = run_lengths(steps)
     pa, pb = pair_index(True)
     for t in range(1, T):
         r = runs[t - 1].astype(np.float64)
@@ -207,26 +153,17 @@ def bridge_features(history: History, mode: Mode, min_streak: int) -> tuple[np.n
         y = history.digits[t, pb].astype(np.int64)
         n1, n2 = 10 * x + y, 10 * y + x
         alive = r >= min_streak
-        # Số lộn chỉ tính khi khác số thuận: số kép là MỘT số.
         for nums, use in ((n1, np.ones(len(r), dtype=bool)), (n2, n1 != n2)):
             count[t] += np.bincount(nums[use & alive], minlength=100)
             np.maximum.at(longest[t], nums[use], r[use])
     return count, longest
 
 
-#: Số đếm ảo cộng vào CẢ số quan sát lẫn số kỳ vọng của một cặp trước khi lấy log.
 PMI_PSEUDOCOUNT = 5.0
 
 
 def _pmi(joint: np.ndarray, left: np.ndarray, right: np.ndarray, total: float,
          pseudo: float = PMI_PSEUDOCOUNT) -> np.ndarray:
-    """PMI co về 0: ``log[(c_ij + k) / (e_ij + k)]`` với ``e_ij = c_i·c_j / N``.
-
-    ``e_ij`` là số lần cặp cùng xuất hiện nếu hai con độc lập. Cặp chưa có bằng
-    chứng (``c_ij`` và ``e_ij`` đều ≈ 0) cho PMI ≈ 0, không phải "liên kết mạnh";
-    cặp có nhiều dữ liệu tiến về ``log(c_ij / e_ij)``. Dạng cũ
-    ``log[(c_ij+1)·N / ((c_i+1)(c_j+1))]`` cho hai con chưa từng về PMI = log N.
-    """
     expected = np.outer(left, right) / max(float(total), 1.0)
     return np.log((joint + pseudo) / (expected + pseudo))
 
@@ -234,12 +171,6 @@ def _pmi(joint: np.ndarray, left: np.ndarray, right: np.ndarray, total: float,
 def cooccurrence_features(
     present: np.ndarray, target_hit: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """PMI cùng kỳ, PMI trễ 1 kỳ trung bình, và PMI trễ 1 kỳ LỚN NHẤT.
-
-    ``present`` là tập LOTO của từng kỳ; ``target_hit`` là biến cố được dự báo
-    (LOTO hoặc Đặc Biệt). Ma trận đếm chỉ gồm các kỳ ≤ t. Bản trung bình pha
-    loãng một cặp mạnh trong ~23 con vừa về; bản lớn nhất giữ được nó.
-    """
     T = len(present)
     same = np.zeros((T, 100))
     lagged = np.zeros((T, 100))
@@ -273,14 +204,9 @@ def cooccurrence_features(
 
 
 def community_heat(present: np.ndarray, rate_ratio: np.ndarray, every: int, seed: int) -> np.ndarray:
-    """Nhiệt của cộng đồng Louvain chứa con số: trung bình ``rate_ratio`` của cả cụm.
-
-    Đồ thị: 100 đỉnh, cạnh nặng = PMI dương cùng kỳ. Cộng đồng được tính lại tại
-    các mốc ``every, 2·every, …`` chỉ từ các kỳ ≤ mốc.
-    """
     T = len(present)
     out = np.ones((T, 100))
-    labels = np.zeros(100, dtype=np.int64)  # trước mốc đầu: một cụm duy nhất
+    labels = np.zeros(100, dtype=np.int64)
     for start in range(0, T, every):
         if start > 0:
             seen = present[:start].astype(np.float64)
@@ -305,7 +231,6 @@ def community_heat(present: np.ndarray, rate_ratio: np.ndarray, every: int, seed
     return out
 
 
-#: Thuộc tính của con số Đặc Biệt: (tên, mã nhóm của mỗi con 00..99).
 SPECIAL_GROUPS: dict[str, np.ndarray] = {
     "dau": NUMBERS // 10,
     "duoi": NUMBERS % 10,
@@ -318,7 +243,6 @@ MARKOV_GROUPS = ("tong", "dau", "duoi")
 
 
 def special_group_features(special: np.ndarray, half_life: float = 30.0) -> dict[str, np.ndarray]:
-    """Tần suất suy giảm của nhóm chứa con n, chia cho tỉ phần của nhóm ấy."""
     T = len(special)
     out = {}
     for name, group in SPECIAL_GROUPS.items():
@@ -333,7 +257,6 @@ def special_group_features(special: np.ndarray, half_life: float = 30.0) -> dict
 
 
 def markov_features(special: np.ndarray) -> dict[str, np.ndarray]:
-    """P(nhóm kỳ t+1 = nhóm của n | nhóm kỳ t) / tỉ phần nhóm, đếm trên các cặp ≤ t."""
     T = len(special)
     out = {}
     for name in MARKOV_GROUPS:
@@ -346,19 +269,13 @@ def markov_features(special: np.ndarray) -> dict[str, np.ndarray]:
             if t >= 1:
                 counts[group[special[t - 1]], group[special[t]]] += 1.0
             row = counts[group[special[t]]]
-            prob = (row + share * k) / (row.sum() + k)  # làm trơn về tỉ phần, nặng k
+            prob = (row + share * k) / (row.sum() + k)
             feat[t] = prob[group] / share[group]
         out[f"markov_{name}"] = feat
     return out
 
 
 def weekday_features(dates: tuple[str, ...]) -> tuple[np.ndarray, np.ndarray]:
-    """sin/cos thứ của kỳ đích t+1 (lịch quay biết trước, không phải kết cục).
-
-    Hàng lịch sử lấy đúng ngày của kỳ quay KẾ TIẾP trong chuỗi — qua quãng nghỉ
-    (Tết, 2020) đó không phải ngày lịch kế tiếp. Chỉ hàng cuối, khi kỳ đích chưa
-    có trong dữ liệu, mới giả định quay vào ngày hôm sau.
-    """
     day = pd.to_datetime(pd.Series(dates))
     nxt = day.shift(-1)
     nxt.iloc[-1] = day.iloc[-1] + pd.Timedelta(days=1)
@@ -368,7 +285,6 @@ def weekday_features(dates: tuple[str, ...]) -> tuple[np.ndarray, np.ndarray]:
 
 
 def build_features(history: History, mode: Mode, params: FeatureParams | None = None) -> FeatureTensor:
-    """Dựng tensor đặc trưng (T, 100, F) cho ``mode``."""
     params = params or FeatureParams()
     T = len(history)
     hit = history.hits(mode)
@@ -395,7 +311,6 @@ def build_features(history: History, mode: Mode, params: FeatureParams | None = 
     cols["reverse_hit_today"] = hit[:, reverse].astype(np.float64)
 
     if mode == "de":
-        # Đặc Biệt còn đọc được tập LOTO của kỳ vừa quay.
         loto_rate = decayed_sum(present, 30) / decayed_sum(np.ones(T), 30)[:, None]
         cols["loto_ewm30_ratio"] = loto_rate / np.maximum(expanding_rate(present), 1e-9)[:, None]
         cols["loto_present_today"] = present.astype(np.float64)
@@ -424,17 +339,7 @@ def build_features(history: History, mode: Mode, params: FeatureParams | None = 
     return FeatureTensor(names, X)
 
 
-# --- Lịch sử tổng hợp có cài tín hiệu (trước 15-11-2026: backtest/synthetic.py) -------------------
-#
-# Lịch sử tổng hợp có CÀI tín hiệu, để kiểm công cụ đo có phát hiện được không.
-
 def synthetic_history(n: int, seed: int, *, loto_signal: float = 0.5, de_signal: float = 0.15) -> History:
-    """Kỳ quay ngẫu nhiên đều, cộng hai tín hiệu cài sẵn.
-
-    LOTO: nếu 37 về ở kỳ t thì giải bảy thứ nhất kỳ t+1 là 73 với xác suất
-    ``loto_signal``. Đặc Biệt: hai số cuối kỳ t+1 = hai số cuối kỳ t + 1 (mod
-    100) với xác suất ``de_signal``. Đặt cả hai bằng 0 là lịch sử thuần ngẫu nhiên.
-    """
     rng = np.random.default_rng(seed)
     values = np.column_stack([rng.integers(0, 10**w, size=n) for _, w in FIELD_WIDTHS])
     seven = PRIZE_FIELDS.index("prize7_1")
@@ -448,18 +353,10 @@ def synthetic_history(n: int, seed: int, *, loto_signal: float = 0.5, de_signal:
     return history_from_frame(raw)
 
 
-# min_data_in_leaf được CHỌN trên lịch sử seed TUNING_SEED; độ nhạy công bố phải
-# đo trên seed khác (POWER_SEED), chưa từng dùng để chọn gì.
 TUNING_SEED = 11
 POWER_SEED = 31
 POWER_SIGNALS = {"loto": {"loto_signal": 0.5, "de_signal": 0.0}, "de": {"loto_signal": 0.0, "de_signal": 0.15}}
 
 
 def power_history(mode: str, n: int, seed: int) -> History:
-    """Lịch sử cho kiểm độ nhạy của MỘT chế độ: chỉ cài tín hiệu của chế độ ấy.
-
-    Đặc Biệt cũng là một trong 27 giải LOTO, nên cài cả hai thì tín hiệu
-    "Đặc Biệt + 1" thành thêm một tín hiệu trễ của LOTO và phép đo LOTO không
-    còn nói được mô hình bắt đúng tín hiệu 37 → 73.
-    """
     return synthetic_history(n, seed, **POWER_SIGNALS[mode])

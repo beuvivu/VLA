@@ -1,15 +1,3 @@
-"""Bảy trang cầu vị trí (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, theo thứ) và
-công cụ tạo phôi tuần.
-
-Đọc ``data/soi_cau/bridge_pages/latest.json`` (do ``bridge_rules.py`` sinh ngay sau mỗi
-kỳ quay). Mỗi trang nhúng 420 kỳ gần nhất; ``templates/bridge_pages.js`` tính lại
-cầu cho mọi tham số người xem chọn (biên ngày, số ngày cầu chạy, thứ trong tuần,
-"cả hai chữ số") và tô vị trí cầu trên các bảng kiểu Sổ kết quả.
-
-Mỗi trang kèm bảng "Cầu dài có đáng tin hơn?" đo trên toàn lịch sử — kết luận rút
-từ số đo, không viết cứng.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -34,7 +22,6 @@ WEEKDAYS = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "T
 NUMBER_RANK_RULES = frozenset(RULES)
 NUMBER_RANK_LABELS = {1: "Nhất", 2: "Nhì", 3: "Ba"}
 
-#: Luật của từng kiểu, viết cho người đọc.
 RULE_TEXT = {
     "loto": "Ghép chữ số ở hai vị trí a < b của bảng kết quả thành số ab. Kỳ sau trúng khi ab "
             "hoặc số lộn ba về ít nhất một nháy.",
@@ -85,7 +72,6 @@ def form_card(key: str, cfg: dict, report: dict) -> str:
 
 
 def number_ranks(counts: dict[str, int], rule_key: str) -> dict[str, int]:
-    """Ba mức số đường cầu cao nhất, đồng hạng cùng màu, chỉ xét số có hơn bảy cầu."""
     if rule_key not in NUMBER_RANK_RULES:
         return {}
     levels = sorted({count for count in counts.values() if count > 7}, reverse=True)[:3]
@@ -93,7 +79,6 @@ def number_ranks(counts: dict[str, int], rule_key: str) -> dict[str, int]:
 
 
 def rank_legend(rule_key: str) -> str:
-    """Chú giải màu theo số đường cầu, không gán ý nghĩa tin cậy dự báo."""
     if rule_key not in NUMBER_RANK_RULES:
         return ""
     labels = "".join(
@@ -105,7 +90,6 @@ def rank_legend(rule_key: str) -> str:
 
 
 def static_grid(counts: dict[str, int], *, rule_key: str = "") -> str:
-    """Bảng đầu 0–9 dựng sẵn — đúng khi chưa ai đổi tham số và khi JS không chạy."""
     ranks = number_ranks(counts, rule_key)
     rows = []
     for head in range(10):
@@ -254,9 +238,7 @@ def render(key: str, report: dict) -> str:
 """
 
 
-
 def render_tool(specials: list[list[str]]) -> str:
-    """Tạo phôi tuần: bảng giải Đặc Biệt theo tuần, tách 3 chữ số đầu và 2 chữ số cuối."""
     form = (
         '<form id="app-phoi-form" class="app-cau-form">'
         '<label>Số tuần (5–80)<input type="number" name="count" min="5" max="80" value="50" inputmode="numeric"></label>'
@@ -305,7 +287,6 @@ def render_tool(specials: list[list[str]]) -> str:
 
 
 def specials_from(report: dict) -> list[list[str]]:
-    """(ngày, giải Đặc Biệt) của các kỳ nhúng — dòng mã hoá mang ĐB ở 5 chữ số đầu."""
     return [[row[:10], row[10:15]] for row in report["draws"][-TOOL_DRAWS:]]
 
 
@@ -327,7 +308,7 @@ def build(data_dir: Path, docs_dir: Path) -> list[Path]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--docs-dir", default="docs")
     args = parser.parse_args()

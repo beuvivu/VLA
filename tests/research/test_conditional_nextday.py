@@ -11,7 +11,7 @@ def _two(dates: list[str]) -> pd.DataFrame:
     rows = []
     for t, d in enumerate(dates):
         vals = [(10 * t + i) % 100 for i in range(27)]
-        vals[0] = t % 2  # two repeating special states 00/01
+        vals[0] = t % 2
         rows.append({"date": d, **dict(zip(cols, vals, strict=True))})
     return pd.DataFrame(rows)
 
@@ -35,8 +35,6 @@ def test_missing_calendar_day_is_not_treated_as_next_day_pair():
     full = compute_loto_nextday_given_special(_two(full_dates), prior_strength=0.0)
     gap = compute_loto_nextday_given_special(_two(gap_dates), prior_strength=0.0)
 
-    # State 01 occurs at source row 1. In the gapped history its following row is
-    # Jan-04, which must NOT be counted as a t+1 trial for Jan-02.
     full_trials = int(full.loc[full["special"] == 1, "trials"].iloc[0])
     gap_state = gap[gap["special"] == 1]
     assert full_trials == 1
@@ -55,7 +53,6 @@ def test_empirical_bayes_probability_shrinks_toward_baseline():
 
 
 def _noise_two(days: int, seed: int = 4) -> pd.DataFrame:
-    """Lịch sử vô tín hiệu: đề và LOTO ngày hôm sau độc lập hoàn toàn."""
     rng = np.random.default_rng(seed)
     cols = ["special"] + [f"p{i}" for i in range(1, 27)]
     dates = pd.date_range("2020-01-01", periods=days, freq="D").strftime("%Y-%m-%d")
@@ -69,7 +66,6 @@ def _noise_two(days: int, seed: int = 4) -> pd.DataFrame:
 def test_learning_is_the_default_and_is_reported_per_special() -> None:
     out = compute_loto_nextday_given_special(_noise_two(500))
     assert "prior_strength" in out.columns
-    # Mỗi con đề là một câu hỏi riêng nên κ phải khác nhau giữa các hàng.
     per_special = out.groupby("special")["prior_strength"].nunique()
     assert (per_special == 1).all(), "trong một hàng κ phải là một giá trị"
     assert out.groupby("special")["prior_strength"].first().nunique() > 1
@@ -84,12 +80,6 @@ def test_an_explicit_number_is_used_verbatim_for_every_special() -> None:
 
 
 def _conditional_oracle_risks(seed: int, *, planted: bool) -> dict[str, float]:
-    """Rủi ro Brier dư kỳ vọng trên đủ 100 trạng thái nguồn và 100 số.
-
-    Dùng đúng 700 kỳ khớp của fixture cũ. Các kết quả đặc biệt giữ IID đều;
-    khi nguồn là 42, chỉ 26 giải thường ngày sau được lấy từ nhóm 00–19.
-    Vì thế việc tiêm không thay chuỗi trạng thái nguồn hay làm sai oracle.
-    """
     rng = np.random.default_rng(seed)
     draws = rng.integers(0, 100, size=(900, 27))
     truth = np.full((100, 100), 1.0 - 0.99 ** 27)
@@ -114,7 +104,6 @@ def _conditional_oracle_risks(seed: int, *, planted: bool) -> dict[str, float]:
     }
     predictions = {"pooled": np.tile(baseline, (100, 1))}
     for name, probabilities in values.items():
-        # Nguồn vắng trong tập khớp vẫn được chấm, với fallback về baseline.
         grid = np.tile(baseline, (100, 1))
         grid[source, number] = probabilities
         predictions[name] = grid
@@ -125,24 +114,12 @@ def _conditional_oracle_risks(seed: int, *, planted: bool) -> dict[str, float]:
 
 
 def test_learned_shrinks_null_risk_against_empirical_rates_across_seeds() -> None:
-    """Co nhiễu được đo bằng oracle-risk, không bằng dấu của 199 kỳ may rủi.
-
-    Seed 11 vẫn thuộc dải 0–19. Với 700 kỳ, mô men đã hiệu chỉnh KHÔNG luôn
-    hơn κ=60: trên 1.000 seed, excess-risk là 0,00057943 so với 0,00053046.
-    Đó là đánh đổi giữ tín hiệu, không phải lý do đổi seed hay bỏ hiệu chỉnh.
-    """
     risks = [_conditional_oracle_risks(seed, planted=False) for seed in range(20)]
     difference = [row["learned"] - row["empirical"] for row in risks]
     assert np.mean(difference) < 0.0
 
 
 def test_learned_preserves_planted_conditional_signal_across_seeds() -> None:
-    """Co hoàn toàn hoặc ép κ=60 không được thay thế phép học có tín hiệu.
-
-    Chấm cả bảng để trả giá cho nhiễu ở 99 nguồn còn lại; đồng thời chấm riêng
-    hàng có quy luật thật. So expected Brier chỉ cần marginal oracle, không
-    giả định 100 số trong cùng kỳ độc lập.
-    """
     risks = [_conditional_oracle_risks(seed, planted=True) for seed in range(20)]
     for baseline in ("pooled", "hand60"):
         assert np.mean([row["learned"] - row[baseline] for row in risks]) < 0.0

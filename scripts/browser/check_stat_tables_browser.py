@@ -1,4 +1,3 @@
-"""Đo đủ dữ liệu, chiều cao, tiêu đề dính và cuộn ngang của năm bảng thống kê."""
 from pathlib import Path
 
 from playwright.sync_api import expect
@@ -11,7 +10,6 @@ PRESET_PAGES = ("cau-dac-biet-theo-bo-so.html", "chu-ky-dac-biet.html",
 
 
 def check_tomorrow_panels(page, width):
-    """Hai khung cân nhau; mọi LOTO phải thuộc đúng ngày nằm cạnh giải."""
     state = page.evaluate("""() => {
       const left = document.querySelector('.app-tomorrow-history');
       const right = document.querySelector('.app-tomorrow-stat');
@@ -68,7 +66,6 @@ def check_tomorrow_panels(page, width):
 
 
 def check_preset_ranges(page, base, out: Path, width, dark):
-    """Bấm các mốc thật, đối chiếu số kỳ và số lần về với dữ liệu gốc."""
     results = []
     for name in PRESET_PAGES:
         errors = []
@@ -140,7 +137,6 @@ def check_preset_ranges(page, base, out: Path, width, dark):
 
 
 def select_days(page, days):
-    """Chọn dải thật qua bộ lọc và phát sự kiện như thao tác người dùng."""
     page.evaluate("""days => {
       const from = document.getElementById('sp-from');
       const to = document.getElementById('sp-to');
@@ -151,13 +147,11 @@ def select_days(page, days):
 
 
 def choose_orientation(page, orientation):
-    """Hai nút công khai giữ bộ chọn nội bộ cho hợp đồng dữ liệu cũ."""
     value = "vertical" if orientation.endswith("dọc") else "horizontal"
     page.locator(f'[data-app-orientation="{value}"]').click()
 
 
 def check_vertical_matrix(page):
-    """Chiều dọc hoán đổi trục; số lượt, đồ thị và danh tính ô không thay đổi."""
     state = page.evaluate("""() => {
       const table = document.getElementById('sp-matrix-grid');
       const counts = countLoto(selected());
@@ -181,7 +175,6 @@ def check_vertical_matrix(page):
 
 
 def check_geometry(page, selector):
-    """Đo DOM đã bố trí: không cắt hàng, không tràn trang, ghim đúng hai trục."""
     page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
     table = page.locator(selector)
     state = table.evaluate("""table => {
@@ -196,7 +189,6 @@ def check_geometry(page, selector):
     assert state["pageOverflow"] <= 1, state
     assert state["hiddenHeight"] <= 1 and state["lastInside"], state
     assert state["minWidth"], state
-    # Cuộn trang thật; hàng tiêu đề phải nằm ngay dưới thanh ứng dụng.
     table.evaluate("""table => {
       window.scrollTo(0, table.getBoundingClientRect().top + scrollY + 100);
       table.parentElement.scrollLeft = Math.min(340, table.scrollWidth);
@@ -222,7 +214,6 @@ def check_geometry(page, selector):
     assert sticky["border"] == "1px", sticky
     if sticky["scroll"]:
         assert abs(sticky["pan"] - sticky["scroll"]) <= 1, sticky
-    # Đi đến cột cuối bằng thanh cuộn ở đầu, kiểm tra đồng bộ ngược lại.
     table.evaluate("""table => {
       const pan = table.parentElement.parentElement.querySelector('.sp-table-pan');
       if (pan && !pan.hidden) pan.scrollLeft = pan.scrollWidth;
@@ -239,7 +230,6 @@ def check_geometry(page, selector):
 
 
 def check_full_history(page):
-    """Cuộn tới ngày cũ nhất, quay lại và đổi chiều mà không dựng hàng trăm nghìn ô."""
     results = []
     for orientation in ("Xem theo chiều ngang", "Xem theo chiều dọc"):
         choose_orientation(page, orientation)
@@ -278,7 +268,6 @@ def check_full_history(page):
             assert state["valid"] and not state["incorrect"], state
             assert max(state["rows"], state["cols"]) >= state["count"] + 1, state
             results.append({"days":"all", "orientation":orientation, "end":end, **state})
-        # Mép trục số/cặp đã sort không được nhảy về vị trí gốc trong dữ liệu.
         boundary = page.evaluate("""vertical => {
           const rows = Array.from(document.querySelector('#sp-matrix-grid').tBodies[0].rows)
             .filter(r => !r.hidden && !r.classList.contains('sp-virtual-gap'));
@@ -290,7 +279,6 @@ def check_full_history(page):
         }""", orientation.endswith("dọc"))
         page.keyboard.press('ArrowRight' if orientation.endswith('dọc') else 'ArrowDown')
         assert page.evaluate('document.activeElement?.dataset.key') == boundary
-        # Phím mũi tên qua biên vùng dựng phải đi đúng một ngày và giữ danh tính ô.
         edge = page.evaluate("""vertical => {
           const table = document.getElementById('sp-matrix-grid');
           const rows = Array.from(table.tBodies[0].rows).filter(r => !r.hidden && !r.classList.contains('sp-virtual-gap'));
@@ -304,7 +292,6 @@ def check_full_history(page):
         }""", orientation.endswith("dọc"))
         page.keyboard.press("ArrowDown" if orientation.endswith("dọc") else "ArrowRight")
         page.wait_for_function("key => document.activeElement?.dataset.key === key", arg=edge["expected"])
-        # Dấu được lưu theo số/ngày, không theo vị trí ô trong vùng dựng.
         page.evaluate("document.activeElement.click()")
         marked = page.evaluate("document.activeElement.classList.contains('marked')")
         page.evaluate("""vertical => {
@@ -319,7 +306,6 @@ def check_full_history(page):
         page.wait_for_function("key => !!document.querySelector(`#sp-matrix-grid [data-key=\"${key}\"]`)", arg=edge["expected"])
         assert page.locator(f'#sp-matrix-grid [data-key="{edge["expected"]}"]').evaluate(
             "cell => cell.classList.contains('marked')") == marked
-        # Đổi dải phải tháo vùng cuộn cũ; cuộn tiếp không được làm hiện lại lịch sử cũ.
         select_days(page, 10)
         page.wait_for_function("!document.querySelector('#sp-matrix-grid').hasAttribute('aria-rowcount')")
         page.evaluate("window.scrollBy(0, 200)")
@@ -328,7 +314,6 @@ def check_full_history(page):
 
 
 def check_small_selection(page, pair_page):
-    """Khung cũng phải co lại sau dải rỗng hoặc chỉ còn một cặp."""
     if pair_page:
         choose_orientation(page, 'Xem theo chiều dọc')
         select_days(page, page.evaluate("DRAWS.length"))
@@ -355,7 +340,6 @@ def check_small_selection(page, pair_page):
 
 
 def check_gan_keyboard(page):
-    """Popup thật giữ Tab bên trong, đóng trả focus và đổi mode không mất focus."""
     trigger = page.locator('#sp-gan-pick')
     trigger.focus()
     trigger.select_option('12')
@@ -388,7 +372,6 @@ def check_gan_keyboard(page):
 
 
 def check_detail_tables(page, base, out: Path, width, dark):
-    """Giữ cỡ số khi chọn, đủ ma trận Đầu–Đuôi và phân cấp bảng chi tiết."""
     results = []
 
     def select_without_resize(value):
@@ -437,8 +420,6 @@ def check_detail_tables(page, base, out: Path, width, dark):
                 "nodes => nodes.map(e => {const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})")
             assert len(cards) == 2, cards
             a, b = cards
-            # Hai panel mới có chú giải riêng nên hàng dữ liệu đầu không cùng
-            # cao độ. Đo đỉnh panel và đúng ngưỡng xếp chồng của lớp riêng.
             if width > 1100:
                 assert abs(a["y"] - b["y"]) <= 1 and b["x"] > a["x"] + a["w"], cards
             else:
@@ -463,7 +444,6 @@ def check_detail_tables(page, base, out: Path, width, dark):
 
 
 def check_stat_tables(page, base, out: Path, width, dark):
-    """Kiểm tra bộ lọc ngắn/dài và đổi trục trên dữ liệu đã xuất bản."""
     results = []
     for name in FREQUENCY_PAGES + CALENDAR_PAGES:
         errors = []

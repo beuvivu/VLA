@@ -34,8 +34,6 @@ def test_clustered_bootstrap_resamples_complete_dates() -> None:
 
     brier, _ = _paired_date_bootstrap(baseline, challenger, config=config)
 
-    # Sampling two whole dates can select good/good, good/bad, or bad/bad.
-    # Independent row bootstrap would produce additional intermediate values.
     assert set(np.round(brier, 8)).issubset({0.24, -0.16, -0.56})
     assert {0.24, -0.16, -0.56}.issubset(set(np.round(brier, 8)))
 
@@ -92,23 +90,6 @@ def test_temporal_partitions_reject_same_date_crossing_boundaries() -> None:
 
 
 def test_temporal_partitions_reject_training_after_calibration() -> None:
-    """Train phải đi TRƯỚC calibration, không chỉ là không trùng ngày.
-
-    Phép kiểm này bổ sung một chỗ hở thật: xoá hẳn hai dòng canh thứ tự thời
-    gian trong ``assert_temporal_partitions`` mà bộ kiểm vẫn xanh trọn vẹn.
-    Đột biến đã chứng minh điều đó, và đây đúng là nơi một lỗi rò rỉ
-    train/test sẽ ẩn mình — các phân vùng không trùng ngày nào nhưng vẫn
-    xen kẽ nhau về thời gian.
-    """
-    # Calibration phải có ÍT NHẤT HAI ngày, và bao quanh đuôi của train:
-    #
-    #     train        05, 06        max = 06
-    #     calibration  02, 09        min = 02   max = 09
-    #
-    # Với một ngày calibration duy nhất thì min trùng max, nên đột biến đổi
-    # `calibration_values.min()` thành `.max()` không thể bị phát hiện — đã
-    # kiểm và nó lọt qua. Dàn như trên thì bản đúng đỏ (06 >= 02) còn bản đột
-    # biến im lặng (06 < 09).
     dates = np.array([
         "2026-01-05", "2026-01-06", "2026-01-02", "2026-01-09", "2026-01-20",
     ])
@@ -122,7 +103,6 @@ def test_temporal_partitions_reject_training_after_calibration() -> None:
 
 
 def test_temporal_partitions_reject_calibration_after_test() -> None:
-    """Calibration phải đi TRƯỚC test, cùng lý do như trên."""
     dates = np.array(["2026-01-01", "2026-01-02", "2026-01-09", "2026-01-05"])
     with pytest.raises(ValueError, match="calibration dates must precede test"):
         assert_temporal_partitions(
@@ -134,7 +114,6 @@ def test_temporal_partitions_reject_calibration_after_test() -> None:
 
 
 def test_temporal_partitions_accept_a_correctly_ordered_split() -> None:
-    """Chốt chặn ngược: phép canh không được chặn cả phân vùng ĐÚNG."""
     dates = np.array(["2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"])
     assert_temporal_partitions(
         dates,
@@ -145,7 +124,6 @@ def test_temporal_partitions_accept_a_correctly_ordered_split() -> None:
 
 
 def test_temporal_partitions_ignore_the_clock_within_a_day() -> None:
-    """Chuẩn hoá về ngày phải giữ: hai mốc cùng ngày khác giờ vẫn là TRÙNG."""
     dates = np.array([
         "2026-01-01 09:00", "2026-01-02 08:00",
         "2026-01-02 19:30", "2026-01-03 06:00",
@@ -195,7 +173,6 @@ def test_production_inference_rejects_nonfinite_features_and_invalid_probabiliti
 
 
 def _reference_bootstrap(baseline, challenger, config):
-    """Bản trước khi vector hoá: ghép lại mọi hàng của các kỳ rút được rồi chấm qua sklearn."""
     unique_dates = pd.unique(baseline.dates)
     groups = [np.flatnonzero(baseline.dates == date) for date in unique_dates]
     rng = np.random.default_rng(config.bootstrap_seed)
@@ -213,11 +190,10 @@ def _reference_bootstrap(baseline, challenger, config):
 
 @pytest.mark.parametrize("seed", [0, 1, 2])
 def test_grouped_bootstrap_equals_the_row_concatenating_bootstrap(seed) -> None:
-    """Kỳ có số hàng KHÁC nhau và xác suất sát biên: trung bình theo hàng phải trọng số theo cỡ kỳ."""
     rng = np.random.default_rng(seed)
     sizes = rng.integers(1, 9, size=37)
     dates = np.repeat(pd.date_range("2026-01-01", periods=len(sizes)).to_numpy(), sizes)
-    rng.shuffle(dates)  # các hàng của một kỳ không cần liền nhau
+    rng.shuffle(dates)
     y = rng.integers(0, 2, size=len(dates))
     p_base = rng.uniform(0, 1, size=len(dates))
     p_cand = np.clip(p_base + rng.normal(0, .2, size=len(dates)), 0, 1)

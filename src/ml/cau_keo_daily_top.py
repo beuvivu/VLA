@@ -1,21 +1,3 @@
-"""Lưu 10 số đứng đầu bảng Cầu Kèo theo ĐÚNG ngày quay mà chúng nhắm tới.
-
-Trang chủ in khối "Đặc Biệt ngày mai" / "LOTO ngày mai" từ
-``data/ai_ml/cau_keo_<mode>_top20.csv``, xếp theo ``cau_score`` giảm dần. Tệp ấy
-bị ghi đè sau mỗi kỳ quay, nên tới lúc trang trực tiếp cần nó (trong phiên quay
-của ngày D) hoặc sau đó, bảng đã chuyển sang ngày D + 1. Module này chụp 10 số
-ấy vào ``data/ai_ml/daily/cau_keo_<mode>_top10_<ngày>.csv`` — khoá theo cột
-``predict_for_date`` của chính bảng — để trang trực tiếp đọc đúng ngày.
-
-Thứ hạng đi qua :func:`top_by_cau_score`, hàm trang chủ cũng dùng, nên hai nơi
-không thể lệch nhau. Điểm cầu-kèo là thứ hạng 0–100 trong một kỳ, KHÔNG phải
-xác suất đã hiệu chuẩn.
-
-Chạy lại trước giờ quay thì bản của ngày ấy được ghi đè bằng bảng mới nhất —
-đúng thứ trang chủ đang hiện. Sau kỳ quay bảng đã nhắm sang ngày sau, nên bản
-của ngày đã quay không bị chạm tới nữa.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -34,11 +16,6 @@ FIELDS = ["predict_for_date", "rank", "number", "cau_score", "prob"]
 
 
 def top_by_cau_score(df: pd.DataFrame, limit: int = TOP) -> pd.DataFrame:
-    """``limit`` dòng có ``cau_score`` cao nhất; hoà thì giữ thứ tự trong tệp.
-
-    Sắp xếp ỔN ĐỊNH (mergesort): ``quicksort`` mặc định của pandas không hứa giữ
-    thứ tự các dòng hoà điểm, nên hai lần xếp cùng một bảng có thể ra hai top-10.
-    """
     if df.empty or "cau_score" not in df.columns:
         return pd.DataFrame()
     score = pd.to_numeric(df["cau_score"], errors="coerce").fillna(0.0)
@@ -51,7 +28,6 @@ def daily_path(data_dir: Path, mode: str, day: str) -> Path:
 
 
 def write_daily_top(data_dir: Path, mode: str) -> Path | None:
-    """Chụp top 10 hiện tại của ``mode``; trả đường dẫn đã ghi, hoặc ``None``."""
     table = read_csv_or_empty(
         data_dir / "ai_ml" / f"cau_keo_{mode}_top20.csv",
         dtype={"number_str": str, "predict_for_date": str},
@@ -60,7 +36,6 @@ def write_daily_top(data_dir: Path, mode: str) -> Path | None:
         return None
     days = {str(v)[:10] for v in table["predict_for_date"].dropna()}
     if len(days) != 1:
-        # Một bảng phải nhắm đúng một ngày; nhiều ngày lẫn nhau là tệp hỏng.
         raise ValueError(f"cau_keo_{mode}_top20.csv nhắm nhiều ngày: {sorted(days)}")
     (day,) = days
     top = top_by_cau_score(table)
@@ -81,7 +56,7 @@ def write_daily_top(data_dir: Path, mode: str) -> Path | None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default=str(REPO_ROOT / "data"))
     args = parser.parse_args()
     for mode in MODES:

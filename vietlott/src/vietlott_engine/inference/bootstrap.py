@@ -1,14 +1,3 @@
-"""Resampling inference for dependent data and data-snooping-robust strategy selection.
-
-* Stationary bootstrap (Politis & Romano 1994): geometric block lengths, preserves
-  serial dependence.
-* Hansen (2005) Superior Predictive Ability test and White (2000) Reality Check:
-  when M strategies are tried, "the best one beat the benchmark" is a statement about
-  a *maximum* and must be tested as such. H0: no strategy has positive expected
-  performance relative to the benchmark. Three SPA p-values (lower / consistent /
-  upper) bracket the answer; the consistent one is the recommended test.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -16,11 +5,6 @@ from pydantic import BaseModel
 
 
 def stationary_bootstrap_indices(t: int, mean_block: float, rng: np.random.Generator, size: int | None = None) -> np.ndarray:
-    """Politis–Romano resampling indices, shape (t,) or (size, t) — vectorised.
-
-    A new block starts with probability 1/mean_block; within a block indices advance
-    by one (circularly).
-    """
     b = 1 if size is None else size
     p = 1.0 / max(mean_block, 1.0)
     starts = rng.random((b, t)) < p
@@ -46,7 +30,6 @@ class SPAResult(BaseModel):
 
 
 def spa_test(differentials: np.ndarray, names: list[str], bootstrap: int = 2000, mean_block: float = 10.0, seed: int | None = None) -> SPAResult:
-    """``differentials``: (T, M) performance of each strategy minus the benchmark, per period."""
     d = np.asarray(differentials, dtype=np.float64)
     t, m = d.shape
     rng = np.random.default_rng(seed)
@@ -63,7 +46,7 @@ def spa_test(differentials: np.ndarray, names: list[str], bootstrap: int = 2000,
     g_l = np.maximum(dbar, 0.0)
     g_c = dbar * (np.sqrt(t) * dbar / omega >= thresh)
     g_u = dbar
-    centred = boot_means - dbar  # d̄* − d̄
+    centred = boot_means - dbar
 
     def p_for(g: np.ndarray) -> float:
         z = np.sqrt(t) * (centred + dbar - g) / omega

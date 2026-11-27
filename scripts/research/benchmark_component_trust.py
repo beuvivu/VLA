@@ -1,29 +1,3 @@
-"""Đo ngoài mẫu hai sửa chữa của tổ hợp production: độ tin cầu-kèo và neo mức LOTO.
-
-1. **Cầu-kèo** (``cau_keo_ml``, trọng số tổ hợp 0,30) phát xác suất THÔ của cây
-   tăng cường + Platt, không co về nền khi không có kỹ năng — khác thành phần
-   ML, vốn đã có ``ml_train.model_trust``. Ứng viên: cùng luật ấy,
-   ``p = trust·thô + (1 − trust)·nền`` với trust = clip(20·s, 0, 1).
-2. **Neo mức LOTO**: hai nhánh cầu vị trí (``path_prob``) chọn top quy tắc nên
-   mang lời nguyền người thắng ở MỨC. Ứng viên: chốt tổ hợp LOTO bằng
-   ``Σp = 100·nền`` (``ensemble_utils.anchor_loto_level``).
-
-Walk-forward trên ``--last`` kỳ cuối. Cầu-kèo học lại mỗi ``--refit-every`` kỳ
-bằng đúng ``cau_keo_ml._train_model`` (cùng khối thời gian, cùng siêu tham số);
-cầu vị trí dựng lại mỗi kỳ như production. Kỳ ngay sau quãng nghỉ (Tết) bị loại.
-
-Tổ hợp được MÔ PHỎNG với trọng số mặc định: ML và thống kê lấy đúng tỉ lệ nền —
-walk-forward 03-10-2026 đo trust của ML bằng 0 ở gần như mọi lần học, và tín
-hiệu thống kê co hoàn toàn về nền từ 14-09-2026 — còn cầu-kèo và cầu vị trí
-lấy từ walk-forward ở trên.
-
-Luật quyết định chốt TRƯỚC khi đo (cùng luật với ``benchmark_model_trust``):
-chỉ đổi khi bản mới không kém bản hiện hành ở cả hai chế độ và thắng với z ≥ 2
-ở ít nhất một chế độ; đồng thời không kém dự báo hằng số có ý nghĩa thống kê.
-
-    PYTHONPATH=src python3 scripts/research/benchmark_component_trust.py --last 1000
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -56,7 +30,6 @@ from core.xsmb_domain import baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "component_trust.json"
 MODES = ("loto", "de")
-#: Đúng tham số ``run_path_ui`` dùng trong pipeline.
 PATH_PARAMS = PathParams(lag_max=30, window_days=365, min_trials=60, min_max_streak=3,
                          min_current_streak=3, top_rules_per_lag=300)
 TRAIN_WINDOW = 2000
@@ -65,7 +38,6 @@ _PREPARED = None
 
 
 def _cau_walk_forward(mode: str, last: int, refit_every: int) -> tuple[dict[str, dict], list[dict]]:
-    """Xác suất THÔ của cầu-kèo cho ``last`` neo cuối, kèm trust/nền của lần học phủ neo ấy."""
     config = ck.CauKeoConfig(window_days=last + TRAIN_WINDOW + 10)
     X, y = ck.build_cau_keo_feature_frame(mode, include_target=True, config=config)
     X["anchor_date"] = pd.to_datetime(X["anchor_date"])
@@ -77,7 +49,6 @@ def _cau_walk_forward(mode: str, last: int, refit_every: int) -> tuple[dict[str,
     scored = anchors[-last:]
     for start in range(0, last, refit_every):
         block = scored[start:start + refit_every]
-        # Nhãn của neo s−1 là kỳ s, đã biết tại neo s: học trên mọi neo < neo đầu khối.
         window = anchors[anchors < block[0]][-TRAIN_WINDOW:]
         mask = (anchor_of_row >= window[0].to_datetime64()) & (anchor_of_row < block[0].to_datetime64())
         with tempfile.TemporaryDirectory() as scratch:
@@ -190,7 +161,6 @@ def run(last: int, refit_every: int, workers: int) -> dict:
             "vs_constant": {k: _paired(v, ref) for k, v in ll.items()},
             "cau_trusted_vs_raw": _paired(ll["cau_trusted"], ll["cau_raw"]),
             "ensemble_new_vs_current": _paired(ll["ensemble_new"], ll["ensemble_current"]),
-            # Tách hai sửa chữa: neo mức một mình, rồi độ tin cầu-kèo khi đã neo.
             "anchor_only_vs_current": _paired(ll["ensemble_current_plus_anchor"], ll["ensemble_current"]),
             "cau_trust_given_anchor": _paired(ll["ensemble_new"], ll["ensemble_current_plus_anchor"]),
             "cau_mean_trust": float(np.mean([r["trust"] for r in c])),
@@ -210,7 +180,7 @@ def run(last: int, refit_every: int, workers: int) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--last", type=int, default=1000)
     ap.add_argument("--refit-every", type=int, default=50)
     ap.add_argument("--workers", type=int, default=4)

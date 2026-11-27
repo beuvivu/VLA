@@ -1,4 +1,3 @@
-"""Run the actual publication helper in a local remote, including rejected pushes."""
 import subprocess
 import sys
 import importlib.util
@@ -45,7 +44,6 @@ def test_rejected_push_never_satisfies_publication_barrier(tmp_path):
 
 
 def test_remote_advance_after_accepted_push_retries_publication(tmp_path, monkeypatch):
-    """Commit khác tới sau push vẫn phải được đồng bộ trước khi dựng trang."""
     _, first, queued = remote_fixture(tmp_path)
     git(queued, 'pull', '--rebase')
     journal = queued / 'data/results/results.jsonl'

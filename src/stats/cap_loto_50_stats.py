@@ -2,13 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Historical statistics for the common 50-cặp-loto partition.
-
-The partition contains 45 reverse pairs and five kép-bóng pairs. This module
-measures whether members actually behave similarly in historical data. It does
-not assume that a domain relation is predictive; it emits evidence that can be
-used later by leakage-safe feature engineering or score regularization.
-"""
 
 import argparse
 import json
@@ -107,7 +100,6 @@ def _window_metrics(
 def _current_cau_scores(
     mode: str, data_dir: Path, *, expected_anchor: str
 ) -> dict[str, float]:
-    """Load only a cầu-kèo artifact anchored to the same canonical history end."""
 
     path = data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv"
     df = read_csv_or_empty(path, dtype={"number_str": str, "anchor_date": str})

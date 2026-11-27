@@ -1,9 +1,3 @@
-"""FastAPI application factory.
-
-Run:  uvicorn vietlott_engine.api.main:app --host 127.0.0.1 --port 8000
-Docs: http://localhost:8000/docs
-"""
-
 from __future__ import annotations
 
 from vietlott_engine import __version__
@@ -54,7 +48,6 @@ def build_repository(settings: Settings) -> DrawRepository:
 
 
 async def _seed(state: AppState) -> None:
-    """Load the bundled JSONL snapshot into an empty store (local, fast, blocking)."""
     s = state.settings
     if s.seed_file_dir is None or not s.seed_file_dir.exists():
         return
@@ -69,7 +62,6 @@ async def _seed(state: AppState) -> None:
 
 
 async def _background_sync(state: AppState) -> None:
-    """Incremental network sync after startup; the API serves stored data meanwhile."""
     for spec in GAMES.values():
         try:
             async with build_http_client(state.settings) as client:
@@ -138,18 +130,12 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         lifespan=lifespan,
     )
     _MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
-    # GET làm mới dự báo ghi trạng thái; GET GCN huấn luyện lại ngay trong lượt yêu cầu.
-    # Cả hai cần cùng cổng token/origin để khách lạ không tiêu CPU qua đường chỉ đọc.
-    # /scoreboard chỉ đọc sổ nên không thuộc cổng này.
     _PROTECTED_GET = re.compile(
         r"^/(?:(?:ml/)?forecast/[^/]+(?:/evidence)?|games/[^/]+/ml/gcn/(?:skill|next))/?$"
     )
     _BOOL = TypeAdapter(bool)
 
     def _asks_to_record(request: Request) -> bool:
-        """Đọc ``record`` ĐÚNG như FastAPI đọc tham số bool (pydantic): "on", "y", "t"… cũng là
-        True, không chỉ "1"/"true"/"yes". Xét MỌI lần lặp của tham số. Giá trị không đọc được
-        (FastAPI sẽ trả 422) vẫn tính là lệnh ghi: đóng an toàn."""
         for value in request.query_params.getlist("record"):
             try:
                 if _BOOL.validate_python(value):
@@ -159,11 +145,6 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         return False
 
     def _sent_by_another_site(request: Request) -> bool:
-        """Trình duyệt đánh dấu yêu cầu đến từ một trang khác (Fetch Metadata, hoặc Origin lạ).
-
-        Client không phải trình duyệt (scheduler, curl) không gửi hai đầu mục này nên không bị
-        ảnh hưởng. Cùng trang (Swagger UI ở /docs do chính API phục vụ) và Origin có trong
-        VQE_CORS_ORIGINS là được tin."""
         site = request.headers.get("sec-fetch-site")
         if site in {"same-origin", "none"}:
             return False
@@ -175,14 +156,7 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
 
     @app.middleware("http")
     async def _require_token_for_writes(request: Request, call_next):  # type: ignore[no-untyped-def]
-        """Lệnh ghi cần token khi VQE_API_TOKEN được đặt; lệnh đọc giữ nguyên.
-
-        Không đặt token thì lệnh ghi vẫn mở cho client cục bộ, nhưng KHÔNG cho trình duyệt gửi
-        từ trang khác: CORS đóng chỉ ngăn đọc phản hồi, còn một "simple request" như
-        ``GET /forecast/mega645?record=true`` từ trang lạ vẫn được gửi đi."""
         token = settings.api_token
-        # Cùng đường dẫn tương đối mà router ASGI dùng: mount/reverse proxy có
-        # root_path không được che một GET làm mới trạng thái khỏi xác thực.
         path = request.scope["path"]
         root_path = request.scope.get("root_path", "")
         if root_path and path.startswith(root_path + "/"):
@@ -197,8 +171,6 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
             return JSONResponse(status_code=403, content={"error": "Forbidden", "detail": "cross-site write without an API token"})
         return await call_next(request)
 
-    # CORS thêm SAU cùng nên nằm NGOÀI cùng: phản hồi 401/403 trả sớm ở trên vẫn mang đầu mục
-    # CORS cho trang được phép, thay vì thành lỗi mạng mờ.
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"])
 
     @app.exception_handler(VQEError)
@@ -219,7 +191,6 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         base_openapi = app.openapi
 
         def _openapi_with_bearer() -> dict:
-            """Cho Swagger gửi token theo đúng các thao tác middleware bảo vệ."""
             schema = base_openapi()
             schema.setdefault("components", {}).setdefault("securitySchemes", {})["VqeBearer"] = {
                 "type": "http",

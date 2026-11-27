@@ -1,4 +1,3 @@
-"""Chạy nguyên bước tóm tắt; dữ liệu lỗi không được lộ bí mật vào log."""
 import json
 import os
 import subprocess
@@ -62,7 +61,6 @@ def test_summary_falls_back_to_checkpoint_when_update_output_is_invalid(tmp_path
 
 
 def test_summary_names_the_kind_of_error_from_a_fixed_list_never_the_message(tmp_path):
-    """Câu lỗi có thể mang địa chỉ kèm token: chỉ NHÃN cố định được in, kể cả khi câu lỗi chứa nó."""
     data = {'products': {
         'keno': {'last_draw_id': 301336, 'last_draw_date': '2026-11-01', 'freshness': {'status': 'date_only'},
                  'error': f'{SECRET}; historical verified draw gaps remain: [[1, 2]]'},

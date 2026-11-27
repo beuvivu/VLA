@@ -11,9 +11,6 @@ from ml.ml_features import (
     _validate_aligned_histories,
 )
 
-# FIELD_WIDTHS thuộc về xsmb_domain. Trước đây test lấy nó qua ml_features —
-# một re-export tình cờ, và linter đã gỡ đúng dòng import ấy vì trong chính
-# ml_features nó không được dùng. Trỏ thẳng nguồn gốc thì không vỡ lại được.
 from core.xsmb_domain import FIELD_WIDTHS
 
 
@@ -31,8 +28,6 @@ def test_vectorized_path_support_matches_single_day_reference() -> None:
 
 
 def test_path_support_includes_anchor_day_but_not_future_day() -> None:
-    # Feature row t predicts t+1. The anchor draw t is already observed and may
-    # be used; using t+1 would be leakage. Day 0 is 00 pairs and day 1 is 99.
     raw = [np.zeros(5, dtype=np.uint8), np.full(5, 9, dtype=np.uint8)]
     i, j = _pairs_indices(5)
     matrix = _path_support_matrix(raw, lag_max=30, I=i, J=j)
@@ -48,10 +43,10 @@ def test_target_weekday_features_refer_to_prediction_day() -> None:
 
     from ml.ml_features import _target_weekday_components
 
-    dates = pd.DatetimeIndex(["2026-08-30", "2026-08-31"])  # Sunday, Monday
+    dates = pd.DatetimeIndex(["2026-08-30", "2026-08-31"])
     target, sin_v, cos_v = _target_weekday_components(dates)
 
-    assert target.tolist() == [0, 1]  # Monday, Tuesday
+    assert target.tolist() == [0, 1]
     assert sin_v.shape == (2,)
     assert cos_v.shape == (2,)
 
@@ -63,7 +58,6 @@ def test_target_weekday_rate_never_uses_future_label() -> None:
 
     dates = pd.date_range("2026-08-24", periods=8, freq="D")
     hit = np.zeros((8, 100), dtype=bool)
-    # Put a future hit on the last row. Earlier rows' features must be unchanged.
     baseline = _target_weekday_rate(dates, hit)
     hit[-1, 42] = True
     changed = _target_weekday_rate(dates, hit)

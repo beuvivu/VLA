@@ -1,10 +1,3 @@
-"""Hợp đồng API Sổ kết quả: lịch sử chuẩn trước, nguồn dự phòng chỉ bù ngày thiếu.
-
-Từ 08-10-2026 nguồn dự phòng CHỈ được gọi từ cron (``refreshFallbackOverlay``); yêu cầu của khách
-chỉ đọc lớp bù đã lưu. Một khoá KV không chặn được khuếch đại giữa các isolate (KV nhất quán sau,
-không có đọc-ghi nguyên tử), nên lưu lượng khách phải không còn đường nào chạm tới nguồn ngoài.
-"""
-
 from __future__ import annotations
 
 import json
@@ -101,27 +94,22 @@ def test_xskt_parser_and_vietnam_cutoff_policy() -> None:
 
 
 def test_changing_the_date_range_cannot_amplify_calls_to_the_fallback_source() -> None:
-    """Mỗi khoảng ngày là một khoá đệm mới; trước đây 20 khoảng kéo 20 lượt tải trang nguồn."""
     result = _scenario("amplification")
     assert result["statuses"] == [200]
     assert result["counter"] == {"primary": 1, "xskt": 0}
 
 
 def test_the_cron_refresh_is_spaced_ten_minutes_apart() -> None:
-    """Ngày 13-09 vẫn thiếu ở các lượt cron phút 0, 5, 9, 11, 15, 22: chỉ phút 0, 11, 22 tải."""
     assert _scenario("cron_refresh_is_spaced")["xskt_after_each"] == [1, 1, 1, 2, 2, 3]
 
 
 def test_days_the_source_never_had_are_not_fetched_again() -> None:
-    """XSMB nghỉ quay dịp Tết: ngày ấy thiếu mãi trong lịch sử chuẩn. Không ghi nhớ thì lượt cron
-    nào cũng thấy "thiếu" và tải lại trọn trang 500 ngày."""
     result = _scenario("days_the_source_never_had_are_remembered")
     assert result["first"] == {"fetched": True, "missing": 2, "filled": 1, "absent": 1}
     assert result["second"] == {"fetched": False, "missing": 0}
     assert result["xskt"] == 1
     assert result["dates"] == ["2026-09-13", "2026-09-12", "2026-09-10"]
     assert result["unresolved"] == []
-    # Dấu "absent" không vĩnh viễn: một lần trang tạm thiếu không được thành khoảng trống mãi.
     assert result["recheck"] == {"fetched": True, "missing": 1, "filled": 0, "absent": 1}
     assert result["after_recheck"] == {"fetched": False, "missing": 0}
     assert result["xskt_total"] == 2
@@ -151,8 +139,6 @@ def test_the_api_never_names_its_sources() -> None:
 
 
 def test_renaming_the_source_fields_bumped_the_schema_version() -> None:
-    """Lược đồ 1 ghi tên nguồn vào `source.kind`, `source_counts`, `sources_used`. Đổi các giá
-    trị ấy mà giữ số phiên bản thì bên gọi phân nhánh theo giá trị cũ lặng lẽ mất kết quả."""
     assert _scenario("anonymised")["schema_version"] == 2
 
 
@@ -182,13 +168,6 @@ def test_a_table_with_incomplete_prizes_is_retried_instead_of_becoming_a_holiday
 
 
 def test_client_chosen_date_ranges_never_become_kv_writes() -> None:
-    """Khoảng ngày do khách chọn không được thành khoá KV (lỗ hổng cạn hạn mức ghi, 15-11-2026).
-
-    Gói KV Free có 1 000 lượt ghi/ngày cho cả tài khoản, dùng chung với cron ghi kết quả trực tiếp. Trước bản
-    vá mỗi cặp ``from:to`` là một lượt ghi đệm phản hồi: ~900 yêu cầu khác khoảng ngày là cạn hạn mức và
-    trang Live đứng hình đúng giờ quay. Nay 60 khoảng ngày khác nhau chỉ gây đúng hai lượt ghi của lần tải
-    lịch sử chuẩn đầu tiên.
-    """
     result = _scenario("distinct_ranges_write_kv_bounded")
     assert result["statuses"] == [200]
     assert sorted(result["puts"]) == ["traditional:primary:fresh:v2", "traditional:primary:last-good:v2"]
@@ -210,8 +189,6 @@ def test_the_fresh_copy_lives_five_minutes_only_while_new_draws_can_arrive() -> 
 
 
 def test_a_repeated_range_is_served_from_isolate_memory_within_a_bounded_shelf() -> None:
-    """Không đệm trong KV nữa thì gọi lại cùng khoảng ngày phải rẻ: khoảng tối đa 500 ngày tốn ~14 ms CPU khi dựng
-    mới, quá trần 10 ms của gói Free. Đệm trong bộ nhớ isolate có trần, để khoảng ngày của khách không phình bộ nhớ."""
     result = _scenario("repeat_range_from_memory")
     assert result["same_body"] is True
     assert result["gets_on_repeat"] == 0
@@ -225,8 +202,6 @@ def test_an_unchanged_fresh_copy_reuses_the_draws_built_for_it() -> None:
 
 
 def test_unexpected_errors_never_reach_the_client_but_curated_messages_do() -> None:
-    """CodeQL js/stack-trace-exposure (15-11-2026): ``String(error?.message || error)`` đưa nguyên lỗi bất ngờ ra khách.
-    Nay chỉ thông báo tự soạn (``PublicError``) được trả; lỗi khác chỉ còn một câu cố định."""
     result = _scenario("internal_errors_stay_internal")
     assert result["failed"]["status"] == 502
     assert result["secret"] not in result["failed"]["body"]
@@ -238,11 +213,6 @@ def test_unexpected_errors_never_reach_the_client_but_curated_messages_do() -> N
 
 
 def test_a_cold_isolate_answers_without_parsing_the_whole_history() -> None:
-    """Isolate lạnh (bộ nhớ rỗng, KV có bản tươi) không ``JSON.parse`` trọn lịch sử (15-11-2026).
-
-    Bản JSON cũ ~1,25 MB tốn ~20 ms để phân tích — quá trần CPU 10 ms của gói Free — và mọi isolate lạnh phải
-    trả giá ấy, kể cả trang Live khi hỏi kỳ chuẩn trước. Bản ghi độ rộng cố định chỉ giải mã kỳ được hỏi.
-    """
     result = _scenario("cold_isolate_skips_full_parse")
     assert result["big_parses"] == 0
     assert result["cache"] == "hit"
@@ -262,7 +232,6 @@ def test_the_stored_history_is_searched_correctly_across_holiday_gaps() -> None:
 
 
 def test_a_malformed_stored_history_is_fetched_again_instead_of_being_searched() -> None:
-    """Tìm nhị phân trên bản lưu không tăng dần trả sai mà không báo, nên bản ấy phải bị loại."""
     result = _scenario("malformed_fresh_is_refetched")
     for name in ("swapped", "truncated", "legacy_json"):
         assert result[name] == {"cache": "miss", "fetches": 1, "special": "58851"}, name

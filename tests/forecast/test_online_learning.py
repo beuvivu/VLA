@@ -1,5 +1,3 @@
-"""Hợp đồng học trực tuyến: chỉ chấm dự báo đã đóng băng trước kỳ quay."""
-
 from __future__ import annotations
 
 import copy
@@ -378,7 +376,6 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
 
 @pytest.mark.parametrize("slow_phase", ["lock", "advance", "serialization", "fsync"])
 def test_cli_rechecks_cutoff_before_saving_a_new_forecast(online, tmp_path, monkeypatch, slow_phase):
-    """Chờ khóa, học, mã hóa hoặc ghi đĩa vượt hạn đều không được xuất bản."""
     from core import atomic_io
     data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
@@ -485,7 +482,6 @@ def test_slow_fsync_uses_the_fixed_clock_when_now_is_injected(online, tmp_path, 
 
 
 def test_cli_can_restore_existing_forecast_after_cutoff_with_an_injected_clock(online, tmp_path, monkeypatch):
-    """Khôi phục dự báo đóng băng không phải tạo dự báo hồi cứu mới."""
     data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
@@ -570,11 +566,6 @@ def _settled_state(online):
 
 
 def test_rounding_noise_in_a_settled_score_does_not_reject_the_journal(online, tmp_path):
-    """Runner khác CPU chấm lại cùng vector lệch 1 ULP; sổ vẫn phải đọc được.
-
-    Ngày 04-10-2026 logloss chốt ...7733 nhưng chấm lại ra ...7734, phép so
-    bằng tuyệt đối từ chối sổ và pipeline hoàn tất đỏ hai ngày liền.
-    """
     state, scores = _settled_state(online)
     value = scores["bayes_30"]["logloss"]
     scores["bayes_30"]["logloss"] = float(np.nextafter(value, np.inf))

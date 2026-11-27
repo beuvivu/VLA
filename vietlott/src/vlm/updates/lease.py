@@ -1,4 +1,3 @@
-"""An OS-held single-writer lease, released automatically when a process dies."""
 import os
 from pathlib import Path
 
@@ -29,6 +28,5 @@ class WriterLease:
 
     def __exit__(self, *args):
         if self.file is not None:
-            # close releases the kernel lock even after exceptions/cancellation.
             self.file.close()
             self.file = None

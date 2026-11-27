@@ -1,12 +1,9 @@
-"""Đo những lỗi bố cục thực tế mà phép kiểm HTML không nhìn thấy."""
-
 from pathlib import Path
 
 from playwright.sync_api import expect
 
 
 def check_landing(page, output: Path, width: int, dark: bool) -> dict:
-    """Kiểm hàng ba thẻ, bảng dùng chung, căn cột và khoảng đệm thực."""
     board = page.locator("#app-daily-results")
     expect(board.locator(".tr-number")).to_have_count(27)
     expect(board.locator(".tr-loto")).to_have_count(0)
@@ -70,7 +67,6 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
       };
     }""")
     measured["simulationLoto"] = loto
-    # Lưu đủ bảy vùng ngay cả khi một phép đo sau đó không đạt.
     for target in ("ket-qua", "db-tuan-thang", "ai-ml", "tan-suat-cap", "cap-lon", "dau-duoi-tong", "duong-cau"):
         page.locator(f"#{target}").screenshot(
             path=str(output / f"landing-{target}-{width}-{'dark' if dark else 'light'}.png"),

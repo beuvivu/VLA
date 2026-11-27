@@ -1,15 +1,5 @@
 from __future__ import annotations
 
-"""``_reverse_pair_frequency`` phải tuyến tính theo số hàng, không theo P × N.
-
-Bản trước lồng hai vòng ``kỳ × 50 cặp``, và MỖI lượt quét lại toàn bảng bằng
-``df.loc[df["period_key"] == period_key, a]``. Với P kỳ trên N hàng, chi phí là
-O(P · 50 · N); ở ``period="day"`` thì P ≈ N nên thành O(50 · N²).
-
-Profile trên lịch sử 4 207 kỳ: hàm này chiếm 606,8 trong 630,8 giây (96,2%) của
-``statistical_matrices.py``, 151,7 giây mỗi lần gọi. Sau khi gom một lần và
-tính cả 50 cặp trên ma trận boolean, cả script chạy 20 giây thay vì 342.
-"""
 
 import time
 
@@ -32,7 +22,6 @@ def _sparse(draws: int, *, seed: int = 0) -> pd.DataFrame:
 
 
 def _reference(sparse_df: pd.DataFrame, *, period: str) -> pd.DataFrame:
-    """Bản lồng hai vòng viết thẳng theo định nghĩa: chậm, nhưng rõ ràng."""
     df = _prepare_sparse(sparse_df)
     if df.empty:
         return pd.DataFrame()
@@ -82,7 +71,6 @@ def test_it_matches_the_straight_nested_reference(period: str) -> None:
 
 
 def test_every_period_yields_exactly_fifty_pairs() -> None:
-    """Đúng 50 họ cặp, không có cặp tự-ghép như 77-77."""
     out = _reverse_pair_frequency(_sparse(120), period="month")
     per_period = out.groupby("period_key")["pair"].nunique()
     assert set(per_period.unique()) == {50}, per_period.to_dict()
@@ -90,16 +78,6 @@ def test_every_period_yields_exactly_fifty_pairs() -> None:
 
 
 def test_it_is_an_order_of_magnitude_faster_than_the_nested_reference() -> None:
-    """So THỜI GIAN THẬT với bản lồng hai vòng, không so tỉ lệ tăng.
-
-    Bản đầu của phép kiểm này đo TỈ LỆ tăng khi gấp bốn số hàng và đòi dưới 10
-    lần. Đo lại thì chính bản lồng hai vòng cũng chỉ tăng 4,27 lần trong dải N
-    ấy — nên ngưỡng đó không bắt được cả lỗi gốc. Cái phân biệt hai bản là
-    HẰNG SỐ: ở N = 600, bản gốc mất 25,0 giây còn bản gom nhóm mất 0,32 giây.
-
-    Ngưỡng 10 lần đặt rất rộng so với 63 lần đo được, nên nó không đỏ vì nhiễu
-    máy chạy, mà vẫn đỏ ngay nếu ai đó trả hàm về lối quét từng cặp.
-    """
     sparse = _sparse(300)
 
     start = time.perf_counter()

@@ -1,4 +1,3 @@
-"""Shared synchronization and update integration for the legacy and ML forecasters."""
 from __future__ import annotations
 
 import asyncio
@@ -29,7 +28,6 @@ _LOCAL = threading.local()
 
 @contextmanager
 def forecast_guard(directory: Path):
-    """Thread serialization plus an OS-held lease; nested same-thread calls are safe."""
     directory = Path(directory).resolve()
     with _LOCK:
         held = getattr(_LOCAL, 'held', set())
@@ -56,7 +54,6 @@ def directory_for(state) -> Path:  # type: ignore[no-untyped-def]
 
 
 def _read_events(path: Path) -> list[dict]:
-    """Only an unterminated, incomplete final JSON object is safely recoverable."""
     if not path.exists():
         return []
     raw = path.read_bytes()
@@ -101,7 +98,6 @@ def _read_events(path: Path) -> list[dict]:
 
 
 def _event(directory: Path, entry: dict) -> dict:
-    """Immutable audit events. Replayed scores/issues use the original event once."""
     path = directory / 'ml-ledger.jsonl'
     identity = (entry['event'], entry['product'], entry['target_id'], entry.get('history_sha256'))
     for old in _read_events(path):
@@ -115,23 +111,11 @@ def _event(directory: Path, entry: dict) -> dict:
     return entry
 
 
-#: Hai số thực lệch nhau dưới mức này (tương đối, hoặc tuyệt đối khi gần 0) là CÙNG một số đo.
-#:
-#: `np.exp` và `np.dot` chọn nhân tính theo CPU (AVX2, AVX-512), và các nhân ấy lệch nhau ở bit cuối.
-#: Runner của GitHub không cùng một loại CPU. Vì thế, làm mới trên CÙNG dữ liệu ở hai runner cho trọng số
-#: như 0,29001380630159374 và 0,2900138063015937. Tuần 03 → 10-11-2026 có 40/64 commit chạm tệp tóm tắt
-#: chỉ mang kiểu lệch ấy (lớn nhất 2,5·10⁻¹⁴) cùng một `generated_at` mới. Ngưỡng 10⁻⁹ cao hơn nhiễu năm
-#: bậc và thấp hơn mọi thay đổi có nghĩa: một kỳ mới đổi trọng số ở chữ số thứ hai.
 SUMMARY_FLOAT_RELATIVE_NOISE = 1e-9
 SUMMARY_FLOAT_ABSOLUTE_NOISE = 1e-12
 
 
 def _same_up_to_float_noise(new: object, old: object) -> bool:
-    """Hai cây JSON trùng nhau khi mọi thứ bằng nhau, riêng số thực chỉ cần lệch dưới mức nhiễu.
-
-    Chỉ số thực được nới. Số nguyên, chuỗi, khoá, độ dài danh sách và kiểu phải trùng tuyệt đối: một kỳ
-    mới luôn đổi `last_id` hoặc `observations`, nên không bao giờ bị coi là «không đổi».
-    """
     if isinstance(new, dict) and isinstance(old, dict):
         return new.keys() == old.keys() and all(_same_up_to_float_noise(new[k], old[k]) for k in new)
     if isinstance(new, list) and isinstance(old, list):
@@ -143,7 +127,6 @@ def _same_up_to_float_noise(new: object, old: object) -> bool:
 
 
 def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
-    """Lưu bản tóm tắt nguyên tử để trang public đọc được ngay cả khi mất cache."""
     components = {name: comp.multi_agent.report() for name, comp in model.components.items()
                   if comp.multi_agent is not None}
     path = directory / 'multi-agent-summary.json'
@@ -156,10 +139,6 @@ def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
             'generated_at': datetime.now(timezone.utc).isoformat(),
             'confidence': model.confidence(), 'components': components,
         }
-        # Cùng nội dung thì giữ nguyên tệp và dấu giờ của lần đổi thật: tệp này được commit, và 32/113
-        # commit tuần 25-10 → 01-11-2026 chỉ mang mỗi `generated_at` mới. So sau một vòng JSON để
-        # số thực, tuple… ở cùng dạng với bản đọc từ đĩa. «Cùng nội dung» tính cả nhiễu dấu phẩy động
-        # giữa các CPU (`_same_up_to_float_noise`): tệp giữ số của lần đổi thật gần nhất.
         unchanged = json.loads(json.dumps(entry, ensure_ascii=False, allow_nan=False))
         old = document['products'].get(model.product.value)
         if old is not None and _same_up_to_float_noise(
@@ -183,7 +162,6 @@ def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
 
 
 def _restore_pending_issue(model: MLForecaster, series: Series, issues: dict) -> bool:
-    """Lấy pending từ issue đầu tiên, kiểm ngữ cảnh thật trước khi chấm kỳ mới."""
     if model.pending is None:
         return True
     try:
@@ -226,11 +204,6 @@ def _restore_pending_issue(model: MLForecaster, series: Series, issues: dict) ->
 
 
 def _verify_restored_evidence(model: MLForecaster, series: Series, directory: Path) -> None:
-    """Đối chiếu pending và thành tích checkpoint với issue đầu tiên trước update.
-
-    Mất/không khớp ledger chỉ hủy evidence, giữ model đã học. Không dựng lại
-    dự báo quá khứ từ trọng số hiện tại hoặc thay các dòng ledger đã công bố.
-    """
     if not model.live_scored and model.pending is None:
         return
     events = _read_events(directory / 'ml-ledger.jsonl')
@@ -294,7 +267,6 @@ def _verify_restored_evidence(model: MLForecaster, series: Series, directory: Pa
 def refresh_snapshot(product: str, series: Series, directory: Path, *, config: MLConfig | None = None,
                      refit: bool = False, issue: bool = True, include_legacy: bool = False,
                      require_config_match: bool = False):
-    """Update a frozen history snapshot; callers capture it while holding the sync lock."""
     code, directory = get_product(product), Path(directory)
     with forecast_guard(directory):
         path = directory / 'ml' / f'{code.value}.json.gz'
@@ -305,7 +277,6 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
                 model = MLForecaster.load(path)
                 loaded_checkpoint = True
             except (ValueError, KeyError, TypeError, OSError, EOFError, gzip.BadGzipFile):
-                # Keep failed bytes for diagnosis; a failed restore never keeps its scores.
                 suffix = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')
                 path.replace(path.with_name(path.name + '.' + suffix + '.invalid'))
                 model, recovery = MLForecaster(code, config), True
@@ -317,8 +288,6 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
             raise ValueError('config_change_requires_fit')
         if recovery:
             model.warnings.append('checkpoint_recovered')
-        # A delayed thread must not overwrite a checkpoint that already learned a
-        # newer snapshot. Deliberate rollback is available only through explicit fit.
         if (not refit and model.last_id is not None
                 and (not len(series) or int(series.draw_ids[-1]) < model.last_id)):
             return model, 0, {'enabled':True, 'learned_draws':0, 'last_id':model.last_id,
@@ -331,7 +300,6 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
         if config is not None and config.patterns != model.config.patterns:
             upgrades.append('pattern_policy_upgrade')
         if loaded_checkpoint and (refit or upgrades and not require_config_match):
-            # Chấm đúng law cũ trước khi nâng cấp; kết quả mới không được làm mất issue.
             model.update(series, now=now_vn())
             for score in model.last_live_scores:
                 _event(directory, {'event': 'score', 'product': code.value, **score})
@@ -360,7 +328,7 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
                 event = _event(directory, {'event':'issue', 'product':code.value,
                     'target_id':model.pending['target_id'], 'history_sha256':model.prefix_hash,
                     'pending':model.pending, 'config':model.config.model_dump(mode='json')})
-                model.pending = event['pending']  # preserve the first issued distribution
+                model.pending = event['pending']
                 if not model.pending_valid():
                     raise ValueError('Unverified issued ledger event')
         model.save(path)
@@ -381,7 +349,6 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
 
 
 async def refresh_models(state, product: str) -> dict:  # type: ignore[no-untyped-def]
-    """Keep CPU fitting off the event loop. The caller owns the product sync lock."""
     code = get_product(product)
     directory = directory_for(state)
     def learn_latest():

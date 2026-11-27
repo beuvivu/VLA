@@ -1,11 +1,3 @@
-"""Trang «Lô VIP nhiều nháy»: mọi con số và kết luận phải ĐI THEO phép đo.
-
-Trang không được có câu "không hơn chọn bừa" viết sẵn: cùng một trình dựng, đưa số đo của một
-lịch sử có cài tín hiệu thì phải nói "hơn", đưa số đo của lịch sử công bằng thì phải nói "không
-hơn". Các phép kiểm dưới đây dựng cả hai phía bằng chính ``multi_hit_report.vip_section`` trên
-lịch sử giả định, rồi ghim luật làm mới bản đệm của giao thức lượt hai.
-"""
-
 from __future__ import annotations
 
 import copy
@@ -29,9 +21,7 @@ DATA = ROOT / "data" / "forecast" / "multi_hit"
 PLANTED = (7, 38, 68)
 
 
-#: Lịch sử giả định bắt đầu 01-01-2026: chốt mô hình TRƯỚC đó để mọi kỳ là tiến cứu.
 BEFORE_MOCK = "2025-12-31"
-#: Mô hình Lô VIP cỡ nhỏ cho lịch sử giả định vài trăm kỳ (mặc định cần 60 + 365 kỳ).
 SMALL = mf.ForecastConfig(warmup=40, refit=40, min_history_days=20)
 
 
@@ -60,7 +50,6 @@ def planted_vip() -> dict:
 
 @pytest.fixture(scope="module")
 def bench() -> dict:
-    """Số đo lượt hai đã xuất bản; dùng làm phần nền cho các kịch bản dựng trang."""
     return json.loads((DATA / "benchmark.json").read_text(encoding="utf-8"))
 
 
@@ -72,20 +61,15 @@ def _verdict(soup: BeautifulSoup) -> str:
     return soup.select_one(".app-vip-verdict")["data-verdict"]
 
 
-# --------------------------------------------------------------------------- số đo
-
-
 def test_wilson_interval_matches_the_textbook_value() -> None:
     lo, hi = report.wilson(5, 10)
     assert (lo, hi) == pytest.approx((0.2366, 0.7634), abs=1e-4)
-    # Không trúng lần nào: cận dưới đúng 0, cận trên vẫn dương (khoảng Wald thì sập về 0).
     lo, hi = report.wilson(0, 50)
     assert lo == pytest.approx(0.0, abs=1e-12) and hi == pytest.approx(0.0713, abs=1e-4)
     assert all(math.isnan(x) for x in report.wilson(0, 0))
 
 
 def test_the_interval_is_wilson_on_the_kish_effective_sample() -> None:
-    """deff = phương sai số trúng từng kỳ / (k·p·(1 − p)); Wilson trên số lượt chọn / deff."""
     k, n = 5, 400
     hits = np.zeros(n)
     hits[:60] = 1
@@ -98,12 +82,11 @@ def test_the_interval_is_wilson_on_the_kish_effective_sample() -> None:
 
 
 def test_picks_that_hit_together_widen_the_interval() -> None:
-    """Năm con cùng kỳ trúng hay trượt cùng nhau: thông tin chỉ bằng một phép thử mỗi kỳ."""
     k, n = 5, 400
     clustered = np.zeros(n)
-    clustered[:12] = k                       # 60 lượt trúng dồn trong 12 kỳ
+    clustered[:12] = k
     spread = np.zeros(n)
-    spread[:60] = 1                          # cùng 60 lượt trải trên 60 kỳ
+    spread[:60] = 1
     (c_lo, c_hi), c_deff = report.draw_level_interval(clustered, k)
     (s_lo, s_hi), s_deff = report.draw_level_interval(spread, k)
     assert c_deff > 4 > s_deff
@@ -128,14 +111,13 @@ def test_the_recent_rows_count_the_real_nhay_of_each_pick(fair_vip) -> None:
     _, labels = m.draws_from_frame(history[1])
     counts = _counts(history)
     assert len(fair_vip["recent"]) == report.RECENT_DRAWS
-    assert fair_vip["recent"][0]["date"] == labels[-1]           # mới nhất trước
+    assert fair_vip["recent"][0]["date"] == labels[-1]
     for row in fair_vip["recent"]:
         t = labels.index(row["date"])
         assert len(row["picks"]) == fair_vip["config"]["top_k"]
         for pick in row["picks"]:
             assert pick["hits"] == counts[t, int(pick["number"])]
         assert row["multi"] == sum(p["hits"] >= 2 for p in row["picks"])
-        # Mốc chọn bừa của TỪNG kỳ: k con trong 100, m con về ≥ 2 nháy → k·m/100.
         m_t = int((counts[t] >= 2).sum())
         assert row["numbers_multi"] == m_t
         assert row["expected"] == pytest.approx(fair_vip["config"]["top_k"] * m_t / 100)
@@ -146,7 +128,6 @@ def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
     assert bt["rate"] == pytest.approx(bt["hits"] / bt["picks"])
     wf = _walk(_mock(150, seed=2026, planted=PLANTED))
     assert bt["hits"] == int(wf.hits.sum()) and bt["draws"] == len(wf.rows)
-    # Xác suất đã in cho các con được chọn, để đặt cạnh tỉ lệ trúng thật.
     assert bt["predicted"] == pytest.approx(float(wf.printed.mean()))
     assert bt["ci95"][0] < bt["rate"] < bt["ci95"][1]
     assert bt["lift"] == pytest.approx(bt["hits"] / bt["expected"])
@@ -172,7 +153,6 @@ def test_the_day_measure_counts_draws_where_any_pick_came_twice(planted_vip) -> 
     assert bt["day_random_rate"] == pytest.approx(rand.mean())
     assert bt["day_z"] == pytest.approx((day.sum() - rand.sum()) / math.sqrt((rand * (1 - rand)).sum()))
     assert bt["day_fair"] == pytest.approx(m.any_multi_chance(k))
-    # Mọi kỳ giả định đều sau ngày chốt: phần tiến cứu là toàn bộ.
     assert pro["days_hit"] == bt["days_hit"] and pro["days_expected"] == pytest.approx(rand.sum())
 
 
@@ -193,21 +173,15 @@ def test_the_page_prints_the_day_measure_from_the_measurement(planted_vip) -> No
     assert "1 kỳ trong 4." in other
 
 
-# --------------------------------------------------------------------------- p luôn hợp lệ
-
-
 def test_anytime_p_on_a_hand_computed_path() -> None:
-    # Cược λ = 1: vốn 1 → 1,5 (trúng 1, kỳ vọng 0,5) → 0,75 (trượt). Đỉnh 1,5 → p = 1/1,5.
     p, e_max = report.anytime_p([1, 0], [0.5, 0.5], grid=(1.0,))
     assert e_max == pytest.approx(1.5) and p == pytest.approx(1 / 1.5)
-    # Không bao giờ hơn kỳ vọng: vốn không lên khỏi 1, p = 1.
     assert report.anytime_p([0, 0, 0], [0.2, 0.3, 0.1]) == (1.0, 1.0)
     with pytest.raises(ValueError):
-        report.anytime_p([0], [0.5], grid=(3.0,))         # cược làm vốn âm
+        report.anytime_p([0], [0.5], grid=(3.0,))
 
 
 def _null_paths(n_hist: int, n_draws: int, seed: int = 1):
-    """Lịch sử KHÔNG có kỹ năng: mỗi kỳ m con về ≥ 2 nháy, top-5 trúng theo siêu bội."""
     rng = np.random.default_rng(seed)
     for _ in range(n_hist):
         m_t = rng.binomial(100, 0.0297, size=n_draws)
@@ -215,8 +189,6 @@ def _null_paths(n_hist: int, n_draws: int, seed: int = 1):
 
 
 def test_looking_every_day_needs_the_anytime_p() -> None:
-    """Xem lại sau mỗi kỳ với cùng ngưỡng 0,05: p một lần xem vượt ngưỡng ở quá nhiều lịch sử
-    không kỹ năng; p luôn hợp lệ giữ đúng mức đã hứa."""
     from scipy.stats import norm
 
     naive = anytime = 0
@@ -226,12 +198,11 @@ def test_looking_every_day_needs_the_anytime_p() -> None:
         z = np.cumsum(hits - mu)[200:] / np.sqrt(np.cumsum(var)[200:])
         naive += bool((norm.sf(z) < 0.05).any())
         anytime += report.anytime_p(hits, mu)[0] < 0.05
-    assert naive / n_hist > 0.15              # vấn đề có thật trong chính thiết lập này
+    assert naive / n_hist > 0.15
     assert anytime / n_hist <= 0.05
 
 
 def test_every_confidence_on_the_page_follows_the_anytime_p(monkeypatch) -> None:
-    """Mô hình tự báo High trên lịch sử cài tín hiệu; nếu p luôn hợp lệ không đạt thì không con nào được tin."""
     monkeypatch.setattr(report, "anytime_p", lambda hits, expected: (1.0, 1.0))
     vip = _vip_of(_mock(150, seed=2026, planted=PLANTED))
     assert vip["confidence"] == "Low"
@@ -244,11 +215,10 @@ def test_anytime_p_still_finds_a_real_edge(planted_vip, fair_vip) -> None:
 
 
 def test_a_retrospective_edge_alone_cannot_raise_the_confidence() -> None:
-    """Bộ lọc thiết kế sau khi xem lịch sử: lợi thế trên chính lịch sử ấy không được tính là bằng chứng."""
     vip = _vip_of(_mock(150, seed=2026, planted=PLANTED), after="2026-12-31")
-    assert vip["backtest"]["p_value"] < 1e-6                     # hồi cứu thì "rất có ý nghĩa"
+    assert vip["backtest"]["p_value"] < 1e-6
     assert vip["prospective"]["draws"] == 0 and vip["prospective"]["lift"] is None
-    json.dumps(vip, allow_nan=False)                             # tệp đo là JSON hợp chuẩn
+    json.dumps(vip, allow_nan=False)
     assert vip["confidence"] == "Low"
     assert {p["confidence"] for p in vip["picks"]} == {"Low"}
     assert page.verdict(vip, None)["state"] != "hon"
@@ -260,19 +230,15 @@ def test_only_draws_after_the_freeze_enter_the_e_process() -> None:
     vip = _vip_of(history, after=labels[119])
     table = mf.build_table(*history, SMALL)
     wf = mf.walk_forward(table, SMALL)
-    later = table.anchors[wf.rows] + 1 > 119          # kỳ được dự báo nằm sau ngày chốt
+    later = table.anchors[wf.rows] + 1 > 119
     assert vip["prospective"]["draws"] == int(later.sum()) == 30
     assert vip["prospective"]["hits"] == int(wf.hits[later].sum())
 
 
 def test_the_rule_is_frozen_on_the_day_it_was_designed() -> None:
-    """Luật mới đăng ký ngày chốt mới; ngày chốt của bộ lọc VIP đã nghỉ giữ nguyên làm lịch sử."""
     assert mf.FROZEN_AT == "2026-10-15" and report.VIP_FROZEN_AT == "2026-10-12"
     raw, two = _mock(150, seed=2026)
     assert report.vip_section(raw, two, cfg=SMALL)["prospective"]["after"] == mf.FROZEN_AT
-
-
-# --------------------------------------------------------------------------- bản đệm lượt hai
 
 
 def _history(n: int = 100):
@@ -287,7 +253,6 @@ def _cached(draws, labels, measured: int, **extra) -> dict:
 
 @pytest.fixture
 def register_at(monkeypatch):
-    """Dời ngày đăng ký của lượt hai về kỳ thứ n của một lịch sử giả định (mặc định: 12-10-2026)."""
     def _register(labels, n: int) -> None:
         monkeypatch.setattr(report, "SECOND_ROUND_UNTIL", labels[n - 1])
     return _register
@@ -303,7 +268,6 @@ def test_a_missing_or_older_benchmark_is_remeasured(register_at) -> None:
 
 
 def test_a_new_daily_measurement_format_does_not_reopen_the_one_time_test(register_at, monkeypatch) -> None:
-    """vip.json đổi khuôn (thêm cặp xiên 2) không được buộc phép kiểm một lần đã đóng băng chạy lại."""
     draws, labels = _history()
     register_at(labels, 70)
     cached = _cached(draws, labels, 70)
@@ -315,7 +279,6 @@ def test_a_new_daily_measurement_format_does_not_reopen_the_one_time_test(regist
 
 @pytest.mark.parametrize("added", [0, 30, 240])
 def test_new_draws_never_reopen_the_one_time_test(register_at, added) -> None:
-    """Lượt hai là phép kiểm MỘT lần: kỳ mới sau ngày đăng ký không bao giờ làm nó cần đo lại."""
     draws, labels = _history(300)
     register_at(labels, 60)
     cached = _cached(draws, labels, 60)
@@ -324,7 +287,6 @@ def test_new_draws_never_reopen_the_one_time_test(register_at, added) -> None:
 
 
 def test_correcting_an_old_draw_invalidates_the_benchmark(register_at) -> None:
-    """Sửa một ô của kỳ cũ: số kỳ và ngày cuối không đổi, nhưng mọi số đo có thể đã đổi."""
     draws, labels = _history()
     register_at(labels, 80)
     cached = _cached(draws, labels, 80)
@@ -352,7 +314,7 @@ def test_new_draws_after_the_registered_date_do_not_invalidate_it(register_at) -
     draws, labels = _history()
     register_at(labels, 80)
     later = draws.copy()
-    later[85, 0] = (later[85, 0] + 1) % 100        # sau ngày đăng ký
+    later[85, 0] = (later[85, 0] + 1) % 100
     assert not report.benchmark_is_stale(_cached(draws, labels, 80), later, labels)
 
 
@@ -390,7 +352,7 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
     monkeypatch.setattr(report, "benchmark_section", fake_benchmark)
     assert set(report.run(tmp_path, cfg=SMALL)) == {"vip", "benchmark"}
     assert set(report.run(tmp_path, cfg=SMALL)) == {"vip"}
-    _write_history(tmp_path, history)                               # 40 kỳ mới sau ngày đăng ký
+    _write_history(tmp_path, history)
     assert set(report.run(tmp_path, cfg=SMALL)) == {"vip"}
     assert set(report.run(tmp_path, force_benchmark=True, cfg=SMALL)) == {"vip", "benchmark"}
     assert calls == [80, 80]
@@ -401,7 +363,7 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
 def test_the_recent_baseline_sums_each_displayed_draw(fair_vip) -> None:
     changed = copy.deepcopy(fair_vip)
     for i, row in enumerate(changed["recent"]):
-        row["expected"] = 0.1 * (i + 1)          # tổng 5,5 — khác hẳn mọi trung bình toàn lịch sử
+        row["expected"] = 0.1 * (i + 1)
     text = _soup(changed, None).select_one("#app-vip-recent").get_text(" ", strip=True)
     assert "chọn bừa kỳ vọng 5,50" in text
 
@@ -434,7 +396,6 @@ def _write_vip(data: Path, history) -> None:
 
 
 def _corrected(history):
-    """Sửa một kỳ cũ ở CẢ hai sổ (giải 7 có hai chữ số nên hai sổ ghi cùng một số)."""
     raw, two = (frame.copy() for frame in history)
     for frame in (raw, two):
         frame.loc[3, "prize7_1"] = (int(frame.loc[3, "prize7_1"]) + 1) % 100
@@ -448,7 +409,6 @@ def test_the_builder_prints_measurements_that_match_the_history(tmp_path) -> Non
 
 
 def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_path) -> None:
-    """Một kỳ cũ được sửa; bộ lọc đã đo lại nhưng lượt hai thì chưa (bước đo hỏng giữa chừng)."""
     history = _mock(80, seed=5)
     data = _data_dir(tmp_path, history)
     fixed = _corrected(history)
@@ -459,7 +419,6 @@ def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_pa
 
 
 def test_the_builder_keeps_the_frozen_benchmark_as_new_draws_arrive(tmp_path, register_at) -> None:
-    """Bộ lọc đo lại mỗi ngày; lượt hai đóng băng ở ngày đăng ký vẫn được in, kỳ mới không làm nó cũ."""
     history = _mock(120, seed=5)
     register_at(list(m.draws_from_frame(history[1])[1]), 80)
     data = _data_dir(tmp_path, _head(history, 80))
@@ -470,19 +429,18 @@ def test_the_builder_keeps_the_frozen_benchmark_as_new_draws_arrive(tmp_path, re
 
 
 def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> None:
-    """Sổ có thêm kỳ mà bước đo hỏng: con và cặp của lần đo cũ là cho một kỳ ĐÃ quay."""
     history = _mock(126, seed=5)
     data = _data_dir(tmp_path, _head(history, 120))
     _write_history(data, history)
     got = page.load(data)
     assert (got.vip_state, got.behind_by) == ("behind", 6)
-    assert got.vip["pairs"]["picks"]                             # có cặp đã đo, nhưng không được in
+    assert got.vip["pairs"]["picks"]
     soup = BeautifulSoup(page.render(got.vip, None, last_date=got.last_date,
                                      behind_by=got.behind_by), "html.parser")
     assert soup.select_one("#app-vip-picks [data-vip-behind]")["data-vip-behind"] == "6"
     assert not soup.select("#app-vip-picks .app-vip-strip li")
     assert not soup.select("#app-vip-pairs .app-vip-strip li")
-    assert soup.select_one(".app-vip-verdict") is not None      # kiểm chứng của đoạn đã đo vẫn in
+    assert soup.select_one(".app-vip-verdict") is not None
     assert soup.select_one(".app-vip-pair-verdict") is not None
 
 
@@ -502,7 +460,6 @@ def test_a_filter_measurement_of_a_corrected_history_prints_nothing(tmp_path) ->
 
 
 def test_a_missing_filter_measurement_replaces_the_old_page(tmp_path) -> None:
-    """Thiếu vip.json thì trang cũ (với top-k và kết luận cũ) phải bị ghi đè, không được để nguyên."""
     data = _data_dir(tmp_path, _mock(80, seed=5))
     (data / report.OUT_DIR / report.VIP_FILE).unlink()
     docs = tmp_path / "docs"
@@ -516,7 +473,6 @@ def test_a_missing_filter_measurement_replaces_the_old_page(tmp_path) -> None:
 
 @pytest.mark.parametrize("garbage", ['{"version": 5, "draws"', "[1, 2, 3]", "\x00\x01"])
 def test_unreadable_measurements_replace_the_old_page(tmp_path, garbage) -> None:
-    """Tệp đo cụt hay hỏng: không làm trình dựng chết (trang cũ còn nguyên), mà coi như không hợp lệ."""
     data = _data_dir(tmp_path, _mock(80, seed=5))
     for name in (report.VIP_FILE, report.BENCHMARK_FILE):
         (data / report.OUT_DIR / name).write_text(garbage, encoding="utf-8")
@@ -543,11 +499,7 @@ def test_the_filter_status_follows_the_history_prefix() -> None:
     assert report.vip_status(None, draws, labels) == "invalid"
 
 
-# --------------------------------------------------------------------------- "ít nhất một con về"
-
-
 def _scores_for(picks: list[int], n_rows: int) -> np.ndarray:
-    """Điểm chọn đúng con ``picks[t]`` ở hàng t (mọi con khác thấp hơn rõ rệt)."""
     scores = np.zeros((n_rows, 100))
     for t, number in enumerate(picks):
         scores[t, number] = 1.0
@@ -556,15 +508,13 @@ def _scores_for(picks: list[int], n_rows: int) -> np.ndarray:
 
 def test_the_any_hit_error_is_paired_on_the_same_draws() -> None:
     counts = np.zeros((6, 100))
-    counts[:, 7] = [2, 2, 0, 2, 0, 2]          # con 7 về ≥ 2 nháy ở kỳ 0, 1, 3, 5
-    counts[:, 9] = [2, 0, 0, 2, 2, 0]          # con 9 về ≥ 2 nháy ở kỳ 0, 3, 4
+    counts[:, 7] = [2, 2, 0, 2, 0, 2]
+    counts[:, 9] = [2, 0, 0, 2, 2, 0]
     rows = range(6)
     a, b = _scores_for([7] * 6, 6), _scores_for([9] * 6, 6)
     se = report.paired_any_hit_se(a, b, counts, rows, ks=(1,))["multi"]["1"]
     diff = np.array([0, 1, 0, 0, -1, 1], dtype=float)
     assert se == pytest.approx(diff.std(ddof=1) / math.sqrt(6))
-    # Cùng một bộ chọn: hiệu từng kỳ bằng 0, nên sai số của hiệu bằng 0 — công thức hai mẫu độc
-    # lập thì vẫn ra số dương.
     assert report.paired_any_hit_se(a, a, counts, rows, ks=(1,))["multi"]["1"] == 0.0
 
 
@@ -592,15 +542,11 @@ def test_the_page_prints_the_measured_paired_error(fair_vip, bench) -> None:
     assert "là 1,2 điểm %" in text
 
 
-# --------------------------------------------------------------------------- kết luận
-
-
 def test_a_fair_history_reads_not_better_than_random(fair_vip, bench) -> None:
     assert fair_vip["confidence"] == "Low"
     soup = _soup(fair_vip, bench)
     assert _verdict(soup) == "khong-hon"
     headline = soup.select_one(".app-vip-verdict").get_text(strip=True)
-    # Không bác bỏ được "không kỹ năng" không phải chứng minh không có lợi thế.
     assert headline.startswith("Không có bằng chứng hơn chọn bừa")
     assert "không loại trừ được một lợi thế nhỏ hơn" in soup.select_one("#app-lab-conclusion").get_text()
 
@@ -627,7 +573,6 @@ def test_a_blind_protocol_cannot_conclude_not_better(fair_vip, bench) -> None:
 
 
 def test_sensitivity_is_the_power_over_many_histories_not_one_lucky_run(fair_vip, bench) -> None:
-    """Một lượt cài tín hiệu đạt hay trượt do may không được quyết định kết luận; tỉ lệ đạt mới quyết định."""
     lucky = copy.deepcopy(bench)
     lucky["power_check"]["candidate_passes"] = True
     lucky["power"].update(passes=5, rate=0.5, sensitive=False)
@@ -655,7 +600,6 @@ def test_the_power_check_uses_many_independent_histories() -> None:
 
 
 def test_without_a_benchmark_a_negative_result_is_not_concluded(fair_vip) -> None:
-    """Thiếu (hay bị loại) số đo lượt hai thì chưa biết phép đo có đủ nhạy: không được nói "không hơn"."""
     soup = _soup(fair_vip, None)
     assert _verdict(soup) == "chua-ket-luan"
     headline = soup.select_one(".app-vip-verdict").get_text(strip=True)
@@ -665,7 +609,6 @@ def test_without_a_benchmark_a_negative_result_is_not_concluded(fair_vip) -> Non
 
 @pytest.mark.parametrize("case", ["fair", "planted", "no-bench"])
 def test_the_detailed_conclusion_carries_the_same_headline(case, fair_vip, planted_vip, bench) -> None:
-    """Kết luận ở khối trên và kết luận đầy đủ trong «Chi tiết phép đo» không được nói hai điều khác nhau."""
     vip, b = {"fair": (fair_vip, bench), "planted": (planted_vip, bench), "no-bench": (fair_vip, None)}[case]
     soup = _soup(vip, b)
     top = soup.select_one(".app-vip-verdict b").get_text(strip=True)
@@ -676,12 +619,10 @@ def test_the_detailed_conclusion_carries_the_same_headline(case, fair_vip, plant
 
 
 def test_without_a_benchmark_a_measured_edge_still_reads_better(planted_vip) -> None:
-    """Bằng chứng dương của chính bộ lọc không cần lượt hai để đứng vững."""
     assert _verdict(_soup(planted_vip, None)) == "hon"
 
 
 def test_the_release_check_measures_before_it_builds_the_page() -> None:
-    """release_check dựng trang trên lịch sử hiện tại: bước đo phải chạy NGAY TRƯỚC trình dựng."""
     lines = [ln.strip() for ln in (ROOT / "scripts" / "release" / "release_check.sh").read_text(encoding="utf-8").splitlines()]
     build = lines.index("python src/pages/build_multi_hit_page.py")
     assert lines[build - 1] == "python src/forecast/multi_hit_report.py"
@@ -703,9 +644,6 @@ def test_the_confidence_rule_on_the_page_is_the_model_s_rule(fair_vip) -> None:
         assert f"p < {page._num(p, 2)}" in text, level
 
 
-# --------------------------------------------------------------------------- bảng
-
-
 def _strip(soup: BeautifulSoup, ident: str) -> list[str]:
     return [li.select_one("b").get_text(strip=True) for li in soup.select(f"#{ident} .app-vip-strip li")]
 
@@ -714,14 +652,13 @@ def test_the_picks_strip_lists_the_measured_top_k(planted_vip) -> None:
     soup = _soup(planted_vip, None)
     numbers = _strip(soup, "app-vip-picks")
     assert numbers == [p["number"] for p in planted_vip["picks"]]
-    assert {int(n) for n in PLANTED} <= {int(n) for n in numbers}   # mô hình bắt được con cài tín hiệu
+    assert {int(n) for n in PLANTED} <= {int(n) for n in numbers}
     probs = [[x.get_text(strip=True) for x in li.select("small")]
              for li in soup.select("#app-vip-picks .app-vip-strip li")]
     assert probs == [[page._pct(p["probability"])] for p in planted_vip["picks"]]
 
 
 def test_the_card_names_the_draw_it_forecasts(planted_vip) -> None:
-    """Khối trên cùng là DỰ BÁO cho kỳ kế tiếp, không phải thống kê kỳ đã quay."""
     history = _mock(150, seed=2026, planted=PLANTED)
     last = m.draws_from_frame(history[1])[1][-1]
     assert planted_vip["source_date"] == last
@@ -741,7 +678,6 @@ def test_every_pick_prints_its_reasons(planted_vip) -> None:
 
 
 def test_the_bridge_experience_line_prints_the_counted_rates(fair_vip) -> None:
-    """Kinh nghiệm cầu hai nháy là số ĐẾM của bước đo, in nguyên phân số, nhóm nhiều cầu trước."""
     changed = copy.deepcopy(fair_vip)
     changed["experience"][2].update(observed=123, seen=4567, rate=123 / 4567)
     text = _soup(changed, None).select_one("#app-vip-picks .app-vip-experience").get_text(" ", strip=True)
@@ -764,7 +700,7 @@ def test_the_conclusion_sets_the_printed_rate_beside_the_real_one(planted_vip) -
 
 def test_every_strategy_of_the_benchmark_has_a_reader_facing_label(bench) -> None:
     names = [s["name"] for s in bench["strategies"]]
-    assert len(names) >= 20                    # không quét tập rỗng
+    assert len(names) >= 20
     missing = [n for n in names if n not in page.STRATEGY_LABELS]
     assert not missing, missing
 
@@ -776,7 +712,6 @@ def test_the_candidate_row_is_marked_and_only_that_row(bench, fair_vip) -> None:
 
 
 def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
-    """Ngăn kéo bằng chứng phải mô tả đúng phép tính mà bước đo dùng, không phải bản cũ."""
     from web import evidence_catalog
 
     _, sections = evidence_catalog._catalog({})[page.PAGE]
@@ -792,7 +727,6 @@ def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
 
 
 def test_every_evidence_section_names_a_card_the_page_has(fair_vip, bench) -> None:
-    """Ngăn kéo nhận khối theo tiền tố tiêu đề: đổi tên thẻ mà quên danh mục là mất bằng chứng."""
     from web import evidence_catalog
 
     vip = _vip_of(_pair_history(160, pair=(12, 34)))
@@ -803,11 +737,7 @@ def test_every_evidence_section_names_a_card_the_page_has(fair_vip, bench) -> No
         assert any(title.startswith(sec["heading"]) for title in titles), sec["heading"]
 
 
-# --------------------------------------------------------------------------- cặp xiên 2
-
-
 def _pair_frame(n: int, pair: tuple[int, int] | None = None, rate: float = 0.4, seed: int = 11):
-    """Lịch sử giả định cùng khuôn sổ thật; ``pair`` (nếu có) được cài cùng về với xác suất ``rate``."""
     frame = m.mock_history(n, seed=seed)
     if pair is not None:
         rng = np.random.default_rng(seed + 1)
@@ -819,8 +749,6 @@ def _pair_frame(n: int, pair: tuple[int, int] | None = None, rate: float = 0.4, 
 
 
 def _pair_history(n: int, pair: tuple[int, int], rate: float = 0.4, seed: int = 11):
-    """Như ``_pair_frame`` nhưng có cả sổ kết quả đầy đủ (cho mô hình Lô VIP): cặp cài vào hai số cuối
-    của hai giải ngẫu nhiên ở CẢ hai sổ."""
     raw, two = mf.mock_raw_history(n, seed=seed)
     rng = np.random.default_rng(seed + 1)
     cols = [c for c in two.columns if c != "date"]
@@ -852,9 +780,9 @@ def test_pair_picks_read_only_earlier_draws() -> None:
     before = pairs.walk_forward(present)
     t = 200
     changed = present.copy()
-    changed[t:] = ~changed[t:]                       # đảo toàn bộ từ kỳ t trở đi
+    changed[t:] = ~changed[t:]
     after = pairs.walk_forward(changed)
-    upto = t - pairs.WINDOW + 1                     # các hàng chọn cho kỳ ≤ t
+    upto = t - pairs.WINDOW + 1
     assert (before["picks"][:upto] == after["picks"][:upto]).all()
     assert not (before["picks"][upto:] == after["picks"][upto:]).all()
 
@@ -867,7 +795,6 @@ def test_pair_hits_and_the_same_draw_baseline() -> None:
         chosen = wf["picks"][j]
         assert wf["hits"][j] == sum(bool(row[pairs.PAIR_A[i]] and row[pairs.PAIR_B[i]]) for i in chosen)
         d = int(row.sum())
-        # Chọn bừa k cặp trong 4 950: kỳ có d con khác nhau về thì C(d, 2) cặp cùng về.
         assert wf["expected"][j] == pytest.approx(pairs.TOP_K * math.comb(d, 2) / 4950)
 
 
@@ -898,7 +825,7 @@ def test_the_measurement_prints_each_pair_s_own_window_count() -> None:
 def test_ties_go_to_the_pair_that_came_together_more_recently() -> None:
     together = np.zeros(pairs.N_PAIRS, dtype=int)
     last = np.full(pairs.N_PAIRS, -1)
-    old, recent = 10, 4000                          # hai cặp cùng điểm cao nhất
+    old, recent = 10, 4000
     together[[old, recent]] = 9
     last[old], last[recent] = 50, 90
     assert pairs.pick_pairs(together, last, t=100, k=2) == [recent, old]
@@ -906,7 +833,7 @@ def test_ties_go_to_the_pair_that_came_together_more_recently() -> None:
 
 def test_a_number_sits_in_at_most_two_pairs() -> None:
     present = _present(m.mock_history(150, seed=8))
-    present[:, 5] = True                            # con 5 về mọi kỳ: mọi cặp có 5 đều điểm cao
+    present[:, 5] = True
     picks = pairs.walk_forward(present)["picks"]
     for row in picks:
         used = np.bincount(np.concatenate([pairs.PAIR_A[row], pairs.PAIR_B[row]]), minlength=100)
@@ -979,9 +906,6 @@ def test_the_recent_table_shows_each_draw_s_pairs(tmp_path) -> None:
             " · ".join(x["pair"]) for x in shown["picks"]]
         assert [int(c["data-hit"]) for c in cells[3].select(".ui-badge")] == [int(x["hit"]) for x in shown["picks"]]
         assert cells[4].get_text(strip=True) == str(shown["hits"])
-
-
-# --------------------------------------------------------------------------- trang đã xuất bản
 
 
 def test_the_published_page_agrees_with_the_published_measurement() -> None:

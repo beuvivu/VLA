@@ -2,21 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Conservative empirical-Bayes statistical signal for the 00..99 universe.
-
-This component combines:
-- recency-weighted Bayesian frequency;
-- target-weekday posterior;
-- 30/90/365-calendar-day shrinkage;
-- stability/credible intervals;
-- higher-order number dynamics (Markov-2, renewal hazard, lag kernels,
-  cross-number lag-1 transition matrices, and regime drift).
-
-Every day/lag/window interpretation is evaluated only on a verified daily-
-contiguous canonical calendar. All dynamic evidence is strongly shrunk toward
-historical baselines. The output is a calibrated ranking component for the wider
-ML/path ensemble, not a claim of deterministic numerical predictability.
-"""
 
 import argparse
 import json
@@ -55,17 +40,9 @@ def _effective_n(weights: np.ndarray) -> float:
 def _weighted_counts(
     observations: np.ndarray, weights: np.ndarray
 ) -> tuple[np.ndarray, float]:
-    """Đổi tần suất có trọng số thành số đếm giả trên cùng cỡ mẫu hiệu dụng.
-
-    ``n_eff=(Σw)²/Σw²`` và ``counts_eff=weighted_rate*n_eff``. Đây là xấp xỉ
-    khớp mô men khi các kỳ độc lập, không phải likelihood Beta-Binomial chính
-    xác của tổng có trọng số. Trọng số đều khôi phục đúng số đếm ban đầu.
-    """
     scale = float(np.max(weights, initial=0.0))
     if scale <= 0.0:
         return np.zeros(observations.shape[1], dtype=float), 0.0
-    # Chỉ tỉ lệ giữa các trọng số có ý nghĩa; đổi đơn vị không được làm
-    # bình phương tràn số hoặc hụt về không trước khi tính ESS.
     relative = weights / scale
     ess = _effective_n(relative)
     rates = (observations * relative[:, None]).sum(axis=0) / relative.sum()
@@ -90,18 +67,6 @@ def _js_divergence(p: np.ndarray, q: np.ndarray) -> float:
 def _eb_parameters(
     counts: np.ndarray, trials: float, prior_strength: float | None
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Tham số Beta dùng chung cho ước lượng điểm và khoảng khả tín.
-
-    Mỗi hậu nghiệm trả lời một câu hỏi gộp KHÁC NHAU, nên phải có κ riêng:
-
-    * ``ewm`` hỏi "các con có khác nhau về tần suất chung không?"
-    * ``weekday`` hỏi "các con có khác nhau về tần suất RIÊNG thứ ấy không?"
-    * mỗi cửa sổ hỏi câu tương tự trên đúng cửa sổ của nó.
-
-    Dùng chung một κ học từ tần suất chung là sai, và cái sai ấy có hướng rõ
-    ràng: tần suất chung đồng nhất kéo κ lên rất lớn, rồi κ ấy nghiền nát một
-    nhịp theo thứ có thật. Phép kiểm nhịp thứ Hai bắt được đúng điều này.
-    """
     if prior_strength is None:
         fit = fit_pooling(counts, float(trials))
         kappa, mean = fit.prior_strength, fit.pooled_rate
@@ -116,21 +81,13 @@ def _eb_parameters(
 def _eb_posterior(
     counts: np.ndarray, trials: float, prior_strength: float | None
 ) -> np.ndarray:
-    """Trung bình hậu nghiệm từ số đếm và số kỳ cùng đơn vị đo."""
     if trials <= 0.0:
         return np.full(counts.shape, 1.0 / max(counts.size, 1), dtype=float)
     alpha, beta = _eb_parameters(counts, trials, prior_strength)
     return alpha / (alpha + beta)
 
 
-#: Trọng số của ba thành phần tầng 2, giữ nguyên từ bản cũ.
-#:
-#: Tệp này đổi CÁCH HỢP, không đổi HỢP CÁI GÌ. Tách hai câu hỏi ra là cố ý:
-#: gộp chúng vào một phép tối ưu sẽ cho một mặt mục tiêu mà không ai đọc được
-#: kết quả, và khi nó tệ đi thì không biết tại phần nào.
 SIGNAL_COMPONENT_WEIGHTS: tuple[float, float, float] = (0.55, 0.25, 0.20)
-#: Số kỳ cuối dùng để chọn phép hợp. Đủ dài để phép so cặp đôi có ý nghĩa,
-#: đủ ngắn để không kéo dài thời gian dựng tín hiệu hằng ngày.
 POOL_SELECTION_DAYS = 300
 
 
@@ -142,16 +99,6 @@ def select_signal_pool(
     half_life: int,
     eval_days: int = POOL_SELECTION_DAYS,
 ) -> tuple[PoolParams | None, PoolAudit | None]:
-    """Chọn phép hợp ba thành phần tầng 2 bằng Brier trên lát giữ riêng.
-
-    Trả về ``(None, None)`` khi lịch sử quá ngắn — khi ấy giữ trộn số học, đúng
-    hành vi cũ, và nói rõ là không chọn.
-
-    Vì sao đáng làm, bằng số đo: trộn số học luôn nằm trong ``[min, max]`` của
-    đầu vào nên không bao giờ sắc hơn thành phần sắc nhất. Đo với tín hiệu tiêm
-    +25 %: trộn số học thu hồi 6,8 %, log-odds ở độ sắc 2 thu hồi 13,4 %, ở độ
-    sắc 3 thu hồi 20,3 %. Kiến trúc cũ vứt bỏ 93 % của một tín hiệu có thật.
-    """
     days = int(hit.shape[0])
     start = max(200, days - eval_days)
     if days - start < 60:
@@ -224,15 +171,12 @@ def _loto_signal(
 
     components = np.vstack([ewm, weekday, window_probs[90]])
     if pool is None:
-        # Hành vi cũ: trộn số học với trọng số đặt tay.
         raw = np.tensordot(np.asarray(SIGNAL_COMPONENT_WEIGHTS), components, axes=(0, 0))
     else:
         raw = apply_pool("loto", components, pool)
     prob = baseline + stability * (raw - baseline)
     prob = np.clip(prob, 1e-5, 1 - 1e-5)
 
-    # Khoảng này mô tả EWM trước khi trộn: dùng nguyên alpha/beta đã sinh
-    # ewm_prob, gồm tâm có trọng số, κ và số đếm giả trên cùng ESS.
     ci_low = beta_dist.ppf(0.025, alpha, beta)
     ci_high = beta_dist.ppf(0.975, alpha, beta)
 
@@ -258,13 +202,6 @@ def _loto_signal(
 def _de_posterior(
     onehot: np.ndarray, weights: np.ndarray, prior_strength: float | None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Hậu nghiệm Dirichlet cho Đặc Biệt, xấp xỉ ESS khi có trọng số.
-
-    Đặc Biệt là bài toán một-trong-một-trăm nên tiên nghiệm là Dirichlet đối xứng với
-    tổng độ tập trung ``κ``. Câu hỏi gộp vẫn y hệt chế độ LOTO — "các con có
-    khác nhau thật hay chỉ dao động?" — nên dùng cùng bộ ước lượng, chỉ khác ở
-    chỗ chia đều κ cho 100 loại.
-    """
     counts, ess = _weighted_counts(onehot, weights)
     if prior_strength is None:
         kappa = (
@@ -408,42 +345,12 @@ def _blend_dynamics(
     return merged, dyn_diag
 
 
-#: ``None`` nghĩa là HỌC độ co ngót từ dữ liệu thay vì đặt tay.
-#:
-#: Giá trị cũ là 80, và nó được chọn bằng cảm tính. Đo walk-forward trên 938 kỳ
-#: của chính kho này: κ học được có trung vị 1 000 000 (chạm trần) và nhỏ nhất
-#: 23 626 — tức dữ liệu đòi co ngót mạnh hơn 80 từ ba trăm tới hơn mười nghìn
-#: lần. Brier: gộp hoàn toàn 0,18138190; học κ 0,18138272; đặt tay 80
-#: 0,18149968; không gộp 0,18150858.
-#:
-#: Vẫn nhận một số cụ thể để ép κ; số đếm có trọng số luôn dùng đơn vị ESS.
 LEARN_PRIOR_STRENGTH: float | None = None
 
-#: Lưới chu kỳ bán rã để chọn, tính bằng KỲ QUAY.
-#:
-#: Giá trị cũ là 45, cũng đặt tay. Đo walk-forward 300 kỳ cuối trên dữ liệu
-#: thật, kèm phép tiêm tín hiệu +100 % vào một con:
-#:
-#:   bán rã   ESS    Brier         ngụy tín hiệu   thu hồi tín hiệu
-#:       45   130    0,18134089    0,00001          0,0 %
-#:      180   519    0,18133923    0,00002         36,0 %
-#:      365  1031    0,18133891    0,00003         63,9 %
-#:        ∞  2398    0,18133866    0,00009         90,4 %
-#:
-#: Brier tốt lên ĐƠN ĐIỆU theo chu kỳ dài hơn, còn ngụy tín hiệu tăng chín lần
-#: nhưng vẫn ở mức 0,009 điểm phần trăm trên nền 23,77 %. Ở mức 45, thành phần
-#: `ewm` — vốn mang trọng số lớn nhất của tầng này — thu hồi ĐÚNG 0 % của một
-#: tín hiệu gấp đôi tần suất nền. Nó đang mù hoàn toàn.
-#:
-#: ``None`` nghĩa là chọn từ lưới này bằng Brier trên lát giữ riêng.
 HALF_LIFE_GRID: tuple[int, ...] = (45, 90, 180, 365, 730, 1460)
 LEARN_HALF_LIFE: int | None = None
-#: Dưới ngưỡng này thì cắt lát giữ riêng làm hỏng chính phép khớp.
 MIN_HALF_LIFE_SELECTION_DAYS = 200
 HALF_LIFE_HOLDOUT = 0.25
-#: Sàn tuyệt đối cho phép so cặp đôi: dưới mức này là nhiễu cộng dấu chấm
-#: động chứ không phải chênh lệch. Chỉ dùng khi sai số chuẩn bằng 0 (mọi kỳ
-#: cho chênh lệch giống hệt nhau).
 _FLOAT_NOISE = 1e-12
 
 
@@ -453,12 +360,6 @@ def select_half_life(
     grid: tuple[int, ...] = HALF_LIFE_GRID,
     holdout_fraction: float = HALF_LIFE_HOLDOUT,
 ) -> tuple[int, dict[str, float] | None]:
-    """Chọn chu kỳ bán rã bằng Brier trên lát giữ riêng cắt theo THỜI GIAN.
-
-    Trả về ``(chu kỳ, điểm từng ứng viên)``; phần thứ hai là ``None`` khi lịch
-    sử quá ngắn để chọn — khi ấy giữ giá trị đầu lưới và nói rõ là không chọn,
-    thay vì chọn bừa trên vài chục kỳ.
-    """
     days = int(hit.shape[0])
     split = int(round(days * (1.0 - holdout_fraction)))
     if days < MIN_HALF_LIFE_SELECTION_DAYS or split <= 1 or days - split <= 1:
@@ -476,20 +377,6 @@ def select_half_life(
         per_day[half_life] = np.asarray(errors, dtype=float)
     scores = {str(hl): float(errors.mean()) for hl, errors in per_day.items()}
 
-    # So CẶP ĐÔI có sai số chuẩn, không so với một dung sai đặt tay.
-    #
-    # Câu hỏi đúng không phải "chênh bao nhiêu" mà "chênh ấy có ĐO ĐƯỢC không".
-    # Hai lý do buộc phải hỏi như vậy:
-    #
-    # * Dung sai tương đối sụp đổ khi Brier gần 0 — với dữ liệu mà mọi con đều
-    #   trúng, ``|best| * 1e-6`` bằng 0 nên không gì hoà, và bộ chọn quay lại
-    #   quyết định theo chữ số cuối.
-    # * Đo thật ở chế độ đề: cả sáu ứng viên cho 0,00990000 giống hệt tới tám
-    #   chữ số. Chọn giữa chúng là chọn theo nhiễu dấu chấm động.
-    #
-    # Phép so cặp đôi tận dụng việc mọi ứng viên được chấm trên CÙNG các kỳ:
-    # phương sai của chênh lệch nhỏ hơn hẳn phương sai của từng bản, nên phép
-    # kiểm nhạy hơn nhiều so với việc so hai trung bình độc lập.
     best_hl = min(grid, key=lambda hl: (scores[str(hl)], hl))
     best_errors = per_day[best_hl]
     n_days = max(best_errors.size, 1)
@@ -501,15 +388,12 @@ def select_half_life(
         if float(delta.mean()) <= SIGNIFICANCE_SIGMAS * standard_error + _FLOAT_NOISE:
             tied.append(half_life)
 
-    # Hoà thì chu kỳ NGẮN hơn thắng: nó phản ứng nhanh hơn với trôi khái niệm,
-    # nên khi không đo được khác biệt thì chọn bản linh hoạt hơn.
     return int(min(tied)), scores
 
 
 def _resolve_prior_strength(
     observations: np.ndarray, prior_strength: float | None
 ) -> tuple[float, PoolingFit | None]:
-    """Trả về độ co ngót sẽ dùng, kèm bằng chứng nếu nó được HỌC."""
     if prior_strength is not None:
         return float(prior_strength), None
     fit = fit_pooling(observations.sum(axis=0), float(observations.shape[0]))
@@ -552,9 +436,6 @@ def build_statistical_signal(
         chosen_half_life, half_life_scores = (
             (half_life, None) if half_life is not None else select_half_life(hit)
         )
-        # Chế độ đề chưa nối phép hợp học được: nó chuẩn hoá về phân phối tổng
-        # bằng 1 nên phép hợp phải giữ ràng buộc ấy, và cần đo riêng trước khi
-        # đổi. Giữ trộn số học cho tới khi có số liệu.
         pool, pool_audit = None, None
         df = _de_signal(
             hit,
@@ -568,8 +449,6 @@ def build_statistical_signal(
             sparse.drop(columns=["date"]).to_numpy(dtype=int) > 0
         ).astype(np.int8)
         dates = sparse["date"]
-        # `_resolve_prior_strength` ở đây chỉ để BÁO CÁO độ co ngót tổng thể;
-        # từng phép đo bên trong tự học κ của riêng nó.
         _strength, pooling = _resolve_prior_strength(hit, prior_strength)
         chosen_half_life, half_life_scores = (
             (half_life, None) if half_life is not None else select_half_life(hit)
@@ -603,8 +482,6 @@ def build_statistical_signal(
         "anchor_date": anchor.isoformat(),
         "target_date": target.isoformat(),
         "history_days": int(len(two)),
-        # Tên trường giữ nguyên để không phá bản tóm tắt cũ, nhưng đơn vị là
-        # KỲ QUAY chứ không phải ngày lịch — xem ghi chú ở HALF_LIFE_GRID.
         "half_life_days": chosen_half_life,
         "half_life_learned": half_life_scores is not None,
         "half_life_brier_by_candidate": half_life_scores,
@@ -618,11 +495,6 @@ def build_statistical_signal(
         },
         "prior_strength": _strength,
         "prior_strength_learned": pooling is not None,
-        # Số tham số HIỆU DỤNG là con số nối thẳng tới công suất thống kê: báo
-        # cáo ngẫu nhiên đo được ngưỡng phát hiện +11,8 % tương đối với 100 giả
-        # thuyết, nhưng chỉ +7,7 % với một (23-11-2026). Co ngót kéo 100 xuống gần 1, tức
-        # hạ ngưỡng ấy khoảng một phần ba — đó mới là phần thắng thật, không
-        # phải vài phần trăm nghìn Brier.
         "pooling": None if pooling is None else {
             "pooled_rate": pooling.pooled_rate,
             "shrinkage": pooling.shrinkage,
@@ -653,10 +525,7 @@ def main() -> None:
         )
     )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
-    # Mặc định là CHỌN từ lưới; truyền số để ép.
     ap.add_argument("--half-life", type=int, default=None)
-    # Mặc định là HỌC (không truyền cờ). Truyền một số để ép, phục vụ tái lập
-    # kết quả của các bản chạy cũ.
     ap.add_argument("--prior-strength", type=float, default=None)
     ap.add_argument("--out-dir", default="data/stats/statistical_signal")
     ap.add_argument("--dynamics-out-dir", default="data/stats/number_dynamics")

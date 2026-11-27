@@ -1,5 +1,3 @@
-"""Commit bot Vietlott phải mang đúng manifest của các trang nó vừa dựng."""
-
 import os
 from pathlib import Path
 import shutil
@@ -14,7 +12,6 @@ SCRIPTS = ("src/web/site_assets.py", "scripts/ops/push_generated_site.py", "scri
 
 
 def test_vietlott_bot_commits_a_complete_release_snapshot(tmp_path: Path) -> None:
-    """Chạy nguyên shell ghi trang và helper thật trên remote git cục bộ."""
     def git(repo, *args):
         return subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True)
     remote, work = tmp_path / "remote.git", tmp_path / "work"
@@ -40,7 +37,6 @@ def test_vietlott_bot_commits_a_complete_release_snapshot(tmp_path: Path) -> Non
     git(work, "commit", "-qm", "Ảnh chụp ban đầu")
     git(work, "push", "-q", "origin", "main")
     page.write_text("<!doctype html><p>Kết quả kỳ mới</p>", encoding="utf-8")
-    # Sửa tài nguyên chung buộc finalizer thay cả URL trên trang chủ.
     (assets / "app-evidence.js").write_text("/* tài nguyên mới */", encoding="utf-8")
     workflow = yaml.safe_load((ROOT / ".github/workflows/vietlott-results.yml").read_text())
     step = next(step for step in workflow["jobs"]["build"]["steps"] if step.get("name") == "Ghi trang")
@@ -48,7 +44,6 @@ def test_vietlott_bot_commits_a_complete_release_snapshot(tmp_path: Path) -> Non
         ["bash", "-e", "-c", step["run"]], cwd=work, check=True,
         env={**os.environ, "GITHUB_REF_NAME": "main"}, capture_output=True, text=True,
     )
-    # Clone remote sau khi đẩy: không được vô tình đo cây chưa commit/stage.
     published = tmp_path / "published"
     git(tmp_path, "clone", "-q", str(remote), str(published))
     assert check_site(published / "docs") == []
@@ -95,7 +90,6 @@ def _fixture(tmp_path: Path, page_text: str):
 
 
 def test_a_rebuild_that_only_moves_the_build_time_is_not_committed(tmp_path: Path) -> None:
-    """78% lượt dựng tháng 10-2026 chỉ đổi giờ dựng: không commit, giữ đúng bản HEAD để triển khai."""
     git, remote, work, docs = _fixture(tmp_path, _stamped("06:17"))
     head = git(work, "rev-parse", "HEAD").stdout
     committed = (docs / "vietlott.html").read_text(encoding="utf-8")

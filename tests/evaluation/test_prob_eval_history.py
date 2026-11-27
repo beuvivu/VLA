@@ -22,8 +22,6 @@ def _history(day: str, *, mode: str) -> pd.DataFrame:
             "target_date": [day] * 100,
             "number": np.arange(100),
             "y": y,
-            # Deliberately include components that would have allowed the old
-            # 40/30/30 reconstruction. The evaluator must ignore them.
             "p_ml": np.full(100, 0.2),
             "p_active": np.full(100, 0.2),
             "p_stable": np.full(100, 0.2),
@@ -109,11 +107,6 @@ def _emit(tmp_path: Path, day: str, mode: str) -> None:
 
 
 def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> None:
-    """Đọc tệp thô phải thấy ngay đơn vị: Đặc Biệt cũ là trung bình, mới là tổng.
-
-    Sổ cũ chưa có cột; lần ghi kế tiếp phải gắn nhãn cả dòng cũ, nhận ra dòng
-    thang cũ bằng bất biến chứ không bằng ngày, và không đè nhãn đã có.
-    """
     from evaluation import prob_eval_history
 
     out = tmp_path / "ensemble_history.csv"
@@ -122,7 +115,6 @@ def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> 
             "mode": ["de", "de", "loto", "de"],
             "target_date": ["2026-08-01", "2026-08-02", "2026-08-01", "2026-08-03"],
             "logloss": [4.65, 4.65, 0.55, 4.60],
-            # Thang cũ (~0,0099), thang mới (~0,99), LOTO, thang cũ.
             "brier": [0.0099, 0.9905, 0.18, 0.0101],
             "updated_at_utc": ["2026-09-30T00:00:00Z"] * 4,
         }
@@ -139,7 +131,6 @@ def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> 
     frame = pd.read_csv(out, dtype={"target_date": str})
     assert list(frame.columns).index("brier_unit") == list(frame.columns).index("brier") + 1
     unit = frame.set_index(["mode", "target_date"])["brier_unit"]
-    # Ngày ghi của dòng cũ cố ý là SAU bản sửa: luật theo ngày sẽ gắn sai.
     assert unit[("de", "2026-08-01")] == "mean_100_classes"
     assert unit[("de", "2026-08-02")] == "sum_100_classes"
     assert unit[("loto", "2026-08-01")] == "mean_100_bernoulli"
@@ -147,18 +138,12 @@ def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> 
     assert unit[("loto", "2026-09-10")] == "mean_100_bernoulli"
     assert unit[("de", "2026-08-03")] == "mean_100_classes"
 
-    # Nhãn đã ghi thì giữ nguyên.
     kept = prob_eval_history.label_brier_units(frame.assign(brier_unit=frame["brier_unit"].where(
         frame["target_date"] != "2026-08-03", "ghi_tay")))
     assert kept.set_index(["mode", "target_date"])["brier_unit"][("de", "2026-08-03")] == "ghi_tay"
 
 
 def test_a_rerun_with_the_same_metrics_leaves_the_ledger_byte_identical(tmp_path: Path, monkeypatch) -> None:
-    """Pipeline chạy lại trong ngày ra đúng số đo cũ: sổ không đổi byte nào, giờ ghi đầu được giữ.
-
-    Trước 06-11-2026 mỗi lượt chạy lại ghi lại dòng của kỳ chỉ để đổi ``updated_at_utc``. Số đo đổi
-    thật thì dòng vẫn được ghi lại, kèm giờ mới.
-    """
     from datetime import UTC
     from datetime import datetime as real_datetime
 
@@ -183,7 +168,6 @@ def test_a_rerun_with_the_same_metrics_leaves_the_ledger_byte_identical(tmp_path
     assert out.read_bytes() == first
     assert "2026-11-05T11:37:49Z" in first.decode()
 
-    # Số đo đổi (dự báo công bố khác): dòng được ghi lại với giờ mới.
     predict = tmp_path / "forecast" / "predict" / "predict_next_loto_all_2026-09-10.csv"
     frame = pd.read_csv(predict)
     frame["prob"] = frame["prob"] * 0.9
@@ -194,12 +178,6 @@ def test_a_rerun_with_the_same_metrics_leaves_the_ledger_byte_identical(tmp_path
 
 
 def test_the_repository_ledger_labels_every_brier_with_a_consistent_unit() -> None:
-    """Sổ thật: mỗi dòng có nhãn, và nhãn khớp độ lớn của chính con số.
-
-    Brier Đặc Biệt theo quy ước trung bình không vượt 2/100 (tổng bình phương của
-    một phân phối và một one-hot tối đa là 2); quy ước tổng thì thoả cận dưới
-    ``(1 − e^−logloss)²``.
-    """
     from evaluation.backfill_baseline_skill import brier_is_comparable
 
     path = Path(__file__).resolve().parents[2] / "data" / "evaluation" / "prob_eval" / "ensemble_history.csv"

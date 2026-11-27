@@ -1,5 +1,3 @@
-"""Behavioral checks for causal, bounded hybrid memory."""
-
 import copy
 import json
 import unittest

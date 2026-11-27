@@ -1,5 +1,3 @@
-"""Incremental sync pipeline: source → validation → integrity checks → repository → Parquet."""
-
 from __future__ import annotations
 
 import time
@@ -50,22 +48,14 @@ class SyncReport:
         return asdict(self)
 
 
-# Chỉ nguồn chính thức vietlott.vn được sửa kết quả kỳ đã lưu, và chỉ khi tải lại toàn bộ (``--full``).
 OFFICIAL_SOURCE = "vietlott"
 
 
 def _result_identity(draw: Draw) -> tuple:
-    """Kết quả quay của một kỳ; bảng giải và nhãn nguồn không thuộc về nó."""
     return (draw.draw_date, draw.numbers, draw.bonus)
 
 
 def conflicting_draws(fetched: list[Draw], stored: dict[int, Draw], full_refresh: bool) -> list[int]:
-    """Mã các kỳ nguồn trả về khác kết quả đã lưu mà nguồn không có quyền sửa.
-
-    Cùng luật với Keno/Bingo18 và Max 3D/3D Pro/4D (``product_store``): nguồn không được sửa kỳ đã
-    lưu; chỉ ``--full`` từ vietlott.vn chính thức được sửa. Xét theo nhãn ``source`` của TỪNG kỳ, vì
-    ``auto`` ghép kỳ của nhiều nguồn vào một lô.
-    """
     return sorted({
         draw.draw_id for draw in fetched
         if draw.draw_id in stored and _result_identity(draw) != _result_identity(stored[draw.draw_id])
@@ -74,11 +64,10 @@ def conflicting_draws(fetched: list[Draw], stored: dict[int, Draw], full_refresh
 
 
 def check_integrity(draws: list[Draw], spec: GameSpec) -> IntegrityReport:
-    """Data-quality checks on the full (sorted) history. Gaps are reported, not fatal."""
     rep = IntegrityReport()
     ids = [d.draw_id for d in draws]
     if ids and min(ids) > 1:
-        rep.id_gaps.append((1, min(ids) - 1))  # leading draws missing from the source
+        rep.id_gaps.append((1, min(ids) - 1))
     seen: set[int] = set()
     for i in ids:
         if i in seen:
@@ -108,18 +97,13 @@ class SyncPipeline:
         since = known_ids[-1] if known_ids else None
         repair_gap = next((a for a, b in zip(known_ids, known_ids[1:]) if b > a + 1), None)
         if repair_gap is not None:
-            # Chỉ lùi tới khoảng hở NỘI BỘ; kho khởi động thiếu đầu vẫn giữ hợp đồng cũ.
             since = repair_gap
         log.info("sync %s from %s (since draw_id=%s)", spec.code.value, self.source.name, since)
         fetched = await self.source.fetch(spec, since_id=since)
         additions = fetched.draws
         if repair_gap is not None:
-            # Lùi cursor không cho nguồn dự phòng sửa các kỳ chuẩn đã có.
             known = set(known_ids)
             additions = [draw for draw in additions if draw.draw_id > repair_gap and draw.draw_id not in known]
-        # Tải lại toàn bộ đưa CẢ lịch sử của nguồn vào upsert. Trước 15-11-2026 bản sao hay kho lưu trữ
-        # đăng sai một kỳ cũ là ghi đè lặng lẽ kỳ ấy; nay giữ bản đã lưu và báo mã kỳ. Xét cả lượt thường:
-        # nguồn trả kỳ không mới hơn cursor là trái hợp đồng ``since_id``, không phải quyền sửa.
         conflicts = conflicting_draws(additions, stored, full_refresh)
         if conflicts:
             log.warning("%s: source %s conflicts with %d stored draws, kept stored results, e.g. %s",
@@ -230,7 +214,6 @@ def build_source(settings: Settings, client: AsyncHttpClient | None, kind: str |
     raise ValueError(f"unknown source {kind!r}")
 
 
-# ----------------------------------------------------------------- prize data
 @dataclass
 class PrizeSyncReport:
     game: str
@@ -245,7 +228,6 @@ class PrizeSyncReport:
 
 
 class PrizeSyncPipeline:
-    """Download public prize data, reconcile it against the stored draws, upsert."""
 
     def __init__(self, client: AsyncHttpClient, repository: DrawRepository, winners_base_url: str, power_history_url: str) -> None:
         self.client = client

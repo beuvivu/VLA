@@ -1,10 +1,3 @@
-"""Boc chu thich khoi trang da dung, truoc khi ghi ra `docs/`.
-
-Vi sao boc o BUOC XUAT chu khong xoa trong ma nguon: chu thich trong
-`src/` la ban ghi ky thuat cua du an. Con thu nguoi xem thay khi bam
-"View Source" la TRANG DA DUNG, va trang ay sach tuyet doi sau buoc nay.
-"""
-
 from __future__ import annotations
 
 import re
@@ -206,14 +199,6 @@ _SOURCE_DETAIL_STYLE_CU = re.compile(
 
 
 def _inject_source_detail_style(path: Path, html: str) -> str:
-    """Chèn CSS của các trang thống kê chi tiết: BÓC bản đang có rồi chèn lại, ở đúng bước này.
-
-    Trước 11-11-2026 hàm bỏ qua trang đã mang khối này. Ghi lại một trang đã ghi vì thế cho ra tệp
-    KHÁC: `refine_page` bóc khối CSS của nó rồi chèn lại ở cuối `<head>`, tức SAU khối này, còn bản
-    dựng mới đặt khối này sau. Hai workflow giằng co trên sáu trang mỗi ngày: `regional-results.yml`
-    (ghi lại mọi trang qua `refresh_navigation.py`) đẩy khối lên trước, pipeline dựng mới đẩy nó về
-    sau. Bỏ qua trang đã có khối cũng giữ luôn CSS cũ khi `stat_detail_pages.css` đổi.
-    """
     if path.name not in _DETAIL_STAT_PAGES:
         return html
     css_path = TEMPLATES / "stat_detail_pages.css"
@@ -226,16 +211,13 @@ def _inject_source_detail_style(path: Path, html: str) -> str:
     return f"{head}{style}\n</head>{rest}"
 
 
-#: Dấu giờ DỰNG trên trang: trang chỉ khác bản đang có ở các mẩu này thì giữ bản cũ
-#: (``core.atomic_io.write_text_unless_only_stamps``). Ngày 05-11-2026 lượt pipeline chạy lại
-#: trên cùng dữ liệu ghi lại 15 trang chỉ vì chúng.
 PAGE_BUILD_STAMPS: tuple[re.Pattern[str], ...] = (
     re.compile(r"Dựng lúc \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"),
     re.compile(r"Bản dựng: \d\d/\d\d/\d{4} \d\d:\d\d UTC\+7"),
     re.compile(r"Bản dữ liệu được dựng lúc \d\d:\d\d \d\d/\d\d/\d{4}"),
     re.compile(r'<time id="footerBuilt" datetime="[^"]*">[^<]*</time>'),
     re.compile(r'"generated_at(?:_utc)?":\s*"[^"]*"'),
-    re.compile(r"Sinh lúc \d{4}-\d\d-\d\d \d\d:\d\d UTC"),   # trang chủ và hai bản landing
+    re.compile(r"Sinh lúc \d{4}-\d\d-\d\d \d\d:\d\d UTC"),
 )
 
 
@@ -245,13 +227,6 @@ def _same_page_but_for_stamps(committed: bytes, current: bytes) -> bool:
 
 
 def keep_committed_pages_when_only_stamps_changed(repo: Path) -> list[str]:
-    """Trả mọi trang `docs/*.html` chỉ khác bản HEAD ở dấu giờ dựng về đúng bản HEAD.
-
-    `write_page` đã giữ trang cũ khi bản mới chỉ khác dấu giờ, nhưng nó so với tệp ĐANG CÓ trên đĩa, và
-    trang chủ được ghi hai bước: `build_landing_page` ghi bản chưa có bảng mô phỏng (khác bản trên đĩa ở
-    cả bảng, nên được ghi kèm dấu giờ mới), rồi `build_fun_prediction` chèn bảng. Lượt chạy lại vì thế
-    vẫn ghi lại ba trang chủ (14-11-2026). So với bản HEAD sau mỗi bước thì thấy được kết quả cuối.
-    """
     return keep_committed_when(repo, scope=("docs",), suffix=".html", same=_same_page_but_for_stamps)
 
 
@@ -262,9 +237,6 @@ def write_page(path: Path, html: str) -> None:
     refined = refine_page(path, html)
     refined = _inject_source_detail_style(path, refined)
     refined = _attach_visual_system(path, refined)
-    # Khung ứng dụng bọc SAU CÙNG, và chỉ bọc. Mọi trình dựng đều đi qua hàm
-    # này, nên đây là chỗ duy nhất cần sửa để cả hai mươi chín trang có cùng
-    # một khung — thay vì chép khung vào từng trình dựng rồi trôi khỏi nhau.
     refined = _attach_shell(path, refined)
     refined = attach_crafto_design(path, refined)
     refined = _attach_theme_bootstrap(path, refined)
@@ -279,8 +251,6 @@ _DESIGN_MAIN = re.compile(r'(<main\b[^>]*\bid="app-main"[^>]*>)', re.I)
 
 
 def attach_crafto_design(path: Path, html: str) -> str:
-    """Lớp trình bày và chuyển động gắn sau khung, không thay dữ liệu trang: xuất tài nguyên nội bộ và chèn
-    một lớp hiệu ứng duy nhất, lũy đẳng. (Gộp từ ``web.crafto_design`` ngày 15-11-2026.)"""
     if "</head>" not in html or not _DESIGN_MAIN.search(html):
         return html
     assets = path.parent / "assets"
@@ -290,7 +260,6 @@ def attach_crafto_design(path: Path, html: str) -> str:
 
     head, body = html.split("</head>", 1)
     head = _DESIGN_SCRIPT.sub("", _DESIGN_STYLE.sub("", head))
-    # Script ở head để không phá mẫu đuôi mà bộ gỡ shell dùng khi dựng lại.
     head = (head.rstrip() + '\n<link rel="stylesheet" href="assets/app-design.css" data-app-design-style>\n'
             '<script src="assets/app-motion.js" defer data-app-motion-script></script>\n')
     body = _DESIGN_EFFECTS.sub("", body)
@@ -306,13 +275,11 @@ def attach_crafto_design(path: Path, html: str) -> str:
         '<button id="app-motion-toggle" type="button" aria-pressed="false" hidden>'
         'Hiệu ứng: Tắt</button></aside>'
     )
-    # Đặt cuối vùng nội dung để thứ tự đọc và các điều khiển gốc không đổi.
     body = re.sub(r'</main\s*>', lambda _: effects + '</main>', body, count=1, flags=re.I)
     return head + "</head>" + body
 
 
 def _attach_theme_bootstrap(path: Path, html: str) -> str:
-    """Nạp màu đã chọn sau metadata/CSP nhưng trước mọi stylesheet."""
     head_match = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, re.I | re.S)
     if not head_match:
         return html
@@ -327,7 +294,6 @@ def _attach_theme_bootstrap(path: Path, html: str) -> str:
     metadata = list(re.finditer(r"<(?:meta|base)\b[^>]*>", head, re.I))
     position = metadata[-1].end() if metadata else 0
     script = '\n<script src="assets/app-theme.js" data-app-theme></script>\n'
-    # Chuẩn hoá hai mép để lần ghi thứ hai không thêm một dòng trắng nữa.
     head = head[:position].rstrip() + script + head[position:].lstrip()
     return html[:head_match.start(1)] + head + html[head_match.end(1):]
 
@@ -337,14 +303,6 @@ _EVIDENCE_CU = re.compile(r"<script\b[^>]*\bdata-app-evidence\b[^>]*>.*?</script
 
 
 def _attach_evidence(path: Path, html: str) -> str:
-    """Nạp hiệu ứng nguồn & bằng chứng cho mọi con số của trang.
-
-    Hai thẻ vào ``<head>``: khối JSON ``#app-evidence-data`` (danh mục của
-    trang, :mod:`evidence_catalog`) và ``assets/app-evidence.js`` chạy trễ.
-    Đặt ở đầu trang chứ không ở đuôi khung: đuôi khung là mốc mà
-    ``app_shell._DUOI_KHUNG`` neo vào để bóc lớp cũ, thêm thẻ vào đó là làm
-    trượt phép bóc. Bóc bản cũ rồi chèn lại, nên ghi hai lần ra cùng một tệp.
-    """
     head_match = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, re.I | re.S)
     if not head_match:
         return html
@@ -363,9 +321,6 @@ def _attach_evidence(path: Path, html: str) -> str:
     return html[:head_match.start(1)] + head + tags + html[head_match.end(1):]
 
 
-#: Tệp tĩnh của khung, chép từ ``src/`` sang ``docs/assets/`` mỗi lần ghi
-#: trang. GitHub Pages chỉ phục vụ ``docs/``, nên trỏ thẳng vào ``src/`` là một
-#: tham chiếu chết.
 _SHELL_CSS_NGUON = TEMPLATES / "app_shell.css"
 _SHELL_JS_NGUON = ASSETS / "app-shell.js"
 _SHELL_LINK = '<link rel="stylesheet" href="assets/app-shell.css" data-app-shell>'
@@ -379,7 +334,6 @@ _BRAND_LINKS = (
 
 
 def _attach_shell(path: Path, html: str) -> str:
-    """Bọc trang vào khung dùng chung và xuất bản biểu định kiểu của khung."""
     if "</head>" not in html or not re.search(r"<body\b", html, re.I):
         return html
     assets = path.parent / "assets"
@@ -395,7 +349,6 @@ def _attach_shell(path: Path, html: str) -> str:
                 assets / f"{name}.css",
                 (TEMPLATES / f"{name.replace('-', '_')}.css").read_text(encoding="utf-8"),
             )
-    # Keep the reference typography, with a separate application brand asset.
     reference_assets = ASSETS / "nexlink"
     for source in reference_assets.glob("InstrumentSans-*"):
         (assets / source.name).write_bytes(source.read_bytes())
@@ -403,43 +356,26 @@ def _attach_shell(path: Path, html: str) -> str:
     for name in _BRAND_FILES:
         (assets / name).write_bytes((brand_assets / name).read_bytes())
     head, rest = html.split("</head>", 1)
-    # Bóc bản cũ trước khi chèn bản mới, đúng thứ tự đã học ở
-    # `_attach_visual_system`: ghi lại một trang đã ghi phải cho ra đúng tệp ấy.
     head = _SHELL_LINK_CU.sub("", head)
     head = _BRAND_LINK_CU.sub("", head)
     html = head.rstrip() + "\n" + _SHELL_LINK + "\n" + _BRAND_LINKS + "\n</head>" + rest
-    # Nhập TRỄ, có chủ ý: `app_shell` đọc `ui_theme.SITE_NAV`, mà `ui_theme`
-    # lại nhập `page_output`. Nhập ở đầu tệp thì vòng khép lại ngay lúc nạp
-    # module và Python dừng với "partially initialized module".
     from web.app_shell import wrap_page
 
     return wrap_page(html, path.name)
 
 
 def _attach_visual_system(path: Path, html: str) -> str:
-    """Publish shared skin; load non-blocking for Critical Rendering Path."""
     if "</head>" not in html or not re.search(r"<body\b", html, re.I):
         return html
     css = TEMPLATES / "ui_visual_system.css"
     target = path.parent / "assets" / "ui-visual-system.css"
     target.parent.mkdir(parents=True, exist_ok=True)
     write_stylesheet_text(target, css.read_text(encoding="utf-8"))
-    # `assets/critical.css` cũng phải được ghi lại từ `CRITICAL_CSS`, không
-    # phải để nguyên hiện vật đã commit. Hàm ghi riêng tệp này trước đây (đã gỡ
-    # 13-10-2026) KHÔNG được gọi ở đâu cả, nên tệp xuất bản là một bản chép tay đứng im:
-    # nó còn mang chú thích `/* critical shell ... */` mà nguồn không có, và
-    # nó trôi khỏi `CRITICAL_CSS` mà không dấu hiệu gì. Mỗi trang ghi ra đều
-    # ghi lại tệp này, cùng chỗ với biểu định kiểu anh em ngay trên.
     write_stylesheet_text(
         path.parent / "assets" / "critical.css",
         CRITICAL_CSS,
     )
     head, rest = html.split("</head>", 1)
-    # Bóc khối <noscript> TRƯỚC, rồi mới bóc thẻ <link> trần. Đảo thứ tự thì
-    # luật đầu ăn mất chính cái <link> nằm trong <noscript>, luật sau không còn
-    # gì để khớp, và một <noscript></noscript> rỗng ở lại sau mỗi lần ghi — nên
-    # `write_page` không còn là điểm bất động: ghi lại một trang đã ghi cho ra
-    # tệp khác.
     head = re.sub(
         r'<noscript>\s*<link\b[^>]*\bdata-ui-visual-system\b[^>]*>\s*</noscript>\s*',
         "",

@@ -1,16 +1,3 @@
-"""Dựng bản đồ mắt xích của mọi workflow từ chính YAML, ghi vào tài liệu vận hành và kiểm nó.
-
-Workflow nối nhau qua bốn kiểu mắt xích, và GitHub im lặng khi một mắt xích gãy:
-
-* `workflow_run` theo TÊN (`name:`) của workflow nguồn — tên gõ sai thì không bao giờ chạy;
-* gọi API `actions/workflows/<tệp>/dispatches` theo TÊN TỆP — đổi tên tệp là đứt;
-* `repository_dispatch` do bộ hẹn giờ ngoài (cron-job.org) gửi theo `event_type`;
-* `schedule` (cron, giờ UTC) và `push` lọc theo đường dẫn.
-
-`python3 scripts/ops/workflow_map.py --write` dựng lại khối giữa hai dấu mốc trong
-`documentation/operations/workflow-map.md`; `--check` (mặc định) báo lệch và thoát 1.
-`tests/repo/test_workflow_map.py` dùng cùng mô hình để buộc mọi mắt xích trỏ vào thứ có thật.
-"""
 from __future__ import annotations
 
 import argparse
@@ -26,7 +13,6 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 DOC = ROOT / "documentation" / "operations" / "workflow-map.md"
 START, END = "<!-- workflow-map:start -->", "<!-- workflow-map:end -->"
 _API_DISPATCH = re.compile(r"actions/workflows/([\w.-]+\.ya?ml)/dispatches")
-# Ba lối ghi `main` của kho: lệnh git trực tiếp, trình đẩy trang của VLA, rào xuất bản của engine.
 _COMMIT_MARKERS = ("push_generated_site.py", "persist_site.py persist")
 _CALL_DISPATCH = re.compile(r"""\bdispatch\(\s*["']([\w.-]+\.ya?ml)["']""")
 
@@ -37,10 +23,10 @@ class Workflow:
     name: str
     events: list[str]
     crons: list[str] = field(default_factory=list)
-    follows: list[str] = field(default_factory=list)       # tên workflow nguồn của workflow_run
-    dispatch_types: list[str] = field(default_factory=list)  # repository_dispatch (bộ hẹn giờ ngoài)
+    follows: list[str] = field(default_factory=list)
+    dispatch_types: list[str] = field(default_factory=list)
     push_paths: int = 0
-    dispatches: list[str] = field(default_factory=list)    # tệp workflow được gọi qua API
+    dispatches: list[str] = field(default_factory=list)
     commits: bool = False
     deploys_pages: bool = False
 
@@ -79,7 +65,6 @@ def load(folder: Path = WORKFLOWS) -> dict[str, Workflow]:
 
 
 def broken_links(workflows: dict[str, Workflow]) -> list[str]:
-    """Mọi mắt xích trỏ vào thứ không có thật, hoặc vòng lặp kích hoạt."""
     by_name = {w.name: w for w in workflows.values()}
     problems = []
     for w in workflows.values():
@@ -165,7 +150,7 @@ def updated_document(text: str, workflows: dict[str, Workflow]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true", help="ghi lại khối bản đồ trong tài liệu")
     args = parser.parse_args(argv)
     workflows = load()

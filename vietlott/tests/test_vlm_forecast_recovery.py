@@ -1,4 +1,3 @@
-"""Lỗi số học hoặc fit thất bại không được phá model tốt hay chấm kỳ hai lần."""
 from __future__ import annotations
 
 import copy
@@ -458,7 +457,7 @@ def test_partial_failure_preserves_audit_metadata_on_reload(tmp_path, monkeypatc
         series.draw_ids = np.array([1, 3, 4, 5])
     else:
         series.dates[:] = ['2026-01-02', '2026-01-01', '2026-01-02', '2026-01-02']
-        bootstrap = 2  # Đảo ngày nằm ngoài cửa sổ huấn luyện, vẫn phải được báo cáo.
+        bootstrap = 2
     model = MLForecaster('mega645', MLConfig(bootstrap=bootstrap, backends=(), search_nodes=1))
     original = FeatureState.observe
     def fail_last(self, row, draw_id, draw_date):

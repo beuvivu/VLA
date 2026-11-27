@@ -1,5 +1,3 @@
-"""Luồng thao tác soi cầu có nhãn rõ và tách phần kiểm chứng khỏi kết quả."""
-
 from copy import deepcopy
 from pathlib import Path
 
@@ -45,7 +43,6 @@ def test_primary_workspace_precedes_closed_evidence_and_explains_draw_units(repo
 def test_published_page_keeps_one_compact_guide_without_a_generic_hero(
     report: dict, tmp_path: Path,
 ) -> None:
-    """Kiểm bước xuất thật vì lớp hậu xử lý từng chèn thêm hero và hướng dẫn."""
     output = tmp_path / page.PAGE
     page.write_page(output, page.render(report))
     soup = BeautifulSoup(output.read_text(encoding="utf-8"), "html.parser")

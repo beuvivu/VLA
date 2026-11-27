@@ -1,16 +1,3 @@
-"""Per-draw prize results: number of winning tickets per tier and jackpot pot values.
-
-Two representations:
-
-* ``PrizeRecord`` — validated Pydantic row (storage, API).
-* ``PrizeHistory`` — arrays aligned 1:1 with a ``DrawHistory`` (NaN where a draw has no
-  prize data), the input of the behaviour calibration and the sales model.
-
-``jackpot_pots`` holds the *total* value of each pari-mutuel pot at that draw (the
-amount shared by its winners, or carried forward when nobody wins). Published tables
-quote the value *per winner* when several people share a jackpot; loaders convert.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -50,18 +37,12 @@ class PrizeRecord(BaseModel):
         return self
 
     def fixed_prizes_paid(self, spec: GameSpec | None = None) -> float:
-        """Total value of fixed-amount prizes paid in this draw (VND, before tax)."""
         spec = spec or get_game(self.game)
         return float(sum(self.winners.get(t.name, 0) * (t.fixed_amount or 0) for t in spec.tiers if not t.is_jackpot))
 
 
 @dataclass(frozen=True)
 class PrizeHistory:
-    """Prize data aligned with a ``DrawHistory``.
-
-    ``winners``: (D, T) float, NaN when unknown; columns follow ``spec.tiers`` order.
-    ``pots``:    (D, J) float, NaN when unknown; columns follow ``jackpot_tiers``.
-    """
 
     spec: GameSpec
     draw_ids: np.ndarray
@@ -107,7 +88,6 @@ class PrizeHistory:
         return np.nansum(self.winners * amounts, axis=1) + np.where(self.has_winners, 0.0, np.nan)
 
     def jackpot_won(self) -> np.ndarray:
-        """(D, J) bool — pot j had at least one winner at that draw (False when unknown)."""
         cols = [self.tier_names.index(j) for j in self.jackpot_tiers]
         w = self.winners[:, cols]
         return np.nan_to_num(w, nan=0.0) > 0

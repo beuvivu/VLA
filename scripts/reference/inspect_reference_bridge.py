@@ -1,16 +1,3 @@
-"""In chi tiết cách một trang soi cầu tham chiếu đánh số vị trí và tô đường cầu.
-
-Vì sao tồn tại: chủ dự án muốn hệ thống soi cầu theo đúng nguyên lý của một
-trang tham chiếu (tham số kiểu ``vt=6x22``, ``lon``, ``nhay``, ``db``). Proxy của
-môi trường phát triển chặn trang ấy; runner của Actions thì gọi được. Đoán quy
-ước đánh số vị trí là cách chắc chắn nhất để dựng sai, nên phải đọc tận nơi.
-
-Script chỉ ĐỌC và in ra log: tham số của biểu mẫu, đoạn chú giải, và TỪNG Ô của
-các bảng kết quả kèm lớp/kiểu tô màu của phần tử con — đủ để suy ra vị trí nào
-được tô, kỳ nào được tô, và số nào được ghép. Không lưu nội dung trang vào kho.
-Mỗi URL gọi đúng một lần, có nhịp chờ giữa các lần.
-"""
-
 from __future__ import annotations
 
 import os
@@ -34,7 +21,6 @@ TEXT_CHARS = int(os.environ.get("TEXT_CHARS", "5000"))
 
 
 def marked(cell) -> list[str]:
-    """Các phần tử con có lớp hoặc kiểu riêng — đó là chỗ trang tô màu."""
     out = []
     for el in cell.find_all(True):
         text = el.get_text("", strip=True)
@@ -75,7 +61,6 @@ def dump_controls(soup) -> None:
 
 
 def dump_styles(soup, classes: set[str]) -> None:
-    """Quy tắc CSS nội tuyến cho các lớp tô màu đã thấy."""
     css = " ".join(s.get_text(" ") for s in soup.find_all("style"))
     for name in sorted(classes)[:40]:
         for match in re.finditer(r"[^{}]*\." + re.escape(name) + r"\b[^{}]*\{[^}]*\}", css):

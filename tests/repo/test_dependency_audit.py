@@ -1,12 +1,3 @@
-"""Job kiểm lỗ hổng hằng tuần (`dependency-audit.yml`) chấm MỌI gói chạy trên runner (04-11-2026).
-
-Dependabot không cập nhật pip cho Python 3.15, nên job này là cảnh báo bảo mật duy nhất của gói Python.
-Ngoài requirements, nó phải cài cả gói mà workflow cài thẳng trong lệnh `pip install` (playwright của job
-Chromium; build của vlm-release.yml, gỡ 25-11-2026) và mọi phần tuỳ chọn của engine mà workflow cài (xgboost/lightgbm
-của job ML) — bốn góp ý Codex trên PR #206 chỉ ra từng gói lọt khỏi bản trước. Tập gói tính bằng
-`scripts/ops/audit_install_set.py`; luật đọc lệnh cài được ghim trên workflow dựng sẵn, còn phép trên kho
-thật canh rằng các gói đã biết vẫn nằm trong tập.
-"""
 from __future__ import annotations
 
 import importlib.util
@@ -73,7 +64,6 @@ jobs:
 def test_the_install_set_follows_what_workflows_really_run(tmp_path: Path) -> None:
     root = _fake_repo(tmp_path, {"x.yml": FAKE})
     assert audit.extra_requirements(root) == ["bare", "build", "joined==2.0", "pip", "playwright==1.55.0"]
-    # Phần tuỳ chọn chỉ tính bước chạy trong vietlott/ (mặc định của workflow, của job, hay của bước).
     assert audit.engine_extras(root) == ["crawler", "dev", "ml"]
 
 
@@ -122,11 +112,6 @@ def test_the_script_prints_what_the_workflow_reads(argv: list[str], expected: st
     assert expected in capsys.readouterr().out
 
 
-# --- Bước đối chiếu, chạy thật bằng bash -e như GitHub ---------------------------------------------------
-# Lượt đầu trên main (04-11-2026) đỏ cả hai job dù không có lỗ hổng nào: pip-audit KHÔNG ghi `--output` khi
-# không có gì để báo nên `cat audit.md` hỏng dưới `bash -e`, và `--strict` coi gói editable bị
-# `--skip-editable` bỏ qua là lỗi chí mạng. `python` giả dưới đây mô phỏng đúng hai hành vi đã đo ấy của
-# pip-audit 2.10.1; mọi lệnh khác làm nó dừng với mã 97.
 FAKE_PYTHON = r"""#!/usr/bin/env bash
 echo "$*" >> "$STUB_LOG"
 if [ "$1 $2 $3" = "-m pip freeze" ]; then

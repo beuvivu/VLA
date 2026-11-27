@@ -1,5 +1,3 @@
-"""Đọc năm số dự báo kỳ kế tiếp từ xác suất đã công bố, không tính lại mô hình."""
-
 from __future__ import annotations
 
 import json
@@ -15,12 +13,6 @@ from ensemble.pick_diversity import diversified_order
 
 
 def load_daily_forecast(data_dir: Path, anchor_date: str) -> dict | None:
-    """Chỉ trả đủ hai nhóm đúng kỳ; dữ liệu thiếu, cũ hoặc hỏng thì chờ cập nhật.
-
-    ``anchor_date`` là ngày kết quả đang hiển thị. Giữ nguyên cột ``prob`` của
-    tệp đã công bố: Đặc Biệt là xác suất hai số cuối; LOTO là xác suất xuất hiện
-    ít nhất một lần. Giới hạn cùng đuôi chỉ áp dụng khi chọn năm con LOTO.
-    """
     try:
         if date.fromisoformat(anchor_date).isoformat() != anchor_date:
             return None
@@ -47,7 +39,6 @@ def load_daily_forecast(data_dir: Path, anchor_date: str) -> dict | None:
                 or metadata.get("target_date") != target_date
             ):
                 return None
-            # Mặc định của pandas ≥ 3.1 đã đúng từng bit (tests/core/test_csv_float_round_trip.py).
             frame = pd.read_csv(pred_dir / f"predict_next_{mode}_all_{target_date}.csv")
             checked = probability_component(
                 frame, mode=mode, expected_target_date=target_date,
@@ -55,8 +46,6 @@ def load_daily_forecast(data_dir: Path, anchor_date: str) -> dict | None:
             )
             if not checked.available:
                 return None
-            # Bộ kiểm chuẩn hoá Đặc Biệt cho các thành phần; thẻ chỉ dùng nó
-            # để kiểm rồi giữ nguyên xác suất thực sự đã công bố trong CSV.
             numbers = pd.to_numeric(frame["number"]).to_numpy(dtype=int)
             probabilities = pd.to_numeric(frame["prob"]).to_numpy(dtype=float)[np.argsort(numbers, kind="stable")]
             if mode == "de" and not np.isclose(probabilities.sum(), 1.0, rtol=0, atol=1e-8):

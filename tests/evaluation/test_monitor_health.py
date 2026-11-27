@@ -29,8 +29,6 @@ def _health(tmp_path: Path, latest: str) -> Path:
 
 
 def test_the_expected_date_replaces_the_wall_clock(tmp_path: Path) -> None:
-    """Lượt 45384584244: job chốt kỳ đích 23-11 lúc 18:29, pipeline xong lúc 18:37 và phép tính theo đồng hồ
-    đòi kỳ 24-11 chưa về. Với kỳ đích truyền vào, kết quả không phụ thuộc giờ phép kiểm chạy."""
     health = _health(tmp_path, "2026-11-23")
     args = ["--health", str(health), "--max-staleness-days", "0", "--fail-on-stale"]
 

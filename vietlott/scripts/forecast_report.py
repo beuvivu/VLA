@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""reports/forecast.{md,json}: the self-learning forecaster on the bundled history of all eight
-products, plus a simulation check of its evidence (size under fair draws, power on a planted
-bias of the size seen in Max 3D).
-
-    python scripts/forecast_report.py [--sims 200]
-"""
 
 from __future__ import annotations
 
@@ -32,7 +26,6 @@ OUT = Path(os.environ.get("VQE_REPORTS_DIR") or ROOT / "reports")
 
 
 def _run(comp: Component, obs: dict) -> tuple[float, float]:
-    """(max, final) cumulative log wealth (natural log) of one run."""
     st = comp.init_state()
     t = len(next(iter(obs.values())))
     incr, _ = comp.process(st, obs, np.arange(1, t + 1))
@@ -47,7 +40,6 @@ def _set_obs(nums: np.ndarray, n: int) -> dict:
 
 
 def calibration(sims: int) -> dict:
-    """Size under fair draws; power and draw-down under a *constant* units-6 bias of the size seen."""
     thr = log(20)
     set_rej = sum(_run(Component("main", SetSpec(45, 6), 20, 1 / 1560), _set_obs(np.argpartition(np.random.default_rng(10_000 + s).random((500, 45)), 6, axis=1)[:, :6] + 1, 45))[0] >= thr for s in range(sims))
     dspec = DigitSpec(10, 3, 20, ("trăm", "chục", "đơn vị"))
@@ -71,8 +63,6 @@ def calibration(sims: int) -> dict:
 
 
 def _timeline(f: Forecaster, series) -> dict:  # type: ignore[no-untyped-def]
-    """Exact (per-draw) e-value path: first crossing of 20×, share of later draws above it, start of
-    the current run above it, peak and current value."""
     if not f.trace:
         return {}
     ids = np.concatenate([a for a, _ in f.trace])
@@ -104,7 +94,7 @@ def main() -> int:
     a = ap.parse_args()
     reports, rows, timeline, keno_fit = {}, [], {}, {}
     with tempfile.TemporaryDirectory() as tmp:
-        store = ProductStore(Path(tmp), SEED)  # bundled data only: reproducible
+        store = ProductStore(Path(tmp), SEED)
         for code in ProductCode:
             t0 = time.time()
             f = Forecaster(code, keep_trace=True)

@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-"""Security helpers shared by the static HTML builders."""
 
 import json
 import re
 from typing import Any
 
-# Practical CSP for static pages that still embed page CSS/JS inline.
-# (Landing matrix styles + APP_DATA script live in the HTML document.)
-# External assets remain limited to 'self'; no frames/objects.
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
     "base-uri 'none'; "
@@ -24,7 +20,6 @@ CONTENT_SECURITY_POLICY = (
 
 
 def security_meta_tags(*, connect_sources: tuple[str, ...] = ()) -> str:
-    """Return defense-in-depth policy tags for self-contained static pages."""
     for source in connect_sources:
         if re.fullmatch(r"https://(?:\*\.)?[A-Za-z0-9.-]+(?::\d+)?", source) is None:
             raise ValueError(f"invalid CSP connect source: {source!r}")
@@ -37,7 +32,6 @@ def security_meta_tags(*, connect_sources: tuple[str, ...] = ()) -> str:
 
 
 def json_for_html_script(payload: Any) -> str:
-    """Serialize JSON without allowing data to terminate its script element."""
     text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return (
         text.replace("&", "\\u0026")

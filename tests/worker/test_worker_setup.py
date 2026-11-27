@@ -1,14 +1,3 @@
-"""Bộ cài đặt một lệnh cho Worker.
-
-Chỗ dễ hỏng âm thầm nhất của một kịch bản cài đặt là biểu thức bóc dữ liệu
-không khớp mà kịch bản vẫn báo "xong": người dùng tưởng đã xong, rồi 18:15 hôm
-sau trang không có gì. Vì thế mọi hàm biến đổi đều phải NÉM LỖI khi không
-khớp, và phép kiểm này đòi đúng điều đó.
-
-Đầu ra của wrangler đổi dạng giữa các bản, nên bộ ca gồm cả dạng khối TOML,
-dạng JSON, và dạng có mã màu ANSI.
-"""
-
 from __future__ import annotations
 
 import json
@@ -49,7 +38,6 @@ def _run(cases: list[dict], tmp_path: Path) -> list[dict]:
 
 KV_ID = "0123456789abcdef0123456789abcdef"
 
-# Ba dạng đầu ra thật đã gặp giữa các bản wrangler.
 KV_OUTPUTS = [
     f'✨ Success!\n[[kv_namespaces]]\nbinding = "LIVE"\nid = "{KV_ID}"\n',
     f'{{"binding": "LIVE", "id": "{KV_ID}"}}',
@@ -77,11 +65,6 @@ def test_worker_url_is_extracted_from_every_known_deploy_output(tmp_path: Path) 
 
 
 def test_extraction_fails_loudly_instead_of_returning_something_wrong(tmp_path: Path) -> None:
-    """Không khớp thì phải nổ, kèm đầu ra thật để người dùng tự xử lý được.
-
-    Trả về rỗng hay giữ nguyên bản gốc sẽ khiến kịch bản báo "xong" trong khi
-    tệp chưa hề được sửa — đúng kiểu hỏng mà không ai phát hiện.
-    """
     results = _run([
         {"fn": "extractKvId", "args": ["Error: something went wrong"]},
         {"fn": "extractKvId", "args": ['id = "qua-ngan"']},
@@ -96,11 +79,6 @@ def test_extraction_fails_loudly_instead_of_returning_something_wrong(tmp_path: 
 
 
 def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Path) -> None:
-    """Vá trên chính hai tệp thật trong kho, và chạy lại phải ra cùng kết quả.
-
-    Kịch bản cài đặt được thiết kế để chạy lại nhiều lần vẫn an toàn; nếu lần
-    hai sinh ra mục [[kv_namespaces]] thứ hai thì wrangler sẽ hỏng.
-    """
     toml = (ROOT / "worker" / "wrangler.toml").read_text(encoding="utf-8")
     html = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     url = "https://ui-live.beuvivu.workers.dev"
@@ -116,9 +94,6 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     assert "THAY_BANG_ID_KV_CUA_BAN" not in patched_toml
     assert patched_toml.count("[[kv_namespaces]]") == 1
 
-    # Phải vá đúng DÒNG GÁN, không phải dòng chú thích ví dụ ngay phía trên.
-    # Bản đầu tôi viết vá nhầm vào chú thích: kịch bản báo "xong" mà trang vẫn
-    # không trỏ đi đâu. Kiểm từng dòng chứ không kiểm "chuỗi có mặt đâu đó".
     assigns = [
         line for line in patched_html.splitlines()
         if "window.LIVE_WORKER_URL" in line and not line.strip().startswith("//")
@@ -127,13 +102,6 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     assert len(assigns) == 1, assigns
     assert assigns[0].strip() == f"window.LIVE_WORKER_URL = '{url}/live.json';"
 
-    # `live.html` nay KHÔNG còn dòng chú thích nào.
-    #
-    # Hai khẳng định cũ ở đây đòi các dòng hướng dẫn phải còn, và đòi trình vá
-    # không được vá nhầm vào chúng. Ý định thật là điều thứ hai: sửa DÒNG MÃ,
-    # không sửa chú thích. Bỏ hết chú thích đi thì điều ấy đúng theo cấu trúc
-    # chứ không còn phải canh nữa — và những dòng hướng dẫn ấy chính là chỗ
-    # nói ra rằng trang có một Worker đứng sau.
     assert not _comment_lines(patched_html), _comment_lines(patched_html)[:3]
 
     twice = _run([
@@ -145,15 +113,7 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     assert twice[0]["value"].count("[[kv_namespaces]]") == 1
 
 
-
 def test_the_setup_script_no_longer_touches_the_results_page() -> None:
-    """Trang Sổ kết quả nay tự chứa dữ liệu, không gọi API nào.
-
-    Đây là phép kiểm hồi quy cho một lỗi THẬT đã lọt vào kho: khi trang bỏ
-    `window.VLA_RESULTS_API_URL`, bộ cài đặt vẫn đi tìm dòng gán ấy và chết
-    với "không tìm thấy dòng gán". Bộ kiểm đầy đủ bắt được; lượt chạy rút gọn
-    203 phép kiểm của tôi thì không, vì nó không gồm tệp này.
-    """
     setup = (ROOT / "worker" / "setup.mjs").read_text(encoding="utf-8")
     patch = (ROOT / "worker" / "setup" / "patch.mjs").read_text(encoding="utf-8")
     assert "so-ket-qua-truyen-thong" not in setup
@@ -162,12 +122,6 @@ def test_the_setup_script_no_longer_touches_the_results_page() -> None:
 
 
 def test_the_verification_step_reads_the_anonymised_snapshot_fields() -> None:
-    """Bản chụp công khai đã ẩn danh nguồn, và bước xác minh phải đọc theo.
-
-    Lỗi thứ hai cùng loại: bước xác minh lọc `!r.error`, nhưng trường `error`
-    đã bị thay bằng cờ `failed`. Mọi hàng đều tính là "sống", nên cảnh báo
-    "không nguồn nào trả lời" sẽ không bao giờ hiện ra — đúng lúc nó cần nhất.
-    """
     setup = (ROOT / "worker" / "setup.mjs").read_text(encoding="utf-8")
     assert "(r) => !r.failed" in setup
     assert "!r.error" not in setup
@@ -176,11 +130,6 @@ def test_the_verification_step_reads_the_anonymised_snapshot_fields() -> None:
 
 
 def test_the_verification_step_reads_a_503_as_waiting_for_the_first_cron() -> None:
-    """Lượt yêu cầu không còn thu thập, nên Worker vừa triển khai trả 503 cho tới lượt cron đầu.
-
-    Đọc thân 503 như một ảnh chụp thì `source_status` rỗng và bộ cài đặt in "0/0 nguồn trả lời
-    được" — trông như đã kiểm mà thật ra chưa có gì để kiểm.
-    """
     setup = (ROOT / "worker" / "setup.mjs").read_text(encoding="utf-8")
     block = setup.split("/live.json`, { cache: \"no-store\" })")[1].split("} catch (error)")[0]
     waiting, snapshot = block.split("} else {")
@@ -201,11 +150,6 @@ def test_a_trailing_slash_in_the_worker_url_does_not_double_up(tmp_path: Path) -
 
 
 def test_the_dry_run_touches_nothing(tmp_path: Path) -> None:
-    """`--dry-run` phải cho xem trước mà không sửa tệp nào.
-
-    Người ngại thao tác tay cần thấy kịch bản định làm gì trước khi cho nó
-    chạy thật; nếu bản thử khô cũng ghi tệp thì nó vô nghĩa.
-    """
     before = {
         path: (ROOT / path).read_bytes()
         for path in (
@@ -222,27 +166,16 @@ def test_the_dry_run_touches_nothing(tmp_path: Path) -> None:
         assert (ROOT / path).read_bytes() == content, f"thử khô đã sửa {path}"
     assert proc.returncode == 0, f"thử khô phải chạy trót lọt:\n{proc.stderr[-800:]}"
     assert "(thử khô)" in proc.stdout, proc.stdout[-500:]
-    # Thử khô phải HERMETIC: không gọi wrangler, không cần mạng. Nếu nó tải
-    # wrangler về thì mỗi lần chạy kiểm trong CI tốn ~30 MB và dễ chập chờn.
     assert proc.stdout.count("(thử khô)") >= 4, "phải xem trước đủ các bước"
 
 
 def test_setup_is_wired_into_npm_scripts() -> None:
-    """`npm run setup` phải chạy được — đó là toàn bộ giao diện người dùng."""
     package = json.loads((ROOT / "worker" / "package.json").read_text(encoding="utf-8"))
     assert package["scripts"]["setup"] == "node setup.mjs"
     assert package["scripts"]["setup:dry"] == "node setup.mjs --dry-run"
     assert SETUP.exists()
 
 def _comment_lines(html: str) -> list[str]:
-    """Những dòng chú thích còn sót trong thân `<script>`/`<style>` của trang.
-
-    Chỉ soi THÂN hai thẻ ấy. Quét cả tệp sẽ báo động giả: thẻ CSP chứa
-    ``https://*.workers.dev``, tức có chuỗi con ``/*`` mà không phải chú thích.
-
-    Và phải bỏ nội dung chuỗi trước khi tìm ``//``, nếu không mọi URL trong mã
-    đều bị tính là chú thích.
-    """
     import re
 
     found: list[str] = []

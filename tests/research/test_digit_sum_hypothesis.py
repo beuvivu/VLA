@@ -1,7 +1,3 @@
-"""Phép kiểm tiến cứu "tổng – bóng – chạm": chỉ chấm kỳ SAU ngày đăng ký, sổ cái
-giữ lần ghi đầu, kết luận theo đúng luật đã chốt, và trang in đúng trạng thái.
-"""
-
 from __future__ import annotations
 
 import math
@@ -17,8 +13,6 @@ from core.xsmb_domain import FIELD_WIDTHS
 
 
 def test_the_registered_parameters_are_not_edited_to_fit_the_result() -> None:
-    """Sửa tham số sau khi thấy kết quả là phá phép kiểm tiến cứu. Muốn đổi thì
-    đăng ký giả thuyết MỚI với ngày bắt đầu mới."""
     assert (dh.REGISTERED_ON, dh.FIRST_TARGET) == ("2026-10-05", "2026-10-06")
     assert (dh.MIN_DRAWS, dh.ALPHA) == (180, 0.01)
     assert dh.FIRST_TARGET > dh.REGISTERED_ON == dh.RETROSPECTIVE["last_draw"]
@@ -31,7 +25,6 @@ def _history(start: str, days: int, seed: int, *, planted: bool = False) -> pd.D
     data["date"] = pd.date_range(start, periods=days, freq="D").strftime("%Y-%m-%d")
     frame = pd.DataFrame(data)
     if planted:
-        # Đầu Đặc Biệt kỳ sau LUÔN là tổng 2 số cuối Đặc Biệt kỳ trước.
         special = frame["special"].to_numpy().copy()
         for t in range(1, days):
             head = dsr.tong(f"{special[t - 1]:05d}"[-2:])
@@ -55,7 +48,6 @@ def test_only_draws_after_registration_are_scored(tmp_path: Path) -> None:
 
 
 def test_the_ledger_keeps_the_first_write(tmp_path: Path) -> None:
-    """Sổ cái là bằng chứng: lượt sau không được viết lại dòng đã chấm."""
     _write(tmp_path, _history("2026-10-01", 15, seed=2))
     path = dh.update_ledger(tmp_path)
     ledger = pd.read_csv(path, dtype={"date": str, "picks": str})
@@ -83,9 +75,9 @@ def test_each_row_records_the_exact_chance_of_a_same_size_random_pick(tmp_path: 
 @pytest.mark.parametrize(
     "days, planted, state",
     [
-        (60, False, "dang_thu"),     # chưa đủ MIN_DRAWS
-        (200, True, "xac_nhan"),     # đầu Đặc Biệt cài sẵn: luôn trúng
-        (200, False, "bac_bo"),      # ngẫu nhiên: không quy tắc nào qua Holm
+        (60, False, "dang_thu"),
+        (200, True, "xac_nhan"),
+        (200, False, "bac_bo"),
     ],
 )
 def test_the_verdict_follows_the_registered_rule(tmp_path: Path, days, planted, state) -> None:
@@ -115,14 +107,12 @@ def test_the_page_shows_the_prospective_state(tmp_path: Path) -> None:
 
 
 def test_the_verdict_is_frozen_at_the_registered_sample_size(tmp_path: Path) -> None:
-    """Tính lại kết luận mỗi ngày trên sổ dài dần là nhìn nhiều lần: kỳ 181 trở đi
-    được ghi nhưng không được lật một kết luận đã chốt ở kỳ 180."""
     days = pd.date_range(dh.FIRST_TARGET, periods=260, freq="D").strftime("%Y-%m-%d")
     rows = []
     for i, day in enumerate(days):
         for rule in dsr.RULES:
             if rule.key == "dau_db":
-                hit = int(i % 5 == 0) if i < dh.MIN_DRAWS else 1  # đúng mốc, rồi trúng liên tục
+                hit = int(i % 5 == 0) if i < dh.MIN_DRAWS else 1
             else:
                 hit = int(i % 5 == 0)
             rows.append({"date": day, "rule": rule.key, "base_date": "", "picks": "",

@@ -1,38 +1,3 @@
-"""Exact mathematics of Vietlott "chơi bao" (system) tickets.
-
-Official options (Vietlott; see README §Chơi bao for sources)
--------------------------------------------------------------
-* **Mega 6/45, Power 6/55** — Bao 5 (5 numbers + every other number: 40 / 50 plays),
-  Bao 7 … Bao 15 and Bao 18 (every 6-subset: C(v, 6) plays). No Bao 6, 16, 17.
-* **Lotto 5/35** — Bao 4 (4 main numbers + each of the other 31: 31 plays), Bao 6 … Bao 15
-  (C(v, 5) plays) and "bao số đặc biệt" (one set of 5 main numbers with 2 … 12 special
-  numbers: one play per special number). Combining a main-number bao with several
-  special numbers is not described in public material; it is analysed (plays × specials)
-  but flagged as undocumented.
-
-Every play costs one ticket price (10,000 đ).
-
-Exact distribution
-------------------
-For Bao v, the number j of winning numbers inside the chosen set is hypergeometric and the
-number of plays with exactly m matches is C(j, m)·C(v−j, k−m). The Power bonus ball (same
-drum) and the Lotto special number (separate drum) are handled by conditioning on where
-they fall. Nothing is simulated.
-
-Rules that matter for a bao
----------------------------
-* **Jackpots are shared per winning play.** If several plays of one bao hit the same
-  jackpot (Power Bao 7, six numbers + bonus ⇒ six Jackpot-2 plays), the bao holds that many
-  *shares* of one pot — it does not receive the pot several times. Payout = pot·n/(n + K),
-  K = other winning plays.
-* **Tax** (10 % above the threshold) applies per winning ticket. A bao is one ticket, so
-  its prizes are added before tax (``tax_basis="ticket"``); ``"play"`` taxes each play
-  separately, as if the same plays had been bought as single tickets.
-* Expected value per đồng is the same as for single tickets (linearity of expectation);
-  what changes is the *shape*: prizes arrive in correlated bundles, so the probability of
-  winning anything is much lower than for the same number of independent tickets.
-"""
-
 from __future__ import annotations
 
 from itertools import combinations
@@ -48,7 +13,6 @@ from vietlott_engine.core.games import DEFAULT_TAX, GameSpec, TaxRule
 TaxBasis = Literal["ticket", "play"]
 
 
-# ------------------------------------------------------------------ catalogue
 class BaoOption(BaseModel):
     game: str
     kind: str
@@ -61,7 +25,6 @@ class BaoOption(BaseModel):
 
 
 def bao_kind(spec: GameSpec, v: int, s: int = 1) -> tuple[str, int, bool, str]:
-    """(name, plays, documented by Vietlott, note) for v main numbers and s special numbers."""
     n, k = spec.pool_size, spec.pick
     if v == k - 1:
         main_plays, name = n - k + 1, f"Bao {k - 1}"
@@ -91,7 +54,6 @@ def bao_kind(spec: GameSpec, v: int, s: int = 1) -> tuple[str, int, bool, str]:
 
 
 def bao_catalog(spec: GameSpec) -> list[BaoOption]:
-    """Every bao option Vietlott sells for the game, with plays and cost."""
     k = spec.pick
     out = []
     levels = [k - 1] + [v for v in spec.bao_levels if v > k]
@@ -104,17 +66,16 @@ def bao_catalog(spec: GameSpec) -> list[BaoOption]:
     return out
 
 
-# ------------------------------------------------------------------ results
 class BaoOutcome(BaseModel):
     hits_in_set: int
-    bonus: str  # "-", "in_set"/"not_in_set" (Power), "in_fixed"/"not_in_fixed" (Bao 5), "matched"/"missed" (Lotto)
+    bonus: str
     probability: float
     plays_per_tier: dict[str, int]
     fixed_prizes: float
     jackpot_plays: dict[str, int]
-    payout_gross: float  # fixed + one share-weighted pot per jackpot tier won
+    payout_gross: float
     payout_net: float
-    vietlott_style: str  # "JP2 + 24.000.000"
+    vietlott_style: str
 
 
 class BaoAnalysis(BaseModel):
@@ -127,15 +88,15 @@ class BaoAnalysis(BaseModel):
     documented: bool
     notes: list[str] = []
     p_any_prize: float
-    p_any_prize_same_budget_single_tickets: float  # B independent random tickets
-    p_profit: float  # payout ≥ cost (gross)
-    expected_payout: float  # gross, jackpots at the given values, no other winners
+    p_any_prize_same_budget_single_tickets: float
+    p_profit: float
+    expected_payout: float
     expected_payout_net: float
     return_to_player: float
     tax_basis: TaxBasis
     jackpot_values: dict[str, float]
     outcomes: list[BaoOutcome]
-    prize_table: list[dict]  # Vietlott-style: what the ticket wins when j drawn numbers are in the set
+    prize_table: list[dict]
 
 
 def _hyper(total: int, good: int, draws: int, j: int) -> float:
@@ -161,9 +122,6 @@ def ticket_payout(
     tax: TaxRule | None = None,
     tax_basis: TaxBasis = "ticket",
 ) -> tuple[float, float, float]:
-    """(fixed prizes, gross payout, net payout) of one bao ticket for given plays per tier.
-
-    A jackpot won by n plays of the ticket pays pot·n/(n + K), K = other winning plays."""
     co = co_winners or {}
     fixed = 0.0
     jp_shares: list[float] = []
@@ -212,19 +170,18 @@ def _add(plays: dict[str, int], tier, count: int) -> None:  # type: ignore[no-un
 
 
 def _outcome_plays(spec: GameSpec, v: int, n_specials: int) -> list[tuple[int, str, float, dict[str, int]]]:
-    """(hits, bonus label, probability, plays per tier) for every outcome of a bao."""
     n, k = spec.pool_size, spec.pick
     out: list[tuple[int, str, float, dict[str, int]]] = []
     if v == k - 1:
         main_plays = n - (k - 1)
-        for j0 in range(k):  # winners among the k−1 fixed numbers
+        for j0 in range(k):
             pj = _hyper(n, k - 1, k, j0)
             if pj == 0:
                 continue
-            up = k - j0  # plays whose added number is a winner → j0 + 1 matches
-            rest = main_plays - up  # → j0 matches
+            up = k - j0
+            rest = main_plays - up
             if spec.bonus_mode == "same_drum":
-                p_in_f = (k - 1 - j0) / (n - k)  # bonus is one of the fixed non-winners
+                p_in_f = (k - 1 - j0) / (n - k)
                 for label, pb in (("in_fixed", p_in_f), ("not_in_fixed", 1 - p_in_f)):
                     if pb <= 0:
                         continue
@@ -234,7 +191,7 @@ def _outcome_plays(spec: GameSpec, v: int, n_specials: int) -> list[tuple[int, s
                         _add(pl, spec.classify(j0, True), rest)
                     else:
                         _add(pl, spec.classify(j0 + 1, False), up)
-                        _add(pl, spec.classify(j0, True), 1)  # the play whose added number is the bonus
+                        _add(pl, spec.classify(j0, True), 1)
                         _add(pl, spec.classify(j0, False), rest - 1)
                     out.append((j0, label, pj * pb, pl))
             elif spec.separate_special:
@@ -268,7 +225,6 @@ def _outcome_plays(spec: GameSpec, v: int, n_specials: int) -> list[tuple[int, s
                 for m, cnt in counts.items():
                     if cnt == 0:
                         continue
-                    # plays holding the bonus: m winners + the bonus + (k−m−1) other non-winners
                     with_b = comb(j, m) * comb(v - j - 1, k - m - 1) if label == "in_set" and m < k and v - j - 1 >= 0 and k - m - 1 >= 0 else 0
                     _add(pl, spec.classify(m, True), with_b)
                     _add(pl, spec.classify(m, False), cnt - with_b)
@@ -318,13 +274,6 @@ def analyse_bao(
     strict: bool = False,
     tax: TaxRule = DEFAULT_TAX,
 ) -> BaoAnalysis:
-    """Exact payout distribution of a bao ticket.
-
-    ``len(numbers) == k−1`` → Bao k−1 (fixed numbers + every other number);
-    ``len(numbers) >= k`` → Bao v (``== k`` with several specials: Lotto bao số đặc biệt).
-    ``strict`` rejects options Vietlott does not sell. ``co_winners`` = other winning
-    plays per jackpot tier (default 0). ``after_tax`` selects which payout the RTP uses.
-    """
     nums, sp = _validate(spec, numbers, specials)
     jackpots = dict(jackpots or {})
     v = len(nums)
@@ -394,14 +343,12 @@ def analyse_bao(
 
 
 def bao_prize_table(spec: GameSpec, v: int, n_specials: int = 1) -> list[dict]:
-    """Vietlott-style lookup table of a bao level (independent of the chosen numbers)."""
     nums = list(range(1, v + 1))
     sp = list(range(1, n_specials + 1)) if spec.separate_special else None
     return analyse_bao(spec, nums, sp).prize_table
 
 
 def bao_tickets(spec: GameSpec, numbers: list[int], specials: list[int] | None = None) -> list[tuple[tuple[int, ...], int | None]]:
-    """Expand a bao into its individual plays (for simulation / printing)."""
     n, k = spec.pool_size, spec.pick
     nums = sorted(numbers)
     if len(nums) == k - 1:
@@ -412,9 +359,7 @@ def bao_tickets(spec: GameSpec, numbers: list[int], specials: list[int] | None =
     return [(c, s) for c in mains for s in (sps or [None])]
 
 
-# ------------------------------------------------------------- crowd-aware EV
 def expected_share(n: int, lam: float) -> float:
-    """E[n / (n + K)], K ~ Poisson(λ): the bao's expected fraction of a shared pot."""
     if lam <= 1e-12:
         return 1.0
     kmax = int(stats.poisson.ppf(1 - 1e-12, lam)) + 2
@@ -444,10 +389,6 @@ def bao_ev(
     tax: TaxRule = DEFAULT_TAX,
     tax_basis: TaxBasis = "ticket",
 ) -> BaoEV:
-    """Expected after-tax payout of a bao when other players may hold the jackpot combination.
-
-    Other winners K ~ Poisson(N·ratio/C) with ratio = mean popularity of the bao's plays
-    (1 without a crowd model). Fixed prizes and taxes come from the exact distribution."""
     nums, sp = _validate(spec, numbers, specials)
     plays_list = bao_tickets(spec, nums, sp or None)
     ratio = 1.0
@@ -462,15 +403,11 @@ def bao_ev(
     res = analyse_bao(spec, nums, sp or None, jackpots, tax=tax, tax_basis=tax_basis)
     total = fixed_part = 0.0
     for o in res.outcomes:
-        # expected net payout of this outcome with random co-winners on each jackpot won
         if not o.jackpot_plays:
             total += o.probability * o.payout_net
             fixed_part += o.probability * o.payout_net
             continue
-        # JP1: others holding the drawn combination; JP2 (Power): any of the k winning
-        # 5+bonus combinations, so ≈ k−1 more combinations at uniform popularity
         lam = {t: lam_base if t != "jackpot2" else tickets_sold * (ratio + spec.pick - 1) / spec.total_combinations for t in o.jackpot_plays}
-        # integrate over K for the (at most two) jackpot tiers with a small Poisson grid
         grids = []
         for t, nown in o.jackpot_plays.items():
             kmax = int(stats.poisson.ppf(1 - 1e-9, lam[t])) + 2
@@ -501,7 +438,6 @@ def bao_ev(
     )
 
 
-# ----------------------------------------------------------- simulation & comparison
 def _masks(arr: np.ndarray) -> np.ndarray:
     arr = np.atleast_2d(np.asarray(arr)).astype(np.uint64)
     return np.bitwise_or.reduce(np.left_shift(np.uint64(1), arr - np.uint64(1)), axis=1)
@@ -515,7 +451,6 @@ def simulate_plays(
     seed: int | None = 0,
     jackpots: dict[str, float] | None = None,
 ) -> dict[str, np.ndarray]:
-    """Monte Carlo payout of an arbitrary set of plays (own jackpot plays share one pot)."""
     rng = np.random.default_rng(seed)
     n, k = spec.pool_size, spec.pick
     mains = np.asarray(mains, dtype=np.int64)
@@ -549,7 +484,7 @@ def simulate_plays(
             else:
                 hit = np.zeros((p, c), dtype=bool)
         m = np.bitwise_count(pm[:, None] & dm[None, :])
-        t = table[m, hit.astype(np.int64)]  # (plays, draws), −1 = no prize
+        t = table[m, hit.astype(np.int64)]
         tt = np.where(t >= 0, t, len(spec.tiers))
         val = fixed_val[tt].sum(axis=0)
         for i in jp_idx:
@@ -566,7 +501,7 @@ class StrategyStats(BaseModel):
     cost: int
     p_any_prize: float
     p_payout_at_least_1m: float
-    p_profit: float  # payout ≥ cost
+    p_profit: float
     expected_fixed_payout: float
     sd_payout: float
     note: str = ""
@@ -604,9 +539,6 @@ def compare_bao_strategies(
     seed: int | None = 0,
     reduced_guarantee: tuple[int, int] = (3, 3),
 ) -> BaoComparison:
-    """Same money, different shapes: the bao vs a reduced wheel ("bao rút gọn") on the same
-    numbers vs the same number of spread-out single tickets vs random quick picks.
-    Jackpots are excluded (identical tiny probabilities); fixed prizes only."""
     from vietlott_engine.game_theory.coverage import optimise_coverage
     from vietlott_engine.wheeling.cover import WheelRequest, build_wheel
 

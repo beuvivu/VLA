@@ -15,7 +15,6 @@ from core.path_models import build_daily_targets
 
 
 def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
-    """Count same-day co-occurrence for the 45 non-double reverse pairs."""
 
     df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
@@ -60,7 +59,6 @@ def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
-    """Count unordered same-day pair frequency for all distinct loto numbers."""
 
     df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
@@ -83,8 +81,6 @@ def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
         }
         for pair, count in ctr.items()
     ]
-    # Cặp hoà số lần xếp theo chính cặp số: sắp xếp một khoá mặc định (quicksort) xếp phần tử hoà theo
-    # lệnh vector của CPU, nên ngày 05-11-2026 hai lượt trên cùng dữ liệu in «68-97» rồi «68-76» ở trang chủ.
     return (
         pd.DataFrame(rows)
         .sort_values(["count", "x", "y"], ascending=[False, True, True], kind="stable")
@@ -130,8 +126,6 @@ def main() -> None:
     pairs = compute_pair_frequency(df_2d).head(args.top)
     write_code_csv(pairs, out_dir / f"top_unordered_pairs_top{args.top}.csv", index=False)
 
-    # The 50-pair system is a different object from arbitrary co-occurrence:
-    # 45 AB-BA pairs plus 5 kép-bóng pairs partition the whole 00..99 universe.
     _write_cap_loto_50_stats(data_dir=Path(args.data_dir), out_dir=out_dir)
 
     print(f"Saved pair stats to {out_dir}")

@@ -1,5 +1,3 @@
-"""Gỡ điều hướng đã nghỉ nhưng giữ nguyên nội dung và kịch bản nghiệp vụ."""
-
 from pathlib import Path
 
 import pytest
@@ -13,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[2]
 @pytest.mark.parametrize("selector", [".dock", ".ui-dock"])
 @pytest.mark.parametrize("quote", ['"', "'"])
 def test_old_dock_script_is_removed_without_eating_the_next_script(selector, quote):
-    """Handler cũ biến mất; script dữ liệu kề bên và JSON phải còn nguyên."""
     business = '<script>window.businessData = [12, 34];</script>'
     data = '<script type="application/json" id="payload">{"values":[12,34]}</script>'
     old = f'<script>(function(){{var d=document.querySelector({quote}{selector}{quote});if(!d)return;}})();</script>'
@@ -29,7 +26,6 @@ def test_old_dock_script_is_removed_without_eating_the_next_script(selector, quo
 
 
 def test_business_script_mentioning_dock_is_preserved():
-    """Nhắc tên lớp cũ không đủ để coi một kịch bản là handler đã nghỉ."""
     business = '<script>var legacy = document.querySelector(".ui-dock");window.businessData = [12, 34];</script>'
     page = f'<html><head></head><body><nav class="dock">cũ</nav>{business}</body></html>'
     assert business in wrap_page(page, "index.html")
@@ -42,7 +38,6 @@ def test_business_script_mentioning_dock_is_preserved():
     'id="app-main" data-old="true" class="legacy app-main"',
 ])
 def test_nested_shell_with_normalized_content_tag_is_repaired(tag, attributes):
-    """Khung lồng nhau vẫn phải sửa được sau lượt chuẩn hoá thuộc tính."""
     payload = '<table id="results"><tr><td>12</td><td>34</td></tr></table>'
     data = '<script type="application/json" id="payload">{"values":[12,34]}</script>'
     inner = f'<nav class="app-rail"></nav><{tag} {attributes}>{payload}{data}</{tag}>'
@@ -60,7 +55,6 @@ def test_nested_shell_with_normalized_content_tag_is_repaired(tag, attributes):
 
 
 def test_repair_has_no_limit_on_accumulated_legacy_shells():
-    """Không để sót lớp thứ 65 sau nhiều lượt pipeline cũ."""
     payload = '<p id="payload">Dữ liệu trực tiếp</p>'
     body = payload
     for _ in range(70):

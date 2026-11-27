@@ -1,4 +1,3 @@
-"""Hợp đồng nguồn cho chủ đề màu đầy đủ, gồm các màu mang nghĩa dữ liệu."""
 from pathlib import Path
 import re
 
@@ -11,7 +10,6 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def palette(dark: bool) -> dict[str, str]:
-    """Đọc giá trị thật, không chép màu sản phẩm vào phép kiểm."""
     selector = ':root[data-ui-theme="dark"]' if dark else ':root'
     match = re.search(re.escape(selector) + r'\s*\{([^{}]*)\}', TAILWIND_LITE_CSS)
     assert match, selector
@@ -104,7 +102,6 @@ def test_frequency_crosshair_keeps_the_data_fill_visible():
 
 
 def _assert_selection_is_distinct(css, base_selector, selected_suffix):
-    """So hai trạng thái thực từ CSS, kể cả màu cuối đã phân giải theo chủ đề."""
     from theme_palette_helpers import resolve_theme_colors
     for dark in (False, True):
         resolved = rules(resolve_theme_colors(css, dark))

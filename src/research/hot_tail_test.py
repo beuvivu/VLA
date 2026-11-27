@@ -1,30 +1,3 @@
-"""Kiểm TIẾN CỨU giả thuyết "đuôi nóng 7 kỳ" — đăng ký trước ngày 28-09-2026.
-
-Nguồn gốc
----------
-Điều tra vì sao cả 10 con LOTO công bố cho 28-09-2026 đều đuôi 4 tìm ra đặc
-trưng ``tail_freq_7d`` của mô hình cầu kèo. Soi lại lịch sử thì đuôi xuất hiện
-nhiều nhất trong 7 kỳ trước về nhiều hơn trung bình các đuôi trong cùng kỳ:
-đúng theo định nghĩa dưới đây, +0,456 điểm % trên 4 212 kỳ (z 2,43, p Monte
-Carlo hai phía 0,011 trên 2 000 lịch sử công bằng), trong khi "đầu nóng" —
-nhóm đối chứng — không có gì (+0,135 điểm %, p 0,475). Nhưng giả thuyết được đặt
-SAU khi nhìn dữ liệu, và đã thử bốn độ dài cửa sổ: bằng chứng hồi cứu không đủ.
-
-Cách duy nhất phân biệt tín hiệu thật với tín hiệu tìm ra sau khi nhìn là chấm
-nó trên những kỳ CHƯA TỒN TẠI lúc đặt giả thuyết. Mọi tham số dưới đây được
-chốt trước kỳ đầu tiên được chấm và KHÔNG được sửa để vừa kết quả: sửa thì phải
-đăng ký một giả thuyết mới với ngày bắt đầu mới.
-
-Thống kê cho mỗi kỳ t (từ ``FIRST_TARGET``):
-    đuôi nóng = đuôi có tổng số kỳ-về của 10 con lớn nhất trong 7 kỳ trước t
-                (hoà thì lấy trung bình các đuôi hoà)
-    d_t       = tỉ lệ về của 10 con đuôi nóng ở kỳ t
-                − tỉ lệ về trung bình của cả 10 đuôi ở kỳ t
-Dưới giả thuyết công bằng E[d_t] = 0 và các kỳ độc lập. Kết luận sau
-``MIN_DRAWS`` kỳ: xác nhận nếu z một phía của trung bình d_t ≥ ``Z_CRITICAL``
-(α = 0,01), ngược lại bác bỏ.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -39,17 +12,15 @@ from core.xsmb_domain import PRIZE_FIELDS
 
 from core.atomic_io import atomic_write_text
 
-#: Tham số ĐÃ ĐĂNG KÝ. Không sửa — xem docstring.
 REGISTERED_ON = "2026-09-28"
 FIRST_TARGET = "2026-09-29"
 WINDOW = 7
 MIN_DRAWS = 180
 ALPHA = 0.01
-Z_CRITICAL = 2.326  # z một phía cho α = 0,01
+Z_CRITICAL = 2.326
 LEDGER = Path("research") / "hypotheses" / "hot_tail.csv"
 FIELDS = ["date", "hot_tails", "hot_rate", "all_rate", "diff"]
 
-#: Bằng chứng HỒI CỨU đã dẫn tới giả thuyết — chỉ để đối chiếu, không dùng để kết luận.
 RETROSPECTIVE = {
     "draws": 4212,
     "last_draw": "2026-09-28",
@@ -70,13 +41,12 @@ def _hits(draws: np.ndarray) -> np.ndarray:
 
 
 def score_draw(history: np.ndarray, today: np.ndarray) -> dict:
-    """Chấm MỘT kỳ: ``history`` là (≥7, 27) các kỳ trước, ``today`` là (27,)."""
-    past = _hits(history[-WINDOW:]).sum(axis=0)          # số kỳ-về của từng con
-    per_tail = past.reshape(10, 10).sum(axis=0)          # cột j = đuôi j
+    past = _hits(history[-WINDOW:]).sum(axis=0)
+    per_tail = past.reshape(10, 10).sum(axis=0)
     hot = np.flatnonzero(per_tail == per_tail.max())
     hit = np.zeros(100, dtype=int)
     hit[today] = 1
-    rate = hit.reshape(10, 10).mean(axis=0)              # tỉ lệ về theo đuôi
+    rate = hit.reshape(10, 10).mean(axis=0)
     hot_rate = float(rate[hot].mean())
     all_rate = float(rate.mean())
     return {"hot_tails": "".join(str(int(t)) for t in hot), "hot_rate": hot_rate,
@@ -84,7 +54,6 @@ def score_draw(history: np.ndarray, today: np.ndarray) -> dict:
 
 
 def scored_draws(frame: pd.DataFrame) -> list[dict]:
-    """Mọi kỳ từ ``FIRST_TARGET`` trở đi, mỗi kỳ chấm bằng 7 kỳ ngay trước nó."""
     frame = frame.sort_values("date", kind="stable").reset_index(drop=True)
     draws = frame[PRIZES].to_numpy().astype(int)
     rows = []
@@ -97,7 +66,6 @@ def scored_draws(frame: pd.DataFrame) -> list[dict]:
 
 
 def update_ledger(data_dir: Path) -> Path:
-    """Ghi các kỳ mới vào sổ cái. Kỳ đã ghi thì giữ nguyên, không bị đè."""
     path = data_dir / LEDGER
     known: dict[str, dict] = {}
     if path.exists():
@@ -116,7 +84,6 @@ def update_ledger(data_dir: Path) -> Path:
 
 
 def evaluate(data_dir: Path) -> dict:
-    """Trạng thái phép kiểm tiến cứu từ sổ cái."""
     path = data_dir / LEDGER
     diffs = []
     first = last = None

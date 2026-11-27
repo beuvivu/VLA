@@ -24,7 +24,6 @@ FAKE_TOKEN = "only-a-test-token"
 
 @pytest.fixture(autouse=True)
 def no_live_api(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Không phép kiểm nào được chạm mạng hoặc dùng token của môi trường."""
     monkeypatch.delenv("GH_TOKEN", raising=False)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.setattr(
@@ -40,7 +39,6 @@ def _http(
     monkeypatch: pytest.MonkeyPatch,
     replies: list[tuple[int, object] | Exception],
 ) -> list[tuple[str, str]]:
-    """Giả lập đúng biên HTTP; vẫn chạy logic phân trang và xử lý lỗi thật."""
     pending = iter(replies)
     calls: list[tuple[str, str]] = []
 
@@ -270,7 +268,6 @@ def test_main_does_not_print_tokens_or_untrusted_error_content(
 
 
 def _workflow() -> dict:
-    """BaseLoader giữ nguyên khoá `on` theo quy ước YAML của GitHub."""
     return yaml.load((ROOT / ".github/workflows/cache-purge.yml").read_text(), Loader=yaml.BaseLoader)
 
 

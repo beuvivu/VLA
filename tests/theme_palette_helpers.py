@@ -1,4 +1,3 @@
-"""Phân giải token màu nguồn cho phép kiểm CSS, không duy trì bảng màu thứ hai."""
 import re
 
 from web.ui_theme import TAILWIND_LITE_CSS

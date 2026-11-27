@@ -1,4 +1,3 @@
-"""Bảng giải phải đúng kỳ, còn nguyên sau mất cache và không bị nguồn cũ che."""
 import asyncio
 import json
 from contextlib import asynccontextmanager
@@ -40,7 +39,6 @@ def repository():
 
 @pytest.mark.parametrize('first', [canonical(1, '2026-10-04'), canonical(prizes=False)])
 def test_auto_finance_continues_past_stale_or_prizeless_source(monkeypatch, first):
-    """Dừng ở dữ liệu cũ hoặc chỉ có số quay sẽ bỏ mất jackpot đúng kỳ ở nguồn sau."""
     import vietlott_engine.crawler.product_store as store
     async def fetch(_client, _repo, _spec, source, **_kwargs):
         return [first] if source == 'canonical' else [canonical()]
@@ -56,7 +54,6 @@ def test_auto_finance_continues_past_stale_or_prizeless_source(monkeypatch, firs
 
 @pytest.mark.parametrize('wrong', [canonical(day='2026-10-04'), canonical(numbers=[1, 2, 3, 4, 5, 6])])
 def test_finance_source_cannot_replace_existing_draw_to_make_its_table_match(monkeypatch, wrong):
-    """Bỏ gate ngày/số sẽ gắn bảng giải khác vào mã kỳ đã xác thực."""
     import vietlott_engine.crawler.product_store as store
     async def fetch(*_args, **_kwargs): return [wrong]
     monkeypatch.setattr(store, '_prize_records', fetch)
@@ -70,7 +67,6 @@ def test_finance_source_cannot_replace_existing_draw_to_make_its_table_match(mon
 
 
 def test_old_finance_does_not_report_latest_finance_success(monkeypatch):
-    """Đếm bảng giải lịch sử không chứng minh kỳ mới đã có dữ liệu tài chính."""
     import vietlott_engine.crawler.product_store as store
     async def fetch(*_args, **_kwargs): return [canonical(1, '2026-10-04')]
     monkeypatch.setattr(store, '_prize_records', fetch)
@@ -83,7 +79,6 @@ def test_old_finance_does_not_report_latest_finance_success(monkeypatch):
 
 @pytest.mark.parametrize('field', ['game', 'game_type', 'product'])
 def test_declared_other_product_cannot_supply_same_number_finance(monkeypatch, field):
-    """Bỏ tên sản phẩm khai trong row sẽ biến bảng giải Power thành Mega."""
     import vietlott_engine.crawler.product_store as store
     async def fetch(*_args, **_kwargs): return [canonical() | {field:'power655'}]
     monkeypatch.setattr(store, '_prize_records', fetch)
@@ -95,7 +90,6 @@ def test_declared_other_product_cannot_supply_same_number_finance(monkeypatch, f
 
 
 def test_rejected_duplicate_draw_cannot_poison_matching_rows_finance(monkeypatch):
-    """Gate từng số quay nhưng join lại chỉ theo ID sẽ nhận pot của row đã bị loại."""
     import vietlott_engine.crawler.product_store as store
     wrong = canonical(numbers=[1, 2, 3, 4, 5, 6])
     wrong['prizes'][0]['jackpot_vnd'] = 999_000_000_000
@@ -108,7 +102,6 @@ def test_rejected_duplicate_draw_cannot_poison_matching_rows_finance(monkeypatch
 
 
 def test_partial_official_table_does_not_relabel_a_secondary_jackpot(monkeypatch):
-    """Ghép pot từ nguồn cũ rồi gắn source mới làm provenance khẳng định sai."""
     import vietlott_engine.crawler.product_store as store
     partial = canonical()
     partial['prizes'][0].pop('jackpot_vnd')
@@ -125,7 +118,6 @@ def test_partial_official_table_does_not_relabel_a_secondary_jackpot(monkeypatch
 
 
 def test_power_finance_requires_the_same_bonus_ball(monkeypatch):
-    """Bonus cũng thuộc danh tính kết quả, dù sáu số chính khớp."""
     import vietlott_engine.crawler.product_store as store
     row = {'draw_id':1408, 'draw_date':'2026-10-08',
            'result':{'main_numbers':[1, 7, 12, 27, 31, 52], 'bonus_numbers':[8]},
@@ -144,7 +136,6 @@ def test_power_finance_requires_the_same_bonus_ball(monkeypatch):
 
 
 def test_complete_secondary_power_table_can_fill_matching_partial_official_table(monkeypatch):
-    """Một dict pot không rỗng vẫn có thể thiếu Jackpot 2; không được che bảng đủ ở nguồn sau."""
     import vietlott_engine.crawler.product_store as store
     row = {'draw_id':1408, 'draw_date':'2026-10-08', 'data_source':'mirror',
            'result':{'main_numbers':[1, 7, 12, 27, 31, 52], 'bonus_numbers':[6]},
@@ -167,7 +158,6 @@ def test_complete_secondary_power_table_can_fill_matching_partial_official_table
 
 @pytest.mark.parametrize('existing_cache', [False, True])
 def test_update_persists_finance_only_change_and_replays_the_exact_table(tmp_path, monkeypatch, existing_cache):
-    """Bỏ lần ghi sau finance, dedup finance hoặc replay bảng giải sẽ làm jackpot mất sau cache loss."""
     settings = Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed',
                         source='github_mirror', fallback_order=['github_mirror'], ml_auto_update_enabled=False)
     state = AppState(settings, repository())
@@ -200,7 +190,6 @@ def test_update_persists_finance_only_change_and_replays_the_exact_table(tmp_pat
 
 
 def test_replay_finance_never_attaches_to_current_corrected_numbers(tmp_path):
-    """Bỏ đối chiếu bộ số khi replay sẽ làm bảng giải cũ theo mã kỳ thắng bản sửa."""
     settings = Settings(data_dir=tmp_path)
     writer = AppState(settings, InMemoryRepository())
     row = canonical()
@@ -215,7 +204,6 @@ def test_replay_finance_never_attaches_to_current_corrected_numbers(tmp_path):
 
 
 def test_replay_does_not_label_journal_pots_with_a_partial_cached_tables_source(tmp_path):
-    """Bổ sung pot từ journal không thể coi nguồn của cache không có pot là nguồn pot."""
     settings = Settings(data_dir=tmp_path)
     writer = AppState(settings, InMemoryRepository())
     service._append(writer, [DrawRecord.from_legacy('mega645', canonical() | {'source':'mirror'})])
@@ -229,7 +217,6 @@ def test_replay_does_not_label_journal_pots_with_a_partial_cached_tables_source(
 
 @pytest.mark.parametrize('backend', ['memory', 'duckdb'])
 def test_sync_result_correction_discards_old_numbers_finance_before_journaling(tmp_path, monkeypatch, backend):
-    """Cùng ID/ngày nhưng số đã sửa phải loại bảng giải còn gắn với số cũ."""
     settings = Settings(data_dir=tmp_path, ml_auto_update_enabled=False)
     repo = repository() if backend == 'memory' else DuckDBRepository(tmp_path / 'vietlott.duckdb', tmp_path / 'parquet')
     if backend == 'duckdb':
@@ -247,7 +234,7 @@ def test_sync_result_correction_discards_old_numbers_finance_before_journaling(t
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(200, text=response))) as http:
             yield http
     monkeypatch.setattr(service, 'build_http_client', client)
-    official_matrix_source(monkeypatch, service)  # chỉ --full chính thức được sửa số của kỳ đã lưu
+    official_matrix_source(monkeypatch, service)
     asyncio.run(service.sync_matrix(state, MEGA_645, source='vietlott', full_refresh=True, learn=False))
     assert repo.load_prizes('mega645') == []
     latest = json.loads(service.journal_path(state).read_text().splitlines()[-1])
@@ -264,7 +251,6 @@ def test_sync_result_correction_discards_old_numbers_finance_before_journaling(t
 
 
 def test_old_seed_finance_failure_keeps_retryable_cache_and_recovers_after_restart(tmp_path, monkeypatch):
-    """Finance của kỳ cũ chưa có journal phải bền trước khi baseline cache đổi."""
     import os
     settings = Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed',
                         source='github_mirror', fallback_order=['github_mirror'], ml_auto_update_enabled=False)
@@ -313,7 +299,6 @@ def test_old_seed_finance_failure_keeps_retryable_cache_and_recovers_after_resta
 @pytest.mark.parametrize('backend', ['memory', 'duckdb'])
 @pytest.mark.parametrize('incoming_finance', [False, True])
 def test_pending_result_correction_recovers_after_upsert_before_old_finance_is_removed(tmp_path, monkeypatch, backend, incoming_finance):
-    """Commit số và loại finance là hai bước; CAS phải nhận trạng thái ở giữa."""
     repo = repository() if backend == 'memory' else DuckDBRepository(tmp_path / 'cache.duckdb')
     if backend == 'duckdb':
         repo.upsert(repository().load('mega645'))
@@ -337,7 +322,7 @@ def test_pending_result_correction_recovers_after_upsert_before_old_finance_is_r
                     source='vietlott')])
         monkeypatch.setattr(service, 'build_source', lambda *_args:Source())
     else:
-        official_matrix_source(monkeypatch, service)  # chỉ --full chính thức được sửa số của kỳ đã lưu
+        official_matrix_source(monkeypatch, service)
     with monkeypatch.context() as crash:
         def interrupt(*args, **kwargs):
             raise RuntimeError('crash before finance invalidation')
@@ -355,7 +340,6 @@ def test_pending_result_correction_recovers_after_upsert_before_old_finance_is_r
 
 
 def test_pending_new_finance_recovers_when_only_its_draw_was_committed(tmp_path, monkeypatch):
-    """Kỳ mới đã ghi draws nhưng crash trước prizes vẫn có thể hoàn tất outbox."""
     settings = Settings(data_dir=tmp_path, ml_auto_update_enabled=False)
     repo = InMemoryRepository()
     state = AppState(settings, repo)
@@ -385,7 +369,6 @@ def test_pending_new_finance_recovers_when_only_its_draw_was_committed(tmp_path,
 
 
 def test_multibatch_pending_finance_recovers_from_last_committed_batch(tmp_path):
-    """Batch B đã commit phải là baseline hợp lệ khi batch C dừng trước upsert."""
     state = AppState(Settings(data_dir=tmp_path), repository())
     draw = state.repository.load('mega645')[0]
     def record(count):
@@ -408,7 +391,6 @@ def test_multibatch_pending_finance_recovers_from_last_committed_batch(tmp_path)
 
 
 def test_refused_pending_finance_is_not_applied_by_the_ordinary_journal(tmp_path):
-    """Sau khi CAS từ chối, đường replay thường không được ghi đè canonical khác."""
     state = AppState(Settings(data_dir=tmp_path), repository())
     draw = state.repository.load('mega645')[0]
     before = service._matrix_record(draw)
@@ -427,7 +409,6 @@ def test_refused_pending_finance_is_not_applied_by_the_ordinary_journal(tmp_path
 
 @pytest.mark.parametrize('backend', ['memory', 'duckdb'])
 def test_matrix_finance_only_seed_correction_is_staged_before_cache_commit(tmp_path, monkeypatch, backend):
-    """Draw giữ nguyên số nhưng đổi jackpot cũng phải lưu delta trước cache."""
     import os
     from vietlott_engine.crawler.sources.base import FetchResult
     repo = InMemoryRepository() if backend == 'memory' else DuckDBRepository(tmp_path / 'cache.duckdb')
@@ -471,7 +452,6 @@ def test_matrix_finance_only_seed_correction_is_staged_before_cache_commit(tmp_p
 
 @pytest.mark.parametrize('existing_cache', [False, True])
 def test_pending_draw_finance_replay_keeps_exact_metadata_when_cleanup_is_interrupted(tmp_path, monkeypatch, existing_cache):
-    """Replay không được tự tạo metadata finance khiến lần retry từ chối chính nó."""
     repo = repository() if existing_cache else InMemoryRepository()
     settings = Settings(data_dir=tmp_path)
     state = AppState(settings, repo)
@@ -496,7 +476,6 @@ def test_pending_draw_finance_replay_keeps_exact_metadata_when_cleanup_is_interr
 
 
 def test_mixed_pending_conflict_keeps_successful_draw_metadata_retryable(tmp_path):
-    """Outbox còn conflict không cho journal đổi metadata của key đã phục hồi."""
     repo = repository()
     state = AppState(Settings(data_dir=tmp_path), repo)
     draw = repo.load('mega645')[0]
@@ -518,7 +497,6 @@ def test_mixed_pending_conflict_keeps_successful_draw_metadata_retryable(tmp_pat
     assert service._journal_identity(recovered_first) == service._journal_identity(after_first)
     assert list((tmp_path / 'updates').glob('pending-*.json'))
 
-    # Giải quyết riêng conflict thứ hai, giữ nguyên key đã phục hồi để thử lại.
     repo.invalidate_finance('mega645', [2])
     retried = AppState(state.settings, repo)
     service.replay_results(retried)
@@ -530,7 +508,6 @@ def test_mixed_pending_conflict_keeps_successful_draw_metadata_retryable(tmp_pat
 
 @pytest.mark.parametrize('backend', ['memory', 'duckdb'])
 def test_existing_draw_finance_replay_survives_crash_between_draw_and_prizes(tmp_path, monkeypatch, backend):
-    """Replay lần hai phải nhận đúng trạng thái dở dang do lần đầu tự ghi."""
     settings = Settings(data_dir=tmp_path, ml_auto_update_enabled=False)
     repo = repository() if backend == 'memory' else DuckDBRepository(tmp_path / 'results.duckdb')
     if backend == 'duckdb':

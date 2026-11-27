@@ -2,24 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Explainable AI/ML layer for Vietnamese lottery statistical "cầu kèo".
-
-This module builds a leakage-aware training table where each row is:
-(anchor day t, number 00..99) -> whether the number appears on t+1.
-
-It combines modern ML with lottery-domain statistical signals:
-- rolling frequency windows
-- current gap/rhythm pressure
-- same-weekday seasonality
-- previous-special relations: same/reverse/chạm/tổng/bóng
-- conditional transitions: Đặc Biệt hôm nay -> tomorrow target, loto hôm nay -> tomorrow target
-- raw-result digit pair/path support
-- lô rơi style support from numbers appearing in today's result
-
-All row-based rolling, lag and next-day features are evaluated only after the raw
-and two-digit histories are proven daily-contiguous and date-aligned. The output
-is an explainable ranking signal, not a guarantee of future lottery outcomes.
-"""
 
 import argparse
 import csv
@@ -51,15 +33,8 @@ from ml.ml_models import PlattCalibratedClassifier
 Mode = Literal["loto", "de"]
 NUMBER_COLS = list(range(100))
 
-#: Luật tính ``model_trust`` của gói cầu-kèo. Đổi luật thì tăng số này (ở
-#: ``ensemble_components.COMPONENT_POLICY``): gói đã lưu mang trust tính theo luật
-#: cũ, và dùng lại nó là phát xác suất theo công thức đã bỏ — ``_load_or_train``
-#: coi gói khác số là phải học lại, còn sổ lịch sử ghi số này cho từng dòng.
 TRUST_POLICY_VERSION = COMPONENT_POLICY["cau"]
-#: Khoá dấu giờ học của gói: học lại y hệt (cùng dữ liệu, runner khác CPU) thì giữ tệp cũ.
 PACK_STAMP_KEYS = frozenset({"trained_at"})
-#: Lý do in cho người đọc khi đặc trưng ``path_support`` ở nhóm cao nhất. Trước 21-11-2026 là
-#: «cầu rawdata mạnh»: tên nội bộ của dãy chữ số đã lọt ra trang chủ và trang thống kê.
 PATH_SUPPORT_REASON = "nhiều cặp vị trí ghép ra số"
 
 logger = logging.getLogger(__name__)
@@ -146,7 +121,6 @@ def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
 def _build_hit_matrices(
     two_digit_df: pd.DataFrame,
 ) -> tuple[pd.DatetimeIndex, np.ndarray, np.ndarray, np.ndarray]:
-    """Return dates, loto bool hits, de bool hits, and loto occurrence counts."""
     two = _ensure_datetime(two_digit_df)
     if two.empty:
         raise RuntimeError("No 2-digit data loaded. Run src/ingest/sync.py first.")
@@ -209,7 +183,6 @@ def _reverse_numbers() -> np.ndarray:
 
 
 def _bong_number(n: int) -> int:
-    """Simple bóng +/-5 transform for both digits: ab -> (a+5)(b+5) modulo 10."""
     return (((n // 10 + 5) % 10) * 10) + ((n % 10 + 5) % 10)
 
 
@@ -284,9 +257,6 @@ def _build_same_weekday_feature(
     start = max(0, anchor_t - lookback_days + 1)
     if start > anchor_t:
         return np.zeros(100, dtype=np.int16)
-    # Mặt nạ thứ trên lát cửa sổ, một phép vector. Bản cũ lấy từng
-    # ``dates[i]`` (mỗi lần bọc một Timestamp): 1,47 triệu lượt mỗi lần dựng
-    # khung, 16 trong 75 giây của cau_keo_domain_challenger.
     same = np.asarray(dates[start : anchor_t + 1].day_of_week) == target_weekday
     if not same.any():
         return np.zeros(100, dtype=np.int16)
@@ -294,14 +264,6 @@ def _build_same_weekday_feature(
 
 
 def _stack_anchor_columns(rows: list[dict[str, object]]) -> pd.DataFrame:
-    """Ghép cột của mọi kỳ neo thành MỘT khung; đúng bằng ``pd.concat`` các khung 100 hàng.
-
-    Mỗi kỳ neo là 100 hàng (một hàng một con số). Dựng một ``DataFrame`` cho
-    từng kỳ rồi ``pd.concat`` tốn ~2,3 ms mỗi khung — 4 185 khung, gần 10 giây
-    trong ``multi_hit_report``. Nối từng cột bằng ``np.concatenate`` rồi dựng
-    một lần cho cùng giá trị và cùng kiểu: danh sách chuỗi thành mảng chuỗi
-    numpy, pandas đổi về ``object`` như khi suy kiểu từ danh sách.
-    """
     if not rows:
         return pd.DataFrame()
     return pd.DataFrame(
@@ -359,13 +321,6 @@ def build_cau_keo_feature_frame(
     two: pd.DataFrame | None = None,
     next_date: str | pd.Timestamp | None = None,
 ) -> tuple[pd.DataFrame, pd.Series | None]:
-    """Build explainable calendar-safe cầu-kèo features.
-
-    ``raw``/``two`` (đủ cả hai) thay cho sổ kết quả của ``Lottery``: cùng khuôn ``xsmb.csv`` và
-    ``xsmb-2-digits.csv``. Bỏ trống thì đọc sổ thật như trước. ``next_date`` (chỉ khi
-    ``include_target=False``): ngày của kỳ được dự báo khi nó không phải ngày lịch kế tiếp (kỳ nghỉ
-    quay); các đặc trưng theo thứ/tháng/năm của kỳ đích tính theo ngày ấy.
-    """
     if next_date is not None and include_target:
         raise ValueError("next_date chỉ dùng cho khung dự báo kỳ tới (include_target=False)")
     if (raw is None) != (two is None):
@@ -415,9 +370,6 @@ def build_cau_keo_feature_frame(
     gap = _compute_gap(hit)
     loto_occ_7 = _rolling_sum_int(loto_counts, 7)
 
-    # Pair/path support from raw result digits. The raw/two date-axis equality
-    # guard above proves that path_support[t] and hit[t] refer to the same day.
-    # Vectorised digit extraction (was one zfill round-trip per draw).
     raw_digits = list(raw_digit_matrix(raw))
     P = raw_digits[0].shape[0]
     I, J = _pairs_indices(P)
@@ -425,8 +377,6 @@ def build_cau_keo_feature_frame(
         raw_digits, config.lag_max_for_path_support, I, J
     )
 
-    # Dynamic, leakage-aware conditional counts. Updated with relationships that
-    # have known outcomes before creating features for anchor day t.
     cond_de_counts = np.zeros((100, 100), dtype=np.int32)
     cond_de_trials = np.zeros(100, dtype=np.int32)
     cond_loto_counts = np.zeros((100, 100), dtype=np.int32)
@@ -439,14 +389,9 @@ def build_cau_keo_feature_frame(
     if include_target and config.window_days and n_days > config.window_days:
         start_save_t = max(start_save_t, n_days - config.window_days - 1)
     elif not include_target:
-        # For next-day inference we only need the latest anchor frame. The loop
-        # still walks prior days to update conditional transition counts, but it
-        # no longer builds hundreds/thousands of throwaway DataFrames.
         start_save_t = end_t
 
     for t in range(1, end_t + 1):
-        # Calendar continuity has already been proven, so k=t-1 -> t is exactly
-        # a one-calendar-day transition known by anchor t.
         k = t - 1
         s_prev = int(de_targets[k])
         cond_de_trials[s_prev] += 1
@@ -573,13 +518,6 @@ def build_cau_keo_feature_frame(
 
 
 def _validation_report(val_df: pd.DataFrame, mode: Mode, pack: Mapping[str, Any]) -> pd.DataFrame:
-    """Bảng kiểm định top-K kèm số đo thẩm định của gói (Brier, LogLoss, kỹ năng, trust, mốc chia khối).
-
-    Lượt học và lượt dùng lại gói đều đi qua đây, với số đo đọc từ CHÍNH gói: trước 06-11-2026 lượt
-    dùng lại (pipeline chạy lại trong ngày, ví dụ sau khi gộp một PR) chỉ ghi tỉ lệ top-K, nên trang
-    Thống kê và trang chủ mất ba cột kiểm định ở 6/11 phiên bản báo cáo trong 30 ngày. Gói thiếu
-    trường nào thì ``KeyError`` — nơi gọi coi là gói cũ và học lại.
-    """
     report = _topk_backtest(val_df, mode=mode)
     report.insert(0, "mode", mode)
     report["val_brier"] = round(float(pack["val_brier"]), 10)
@@ -617,8 +555,6 @@ def _train_model(
     X_val, y_val = Xf[val_mask.to_numpy()], y_np[val_mask.to_numpy()]
 
     neg_ratio = 22 if mode == "de" else 8
-    # Downsample only the fit block. Calibration must retain the natural class
-    # prevalence; downsampling it makes Platt probabilities systematically too high.
     X_train, y_train = _downsample(
         X_train, y_train, neg_ratio=neg_ratio, seed=20260812
     )
@@ -643,7 +579,6 @@ def _train_model(
         y_val, np.vstack([1 - p_val, p_val]).T, labels=[0, 1]
     )
 
-    # Mốc so sánh: tỉ lệ nền học CHỈ trên các kỳ trước khối thẩm định.
     base_rate = float(np.clip(y_np[~val_mask.to_numpy()].mean(), 1e-6, 1 - 1e-6))
     base_vec = np.full(len(y_val), base_rate, dtype=float)
     base_brier = brier_score_loss(y_val, base_vec)
@@ -691,11 +626,6 @@ def _train_model(
 
 
 def trust_from_pack(pack: object) -> tuple[float, float]:
-    """``(model_trust, base_rate)`` của gói cầu-kèo; gói thiếu hay hỏng thì ném ValueError.
-
-    Không có giá trị mặc định: một gói lưu trước khi có luật tin mà được đọc
-    thành trust = 1 sẽ phát lại đúng xác suất thô mà luật này sinh ra để chặn.
-    """
     if not isinstance(pack, dict):
         raise ValueError("cầu-kèo model pack has invalid type")
     policy = pack.get("trust_policy_version")
@@ -716,17 +646,6 @@ def trust_from_pack(pack: object) -> tuple[float, float]:
 def trusted_probability(
     raw: np.ndarray | pd.Series, *, mode: Mode, trust: float, base_rate: float
 ) -> np.ndarray:
-    """Xác suất cầu-kèo đưa vào tổ hợp: ``p = trust·thô + (1 − trust)·nền``.
-
-    Cùng luật với thành phần ML (``ml_train.model_trust``): trust = clip(20·s, 0, 1),
-    s là kỹ năng trên khối thẩm định chưa chạm, kém hơn trong logloss/Brier.
-    Walk-forward 1 000 kỳ (học lại mỗi 50 kỳ, kỳ đích 25-12-2023 → 04-10-2026):
-    xác suất THÔ của Đặc Biệt kém dự báo hằng số z = −2,18, bản co hơn bản thô
-    z = +2,18; LOTO thô ngang hằng số và bản co ngang bản thô (z = −0,02). Kỹ năng
-    thẩm định dương ở 10/21 (LOTO) và 9/21 (Đặc Biệt) lần học nhưng trust trung
-    bình chỉ 0,0007 và 0,0001 (``scripts/research/benchmark_component_trust.py``).
-    Đặc Biệt chuẩn hoá lại về tổng 1.
-    """
     p = float(trust) * np.asarray(raw, dtype=float) + (1.0 - float(trust)) * float(base_rate)
     if mode == "de":
         total = float(p.sum())
@@ -799,9 +718,6 @@ def _load_or_train(
             except ValueError:
                 trust_ok = False
             if same_schema and up_to_date and trust_ok:
-                # Produce a fresh validation report while avoiding duplicate training
-                # inside the same daily pipeline run. A new draw automatically makes
-                # ``latest_anchor`` advance and forces retraining.
                 X_eval = X_train.copy()
                 X_eval["anchor_date"] = pd.to_datetime(X_eval["anchor_date"])
                 unique_days = pd.DatetimeIndex(
@@ -848,8 +764,6 @@ def _reason_candidates(
     if float(row.get("ml_prob_raw", 0.0)) >= quantiles.get("ml_prob_raw", 1.0):
         reasons.append("ML xác suất cao")
     if float(row.get("path_support", 0.0)) >= quantiles.get("path_support", 1.0):
-        # Đặc trưng đếm MỌI cặp vị trí của 30 kỳ gần nhất ghép ra số này, không phải một cầu cụ thể;
-        # «rawdata» là tên nội bộ của dãy chữ số, không phải lời cho người đọc.
         reasons.append(PATH_SUPPORT_REASON)
     if float(row.get("cond_de_rate", 0.0)) >= quantiles.get("cond_de_rate", 1.0):
         reasons.append("hợp điều kiện Đặc Biệt hôm trước")
@@ -937,7 +851,6 @@ def _add_ai_judgement(
     for _, row in out.iterrows():
         reasons = _reason_candidates(row, quantiles)
         while len(reasons) < 3:
-            # deterministic, user-friendly fallbacks
             if "tần suất gần" not in reasons:
                 reasons.append("tần suất gần")
             elif "nhịp lịch sử" not in reasons:
@@ -966,9 +879,6 @@ def _add_ai_judgement(
         "AI/ML ranking signal from historical statistics; not a guaranteed prediction"
     )
 
-    # ``prob`` là xác suất đưa vào tổ hợp, đã co về nền theo kỹ năng thẩm định;
-    # điểm và lý do ở trên vẫn đọc ``ml_prob_raw`` — co tuyến tính giữ nguyên
-    # thứ tự, nhưng khi trust = 0 mọi ``prob`` bằng nhau và không còn gì để xếp.
     out["model_trust"] = float(trust)
     out["base_rate"] = float(base_rate)
     out["trust_policy_version"] = TRUST_POLICY_VERSION
@@ -1063,7 +973,6 @@ def _write_outputs(
     )
     write_code_csv(report, report_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
-    # Store a compact validation sample, enough for debugging UI/reporting.
     backtest_cols = ["predict_for_date", "number_str", "target", "prob"]
     bt = val_df.copy()
     if "number_str" not in bt.columns and "number" in bt.columns:

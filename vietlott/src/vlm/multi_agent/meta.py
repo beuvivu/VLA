@@ -1,4 +1,3 @@
-'Hedge theo ngữ cảnh, chọn nhiệt độ theo thời gian và kiểm toán bằng chứng.'
 from __future__ import annotations
 
 import math
@@ -18,7 +17,6 @@ def mixture_log_prob(distributions: Sequence[SubsetDistribution], weights: Seque
                      outcome: Sequence[int]) -> float:
     values = np.array([math.log(float(w)) + d.log_prob(outcome)
                        for w, d in zip(weights, distributions, strict=True)])
-    # A proper mixture has probability at most one; remove positive ulp noise.
     return min(0.0, float(np.logaddexp.reduce(values)))
 
 
@@ -28,7 +26,6 @@ def mixture_marginals(distributions: Sequence[SubsetDistribution], weights: Sequ
 
 
 class MetaLearner:
-    'Chỉ cập nhật loss trên các dự báo đã khóa trước khi biết kết quả.\n\nE-process kiểm giả thuyết phân phối đều có điều kiện, không reset hay discount. Loss dùng để thích nghi không phải mức tin cậy đã hiệu chuẩn.'
 
     def __init__(self, n: int, k: int) -> None:
         self.n, self.k = n, k
@@ -49,7 +46,6 @@ class MetaLearner:
     def context(self, history: np.ndarray) -> int:
         if len(history) < 40:
             return 0
-        # Total variation of normalized inclusion frequencies (sum one).
         distance = np.abs(history[-20:].mean(axis=0) - history[-40:-20].mean(axis=0)).sum() / (2 * self.k)
         return int(distance > .25)
 
@@ -81,7 +77,6 @@ class MetaLearner:
         outcomes = np.array([r['target'] for r in self.records])
         bins = []
         edges = np.linspace(0.0, 1.0, 11)
-        # Integer membership has no gaps from separately rounded float edges.
         membership = np.minimum(np.searchsorted(edges, probabilities, side='right') - 1, 9)
         for index, (left, right) in enumerate(zip(edges[:-1], edges[1:], strict=True)):
             mask = membership == index
@@ -112,7 +107,7 @@ class MetaLearner:
         shadow_loss = candidate_losses[chosen]
         distributions = candidates[chosen]
         expert_losses = np.array([-d.log_prob(outcome) for d in distributions])
-        context = pending['context']  # Never infer context from the outcome.
+        context = pending['context']
         self.losses[context] = self.discount * self.losses[context] + expert_losses
         self.temperature_losses = self.discount * self.temperature_losses + candidate_losses
         self.expert_brier = .98 * self.expert_brier + .02 * np.array([

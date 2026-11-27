@@ -1,17 +1,3 @@
-"""Import the product snapshot of *Vietlott Quant Engine 1.3.0* (``data/products``).
-
-1.3.0 stores every product as Parquet with one row per draw — ``draw_number, draw_date,
-status, payload`` (JSON with ``result`` and provenance) — and prize cells as
-``draw_number, variant, tier, payload`` (``winner_count``, ``displayed_value_vnd``). Its rows
-come from a pinned revision of ``NhanAZ-Data/vietlott-research`` plus ``vietvudanh`` reference
-rows, so they are converted to the archive's row format and go through the same converter
-(:mod:`vietlott_engine.crawler.sources.nhanaz`). Draws with ``status = not_confirmed`` become exclusions.
-
-Parquet is read with whichever is available: the ``duckdb`` Python package (an engine
-dependency), ``pyarrow``, or the DuckDB command-line tool (``VQE_DUCKDB_CLI`` or ``duckdb`` on
-``PATH``).
-"""
-
 from __future__ import annotations
 
 import json
@@ -38,7 +24,6 @@ V130_PRODUCTS = {
 
 
 def read_parquet(path: Path) -> list[dict]:
-    """All rows of a Parquet file as dicts (duckdb → pyarrow → DuckDB CLI)."""
     path = Path(path)
     if not path.exists():
         raise SourceError(f"missing file {path}")
@@ -62,8 +47,6 @@ def read_parquet(path: Path) -> list[dict]:
     if cli:
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "rows.json"
-            # Chuỗi SQL: đường dẫn có dấu nháy đơn (thư mục người dùng đặt tên tuỳ ý) sẽ cắt câu lệnh, nên thoát
-            # nó theo đúng cú pháp SQL như `storage.export_parquet`.
             def quote(value: Path) -> str:
                 return "'" + value.as_posix().replace("'", "''") + "'"
 
@@ -101,7 +84,6 @@ def _prize_row(r: dict) -> dict:
 
 
 def products_dir(root: Path | str) -> Path:
-    """Accept the package root or its ``data/products`` folder."""
     p = Path(root)
     for cand in (p, p / "data" / "products"):
         if (cand / "coverage.json").exists() or any(cand.glob("*.parquet")):
@@ -119,7 +101,6 @@ def import_v130(root: Path | str, product: ProductCode) -> ArchiveDraws:
 
 
 def v130_exclusions(root: Path | str) -> list[dict]:
-    """``exclusions.json`` of the snapshot (issuer notices), normalised like the archive's."""
     path = products_dir(root) / "exclusions.json"
     if not path.exists():
         return []

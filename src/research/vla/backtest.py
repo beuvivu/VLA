@@ -1,9 +1,3 @@
-"""Đánh giá ngoài mẫu của phòng thử thách: bộ chỉ số và walk-forward cửa sổ mở rộng.
-
-Một module từ 15-11-2026 (trước là `backtest/evaluator.py`, `backtest/walk_forward.py`). Chỉ cần numpy:
-lịch sử tổng hợp nằm ở `research.vla.features`, đối chứng ML production ở `research.vla.models`.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -14,19 +8,6 @@ import numpy as np
 
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY
 
-
-# --- Bộ chỉ số (trước 15-11-2026: backtest/evaluator.py) ------------------------------------------
-#
-# Chỉ số chấm dự báo xác suất: logloss, Brier, Top-K, ROI theo luật trả thưởng.
-#
-# Mọi chỉ số tính TỪNG KỲ rồi mới gộp, để so hai mô hình bằng hiệu từng kỳ
-# (kỳ quay độc lập nên sai số chuẩn của trung bình hiệu là phép so công bằng).
-#
-# Luật trả thưởng mặc định (đặt được qua ``Payout``): lô 23 nghìn một điểm, trúng
-# 80 nghìn mỗi nháy; Đặc Biệt 1 ăn 70. Đánh ngẫu nhiên thì kỳ vọng hoàn
-# ``80·0,27/23 ≈ 0,939`` cho lô và ``70/100 = 0,70`` cho Đặc Biệt — tức nhà cái
-# giữ khoảng 6% và 30%. Không có xác suất hiệu chỉnh nào vượt được mức ấy nếu
-# không có tín hiệu thật.
 
 Mode = Literal["loto", "de"]
 EPS = 1e-6
@@ -41,11 +22,6 @@ class Payout:
 
 
 def cumulative_reference(mode: Mode, hit: np.ndarray, targets: np.ndarray) -> np.ndarray:
-    """Dự báo hằng số làm mốc kỹ năng 0, cho từng kỳ đích.
-
-    Đặc Biệt: 1/100. LOTO: tỉ lệ về tích luỹ qua MỌI kỳ trước kỳ đích ấy
-    (kỳ 0..target-1) — cập nhật từng kỳ, không đông cứng ở đầu khối.
-    """
     targets = np.asarray(targets, dtype=np.int64)
     if mode == "de":
         return np.full((len(targets), 100), 0.01)
@@ -62,7 +38,6 @@ def daily_logloss(mode: Mode, p: np.ndarray, hits: np.ndarray) -> np.ndarray:
 
 
 def daily_brier(mode: Mode, p: np.ndarray, hits: np.ndarray) -> np.ndarray:
-    """Đặc Biệt: Brier đa lớp chuẩn (TỔNG trên 100 lớp). LOTO: trung bình 100 biên."""
     if mode == "de":
         q = p / p.sum(axis=1, keepdims=True)
         return ((q - hits) ** 2).sum(axis=1)
@@ -70,23 +45,16 @@ def daily_brier(mode: Mode, p: np.ndarray, hits: np.ndarray) -> np.ndarray:
 
 
 def top_k(p: np.ndarray, k: int) -> np.ndarray:
-    """(n, k) chỉ số con số xác suất cao nhất; hoà thì số nhỏ trước."""
     order = np.lexsort((np.broadcast_to(np.arange(p.shape[1]), p.shape), -p), axis=1)
     return order[:, :k]
 
 
 def expected_hits_per_number(p: np.ndarray) -> np.ndarray:
-    """Số nháy kỳ vọng từ xác suất "về ít nhất một lần" của LOTO.
-
-    27 giải độc lập, mỗi giải ra con n với xác suất q: ``P(≥1) = 1-(1-q)^27``
-    nên ``q = 1-(1-p)^{1/27}`` và kỳ vọng số nháy là ``27q``.
-    """
     q = 1.0 - np.power(np.clip(1.0 - p, EPS, 1.0), 1.0 / LOTO_DRAWS_PER_DAY)
     return LOTO_DRAWS_PER_DAY * q
 
 
 def roi_top_k(mode: Mode, p: np.ndarray, counts: np.ndarray, special: np.ndarray, k: int, pay: Payout) -> dict:
-    """Mỗi kỳ đánh đều k con xác suất cao nhất."""
     chosen = top_k(p, k)
     rows = np.arange(len(p))[:, None]
     if mode == "loto":
@@ -99,7 +67,6 @@ def roi_top_k(mode: Mode, p: np.ndarray, counts: np.ndarray, special: np.ndarray
 
 
 def roi_positive_ev(mode: Mode, p: np.ndarray, counts: np.ndarray, special: np.ndarray, pay: Payout) -> dict:
-    """Chỉ đánh con có giá trị kỳ vọng dương THEO CHÍNH xác suất mô hình."""
     if mode == "loto":
         ev = pay.lo_win_per_hit * expected_hits_per_number(p) - pay.lo_cost
         bet = ev > 0
@@ -120,7 +87,6 @@ def roi_positive_ev(mode: Mode, p: np.ndarray, counts: np.ndarray, special: np.n
 
 
 def calibration_table(mode: Mode, p: np.ndarray, hits: np.ndarray, bins: int = 10) -> list[dict]:
-    """Chia theo phân vị xác suất dự báo; so xác suất trung bình với tần suất thật."""
     q = p / p.sum(axis=1, keepdims=True) if mode == "de" else p
     flat, y = q.reshape(-1), hits.reshape(-1)
     edges = np.quantile(flat, np.linspace(0, 1, bins + 1))
@@ -134,7 +100,6 @@ def calibration_table(mode: Mode, p: np.ndarray, hits: np.ndarray, bins: int = 1
 
 
 def paired(model: np.ndarray, reference: np.ndarray) -> dict:
-    """Hiệu logloss từng kỳ (tham chiếu − mô hình): dương = mô hình tốt hơn."""
     d = np.asarray(reference) - np.asarray(model)
     se = float(d.std(ddof=1) / np.sqrt(len(d))) if len(d) > 1 else float("nan")
     return {"mean_gain": float(d.mean()), "se": se, "z": float(d.mean() / se) if se and se > 0 else 0.0}
@@ -150,11 +115,6 @@ def evaluate(
     ks: tuple[int, ...] = (5, 10, 20),
     pay: Payout | None = None,
 ) -> dict:
-    """Bảng chỉ số của một mô hình trên ``n`` kỳ đích.
-
-    ``counts``: (n, 100) số nháy thật; ``special``: (n,) hai số cuối Đặc Biệt;
-    ``reference``: (n, 100) dự báo hằng số dùng làm mốc kỹ năng.
-    """
     pay = pay or Payout()
     if mode == "loto":
         hits = (counts > 0).astype(np.float64)
@@ -197,16 +157,6 @@ def evaluate(
     return out
 
 
-# --- Walk-forward (trước 15-11-2026: backtest/walk_forward.py) ------------------------------------
-#
-# Walk-forward cửa sổ mở rộng: không K-fold, không nhìn trước.
-#
-# Quy ước hàng/kỳ như ``research.vla.features``: hàng ``t`` dự báo kỳ ``t+1``.
-# Để dự báo một khối kỳ đích ``[s, s+R)``, mô hình được huấn luyện lại CHỈ trên
-# các hàng có nhãn đã biết trước kỳ ``s``, tức hàng ``t ≤ s-2`` (nhãn là kỳ
-# ``t+1 ≤ s-1``). ``run`` kiểm điều đó cho từng khối và ném lỗi nếu vi phạm —
-# phép kiểm ``test_walk_forward_never_trains_on_a_draw_it_scores`` ghim luật này.
-
 class Model(Protocol):
     def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> Model: ...
 
@@ -215,8 +165,8 @@ class Model(Protocol):
 
 @dataclass
 class WalkForwardResult:
-    targets: np.ndarray  # chỉ số kỳ đích
-    probs: np.ndarray  # (n, 100)
+    targets: np.ndarray
+    probs: np.ndarray
     refits: list[dict] = field(default_factory=list)
 
 
@@ -231,10 +181,6 @@ def run(
     max_train_rows: int | None = None,
     on_refit: Callable[[dict], None] | None = None,
 ) -> WalkForwardResult:
-    """Dự báo các kỳ đích ``first_target..last_target`` (bao gồm hai đầu).
-
-    ``max_train_rows`` giới hạn cửa sổ (trượt) cho mô hình cần; mặc định mở rộng.
-    """
     if first_target < 2 or last_target >= len(hit) or first_target > last_target:
         raise ValueError("khoảng kỳ đích không hợp lệ")
     targets = np.arange(first_target, last_target + 1)
@@ -242,13 +188,13 @@ def run(
     refits: list[dict] = []
     for start in range(first_target, last_target + 1, refit_every):
         stop = min(start + refit_every, last_target + 1)
-        train_rows = np.arange(0, start - 1)  # nhãn của hàng t là kỳ t+1 ≤ start-1
+        train_rows = np.arange(0, start - 1)
         if max_train_rows is not None:
             train_rows = train_rows[-max_train_rows:]
         if train_rows.size and train_rows.max() + 1 >= start:
             raise AssertionError("huấn luyện chạm vào kỳ đang chấm")
         model = factory().fit(X, hit, train_rows)
-        pred_rows = np.arange(start - 1, stop - 1)  # hàng t dự báo kỳ t+1 ∈ [start, stop)
+        pred_rows = np.arange(start - 1, stop - 1)
         probs[start - first_target : stop - first_target] = model.predict(X, hit, pred_rows)
         info = {"first_target": int(start), "last_target": int(stop - 1), "train_rows": int(train_rows.size),
                 "last_label": int(train_rows.max() + 1) if train_rows.size else -1}

@@ -1,11 +1,3 @@
-"""Mô hình Lô VIP: dự báo kỳ SAU từ kinh nghiệm cầu kèo và cầu hai nháy, không nhìn trước, in đúng.
-
-Yêu cầu 15-10-2026: trang phải là phỏng đoán cho kỳ hôm sau dựa trên dữ liệu và kinh nghiệm cầu
-kèo, không phải thống kê con đã về hôm nay. Các phép kiểm dưới đây ghim từng mắt xích: cầu hai nháy
-đếm khớp trang soi cầu hai nháy, đặc trưng chỉ đọc kỳ đã quay, mỗi khối walk-forward chấm bằng mô
-hình chưa thấy nó, xác suất in ra hiệu chỉnh chỉ bằng các khối trước, và lý do in đúng tín hiệu.
-"""
-
 from __future__ import annotations
 
 import json
@@ -36,7 +28,6 @@ def _digits(history):
 
 @pytest.mark.parametrize("t", [62, 70, 79])
 def test_the_bridge_features_count_what_the_bridge_pages_find(t) -> None:
-    """Số cầu hai nháy (≥ 2 kỳ) và cầu LOTO (≥ 3 kỳ, báo cả số lộn) đúng như ``bridge_rules.find``."""
     history = mf.mock_raw_history(80, seed=12)
     _, digits, values = _digits(history)
     feats = mf.bridge_features(digits, values)
@@ -57,7 +48,6 @@ def test_the_bridge_features_count_what_the_bridge_pages_find(t) -> None:
 
 
 def test_every_row_reads_only_draws_already_drawn() -> None:
-    """Sửa kỳ k chỉ được đổi đặc trưng của kỳ neo ≥ k và nhãn của kỳ neo k − 1."""
     history = mf.mock_raw_history(90, seed=4)
     raw, two = (frame.copy() for frame in history)
     k = 70
@@ -80,11 +70,10 @@ def test_the_label_is_the_next_draw_coming_twice(planted_table) -> None:
 
 
 def test_the_forecast_skips_registered_non_draw_days() -> None:
-    """Dữ liệu đến 15-02 mà 16–19-02 nghỉ Tết: kỳ được dự báo là 20-02, không phải một kỳ không có."""
     tet = frozenset({"2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19"})
     assert mf.next_draw_date("2026-02-15", tet) == "2026-02-20"
     assert mf.next_draw_date("2026-02-14", tet) == "2026-02-15"
-    history = mf.mock_raw_history(80, seed=4)           # 01-01 → 21-03-2026
+    history = mf.mock_raw_history(80, seed=4)
     last = history[1]["date"].iloc[-1]
     closed = frozenset({(pd.Timestamp(last) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")})
     table = mf.build_table(*history, SMALL, closed=closed)
@@ -110,8 +99,6 @@ def test_each_block_is_scored_by_a_model_that_never_saw_it(planted_table, monkey
 
 @pytest.mark.parametrize("n", [130, 141])
 def test_the_published_picks_are_the_ones_scored_when_the_draw_arrives(n) -> None:
-    """Năm con công bố hôm nay (kỳ neo cuối) phải đúng là năm con walk-forward chấm khi kỳ ấy có kết
-    quả, cùng xác suất đã in — kể cả khi kỳ neo cuối mở đầu một khối mới (n = 141)."""
     raw, two = mf.mock_raw_history(n + 1, seed=21, planted=PLANTED)
     today = mf.walk_forward(mf.build_table(raw.iloc[:n], two.iloc[:n], SMALL), SMALL)
     tomorrow_table = mf.build_table(raw, two, SMALL)
@@ -122,7 +109,6 @@ def test_the_published_picks_are_the_ones_scored_when_the_draw_arrives(n) -> Non
 
 
 def test_the_forecast_row_uses_the_real_next_draw_date() -> None:
-    """Kỳ tới sau ngày nghỉ: đặc trưng cùng thứ / từ đầu tháng / đầu năm tính theo ngày quay thật."""
     from ml import cau_keo_ml as ck
 
     raw, two = mf.mock_raw_history(80, seed=4)
@@ -160,14 +146,14 @@ def test_the_printed_rate_is_calibrated_only_on_earlier_blocks(planted_table, mo
     blocks = [b["start"] for b in wf.blocks]
     assert sizes == [k * (s - blocks[0]) for s in blocks]
     first = wf.rows < blocks[1]
-    assert np.allclose(wf.printed[first], 1 / (1 + np.exp(-wf.scores[first])))   # chưa có gì để hiệu chỉnh
+    assert np.allclose(wf.printed[first], 1 / (1 + np.exp(-wf.scores[first])))
 
 
 def test_a_planted_signal_is_found_and_the_printed_rate_matches_the_real_one(planted_table) -> None:
     wf = mf.walk_forward(planted_table, SMALL)
     realised = wf.hits.sum() / wf.picks.size
     assert realised > 0.15
-    late = wf.rows >= wf.blocks[2]["start"]       # khi đã đủ lượt chọn ngoài mẫu để hiệu chỉnh
+    late = wf.rows >= wf.blocks[2]["start"]
     n, rate = wf.picks[late].size, wf.hits[late].sum() / wf.picks[late].size
     assert abs(wf.printed[late].mean() - rate) <= 3 * np.sqrt(rate * (1 - rate) / n)
     assert set(PLANTED) <= set(wf.picks[-1]) | set(wf.picks[-2]) | set(wf.picks[-3])
@@ -176,11 +162,11 @@ def test_a_planted_signal_is_found_and_the_printed_rate_matches_the_real_one(pla
 def test_inner_validation_chooses_regularisation_by_held_out_loss() -> None:
     rng = np.random.default_rng(3)
     X = rng.normal(size=(60, 100, 3))
-    y = (X[..., 0] > 1.6).astype(float)              # một đặc trưng quyết định nhãn
+    y = (X[..., 0] > 1.6).astype(float)
     strong = mf.fit(X, y)
     assert strong.C == max(mf.C_GRID) and strong.inner_gain > 0.05
     blind = y.copy()
-    blind[48:] = 0                                   # lát thẩm định trong không có ca dương nào
+    blind[48:] = 0
     fallback = mf.fit(X, blind)
     assert (fallback.C, fallback.inner_gain) == (mf.C_GRID[0], 0.0)
     with pytest.raises(ValueError, match="một lớp"):
@@ -206,7 +192,7 @@ def test_reasons_are_the_largest_positive_contributions(planted_table) -> None:
     texts = [t for t in (mf.reason(mf.FEATURES[j], x[j], PLANTED[0], 34) for j in order) if t]
     assert got == texts and got
     assert mf.reasons(model, x, PLANTED[0], 34) == texts[:2]
-    assert (contrib <= 0).any()                     # có đặc trưng kéo xuống: phép kiểm có răng
+    assert (contrib <= 0).any()
 
 
 def test_the_bridge_experience_counts_every_labelled_anchor(planted_table) -> None:
@@ -216,12 +202,7 @@ def test_the_bridge_experience_counts_every_labelled_anchor(planted_table) -> No
     assert [r["label"] for r in rows] == [label for *_, label in mf.BRIDGE_BUCKETS]
 
 
-# --------------------------------------------------------------------------- số đo đã xuất bản
-
-
 def test_the_published_forecast_is_for_the_draw_after_the_latest() -> None:
-    """Năm con trên trang là dự báo cho kỳ SAU kỳ mới nhất, mỗi con có lý do, và 10 kỳ gần nhất chấm
-    đúng số nháy thật của sổ kết quả."""
     vip = json.loads((ROOT / "data" / "forecast" / "multi_hit" / "vip.json").read_text(encoding="utf-8"))
     frame = pd.read_csv(ROOT / "data" / "xsmb-2-digits.csv", dtype=str)
     draws, labels = m.draws_from_frame(frame)

@@ -1,4 +1,3 @@
-"""Khung giữ vector Nexlink; menu sắp theo chức năng và mọi đích đều có thật."""
 import hashlib
 import json
 import sys
@@ -17,7 +16,6 @@ def test_reference_vectors_are_preserved_in_the_rendered_shell():
     from web.nexlink_icons import nexlink_icon
     manifest = json.loads((ASSETS / 'provenance.json').read_text())
     assert manifest['source'] == 'https://nexlink.layoutdrop.com/demo/index.html'
-    # These hashes were recorded directly from the reference, before implementation.
     assert manifest['sha256']['home.svg'] == 'e1abae9be24be1865761b149c227a30da5a6dce986d20b4628987d6b481ab399'
     assert manifest['sha256']['crown.svg'] == '48517fa2181c1844f19cc6bbc94a064683b8a6285adaa6caa5824817c3b945bf'
     for name, digest in manifest['sha256'].items():
@@ -28,7 +26,6 @@ def test_reference_vectors_are_preserved_in_the_rendered_shell():
         for attr in ('width', 'height'):
             assert original.get(attr) == rendered.get(attr)
         assert rendered.get('aria-hidden') == 'true'
-        # Only color tokens may change; geometry and duotone opacity stay exact.
         def geometry(svg):
             return [(e.tag.split('}')[-1], {k:v for k,v in e.attrib.items()
                      if k not in ('fill','stroke')}) for e in svg.iter() if e is not svg]
@@ -48,7 +45,6 @@ def test_rail_follows_the_reader_workflow_and_keeps_utilities_separate():
 
 
 def test_submenus_separate_statistics_bridges_and_forecasts():
-    """Trang tần suất không lẫn vào soi cầu; xếp hạng kỳ sau ở nhóm dự báo."""
     from web.app_shell import panel_html
 
     for page, group, section in [

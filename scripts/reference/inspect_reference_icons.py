@@ -1,20 +1,3 @@
-"""Đo HỆ BIỂU TƯỢNG và MENU của trang tham chiếu.
-
-Vì sao cần một bản đo riêng: ``inspect_reference_shell.py`` đo hình học của
-hai dải và thanh trên — bề rộng, đệm, bo góc. Nó không nói biểu tượng được
-VẼ BẰNG GÌ, mà đó mới là câu hỏi ở đây. Một biểu tượng có thể là:
-
-* ký tự của một phông biểu tượng, nằm trong ``content`` của ``::before``;
-* một phần tử ``<svg>`` với ``stroke-width`` và ``viewBox`` riêng;
-* một ảnh nền.
-
-Ba lối ấy đòi ba cách dựng lại khác hẳn nhau, nên đoán sai là dựng sai.
-
-KHÔNG tải hiện vật của họ về kho: không lưu HTML, CSS, phông hay đường vẽ
-SVG. Chỉ in SỐ ĐO và TÊN — cỡ, nét, màu, hộp chứa, và ẩn dụ của từng mục
-menu — để tự viết lại bằng tay theo đúng ngôn ngữ thị giác ấy.
-"""
-
 from __future__ import annotations
 
 import json
@@ -112,11 +95,6 @@ JS = r"""
 
 
 def main() -> int:
-    """Đo từng URL rồi in số đo ra log.
-
-    Returns:
-        0 nếu đo được ít nhất một URL, 1 nếu không.
-    """
     urls = [u.strip() for u in os.environ.get("URLS", "").split(",") if u.strip()]
     if not urls:
         print("Chưa truyền URLS", file=sys.stderr)

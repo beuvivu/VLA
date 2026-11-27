@@ -28,13 +28,6 @@ def _parse_hhmm(value: str) -> dtime:
 
 
 def expected_latest_draw_date(*, now: datetime, cutoff: dtime) -> date:
-    """Latest draw date that should be complete at ``now``.
-
-    Before the evening draw cutoff, yesterday is the newest draw that can be
-    required.  At/after the cutoff, today's draw is expected.  This prevents a
-    morning bootstrap run from being marked stale merely because today's draw
-    has not happened yet.
-    """
     return latest_complete_draw_date(now=now, cutoff=cutoff)
 
 

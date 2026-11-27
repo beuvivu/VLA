@@ -1,25 +1,3 @@
-"""Ticket sales, jackpot accounting and jackpot dynamics.
-
-Accounting identity (documented structure: a fixed share of revenue funds the prizes;
-fixed prizes are paid first and most of the rest feeds the jackpot):
-
-    ΔJ_t  =  s · R_t  −  F_t
-
-ΔJ_t is the growth of all jackpot pots at draw t (relative to the previous pot, or to
-the minimum after a win), F_t the fixed prizes paid, R_t the gross revenue and s the
-effective share of revenue that ends up in that draw's prizes. Vietlott quotes 55 % of
-revenue for "prizes and prize reserves"; the share that reaches the jackpot is lower.
-
-``s`` is *estimated*, not assumed, from an exact identity: for any crowd behaviour,
-E_W[P_m(W)] = H_m over uniformly random winning sets, hence E[y_m] = N·H_m and
-
-    ŝ = Σ_t (ΔJ_t + F_t)/price · H_m  /  Σ_t y_tm .
-
-Different tiers m give independent estimates; on Power 6/55 they agree (ŝ ≈ 0.41),
-which validates the identity. Combined with the revenue Vietlott reports for its
-matrix games this is the basis of the tickets-sold series N_t = R_t/price.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -33,7 +11,6 @@ from vietlott_engine.inference.predictive import newey_west_variance
 
 
 def jackpot_growth(ph: PrizeHistory) -> np.ndarray:
-    """ΔJ_t (D,): total growth of all jackpot pots at each draw (NaN when not computable)."""
     spec = ph.spec
     pots = ph.pots
     won = ph.jackpot_won()
@@ -57,7 +34,6 @@ class PayoutShare(BaseModel):
 
 
 def estimate_payout_share(ph: PrizeHistory, dates: np.ndarray, tiers: tuple[str, ...] = ("third", "second")) -> PayoutShare:
-    """Method-of-moments estimate of s (see module docstring), with a block-bootstrap CI."""
     spec = ph.spec
     acc = jackpot_growth(ph)
     fixed = ph.fixed_prizes_paid()
@@ -95,19 +71,12 @@ def estimate_payout_share(ph: PrizeHistory, dates: np.ndarray, tiers: tuple[str,
 
 
 def tickets_sold_from_accounting(ph: PrizeHistory, share: float) -> np.ndarray:
-    """N_t = (ΔJ_t + F_t) / (s · price); NaN where the jackpot series is incomplete."""
     acc = jackpot_growth(ph)
     n = (acc + ph.fixed_prizes_paid()) / (share * ph.spec.ticket_price)
     return np.where(np.isfinite(n) & (n > 0), n, np.nan)
 
 
-# ------------------------------------------------------------- sales model
 class SalesModel(BaseModel):
-    """log N_t = a + b·x + c·x² + weekday + year effects, x = log J − log J_ref (OLS, HAC SEs).
-
-    ``elasticity`` is the slope at the reference (median) jackpot; ``curvature`` c > 0 means
-    sales accelerate at large jackpots ("jackpot fever", strong for Mega 6/45). Outside the
-    fitted jackpot range the quadratic is continued along its tangent (no wild extrapolation)."""
 
     game: str
     elasticity: float
@@ -125,7 +94,6 @@ class SalesModel(BaseModel):
     x_range: tuple[float, float] = (-1e9, 1e9)
 
     def _shape(self, jackpot: float) -> tuple[float, float]:
-        """(b·x + c·q(x), d/dx) with tangent continuation outside ``x_range``."""
         x = float(np.log(jackpot)) - self.log_jackpot_ref
         lo, hi = self.x_range
         xc = min(max(x, lo), hi)
@@ -146,7 +114,6 @@ class SalesModel(BaseModel):
 
 
 def advertised_jackpot(ph: PrizeHistory) -> np.ndarray:
-    """Total jackpot on offer before each draw (pots carried in, or minimum after a win)."""
     spec = ph.spec
     mins = np.array([spec.min_jackpots.get(j, 0) for j in ph.jackpot_tiers], dtype=np.float64)
     won = ph.jackpot_won()
@@ -163,7 +130,7 @@ def fit_sales_model(h: DrawHistory, sold: np.ndarray, jackpot_before: np.ndarray
     y = np.log(sold[ok])
     dates = h.dates[ok]
     years = (dates.astype("datetime64[Y]").astype(int) + 1970).astype(str)
-    wd = ((dates.astype("datetime64[D]").astype(int) + 3) % 7).astype(int)  # 1970-01-01 was a Thursday
+    wd = ((dates.astype("datetime64[D]").astype(int) + 3) % 7).astype(int)
     uy = sorted(set(years))
     uw = sorted(set(wd))
     lj = np.log(jackpot_before[ok])
@@ -180,7 +147,6 @@ def fit_sales_model(h: DrawHistory, sold: np.ndarray, jackpot_before: np.ndarray
     x = np.column_stack(cols)
     beta, *_ = np.linalg.lstsq(x, y, rcond=None)
     resid = y - x @ beta
-    # HAC standard error of the elasticity (sales shocks are serially correlated)
     xtx_inv = np.linalg.inv(x.T @ x)
     u = x * resid[:, None]
     s = np.zeros((x.shape[1], x.shape[1]))
@@ -190,7 +156,7 @@ def fit_sales_model(h: DrawHistory, sold: np.ndarray, jackpot_before: np.ndarray
         wgt = 1.0 if j == 0 else 1 - j / (lag + 1)
         s += wgt * (g if j == 0 else g + g.T)
     cov = xtx_inv @ s @ xtx_inv
-    _ = newey_west_variance  # same Bartlett weighting as predictive.newey_west_variance
+    _ = newey_west_variance
     year_eff = {uy[0]: 0.0, **{nm[1:]: float(b) for nm, b in zip(names, beta) if nm.startswith("y")}}
     wd_eff = {str(uw[0]): 0.0, **{nm[1:]: float(b) for nm, b in zip(names, beta) if nm.startswith("w")}}
     return SalesModel(
@@ -211,23 +177,15 @@ def fit_sales_model(h: DrawHistory, sold: np.ndarray, jackpot_before: np.ndarray
     )
 
 
-# ------------------------------------------------- jackpot reconstruction
 class JackpotPath(BaseModel):
     game: str
     draw_ids: list[int]
-    jackpot: list[float | None]  # pot value at each draw (after that draw's sales)
+    jackpot: list[float | None]
     anchor: str
-    closure_error: float | None  # reconstructed − known value at the anchor (VND)
+    closure_error: float | None
 
 
 def reconstruct_jackpot(spec: GameSpec, ph: PrizeHistory, sold: np.ndarray, share: float, anchor_index: int | None = None, anchor_value: float | None = None) -> JackpotPath:
-    """Rebuild a single-pot jackpot path from tickets sold, winners and s.
-
-    Forward from every reset (pot = minimum + s·R − F at the first draw after a win);
-    when an anchor (a published jackpot value) is given, the segment containing it is
-    also rebuilt backwards from the anchor and the forward/backward mismatch at the
-    anchor is returned as ``closure_error`` — a test of s, N_t and F_t together.
-    """
     d = len(ph.draw_ids)
     j = np.full(d, np.nan)
     won = ph.jackpot_won()[:, 0]
@@ -249,7 +207,6 @@ def reconstruct_jackpot(spec: GameSpec, ph: PrizeHistory, sold: np.ndarray, shar
     closure = None
     if anchor_index is not None and anchor_value is not None:
         fwd = j[anchor_index]
-        # backward fill inside the anchor's segment where the forward path is unknown
         jb = anchor_value
         for t in range(anchor_index, 0, -1):
             if np.isnan(j[t]):
@@ -270,10 +227,6 @@ def reconstruct_jackpot(spec: GameSpec, ph: PrizeHistory, sold: np.ndarray, shar
 
 
 def jackpot_hit_check(pop_ticket_prob_fn, sold: np.ndarray, won: np.ndarray, spec: GameSpec, winning: np.ndarray) -> dict:
-    """Compare observed jackpot wins with the model: P(won_t) = 1 − exp(−N_t·p(W_t)).
-
-    Returns observed wins, expected under the calibrated crowd and under uniform picking.
-    """
     ok = np.isfinite(sold)
     p_pop = pop_ticket_prob_fn(winning[ok])
     exp_model = float(np.sum(1 - np.exp(-sold[ok] * p_pop)))

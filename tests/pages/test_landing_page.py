@@ -34,7 +34,6 @@ def test_landing_page_contains_navigation_and_sections(tmp_path: Path) -> None:
         assert f'id="{section_id}"' in html or f"id='{section_id}'" in html
         assert f"#{section_id}" in html
 
-    # Khung hai cấp thay dock nổi, giữ các neo chuyển phần.
     assert 'class="app-rail"' in html
     assert 'class="dock"' not in html
     assert "Các phần trong trang" in html
@@ -73,18 +72,6 @@ def test_landing_page_escapes_embedded_data_and_avoids_untrusted_inner_html(
 
 
 def test_the_landing_page_delegates_clicks_instead_of_binding_every_cell() -> None:
-    """Một trình nghe uỷ quyền, không phải một trình nghe mỗi ô.
-
-    Đo trên trang đã dựng: ``[data-number]`` khớp 1309 phần tử — 1000 ô ma
-    trận, 100 ô ma trận nhỏ, 88 liên kết số, 44 hàng cột, 27 số giải, 27 số
-    dự đoán vui, 20 hàng xác suất. Bản cũ gọi ``addEventListener`` cho từng
-    cái, giữ lại 1309 closure cùng 1309 bản ghi trình nghe. Đếm trong trình
-    duyệt: 1339 trình nghe trước, 31 sau.
-
-    Phép kiểm soi MÃ NGUỒN chứ không đếm trong trình duyệt: đếm trình nghe
-    cần Chromium và một lượt dựng, quá nặng cho bộ kiểm thường. Thứ ghim ở
-    đây là KHUÔN — không được quay lại lối gắn từng phần tử.
-    """
     nguon = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     assert "document.querySelectorAll('[data-number]').forEach" not in nguon, (
         "quay lại lối gắn trình nghe cho từng phần tử mang data-number"
@@ -95,17 +82,6 @@ def test_the_landing_page_delegates_clicks_instead_of_binding_every_cell() -> No
 
 
 def test_every_number_element_on_the_landing_page_can_still_be_opened() -> None:
-    """Uỷ quyền chỉ đúng khi MỌI phần tử mang số vẫn mở được bảng căn cứ.
-
-    Bản đầu của phép thử soi ``#number-detail`` — một id KHÔNG tồn tại — nên
-    nó báo "nội dung không đổi" cho cả bốn loại phần tử và suýt bị đọc thành
-    hồi quy. ``showNumber`` ghi vào ``#inspect-*``; soi đúng chỗ thì cả bốn
-    loại đều đặt đúng con số.
-
-    Ở đây ghim điều kiện để uỷ quyền chạy được: mọi phần tử bấm được đều mang
-    ``data-number``, và trang có đủ các ô ``#inspect-*`` mà ``showNumber`` ghi
-    vào. Thiếu một trong hai thì uỷ quyền im lặng không làm gì.
-    """
     trang = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
     for o in ("inspect-num", "inspect-mode", "inspect-title", "inspect-score",
               "inspect-prob", "inspect-reason", "inspect-evidence",
@@ -133,8 +109,6 @@ def test_the_conditional_tables_print_the_baseline_and_fdr_beside_the_raw_rate()
 
 
 def test_tied_rows_keep_their_file_order_on_every_machine() -> None:
-    # Hai dòng cầu cùng điểm từng đổi chỗ giữa runner CI và máy khác: quicksort của numpy xếp
-    # dòng hoà theo lệnh vector của CPU.
     import pandas as pd
 
     from pages.build_landing_page import _sort_top

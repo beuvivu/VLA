@@ -1,14 +1,3 @@
-"""Kết quả cổng tái lập phải đi được tới tận đầu ra dự đoán.
-
-Một cổng chạy đúng nhưng không ai nhìn thấy kết quả thì không đổi được gì. Tệp
-này khoá đường đi của con số:
-
-    run_bridge_scan  ->  bridge_scan_summary.json  ->  bằng chứng của dự đoán
-
-và đòi mẫu số luôn đi kèm: "3 đường tái lập" mà không nói đã quét bao nhiêu
-giả thuyết là cách trình bày sai lệch nhất có thể ở đây.
-"""
-
 from __future__ import annotations
 
 import json
@@ -39,7 +28,6 @@ def _tiny_raw(days: int = 400, seed: int = 5) -> pd.DataFrame:
 def test_the_scan_summary_carries_the_replication_block(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Chạy thật bộ quét thu hẹp và đòi khối tái lập có mặt, đủ trường."""
     monkeypatch.setattr(run_bridge_scan, "TARGET_TYPES", ("de",))
     raw = tmp_path / "xsmb.csv"
     _tiny_raw().to_csv(raw, index=False)
@@ -59,7 +47,6 @@ def test_the_scan_summary_carries_the_replication_block(
     assert block["discovery_days"] + block["replication_days"] <= 400
     assert block["replicated"] <= block["discovered_on_discovery_half"]
 
-    # Mẫu số phải đi cùng: số giả thuyết đã quét nằm ngay cạnh.
     assert summary["modes"]["de"]["hypotheses"] > 0
 
     written = json.loads(
@@ -71,7 +58,6 @@ def test_the_scan_summary_carries_the_replication_block(
 def test_noise_produces_no_replicated_bridge_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Không có gì tái lập thì KHÔNG được ghi tệp — tệp rỗng trông như dữ liệu."""
     monkeypatch.setattr(run_bridge_scan, "TARGET_TYPES", ("de",))
     raw = tmp_path / "xsmb.csv"
     _tiny_raw().to_csv(raw, index=False)
@@ -86,7 +72,6 @@ def test_noise_produces_no_replicated_bridge_file(
 def test_prediction_evidence_surfaces_replication_with_its_denominator(
     tmp_path: Path,
 ) -> None:
-    """Bằng chứng kèm dự đoán phải mang cả con số tái lập lẫn mẫu số của nó."""
     research = tmp_path / "research"
     research.mkdir()
     (research / "bridge_scan_summary.json").write_text(
@@ -113,11 +98,6 @@ def test_prediction_evidence_surfaces_replication_with_its_denominator(
 def test_prediction_evidence_survives_an_older_summary_without_replication(
     tmp_path: Path,
 ) -> None:
-    """Bản tóm tắt cũ chưa có khối tái lập không được làm đổ quy trình.
-
-    Tệp này do một bộ quét chạy TAY sinh ra, nên bản cũ vẫn nằm trong kho một
-    thời gian sau khi mã đổi. Đọc nó phải ra `None`, không phải KeyError.
-    """
     research = tmp_path / "research"
     research.mkdir()
     (research / "bridge_scan_summary.json").write_text(

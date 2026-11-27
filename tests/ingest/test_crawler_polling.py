@@ -1,10 +1,3 @@
-"""Kiểm thử lớp thăm dò đúng giờ.
-
-Không có test nào chạm mạng thật: nguồn được thay bằng bản giả có kịch bản,
-đồng hồ và hàm ngủ được tiêm vào. Một test phụ thuộc mạng sẽ đỏ vì lý do
-không liên quan gì tới mã, và đỏ kiểu đó thì người ta bắt đầu bỏ qua nó.
-"""
-
 from __future__ import annotations
 
 from datetime import date, datetime, time as dtime, timedelta
@@ -30,7 +23,6 @@ TARGET = date(2026, 9, 7)
 
 
 def _full_prize_map() -> dict[str, list[str]]:
-    """Một kỳ quay hoàn chỉnh, đúng độ dài từng giải."""
     widths = {
         "special": 5, "prize1": 5, "prize2": 5, "prize3": 5,
         "prize4": 4, "prize5": 4, "prize6": 3, "prize7": 2,
@@ -47,7 +39,6 @@ def _full_prize_map() -> dict[str, list[str]]:
 
 
 class FakeSource:
-    """Nguồn giả trả về theo kịch bản định trước từng vòng."""
 
     def __init__(self, name: str, script: list[dict[str, list[str]]]) -> None:
         self.name = name
@@ -65,7 +56,6 @@ class FakeSource:
 
 
 class BoomSource(FakeSource):
-    """Nguồn luôn ném ngoại lệ — mô phỏng nguồn chết hoặc bị chặn."""
 
     def fetch_partial(self, selected_date, http, *, live=False):
         self.calls += 1
@@ -73,7 +63,6 @@ class BoomSource(FakeSource):
 
 
 class FakeClock:
-    """Đồng hồ điều khiển được; ``sleep`` chỉ đẩy kim đồng hồ."""
 
     def __init__(self, start: datetime) -> None:
         self.now = start
@@ -87,11 +76,7 @@ class FakeClock:
         self.now = self.now + timedelta(seconds=seconds)
 
 
-# --- Cấu hình -------------------------------------------------------------
-
-
 def test_total_slots_is_the_xsmb_invariant() -> None:
-    """27 ô là bất biến của bài toán, không phải con số cấu hình được."""
     assert TOTAL_SLOTS == 27
 
 
@@ -111,15 +96,10 @@ def test_config_rejects_impossible_settings(kwargs) -> None:
 
 
 def test_default_timeout_is_tight_enough_for_peak_hour() -> None:
-    """Hạn mặc định của sources là 15-20s; khung cao điểm cần chặt hơn nhiều."""
     assert DEFAULT_REQUEST_TIMEOUT <= 8.0
 
 
-# --- Lớp HTTP -------------------------------------------------------------
-
-
 def test_session_sends_a_browser_user_agent() -> None:
-    """Mặc định python-requests/2.x bị lớp chống bot chặn thẳng."""
     session = build_session()
     ua = session.headers["User-Agent"]
     assert ua in USER_AGENTS
@@ -127,7 +107,6 @@ def test_session_sends_a_browser_user_agent() -> None:
 
 
 def test_session_sends_the_headers_a_real_browser_would() -> None:
-    """Chỉ đặt UA vẫn lộ: trình duyệt thật luôn gửi kèm Accept-Language."""
     headers = build_session().headers
     assert "Accept-Language" in headers
     assert "vi" in headers["Accept-Language"]
@@ -156,14 +135,12 @@ class _RecordingSession:
 
 
 def test_timeout_cap_overrides_a_longer_caller_timeout() -> None:
-    """sources truyền sẵn timeout=15; lớp thăm dò phải kẹp nó xuống."""
     inner = _RecordingSession()
     _TimeoutCappedSession(inner, 8.0).get("http://x", timeout=15)
     assert inner.seen == [8.0]
 
 
 def test_timeout_cap_keeps_a_shorter_caller_timeout() -> None:
-    """Kẹp là trần, không phải ghi đè: hạn ngắn hơn vẫn được tôn trọng."""
     inner = _RecordingSession()
     _TimeoutCappedSession(inner, 8.0).get("http://x", timeout=3)
     assert inner.seen == [3.0]
@@ -175,9 +152,6 @@ def test_timeout_cap_applies_when_caller_passes_nothing() -> None:
     assert inner.seen == [8.0]
 
 
-# --- Một vòng thăm dò -----------------------------------------------------
-
-
 def test_a_single_round_verifies_when_two_groups_agree() -> None:
     full = _full_prize_map()
     sources = [FakeSource("a.vn", [full]), FakeSource("b.vn", [full])]
@@ -187,7 +161,6 @@ def test_a_single_round_verifies_when_two_groups_agree() -> None:
 
 
 def test_one_source_alone_cannot_verify_under_two_group_agreement() -> None:
-    """Đây là lá chắn chống một nguồn đăng sai số: một mình không đủ."""
     full = _full_prize_map()
     empty = {k: [] for k in PRIZE_ORDER}
     sources = [FakeSource("a.vn", [full]), FakeSource("b.vn", [empty])]
@@ -196,7 +169,6 @@ def test_one_source_alone_cannot_verify_under_two_group_agreement() -> None:
 
 
 def test_a_dead_source_does_not_sink_the_round() -> None:
-    """Mất một nguồn là chuyện bình thường; sập cả vòng thì không."""
     full = _full_prize_map()
     sources = [FakeSource("a.vn", [full]), BoomSource("b.vn", []), FakeSource("c.vn", [full])]
     _, verified, stats = poll_once(sources, TARGET, min_agreement=2)
@@ -214,15 +186,10 @@ def test_round_reports_per_source_latency_for_diagnosis() -> None:
 
 
 def test_stats_come_back_in_business_priority_order() -> None:
-    """as_completed trả về theo thứ tự XONG; phép đồng thuận phá hoà theo
-    thứ tự ƯU TIÊN, nên phải sắp lại trước khi hợp nhất."""
     full = _full_prize_map()
     sources = [FakeSource(f"s{i}.vn", [full]) for i in range(5)]
     _, _, stats = poll_once(sources, TARGET, min_agreement=2)
     assert [s["priority"] for s in stats] == [1, 2, 3, 4, 5]
-
-
-# --- Vòng lặp thăm dò -----------------------------------------------------
 
 
 def _cfg(**kw) -> PollConfig:
@@ -237,11 +204,7 @@ def _cfg(**kw) -> PollConfig:
     return PollConfig(**base)
 
 
-# --- Nguồn chính trước, dự phòng chỉ khi nó gặp sự cố ---------------------
-
-
 def test_the_fallbacks_are_not_asked_while_the_primary_answers() -> None:
-    """Chính sách từ 13-10-2026: nguồn chính đủ số thì hai nguồn dự phòng không bị gọi."""
     full = _full_prize_map()
     primary, backup = FakeSource("xoso.vn", [full]), FakeSource("du-phong.vn", [full])
     clock = FakeClock(datetime(2026, 9, 7, 18, 33, tzinfo=TZ))
@@ -290,11 +253,6 @@ def test_a_primary_stuck_after_18_40_hands_over_to_the_fallbacks() -> None:
 
 
 def test_a_page_still_showing_yesterday_is_never_verified() -> None:
-    """Trước giờ quay mọi trang live vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
-
-    Không có chốt này, lượt thăm dò 18:15 thấy "đủ 27 ô" ngay vòng đầu, gọi hoàn tất
-    ``live_verified`` rồi thoát — trước cả khi kỳ hôm nay bắt đầu quay.
-    """
     yesterday = _full_prize_map()
     primary = FakeSource("xoso.vn", [yesterday])
     backup = FakeSource("du-phong.vn", [yesterday])
@@ -326,8 +284,6 @@ def test_todays_draw_is_verified_once_the_page_moves_on() -> None:
 
 
 def test_a_two_group_threshold_asks_every_source_from_the_start() -> None:
-    """Nguồn chính đủ 27 ô vẫn chỉ là một nhóm: ngưỡng 2 phải hỏi cả dự phòng, nếu không
-    vòng thăm dò chạy tới hạn chót mà không bao giờ xác minh được."""
     full = _full_prize_map()
     primary, backup = FakeSource("xoso.vn", [full]), FakeSource("du-phong.vn", [full])
     clock = FakeClock(datetime(2026, 9, 7, 18, 33, tzinfo=TZ))
@@ -342,7 +298,6 @@ def test_a_two_group_threshold_asks_every_source_from_the_start() -> None:
 
 
 def test_polling_stops_the_moment_all_27_are_verified() -> None:
-    """Điểm mấu chốt về chi phí: xong lúc nào thoát lúc đó."""
     full = _full_prize_map()
     empty = {k: [] for k in PRIZE_ORDER}
     script = [empty, empty, full, full, full]
@@ -357,7 +312,6 @@ def test_polling_stops_the_moment_all_27_are_verified() -> None:
 
 
 def test_polling_waits_until_the_window_opens() -> None:
-    """Chạy lúc 17:50 thì không nên nã yêu cầu vào trang chắc chắn chưa có số."""
     full = _full_prize_map()
     sources = [FakeSource("a.vn", [full]), FakeSource("b.vn", [full])]
     clock = FakeClock(datetime(2026, 9, 7, 17, 50, tzinfo=TZ))
@@ -380,7 +334,6 @@ def test_polling_does_not_wait_when_started_inside_the_window() -> None:
 
 
 def test_polling_gives_up_at_the_deadline() -> None:
-    """Không bao giờ giữ runner vô hạn khi nguồn không bao giờ đủ số."""
     empty = {k: [] for k in PRIZE_ORDER}
     sources = [FakeSource("a.vn", [empty]), FakeSource("b.vn", [empty])]
     clock = FakeClock(datetime(2026, 9, 7, 18, 15, tzinfo=TZ))
@@ -394,7 +347,6 @@ def test_polling_gives_up_at_the_deadline() -> None:
 
 
 def test_polling_never_sleeps_past_the_deadline() -> None:
-    """Ngủ 90 giây khi chỉ còn 30 giây tới hạn là vượt hạn một cách vô hình."""
     empty = {k: [] for k in PRIZE_ORDER}
     sources = [FakeSource("a.vn", [empty])]
     clock = FakeClock(datetime(2026, 9, 7, 19, 29, tzinfo=TZ))
@@ -408,10 +360,9 @@ def test_polling_never_sleeps_past_the_deadline() -> None:
 
 
 def test_partial_progress_is_reported_even_on_failure() -> None:
-    """Trả về 20/27 khác hẳn trả về 0/27 khi đi chẩn đoán."""
     full = _full_prize_map()
     partial = dict(full)
-    partial["prize7"] = []          # thiếu 4 ô
+    partial["prize7"] = []
     sources = [FakeSource("a.vn", [partial]), FakeSource("b.vn", [partial])]
     clock = FakeClock(datetime(2026, 9, 7, 18, 15, tzinfo=TZ))
 
@@ -424,7 +375,6 @@ def test_partial_progress_is_reported_even_on_failure() -> None:
 
 
 def test_max_rounds_is_a_backstop_against_a_broken_clock() -> None:
-    """Nếu đồng hồ đứng yên thì hạn chót không bao giờ tới; cần chốt chặn."""
     empty = {k: [] for k in PRIZE_ORDER}
     sources = [FakeSource("a.vn", [empty])]
     frozen = datetime(2026, 9, 7, 18, 15, tzinfo=TZ)
@@ -447,24 +397,13 @@ def test_outcome_serialises_to_plain_json_types() -> None:
     clock = FakeClock(datetime(2026, 9, 7, 18, 15, tzinfo=TZ))
     outcome = poll_until_complete(_cfg(), sources=sources, sleeper=clock.sleep, clock=clock)
 
-    json.dumps(outcome.to_dict(), ensure_ascii=False)  # không được ném
-
-
-# --- Nhật ký thời gian ----------------------------------------------------
+    json.dumps(outcome.to_dict(), ensure_ascii=False)
 
 
 def test_log_stamp_carries_both_timezones() -> None:
-    """GitHub báo cáo theo UTC, người đọc ở VN đọc ICT. Ghi một cái là mơ hồ."""
     text = stamp(datetime(2026, 9, 7, 18, 15, 0, tzinfo=TZ))
     assert "18:15:00 ICT" in text
     assert "11:15:00 UTC" in text
-
-
-# --- Quan sát được lỗi mạng ------------------------------------------------
-#
-# sources._request_page bắt mọi ngoại lệ rồi trả về chuỗi rỗng. Nếu lớp thăm
-# dò chỉ nhìn giá trị trả về thì "bị chặn 403", "DNS hỏng" và "trang chưa
-# đăng số" trông giống hệt nhau — tất cả đều ra 0 ô.
 
 
 def test_wrapper_records_a_network_error_it_reraises() -> None:
@@ -477,7 +416,6 @@ def test_wrapper_records_a_network_error_it_reraises() -> None:
 
 
 def test_wrapper_records_a_non_200_status() -> None:
-    """429 và 5xx trong khung cao điểm là lý do phổ biến nhất khiến số chưa về."""
     wrapper = _TimeoutCappedSession(_RecordingSession(status=429), 8.0)
     wrapper.get("http://x")
     assert wrapper.last_error == "HTTP 429"
@@ -491,7 +429,6 @@ def test_wrapper_records_no_error_on_success() -> None:
 
 
 class _SilentlyFailingSource:
-    """Bắt chước sources._request_page: nuốt lỗi mạng, trả về bản đồ rỗng."""
 
     name = "im-lặng.vn"
 
@@ -504,7 +441,6 @@ class _SilentlyFailingSource:
 
 
 def test_a_silently_swallowed_error_still_reaches_the_stats(monkeypatch) -> None:
-    """Đây là lỗ hổng chẩn đoán thật: nguồn nuốt lỗi, thống kê báo error=None."""
     from ingest import fetch_results as mod
 
     monkeypatch.setattr(
@@ -515,14 +451,7 @@ def test_a_silently_swallowed_error_still_reaches_the_stats(monkeypatch) -> None
     assert "OSError" in stats[0]["error"]
 
 
-# --- Thử lại có lùi mũ ----------------------------------------------------
-#
-# 429 và 5xx là chuyện thường trong khung 18:15-18:40 khi cả nước cùng vào
-# xem. Bỏ nguồn ngay lần hỏng đầu là mất nó cho cả vòng thăm dò.
-
-
 class _FlakySession:
-    """Hỏng ``fail_times`` lần đầu rồi mới thành công."""
 
     def __init__(self, fail_times: int, status: int = 503, boom: Exception | None = None,
                  retry_after: str | None = None) -> None:
@@ -563,7 +492,6 @@ def test_retries_a_transient_server_error_then_succeeds() -> None:
 
 
 def test_retries_rate_limiting() -> None:
-    """429 lúc cao điểm là lý do phổ biến nhất khiến một nguồn im lặng."""
     inner = _FlakySession(fail_times=1, status=429)
     session, _ = _wrap(inner)
     assert session.get("http://x").status_code == 200
@@ -572,7 +500,6 @@ def test_retries_rate_limiting() -> None:
 
 @pytest.mark.parametrize("status", [403, 404, 410])
 def test_does_not_retry_a_permanent_error(status) -> None:
-    """Thử lại 403/404 chỉ tốn thời gian: câu trả lời sẽ y hệt."""
     inner = _FlakySession(fail_times=5, status=status)
     session, naps = _wrap(inner)
     assert session.get("http://x").status_code == status
@@ -600,15 +527,12 @@ def test_backoff_grows_exponentially() -> None:
     inner = _FlakySession(fail_times=99, status=503)
     session, naps = _wrap(inner, max_attempts=4, backoff_base=1.0, backoff_cap=100.0)
     session.get("http://x")
-    # Có nhiễu nên so theo khoảng: lần thứ n nằm trong [0.5, 1.0] * 2^(n-1).
     assert 0.5 <= naps[0] <= 1.0
     assert 1.0 <= naps[1] <= 2.0
     assert 2.0 <= naps[2] <= 4.0
 
 
 def test_backoff_is_jittered_not_a_fixed_ladder() -> None:
-    """Các nguồn chạy song song; cùng hỏng rồi cùng chờ đúng một khoảng thì
-    lần thử sau lại dội vào cùng thời điểm máy chủ đang quá tải."""
     seen = set()
     for _ in range(12):
         inner = _FlakySession(fail_times=99, status=503)
@@ -619,7 +543,6 @@ def test_backoff_is_jittered_not_a_fixed_ladder() -> None:
 
 
 def test_backoff_respects_retry_after_but_caps_it() -> None:
-    """Có nơi trả Retry-After hàng trăm giây; chờ chừng đó thì hết cả kỳ quay."""
     inner = _FlakySession(fail_times=99, status=429, retry_after="600")
     session, naps = _wrap(inner, max_attempts=2, backoff_base=0.5, backoff_cap=4.0)
     session.get("http://x")
@@ -627,13 +550,11 @@ def test_backoff_respects_retry_after_but_caps_it() -> None:
 
 
 def test_retry_budget_must_fit_inside_the_poll_interval() -> None:
-    """Ngân sách xấu nhất vượt chu kỳ thăm dò thì một nguồn chậm nuốt trọn
-    vòng và vòng kế tiếp bị trượt."""
     with pytest.raises(ValueError, match="ngân sách thử lại"):
         PollConfig(
             target=TARGET,
             request_timeout=8.0,
-            max_attempts=20,          # 160s
+            max_attempts=20,
             interval_seconds=(60.0, 90.0),
         )
 
@@ -644,11 +565,6 @@ def test_default_config_has_a_feasible_retry_budget() -> None:
 
 
 class _RequestingSource:
-    """Nguồn có THỰC SỰ gửi yêu cầu, rồi trả về một kỳ quay đầy đủ.
-
-    FakeSource không gọi ``http.get`` nên số lần thử của nó luôn là 0 — đúng
-    nhưng vô dụng cho phép kiểm này.
-    """
 
     name = "co-goi.vn"
 
@@ -658,7 +574,6 @@ class _RequestingSource:
 
 
 def test_attempt_count_reaches_the_stats_for_diagnosis(monkeypatch) -> None:
-    """Biết một nguồn phải thử 3 lần mới xong là tín hiệu nó đang chật vật."""
     from ingest import fetch_results as mod
 
     monkeypatch.setattr(mod, "build_session", lambda *a, **k: _FlakySession(fail_times=2, status=503))
@@ -668,16 +583,12 @@ def test_attempt_count_reaches_the_stats_for_diagnosis(monkeypatch) -> None:
 
 
 def test_a_source_that_never_requests_reports_zero_attempts() -> None:
-    """0 nghĩa là "không gửi yêu cầu nào", khác hẳn "thử 1 lần" — giữ được
-    phân biệt đó thì nhật ký mới đọc được."""
     full = _full_prize_map()
     _, _, stats = poll_once([FakeSource("a.vn", [full])], TARGET, min_agreement=1)
     assert stats[0]["attempts"] == 0
 
 
 def test_a_start_after_the_deadline_still_polls_once() -> None:
-    """Bộ lập lịch của GitHub trễ 4-8 giờ: lượt nổ lúc 21:00 phải lấy được kỳ
-    đã xong, thay vì thoát mà không gọi nguồn lần nào."""
     full = _full_prize_map()
     sources = [FakeSource("a.vn", [full]), FakeSource("b.vn", [full])]
     clock = FakeClock(datetime(2026, 9, 7, 21, 0, tzinfo=TZ))
@@ -702,7 +613,6 @@ def test_a_late_start_that_finds_no_result_does_not_keep_polling() -> None:
 
 
 def test_the_command_line_reads_the_previous_draw_from_the_ledger(tmp_path, monkeypatch) -> None:
-    """Chốt "kỳ trước" chỉ có tác dụng nếu ``main`` thật sự nạp kỳ ấy từ sổ chuẩn."""
     from ingest import fetch_results as mod
 
     full = _full_prize_map()

@@ -47,13 +47,6 @@ def test_quick_select_renders_top_numbers_from_prediction_rows() -> None:
 
 
 def test_quick_select_has_explicit_empty_state_when_no_predictions() -> None:
-    """Trạng thái rỗng phải nói vì sao trống, không đổ lỗi cho dữ liệu.
-
-    Thông điệp cũ bảo người đọc "hãy chạy lại bước tạo dữ liệu đường cầu". Với
-    Đặc Biệt thì rỗng là trạng thái đúng và thường gặp — tỉ lệ nền 1% khiến xác suất
-    trúng ba kỳ liên tiếp chỉ là 1e-6 — nên câu đó hướng người đọc đi sửa một
-    thứ không hỏng.
-    """
     html = _render_quick_select([])
 
     assert 'aria-label="Danh sách chọn nhanh"' not in html

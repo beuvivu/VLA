@@ -1,10 +1,3 @@
-"""Mắt xích giữa các workflow phải trỏ vào thứ có thật, và bản đồ vận hành phải khớp YAML.
-
-GitHub im lặng với cả ba lỗi dưới đây: `workflow_run` theo một tên không ai mang thì không bao giờ
-chạy; gọi API `actions/workflows/<tệp>/dispatches` sau khi tệp đổi tên trả lỗi trong log của một
-bước giữa chừng; hai workflow kích hoạt lẫn nhau thì chạy mãi. Bản đồ
-`documentation/operations/workflow-map.md` dựng từ cùng mô hình (`scripts/ops/workflow_map.py`).
-"""
 from __future__ import annotations
 
 import importlib.util
@@ -15,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("workflow_map", ROOT / "scripts/ops/workflow_map.py")
 MAP = importlib.util.module_from_spec(SPEC)
-sys.modules["workflow_map"] = MAP  # dataclass cần module đã đăng ký
+sys.modules["workflow_map"] = MAP
 SPEC.loader.exec_module(MAP)
 
 
@@ -35,7 +28,6 @@ def _write(folder: Path, file: str, body: str) -> None:
 
 
 def test_the_link_rules_catch_each_kind_of_break(tmp_path):
-    """Ghim chính LUẬT trên mẫu dựng sẵn: tập workflow rỗng hay glob hỏng không được làm phép kiểm xanh."""
     _write(tmp_path, "source.yml", "name: Nguồn\non:\n  workflow_dispatch:\njobs: {}\n")
     _write(tmp_path, "follower.yml", "name: Theo\non:\n  workflow_run:\n    workflows: [Nguồn]\n    types: [completed]\njobs: {}\n")
     _write(tmp_path, "caller.yml", "name: Gọi\non: push\njobs:\n  a:\n    steps:\n"
@@ -48,7 +40,6 @@ def test_the_link_rules_catch_each_kind_of_break(tmp_path):
     _write(tmp_path, "closed.yml", "name: Đóng\non: push\njobs: {}\n")
     _write(tmp_path, "needs-dispatch.yml", "name: Cần\non: push\njobs:\n  a:\n    steps:\n"
                                            "      - run: curl $API/actions/workflows/closed.yml/dispatches\n")
-    # Ping theo Pong (workflow_run: Pong → Ping), Ping gọi lại Pong qua API (Ping → Pong): vòng.
     _write(tmp_path, "ping.yml", "name: Ping\non:\n  workflow_run:\n    workflows: [Pong]\njobs:\n  a:\n    steps:\n"
                                  "      - run: curl $API/actions/workflows/pong.yml/dispatches\n")
     _write(tmp_path, "pong.yml", "name: Pong\non:\n  workflow_dispatch:\njobs: {}\n")
@@ -60,7 +51,6 @@ def test_the_link_rules_catch_each_kind_of_break(tmp_path):
 
 
 def test_every_external_timer_event_is_documented_for_the_owner():
-    """Bộ hẹn giờ ngoài do chủ dự án cấu hình tay: loại sự kiện nào workflow nghe phải có trong tài liệu."""
     docs = "".join((ROOT / "documentation/operations" / name).read_text(encoding="utf-8")
                    for name in ("scheduling.md", "on-time-trigger.md"))
     types = {kind for w in MAP.load().values() for kind in w.dispatch_types}

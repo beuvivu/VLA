@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""Flatten matrix DOM + virtualize off-screen matrices (IntersectionObserver).
-
-Hydrator lives in docs/assets/matrix-virt.js (RAF batch, recycle, delegated clicks).
-"""
 from __future__ import annotations
 
 import html as html_lib
@@ -167,7 +163,6 @@ def pack_virt_payloads(html: str) -> str:
         try:
             payloads[key] = json.loads(html_lib.unescape(m.group(2)))
         except json.JSONDecodeError as exc:
-            # Ma trận rỗng thay cho dữ liệu hỏng: phải nói ra, nếu không trang mất số mà không ai biết.
             print(f"[WARN] data-virt-payload {key} không phải JSON hợp lệ: {exc}")
             payloads[key] = []
         pre = re.sub(r'\s*data-virt-id="[^"]*"', '', m.group(1))

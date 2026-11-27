@@ -1,5 +1,3 @@
-"""Cùng một bảng giải phải giữ đủ dữ liệu kể cả trước khi JavaScript chạy."""
-
 from bs4 import BeautifulSoup
 
 from pages.build_traditional_results import embedded_payload, render_page
@@ -9,7 +7,6 @@ ENCODED = "2026-09-26" + "00001" + "00000" + "0000200003" + "00004" * 6 + "0005"
 
 
 def test_the_traditional_page_has_all_27_prizes_before_javascript() -> None:
-    """Bỏ fallback hoặc ép số về integer sẽ làm mất ô hay mất số 0 đầu."""
     page = render_page(embedded_payload([ENCODED], generated="x"))
     soup = BeautifulSoup(page, "html.parser")
     values = [node.get_text() for node in soup.select("#tr-results .tr-number")]

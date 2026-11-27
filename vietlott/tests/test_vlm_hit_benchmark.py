@@ -1,4 +1,3 @@
-"""Giao thức benchmark: dữ liệu đóng băng, chia đoạn, nhân quả, chấm đúng mô hình, luật đề bạt."""
 import json
 import shutil
 from copy import deepcopy
@@ -16,7 +15,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _synthetic(t: int, n: int = 45, k: int = 6, hot: float = 0.0, seed: int = 0) -> Series:
-    """Lịch sử kiểu Mega; ``hot`` > 0 cài tín hiệu thật: sáu số đầu có log-trọng số +hot."""
     from vietlott_engine.game_theory.popularity import sample_product_subsets
 
     rng = np.random.default_rng(seed)
@@ -32,7 +30,6 @@ def _synthetic(t: int, n: int = 45, k: int = 6, hot: float = 0.0, seed: int = 0)
 
 
 def test_the_manifest_hashes_every_project_module_that_ran():
-    """Thiếu module p DM hay Holm thì đổi kết luận mà manifest không đổi."""
     import hashlib
 
     manifest = hb.source_manifest()
@@ -94,7 +91,6 @@ def test_rebuilt_legacy_law_scores_exactly_what_the_engine_scores():
 
 
 def test_both_ml_arms_score_the_ticket_their_own_law_would_issue(monkeypatch):
-    """Nhánh ML + τ từng chấm 6 số biên cao nhất, không phải Law.top của luật đã hiệu chuẩn."""
     from vietlott_engine.forecast.data import SetSpec
     from vlm.forecast.distribution import Law
 
@@ -120,7 +116,6 @@ def test_both_ml_arms_score_the_ticket_their_own_law_would_issue(monkeypatch):
 
 @pytest.mark.parametrize('multi_agent', [False, True])
 def test_ml_benchmark_learns_feedback_only_for_later_forecasts(multi_agent):
-    """Đổi nhãn kỳ đầu holdout phải đổi law kỳ sau, không đổi chính law đã phát trước nhãn."""
     from vlm.forecast.pipeline import MLConfig
 
     series = _synthetic(8)
@@ -144,7 +139,7 @@ def test_power_bonus_is_scored_separately_and_never_counted_as_a_main_hit():
     row = np.zeros(55)
     row[[0, 1, 2, 3, 4, 5]] = 1
     record = hb._record(1, '2026-01-01', row, 7, -15.0, -3.9, np.full(55, 6 / 55), [1, 2, 3, 7, 8, 9], spec)
-    assert record['hits'] == 3                       # số 7 là số đặc biệt, không cộng vào H
+    assert record['hits'] == 3
     assert record['bonus_gain'] == pytest.approx(-3.9 - ch.fair_log_likelihood(55, 6, True)[1])
 
 
@@ -192,7 +187,6 @@ def _both(**kwargs) -> dict:
 def test_promotion_requires_every_registered_condition_and_corrects_for_multiplicity():
     win = hb.promotion_decision(_both(gain=0.01, p=1e-6))
     assert win['verdict'] == 'challenger_eligible'
-    # p = 0,01 đơn lẻ < α nhưng Holm trên 8 ứng viên × sản phẩm đẩy lên 0,08.
     assert hb.promotion_decision(_both(gain=0.01, p=0.01))['verdict'] == 'keep_production'
     assert not hb.promotion_decision(_both(gain=0.01, p=1e-6, incumbents_beaten=False))['mega645:shrink']['eligible_for_prospective_trial']
     assert not hb.promotion_decision(_both(gain=0.01, p=1e-6, brier=0.2))['mega645:shrink']['eligible_for_prospective_trial']
@@ -200,7 +194,6 @@ def test_promotion_requires_every_registered_condition_and_corrects_for_multipli
 
 
 def test_a_partial_run_keeps_the_full_holm_family_and_cannot_promote():
-    """Chạy một sản phẩm: họ Holm vẫn 8 giả thuyết (p = 0,01 → 0,08), và lượt thiếu không đề bạt ai."""
     partial = hb.promotion_decision({'mega645': _fake_results(0.01, 0.01)})
     assert partial['verdict'] == 'incomplete_run'
     assert partial['mega645:shrink']['holm_p_vs_fair'] == pytest.approx(0.08)
@@ -212,10 +205,9 @@ def test_a_partial_run_keeps_the_full_holm_family_and_cannot_promote():
 
 
 def test_the_causal_temperature_is_fitted_on_the_stream_that_is_scored():
-    """τ của challenger nhân quả phải chỉnh trên ĐÚNG chuỗi η được chấm (học lại từ warmup)."""
     series = _synthetic(1000, hot=0.7, seed=3)
     split = hb.make_split(len(series))
-    assert (split.dev_end - split.warmup) % hb.PROTOCOL['refit_every'] != 0   # lịch lệch nếu học lại từ dev_end
+    assert (split.dev_end - split.warmup) % hb.PROTOCOL['refit_every'] != 0
     chosen = hb.select_challengers(series, split)
     causal = chosen['causal']
     assert causal['groups']
@@ -237,7 +229,6 @@ def _load_artifacts(directory: Path) -> dict:
 
 
 def test_the_committed_artifacts_were_produced_under_the_current_protocol():
-    """Đổi PROTOCOL mà không chạy lại thì báo cáo đã commit không còn là số đo của giao thức đang khai."""
     assert hb.protocol_mismatches(_load_artifacts(ROOT / 'reports' / 'vlm' / 'hit-benchmark')) == []
 
 

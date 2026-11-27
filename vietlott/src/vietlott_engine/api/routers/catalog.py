@@ -1,9 +1,3 @@
-"""All seven Vietlott products: catalogue, data coverage, draws, odds, randomness, sync.
-
-Mega 6/45, Power 6/55 and Lotto 5/35 have their full feature set under ``/games/{game}``;
-this router adds Keno, Bingo18, Max 3D (3D+) and Max 3D Pro.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -54,7 +48,6 @@ def _code(product: str, non_matrix: bool = True) -> ProductCode:
 
 @router.get("", response_model=list[ProductEntry])
 def catalogue(state: AppState = Depends(get_state)) -> list[ProductEntry]:
-    """Every Vietlott product with its draw rules, schedule and the data stored for it."""
     out = []
     for code, info in PRODUCT_INFO.items():
         entry = ProductEntry(
@@ -83,27 +76,23 @@ def catalogue(state: AppState = Depends(get_state)) -> list[ProductEntry]:
 
 @router.get("/keno/odds", response_model=KenoOdds)
 def keno() -> KenoOdds:
-    """Exact hypergeometric odds and return to player of every Keno bậc and side bet."""
     bacs, sides = keno_odds()
     return KenoOdds(bac=bacs, side_bets=sides, note="Bảng giải tổng hợp từ đại lý/báo chí; mục verified=false có các phiên bản khác nhau (RTP từng phiên bản ở alternatives_rtp / variants).")
 
 
 @router.get("/bingo18/odds", response_model=list[BingoBetOdds])
 def bingo18() -> list[BingoBetOdds]:
-    """Exact odds and return to player of every Bingo18 bet (216 equally likely outcomes)."""
     return bingo18_odds()
 
 
 @router.get("/max3d/digit-check", response_model=DigitReplication)
 async def max3d_digit_check(state: AppState = Depends(get_state)) -> DigitReplication:
-    """Strongest digit bias found in Max 3D, tested out of sample on Max 3D Pro."""
     a, b = state.product_history(ProductCode.MAX3D), state.product_history(ProductCode.MAX3D_PRO)
     return await asyncio.to_thread(lambda: state._cached("rand:digit", lambda: digit_replication(a, b)))
 
 
 @router.get("/{product}/draws")
 def draws(product: str, limit: int = Query(50, ge=1, le=5000), state: AppState = Depends(get_state)) -> dict:
-    """Most recent draws, newest first (Max 3D numbers as 3-digit strings, tiers 2/4/6/8)."""
     code = _code(product)
     h = state.product_history(code)
     rows = []
@@ -116,7 +105,6 @@ def draws(product: str, limit: int = Query(50, ge=1, le=5000), state: AppState =
 
 @router.get("/{product}/randomness", response_model=ProductRandomnessReport)
 async def randomness(product: str, state: AppState = Depends(get_state)) -> ProductRandomnessReport:
-    """Goodness-of-fit and independence tests against the exact law of a fair draw (BH-adjusted)."""
     code = _code(product)
     h = state.product_history(code)
     return await asyncio.to_thread(lambda: state._cached(f"rand:{code.value}", lambda: product_randomness(h)))
@@ -124,7 +112,6 @@ async def randomness(product: str, state: AppState = Depends(get_state)) -> Prod
 
 @router.post("/{product}/sync")
 async def sync(product: str, body: ProductSyncRequest | None = None, state: AppState = Depends(get_state)) -> dict:
-    """Fetch new draws (mirror / canonical / vietlott.vn) into the local product store."""
     from vlm.updates.service import sync_product
 
     code = _code(product)

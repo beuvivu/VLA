@@ -1,12 +1,3 @@
-"""Gap (khoảng vắng) analysis.
-
-Under H0 each number appears in a draw independently with p = k/n, so the gap
-between appearances is Geometric(p) and the hazard — P(appears now | absent for g
-draws) — is constant. A rising hazard is exactly what "overdue number" systems
-assume; ``hazard_table`` measures it directly so the claim can be checked instead
-of believed.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -23,7 +14,7 @@ class NumberGap(BaseModel):
     current_gap: int
     mean_gap: float | None
     max_gap: int
-    tail_probability: float  # P(gap >= current_gap) under H0 — descriptive, NOT predictive
+    tail_probability: float
 
 
 class HazardRow(BaseModel):
@@ -45,7 +36,6 @@ class GapReport(BaseModel):
 
 
 def inter_arrival_gaps(h: DrawHistory) -> dict[int, np.ndarray]:
-    """Gaps (in draws, ≥1) between consecutive appearances, per number."""
     out: dict[int, np.ndarray] = {}
     for i in range(h.n):
         idx = np.flatnonzero(h.incidence[:, i])
@@ -54,7 +44,6 @@ def inter_arrival_gaps(h: DrawHistory) -> dict[int, np.ndarray]:
 
 
 def current_gaps(h: DrawHistory) -> np.ndarray:
-    """Draws since last appearance (0 = appeared in the latest draw; D if never)."""
     d = len(h)
     last = np.full(h.n, -1)
     rows, cols = np.nonzero(h.incidence)
@@ -63,11 +52,10 @@ def current_gaps(h: DrawHistory) -> np.ndarray:
 
 
 def hazard_table(h: DrawHistory, max_gap: int = 30) -> list[HazardRow]:
-    """Empirical P(appear at next draw | current gap = g) pooled over numbers and time."""
     d, n = h.incidence.shape
     at_risk = np.zeros(max_gap + 2)
     events = np.zeros(max_gap + 2)
-    gap = np.full(n, -1)  # unknown until first appearance
+    gap = np.full(n, -1)
     for t in range(d):
         known = gap >= 0
         b = np.minimum(gap[known], max_gap + 1)

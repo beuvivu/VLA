@@ -1,26 +1,3 @@
-"""Import vietlott.vn pages that a person saved after passing the site's human check.
-
-vietlott.vn is protected by Cloudflare's "verify you are human" check. The engine does not
-try to solve or evade it. Instead a person browses the site normally, passes the check, and
-hands the engine what the browser already received:
-
-* **Saved pages** — Ctrl+S in the browser: ``.html`` ("Webpage, HTML only" / "complete") or
-  ``.mhtml`` ("Webpage, single file", keeps what the page rendered with JavaScript).
-* **A network log** (``.har``) — DevTools ▸ Network, opened before loading the pages, then the
-  toolbar's download-arrow button "Export HAR (sanitized)…" (Chrome/Edge 130+; older versions:
-  right-click ▸ "Save all as HAR with content"; Firefox: right-click ▸ "Save All As HAR"), while
-  paging through a results list: every AjaxPro answer (``{"value": {"HtmlContent": …}}``)
-  and every detail page visited is inside.
-
-Pages are classified by their URL (Chrome writes ``<!-- saved from url=… -->`` into saved
-HTML; MHTML and HAR keep the URL), then parsed with the same parsers as the live crawler:
-results lists and AjaxPro answers → draws; draw-detail pages → draws with prize tables
-(Mega / Power / Lotto) and, for Keno, the prize cells of every bậc and side bet.
-
-The parsers were written against the published structure of the site; a page they cannot
-read is reported with the reason instead of being skipped silently.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -37,7 +14,7 @@ from bs4 import BeautifulSoup
 
 from vietlott_engine.core.products import ProductCode
 
-DETAIL_PATHS: list[tuple[str, ProductCode]] = [  # order matters: max-3dpro before max-3d
+DETAIL_PATHS: list[tuple[str, ProductCode]] = [
     ("/ket-qua-trung-thuong/645", ProductCode.MEGA_645),
     ("/ket-qua-trung-thuong/655", ProductCode.POWER_655),
     ("/ket-qua-trung-thuong/535", ProductCode.LOTTO_535),
@@ -64,7 +41,7 @@ MATRIX = {ProductCode.MEGA_645: "mega645", ProductCode.POWER_655: "power655", Pr
 
 @dataclass
 class SavedDoc:
-    origin: str  # file (and HAR entry)
+    origin: str
     url: str | None
     body: str
     ajax: bool = False
@@ -73,12 +50,11 @@ class SavedDoc:
 
 @dataclass
 class PageImport:
-    """What the saved pages contain, per product."""
 
-    product_rows: dict[str, list[dict]] = field(default_factory=lambda: defaultdict(list))  # Keno, Bingo18, Max 3D/Pro/4D
-    canonical: dict[str, list[dict]] = field(default_factory=lambda: defaultdict(list))  # Mega/Power/Lotto (detail pages: + prizes)
-    keno_cells: list[dict] = field(default_factory=list)  # prize cells of Keno detail pages
-    pages: list[dict] = field(default_factory=list)  # one line per document: product, kind, rows, problem
+    product_rows: dict[str, list[dict]] = field(default_factory=lambda: defaultdict(list))
+    canonical: dict[str, list[dict]] = field(default_factory=lambda: defaultdict(list))
+    keno_cells: list[dict] = field(default_factory=list)
+    pages: list[dict] = field(default_factory=list)
     cloudflare_pages: list[str] = field(default_factory=list)
 
     def summary(self) -> dict:
@@ -93,7 +69,6 @@ class PageImport:
         }
 
 
-# ------------------------------------------------------------------ reading files
 def _saved_from(html: str) -> str | None:
     m = re.search(r"<!--\s*saved from url=\(\d+\)(\S+?)\s*-->", html[:2000], re.I)
     if m:
@@ -113,7 +88,7 @@ def read_mhtml(raw: bytes, origin: str) -> list[SavedDoc]:
         if part.get_content_type() == "text/html":
             raw_body = part.get_payload(decode=True) or b""
             charset = part.get_content_charset()
-            if not charset:  # Chrome may omit it: use the page's own <meta charset>, else UTF-8
+            if not charset:
                 m = re.search(rb"<meta[^>]+charset=[\"']?([\w-]+)", raw_body[:4000], re.I)
                 charset = m.group(1).decode("ascii") if m else "utf-8"
             try:
@@ -146,7 +121,6 @@ def read_har(text: str, origin: str) -> list[SavedDoc]:
 
 
 def har_diagnosis(text: str) -> str:
-    """Why a HAR held no vietlott.vn page: say what it does hold and how to record one that works."""
     entries = json.loads(text).get("log", {}).get("entries", [])
     on_site = [e for e in entries if "vietlott.vn" in e.get("request", {}).get("url", "")]
     with_body = [e for e in on_site if (e.get("response", {}).get("content", {}) or {}).get("text")]
@@ -160,7 +134,6 @@ def har_diagnosis(text: str) -> str:
 
 
 def load_documents(path: Path | str) -> tuple[list[SavedDoc], list[dict]]:
-    """Every saved page under ``path`` (a file or a folder, recursively)."""
     p = Path(path)
     files = [p] if p.is_file() else sorted(x for x in p.rglob("*") if x.is_file())
     docs, unreadable = [], []
@@ -183,9 +156,7 @@ def load_documents(path: Path | str) -> tuple[list[SavedDoc], list[dict]]:
     return docs, unreadable
 
 
-# ------------------------------------------------------------------ classification
 def classify(doc: SavedDoc) -> tuple[ProductCode | None, str]:
-    """(product, kind) with kind ∈ {"ajax", "detail", "list", "unknown"}."""
     url = (doc.url or "").lower()
     if doc.ajax or "/ajaxpro/" in url:
         m = re.search(r"webparts\.([a-z0-9]+),", url)
@@ -207,14 +178,12 @@ def _draw_id_from_url(url: str | None) -> int | None:
     return int(v) if v and v.isdigit() else None
 
 
-# ------------------------------------------------------------------ detail-page readers
 def _number_tokens(soup: BeautifulSoup, width: int | None) -> list[str]:
-    """Number tokens inside the result boxes (``bong_tron`` / ``day_so`` / ``ket_qua`` elements)."""
     boxes = soup.select("[class*=day_so], [class*=ket_qua], [class*=bong_tron]")
     out: list[str] = []
     for el in boxes:
         if el.find(class_=re.compile("bong_tron")) is not None:
-            continue  # take the innermost elements only
+            continue
         t = el.get_text("", strip=True)
         if re.fullmatch(r"\d+", t) and (width is None or len(t) == width):
             out.append(t)
@@ -222,8 +191,6 @@ def _number_tokens(soup: BeautifulSoup, width: int | None) -> list[str]:
 
 
 def keno_cells(html: str) -> list[dict]:
-    """Prize cells of a Keno detail page: bậc (from the largest 'Trùng NN' of its table),
-    hits and value; side bets by label."""
     soup = BeautifulSoup(html, "html.parser")
     cells = []
     for ti, table in enumerate(soup.find_all("table")):
@@ -271,7 +238,7 @@ def parse_detail(doc: SavedDoc, product: ProductCode) -> tuple[list[dict], str |
             "source_url": doc.url,
             "source_sha256": det["source_sha256"],
             "source_pdf_url": det["source_pdf_url"],
-            "data_source": None,  # official page
+            "data_source": None,
         }
         return [rec], None if det["prizes"] else "no prize table found (draw kept)"
     if product == ProductCode.KENO:
@@ -286,7 +253,7 @@ def parse_detail(doc: SavedDoc, product: ProductCode) -> tuple[list[dict], str |
         return [{"id": did, "date": d, "result": vals}], None
     width, n = (4, 6) if product == ProductCode.MAX4D else (3, 20)
     toks = _number_tokens(soup, width)
-    if len(toks) < n:  # digits rendered one per ball
+    if len(toks) < n:
         digits = _number_tokens(soup, 1)
         toks = ["".join(digits[i : i + width]) for i in range(0, len(digits) - width + 1, width)]
     if not did or not d or len(toks) < n:
@@ -359,9 +326,7 @@ def import_pages(path: Path | str, product: ProductCode | None = None) -> PageIm
     return out
 
 
-# ------------------------------------------------------------------ verification
 def _upper_bound(k: int, n: int, conf: float = 0.95) -> float | None:
-    """One-sided Clopper–Pearson upper bound of a mismatch rate (k of n)."""
     if n == 0:
         return None
     from scipy import stats
@@ -370,7 +335,6 @@ def _upper_bound(k: int, n: int, conf: float = 0.95) -> float | None:
 
 
 def compare_products(imp: PageImport, store) -> dict:  # type: ignore[no-untyped-def]
-    """Saved official pages vs the engine's data (seed + store, unconfirmed included)."""
     from vietlott_engine.core.products import parse_product_rows
 
     out = {}
@@ -424,7 +388,6 @@ def compare_matrix(imp: PageImport, repository) -> dict:  # type: ignore[no-unty
 
 
 def compare_keno_cells(imp: PageImport) -> dict:
-    """Keno prize cells read from the pages vs the engine's table (shows the bậc 5 / 4-hit cell)."""
     from vietlott_engine.game_theory.fastgames import KENO_TABLE
 
     diffs, seen = [], 0

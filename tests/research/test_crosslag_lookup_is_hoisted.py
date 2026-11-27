@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Bảng tra ngày -> hàng phải dựng MỘT lần, không dựng lại cho từng luật.
-
-Bản trước dựng nó bên trong ``_next_payload``, tức mỗi luật một lần, dù nó chỉ
-phụ thuộc ``dates``. Profile trên 4 208 kỳ với 5 832 luật: dictcomp ấy chiếm
-106,2 trong 118,1 giây (90%), và ``DatetimeIndex.__iter__`` bị gọi 24 564 145
-lần. Sau khi nâng ra ngoài vòng lặp: 107 giây còn 7 giây, kết quả trùng khít.
-"""
 
 import numpy as np
 import pandas as pd
@@ -28,7 +21,6 @@ def test_the_lookup_maps_every_date_to_its_own_row() -> None:
 
 
 def test_the_lookup_normalises_so_a_timestamp_with_a_clock_still_matches() -> None:
-    """Chuẩn hoá phải giữ: mốc có giờ phút vẫn tra được."""
     stamps = pd.DatetimeIndex(["2015-01-01 13:45", "2015-01-02 07:00"])
     lookup = _date_row_lookup(stamps)
     assert lookup[pd.Timestamp("2015-01-01")] == 0
@@ -37,7 +29,6 @@ def test_the_lookup_normalises_so_a_timestamp_with_a_clock_still_matches() -> No
 
 @pytest.mark.parametrize("op", ["concat", "lon", "bo", "cham", "tong"])
 def test_passing_the_lookup_in_gives_the_same_answer_as_building_it_inside(op) -> None:
-    """Bất biến thật: nâng bảng tra ra ngoài KHÔNG được đổi kết quả."""
     dates = _dates(40)
     rng = np.random.default_rng(0)
     tails = rng.integers(0, 10, size=(40, 27)).astype(np.int16)
@@ -49,11 +40,6 @@ def test_passing_the_lookup_in_gives_the_same_answer_as_building_it_inside(op) -
 
 
 def test_it_builds_the_lookup_once_not_once_per_rule() -> None:
-    """Đếm số lần dựng bảng tra, không đo thời gian.
-
-    Đo thời gian ở đây sẽ là phép kiểm nhạy với máy chạy. Đếm số lần gọi nói
-    thẳng điều cần nói: bảng tra là công việc bất biến trong vòng lặp luật.
-    """
     from research import crosslag_positional_lab as lab
 
     dates = _dates(30)

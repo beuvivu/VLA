@@ -1,25 +1,5 @@
 from __future__ import annotations
 
-"""Chronological research lab for legacy cross-day positional rule families.
-
-This closes a real semantic gap between the old ``xoso`` positional library and
-VLA's current same-base-day path engine.  A rule may read digit A and digit B
-from *different calendar days* before the target date, then apply one of the
-legacy operators:
-
-``concat``  AB -> one Loto number
-``lon``     AB + BA -> a one/two-number Loto set
-``bo``      bóng/reverse family of AB -> a 4/8-number Loto set
-``cham``    digit A -> De contains A in either two-digit position
-``tong``    (A+B) mod 10 -> final digit of De
-
-Research safeguards:
-- exact calendar-day lag lookup, so missing dates cannot silently become t-1;
-- chronological train / validation / untouched holdout;
-- shape-matched chance baselines for each rule/day;
-- Benjamini-Hochberg FDR + Bonferroni across the full searched family;
-- no automatic connection to production prediction weights.
-"""
 
 import argparse
 import json
@@ -40,13 +20,10 @@ from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 Operator = Literal["concat", "lon", "bo", "cham", "tong"]
 
-#: Thứ tự của bảng quy tắc: qua cổng nghiên cứu trước, rồi độ nâng trên tập giữ lại, trên tập kiểm
-#: định, rồi q huấn luyện. Trang Phòng nghiên cứu hiện 10 dòng đầu theo đúng thứ tự này.
 LAB_ORDER: tuple[list[str], list[bool]] = (
     ["research_gate_pass", "holdout_lift", "validation_lift", "train_q_value_fdr"],
     [False, False, False, True],
 )
-#: Số dòng mỗi tiêu chí giữ lại trong bản cắt ghi vào git (phương án 3, 07-11-2026).
 CUT_ROWS = 100
 CUT_RULE = (
     f"Mọi quy tắc qua cổng nghiên cứu, cộng {CUT_ROWS} dòng đầu theo thứ tự của bảng, cộng {CUT_ROWS} "
@@ -127,8 +104,6 @@ def generate_rules(
         for lag_a, lag_b in lag_pairs:
             for i in range(n_positions):
                 for j in range(n_positions):
-                    # AB and BA are identical when the same digit is used from
-                    # the same source day; avoid a redundant 'lon' hypothesis.
                     if op == "lon" and i == j and lag_a == lag_b:
                         continue
                     rules.append(RuleSpec(op, i, j, lag_a, lag_b))
@@ -304,18 +279,6 @@ def _rule_series(
 
 
 def _date_row_lookup(dates: pd.DatetimeIndex) -> dict[pd.Timestamp, int]:
-    """Bảng tra ngày -> chỉ số hàng, dựng MỘT lần cho cả lượt quét.
-
-    Bản trước dựng bảng này bên trong ``_next_payload``, tức mỗi luật một lần.
-    Nhưng nó chỉ phụ thuộc ``dates`` — công việc bất biến trong vòng lặp.
-
-    Profile trên lịch sử 4 208 kỳ với 5 832 luật: dictcomp ấy chiếm 106,2 trong
-    118,1 giây (90%), và ``DatetimeIndex.__iter__`` bị gọi 24 564 145 lần — mỗi
-    luật duyệt lại trọn 4 208 mốc thời gian và dựng 4 208 ``pd.Timestamp``.
-
-    Chuẩn hoá theo vector một lượt rồi ghép bằng ``zip`` thay cho vòng lặp
-    Python: O(số luật · N) trở thành O(N + số luật).
-    """
     normalized = pd.DatetimeIndex(dates).normalize()
     return {timestamp: index for index, timestamp in enumerate(normalized)}
 
@@ -373,8 +336,6 @@ def evaluate_lab(
     all_lags = sorted({x for pair in lag_pairs for x in pair})
     source_index = {lag: _calendar_source_indices(dates, lag) for lag in all_lags}
 
-    # The rule itself has no fitted parameters, but we still reserve the early
-    # history as warmup and split the evaluated targets chronologically.
     first_eval = min(max(max(all_lags), int(warmup)), max(max(all_lags), len(two) - 45))
     eval_idx = np.arange(first_eval, len(two), dtype=np.int32)
     if len(eval_idx) < 30:
@@ -470,17 +431,6 @@ def evaluate_lab(
 
 
 def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
-    """Bản cắt của bảng quy tắc để ghi vào git, theo thứ tự `LAB_ORDER`.
-
-    Bản cắt giữ ba loại dòng:
-    - mọi quy tắc qua cổng nghiên cứu, dù nhiều tới đâu;
-    - `rows` dòng đầu theo thứ tự của bảng, tức đúng những dòng trang hiện;
-    - `rows` quy tắc có p huấn luyện nhỏ nhất, tức những dòng FDR xét trước tiên.
-
-    Bảng đầy đủ (5 832 dòng) vẫn được ghi ra đĩa và lên artifact, nhưng không vào git. Lý do: ranh giới
-    huấn luyện/kiểm định/giữ lại trượt theo lịch sử, nên gần như mọi số trong bảng đổi mỗi kỳ. Git
-    không lấy được delta, và đo ngày 06-11-2026 thì tệp ấy chiếm 15% phần tăng của kho.
-    """
     if table.empty:
         return table.copy()
     ordered = table.sort_values(LAB_ORDER[0], ascending=LAB_ORDER[1], ignore_index=True,
@@ -488,14 +438,11 @@ def cut_table(table: pd.DataFrame, rows: int = CUT_ROWS) -> pd.DataFrame:
     return cut_ranked(ordered, rows=rows, keep="research_gate_pass", smallest="train_p_value")
 
 
-#: Bảng đầy đủ: ra đĩa và lên artifact, nằm trong `.gitignore`.
 FULL_TABLE = "crosslag_rules.csv"
-#: Bản cắt (`cut_table`): git theo dõi, trang Phòng nghiên cứu đọc.
 CUT_TABLE = "crosslag_rules_top.csv"
 
 
 def write_outputs(table: pd.DataFrame, report: dict, out_dir: Path | str) -> tuple[Path, Path, Path]:
-    """Ghi bảng đầy đủ, bản cắt và báo cáo; báo cáo ghi thêm số dòng và luật của bản cắt."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     csv_path = out / FULL_TABLE
@@ -516,11 +463,6 @@ def run(
     ops: tuple[Operator, ...] = ("concat", "lon", "bo", "cham", "tong"),
     warmup: int = 180,
 ) -> tuple[Path, Path, Path]:
-    """Chạy phòng thí nghiệm và ghi ba tệp (`write_outputs`): bảng đầy đủ, bản cắt và báo cáo.
-
-    Bảng đầy đủ (`FULL_TABLE`) nằm trong `.gitignore`, và `update-data.yml` tải nó lên artifact. Bản
-    cắt (`CUT_TABLE`) là tệp git theo dõi và trang đọc.
-    """
     lot = Lottery()
     lot.load()
     two = lot.get_2_digits_data().sort_values("date", kind="stable").reset_index(drop=True)

@@ -1,10 +1,3 @@
-"""Ticket-selection strategies evaluated by the walk-forward backtester.
-
-Contract: ``fit`` and ``generate`` receive a detached, read-only prefix of the
-history containing only draws strictly before the draw being predicted. A strategy
-may keep internal state between calls but never receives future data.
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -22,7 +15,6 @@ from vietlott_engine.wheeling.cover import CoveringDesigner
 
 
 def gumbel_topk(logits: np.ndarray, k: int, n_tickets: int, rng: np.random.Generator) -> np.ndarray:
-    """Sample ``n_tickets`` k-subsets without replacement with P ∝ exp(logits) (Plackett–Luce)."""
     g = logits[None, :] + rng.gumbel(size=(n_tickets, logits.size))
     return np.sort(np.argpartition(-g, k, axis=1)[:, :k] + 1, axis=1)
 
@@ -33,15 +25,14 @@ class Strategy(ABC):
     min_history: int = 1
 
     def fit(self, history: DrawHistory) -> None:  # noqa: B027 - optional hook
-        """Called by the engine every ``refit_every`` draws."""
+        pass
 
     @abstractmethod
     def generate(self, history: DrawHistory, n_tickets: int, rng: np.random.Generator) -> np.ndarray:
-        """Return an (n_tickets, k) int array of 1-based numbers."""
+        pass
 
 
 class RandomStrategy(Strategy):
-    """Quick pick — the null benchmark every other strategy must beat."""
 
     name = "random"
 
@@ -51,7 +42,6 @@ class RandomStrategy(Strategy):
 
 
 class FrequencyStrategy(Strategy):
-    """Hot (most frequent) or cold (least frequent) numbers over a rolling window."""
 
     def __init__(self, mode: str = "hot", window: int = 100, pool_factor: float = 2.0) -> None:
         if mode not in {"hot", "cold"}:
@@ -67,7 +57,6 @@ class FrequencyStrategy(Strategy):
 
 
 class OverdueStrategy(Strategy):
-    """Numbers with the longest current absence ("gan"/overdue)."""
 
     name = "overdue"
 
@@ -110,7 +99,6 @@ class MarkovStrategy(Strategy):
 
 
 class GCNStrategy(Strategy):
-    """Samples tickets from the GCN's predicted inclusion probabilities."""
 
     name = "gcn"
     min_history = 120
@@ -143,7 +131,6 @@ class GCNStrategy(Strategy):
 
 
 class AntiPopularityStrategy(Strategy):
-    """Plays the least popular combinations (EV / jackpot-share optimiser)."""
 
     name = "anti_popularity"
 
@@ -162,7 +149,6 @@ class AntiPopularityStrategy(Strategy):
 
 
 class WheelStrategy(Strategy):
-    """Covering-design wheel over the ``pool_size`` hottest numbers (ignores n_tickets)."""
 
     def __init__(self, pool_size: int = 10, guarantee: int = 3, condition: int = 4, window: int = 100, seed: int = 0) -> None:
         self.pool_size, self.window = pool_size, window

@@ -1,25 +1,3 @@
-"""Chấm xác suất ĐÃ CÔNG BỐ với kết quả quay thật, và báo động khi rời vùng 0.
-
-Vì sao chấm artifact chứ không dựng lại
-=======================================
-
-``model_quality`` từng dựng lại tổ hợp từ ``data/evaluation/history/pred_<mode>.csv``.
-Bản dựng ấy bỏ qua bước hiệu chỉnh và tầng xếp chồng, tức là chấm một mô hình
-KHÁC mô hình người xem nhận: nó cho Đặc Biệt tới 25,9% và kỹ năng −2,0%, trong
-khi xác suất thật sự công bố cao nhất 1,28% và kỹ năng −0,03%. Mỗi ngày
-pipeline ghi đúng vector đã công bố vào
-``data/forecast/predict/predict_next_<mode>_all_<ngày>.csv`` TRƯỚC kỳ quay, nên chấm
-chính tệp ấy là phép đo không thể rò rỉ và không thể lệch khỏi production.
-
-Vì sao báo động cả khi "tốt hơn"
-================================
-
-Kỳ quay đã được kiểm là ngẫu nhiên. Kỹ năng ngoài mẫu nằm ngoài vùng 0 theo
-hướng NÀO cũng là tin cần người xem xét: tệ hơn là hồi quy; tốt hơn thì hoặc
-là tín hiệu thật đầu tiên — phải kiểm lại trước khi tin — hoặc là lỗi ghi
-ngày của artifact.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -36,21 +14,11 @@ from core.xsmb_domain import baseline_rate
 
 MODES: tuple[str, ...] = ("loto", "de")
 
-#: Tên tệp artifact đã công bố. Ngày trong tên là KỲ ĐÍCH, không phải ngày chạy.
 _ARTIFACT = re.compile(r"predict_next_(loto|de)_all_(\d{4}-\d{2}-\d{2})\.csv$")
 
-#: Số kỳ gần nhất mà bộ báo động xét.
 DEFAULT_WINDOW = 60
-#: Ít hơn ngần này kỳ thì chưa kết luận gì cả.
 MIN_DAYS = 20
-#: Ngưỡng z cho khoảng tin cậy hai phía. Phép kiểm chạy MỖI NGÀY trên cửa sổ
-#: trượt chồng lấn, nên 1,96 sẽ báo giả vài lần mỗi năm; 3,0 (≈99,7%) giữ báo
-#: giả hiếm mà vẫn bắt được một mô hình tệ đi thật.
 DEFAULT_Z = 3.0
-#: Lệch nhỏ hơn ngần này (0,0001%) không có ý nghĩa thực tế, dù khoảng tin
-#: cậy có hẹp tới đâu. Không có sàn này, một dự báo trùng đúng mốc cho kỹ năng
-#: ±1e-16 (nhiễu dấu phẩy động) với sai số chuẩn còn nhỏ hơn, và bộ theo dõi
-#: báo động giả — phép kiểm dựng sẵn đã bắt được đúng điều đó.
 MIN_EFFECT = 1e-6
 
 
@@ -63,16 +31,7 @@ def _outcomes(data_dir: Path) -> pd.DataFrame:
 def published_evaluation(
     data_dir: Path, mode: str
 ) -> tuple[list[str], np.ndarray, np.ndarray]:
-    """Vector xác suất đã công bố và nhãn thật của mọi kỳ đã quay.
-
-    Returns:
-        ``(ngày, P, Y)`` với ``P``, ``Y`` dạng ``(số kỳ, 100)``. LOTO: ``Y`` là
-        1 nếu con ấy về ít nhất một lần. Đặc Biệt: ``Y`` là one-hot của giải.
-    """
     empty = [], np.empty((0, 100)), np.empty((0, 100))
-    # Thiếu kết quả quay hoặc thư mục artifact thì "chưa có gì để chấm", không
-    # phải lỗi: trang Chất lượng lùi về bản dựng lại, bộ theo dõi báo chưa đủ.
-    # Ném ngoại lệ ở đây từng làm sập cả bước chẩn đoán.
     if not (data_dir / "xsmb-2-digits.csv").exists() or not (data_dir / "forecast" / "predict").is_dir():
         return empty
     outcomes = _outcomes(data_dir)
@@ -86,7 +45,7 @@ def published_evaluation(
             continue
         day = found.group(2)
         if day not in outcomes.index:
-            continue  # kỳ chưa quay, hoặc ngày không quay
+            continue
         frame = pd.read_csv(path).set_index("number").reindex(range(100))
         p = pd.to_numeric(frame["prob"], errors="coerce").to_numpy(dtype=float)
         valid = (
@@ -95,8 +54,6 @@ def published_evaluation(
             and float(p.sum()) > 0.0
         )
         if not valid:
-            # Không được bỏ một kỳ hỏng rồi vẫn báo cửa sổ còn lại bình thường,
-            # hoặc chuẩn hoá vector 0 thành NaN và ghi nó vĩnh viễn vào sổ.
             raise ValueError(f"{mode} {day}: artifact phải đủ 100 xác suất hữu hạn trong [0, 1], tổng dương")
         row = outcomes.loc[day]
         y = np.zeros(100)
@@ -115,7 +72,6 @@ def published_evaluation(
 
 
 def daily_skill(mode: str, probs: np.ndarray, labels: np.ndarray) -> np.ndarray:
-    """Kỹ năng logloss từng kỳ so với dự báo không thông tin (0 = bằng cơ sở)."""
     if len(probs) == 0:
         return np.empty(0)
     if mode == "de":
@@ -128,9 +84,6 @@ def daily_skill(mode: str, probs: np.ndarray, labels: np.ndarray) -> np.ndarray:
     return 1.0 - model / reference
 
 
-#: Sổ cái kỹ năng đã chấm, nằm NGOÀI thư mục bị dọn. ``cleanup_artifacts`` xoá
-#: tệp trong ``data/forecast/predict`` quá 45 ngày, nên chỉ đọc artifact thì cửa sổ 60 kỳ
-#: không bao giờ đầy — review của PR #93 bắt được điều đó. Mỗi dòng ~40 byte.
 LEDGER = Path("evaluation") / "model_quality" / "published_skill.csv"
 
 
@@ -146,11 +99,6 @@ def _read_ledger(data_dir: Path) -> pd.DataFrame:
 
 
 def graded_series(data_dir: Path, mode: str) -> tuple[list[str], np.ndarray]:
-    """Kỹ năng từng kỳ: sổ cái nối với artifact còn trên đĩa.
-
-    Ngày đã có trong sổ thì GIỮ bản trong sổ — lần ghi đầu là lần chấm sớm
-    nhất, sát lúc công bố nhất; không để một tệp viết lại về sau đè lên.
-    """
     kept = _read_ledger(data_dir)
     kept = kept[kept["mode"] == mode]
     series = dict(zip(kept["target_date"], kept["skill"].astype(float), strict=True))
@@ -162,11 +110,6 @@ def graded_series(data_dir: Path, mode: str) -> tuple[list[str], np.ndarray]:
 
 
 def update_ledger(data_dir: Path) -> Path:
-    """Ghi mọi kỳ đã chấm được vào sổ cái. Gọi được nhiều lần cho cùng kết quả.
-
-    Phải chạy TRƯỚC mọi bước xoá artifact; ``cleanup_artifacts`` gọi nó ngay
-    trước khi dọn, nên không kỳ nào bị xoá khi chưa kịp ghi.
-    """
     rows = []
     for mode in MODES:
         days, skills = graded_series(data_dir, mode)
@@ -179,7 +122,6 @@ def update_ledger(data_dir: Path) -> Path:
 
 @dataclass(frozen=True)
 class SkillStatus:
-    """Trạng thái kỹ năng ngoài mẫu của một chế độ trên cửa sổ gần nhất."""
 
     mode: str
     days: int
@@ -199,7 +141,6 @@ class SkillStatus:
 
     @property
     def state(self) -> str:
-        """``chua_du``, ``vung_0``, ``te_hon`` hoặc ``hon``."""
         if self.days < MIN_DAYS:
             return "chua_du"
         if abs(self.mean) < MIN_EFFECT:
@@ -251,7 +192,6 @@ def status(
     window: int = DEFAULT_WINDOW,
     z: float = DEFAULT_Z,
 ) -> SkillStatus:
-    """Kỹ năng trung bình và khoảng tin cậy trên ``window`` kỳ gần nhất."""
     values = np.asarray(skills, dtype=float)
     if not np.isfinite(values).all():
         raise ValueError(f"{mode}: kỹ năng phải hữu hạn trước khi kết luận")
@@ -262,8 +202,6 @@ def status(
         mean = float(recent.mean()) if n else 0.0
         stderr = float(recent.std(ddof=1) / np.sqrt(n)) if n > 1 else float("inf")
         bounds = (mean - z * stderr, mean + z * stderr)
-    # Đầu vào hữu hạn vẫn có thể làm tràn phép cộng hoặc phương sai. Khi đủ
-    # mẫu để kết luận, cả thống kê lẫn khoảng tin phải còn hữu hạn.
     if n >= MIN_DAYS and not np.isfinite((mean, stderr, *bounds)).all():
         raise ValueError(f"{mode}: thống kê kỹ năng và khoảng tin phải hữu hạn trước khi kết luận")
     return SkillStatus(
@@ -286,7 +224,7 @@ def evaluate(data_dir: Path, *, window: int = DEFAULT_WINDOW, z: float = DEFAULT
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--window", type=int, default=DEFAULT_WINDOW)
     parser.add_argument("--z", type=float, default=DEFAULT_Z)

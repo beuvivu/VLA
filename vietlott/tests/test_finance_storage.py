@@ -1,5 +1,3 @@
-"""Loại tài chính sai kỳ trên cả hai kho mà không đổi kết quả quay."""
-
 from pathlib import Path
 
 import pytest
@@ -43,7 +41,6 @@ def _prize(game: str, draw_id: int) -> PrizeRecord:
 
 
 def test_invalidate_finance_clears_selected_draws_and_preserves_other_rows(repo):
-    """Xóa thiếu điều kiện game/ID hoặc xóa kết quả quay sẽ làm phép kiểm này đỏ."""
     repo.upsert([_draw("power655", i) for i in (100, 101, 102)] + [_draw("mega645", 100)])
     repo.upsert_prizes([_prize("power655", i) for i in (100, 101, 102)] + [_prize("mega645", 100)])
 
@@ -63,7 +60,6 @@ def test_invalidate_finance_clears_selected_draws_and_preserves_other_rows(repo)
 
 
 def test_invalidate_finance_clears_direct_values_without_a_prize_record(repo):
-    """Không được chỉ xóa bảng prizes rồi để số tiền cũ trên Draw."""
     repo.upsert([_draw("power655", 100)])
 
     repo.invalidate_finance("power655", [100])
@@ -73,7 +69,6 @@ def test_invalidate_finance_clears_direct_values_without_a_prize_record(repo):
 
 
 def test_invalidate_finance_removes_prize_without_a_draw(repo):
-    """Bảng giải rời không được sống sót vì kho chưa có kết quả quay."""
     repo.upsert_prizes([_prize("power655", 100)])
 
     repo.invalidate_finance("power655", [100])
@@ -83,7 +78,6 @@ def test_invalidate_finance_removes_prize_without_a_draw(repo):
 
 
 def test_invalidate_finance_with_no_ids_preserves_all_finance(repo):
-    """Danh sách rỗng không được biến thành xóa cả game."""
     repo.upsert([_draw("power655", 100)])
     repo.upsert_prizes([_prize("power655", 100)])
 

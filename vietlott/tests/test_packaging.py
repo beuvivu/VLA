@@ -1,5 +1,3 @@
-"""v4.0: package layout, project-root detection, static site."""
-
 from __future__ import annotations
 
 import json
@@ -19,9 +17,9 @@ def test_project_root_is_found_from_anywhere(tmp_path: Path, monkeypatch: pytest
 
     monkeypatch.delenv("VQE_HOME", raising=False)
     monkeypatch.chdir(ROOT / "tests")
-    assert project_root() == ROOT  # a parent folder holds pyproject.toml + data/seed
+    assert project_root() == ROOT
     monkeypatch.chdir(tmp_path)
-    assert project_root() == ROOT  # not under the project: the folder the package lives in
+    assert project_root() == ROOT
     assert enter_project() == ROOT and Path.cwd() == ROOT
     monkeypatch.setenv("VQE_HOME", str(tmp_path))
     assert project_root() == tmp_path.resolve()
@@ -39,7 +37,6 @@ def test_version_and_help() -> None:
 
 
 def test_local_runs_keep_their_own_ledger() -> None:
-    # local runs keep their own ledger, so they never touch the public one that GitHub Actions commits
     assert "\nVQE_FORECAST_DIR=data/local/forecast\n" in (ROOT / ".env.example").read_text(encoding="utf-8")
     ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
     assert "data/local/" in ignored and "!data/forecast/ledger.jsonl" in ignored
@@ -50,7 +47,7 @@ def test_workflows_reference_real_commands(workflow_files: dict[str, Path]) -> N
     wf = {name: yaml.safe_load(p.read_text(encoding="utf-8")) for name, p in workflow_files.items()}
     assert {"ci.yml", "update.yml"} <= set(wf)
     names = [s.get("name", "") for s in wf["update.yml"]["jobs"]["update"]["steps"]]
-    assert names.index("Ghi sổ dự báo vào repo") < names.index("Dựng trang")  # the ledger is committed even if the site fails
+    assert names.index("Ghi sổ dự báo vào repo") < names.index("Dựng trang")
     steps = " ".join(str(s.get("run", "")) for job in wf["update.yml"]["jobs"].values() for s in job.get("steps", []))
     for command in ("vietlott init", "vietlott sync", "vietlott products sync", "vietlott forecast next", "scripts/build_site.py"):
         assert command in steps
@@ -81,7 +78,6 @@ def test_site_build(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_serve_refuses_more_than_one_worker(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    """Mỗi worker giành khoá ghi riêng; worker thứ hai trở đi sập lúc khởi động."""
     import uvicorn
 
     from vietlott_engine import cli
@@ -95,7 +91,6 @@ def test_serve_refuses_more_than_one_worker(monkeypatch: pytest.MonkeyPatch, cap
 
 
 def test_audit_resolves_defaults_inside_the_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """`vlm-audit` gọi từ thư mục khác vẫn đọc đúng seed của dự án."""
     from vlm.tools import gap_analyzer
 
     seen: dict[str, Path] = {}
@@ -113,14 +108,11 @@ def test_audit_resolves_defaults_inside_the_project(tmp_path: Path, monkeypatch:
 
 
 def _requirement_lines(path: Path) -> list[str]:
-    """Dòng yêu cầu thật của một tệp ``requirements*.txt``: bỏ chú thích, dòng trống và ``-r``."""
     lines = [line.split("#", 1)[0].strip() for line in path.read_text(encoding="utf-8").splitlines()]
     return [line for line in lines if line and not line.startswith("-r")]
 
 
 def test_requirements_files_say_the_same_as_pyproject() -> None:
-    """Hai nơi khai phụ thuộc: ``pyproject.toml`` (cài bằng ``pip install -e``) và ``requirements*.txt``
-    (bộ cài, dependabot). Dependabot chỉ sửa tệp txt, nên lệch là chuyện đã xảy ra: phải khớp từng dòng."""
     import tomllib
 
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]

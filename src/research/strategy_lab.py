@@ -1,16 +1,5 @@
 from __future__ import annotations
 
-"""Standardized walk-forward laboratory for deterministic strategy families.
-
-Legacy repositories contained many individually named "cầu" rules. This module
-preserves the useful idea -- a common evaluation contract -- while preventing
-those rules from silently entering production. Every strategy is compared on
-number-level trials against a training-only marginal baseline, with chronological
-holdout, FDR correction, agreement curves and diversity diagnostics.
-
-All row offsets are interpreted as calendar days only after the two-digit and
-sparse histories pass strict daily-contiguity and date-axis equality checks.
-"""
 
 import argparse
 import json
@@ -45,8 +34,8 @@ Mode = Literal["loto", "de"]
 
 @dataclass(frozen=True)
 class StrategyContext:
-    values: np.ndarray  # (days, 27) two-digit prize endings
-    presence: np.ndarray  # (days, 100) bool
+    values: np.ndarray
+    presence: np.ndarray
 
 
 PredictFn = Callable[[StrategyContext, int], set[int]]
@@ -159,14 +148,6 @@ def _cold(window: int, k: int) -> PredictFn:
 
 
 def _gan(k: int) -> PredictFn:
-    """Top-k longest-absent numbers as of day ``t``.
-
-    The scan-backwards-from-t implementation is O(t) per call and the lab calls
-    it once per day, so the strategy alone was O(n^2) — ~12.5M inner steps on a
-    5,000-day history.  "Index of the most recent hit at or before t" is a
-    running maximum over the whole history, so it is computed once, lazily, and
-    then read in O(1) per day.  Identical picks, including the lexsort tie-break.
-    """
     cache: dict[int, np.ndarray] = {}
 
     def last_seen_matrix(ctx: StrategyContext) -> np.ndarray:
@@ -177,7 +158,7 @@ def _gan(k: int) -> PredictFn:
             cached = np.maximum.accumulate(
                 np.where(ctx.presence, index, np.int64(-1)), axis=0
             )
-            cache.clear()  # only the active context is worth holding
+            cache.clear()
             cache[key] = cached
         return cached
 
@@ -405,8 +386,6 @@ def evaluate_lab(
         ignore_index=True,
     )
 
-    # Agreement curve: only strategies that point to at most 10 numbers on a day
-    # are allowed to contribute votes, reducing domination by broad dàn rules.
     agreement_rows: list[dict[str, object]] = []
     for k in range(1, 6):
         n_pred = hits = 0
@@ -416,8 +395,6 @@ def evaluate_lab(
             votes = np.zeros(100, dtype=int)
             for strat in strategies:
                 events = all_events[strat.name]
-                # Source index maps directly because calendar continuity is an
-                # enforced invariant: first event predicts exactly first+1 day.
                 pos = target_t - (first + 1)
                 if 0 <= pos < len(events):
                     picks = events[pos][1]
@@ -448,7 +425,6 @@ def evaluate_lab(
         )
     agreement = pd.DataFrame(agreement_rows)
 
-    # Pairwise prediction diversity over untouched holdout day-number cells.
     div_rows: list[dict[str, object]] = []
     names = [s.name for s in strategies]
     sl = slice(split + 1, len(two))
@@ -474,7 +450,6 @@ def evaluate_lab(
                     "phi_correlation": corr,
                 }
             )
-    # Cặp chiến lược hoà tương quan giữ thứ tự dựng (sắp xếp ổn định), không theo lệnh vector của CPU.
     diversity = pd.DataFrame(div_rows).sort_values(
         "phi_correlation", ascending=False, ignore_index=True, kind="stable"
     )

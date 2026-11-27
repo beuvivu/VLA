@@ -1,24 +1,3 @@
-"""In ĐẶC TÍNH THIẾT KẾ của một trang tham chiếu: màu, gradient, bóng, bán
-kính, phông, hiệu ứng.
-
-Vì sao tồn tại: proxy của môi trường phát triển chặn toàn bộ HTTP ra ngoài
-(đã đo: ``craftohtml.themezaa.com`` trả 403 ở tầng CONNECT, cả qua ``curl``
-lẫn qua trình lấy trang), nên không đọc được trang mẫu mà chủ dự án đưa.
-Runner của Actions thì gọi được — đây là cùng đường mà
-``scripts/reference/inspect_reference_pages.py`` đã dùng.
-
-Khác ``inspect_reference_pages.py``: script ấy in cấu trúc BẢNG (để dựng
-trang dữ liệu cho khớp). Script này in đặc tính THỊ GIÁC, vì câu hỏi lần này
-là "nền và hiệu ứng trông thế nào", không phải "bảng có cột gì".
-
-Nó chỉ in SỐ ĐO tổng hợp — mã màu, chuỗi gradient, giá trị bóng, tên
-``@keyframes`` — chứ không lưu HTML, CSS hay hình ảnh của trang vào kho.
-Trang mẫu là sản phẩm thương mại có bản quyền; ta đọc để biết ngôn ngữ thị
-giác của nó rồi tự viết CSS của mình, không bê nguyên tệp của họ về.
-
-Mỗi tài nguyên gọi đúng MỘT lần, có nhịp chờ giữa các lần.
-"""
-
 from __future__ import annotations
 
 import os
@@ -38,11 +17,6 @@ UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
-#: Chặn trên số biểu định kiểu và dung lượng mỗi tệp. Một trang mẫu thương mại
-#: hay kéo theo hàng chục tệp; đọc hết vừa chậm vừa không thêm thông tin.
-#: Đọc tới 16 biểu định kiểu. Mức 8 cũ quá thấp cho một dashboard: đã đo trên
-#: NexLink, trang nạp MƯỜI tệp và tám cái đầu toàn là thư viện icon/widget,
-#: nên bản đọc thu về 0 biến chủ đề và 0 quy tắc body.
 MAX_SHEETS = 16
 MAX_BYTES = 3_000_000
 TOP = 24
@@ -64,7 +38,6 @@ RE_COMMENT = re.compile(r"/\*.*?\*/", re.S)
 
 
 def fetch(url: str, session: requests.Session) -> str:
-    """Lấy một tài nguyên, trả chuỗi rỗng nếu không lấy được."""
     try:
         resp = session.get(url, timeout=TIMEOUT, headers={"User-Agent": UA})
     except requests.RequestException as exc:
@@ -84,7 +57,6 @@ def nhip_cho() -> None:
 
 
 def in_bang_dem(ten: str, dem: Counter, gioi_han: int = TOP) -> None:
-    """In một bảng đếm đã sắp theo tần suất."""
     print(f"\n  == {ten} ({len(dem)} giá trị khác nhau) ==")
     for gia_tri, lan in dem.most_common(gioi_han):
         print(f"    {lan:5d}×  {gia_tri}")
@@ -97,11 +69,6 @@ def in_tap(ten: str, tap: list[str], gioi_han: int = TOP) -> None:
 
 
 def khung_trang(soup: BeautifulSoup) -> None:
-    """In bộ xương các khối lớn: thẻ, lớp CSS, và ĐỘ DÀI nhan đề.
-
-    In độ dài chứ không in nguyên văn: bố cục là thứ ta cần biết, còn câu chữ
-    của họ thì không.
-    """
     print("\n  == Bộ xương khối lớn ==")
     for i, khoi in enumerate(soup.select("body > section, body > div > section, body > header, body > footer")[:24], 1):
         lop = " ".join(khoi.get("class") or [])[:110]
@@ -160,11 +127,6 @@ def doc_mot_trang(url: str, session: requests.Session) -> None:
     bien = {}
     for m in RE_VAR_DECL.finditer(css):
         bien.setdefault(m.group(1), m.group(2).strip())
-    # Tách biến CỦA CHỦ ĐỀ khỏi biến của framework. Một trang Bootstrap khai
-    # hơn năm trăm biến `--bs-*`; in gộp rồi cắt ở 60 dòng thì danh sách toàn
-    # `--bs-*` và những biến thật sự mang bản sắc thiết kế — phông, màu nhấn —
-    # bị đẩy ra ngoài khung in. Đã đo: lần chạy đầu không thấy `--primary-font`
-    # lẫn `--alt-font` vì đúng lý do đó.
     rieng = {k: v for k, v in bien.items() if not k.startswith("--bs-")}
     framework = {k: v for k, v in bien.items() if k.startswith("--bs-")}
     in_tap("Gradient", sorted({m.group(0) for m in RE_GRADIENT.finditer(css)}, key=len))
@@ -179,8 +141,6 @@ def doc_mot_trang(url: str, session: requests.Session) -> None:
     print(f"\n  == Biến RIÊNG của chủ đề ({len(rieng)} biến) ==")
     for ten, gia_tri in rieng.items():
         print(f"    {ten}: {gia_tri[:110]}")
-    # Không in giá trị biến framework: chúng là mặc định của Bootstrap, tra
-    # được ở tài liệu của họ, và in ra thì đẩy phần mang bản sắc ra khỏi khung.
     print(f"\n  == Biến framework: {len(framework)} biến (không in) ==")
 
     print("\n  == Khai báo cho body / html ==")

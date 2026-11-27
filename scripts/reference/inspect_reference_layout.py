@@ -1,20 +1,3 @@
-"""Đo BỐ CỤC ĐÃ RENDER của một trang tham chiếu bằng trình duyệt thật.
-
-Vì sao cần, dù đã có ``inspect_reference_design.py``: tệp kia đọc CSS dạng văn
-bản. Cách ấy đủ cho một trang tiếp thị khai gần hết bằng biến CSS, nhưng hỏng
-với một dashboard. Đã đo trên NexLink: trang nạp MƯỜI biểu định kiểu, tám cái
-đầu là thư viện icon và widget, nên bản đọc văn bản thu về 0 biến chủ đề, 0
-quy tắc ``body`` và một bộ xương rỗng — không có gì dùng được.
-
-Script này thay vào đó hỏi thẳng trình duyệt ``getComputedStyle``: số đo là
-thứ người dùng thật sự nhìn thấy, sau khi mọi biểu định kiểu và mọi lớp tiện
-ích đã hoà vào nhau.
-
-Nó KHÔNG tải hiện vật của trang về kho. Nó in số đo: bề rộng, chiều cao, màu
-đã tính, bán kính, bóng, giãn cách, cỡ chữ. Trang tham chiếu là sản phẩm
-thương mại; ta đọc ngôn ngữ thị giác rồi tự viết CSS của mình.
-"""
-
 from __future__ import annotations
 
 import json
@@ -24,14 +7,8 @@ import sys
 from playwright.sync_api import sync_playwright
 
 TIMEOUT = 45_000
-#: Ba lần đo, không phải sáu. Log của Actions chỉ lấy về được phần cuối (tải
-#: trọn tệp log bị proxy chặn), nên in ít mà đủ hơn là in hết rồi mất phần đầu.
 LAN_DO = [("pc", 1440, 900, "light"), ("pc", 1440, 900, "dark"), ("dt", 390, 844, "light")]
 
-#: Tìm thành phần theo VAI TRÒ bố cục chứ không theo tên lớp. Tên lớp là của
-#: riêng chủ đề và đổi giữa các bản; vai trò thì không: thanh bên là khối cao
-#: gần bằng màn hình nằm sát mép trái, thanh trên là khối rộng nằm sát mép
-#: trên, thẻ là hình chữ nhật có nền riêng và bo góc, lặp lại nhiều lần.
 JS_DO = r"""
 () => {
   const cs = el => getComputedStyle(el);
@@ -136,9 +113,6 @@ def main() -> int:
                     pg.close()
                     continue
                 print(f"\n--- {ten} {w}x{h} / {che_do} ---")
-                # In GỌN, mỗi lần đo một dòng. Bản trước in JSON thụt lề:
-                # ba lần đo thành 1041 dòng log, mà log của Actions chỉ lấy về
-                # được phần cuối — hai phần ba số đo không đọc tới.
                 print(json.dumps(do, ensure_ascii=False, separators=(",", ":")))
                 pg.close()
         b.close()

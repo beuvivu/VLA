@@ -1,5 +1,3 @@
-"""Request/response schemas of the HTTP API (domain results are returned as-is)."""
-
 from __future__ import annotations
 
 from typing import Literal

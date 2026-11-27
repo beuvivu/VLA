@@ -1,4 +1,3 @@
-'Checkpoint JSON và sổ dự báo/phản hồi bất biến, ghi trong cùng giao dịch.'
 from __future__ import annotations
 
 import json
@@ -42,7 +41,7 @@ class StateStore:
 
     def commit(self, expected_revision: int, state: dict, *,
                forecast: dict | None = None, outcome: dict | None = None) -> int:
-        payload = encode(state)  # Validate finite JSON before opening the transaction.
+        payload = encode(state)
         self.connection.execute('BEGIN IMMEDIATE')
         try:
             cursor = self.connection.execute(

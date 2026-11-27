@@ -1,32 +1,3 @@
-"""Bảng xác suất có điều kiện "hôm trước → hôm sau", chỉ đếm cặp kỳ cách nhau ĐÚNG một ngày lịch.
-
-Mô-đun này là bản chuẩn: ``statistical_matrices`` gọi lại ``build_conditional_tables`` thay vì
-tự đếm theo hàng kề nhau (hàng kề nhau nối cả hai kỳ hai bên một ngày nghỉ). Dữ liệu Đặc Biệt
-thô và dữ liệu LOTO thưa phải cùng một trục ngày.
-
-Mỗi bảng có 100 × 100 ô, và mỗi hàng chỉ có vài chục kỳ (Đặc Biệt hôm trước = x xảy ra
-khoảng 42 lần trên 4 250 kỳ). Xếp theo tỉ lệ thô thì đầu bảng là ô may mắn nhất trong
-10 000 ô: đo 31-10-2026, ô đầu bảng LOTO sau Đặc Biệt là 21/40 = 52,5% so với mức nền
-23,8%, và trên lịch sử quay công bằng giả lập ô đầu bảng cũng đạt TB 53,4%. Vì vậy mỗi ô
-mang thêm:
-
-* ``baseline_rate``: tỉ lệ số đích về ở kỳ sau trên MỌI cặp kỳ liền nhau — mức của ô khi điều
-  kiện không mang thông tin;
-* ``posterior_rate``: tỉ lệ co về mức nền bằng Bayes thực nghiệm, MỘT κ chung cho cả bảng
-  (``fit_shrinkage_to_prior``). Không dùng κ riêng từng hàng: phương pháp mô men cho κ hữu
-  hạn ở khoảng nửa số hàng ngay cả khi không có tín hiệu, và trên lịch sử công bằng giả lập
-  ô cao nhất khi ấy vẫn đạt 30,6% so với nền 23,8%. κ chung cho ô cao nhất vượt nền 0,08
-  điểm %;
-* ``p_value``: một phía, P(X ≥ count) với X ~ Nhị thức(base_count, baseline_rate);
-* ``q_value_fdr``: Benjamini–Hochberg trên MỌI ô đã kiểm của bảng (100 × số hàng có kỳ),
-  không chỉ trên các dòng được ghi ra.
-
-κ chung co rất mạnh một ô có tín hiệu thật nằm giữa 10 000 ô không có gì: ``posterior_rate``
-khi ấy thận trọng, còn ``q_value_fdr`` mới là công cụ phát hiện (tín hiệu cài sẵn "42 → 96
-một nửa số lần" bị q < 0,05 bắt 65% số lần, "luôn luôn" 100%). Bảng xếp theo ``p_value``
-tăng dần — ô có bằng chứng lệch mạnh nhất lên đầu — chứ không theo tỉ lệ thô.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -50,7 +21,6 @@ NUMBER_COLS = list(range(100))
 
 @dataclass(frozen=True)
 class MatrixEvidence:
-    """Full raw and normalized evidence for a 00..99 matrix."""
 
     counts: np.ndarray
     source_counts: np.ndarray
@@ -129,9 +99,6 @@ def _matrix_evidence(
         out=np.zeros((100, 100), dtype=float),
         where=source_counts[:, None] > 0,
     )
-    # Each next-day number is a Bernoulli outcome in the multi-label Loto
-    # state, so Beta smoothing uses two outcomes rather than forcing rows to
-    # sum to one as an exclusive-state Markov chain would.
     smoothed = np.divide(
         counts + alpha,
         source_counts[:, None] + 2.0 * alpha,
@@ -166,11 +133,6 @@ def build_transition_matrix(
     *,
     alpha: float = 1.0,
 ) -> MatrixEvidence:
-    """Build an exact-next-calendar-day multi-label Loto transition matrix.
-
-    Only draws strictly before ``as_of_date`` are eligible.  Raw counts remain
-    available alongside support, confidence, lift, and Beta-smoothed rates.
-    """
     sparse = _prepare_sparse(history)
     cutoff = pd.Timestamp(as_of_date).normalize()
     sparse = sparse[sparse["date"] < cutoff].reset_index(drop=True)
@@ -192,7 +154,6 @@ def build_cooccurrence_matrix(
     *,
     alpha: float = 1.0,
 ) -> MatrixEvidence:
-    """Build a same-draw co-occurrence matrix strictly before a cutoff."""
     sparse = _prepare_sparse(history)
     cutoff = pd.Timestamp(as_of_date).normalize()
     sparse = sparse[sparse["date"] < cutoff].reset_index(drop=True)
@@ -207,7 +168,6 @@ def build_cooccurrence_matrix(
     )
 
 
-#: Cột của mỗi bảng, theo thứ tự ghi ra. Năm cột đầu giữ nguyên từ bản cũ.
 TABLE_COLUMNS = ("count", "base_count", "conditional_rate", "baseline_rate", "posterior_rate", "lift",
                  "p_value", "q_value_fdr")
 
@@ -221,12 +181,6 @@ def _top_matrix(
     *,
     top: int,
 ) -> pd.DataFrame:
-    """Chấm cả 100 × 100 ô so với mức nền rồi ghi ``top`` ô có p nhỏ nhất (chỉ ô có đếm > 0).
-
-    ``row_counts[i]`` là số cặp kỳ có điều kiện i ở kỳ trước, ``baseline[j]`` là tỉ lệ số j về
-    ở kỳ sau trên mọi cặp kỳ. q của BH tính trên mọi ô có ``row_counts > 0`` (kể cả ô đếm 0,
-    p = 1), vì chọn ô nào để ghi ra chính là phép đa kiểm.
-    """
     columns = [row_name, col_name, *TABLE_COLUMNS]
     counts = np.asarray(mat_counts, dtype=float)
     trials = np.asarray(row_counts, dtype=float)
@@ -239,7 +193,6 @@ def _top_matrix(
     base_cell = np.broadcast_to(base[None, :], counts.shape)
     kappa = fit_shrinkage_to_prior(counts[tested], n_cell[tested], base_cell[tested])
     posterior = (counts + kappa * base_cell) / (n_cell + kappa)
-    # P(X ≥ count): sf(count − 1). Ô đếm 0 cho p = 1.
     p_values = binom.sf(counts - 1.0, n_cell, base_cell)
     q_values = np.full(counts.shape, np.nan)
     q_values[tested] = benjamini_hochberg(p_values[tested].ravel()).reshape(p_values[tested].shape)
@@ -284,7 +237,6 @@ def build_conditional_tables(
     *,
     top: int = 500,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
-    """Build Đặc Biệt→Loto, Đặc Biệt→Đặc Biệt and Loto→Loto using exact next-calendar-day pairs."""
     raw = _prepare_raw(raw_df)
     sparse = _prepare_sparse(sparse_df)
     if raw.empty or sparse.empty:
@@ -310,7 +262,6 @@ def build_conditional_tables(
     prev_de_counts = np.zeros(100, dtype=np.int32)
     prev_loto_counts = np.zeros(100, dtype=np.int32)
 
-    # Mức nền: tỉ lệ số đích về ở kỳ SAU trên chính các cặp kỳ được đếm.
     next_loto_counts = np.zeros(100, dtype=np.int32)
     next_de_counts = np.zeros(100, dtype=np.int32)
 
@@ -397,7 +348,6 @@ def write_canonical_tables(*, top: int = 500) -> list[Path]:
     }
     created: list[Path] = []
     for name, table in tables.items():
-        # Chỉ CSV: bản JSON kèm theo không ai đọc (xem ``statistical_matrices._dump_table``).
         csv_path = out / f"{name}.csv"
         write_code_csv(table, csv_path, index=False)
         created.append(csv_path)

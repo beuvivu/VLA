@@ -1,15 +1,3 @@
-"""Kiểm thành phần tín hiệu thống kê — module trước đó ở mức phủ 0 %.
-
-Đây là một trong những khối nuôi thẳng vào bảng xếp hạng dự đoán, nên thứ
-đáng khoá nhất không phải con số cụ thể mà là các tính chất AN TOÀN: trọng số
-phải nghiêng về kỳ GẦN, hậu nghiệm thứ phải đọc thứ của NGÀY ĐÍCH chứ không
-phải ngày neo, xác suất đề phải cộng đúng 1, và lịch gãy phải báo lỗi to chứ
-không lặng lẽ chạy tiếp.
-
-Không phép kiểm nào ở đây khẳng định mô hình dự đoán đúng. Chúng chỉ khẳng
-định nó không tự mâu thuẫn và không đọc ngược thời gian.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -35,15 +23,7 @@ from stats.statistical_signal import (  # noqa: E402
 )
 
 
-# --- Trọng số theo tuổi ----------------------------------------------------
-
-
 def test_exponential_weights_favour_the_most_recent_draw() -> None:
-    """Kỳ GẦN NHẤT có trọng số 1.0, càng lùi về quá khứ càng nhẹ.
-
-    Đảo chiều dãy này là lỗi không bao giờ nổ: mô hình vẫn chạy, vẫn ra số,
-    chỉ là nó học lịch sử xa nhất và bỏ qua hiện tại.
-    """
     w = _exp_weights(5, half_life=2)
 
     assert w[-1] == pytest.approx(1.0), "kỳ mới nhất là mốc"
@@ -53,18 +33,12 @@ def test_exponential_weights_favour_the_most_recent_draw() -> None:
 
 
 def test_half_life_is_floored_at_one_so_weights_stay_finite() -> None:
-    """Chu kỳ bán rã 0 sẽ chia cho 0; hàm phải kẹp sàn thay vì trả inf/NaN."""
     w = _exp_weights(4, half_life=0)
     assert np.all(np.isfinite(w))
     assert w[-1] == pytest.approx(1.0)
 
 
 def test_effective_sample_size_equals_n_only_when_weights_are_flat() -> None:
-    """ESS trả lời "thực chất có bao nhiêu kỳ đang đóng góp".
-
-    Trọng số đều thì bằng đúng số kỳ; càng dồn vào ít kỳ thì càng nhỏ hơn.
-    Dùng thẳng n thay cho ESS sẽ thổi phồng độ tin cậy của khoảng khả tín.
-    """
     assert _effective_n(np.ones(10)) == pytest.approx(10.0)
 
     skewed = np.array([1e-9, 1e-9, 1e-9, 1.0])
@@ -72,15 +46,7 @@ def test_effective_sample_size_equals_n_only_when_weights_are_flat() -> None:
     assert _effective_n(np.zeros(5)) == 0.0, "không trọng số thì không có mẫu"
 
 
-# --- Biến đổi số học -------------------------------------------------------
-
-
 def test_logit_clips_the_ends_instead_of_returning_infinity() -> None:
-    """0 và 1 là giá trị hợp lệ của xác suất thực nghiệm.
-
-    Không kẹp thì logit ra +/-inf, và độ lệch chuẩn của ba cửa sổ — vốn dùng
-    để đo độ ổn định — biến thành NaN cho đúng những con cực đoan nhất.
-    """
     out = _logit(np.array([0.0, 0.5, 1.0]))
     assert np.all(np.isfinite(out))
     assert out[1] == pytest.approx(0.0)
@@ -88,7 +54,6 @@ def test_logit_clips_the_ends_instead_of_returning_infinity() -> None:
 
 
 def test_js_divergence_is_zero_for_identical_and_maximal_for_disjoint() -> None:
-    """JS đo mức trôi giữa hai phân phối: 0 khi trùng, ln2 khi rời hẳn nhau."""
     p = np.full(100, 0.01)
     assert _js_divergence(p, p) == pytest.approx(0.0, abs=1e-12)
 
@@ -101,16 +66,11 @@ def test_js_divergence_is_zero_for_identical_and_maximal_for_disjoint() -> None:
 
 
 def test_divergence_is_computed_on_normalised_distributions() -> None:
-    """Nhân đôi mọi thành phần không làm phân phối thay đổi, nên JS phải bằng 0."""
     p = np.arange(1, 101, dtype=float)
     assert _js_divergence(p, p * 2.0) == pytest.approx(0.0, abs=1e-12)
 
 
-# --- Hậu nghiệm đề ---------------------------------------------------------
-
-
 def test_de_posterior_is_a_proper_distribution_over_the_hundred_numbers() -> None:
-    """Đề là bài toán một-trong-một-trăm: xác suất phải cộng đúng 1."""
     onehot = np.zeros((5, 100))
     onehot[np.arange(5), [3, 3, 7, 7, 7]] = 1.0
     p, low, high = _de_posterior(onehot, np.ones(5), prior_strength=10.0)
@@ -122,7 +82,6 @@ def test_de_posterior_is_a_proper_distribution_over_the_hundred_numbers() -> Non
 
 
 def test_de_posterior_shrinks_toward_uniform_as_the_prior_grows() -> None:
-    """Tiên nghiệm mạnh kéo hậu nghiệm về đều — đó là chốt chống khớp quá mức."""
     onehot = np.zeros((5, 100))
     onehot[np.arange(5), 7] = 1.0
 
@@ -133,14 +92,10 @@ def test_de_posterior_shrinks_toward_uniform_as_the_prior_grows() -> None:
     assert strong[7] == pytest.approx(0.01, abs=2e-3), "gần như đều hẳn"
 
 
-# --- Hậu nghiệm thứ trong tuần ---------------------------------------------
-
-
 def _weekday_history(weekday_only: int, number: int, *, weeks: int = 20) -> tuple[np.ndarray, pd.Series]:
-    """Lịch sử mà ``number`` CHỈ về vào đúng một thứ trong tuần."""
-    dates = pd.date_range("2026-01-05", periods=weeks * 7, freq="D")  # bắt đầu thứ Hai
+    dates = pd.date_range("2026-01-05", periods=weeks * 7, freq="D")
     hit = np.zeros((len(dates), 100), dtype=np.int8)
-    hit[:, 50] = 1  # một con nền để baseline khác 0
+    hit[:, 50] = 1
     for i, day in enumerate(dates):
         if day.weekday() == weekday_only:
             hit[i, number] = 1
@@ -148,7 +103,6 @@ def _weekday_history(weekday_only: int, number: int, *, weeks: int = 20) -> tupl
 
 
 def test_weekday_posterior_reads_the_weekday_it_is_given() -> None:
-    """Con chỉ về thứ Hai phải có hậu nghiệm thứ cao ở thứ Hai và thấp ở thứ Ba."""
     hit, dates = _weekday_history(weekday_only=0, number=7)
 
     monday = _loto_signal(hit, dates, 0, half_life=45, prior_strength=10.0)
@@ -159,15 +113,7 @@ def test_weekday_posterior_reads_the_weekday_it_is_given() -> None:
     assert int(monday.loc[7, "weekday_trials"]) == 20
 
 
-# --- Co về nền -------------------------------------------------------------
-
-
 def test_loto_probability_is_shrunk_toward_the_baseline_never_past_it() -> None:
-    """``stability`` nằm trong (0, 1], nên xác suất chỉ CO về nền chứ không vọt qua.
-
-    Nếu hệ số ấy vượt 1, một con lô hiếm có thể bị đẩy sang phía bên kia nền —
-    đổi hẳn dấu của bằng chứng.
-    """
     rng = np.random.default_rng(11)
     dates = pd.Series(pd.date_range("2026-01-01", periods=200, freq="D"))
     hit = (rng.random((200, 100)) < 0.22).astype(np.int8)
@@ -199,9 +145,6 @@ def test_de_signal_stays_a_distribution_after_shrinkage() -> None:
     assert float(out["stability"].iloc[0]) <= 1.0
 
 
-# --- Toàn tuyến ------------------------------------------------------------
-
-
 class _FakeLottery:
     def __init__(self, two: pd.DataFrame, sparse: pd.DataFrame) -> None:
         self._two, self._sparse = two, sparse
@@ -219,7 +162,6 @@ class _FakeLottery:
 def _synthetic_history(
     *, start: str = "2025-01-01", days: int = 400, monday_only: int | None = None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Lịch sử giả liền ngày, hai khung khớp trục thời gian."""
     rng = np.random.default_rng(7)
     dates = pd.date_range(start, periods=days, freq="D")
     two_rows, sparse_rows = [], []
@@ -250,7 +192,6 @@ def _install(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_target_is_the_day_after_the_anchor(_install) -> None:
-    """Neo là kỳ cuối đã có; đích là ngày kế tiếp — chưa ai biết kết quả."""
     two, sparse = _synthetic_history(start="2025-01-01", days=400)
     _install(two, sparse)
 
@@ -261,18 +202,6 @@ def test_target_is_the_day_after_the_anchor(_install) -> None:
 
 
 def test_weekday_posterior_follows_the_target_day_not_the_anchor_day(_install) -> None:
-    """Đây là bẫy lệch một ngày cổ điển của mọi đặc trưng theo thứ.
-
-    Lịch sử kết thúc đúng Chủ nhật, nên NGÀY ĐÍCH là thứ Hai còn NGÀY NEO là
-    Chủ nhật. Con 42 được cài chỉ về vào thứ Hai. Đọc đúng thứ của ngày đích
-    thì hậu nghiệm thứ của nó phải vọt lên; đọc nhầm thứ của ngày neo thì nó
-    tụt xuống mức nền.
-
-    Ngưỡng ở đây không phải 1.0 dù 42 về đủ MỌI thứ Hai: tiên nghiệm mạnh
-    (``prior_strength`` 80) cố tình kéo hậu nghiệm xuống, và đó là chủ ý chống
-    khớp quá mức. Cái đáng khoá là khoảng cách, nên phép kiểm so 42 với chính
-    99 con còn lại thay vì với một hằng số tự đặt.
-    """
     two, sparse = _synthetic_history(start="2025-01-06", days=364, monday_only=42)
     assert two["date"].max().weekday() == 6, "lịch sử phải kết thúc vào Chủ nhật"
     _install(two, sparse)
@@ -290,11 +219,6 @@ def test_weekday_posterior_follows_the_target_day_not_the_anchor_day(_install) -
 
 
 def test_de_output_is_a_distribution_and_loto_output_is_not(_install) -> None:
-    """Hai chế độ trả lời hai câu hỏi khác nhau, nên chuẩn hoá khác nhau.
-
-    Đề: một trong một trăm — tổng phải bằng 1. Lô: mỗi con về hay không là
-    một câu hỏi riêng — tổng vượt 1 là đúng, ép nó về 1 mới là sai.
-    """
     two, sparse = _synthetic_history()
     _install(two, sparse)
 
@@ -319,16 +243,6 @@ def test_rows_come_back_ranked_by_probability(_install) -> None:
 def test_a_calendar_hole_fails_closed_instead_of_being_silently_spanned(
     _install,
 ) -> None:
-    """Mọi cách diễn giải ngày/độ trễ/cửa sổ ở đây đều giả định lịch liền ngày.
-
-    Lịch thủng mà vẫn chạy thì "30 ngày gần nhất" lặng lẽ trở thành một quãng
-    dài hơn 30 ngày, và mọi con số phía sau đều lệch mà không dấu vết.
-
-    ``number_dynamics`` phía dưới cũng có chốt riêng, nên một lỗ lịch không lọt
-    được đằng nào. Chính vì thế phép kiểm bám vào CHUỖI NGỮ CẢNH: nó phải
-    chứng minh module NÀY tự chặn ở đầu vào, chứ không phải nó chạy nửa đường
-    rồi mới bị lớp dưới bắt lại.
-    """
     two, sparse = _synthetic_history(days=120)
     two = two.drop(index=60).reset_index(drop=True)
     sparse = sparse.drop(index=60).reset_index(drop=True)
@@ -341,7 +255,6 @@ def test_a_calendar_hole_fails_closed_instead_of_being_silently_spanned(
 
 
 def test_two_histories_that_disagree_on_dates_are_rejected(_install) -> None:
-    """Hai khung lệch trục thời gian thì mọi phép ghép hàng đều so sai kỳ."""
     two, sparse = _synthetic_history(days=120)
     sparse["date"] = sparse["date"] + pd.Timedelta(days=1)
     _install(two, sparse)
@@ -353,8 +266,6 @@ def test_two_histories_that_disagree_on_dates_are_rejected(_install) -> None:
 def test_empty_history_is_refused_rather_than_producing_a_prior_only_ranking(
     _install,
 ) -> None:
-    """Không có dữ liệu thì bảng phát ra sẽ thuần tiên nghiệm — vô nghĩa mà
-    trông y hệt một bảng thật."""
     _install(pd.DataFrame(columns=["date", "special"]), pd.DataFrame(columns=["date"]))
     with pytest.raises(RuntimeError, match="No lottery data"):
         build_statistical_signal("loto")

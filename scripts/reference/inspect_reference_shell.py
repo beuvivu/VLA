@@ -1,15 +1,3 @@
-"""Đo KHUNG ỨNG DỤNG của trang tham chiếu: hai cấp điều hướng, thanh trên,
-vùng nội dung, và trạng thái thu/mở.
-
-Khác ``inspect_reference_layout.py``: tệp kia đo MỘT thanh bên và các thành
-phần lẻ (thẻ, bảng, nút). Khung của trang tham chiếu lần này có HAI dải trái
-nằm cạnh nhau — dải biểu tượng và dải chi tiết — cùng một nút trong thanh trên
-điều khiển chúng. Muốn dựng lại thì phải đo cả hai dải VÀ đo lại sau khi bấm
-nút, vì bề rộng khi thu là con số không suy ra được từ CSS tĩnh.
-
-Không tải hiện vật của trang về kho. Chỉ in số đo.
-"""
-
 from __future__ import annotations
 
 import json
@@ -19,8 +7,6 @@ import sys
 from playwright.sync_api import sync_playwright
 
 TIMEOUT = 45_000
-#: Đo ở bốn bề ngang. Mỗi lần đo in một dòng: log của Actions chỉ lấy về được
-#: phần cuối, nên in gọn là điều kiện để đọc được hết.
 BE_NGANG = [(1440, 900, "light"), (1440, 900, "dark"), (1024, 768, "light"), (390, 844, "light")]
 
 JS = r"""
@@ -87,8 +73,6 @@ JS = r"""
 }
 """
 
-#: Ứng viên nút thu/mở trong thanh trên. Dò theo nhiều dấu hiệu vì tên lớp là
-#: của riêng chủ đề.
 NUT = ("button.app-toggler", "[data-toggle='sidebar']", ".sidebar-toggle",
        "header button:first-of-type", "header button")
 

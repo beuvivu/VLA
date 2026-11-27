@@ -1,12 +1,3 @@
-"""Trang Độ tin cậy dự báo: Confidence Score ba tầng cho kỳ kế tiếp.
-
-Đọc ``data/evaluation/confidence/report.json`` (do ``confidence_matrix.py`` sinh) và dựng
-``docs/do-tin-cay.html``. Trang nói thẳng tầng của từng con, kèm đủ căn cứ để
-người đọc tự kiểm: phân phối null, kiểm ngoài mẫu, phép kiểm giả thuyết can
-thiệp và rủi ro/lợi nhuận. Không có con số nào ở đây được làm tròn về phía
-đẹp hơn.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -123,8 +114,6 @@ def matrix_card(report: dict, mode: str) -> str:
 
     def line(r):
         mark = " <small>(đang công bố)</small>" if r["published"] else ""
-        # Tầng và Score đứng ngay sau số: trên điện thoại bảng cuộn ngang, và
-        # thứ người đọc cần trước tiên phải nằm trong khung nhìn đầu.
         return [
             f"<b>{html.escape(r['number'])}</b>{mark}",
             _badge(r["tier"]),
@@ -194,8 +183,6 @@ def intervention_card(report: dict) -> str:
     if not block:
         return '<p class="ui-table-empty">Chưa có bảng kết quả đầy đủ để kiểm.</p>'
     rows = [
-        # Không in "0,000": p không thể bằng 0, và p Monte Carlo không nhỏ hơn
-        # 1/(N+1) — review PR #104.
         [html.escape(t["label"]), f'<span data-evidence-split>{html.escape(t["detail"])}</span>', _p(t["p"], 0.001), _p(t["p_holm"], 0.001)]
         for t in block["tests"]
     ]
@@ -250,9 +237,6 @@ def feedback_card(report: dict) -> str:
     for check in fb.get("monitor", []):
         mode = check["mode"]
         scores = fb.get("modes", {}).get(mode, {})
-        # Số kỳ của phép chấm và của bộ theo dõi là HAI mẫu khác nhau: sổ cái
-        # sống lâu hơn artifact, nên bộ theo dõi thường thấy nhiều kỳ hơn
-        # (review PR #104). Ghi riêng từng số.
         rows.append([
             html.escape(mode_label(mode)),
             f"{scores.get('days', 0)}",
@@ -280,7 +264,6 @@ _HOT_TAIL_WORDS = {
 
 
 def hot_tail_card(report: dict) -> str:
-    """Giả thuyết đã đăng ký trước, chấm trên các kỳ quay SAU ngày đăng ký."""
     h = report.get("hot_tail")
     if not h:
         return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
@@ -318,7 +301,6 @@ _DIGIT_SUM_WORDS = {
 
 
 def digit_sum_card(report: dict) -> str:
-    """Năm quy tắc "tổng – bóng – chạm", chấm tiến cứu và cộng dồn từng kỳ."""
     h = report.get("digit_sum")
     if not h:
         return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
@@ -374,7 +356,6 @@ def digit_sum_card(report: dict) -> str:
 
 
 def _pattern_trust_note(item: dict) -> str:
-    """Độ tin của mạng mẫu hình, in TỪ chẩn đoán của kỳ đang dự báo (định nghĩa 2 trở đi)."""
     pattern = item.get("diagnostics", {}).get("pattern", {})
     if item.get("agent_policy", 1) < 2 or pattern.get("status") != "fitted":
         return ""
@@ -389,7 +370,6 @@ def _pattern_trust_note(item: dict) -> str:
 
 
 def agents_card(report: dict | None, *, target_date: str) -> str:
-    """Hiển thị dự báo thật, ứng viên và loss tiến cứu, không lẫn các thang tin."""
     if report is None or report.get("target_date") != target_date:
         return '<p class="ui-muted">Đang chờ báo cáo ba tác tử đúng kỳ dự báo.</p>'
     from forecast.xsmb_agents.algorithms import LABELS
@@ -491,7 +471,6 @@ def render(report: dict, agents: dict | None = None) -> str:
 
 
 def build(data_dir: Path, docs_dir: Path) -> Path:
-    """Dựng ``docs/do-tin-cay.html`` từ ``data/evaluation/confidence/report.json``."""
     report = json.loads((data_dir / "evaluation" / "confidence" / "report.json").read_text(encoding="utf-8"))
     agents_path = data_dir / "forecast" / "agents" / "report.json"
     agents = json.loads(agents_path.read_text(encoding="utf-8")) if agents_path.exists() else None
@@ -510,7 +489,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--docs-dir", default="docs")
     args = parser.parse_args()

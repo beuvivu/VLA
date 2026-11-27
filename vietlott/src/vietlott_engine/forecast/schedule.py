@@ -1,19 +1,3 @@
-"""When may a forecast be written to the ledger? Only before the draw it targets.
-
-A forecast targets the draw right after the last one in the data. It counts as *pre-registered*
-only if, by Vietlott's published schedule (Vietnam time), that draw has not started yet:
-
-* Mega 6/45 — Wed, Fri, Sun 18:00 · Power 6/55 — Tue, Thu, Sat 18:00
-* Max 3D / 3D+ — Mon, Wed, Fri 18:00 · Max 3D Pro — Tue, Thu, Sat 18:00
-* Lotto 5/35 — every day 13:00 and 21:00
-* Keno / Bingo18 — every few minutes from 06:00 to about 22:00: draw times are not in the data,
-  so a forecast is recorded only in the overnight gap (after 22:15, before 05:55) and only when
-  the day in the data looks complete (at least 98 % of the usual number of draws per day).
-* Max 4D — discontinued in 2021: never recorded.
-
-``VQE_FORECAST_NOW`` (ISO 8601, e.g. ``2026-09-30T20:00:00+07:00``) fixes "now" for tests and replays.
-"""
-
 from __future__ import annotations
 
 import os
@@ -24,7 +8,7 @@ import numpy as np
 from vietlott_engine.core.products import ProductCode
 
 VN = timezone(timedelta(hours=7))
-WEEKLY = {  # Monday = 0, draw at 18:00
+WEEKLY = {
     ProductCode.MEGA_645: (2, 4, 6),
     ProductCode.POWER_655: (1, 3, 5),
     ProductCode.MAX3D: (0, 2, 4),
@@ -43,7 +27,6 @@ def now_vn() -> datetime:
 
 
 def target_draw_time(code: ProductCode, last_date: date, draws_on_last_date: int) -> datetime | None:
-    """Scheduled start of the draw after the last one in the data (None for Max 4D)."""
     if code in WEEKLY:
         d = last_date + timedelta(days=1)
         while d.weekday() not in WEEKLY[code]:
@@ -59,7 +42,6 @@ def target_draw_time(code: ProductCode, last_date: date, draws_on_last_date: int
 
 
 def record_window(code: ProductCode, dates: np.ndarray, now: datetime | None = None) -> tuple[bool, str, datetime | None]:
-    """(may record, reason in Vietnamese, target draw time) for a history whose draw dates are ``dates``."""
     if len(dates) == 0:
         return False, "chưa có dữ liệu", None
     now = now or now_vn()

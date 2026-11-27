@@ -22,7 +22,6 @@ from soi_cau.path_prob import (
 
 
 def _to_date(x):
-    """Coerce common date-like objects to datetime.date."""
     import datetime as _dt
 
     if hasattr(x, "to_pydatetime"):
@@ -261,7 +260,6 @@ def main() -> None:
         (stats_df["trials"] >= params.min_trials)
         & (stats_df["current_streak"] >= params.min_current_streak)
     ].copy()
-    # Cột «Dự báo kỳ tới» của trang: đúng xác suất từng cầu mà bước gợi ý dùng.
     bias = {
         "scope": args.scope,
         "bias_special_touch": args.bias_special_touch,
@@ -396,8 +394,6 @@ def main() -> None:
     (out_dir / f"path_manifest_{args.mode}.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
-    # Kinh nghiệm cầu học từ mọi đường cầu: trang soi cầu in nó và suy câu kết
-    # luận TỪ nó, không viết cứng.
     (out_dir / f"bridge_evidence_{args.mode}.json").write_text(
         json.dumps(
             {"anchor_date": anchor_date.isoformat(), **(evidence.as_dict() if evidence else {})},

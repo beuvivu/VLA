@@ -1,5 +1,3 @@
-"""Mẫu HTML/CSS/JS dùng chung và bộ nạp Jinja đặt ngay trong thư mục mẫu."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -9,12 +7,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
 class Render:
-    """Small helper to render Jinja2 templates.
-
-    The original implementation supported both sync/async environments; for this
-    repository's usage (CLI scripts), a synchronous renderer is simpler and more
-    reliable across Python versions.
-    """
 
     def __init__(self, *, template_dir: Path | None = None) -> None:
         if template_dir is None:

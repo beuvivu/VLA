@@ -1,35 +1,3 @@
-"""Kiểm TIẾN CỨU năm quy tắc "tổng – bóng – chạm" — đăng ký ngày 05-10-2026.
-
-Vì sao cần
-----------
-Năm quy tắc trong ``digit_sum_rules`` được học từ loạt bài tuần SAU khi chúng đã
-được viết ra, và kiểm hồi cứu trên 4 225 kỳ không quy tắc nào hơn chọn bừa (p
-Holm nhỏ nhất 0,966). Hồi cứu không bao giờ bác hẳn được câu "dạo này cầu chạy":
-cách duy nhất là chấm trên những kỳ CHƯA TỒN TẠI lúc chốt quy tắc. Đây là phần
-"tự học tích luỹ" của hệ: mỗi lượt pipeline ghi bộ số mỗi quy tắc báo cho từng
-kỳ mới vào sổ cái, chấm với kết quả thật, và bằng chứng cộng dồn theo ngày.
-
-Mọi tham số dưới đây chốt trước kỳ đầu tiên được chấm và KHÔNG được sửa để vừa
-kết quả: sửa thì đăng ký giả thuyết mới với ngày bắt đầu mới (như
-``hot_tail_test``). Quy tắc nào được XÁC NHẬN cũng không tự vào tổ hợp xác suất:
-nó vẫn phải qua ``scripts/research/benchmark_probability_models.py`` và thắng cả hằng số
-lẫn mô hình đang chạy.
-
-Thống kê, mỗi quy tắc r và mỗi kỳ t từ ``FIRST_TARGET``:
-    bộ số    = quy tắc r đọc kỳ quay ngay trước t
-    trúng_t  = bộ số có về ở kỳ t (LOTO: về ở bất kỳ giải nào; Đặc Biệt: 2 số
-               cuối; đầu/đuôi: chữ số hàng chục/đơn vị của 2 số cuối)
-    p_t      = xác suất một bộ ngẫu nhiên CÙNG CỠ trúng ở đúng kỳ t
-Dưới giả thuyết công bằng, số kỳ trúng theo phân phối Poisson-nhị thức(p_t).
-Sau ``MIN_DRAWS`` kỳ: p một phía P(X ≥ trúng), hiệu chỉnh Holm cho năm quy tắc;
-xác nhận quy tắc nào có p Holm ≤ ``ALPHA``.
-
-Kết luận chỉ dùng ĐÚNG ``MIN_DRAWS`` kỳ đầu từ ``FIRST_TARGET`` rồi đóng băng. Sổ
-vẫn ghi tiếp, nhưng tính lại kết luận mỗi ngày trên sổ dài dần là nhìn nhiều lần:
-một quy tắc bác bỏ ở kỳ 180 có thể "xác nhận" ở kỳ 230 do may, và α = 0,01 không
-còn giữ.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -41,7 +9,6 @@ import pandas as pd
 from soi_cau import digit_sum_rules as dsr
 from core.atomic_io import atomic_write_text
 
-#: Tham số ĐÃ ĐĂNG KÝ. Không sửa — xem docstring.
 REGISTERED_ON = "2026-10-05"
 FIRST_TARGET = "2026-10-06"
 MIN_DRAWS = 180
@@ -49,8 +16,6 @@ ALPHA = 0.01
 LEDGER = Path("research") / "hypotheses" / "digit_sum_rules.csv"
 FIELDS = ["date", "rule", "base_date", "picks", "hit", "chance"]
 
-#: Bằng chứng HỒI CỨU (01-01-2015 → 05-10-2026) — chỉ để đối chiếu, không dùng
-#: để kết luận. Nguồn: ``data/research/digit_sum_rules.json``.
 RETROSPECTIVE = {
     "draws": 4225,
     "last_draw": "2026-10-05",
@@ -63,7 +28,6 @@ RETROSPECTIVE = {
 
 
 def scored_draws(raw: pd.DataFrame) -> list[dict]:
-    """Mọi cặp (kỳ, quy tắc) từ ``FIRST_TARGET``, mỗi kỳ chấm bằng kỳ ngay trước nó."""
     raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     rows = []
     for t in range(1, len(raw)):
@@ -87,7 +51,6 @@ def scored_draws(raw: pd.DataFrame) -> list[dict]:
 
 
 def update_ledger(data_dir: Path) -> Path:
-    """Ghi các kỳ mới vào sổ cái. Dòng đã ghi giữ nguyên, không bị đè."""
     path = data_dir / LEDGER
     known: dict[tuple[str, str], dict] = {}
     if path.exists():
@@ -107,7 +70,6 @@ def update_ledger(data_dir: Path) -> Path:
 
 
 def evaluate(data_dir: Path) -> dict:
-    """Trạng thái phép kiểm tiến cứu từ sổ cái, kèm bộ số cho kỳ kế tiếp."""
     path = data_dir / LEDGER
     ledger = (
         pd.read_csv(path, dtype={"date": str, "picks": str}) if path.exists()

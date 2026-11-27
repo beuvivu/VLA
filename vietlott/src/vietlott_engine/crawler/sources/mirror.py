@@ -1,5 +1,3 @@
-"""JSONL sources: the community GitHub mirror (HTTP) and local files (offline / air-gapped)."""
-
 from __future__ import annotations
 
 import json
@@ -41,7 +39,6 @@ def parse_jsonl(text: str, spec: GameSpec, since_id: int | None, source: str) ->
 
 
 class GithubMirrorSource(DrawSource):
-    """Downloads ``<base_url>/<game>.jsonl`` (one JSON record per draw)."""
 
     name = "github_mirror"
 
@@ -57,7 +54,6 @@ class GithubMirrorSource(DrawSource):
 
 
 class JsonlFileSource(DrawSource):
-    """Reads the same JSONL format from a local directory or file."""
 
     name = "file"
 

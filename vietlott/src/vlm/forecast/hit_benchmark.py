@@ -1,25 +1,3 @@
-"""Giao thức kiểm chứng xác suất và số khớp H cho Mega 6/45 và Power 6/55.
-
-Đăng ký ngày 13-10-2026, TRƯỚC khi chạy phần test. Cấu hình trong ``PROTOCOL`` là luật; đổi nó thì
-đăng ký giao thức mới với ngày mới, không chạy lại rồi vẫn gọi phần test là độc lập.
-
-Trình tự (walk-forward, đơn vị là KỲ QUAY):
-
-1. ``WARMUP`` kỳ đầu chỉ để đặc trưng và mô hình có lịch sử; không chấm.
-2. Phần còn lại tới ``FROZEN_LAST_ID`` chia liền nhau: dev 50% · validation 20% · test 30%.
-3. Challenger chọn siêu tham số trên dev, bỏ nhóm đặc trưng không ổn định qua các fold của
-   dev + validation (ablation), hiệu chuẩn nhiệt độ trên validation — rồi CHỐT.
-4. Mỗi kỳ test được dự báo trước khi mô hình thấy kết quả của nó; học lại sau nhãn chỉ ảnh hưởng
-   các kỳ sau. Test được nhìn MỘT lần.
-
-Thước đo chính là log-likelihood của cả kỳ quay (bộ chính, và số đặc biệt Power chấm riêng) so
-với luật công bằng, kiểm bằng Diebold–Mariano HAC theo kỳ, Holm cho mọi ứng viên × sản phẩm. Brier,
-độ tin cậy (reliability) và phân bố H đi kèm; H ≥ 4 KHÔNG được dùng để đề bạt vì không đủ công
-suất (xem ``hits.detectable_lift``). Lưu ý trung thực: cửa sổ này từng được xem trong các báo cáo
-khám phá trước (03-10-2026); việc chọn cấu hình ở đây chỉ dùng dev/validation, nhưng bằng chứng
-thật chỉ đến từ các kỳ SAU ngày đăng ký (luồng live có sẵn của engine).
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -65,7 +43,7 @@ PROTOCOL: dict = {
     'ablation_min_positive_folds': 3,
     'temperature_bounds': (0.0, 2.0),
     'alpha': 0.05,
-    'portfolio_tickets': PUBLISHED_TOP_N,   # đúng số bộ bảng điều khiển công bố
+    'portfolio_tickets': PUBLISHED_TOP_N,
     'monte_carlo': 20_000,
     'seed': 20261013,
     'promotion': {
@@ -82,17 +60,11 @@ TICKET_PRICE_VND = 10_000
 INCUMBENTS = ('legacy', 'ml')
 
 
-# ============================================================================ dữ liệu
 def _sha256(path: Path) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
 
 
 def load_frozen_series(product: str, root: Path) -> tuple[Series, dict]:
-    """Lịch sử seed + nhật ký kết quả đã xác thực, cắt đúng ``frozen_last_id``; ID phải liền từ 1.
-
-    Raises:
-        ValueError: Nhật ký mâu thuẫn seed, thiếu kỳ hoặc lệch ngày.
-    """
     from vietlott_engine.crawler.sources.mirror import JsonlFileSource
 
     root = Path(root)
@@ -130,7 +102,6 @@ def load_frozen_series(product: str, root: Path) -> tuple[Series, dict]:
 
 @dataclass(frozen=True)
 class Split:
-    """Chỉ số kỳ (0-based) — [warmup, dev_end) dev, [dev_end, val_end) validation, [val_end, end) test."""
 
     warmup: int
     dev_end: int
@@ -151,7 +122,6 @@ def make_split(total: int) -> Split:
     return Split(warmup, dev_end, val_end, total)
 
 
-# ============================================================================ chấm từng kỳ
 def _ticket_from_marginals(pi: np.ndarray, k: int) -> list[int]:
     return sorted(int(i) + 1 for i in np.argsort(-pi, kind='stable')[:k])
 
@@ -171,11 +141,6 @@ def _record(draw_id: int, day: str, row: np.ndarray, bonus: int, main_ll: float,
 
 def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0,
                  top_nodes: int | None = None) -> list[dict]:
-    """Chấm các luật hỗn hợp đã lưu (một luật mỗi kỳ, đã dựng TRƯỚC kỳ đó) — nhiệt độ τ trên trọng số.
-
-    Vé: 6 số π cao nhất (quy tắc legacy) hoặc, khi có ``top_nodes``, bộ xác suất đồng thời cao nhất
-    ``Law.top`` của CHÍNH luật đã hiệu chuẩn (quy tắc họ ML) — luôn là vé mà luật ấy sẽ phát.
-    """
     spec = laws[0].spec
     out = []
     for offset, law in enumerate(laws):
@@ -184,7 +149,6 @@ def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0,
         bonus = int(series.obs['main']['bonus'][t]) if spec.bonus_same_drum else 0
         tempered = law if tau == 1.0 else Law(spec, law.values ** tau, law.mixture)
         main_ll = _mixture_main_log_likelihood(tempered, row)
-        # Số đặc biệt Power chấm riêng: log P(b | bộ chính) = log P(bộ chính, b) − log P(bộ chính).
         bonus_ll = tempered.log_likelihood(row, bonus) - main_ll if spec.bonus_same_drum else 0.
         pi = tempered.marginals()
         if top_nodes is None:
@@ -198,11 +162,6 @@ def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0,
 
 def ml_arm_records(laws: list[Law], portfolios: list[list[list[int]]], series: Series, start: int,
                    tau: float, search_nodes: int) -> tuple[list[dict], list[dict]]:
-    """Nhánh ML và ML + τ; cả hai chấm vé mà CHÍNH luật của nhánh sẽ phát (``Law.top``), không phải top biên.
-
-    Nhánh ML dùng đúng danh mục đã xếp hạng lúc chạy (vé đầu là vé công bố); nhánh τ xếp hạng lại
-    trên luật đã hiệu chuẩn, vì τ có thể đổi bộ xác suất cao nhất.
-    """
     plain = _law_records(laws, series, start)
     for record, tickets in zip(plain, portfolios):
         record['ticket'] = sorted(tickets[0])
@@ -212,16 +171,11 @@ def ml_arm_records(laws: list[Law], portfolios: list[list[list[int]]], series: S
 
 
 def _mixture_main_log_likelihood(law: Law, row: np.ndarray) -> float:
-    """log P(bộ chính) của hỗn hợp, đã lấy tổng trên số đặc biệt."""
     expert = law.log_values @ row - law.log_den
     return float(np.logaddexp.reduce(law.log_mix + expert))
 
 
 def run_legacy(series: Series, start: int, end: int) -> tuple[list[Law], list[float]]:
-    """Mô hình legacy đang chạy: luật hỗn hợp trước mỗi kỳ start..end − 1, và phần tăng e-value của engine.
-
-    Phần tăng log W của engine ở mỗi kỳ phải bằng log-likelihood của luật dựng lại trừ luật công bằng
-    (kiểm tra nhất quán: benchmark chấm đúng mô hình mà engine chấm)."""
     f = Forecaster(series.product)
     f.update(series.head(start))
     comp = f.components['main']
@@ -236,12 +190,10 @@ def run_legacy(series: Series, start: int, end: int) -> tuple[list[Law], list[fl
 
 
 def run_ml(series: Series, start: int, end: int, config: MLConfig, tickets: int) -> tuple[list[Law], list[list[list[int]]]]:
-    """Bộ ML đang chạy: luật trước mỗi kỳ và danh mục ``tickets`` bộ theo đúng luật xếp hạng đã phát (``Law.top``)."""
     model = MLForecaster(series.product, config)
     model.update(series.head(start))
     laws, portfolios = [], []
     for t in range(start, end):
-        # update thay component bằng candidate đã học; không giữ tham chiếu từ warmup.
         comp = model.components['main']
         law = comp.law(str(series.dates[t])[:10], next_id=int(series.draw_ids[t]))
         top, _ = law.top(tickets, max_nodes=config.search_nodes)
@@ -262,14 +214,12 @@ def _eta_records(eta: np.ndarray, series: Series, start: int) -> list[dict]:
                     _ticket_from_marginals(pi[i], spec.k), spec) for i in range(len(eta))]
 
 
-# ============================================================================ challenger: chọn, bỏ nhóm, hiệu chuẩn
 def _weekdays(series: Series) -> np.ndarray:
     days = [date.fromisoformat(str(d)[:10]).weekday() for d in series.dates]
     return np.asarray(days + [days[-1]])
 
 
 def select_challengers(series: Series, split: Split) -> dict:
-    """Mọi quyết định của challenger, CHỈ trên dev và validation; trả cấu hình đã chốt kèm nhật ký chọn."""
     x = series.obs['main']['X']
     spec = CONFIGS[series.product].components['main']
     bonus = series.obs['main']['bonus'] if spec.bonus_same_drum else None
@@ -282,7 +232,6 @@ def select_challengers(series: Series, split: Split) -> dict:
         main, b = ch.cb_log_likelihood(eta, rows, extra)
         return float((main + b).mean())
 
-    # shrink: lưới (nửa đời, độ co), τ tối ưu trên dev
     shrink_log = []
     for half_life in PROTOCOL['shrink_half_lives']:
         for prior in PROTOCOL['shrink_priors']:
@@ -295,7 +244,6 @@ def select_challengers(series: Series, split: Split) -> dict:
     shrink_val = best['tau_dev'] * shrink_score[d_end:v_end]
     shrink_tau = ch.fit_temperature(shrink_val, val_x, val_b, PROTOCOL['temperature_bounds'])
 
-    # causal: λ trên dev với mọi nhóm
     phi = ch.causal_features(x, _weekdays(series))
     every = PROTOCOL['refit_every']
     all_columns = list(range(len(ch.FEATURES)))
@@ -305,7 +253,6 @@ def select_challengers(series: Series, split: Split) -> dict:
         l2_log.append({'l2': l2, 'dev_mean_ll': mean_ll(eta, dev_x, dev_b)})
     l2 = max(l2_log, key=lambda r: r['dev_mean_ll'])['l2']
 
-    # ablation: bỏ từng nhóm, Δ trên từng fold liền của dev + validation
     folds = np.array_split(np.arange(w, v_end), PROTOCOL['ablation_folds'])
     full = ch.causal_walk_forward(phi, x, all_columns, l2, w, v_end, every)
     rows, extra = x[w:v_end], bonus[w:v_end] if bonus is not None else None
@@ -315,19 +262,17 @@ def select_challengers(series: Series, split: Split) -> dict:
         kept_columns = [i for i, name in enumerate(ch.FEATURES) if name not in names]
         reduced = ch.causal_walk_forward(phi, x, kept_columns, l2, w, v_end, every)
         red_main, red_b = ch.cb_log_likelihood(reduced, rows, extra)
-        delta = (full_main + full_b) - (red_main + red_b)   # > 0: nhóm có ích
+        delta = (full_main + full_b) - (red_main + red_b)
         per_fold = [float(delta[f - w].mean()) for f in folds]
         keep = float(np.mean(per_fold)) > 0 and sum(v > 0 for v in per_fold) >= PROTOCOL['ablation_min_positive_folds']
         ablation.append({'group': group, 'delta_per_fold': per_fold, 'mean_delta': float(np.mean(per_fold)), 'keep': keep})
     groups = [a['group'] for a in ablation if a['keep']]
     columns = [i for i, name in enumerate(ch.FEATURES) if any(name in ch.GROUPS[g] for g in groups)]
     if columns:
-        # Cùng chuỗi η (bắt đầu ở warmup, học lại cùng nhịp) mà challenger_eta sẽ chấm: học lại từ
-        # dev_end thì lịch học lại lệch (Power lệch 8 kỳ) và τ được chỉnh trên một chuỗi khác.
         aligned = ch.causal_walk_forward(phi, x, columns, l2, w, v_end, every)
         causal_tau = ch.fit_temperature(aligned[d_end - w:], val_x, val_b, PROTOCOL['temperature_bounds'])
     else:
-        causal_tau = 0.0  # không nhóm nào ổn định: challenger chính là luật công bằng
+        causal_tau = 0.0
     return {'shrink': {**best, 'tau_validation': shrink_tau, 'grid': shrink_log},
             'causal': {'l2': l2, 'l2_grid': l2_log, 'ablation': ablation, 'groups': groups,
                        'tau_validation': causal_tau},
@@ -335,7 +280,6 @@ def select_challengers(series: Series, split: Split) -> dict:
 
 
 def challenger_eta(series: Series, chosen: dict, start: int, end: int) -> dict[str, np.ndarray]:
-    """η đã chốt của hai challenger cho các kỳ start..end − 1 (walk-forward tiếp tục học lại)."""
     x = series.obs['main']['X']
     s = chosen['shrink']
     shrink = s['tau_validation'] * s['tau_dev'] * chosen['_shrink_score'][start:end]
@@ -348,9 +292,7 @@ def challenger_eta(series: Series, chosen: dict, start: int, end: int) -> dict[s
     return {'shrink': shrink, 'causal': causal}
 
 
-# ============================================================================ thước đo
 def reliability(records: list[dict], k: int, n: int) -> dict:
-    """Bin theo hệ số π/(k/n); ECE = Σ (số quan sát bin / tổng) · |dự báo trung bình − tần suất thật|."""
     edges = (0.0, 0.9, 0.97, 1.03, 1.1, np.inf)
     p0 = k / n
     pi = np.concatenate([r['pi'] for r in records])
@@ -380,7 +322,6 @@ def segment_metrics(records: list[dict], spec: SetSpec) -> dict:
 
 
 def paired_test(candidate: list[dict], baseline: list[dict] | None) -> dict:
-    """DM HAC một phía trên Δ log-score từng kỳ (baseline None = luật công bằng, điểm 0)."""
     a = np.array([r['main_gain'] + r['bonus_gain'] for r in candidate])
     if baseline is not None:
         if [r['id'] for r in baseline] != [r['id'] for r in candidate]:
@@ -388,8 +329,6 @@ def paired_test(candidate: list[dict], baseline: list[dict] | None) -> dict:
         a = a - np.array([r['main_gain'] + r['bonus_gain'] for r in baseline])
     thirds = [float(part.mean()) for part in np.array_split(a, 3)]
     if np.allclose(a, 0.0, rtol=0.0, atol=1e-12):
-        # Hai luật trùng nhau (ví dụ challenger đã co hẳn về công bằng): chênh lệch chỉ là sai số
-        # làm tròn, không có gì để kiểm.
         return {'mean_difference_nats': 0.0, 'hac_se': 0.0, 'p_value_greater': 1.0, 'thirds': [0.0] * len(thirds),
                 'identical': True}
     dm = diebold_mariano(a)
@@ -398,12 +337,6 @@ def paired_test(candidate: list[dict], baseline: list[dict] | None) -> dict:
 
 
 def promotion_decision(results: dict) -> dict:
-    """Áp luật đề bạt đã đăng ký lên kết quả test của mọi ứng viên × sản phẩm.
-
-    Họ Holm CỐ ĐỊNH là mọi ứng viên × mọi sản phẩm đã đăng ký; giả thuyết vắng mặt (chạy một sản
-    phẩm, hay không có ML) được tính p = 1 nên không làm họ hiệu chỉnh nhỏ lại. Lượt chạy thiếu thì
-    không xét đề bạt (``incomplete_run``).
-    """
     alpha = PROTOCOL['alpha']
     family = [(p, c) for p in PROTOCOL['products'] for c in CANDIDATES]
     present = {(p, c) for p, c in family if p in results and c in results[p]['tests']['test']}
@@ -418,12 +351,11 @@ def promotion_decision(results: dict) -> dict:
         metrics = results[product]['segments']['test'][candidate]
         checks = {
             'beats_fair_holm': test['vs_fair']['mean_difference_nats'] > 0 and adjusted[(product, candidate)] < alpha,
-            # Thiếu một mô hình đang chạy (chạy không có ML) thì không thể đạt điều kiện này.
             'beats_incumbents': all(f'vs_{inc}' in test and test[f'vs_{inc}']['mean_difference_nats'] > 0
                                     and test[f'vs_{inc}']['p_value_greater'] < alpha for inc in INCUMBENTS),
             'validation_positive': results[product]['segments']['validation'][candidate]['mean_log_gain_nats'] > 0,
             'stable_thirds': sum(v > 0 for v in test['vs_fair']['thirds']) >= 2,
-            'brier_not_worse': metrics['brier'] <= metrics['brier_fair'] + 1e-12,  # dung sai làm tròn
+            'brier_not_worse': metrics['brier'] <= metrics['brier_fair'] + 1e-12,
         }
         checks = {name: bool(value) for name, value in checks.items()}
         out[f'{product}:{candidate}'] = {'checks': checks, 'holm_p_vs_fair': float(adjusted[(product, candidate)]),
@@ -438,7 +370,6 @@ def promotion_decision(results: dict) -> dict:
     return out
 
 
-# ============================================================================ chạy
 def _versions() -> dict:
     out = {'python': platform.python_version(), 'legacy_engine': LEGACY_VERSION, 'ml_checkpoint': ML_VERSION}
     for name in ('numpy', 'scipy', 'scikit-learn', 'pydantic'):
@@ -457,26 +388,15 @@ def _git(root: Path, *args: str) -> str | None:
 
 
 def _plain(value):
-    """Dạng JSON của một giá trị (tuple → list…), để so giao thức trong bộ nhớ với giao thức đọc từ tệp."""
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
 def protocol_mismatches(results: dict) -> list[str]:
-    """Sản phẩm có artifact KHÔNG chạy theo ``PROTOCOL`` hiện hành (hoặc không ghi giao thức).
-
-    Dựng lại báo cáo từ artifact như thế sẽ chấm số đo của giao thức cũ bằng luật đề bạt mới và dán
-    nhãn giao thức mới lên chúng; nơi gọi phải từ chối và chạy lại.
-    """
     current = _plain(PROTOCOL)
     return [product for product, result in results.items() if result.get('protocol') != current]
 
 
 def source_manifest() -> dict:
-    """sha256 của MỌI module của dự án (``vlm``, ``vietlott_engine``) đang được nạp — đúng tập mã đã chạy.
-
-    Danh sách viết tay từng bỏ sót module quyết định kết luận (p DM, Holm, dữ liệu, đa thức đối
-    xứng); gọi sau khi chạy xong thì cả module nạp muộn cũng có mặt.
-    """
     base = Path(__file__).resolve().parents[2]
     out = {}
     for module in list(sys.modules.values()):
@@ -496,7 +416,6 @@ def _git_state(root: Path) -> dict:
 
 
 def benchmark_product(product: str, root: Path, *, ml_config: MLConfig | None = None, include_ml: bool = True) -> dict:
-    """Toàn bộ giao thức cho một sản phẩm; trả artifact JSON-hoá được (không gồm trạng thái mô hình)."""
     started = time.perf_counter()
     series, provenance = load_frozen_series(product, root)
     spec = CONFIGS[series.product].components['main']
@@ -534,7 +453,7 @@ def benchmark_product(product: str, root: Path, *, ml_config: MLConfig | None = 
     fair_eta = np.zeros((end - w, spec.n))
     arms['fair'] = _eta_records(fair_eta, series, w)
     rng = np.random.default_rng(PROTOCOL['seed'])
-    for record in arms['fair']:  # vé ngẫu nhiên chốt trước kỳ: kiểm tra độc lập của mốc siêu bội
+    for record in arms['fair']:
         record['ticket'] = sorted((rng.choice(spec.n, spec.k, replace=False) + 1).tolist())
         record['hits'] = len(set(record['ticket']) & set(_drawn(series, record['id'])))
     for records in arms.values():
@@ -599,7 +518,6 @@ def benchmark_product(product: str, root: Path, *, ml_config: MLConfig | None = 
 
 
 def draw_table(arms: dict[str, list[dict]]) -> dict:
-    """Từng kỳ của mọi nhánh, dạng cột: dự báo (π từng số, vé), điểm (log, Brier) và số khớp."""
     first = next(iter(arms.values()))
     table = {'id': [r['id'] for r in first], 'date': [r['date'] for r in first], 'drawn': [r['drawn'] for r in first], 'arms': {}}
     for name, records in arms.items():
@@ -630,7 +548,6 @@ def segments_of(record: dict, series: Series, segments: dict[str, tuple[int, int
 
 
 def ch_fit_law_temperature(laws: list[Law], series: Series, start: int) -> float:
-    """τ trên trọng số của từng chuyên gia (values ** τ) cực đại log-likelihood validation; giữ luật hợp lệ."""
     from scipy.optimize import minimize_scalar
 
     spec = laws[0].spec
@@ -648,7 +565,6 @@ def ch_fit_law_temperature(laws: list[Law], series: Series, start: int) -> float
     return float(minimize_scalar(loss, bounds=(lo, hi), method='bounded', options={'xatol': 1e-3}).x)
 
 
-# ============================================================================ báo cáo
 ARM_LABELS = {
     'fair': 'Công bằng (vé ngẫu nhiên chốt trước)', 'legacy': 'Legacy đang chạy', 'legacy_tempered': 'Legacy + hiệu chuẩn τ',
     'ml': 'ML đang chạy', 'ml_tempered': 'ML + hiệu chuẩn τ', 'shrink': 'Challenger co về công bằng',
@@ -661,7 +577,7 @@ def _vn(x: float | None, digits: int = 4) -> str:
     if x is None or (isinstance(x, float) and not np.isfinite(x)):
         return '—'
     if abs(x) < 0.5 * 10 ** -digits:
-        x = 0.0  # không in "-0,00"
+        x = 0.0
     return f'{x:,.{digits}f}'.replace(',', '\0').replace('.', ',').replace('\0', '.')
 
 
@@ -670,7 +586,6 @@ def _p(x: float) -> str:
 
 
 def render_report(results: dict[str, dict], decision: dict) -> str:
-    """Báo cáo Markdown tiếng Việt in TỪ artifact; không câu kết luận nào viết sẵn."""
     lines = ['# Vietlott: kiểm chứng xác suất và số khớp H — Mega 6/45, Power 6/55', '',
              f'Giao thức đăng ký ngày {PROTOCOL["registered_at"]} (`vlm.forecast.hit_benchmark.PROTOCOL`). '
              'Walk-forward theo kỳ: mỗi kỳ được dự báo trước khi mô hình thấy kết quả; cấu hình challenger chọn '

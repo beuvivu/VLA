@@ -1,14 +1,3 @@
-"""Điều khiển của trang trên điện thoại, đo trong Chromium thật.
-
-Hai lỗi tìm thấy khi rà 50 trang ngày 21-11-2026, cả hai chỉ thấy được bằng bố cục thật:
-
-* Ô chọn cắt chữ của chính lựa chọn: «Từ độ dài này trở lên» (soi cầu vị trí, 390–412px), «Tất cả ngày
-  đang hiển thị» (kết quả miền, 412–430px), «Gan nhiều nhất» và «Tất cả các thứ» (tần suất, 320–360px).
-  Mỗi trang có ngưỡng một cột riêng, đặt hẹp hơn chỗ chữ cần.
-* Nút «Hiệu ứng» ghim ``position: fixed`` ở góc phải dưới, che chữ của bảng và đoạn văn khi cuộn.
-
-Chạy trong job trình duyệt của CI với ``UI_BROWSER_REQUIRED=1``; nơi khác thiếu Chromium thì bỏ qua.
-"""
 from __future__ import annotations
 
 import json
@@ -19,15 +8,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
-#: Khổ màn hình điện thoại phổ biến, từ máy nhỏ nhất còn dùng tới máy lớn.
 PHONE_WIDTHS = (320, 360, 390, 412, 430)
-#: Trang đại diện cho bốn kiểu khung: trang chủ, công cụ soi cầu, Vietlott, bảng thống kê.
 TOGGLE_PAGES = ("index.html", "soi-cau-vi-tri.html", "vietlott-keno.html", "tan-suat-loto.html")
 
-#: Bề rộng cần lấy từ CHÍNH Chromium: bản sao của ô chọn đặt cạnh ô gốc (cùng bộ chọn CSS, cùng phông, lề và
-#: mũi tên của theme), bề rộng ``max-content`` = chữ của lựa chọn dài nhất + lề + mũi tên. Ô gốc hẹp hơn bản sao
-#: là cắt chữ. Đừng ước lượng mũi tên bằng một hằng số: 20px rộng hơn mũi tên thật 1px, và trên runner CI (không
-#: có phông Inter) hai ô tự co giãn theo nội dung ở bảng Đặc Biệt tháng/năm bị báo nhầm như thế.
 _CLIPPED_SELECTS = """() => {
   const out = [];
   for (const s of document.querySelectorAll('select')) {
@@ -109,7 +92,6 @@ def _pages_with_selects() -> list[str]:
 
 
 def test_the_pages_under_test_exist() -> None:
-    """Tập quét không được rỗng: hai phép kiểm dưới chỉ đỏ được khi có trang để mở."""
     pages = _pages_with_selects()
     assert len(pages) >= 20, pages
     assert {"soi-cau-vi-tri.html", "ket-qua-mien-nam.html", "tan-suat-loto.html"} <= set(pages)
@@ -117,7 +99,6 @@ def test_the_pages_under_test_exist() -> None:
 
 
 def test_the_select_rule_catches_a_clipped_option(chromium) -> None:
-    """Ghim chính luật đo trên mẫu dựng sẵn: ô 120px không chứa nổi chữ dài, ô 360px thì chứa được."""
     page = chromium.new_page(viewport={"width": 390, "height": 600})
     page.set_content(
         '<select id="hep" style="width:120px;padding:0 12px;font:13px sans-serif">'
@@ -131,8 +112,6 @@ def test_the_select_rule_catches_a_clipped_option(chromium) -> None:
 
 
 def test_the_toggle_rule_catches_text_under_a_fixed_button(chromium) -> None:
-    """Ghim luật đo chồng lấn: chữ thật dưới nút ghim cố định bị bắt; chữ trong ``<details>`` đóng và chữ
-    bị khung cuộn cắt mất thì không, vì người dùng không thấy chúng."""
     page = chromium.new_page(viewport={"width": 390, "height": 400})
     page.set_content(
         '<main id="app-main"><div style="height:330px"></div>'
@@ -162,10 +141,6 @@ def test_no_select_clips_an_option_on_a_phone(chromium, width: int) -> None:
 
 @pytest.mark.parametrize("name", TOGGLE_PAGES)
 def test_the_motion_toggle_never_covers_text_on_a_phone(chromium, name: str) -> None:
-    """Cuộn từ đầu tới cuối trang: không lúc nào nút «Hiệu ứng» nằm đè lên chữ của nội dung.
-
-    Bật hiệu ứng (không giảm chuyển động) vì khi giảm chuyển động nút bị ẩn hẳn và phép kiểm trống.
-    """
     context = chromium.new_context(viewport={"width": 390, "height": 760}, is_mobile=True, has_touch=True,
                                    reduced_motion="no-preference")
     page = context.new_page()
@@ -173,9 +148,6 @@ def test_the_motion_toggle_never_covers_text_on_a_phone(chromium, name: str) -> 
     page.wait_for_function("() => document.getElementById('app-motion-toggle')?.hidden === false")
     seen_on_screen = False
     problems: list[str] = []
-    # Cuộn TỨC THÌ: trang đặt scroll-behavior: smooth, nên khi bật hiệu ứng mỗi lần cuộn là một hoạt cảnh và
-    # đo giữa chừng thì nút chưa tới (trang chủ dài ~30 000px). Đọc lại chiều cao ở mỗi bước vì khối tải chậm
-    # làm trang dài thêm; bước cuối cuộn thẳng tới nút để luôn có ít nhất một lần nút ở trên màn hình.
     for label in ("0%", "25%", "50%", "75%", "nút"):
         if label == "nút":
             page.evaluate("() => document.getElementById('app-motion-toggle').scrollIntoView({block: 'end', behavior: 'instant'})")
