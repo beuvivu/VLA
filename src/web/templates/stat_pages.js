@@ -1299,27 +1299,6 @@ function renderTomorrow() {
     mk("div", {"data-number": suffix, "data-count": count}, [mk("b", null, suffix), mk("span", null, `${count} lần`)])));
 }
 
-function groupSpecial(keyOf, label) {
-  const rows = selected();
-  setCount(rows);
-  const groups = new Map();
-  rows.forEach((r) => {
-    const k = keyOf(r.d);
-    if (!groups.has(k)) groups.set(k, new Array(100).fill(0));
-    groups.get(k)[parseInt(lastTwo(r.s), 10)] += 1;
-  });
-  const keys = Array.from(groups.keys()).sort().reverse();
-  const head = [label, "Số kỳ", "Về nhiều nhất", "Số lần", "Không về"];
-  const body = keys.map((k) => {
-    const c = groups.get(k);
-    const total = c.reduce((a, b) => a + b, 0);
-    const best = c.indexOf(Math.max(...c));
-    const missing = c.filter((v) => v === 0).length;
-    return [k, total, pad2(best), Math.max(...c), missing];
-  });
-  table($("sp-grid"), head, body, { numeric: [1, 3, 4] });
-}
-
 const WEEKDAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 function mondayIndex(iso) {
