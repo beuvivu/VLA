@@ -449,14 +449,6 @@ def run_extensions(
             write_code_csv(table, out / name, index=False)
     _, _, pair_cut_rows = write_pair_recency(pair, out)
 
-    randomness = {"ks_full_special": ks, "ljung_box_even_tail_count": ljung}
-    (out / "randomness_extensions.json").write_text(
-        json.dumps(randomness, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (out / "coverage_coupon.json").write_text(
-        json.dumps(coverage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-
     manifest = {
         "schema_version": 1,
         "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),

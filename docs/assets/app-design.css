@@ -1,4 +1,3 @@
-
 body[data-app-design="crafto"][data-ui-page] {
   --app-design-cream:color-mix(in srgb,var(--ui-surface,#fff) 94%,#dabd88);
   --app-design-ink:var(--ui-ink,#2c2e3c);

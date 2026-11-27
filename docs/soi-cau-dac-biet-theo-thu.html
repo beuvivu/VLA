@@ -6,10 +6,9 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
 <meta name="referrer" content="no-referrer" />
 <script src="assets/app-theme.js?rev=32789ffffb14d899" data-app-theme></script>
-<link rel="stylesheet" href="assets/ui.css?rev=fe862e1b6b312422" />
+<link rel="stylesheet" href="assets/ui.css?rev=51ead3056bde48f1" />
   <title>Cầu Đặc Biệt theo thứ — Phân tích XSMB</title>
   <style>
-
 [hidden]{display:none!important}
 
 .tr-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
@@ -471,8 +470,7 @@ body.app-analysis-page .app-bridge-cell {min-width:30px;min-height:40px}
 }
 
   </style>
-<style id="app-analysis-workspace-style">
-body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-brand-ink);--app-workspace-soft:var(--ui-brand-soft);--app-workspace-line:var(--ui-border)}
+<style id="app-analysis-workspace-style">body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-brand-ink);--app-workspace-soft:var(--ui-brand-soft);--app-workspace-line:var(--ui-border)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero) {position:relative;isolation:isolate;padding:32px;margin:0 0 16px;border:1px solid var(--ui-border);border-radius:24px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm);overflow:hidden;color:var(--ui-ink)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero)::after {content:"";position:absolute;inset:0 0 0 auto;width:32%;z-index:-1;background:radial-gradient(ellipse at right top,var(--app-workspace-soft),transparent 74%);pointer-events:none}
 body.app-workspace .app-workspace-hero h1 {font-size:clamp(26px,3vw,40px);line-height:1.2;letter-spacing:-.035em;margin:8px 0 16px;max-width:30ch}
@@ -580,12 +578,12 @@ body.app-workspace:is([data-app-workspace-page="cap-lon-loto"],[data-app-workspa
 body.app-workspace .sp-table td.marked,body.app-workspace .sp-table td.marked b {color:var(--ui-mark-ink)}
 body.app-workspace .sp-bar {background:var(--ui-chart-1)}
 </style>
-<link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" media="print" onload="this.media='all'" data-ui-visual-system>
-<noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" data-ui-visual-system></noscript>
-<link rel="stylesheet" href="assets/app-shell.css?rev=cb5a4b08a430f9b0" data-app-shell>
+<link rel="stylesheet" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" data-ui-visual-system></noscript>
+<link rel="stylesheet" href="assets/app-shell.css?rev=8275eb189e93c27d" data-app-shell>
 <link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png?rev=b1cb60b93dacacc8" data-app-brand>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png?rev=2e4f5d3a86139a08" data-app-brand>
-<link rel="stylesheet" href="assets/app-design.css?rev=a39771ca440eacae" data-app-design-style>
+<link rel="stylesheet" href="assets/app-design.css?rev=907a6da02bfef31c" data-app-design-style>
 <script src="assets/app-motion.js?rev=6ebbb2658eb2c533" defer data-app-motion-script></script>
 <script type="application/json" id="app-evidence-data" data-app-evidence>{"schema":1,"page":{"sources":[{"title":"Sổ kết quả XSMB đã lưu","snippet":"4 278 kỳ quay, 01-01-2015 → 26-11-2026. Mỗi kỳ 27 giải, từ Đặc Biệt (5 chữ số) đến giải bảy (2 chữ số).","url":"so-ket-qua-truyen-thong.html"},{"title":"Bộ dò cầu vị trí","snippet":"107 vị trí chữ số trên bảng kết quả (Đặc Biệt 0–4 … giải bảy 99–106); một cầu ghép chữ số ở hai vị trí và chạy theo kỳ quay.","url":"soi-cau-vi-tri.html"}],"reasoningTrace":{"steps":["Đọc sổ kết quả đã lưu và đánh số 107 vị trí chữ số của mỗi kỳ.","Với mỗi cặp vị trí a \u003c b, ghép số 10·d[a] + d[b] ở từng kỳ.","Như cầu Đặc Biệt, nhưng chỉ trên các kỳ cùng một thứ trong tuần.","Cầu chạy N ngày khi N bước liên tiếp gần nhất đều trúng. Đây là thống kê mô tả; độ dài cầu đã được đo trên toàn lịch sử ở mục «Cầu dài có đáng tin hơn?»."]}},"sections":[],"values":{}}</script>
 <script src="assets/app-evidence.js?rev=193a453d1eca5ae9" defer data-app-evidence></script>
@@ -1007,7 +1005,6 @@ body.app-workspace .sp-bar {background:var(--ui-chart-1)}
     };
     const end = q.get("ngay");
     if (end && /^\d{4}-\d{2}-\d{2}$/.test(end)) params.end = end;
-
     const so = q.get("so");
     params.so = so && /^\d{2}$/.test(so) ? so : null;
     const vt = /^(\d{1,3})x(\d{1,3})$/.exec(q.get("vt") || "");
@@ -1204,12 +1201,10 @@ body.app-workspace .sp-bar {background:var(--ui-chart-1)}
       if (form.elements.thu) form.elements.thu.value = String(params.weekday);
       const dates = form.elements.ngay;
       fillDates(dates, params.weekday, last.date);
-
       if (form.elements.thu) {
         form.elements.thu.addEventListener("change", () => fillDates(dates, Number(form.elements.thu.value), null));
       }
       form.addEventListener("submit", (event) => {
-
         event.preventDefault();
         window.location.assign(formQuery(form));
       });
@@ -1268,7 +1263,6 @@ body.app-workspace .sp-bar {background:var(--ui-chart-1)}
           for (const j of cells) card.querySelector(`.tr-number[data-value="${j}"]`).classList.add("is-hit");
           const ok = step(rule.kind, prev, draw, single.a, single.b, params.both);
           if (rule.kind === "bo-so") {
-
             const inSet = cells.length > 0;
             const set = pad(BO_ID[numberAt(prev, single.a, single.b)]);
             facts.append(el("span", ok ? "app-cau-fact-hit" : "app-cau-fact-miss",
@@ -1305,7 +1299,6 @@ body.app-workspace .sp-bar {background:var(--ui-chart-1)}
         buttons.append(button);
       }
       detail.append(buttons);
-
       const tested = params.both && REPORT.backtest_both ? REPORT.backtest_both : REPORT.backtest;
       const history = tested && tested.rows[Math.min(params.count, tested.rows.length - 1)];
       if (history && history.n >= 200) {

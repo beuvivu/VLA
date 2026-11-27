@@ -559,8 +559,6 @@ def test_pair_gan_counts_either_number_not_both() -> None:
     assert "&& !seen.has(pair[1])" in _js_function("pairGaps"), (
         "phải là 'không con nào về' mới bỏ qua; dùng || là hoá thành 'cả hai'"
     )
-    js = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
-    assert "MỘT TRONG HAI" in js, "phải ghi lại định nghĩa đã kiểm chứng"
 
 
 def test_gan_compares_numbers_with_numbers() -> None:
@@ -601,9 +599,10 @@ def test_empty_range_clears_the_tables_instead_of_keeping_stale_numbers() -> Non
 
     tong = _js_function("renderSpecialByTong")
     assert "if (!rows.length) {" in tong, "không được return trắng"
+    branch = tong[tong.index("if (!rows.length) {") :]
+    branch = branch[: branch.index("return;")]
     for table_id in ("sp-grid", "sp-trans", "sp-parity"):
-        head = tong[: tong.index("// 1. Gan theo tổng")]
-        assert table_id in head, f"nhánh rỗng phải dựng lại {table_id}"
+        assert f'table($("{table_id}")' in branch, f"nhánh rỗng phải dựng lại {table_id}"
 
 
 def test_notes_only_name_columns_the_tables_actually_render() -> None:

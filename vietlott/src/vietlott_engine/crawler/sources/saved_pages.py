@@ -120,9 +120,14 @@ def read_har(text: str, origin: str) -> list[SavedDoc]:
     return docs
 
 
+def _on_vietlott(url: str) -> bool:
+    host = (urlparse(url).hostname or "").lower()
+    return host == "vietlott.vn" or host.endswith(".vietlott.vn")
+
+
 def har_diagnosis(text: str) -> str:
     entries = json.loads(text).get("log", {}).get("entries", [])
-    on_site = [e for e in entries if "vietlott.vn" in e.get("request", {}).get("url", "")]
+    on_site = [e for e in entries if _on_vietlott(e.get("request", {}).get("url", ""))]
     with_body = [e for e in on_site if (e.get("response", {}).get("content", {}) or {}).get("text")]
     pages = sorted({e["request"]["url"].split("?")[0] for e in on_site if "/trung-thuong/" in e["request"]["url"] or "/ajaxpro/" in e["request"]["url"].lower()})
     return (

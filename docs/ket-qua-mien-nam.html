@@ -5,12 +5,12 @@
 <script src="assets/app-theme.js?rev=32789ffffb14d899" data-app-theme></script>
 <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/critical.css?rev=bdf8c79646325826" />
-  <link rel="preload" href="assets/ui.css?rev=fe862e1b6b312422" as="style" />
-  <link rel="preload" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" as="style" />
-  <link rel="stylesheet" href="assets/ui.css?rev=fe862e1b6b312422" media="print" data-async-css="1" />
+  <link rel="preload" href="assets/ui.css?rev=51ead3056bde48f1" as="style" />
+  <link rel="preload" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" as="style" />
+  <link rel="stylesheet" href="assets/ui.css?rev=51ead3056bde48f1" media="print" data-async-css="1" />
   <script src="assets/css-async.js?rev=23c53b7c2f2df666" defer></script>
   <noscript>
-  <link rel="stylesheet" href="assets/ui.css?rev=fe862e1b6b312422" />
+  <link rel="stylesheet" href="assets/ui.css?rev=51ead3056bde48f1" />
   </noscript>
 <title>Kết quả xổ số Miền Nam · XSMN</title>
 <style>
@@ -351,12 +351,12 @@ border:1px solid var(--ui-brand-border);border-radius:12px;background:var(--ui-b
   .rg-table .tr-prize-row[data-prize="special"] .tr-prize-label{background:var(--ui-special-bg);color:var(--ui-special-ink)}
 }
 </style>
-<link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" media="print" onload="this.media='all'" data-ui-visual-system>
-<noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" data-ui-visual-system></noscript>
-<link rel="stylesheet" href="assets/app-shell.css?rev=cb5a4b08a430f9b0" data-app-shell>
+<link rel="stylesheet" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" data-ui-visual-system></noscript>
+<link rel="stylesheet" href="assets/app-shell.css?rev=8275eb189e93c27d" data-app-shell>
 <link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png?rev=b1cb60b93dacacc8" data-app-brand>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png?rev=2e4f5d3a86139a08" data-app-brand>
-<link rel="stylesheet" href="assets/app-design.css?rev=a39771ca440eacae" data-app-design-style>
+<link rel="stylesheet" href="assets/app-design.css?rev=907a6da02bfef31c" data-app-design-style>
 <script src="assets/app-motion.js?rev=6ebbb2658eb2c533" defer data-app-motion-script></script>
 <script type="application/json" id="app-evidence-data" data-app-evidence>{"schema":1,"page":{"sources":[{"title":"Sổ kết quả Miền Nam đã lưu","snippet":"Kết quả theo tỉnh/thành mỗi ngày quay, từ giải tám tới Đặc Biệt; lưu riêng, không dùng trong dự báo XSMB."}],"reasoningTrace":{"steps":["Đọc sổ kết quả vùng đã lưu, nhóm theo ngày quay rồi theo tỉnh/thành.","Hiển thị nguyên số đã công bố; bộ lọc ngày và tỉnh chỉ ẩn/hiện, không tính lại."]}},"sections":[{"match":".rg-evidence","title":"Kiểm định ngẫu nhiên và mốc xác suất Miền Nam","sources":[{"title":"Kiểm định từng đài Miền Nam","snippet":"Tám phép kiểm cho từng đài, phân phối chuẩn lấy bằng mô phỏng đúng cấu trúc 18 giải; hiệu chỉnh đa kiểm trên mọi (đài × phép kiểm) của miền."},{"title":"Phép chấm tiến cứu Miền Nam","snippet":"Mỗi cách dự báo chỉ đọc các kỳ trước ngày đích rồi được chấm bằng log-loss trên kỳ ấy, so với dự báo đều."}],"reasoningTrace":{"steps":["Mức nền một con lô ở một đài là 1 − 0,99¹⁸ (18 giải mỗi kỳ); đuôi Đặc Biệt là 1/100.","Mỗi đài được kiểm riêng vì là một bộ lồng cầu riêng; p của phép theo lồng lấy từ đuôi χ², các phép còn lại lấy từ mô phỏng.","Lợi log-loss dương nghĩa là tốt hơn dự báo đều; khoảng 95% lấy mẫu lại theo ngày quay, p hiệu chỉnh Holm.","Độ lệch thấy trên dữ liệu cũ chỉ được coi là xác nhận khi phép kiểm đã đăng ký vượt ngưỡng trên các kỳ quay SAU ngày đăng ký."]}}],"values":{}}</script>
 <script src="assets/app-evidence.js?rev=193a453d1eca5ae9" defer data-app-evidence></script>

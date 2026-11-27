@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from vietlott_engine.core.config import get_settings
 from vietlott_engine.core.games import GAMES, get_game
@@ -755,8 +756,9 @@ def _check_url(url: str, timeout: float) -> tuple[bool, str]:
 
     from vietlott_engine.crawler.http import is_cloudflare_challenge
 
+    host = (urlsplit(url).hostname or "").lower()
     try:
-        method = "HEAD" if "githubusercontent" in url else "GET"
+        method = "HEAD" if host == "raw.githubusercontent.com" else "GET"
         r = httpx.request(method, url, timeout=timeout, follow_redirects=True, headers={"User-Agent": "vietlott-quant-engine doctor"})
     except httpx.ProxyError as exc:
         return False, f"proxy từ chối ({exc.__class__.__name__})"

@@ -96,6 +96,17 @@ def test_har_without_result_pages_is_explained(tmp_path: Path) -> None:
     assert "2 requests, 1 to vietlott.vn, 0 with a body" in problem and "'All'" in problem
 
 
+def test_har_counts_only_hosts_of_vietlott_vn(tmp_path: Path) -> None:
+    entries = [
+        ("https://www.vietlott.vn/favicon.ico", "", None),
+        ("https://vietlott.vn.example.com/trung-thuong/", "", None),
+        ("https://example.com/?next=vietlott.vn", "", None),
+    ]
+    (tmp_path / "x.har").write_text(_har(entries), encoding="utf-8")
+    (problem,) = [p["problem"] for p in import_pages(tmp_path).pages if p["kind"] == "unreadable"]
+    assert "3 requests, 1 to vietlott.vn," in problem
+
+
 def test_classify_urls() -> None:
     def c(url: str, ajax: bool = False, post: str | None = None):
         return classify(SavedDoc("x", url, "", ajax=ajax, post=post))

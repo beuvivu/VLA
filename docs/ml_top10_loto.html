@@ -6,9 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
 <meta name="referrer" content="no-referrer" />
 <script src="assets/app-theme.js?rev=32789ffffb14d899" data-app-theme></script>
-<link rel="stylesheet" href="assets/ui.css?rev=fe862e1b6b312422" />
-  <style id="app-ml-forecast-style">
-.app-ml-forecast{max-width:1100px;min-width:0;margin:0 auto;color:var(--ui-ink);font-size:14px;line-height:1.6;--ml-accent:var(--ui-special-ink);--ml-accent-soft:var(--ui-special-bg);--ml-accent-border:var(--ui-special-border)}
+<link rel="stylesheet" href="assets/ui.css?rev=51ead3056bde48f1" />
+  <style id="app-ml-forecast-style">.app-ml-forecast{max-width:1100px;min-width:0;margin:0 auto;color:var(--ui-ink);font-size:14px;line-height:1.6;--ml-accent:var(--ui-special-ink);--ml-accent-soft:var(--ui-special-bg);--ml-accent-border:var(--ui-special-border)}
 .app-ml-forecast[data-ml-mode="loto"]{--ml-accent:var(--ui-ok);--ml-accent-soft:var(--ui-ok-soft);--ml-accent-border:var(--ui-ok-border)}
 .app-ml-forecast *{box-sizing:border-box}
 .app-ml-forecast [id]{scroll-margin-top:104px}
@@ -60,8 +59,7 @@
 @media print{.app-ml-switch,.app-ml-links{display:none}.app-ml-forecast .ui-table-wrap{overflow:visible}.app-ml-forecast .ui-table{min-width:0}.app-ml-forecast .ui-table :is(th,td){position:static;padding:8px}}
 </style>
   <title>ML — 10 số LOTO đứng đầu</title>
-<style id="app-analysis-workspace-style">
-body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-brand-ink);--app-workspace-soft:var(--ui-brand-soft);--app-workspace-line:var(--ui-border)}
+<style id="app-analysis-workspace-style">body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-brand-ink);--app-workspace-soft:var(--ui-brand-soft);--app-workspace-line:var(--ui-border)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero) {position:relative;isolation:isolate;padding:32px;margin:0 0 16px;border:1px solid var(--ui-border);border-radius:24px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm);overflow:hidden;color:var(--ui-ink)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero)::after {content:"";position:absolute;inset:0 0 0 auto;width:32%;z-index:-1;background:radial-gradient(ellipse at right top,var(--app-workspace-soft),transparent 74%);pointer-events:none}
 body.app-workspace .app-workspace-hero h1 {font-size:clamp(26px,3vw,40px);line-height:1.2;letter-spacing:-.035em;margin:8px 0 16px;max-width:30ch}
@@ -169,12 +167,12 @@ body.app-workspace:is([data-app-workspace-page="cap-lon-loto"],[data-app-workspa
 body.app-workspace .sp-table td.marked,body.app-workspace .sp-table td.marked b {color:var(--ui-mark-ink)}
 body.app-workspace .sp-bar {background:var(--ui-chart-1)}
 </style>
-<link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" media="print" onload="this.media='all'" data-ui-visual-system>
-<noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" data-ui-visual-system></noscript>
-<link rel="stylesheet" href="assets/app-shell.css?rev=cb5a4b08a430f9b0" data-app-shell>
+<link rel="stylesheet" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=c417c1b124ba147b" data-ui-visual-system></noscript>
+<link rel="stylesheet" href="assets/app-shell.css?rev=8275eb189e93c27d" data-app-shell>
 <link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png?rev=b1cb60b93dacacc8" data-app-brand>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png?rev=2e4f5d3a86139a08" data-app-brand>
-<link rel="stylesheet" href="assets/app-design.css?rev=a39771ca440eacae" data-app-design-style>
+<link rel="stylesheet" href="assets/app-design.css?rev=907a6da02bfef31c" data-app-design-style>
 <script src="assets/app-motion.js?rev=6ebbb2658eb2c533" defer data-app-motion-script></script>
 <script type="application/json" id="app-evidence-data" data-app-evidence>{"schema":1,"page":{"sources":[{"title":"Dự báo đã công bố trước kỳ quay","snippet":"Vector xác suất 100 số cho kỳ 27-11-2026: tổ hợp các thành phần ML, cầu, thống kê và hai nhánh đường đi, chốt mức (LOTO: tổng bằng số con khác nhau kỳ vọng mỗi kỳ; Đặc Biệt: tổng bằng 1), rồi hiệu chỉnh.","url":"dashboard.html"},{"title":"Mô hình ML thành phần","snippet":"Cây tăng cường có hiệu chỉnh Platt, học lại theo cửa sổ 2 000 ngày gần nhất; không có kỹ năng thẩm định thì xác suất co hẳn về tỉ lệ nền.","url":"ml_top10_loto.html"},{"title":"Sổ chấm kỹ năng ngoài mẫu","snippet":"Chấm chính vector xác suất đã công bố với kết quả thật, so với dự báo hằng số (Đặc Biệt 1/100, LOTO theo tần suất các kỳ trước). Số liệu đến 26-11-2026.","url":"model-quality.html"}],"reasoningTrace":{"steps":["Mỗi thành phần cho một vector xác suất 100 số, chỉ dùng các kỳ trước kỳ đích.","Trộn theo trọng số mặc định (hoặc vector đã học khi nó thắng mặc định ngoài mẫu), rồi hiệu chỉnh xác suất.","10 số LOTO có xác suất thành phần ML cao nhất.","Kỳ quay đã kiểm là ngẫu nhiên: kỹ năng ngoài mẫu đo được nằm quanh 0, nên xác suất này không cao hơn đáng kể mức nền."]}},"sections":[{"match":".app-lab-summary","title":"Tóm tắt bản dự báo ML","sources":[{"title":"Mô hình ML thành phần","snippet":"Cây tăng cường có hiệu chỉnh Platt, học lại theo cửa sổ 2 000 ngày gần nhất; không có kỹ năng thẩm định thì xác suất co hẳn về tỉ lệ nền.","url":"ml_top10_loto.html"}],"reasoningTrace":{"steps":["Ngày đích và số ứng viên được đọc từ đúng danh sách dự báo đang hiển thị.","Mức tin thành phần ML là trọng số đã lưu, dùng để co xác suất thô về nền; không phải xác suất trúng.","Nếu các dòng có mức tin khác nhau, hiển thị khoảng nhỏ nhất–lớn nhất. Thiếu hoặc sai mức tin ở bất kỳ dòng nào thì hiển thị dấu gạch ngang.","Khi mức tin bằng 0, xác suất công bố bằng nền. Thứ hạng phá hòa không chứng minh lợi thế dự báo."]}}],"values":{}}</script>
 <script src="assets/app-evidence.js?rev=193a453d1eca5ae9" defer data-app-evidence></script>
