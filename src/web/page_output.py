@@ -11,7 +11,7 @@ from core.paths import ASSETS, TEMPLATES
 
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
 
-_HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!-->).)*-->", re.S)
+_HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!--!?>).)*--!?>", re.S)
 _BLOCK = re.compile(r"<(script|style)\b([^>]*)>(.*?)</\1\s*>", re.I | re.S)
 
 _DETAIL_STAT_PAGES = frozenset({
