@@ -54,6 +54,7 @@ def test_the_corpus_actually_exercises_the_hard_cases() -> None:
         "the_long_tach_so",
         "menu_lap_nhan_truoc_bang_that",
         "hai_bang_bang_sau_day_du_hon",
+        "chu_thich_dong_bang_cham_than",
     ):
         assert required in corpus, required
     assert len(corpus) >= 20

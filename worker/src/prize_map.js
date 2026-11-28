@@ -114,7 +114,7 @@ export function decodeEntities(text) {
 
 export function htmlToLines(html) {
   let text = String(html || "");
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
+  text = text.replace(/<!--[\s\S]*?--!?>/g, "");
   text = text.replace(
     /<(script|style)\b[^>]*>(?:[\s\S]*?<\/\1\s*>|[\s\S]*$)/gi,
     "\n",
