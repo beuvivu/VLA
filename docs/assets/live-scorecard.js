@@ -228,6 +228,13 @@
     return t;
   }
 
+  function expectText(list) {
+    var base = list.items.reduce(function (s, item) { return s + item.base; }, 0);
+    var text = 'Chọn bừa: kỳ vọng trúng ' + number(base, 2) + '/' + list.items.length + ' mục mỗi kỳ';
+    if (base > 0 && base < 0.5) text += ' (≈ 1 lần mỗi ' + Math.round(1 / base) + ' kỳ)';
+    return text;
+  }
+
   function beforeText(t) {
     var head = t.priced === t.k ? 'Xác suất công bố TB ' : 'Chọn bừa TB ';
     var text = head + pct(t.exp / t.k, t.exp / t.k < 0.05 ? 2 : 1) + ' · kỳ vọng trúng ' + number(t.exp, 2) + '/' + t.k;
@@ -316,7 +323,8 @@
     head.scope = 'rowgroup';
     var link = el('a', '', main.title);
     link.href = main.page;
-    head.append(link, el('span', 'live-scorecard-group-name', main.group));
+    head.append(link, el('span', 'live-scorecard-group-name', main.group),
+      el('span', 'live-scorecard-expect', expectText(main)));
     var rows = [];
     if (next) {
       rows.push(listNext ? beforeRow(listNext, next, outcome(null), 'is-next',
