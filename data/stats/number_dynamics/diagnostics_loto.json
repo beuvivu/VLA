@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4278,
+  "history_days": 4280,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-11-26",
-  "active_numbers_last_draw": 26,
+  "calendar_end": "2026-11-28",
+  "active_numbers_last_draw": 24,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 41.601476264966884,
+    "hazard": 41.61123608213592,
     "lag_median": 1000000.0,
-    "regime_recent": 213.79357324797297,
-    "regime_long": 2371.16659700115
+    "regime_recent": 301.4384690598732,
+    "regime_long": 2522.1587221940063
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 5.571587379600803,
+    "t_statistic": 5.585948379529029,
     "holdout_days": 1070,
-    "brier_arithmetic": 0.18133848679616177,
-    "brier_logodds": 0.18147265313827385
+    "brier_arithmetic": 0.1813531847047442,
+    "brier_logodds": 0.18148639502707306
   },
-  "transition_active_mean_trials": 1009.9615384615385,
-  "regime_js_divergence_30_vs_180": 0.009812609453845354,
-  "entropy_recent": 4.549583117795413,
-  "entropy_long": 4.595840916575135,
-  "global_dynamics_reliability": 0.762835597201083,
+  "transition_active_mean_trials": 1014.75,
+  "regime_js_divergence_30_vs_180": 0.009686193807856708,
+  "entropy_recent": 4.551552582508285,
+  "entropy_long": 4.595878489484259,
+  "global_dynamics_reliability": 0.7633006055792227,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-11-26T11:37:02Z",
+  "generated_at_utc": "2026-11-28T11:35:16Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-11-26"
+  "anchor_date": "2026-11-28"
 }
