@@ -7,15 +7,15 @@
   "component_cols": [],
   "quality_pass": false,
   "meta_trust": 0.0,
-  "history_days": 90,
+  "history_days": 91,
   "minimum_history_days": 100,
   "tier_maturity_days": {
-    "five_component": 54,
-    "four_with_cau": 54,
-    "four_with_stat": 90,
-    "core_three": 90
+    "five_component": 55,
+    "four_with_cau": 55,
+    "four_with_stat": 91,
+    "core_three": 91
   },
   "trained_through_target_date": null,
-  "evaluated_at_utc": "2026-11-27T11:39:27Z",
-  "reason": "Stacked ML history is not mature for any supported tier: five_component=54, four_with_cau=54, four_with_stat=90, core_three=90"
+  "evaluated_at_utc": "2026-11-28T11:39:24Z",
+  "reason": "Stacked ML history is not mature for any supported tier: five_component=55, four_with_cau=55, four_with_stat=91, core_three=91"
 }

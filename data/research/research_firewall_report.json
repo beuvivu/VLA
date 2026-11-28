@@ -1,13 +1,13 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-11-27T11:37:12Z",
-  "anchor_date": "2026-11-27",
+  "generated_at_utc": "2026-11-28T11:36:26Z",
+  "anchor_date": "2026-11-28",
   "modes": {
     "loto": {
       "mode": "loto",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
-      "train_days": 2566,
+      "train_days": 2567,
       "validation_days": 856,
       "holdout_days": 856,
       "fdr_significant_train": 0,
@@ -16,21 +16,21 @@
       "minimum_effect_gate": 0.004,
       "reality_check": {
         "permutations": 63,
-        "observed_max_skill": 0.04806369276834149,
-        "null_max_skill_mean": 0.0439268439186214,
-        "null_max_skill_p95": 0.05211494943246948,
-        "p_value": 0.15625,
+        "observed_max_skill": 0.04906318550179137,
+        "null_max_skill_mean": 0.04389863060484216,
+        "null_max_skill_p95": 0.05276638306555237,
+        "p_value": 0.140625,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
       "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented.",
-      "cut_rows": 190
+      "cut_rows": 189
     },
     "de": {
       "mode": "de",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
-      "train_days": 2566,
+      "train_days": 2567,
       "validation_days": 856,
       "holdout_days": 856,
       "fdr_significant_train": 0,
@@ -39,15 +39,15 @@
       "minimum_effect_gate": 0.0005,
       "reality_check": {
         "permutations": 63,
-        "observed_max_skill": 0.010994043186895012,
-        "null_max_skill_mean": 0.011679850843290901,
-        "null_max_skill_p95": 0.014015376023827252,
-        "p_value": 0.640625,
+        "observed_max_skill": 0.010996278377372534,
+        "null_max_skill_mean": 0.011695500381023271,
+        "null_max_skill_p95": 0.014016375139560852,
+        "p_value": 0.65625,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
       "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented.",
-      "cut_rows": 191
+      "cut_rows": 192
     }
   }
 }

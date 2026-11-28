@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
-  "calendar_rows": 4279,
+  "calendar_rows": 4280,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-11-27",
-  "exact_next_day_pairs": 4265,
+  "calendar_end": "2026-11-28",
+  "exact_next_day_pairs": 4266,
   "skipped_nonconsecutive_boundaries": 13,
-  "generated_at_utc": "2026-11-27T11:39:21Z",
+  "generated_at_utc": "2026-11-28T11:39:16Z",
   "contract": "only exact +1 calendar-day transitions are counted",
   "ranking": "p_value ascending; posterior_rate shrinks to baseline with one kappa per table"
 }
