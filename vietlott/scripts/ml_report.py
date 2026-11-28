@@ -1,4 +1,3 @@
-"""Reproduce source-backed retrospective ML diagnostics; never certify them as live."""
 from __future__ import annotations
 
 import argparse

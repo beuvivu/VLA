@@ -1,4 +1,3 @@
-"""Bounded, independent updates with an atomic restart checkpoint."""
 from __future__ import annotations
 
 import asyncio
@@ -13,8 +12,6 @@ from pathlib import Path
 from vietlott_engine.forecast.schedule import VN
 from vlm.updates.schedule import LIVE_PRODUCTS, freshness, poll_interval, slot_key, vietnam_time
 
-# Bản sao Keno/Bingo18 cập nhật hai lần mỗi ngày (~00:00, ~12:00 UTC; đo trên `process_time` của nó):
-# 12 giờ giữa hai lượt + 1 giờ trễ cho phép.
 MIRROR_GRACE = timedelta(hours=13)
 
 
@@ -53,22 +50,14 @@ class UpdateRunner:
     @staticmethod
     def _freshness(product: str, entry: dict, now: datetime) -> dict:
         result = freshness(product, now, entry.get('last_draw_date'), entry.get('draws_on_last_date') or 0)
-        # Date-only fast-game histories cannot prove the latest intraday slot.
-        # Monitor actual ID progress instead, allowing a startup/publication grace.
         progress = entry.get('last_draw_advance') or entry.get('first_polled_at')
         minute = now.hour * 60 + now.minute
         if product not in ('keno', 'bingo18') or not progress:
             return result
         advanced_at = vietnam_time(datetime.fromisoformat(progress))
-        # Nguồn kiểm chứng được nhịp nào thì đo độ mới theo nhịp ấy (01-11-2026). Bản sao cộng đồng cập nhật
-        # lúc ~00:00 và ~12:00 UTC, nên chờ nó tới MIRROR_GRACE là bình thường; quá hạn nghĩa là bản sao đã lỡ
-        # một lượt — lúc ấy mới là sự cố. Chỉ áp khi chính KỲ MỚI NHẤT đến từ bản sao (``latest_source``) và
-        # đo từ lần tiến THẬT: mốc 06:00 hằng ngày sẽ dời báo động về một lượt ~07:00 bị lỡ thêm ~11 giờ.
-        # Nguồn khác giữ 20 phút như cũ.
         from_mirror = entry.get('last_advance_source') == 'mirror'
         waiting = from_mirror and now - advanced_at < MIRROR_GRACE
         if result['status'] == 'behind_schedule' and waiting:
-            # Từ kỳ đầu buổi sáng tới lượt cập nhật ~07:00, kho còn mang ngày hôm qua: đang chờ, không trễ lịch.
             result.update(status='date_only', note='Waiting for the next twice-daily verified mirror update.')
         if result['status'] == 'date_only' and 360 <= minute < 1314:
             grace = MIRROR_GRACE if from_mirror else timedelta(minutes=20)
@@ -133,7 +122,6 @@ class UpdateRunner:
             entry.update(last_attempt=now.isoformat(), slot=slot_key(product, now))
             try:
                 result = await asyncio.wait_for(self.update(product), self.timeout_s)
-                # Giữ chẩn đoán và cursor thực đã lưu kể cả lượt phục hồi còn lỗi.
                 entry.update({key:result[key] for key in ('source_attempts','continuity') if key in result})
                 if result.get('error'):
                     entry.update({key:result[key] for key in ('last_draw_id','last_draw_date',
@@ -164,8 +152,6 @@ class UpdateRunner:
             entry['next_attempt'] = (vietnam_time(self.clock()) + timedelta(seconds=delay)).isoformat()
             self._state['updated_at'] = vietnam_time(self.clock()).isoformat()
             self._save()
-            # Persist source success before independent model work. Its deadline
-            # and errors must never turn a saved draw into a source failure.
             if self.learn is not None and entry.get('error') is None:
                 entry['learning'] = {'enabled':True, 'status':'running', 'error':None}
                 self._save()

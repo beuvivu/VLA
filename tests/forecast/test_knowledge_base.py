@@ -1,5 +1,3 @@
-"""Kho tri thức: không nhìn trước, luật chỉ được chấm tiến cứu, giải thích cộng đúng ra con số đã công bố."""
-
 from __future__ import annotations
 
 import json
@@ -22,16 +20,12 @@ def _labels(n: int) -> list[str]:
 
 
 def _planted_lag(n: int, a: int, b: int, rate: float, seed: int = 3, start: int = 0) -> np.ndarray:
-    """Lịch sử công bằng, cộng: từ kỳ ``start``, hễ a về ở kỳ t−1 thì b được cài về ở kỳ t với xác suất ``rate``."""
     present = _fair(n, seed)
     rng = np.random.default_rng(seed + 100)
     for t in range(max(1, start), n):
         if present[t - 1, a] and rng.random() < rate:
             present[t, b] = True
     return present
-
-
-# --------------------------------------------------------------------------- bộ nhớ ngữ cảnh
 
 
 def test_a_context_reads_only_earlier_draws() -> None:
@@ -77,9 +71,6 @@ def test_the_analog_evaluation_scores_against_the_constant_on_the_same_draws() -
     json.dumps(res, allow_nan=False)
 
 
-# --------------------------------------------------------------------------- luật
-
-
 def test_a_short_history_registers_no_rule_rather_than_an_unsupported_one() -> None:
     present = _fair(150)
     assert kb.mine_lag_rules(present, len(present), min_support=200) == []
@@ -92,7 +83,7 @@ def test_mining_finds_a_planted_lag_rule_and_ignores_rare_antecedents() -> None:
     assert rules[0]["lift"] > 1.5
     rare = present.copy()
     rare[:, 12] = False
-    rare[::50, 12] = True                         # a hiếm: chưa đủ số lần làm tiền đề
+    rare[::50, 12] = True
     assert all(r["if"] != 12 for r in kb.mine_lag_rules(rare, len(rare), k=20, min_support=200))
 
 
@@ -101,7 +92,7 @@ def test_a_rule_is_scored_only_on_draws_after_its_registration() -> None:
     rule = {"if": 5, "then": 7, "registered_at": labels[199]}
     score = kb.score_rule(rule, present, labels)
     changed = present.copy()
-    changed[:200] = ~changed[:200]               # sửa mọi kỳ đến ngày đăng ký (trừ tiền đề kỳ 199)
+    changed[:200] = ~changed[:200]
     changed[199] = present[199]
     assert kb.score_rule(rule, changed, labels) == score
     fired = [t for t in range(200, 300) if present[t - 1, 5]]
@@ -113,8 +104,8 @@ def test_a_rule_is_scored_only_on_draws_after_its_registration() -> None:
 
 def test_the_e_process_on_a_hand_path() -> None:
     present = np.zeros((3, 100), dtype=bool)
-    present[0, 1] = True                          # a = 1 về ở kỳ 0
-    present[1, 2:27] = True                       # kỳ 1: 25 con về, gồm b = 2, không gồm a → y = 1, μ = 0,25
+    present[0, 1] = True
+    present[1, 2:27] = True
     labels = ["2026-01-01", "2026-01-02", "2026-01-03"]
     score = kb.score_rule({"if": 1, "then": 2, "registered_at": "2026-01-01"}, present, labels)
     expected = np.mean([1 + lam * (1 - 0.25) for lam in kb.RULE_BETS])
@@ -123,7 +114,6 @@ def test_the_e_process_on_a_hand_path() -> None:
 
 
 def test_the_rule_e_process_keeps_its_promise_under_fair_draws() -> None:
-    """Xem lại mỗi kỳ: trên lịch sử công bằng, e-value chạm 1/α ở không quá α lịch sử."""
     hits = 0
     n_hist = 300
     for seed in range(n_hist):
@@ -151,7 +141,6 @@ def test_rule_status_uses_the_rules_own_e_threshold_and_a_horizon(e_max, draws, 
 
 
 def test_the_batches_split_alpha_once_and_never_spend_more_than_alpha() -> None:
-    """Phần của lô k cố định từ đầu và cộng mọi lô không vượt α — Bonferroni theo thời gian."""
     shares = [kb.batch_alpha(k) for k in range(1, 200_001)]
     assert sum(shares) <= kb.ALPHA and sum(shares) > kb.ALPHA * (1 - 1e-5)
     assert shares[0] == pytest.approx(kb.ALPHA * 6 / np.pi ** 2)
@@ -170,7 +159,6 @@ def test_registered_rules_are_frozen_and_a_new_batch_waits_its_turn() -> None:
     for r in due["rules"]:
         if r["id"] in frozen:
             assert (r["registered_at"], r["in_sample"], r["if"], r["then"]) == frozen[r["id"]]
-    # Ngưỡng ghi lúc đăng ký: lô mới không nâng ngưỡng của lô cũ (không rút lại kết luận đã báo).
     first_batch = set(frozen)
     for r in due["rules"]:
         k = 1 if r["id"] in first_batch else 2
@@ -183,7 +171,6 @@ def test_registered_rules_are_frozen_and_a_new_batch_waits_its_turn() -> None:
 
 
 def test_a_reported_rule_stays_reported_when_a_later_batch_is_registered(monkeypatch) -> None:
-    """Kết luận của lô 1 không bị rút lại chỉ vì lô 2 ra đời: trạng thái đọc ngưỡng ghi lúc đăng ký."""
     present, labels = _fair(1300), _labels(1300)
     own = kb.RULES_PER_BATCH / kb.batch_alpha(1)
     monkeypatch.setattr(kb, "score_rule", lambda rule, *_: {"e_max": own * 1.001, "draws_after": 1})
@@ -197,7 +184,7 @@ def test_a_reported_rule_stays_reported_when_a_later_batch_is_registered(monkeyp
 def test_a_new_experiment_keeps_counting_batches_so_config_changes_cannot_respend_alpha(tmp_path: Path,
                                                                                        monkeypatch) -> None:
     frame = m.mock_history(1270, seed=8)
-    for upto in (1230, 1230 + kb.DISCOVERY_EVERY):                  # thí nghiệm đầu: hai lô
+    for upto in (1230, 1230 + kb.DISCOVERY_EVERY):
         frame.iloc[:upto].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
         first = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
     assert [b["index"] for b in first["batches"]] == [1, 2]
@@ -213,7 +200,6 @@ def test_a_new_experiment_keeps_counting_batches_so_config_changes_cannot_respen
 
 @pytest.mark.parametrize("factor", [0.5, 2.0])
 def test_the_alpha_budget_is_fixed_for_the_life_of_the_knowledge_base(tmp_path: Path, monkeypatch, factor) -> None:
-    """Hạ α sau khi lô 1 đã tiêu thì tổng vượt ngân sách mới; nâng α là xem kết quả rồi mới nới: cả hai bị từ chối."""
     frame = m.mock_history(1235, seed=8)
     frame.iloc[:1230].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
     first = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
@@ -223,9 +209,6 @@ def test_the_alpha_budget_is_fixed_for_the_life_of_the_knowledge_base(tmp_path: 
     with pytest.raises(ValueError, match="ngân sách α"):
         kb.run(tmp_path)
     assert json.loads((tmp_path / "forecast" / "knowledge" / "kb.json").read_text(encoding="utf-8")) == first
-
-
-# --------------------------------------------------------------------------- giải thích
 
 
 def _record(seed: int = 0) -> dict:
@@ -279,8 +262,6 @@ def test_measured_knowledge_follows_the_measurements(tmp_path: Path) -> None:
 @pytest.mark.parametrize(("p_best", "status"), [(0.0, "tin-hieu-anh-chup"), (0.0005, "tin-hieu-anh-chup"),
                                                 (0.00799, "chua-co-bang-chung")])
 def test_confidence_families_are_holm_classified_snapshots_never_evidence(tmp_path: Path, p_best, status) -> None:
-    """Mười lăm họ, mỗi họ ở α = 0,01: một họ p = 0,008 là điều thường thấy dưới giả thuyết không.
-    Và p tính lại mỗi ngày trên lịch sử dồn thì dù nhỏ đến đâu cũng chỉ là ảnh chụp, không là bằng chứng."""
     (tmp_path / "evaluation" / "confidence").mkdir(parents=True)
     families = [{"key": f"h{i}", "label": f"H{i}", "p": 0.5} for i in range(14)]
     families.append({"key": "best", "label": "Best", "p": p_best})
@@ -295,7 +276,6 @@ def test_confidence_families_are_holm_classified_snapshots_never_evidence(tmp_pa
 @pytest.mark.parametrize(("state", "status"), [("dang_thu", "dang-kiem"), ("xac_nhan", "co-bang-chung"),
                                                ("bac_bo", "khong-dat")])
 def test_a_registered_hypothesis_keeps_its_own_verdict_and_sample_size(tmp_path: Path, state, status) -> None:
-    """14 kỳ của một phép kiểm 180 kỳ là đang thử, dù cửa sổ đặc trưng chỉ 7 ngày."""
     (tmp_path / "evaluation" / "confidence").mkdir(parents=True)
     hot = {"window": 7, "min_draws": 180, "draws": 14, "z": 0.83, "state": state}
     (tmp_path / "evaluation" / "confidence" / "report.json").write_text(json.dumps({"hot_tail": hot}), encoding="utf-8")
@@ -311,13 +291,13 @@ def test_run_writes_strict_json_and_keeps_rules_across_runs(tmp_path: Path) -> N
     first = json.loads(path.read_text(encoding="utf-8"))
     assert first["source_date"] == frame["date"].iloc[1229] and len(first["batches"]) == 1
     assert len(first["rules"]) == kb.RULES_PER_BATCH
-    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)     # thêm 30 kỳ: đến hạn lô mới
+    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
     second = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
     assert [b["registered_at"] for b in second["batches"]] == [first["batches"][0]["registered_at"],
                                                               frame["date"].iloc[-1]]
     old = {r["id"] for r in first["rules"]}
     assert old <= {r["id"] for r in second["rules"]}
-    assert second["insights"] == {"loto": None, "de": None}        # chưa có sổ tự học: không bịa
+    assert second["insights"] == {"loto": None, "de": None}
 
 
 _RULE_CHANGES = {"VERSION": kb.VERSION + 1, "DISCOVERY_EVERY": kb.DISCOVERY_EVERY + 1,
@@ -351,18 +331,17 @@ def test_a_changed_rule_definition_retires_the_old_batch_unscored_and_registers_
     assert first["retired"] == [] and first["rule_config"] == kb.rule_config()
     frame.iloc[:1235].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
     same = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
-    assert same["batches"] == first["batches"] and same["retired"] == []     # cùng luật, chưa đến hạn
+    assert same["batches"] == first["batches"] and same["retired"] == []
     monkeypatch.setattr(kb, "HORIZON", kb.HORIZON + 1)
     frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
     changed = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
     assert [b["registered_at"] for b in changed["batches"]] == [frame["date"].iloc[-1]]
-    assert changed["retired"][0]["rules"] == same["rules"]                   # cất nguyên, không chấm lại
+    assert changed["retired"][0]["rules"] == same["rules"]
     assert changed["retired"][0]["rule_config"]["horizon"] == kb.HORIZON - 1
     assert {r["id"] for r in changed["rules"]}.isdisjoint({r["id"] for r in same["rules"]})
 
 
 def test_the_pipeline_builds_the_knowledge_base_after_what_it_reads() -> None:
-    """Kho tri thức đọc sổ tự học, báo cáo Confidence và số đo Lô VIP của CÙNG lượt chạy: đứng sau cả ba."""
     source = (Path(__file__).resolve().parents[2] / "src" / "pipeline.py").read_text(encoding="utf-8")
     at = source.index('"src/forecast/knowledge_base.py"')
     for producer in ("forecast/online_learning", "evaluation/confidence_matrix", "forecast/multi_hit_report"):

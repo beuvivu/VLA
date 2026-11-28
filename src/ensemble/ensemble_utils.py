@@ -11,15 +11,10 @@ import numpy as np
 
 from core.xsmb_domain import LOTO_BASELINE_RATE
 
-#: Trọng số khi CHƯA học được: cầu 0,30 / thống kê 0,20 / ML 0,25 / hai nhánh
-#: cầu 0,125 mỗi bên. Đây là giá trị đặt tay, không phải kết quả tối ưu.
-#: Phiên bản lược đồ tối thiểu của ``weights_<mode>.json`` được phép dùng.
 MIN_WEIGHTS_SCHEMA: Final[int] = 5
 
 
-
 def normalize_distribution(p: np.ndarray) -> np.ndarray:
-    """Chuẩn hoá vector không âm, tránh tràn tổng của các giá trị lớn hữu hạn."""
     values = np.asarray(p, dtype=np.float64)
     if values.size == 0:
         raise ValueError("probability distribution must not be empty")
@@ -32,40 +27,12 @@ def normalize_distribution(p: np.ndarray) -> np.ndarray:
     return scaled / float(np.sum(scaled))
 
 
-#: Sàn xác suất, tính theo tỉ lệ của mức đều. Với 100 con, ``0.05`` nghĩa là
-#: không con nào được nhận dưới 5% của 1/100, tức 0,0005.
-#:
-#: Vì sao cần sàn: một thành phần có thể là ĐIỂM XẾP HẠNG chứ không phải phân
-#: phối. Đo được trên lịch sử: ``p_stable`` của Đặc Biệt gán ĐÚNG 0 cho trung
-#: vị 58/100 con mỗi kỳ, và trong 128 trong 231 kỳ nó gán 0 cho chính con đã
-#: về. Gán xác suất 0 cho biến cố rồi biến cố xảy ra là phát biểu tệ nhất có
-#: thể — logloss bằng vô cực.
-#:
-#: Hôm nay đường dự đoán KHÔNG hỏng: cả 100 con nằm trong [0,009773; 0,010236]
-#: vì `p_cau`/`p_stat` đã có từ 2026-08-12 và che hết chỗ 0 của `stable`. Nhưng
-#: đó là may, không phải thiết kế — nó đã hỏng suốt 212 kỳ khi hai thành phần
-#: ấy vắng, và chỉ cần một tệp thiếu là hỏng lại.
 PROBABILITY_FLOOR_SHARE: Final[float] = 0.05
 
 
 def floor_distribution(
     p: np.ndarray, *, share: float = PROBABILITY_FLOOR_SHARE
 ) -> np.ndarray:
-    """Chuẩn hoá và đặt SÀN, để không kết cục nào bị tuyên bố là bất khả thi.
-
-    Trộn với phân phối đều theo tỉ lệ ``share`` — đúng dạng làm trơn
-    Laplace/Jeffreys. Giữ nguyên thứ hạng của mọi con, chỉ chặn đuôi dưới.
-
-    Đo được: là phép KHÔNG LÀM GÌ khi đầu vào đã lành (dự đoán 2026-09-18 đổi
-    không quá 5% tương đối), nhưng chặn đứng trường hợp thảm hoạ.
-
-    Args:
-        p: Vector xác suất chưa hoặc đã chuẩn hoá.
-        share: Tỉ lệ khối lượng dành cho phân phối đều.
-
-    Returns:
-        Phân phối đã chuẩn hoá, mọi phần tử ``>= share / n``.
-    """
     if not 0.0 <= share < 1.0:
         raise ValueError("share must lie in [0, 1)")
     values = normalize_distribution(p)
@@ -78,33 +45,11 @@ def clip01(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     return np.clip(p, eps, 1.0 - eps)
 
 
-#: Biên của mọi xác suất LOTO đã chốt — cùng ``eps`` với ``clip01``.
 _PROB_LO: Final[float] = 1e-6
 _PROB_HI: Final[float] = 1.0 - 1e-6
 
 
 def anchor_loto_level(p: np.ndarray) -> np.ndarray:
-    """Neo TỔNG xác suất LOTO về số con khác nhau kỳ vọng mỗi kỳ: ``Σp = 100·nền``.
-
-    Mỗi kỳ có đúng 27 giải, nên số con 00–99 khác nhau về là ``Σ_n y_n`` với kỳ
-    vọng ``100·(1 − 0,99²⁷) ≈ 23,77`` — 4 225 kỳ lịch sử đo 23,83 ± 0,02; chênh
-    0,3% ấy đổi logloss chưa tới 10⁻⁶ nats mỗi số, nên neo theo mức lý thuyết.
-    Vector nào có tổng khác con số ấy là SAI MỨC ở mọi con cùng lúc, bất kể
-    thứ hạng đúng hay sai. Đặc Biệt có ràng buộc tương tự là tổng bằng 1
-    (``floor_distribution``); LOTO trước đây không có.
-
-    Đo walk-forward 1 000 kỳ (kỳ đích 25-12-2023 → 04-10-2026): hai nhánh cầu vị
-    trí có tổng trung vị 24,49 (active) và 26,47 (stable) — lời nguyền người thắng
-    của việc chọn top quy tắc — nên tổ hợp trọng số mặc định ra tổng 24,22 và kém
-    dự báo hằng số z = −3,33. Chỉ neo mức đã đưa nó về z = +1,76; neo xong, từng
-    nhánh cầu vị trí cũng về ngang hằng số (z = −0,06 và −0,03;
-    ``scripts/research/benchmark_component_trust.py``).
-
-    Nhân cùng một hệ số nên giữ nguyên thứ hạng của mọi con. Nhận vector 100 số
-    hoặc ma trận ``(kỳ, 100)``; hàng có tổng 0 nhận đúng tỉ lệ nền. Hàng mà phép
-    nhân đẩy một số ra ngoài ``[1e-6, 1 − 1e-6]`` đi qua ``_bounded_level``, để
-    phép chặn biên không âm thầm phá tổng đã hứa.
-    """
     values = np.asarray(p, dtype=np.float64)
     total = values.sum(axis=-1, keepdims=True)
     target = values.shape[-1] * LOTO_BASELINE_RATE
@@ -121,13 +66,6 @@ def anchor_loto_level(p: np.ndarray) -> np.ndarray:
 
 
 def _bounded_level(row: np.ndarray, target: float) -> np.ndarray:
-    """``clip(c·row, lo, hi)`` với hệ số ``c`` chọn để tổng đúng bằng ``target``.
-
-    Tổng ấy tăng đơn điệu theo ``c`` nên tìm ``c`` bằng chia đôi; thứ hạng vẫn
-    giữ (không nghiêm ở chỗ chạm biên). Khi chính phép nhân không đủ — các số
-    dương đều chạm trần mà tổng vẫn thiếu, như vector ``[1, 0, …, 0]`` — phần còn
-    thiếu chia đều cho các số bằng 0: không có bằng chứng nào phân biệt chúng.
-    """
     positive = row > 0.0
     ceiling = positive.sum() * _PROB_HI + (~positive).sum() * _PROB_LO
     if ceiling < target:
@@ -145,16 +83,6 @@ def _bounded_level(row: np.ndarray, target: float) -> np.ndarray:
 
 
 def finalize_blend(p: np.ndarray, mode: str, *, anchor_loto: bool = True) -> np.ndarray:
-    """Phép chốt của tổ hợp tuyến tính TRƯỚC hiệu chuẩn — một nguồn cho mọi nơi.
-
-    Đường dự đoán thật (``predict_nextday_2d``), bộ học trọng số và hiệu chuẩn,
-    tầng xếp chồng, trang Chất lượng và bảng đóng góp thành phần đều phải chấm
-    ĐÚNG vector mà hệ thống xuất bản. Trước đây năm nơi ấy tự chép phép chốt;
-    chép là để chúng trôi khỏi nhau.
-
-    ``anchor_loto=False`` là phép chốt LOTO trước 04-10-2026 (chỉ ``clip01``), chỉ
-    dành cho nơi dựng lại một ngày ĐÃ công bố theo luật cũ (trang Chất lượng).
-    """
     if mode == "de":
         return floor_distribution(p)
     if mode == "loto":
@@ -163,12 +91,6 @@ def finalize_blend(p: np.ndarray, mode: str, *, anchor_loto: bool = True) -> np.
 
 
 def sigmoid(x: np.ndarray) -> np.ndarray:
-    """Numerically stable logistic.
-
-    ``1/(1+exp(-x))`` evaluates ``exp(+|x|)`` for negative inputs and overflows
-    to a RuntimeWarning (and, on some builds, a spurious ``inf``) once
-    ``x < -709``.  Branching on the sign keeps every exponent negative.
-    """
     values = np.asarray(x, dtype=np.float64)
     out = np.empty_like(values)
     positive = values >= 0
@@ -226,28 +148,6 @@ DEFAULT_ENSEMBLE_WEIGHTS = EnsembleWeights(
 
 
 def load_ensemble_weights(data_dir: Path, mode: str) -> EnsembleWeights:
-    """Trọng số tổ hợp đang có hiệu lực cho ``mode``, hoặc mặc định.
-
-    NGUỒN SỰ THẬT DUY NHẤT, và đó là toàn bộ lý do hàm này tồn tại. Trước đây
-    hai nơi tự đọc tệp theo hai cách: ``predict_nextday_2d`` canh
-    ``schema_version >= 5`` và đòi có ``w_stat``, còn ``model_quality`` đọc
-    thẳng không canh gì. Tệp trên đĩa là bản cũ 3 thành phần không có
-    ``schema_version``, nên hai nơi nhận hai vector khác nhau:
-
-        trang Chất lượng   w_ml 0,9987  cầu 0     thống kê 0
-        dự đoán thật       w_ml 0,2500  cầu 0,30  thống kê 0,20
-
-    Lệch 0,75 — ba phần tư khối lượng trọng số. Hệ quả: trang Chất lượng mô
-    hình chấm điểm hiệu chuẩn, độ nhọn và phân rã Murphy cho một mô hình
-    KHÔNG được xuất bản.
-
-    Args:
-        data_dir: Thư mục ``data`` của kho.
-        mode: ``loto`` hoặc ``de``.
-
-    Returns:
-        Trọng số đã chuẩn hoá; mặc định nếu tệp thiếu, sai lược đồ, hoặc hỏng.
-    """
     path = Path(data_dir) / "ensemble" / f"weights_{mode}.json"
     if not path.exists():
         return DEFAULT_ENSEMBLE_WEIGHTS
@@ -275,32 +175,6 @@ def load_ensemble_weights(data_dir: Path, mode: str) -> EnsembleWeights:
 
 
 def weights_provenance(data_dir: Path, mode: str) -> dict:
-    """Trọng số đang có hiệu lực, kèm LÝ DO vì sao nó là nó.
-
-    Ba xuất xứ, không phải hai, và phải đọc từ hồ sơ chứ không suy từ giá trị:
-
-    * ``da_hoc`` — vector đã học và đã vượt cổng thẩm định ngoài mẫu.
-    * ``bi_tu_choi`` — cổng ĐÃ ĐO rồi từ chối đề bạt, nên tệp mang đúng trọng
-      số mặc định. Tệp hoàn toàn lành.
-    * ``khong_co_ho_so`` — không có tệp, sai lược đồ, hoặc tệp ghi trước khi
-      có cổng.
-
-    Hai trạng thái giữa cho CÙNG một bộ trọng số hiển thị, nên phép suy từ giá
-    trị không phân biệt được chúng: nó báo "tệp trọng số thiếu hoặc sai lược
-    đồ" cho một tệp hợp lệ lược đồ 7 — đổ lỗi cho tệp trong khi tệp không có
-    lỗi gì, và che mất việc hệ thống đã đo và đã từ chối.
-
-    Hàm này sống ở tầng dữ liệu chứ không ở tầng trình bày. Nó từng là
-    ``build_dashboard._effective_weights``, nên nó biến mất cùng giao diện —
-    trong khi sự thật nó mô tả thì không phụ thuộc vào giao diện nào.
-
-    Args:
-        data_dir: Thư mục ``data`` của kho.
-        mode: ``loto`` hoặc ``de``.
-
-    Returns:
-        Trọng số đang hiệu lực, mã xuất xứ, lý do, và số đo thẩm định nếu có.
-    """
     effective = load_ensemble_weights(data_dir, mode)
     path = Path(data_dir) / "ensemble" / f"weights_{mode}.json"
     try:
@@ -313,7 +187,6 @@ def weights_provenance(data_dir: Path, mode: str) -> dict:
     out: dict = {"mode": mode, "weights": effective.as_dict()}
     promotion = stored.get("promotion")
 
-    # Metadata huấn luyện có ích cả với hồ sơ cũ chưa có promotion gate.
     if stored:
         for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
             if key in stored:
@@ -344,7 +217,6 @@ def weights_provenance(data_dir: Path, mode: str) -> dict:
 
 
 def weight_grid(step: float = 0.10) -> Iterable[EnsembleWeights]:
-    """Simplex grid for five ensemble components (fallback when scipy is absent)."""
     k = int(round(1.0 / step))
     for i in range(k + 1):
         for j in range(k + 1 - i):
@@ -370,11 +242,6 @@ def bernoulli_brier(p: np.ndarray, y: np.ndarray) -> float:
 
 
 def skill_score(model: float, baseline: float) -> float:
-    """Phần cải thiện tương đối so với đường cơ sở.
-
-    Dương nghĩa là mô hình tốt hơn baseline, âm là tệ hơn. Trả 0 khi baseline
-    không dương để tránh chia cho số không.
-    """
     if not np.isfinite(model) or not np.isfinite(baseline) or baseline <= 0.0:
         return 0.0
     return float((baseline - model) / baseline)
@@ -386,22 +253,6 @@ def categorical_logloss(p: np.ndarray, y_true_idx: int) -> float:
 
 
 def categorical_brier(p: np.ndarray, y_true_idx: int) -> float:
-    """Multi-class Brier score, ``sum_k (p_k - y_k)^2``.
-
-    This used ``np.mean`` rather than ``np.sum``, reporting a value 100x smaller
-    than the standard definition.  Rankings were unaffected (the two differ by a
-    constant factor), but two things were not:
-
-      * every published Đặc Biệt Brier figure was off by two orders of magnitude, and
-      * ``meta_predictor`` mixes the two in ``logloss + 0.20 * brier``, so the
-        Brier term contributed ~0.002 of its intended weight for Đặc Biệt while
-        contributing fully for LOTO (whose ``bernoulli_brier`` is genuinely a
-        mean over the 100 Bernoulli marginals).
-
-    ``bernoulli_brier`` is deliberately left as a mean: for LOTO the target is
-    100 independent Bernoulli marginals, and the mean is the conventional
-    per-marginal score there.
-    """
     values = np.asarray(p, dtype=np.float64)
     y = np.zeros_like(values)
     y[int(y_true_idx)] = 1.0

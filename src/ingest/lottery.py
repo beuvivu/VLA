@@ -33,18 +33,11 @@ logger = logging.getLogger(__name__)
 
 
 def vietnam_today(*, now: datetime | None = None) -> date:
-    """Return the domain date in Vietnam rather than the runner's local date."""
     return vietnam_date(now)
 
 
 @dataclass(frozen=True)
 class RepoPaths:
-    """Common paths used by the project.
-
-    The codebase historically used relative paths (e.g. "data/xsmb.json"), which
-    break when scripts are executed from outside the repository root. Centralising
-    path resolution makes the scripts more robust.
-    """
 
     root: Path
     data_dir: Path
@@ -65,20 +58,12 @@ class Lottery:
         sources: list[Source] | None = None,
     ) -> None:
         self._paths = paths or RepoPaths.from_module()
-        # Use a normal HTTP session. The collector must not bypass CAPTCHA or
-        # anti-bot protections; inaccessible sources simply fail closed.
         self._http = http or requests.Session()
 
-        # Ordered public-source policy.  This order is also the deterministic
-        # display/diagnostic tie-breaker, but never overrides an ambiguous
-        # verification tie between equally supported independent result groups.
         self._sources: list[Source] = sources or default_sources()
 
         self._data: dict[date, Result] = {}
         self._fetch_audit: dict[str, dict[str, Any]] = {}
-        # Ngày mà lần lấy trong PHIÊN NÀY đã xác định là không quay (nguồn trả
-        # kết quả trùng khít một kỳ đã lưu). Thử lại trong vài giây không đổi
-        # được kết luận ấy.
         self._no_draw: set[date] = set()
 
         self._raw_data: pd.DataFrame = pd.DataFrame()
@@ -111,7 +96,6 @@ class Lottery:
             self._paths.data_dir.mkdir(parents=True, exist_ok=True)
             csv_path = self._paths.data_dir / f"{file_name}.csv"
             csv_buffer = io.StringIO()
-            # Tên đích quyết định độ rộng mã số trong write_code_csv.
             csv_buffer.name = str(csv_path)
             write_code_csv(df, csv_buffer, index=False)
             atomic_write_text(csv_path, csv_buffer.getvalue())
@@ -134,7 +118,6 @@ class Lottery:
             audit_path = self._paths.data_dir / "source_audit.json"
             existing: dict[str, Any] = read_json_or_empty(audit_path)
             existing.update(self._fetch_audit)
-            # Keep the audit compact: latest 120 requested dates.
             trimmed = dict(sorted(existing.items())[-120:])
             atomic_write_text(audit_path, json.dumps(trimmed, ensure_ascii=False, indent=2))
 
@@ -144,37 +127,6 @@ class Lottery:
         return tuple(int(payload[k]) for k in payload if k != "date")
 
     def _repeats_a_neighbour(self, selected_date: date, result: Result) -> date | None:
-        """Ngày đã lưu nào có kết quả TRÙNG KHÍT với ứng viên, nếu có.
-
-        XSMB nghỉ quay dịp Tết và trong đợt giãn cách 2020. Vào những ngày đó
-        trang nguồn vẫn trả về kết quả gần nhất, nên trình cào ghi lại như thể
-        đó là kỳ của ngày ấy. Đo trên kho: 50 bản ghi kiểu này, thành 8 cụm
-        trùng đúng vào Tết mỗi năm 2020-2026 và 23 ngày giãn cách 01-22/4/2020.
-
-        Kiểm đồng thuận hai nguồn không chặn được: mọi nguồn cùng đọc một
-        trang tin, nên trong dạng hỏng này chúng không độc lập. Bốn bản ghi
-        như vậy đã lọt vào 393 kỳ gốc trước khi bổ sung lịch sử.
-
-        Bất biến dùng để chặn: hai kỳ liền kề không bao giờ trùng khít. Một kỳ
-        có 107 chữ số giải, nên xác suất trùng ngẫu nhiên là 10^-107 — không
-        phải "hiếm", mà là bất khả. Trùng khít luôn là hiện vật.
-
-        So với TOÀN BỘ kho chứ không chỉ hai ngày liền kề. Bản chỉ xét liền kề
-        đã thủng ngay trong sản xuất: sau khi dọn cụm Tết 2026, quy trình hàng
-        ngày cào lại các ngày thiếu, và với 2026-02-17 thì cả 02-16 lẫn 02-18
-        đều đã bị xoá — không còn gì để so, nên bản bịa lọt lại vào kho. Hai
-        bản ghi quay lại đúng theo đường đó.
-
-        Trùng khít ở BẤT KỲ đâu trong lịch sử cũng là hiện vật, nên không cần
-        giới hạn khoảng cách: xác suất 10^-107 không đổi theo độ trễ.
-
-        Args:
-            selected_date: Ngày đang lấy.
-            result: Kết quả ứng viên.
-
-        Returns:
-            Ngày đã lưu có kết quả trùng khít, hoặc ``None``.
-        """
         signature = self._result_signature(result)
         for day, other in self._data.items():
             if day != selected_date and self._result_signature(other) == signature:
@@ -182,26 +134,15 @@ class Lottery:
         return None
 
     def fetch(self, selected_date: date, *, min_agreement: int = 1) -> bool:
-        """Fetch a draw, optionally requiring independent source agreement.
-
-        ``min_agreement=1`` (mặc định, cả cho kỳ vừa quay từ 13-10-2026): hỏi các nguồn
-        THEO THỨ TỰ ưu tiên và nhận kết quả đầy đủ đầu tiên — nguồn chính trước, dự phòng
-        chỉ khi nguồn chính không trả được kỳ ấy. ``min_agreement >= 2`` vẫn dùng được: hỏi
-        mọi nguồn và chỉ nhận khi đủ ngần ấy nhóm độc lập khớp từng giải; hoà giữa hai kết
-        quả cùng mức ủng hộ bị từ chối.
-        """
         min_agreement = max(1, int(min_agreement))
         candidates: list[tuple[str, Result]] = []
-        # Nguồn trả đúng một kỳ đã lưu (trang chưa cập nhật kỳ mới). Đo 00:37 ngày 13-10-2026:
-        # trang theo ngày 13-10 của hai nguồn dự phòng hiện trọn kỳ 12-10. Bỏ nguồn ấy, hỏi
-        # nguồn kế tiếp; chỉ kết luận "không quay" khi MỌI nguồn có kết quả đều trùng khít.
         twins: list[date] = []
 
         for source in self._sources:
             name = getattr(source, "name", "?")
             try:
                 result = source.fetch(selected_date, self._http)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.debug("Source %s failed for %s: %s", name, selected_date, exc)
                 continue
 
@@ -230,8 +171,6 @@ class Lottery:
                     "agreement": 1,
                     "runner_up_agreement": 0,
                     "ambiguous_tie": False,
-                    # Mã ẩn danh, không phải tên miền: tệp nhật ký này nằm
-                    # trong kho công khai.
                     "sources": [public_source_code(name)],
                     "source_agreement": 1,
                     "independent_groups": [public_group_code(name)],
@@ -258,9 +197,6 @@ class Lottery:
         runner_up_group_count = 0
         ambiguous_tie = False
         if grouped:
-            # Canonical promotion is determined by independent-provider support.
-            # Raw source count and configured priority may order candidates for
-            # diagnostics, but MUST NOT break an equal-support verification tie.
             def group_score(items: list[tuple[str, Result]]) -> tuple[int, int, int]:
                 groups = {source_independence_key(name) for name, _ in items}
                 first_priority = min(
@@ -308,8 +244,6 @@ class Lottery:
         if accepted:
             twin = self._repeats_a_neighbour(selected_date, best[0][1])
             if twin is not None:
-                # Đồng thuận không cứu được dạng hỏng này: mọi nguồn cùng
-                # đọc một trang tin nên chúng nhất trí về chính kết quả cũ.
                 logger.warning(
                     "Bỏ %s dù có đồng thuận: trùng khít kỳ %s — ngày không quay",
                     selected_date, twin,
@@ -352,16 +286,9 @@ class Lottery:
         self._raw_data.iloc[:, 1:] = self._raw_data.iloc[:, 1:].astype("int64")
         self._raw_data = self._raw_data.sort_values("date", ignore_index=True, kind="stable")
 
-        # 2-digit view (LOTO) - vectorised.
         self._2_digits_data = self._raw_data.copy(deep=True)
         self._2_digits_data.iloc[:, 1:] = self._2_digits_data.iloc[:, 1:] % 100
 
-        # Sparse view: for each draw, count occurrences of each number 00..99.
-        #
-        # ``np.apply_along_axis`` runs one Python-level bincount per draw.  A
-        # single offset bincount over the flattened matrix produces the exact
-        # same table in one C call (~8x faster, and the gap widens with history
-        # length).
         values = self._2_digits_data.iloc[:, 1:].to_numpy(dtype=np.int16, copy=False)
         n_days = values.shape[0]
         if np.any(values < 0) or np.any(values > 99):
@@ -389,7 +316,6 @@ class Lottery:
         return self._last_date
 
     def get_dates(self) -> set[date]:
-        """Return the set of dates currently loaded."""
 
         return set(self._data.keys())
 
@@ -397,5 +323,4 @@ class Lottery:
         return d in self._data
 
     def is_no_draw(self, d: date) -> bool:
-        """``d`` vừa được xác định là ngày không quay trong phiên này."""
         return d in self._no_draw

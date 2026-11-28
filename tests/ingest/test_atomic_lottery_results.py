@@ -1,5 +1,3 @@
-"""Kết quả thật và nhật ký nguồn phải còn nguyên khi lần ghi mới bị ngắt."""
-
 from __future__ import annotations
 
 import builtins
@@ -27,20 +25,17 @@ OUTPUTS = [
 
 @pytest.fixture
 def draw_history(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> lottery.Lottery:
-    """Hai kỳ nhỏ có đủ 27 giải, gồm các mã cần giữ số 0 đầu."""
     paths = lottery.RepoPaths(tmp_path, tmp_path / "data", tmp_path / "images")
     lot = lottery.Lottery(paths=paths)
     for day, value in ((date(2026, 10, 7), 0), (date(2026, 10, 8), 3)):
         lot._data[day] = Result(date=day, **dict.fromkeys(FIELD_WIDTHS, value))
     lot.generate_dataframes()
     lot._fetch_audit = {"2026-10-08": {"accepted": True, "note": "đã kiểm"}}
-    # Workbook có phép kiểm riêng; ở đây chỉ canh bảy tệp CSV/JSON của dump.
     monkeypatch.setattr(lottery, "export_excel_outputs", lambda **kwargs: None)
     return lot
 
 
 class _InterruptedWriter:
-    """Ghi một phần thật xuống đĩa rồi báo lỗi, như khi đĩa đầy."""
 
     def __init__(self, stream):
         self.stream = stream
@@ -61,7 +56,6 @@ class _InterruptedWriter:
 
 
 def _interrupt_target_write(monkeypatch: pytest.MonkeyPatch, target: Path) -> None:
-    """Chặn cả tệp ghi thẳng lẫn descriptor của tệp tạm bên cạnh đích."""
     target_fds: set[int] = set()
     original_mkstemp = atomic_io.tempfile.mkstemp
 

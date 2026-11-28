@@ -517,7 +517,6 @@ background:var(--ui-surface);overflow:hidden;box-shadow:var(--ui-sh-sm)}
 .ui-table.ui-m9 td:nth-child(9),.ui-table.ui-m9 th:nth-child(9){text-align:center;white-space:nowrap}
 .ui-table.ui-r10 td:nth-child(10),.ui-table.ui-r10 th:nth-child(10){text-align:right;white-space:nowrap}
 .ui-table.ui-m10 td:nth-child(10),.ui-table.ui-m10 th:nth-child(10){text-align:center;white-space:nowrap}
-
 .app-prize-table{--app-prize-label:100px;width:100%;min-width:0;border:1px solid var(--ui-border);border-radius:12px;border-spacing:0;border-collapse:separate;overflow:hidden;background:var(--ui-surface);table-layout:fixed;color:var(--ui-ink)}
 .app-prize-table th,.app-prize-table .app-prize-label{width:var(--app-prize-label);padding:10px 13px;font-size:12px;font-weight:800;text-align:left;vertical-align:middle;color:var(--ui-ink-2);background:var(--ui-surface-2);border:0;border-right:1px solid var(--ui-border);border-bottom:1px solid var(--ui-border);box-sizing:border-box}
 .app-prize-table td{padding:0;border:0;border-bottom:1px solid var(--ui-border);background:var(--ui-surface)}

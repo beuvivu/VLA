@@ -1,30 +1,3 @@
-"""Danh mục nguồn và bằng chứng suy luận cho các con số trên trang xuất bản.
-
-Mỗi trang mang một khối JSON ``#app-evidence-data`` do :func:`registry` sinh
-ra; ``assets/app-evidence.js`` đọc nó khi người xem rê chuột hoặc nhấp vào
-một con số. Khối gồm:
-
-* ``page``: nguồn và các bước tính mặc định của cả trang;
-* ``sections``: ghi đè cho từng khối (khớp bằng bộ chọn CSS ``match``) khi một
-  trang gộp nhiều loại số liệu, như trang chủ;
-* ``values``: bằng chứng của một giá trị cụ thể, cho phần tử khai
-  ``data-evidence="<id>"``.
-
-Hình dạng khớp đúng giao diện ``CitationEvidence`` mà chủ dự án đặc tả
-(``sources`` + ``reasoningTrace``); ``id`` và ``value`` do trình duyệt điền
-lúc tương tác vì chúng là của từng con số chứ không của trang.
-
-Hai ràng buộc của kho áp lên MỌI chuỗi ở đây, vì chúng đi thẳng ra trình
-duyệt (``tests/site/test_shipped_pages_are_clean.py``):
-
-* không nêu nơi dữ liệu được lấy về hay lưu ở đâu — "nguồn" ở đây là bộ dữ
-  liệu và phép tính, mô tả bằng lời, không phải tên miền hay đường dẫn tệp;
-* không chứa tên kho.
-
-``reasoningTrace.promptUsed`` của đặc tả không áp dụng: không con số nào ở
-đây do mô hình ngôn ngữ sinh ra, nên không có lời nhắc nào để khai.
-"""
-
 from __future__ import annotations
 
 import json
@@ -60,8 +33,6 @@ class Evidence(TypedDict):
 
 
 class Section(Evidence):
-    """Ghi đè cho một khối: khớp bằng bộ chọn CSS ``match`` HOẶC bằng tiêu đề
-    khối ``heading`` (tiền tố của h2/h3), cho trang mà thẻ không mang id."""
 
     title: str
     match: NotRequired[str]
@@ -69,23 +40,16 @@ class Section(Evidence):
 
 
 def _ngay(value: str) -> str:
-    """``2026-10-03`` → ``03-10-2026``; chuỗi lạ giữ nguyên."""
     parts = str(value)[:10].split("-")
     return "-".join(reversed(parts)) if len(parts) == 3 else str(value)
 
 
 def _so(n: int) -> str:
-    """4224 → ``4 224``, đúng cách trang viết số."""
     return f"{n:,}".replace(",", " ")
 
 
 @lru_cache(maxsize=4)
 def facts(data_dir: str) -> dict[str, str]:
-    """Các số đo của dữ liệu đang có, để nguồn ghi đúng phạm vi thật.
-
-    Thiếu tệp nào thì bỏ khoá ấy; chuỗi nguồn khi đó nói chung chung chứ
-    không bịa một con số.
-    """
     base = Path(data_dir)
     out: dict[str, str] = {}
     draws = base / "xsmb.csv"
@@ -96,7 +60,6 @@ def facts(data_dir: str) -> dict[str, str]:
     predicted = sorted((base / "forecast" / "predict").glob("predict_next_loto_all_*.csv"))
     if predicted:
         out["target"] = _ngay(predicted[-1].stem.rsplit("_", 1)[-1])
-    # Siêu dữ liệu trọng số CHỈ qua weights_provenance (luật của kho), không mở tệp.
     from ensemble.ensemble_utils import weights_provenance
 
     spec = weights_provenance(base, "loto")
@@ -111,9 +74,6 @@ def facts(data_dir: str) -> dict[str, str]:
         if covers:
             out["quality_through"] = _ngay(str(covers))
     return out
-
-
-# --- Nguồn dùng chung -----------------------------------------------------
 
 
 def _ket_qua(f: dict[str, str]) -> Source:
@@ -164,7 +124,6 @@ def _cham(f: dict[str, str]) -> Source:
 
 
 def _ml(mode: str = "loto") -> Source:
-    """Nguồn thành phần ML, trỏ về đúng trang top của chế độ đang xem."""
     return {
         "title": "Mô hình ML thành phần",
         "snippet": (
@@ -245,13 +204,10 @@ _CAU_KEO: Source = {
     "url": "statistics.html",
 }
 
-#: Câu nhắc chung cho mọi xác suất dự báo — đúng với số đo của kho, nên ghi ra.
 _GHI_CHU_DU_BAO = (
     "Kỳ quay đã kiểm là ngẫu nhiên: kỹ năng ngoài mẫu đo được nằm quanh 0, nên xác suất "
     "này không cao hơn đáng kể mức nền."
 )
-#: Điểm cầu-kèo là thứ hạng, không phải xác suất; xác suất thô của mô hình cầu-kèo
-#: đo walk-forward 1 000 kỳ còn kém dự báo hằng số (CLAUDE.md, "Độ tin thành phần ML").
 _GHI_CHU_CAU_KEO = (
     "Kỳ quay đã kiểm là ngẫu nhiên: chưa có phép đo nào cho thấy số xếp đầu bảng Cầu Kèo "
     "về nhiều hơn số chọn bừa."
@@ -266,18 +222,14 @@ def _ev(sources: list[Source], steps: list[str], confidence: float | None = None
 
 
 def _sec(match: str, title: str, ev: Evidence) -> Section:
-    return {"match": match, "title": title, **ev}  # type: ignore[typeddict-item]
+    return {"match": match, "title": title, **ev}
 
 
 def _sec_heading(heading: str, title: str, ev: Evidence) -> Section:
-    return {"heading": heading, "title": title, **ev}  # type: ignore[typeddict-item]
-
-
-# --- Theo nhóm trang ------------------------------------------------------
+    return {"heading": heading, "title": title, **ev}
 
 
 def ml_summary_evidence(mode: str) -> Section:
-    """Cùng diễn giải cho cả khối tóm tắt và mức tin hiển thị thành khoảng."""
     return _sec(".app-lab-summary", "Tóm tắt bản dự báo ML", _ev([_ml(mode)], [
         "Ngày đích và số ứng viên được đọc từ đúng danh sách dự báo đang hiển thị.",
         "Mức tin thành phần ML là trọng số đã lưu, dùng để co xác suất thô về nền; không phải xác suất trúng.",
@@ -298,7 +250,6 @@ def _thong_ke(f: dict[str, str], *extra: str) -> Evidence:
 
 
 def _overview(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
-    """Trang gộp nháy theo bộ lọc với chu kỳ Đặc Biệt trên toàn lịch sử."""
     filtered = _ev([_ket_qua({}), _LOTO], [
         "Giữ các kỳ phù hợp với bộ lọc ngày và thứ đang chọn.",
         "Cộng đủ mọi nháy của từng số LOTO; một số về nhiều lần trong một kỳ được cộng từng lần.",
@@ -338,7 +289,6 @@ def _overview(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     ]
 
 
-#: Trang soi cầu theo đường cầu: phép suy luận xác suất kỳ tới (``path_prob.BridgeEvidence``).
 _SOI_PATH = (
     "Xác suất kỳ tới của một đường cầu = tỉ lệ trúng chung của mọi đường cầu + phần riêng của nó, "
     "co theo mức chênh THẬT giữa các cầu (Bayes thực nghiệm trên mọi cặp vị trí × độ trễ, không chỉ "
@@ -365,7 +315,6 @@ def _cau(f: dict[str, str], *extra: str) -> Evidence:
 
 
 def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "both") -> Evidence:
-    """``mode="both"`` cho khối gộp LOTO lẫn Đặc Biệt: trích nguồn ML của cả hai."""
     models = [_ml("loto"), _ml("de")] if mode == "both" else [_ml(mode)]
     return _ev(
         [_du_bao(f), *models, _cham(f)],
@@ -380,8 +329,6 @@ def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "both") -> Evidence:
 
 
 def _so_bong(f: dict[str, str]) -> Section:
-    """Số bóng chỉ HIỆN kèm số kép — nó không tham gia phép dò cầu (``position_bridges``)."""
-    # Neo vào #app-main: số bóng chỉ có khi danh sách có cầu số kép.
     return _sec("#app-main .app-bridge-shadow", "Số bóng", _ev([_CAU], [
         "Số bóng đổi từng chữ số của số kép sang bóng của nó: 0↔5, 1↔6, 2↔7, 3↔8, 4↔9 (44 → 99).",
         "Chỉ hiện kèm để tham khảo cho người quen đọc cặp kép–bóng; số bóng KHÔNG tham gia phép dò cầu và không tính vào phép trúng.",
@@ -389,7 +336,6 @@ def _so_bong(f: dict[str, str]) -> Section:
 
 
 def _cau_keo_ev(f: dict[str, str], *extra: str) -> Evidence:
-    """Điểm cầu-kèo (``cau_keo_ml._add_ai_judgement``): thứ hạng 0–100, KHÔNG phải xác suất."""
     return _ev(
         [_CAU_KEO, _ket_qua(f), _CAU],
         [
@@ -411,7 +357,6 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     sections = [
         _sec("#live", "Kết quả trực tiếp", _ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Khi phiên kết thúc, kết quả được lưu vào sổ."])),
         _sec("#ket-qua", "Bảng kết quả", _ev([_ket_qua(f), _LOTO], ["Lấy kỳ quay đã lưu theo ngày đang chọn.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."])),
-        # Lịch: ngày tháng do bộ tính lịch sinh ra; chỉ giải Đặc Biệt lấy từ sổ kết quả.
         _sec("#app-calendar", "Lịch vạn niên", _ev([_LICH], [
             "Ngày dương, ngày âm (kể cả tháng nhuận), can chi, tiết khí và giờ hoàng đạo do bộ tính lịch sinh ra trong trình duyệt — không đọc từ sổ kết quả.",
             "Ngày âm dựa trên điểm sóc; tháng nhuận và tiết khí dựa trên kinh độ Mặt Trời; can chi và giờ hoàng đạo là phép đếm chu kỳ 10 can, 12 chi từ số ngày và tháng, năm âm.",
@@ -426,7 +371,6 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         ])),
         _sec("#ma-tran-ngay, #db-tuan-thang", "Bảng theo ngày", _thong_ke(f, "Xếp kết quả đã lưu theo ngày, tuần và tháng.")),
         _sec("#ai-ml", "Điểm cầu-kèo ngày mai", _cau_keo_ev(f, "Số trên mỗi thanh là điểm của số ấy; thanh dài hơn chỉ nghĩa là xếp trên trong kỳ này.")),
-        # Nhãn mọi biểu đồ thanh trên trang (cầu-kèo, gan, cặp lộn…): định danh.
         _sec(".bar-label", "Số được mô tả", _ev([_ket_qua(f)], [
             "Nhãn là số 00–99 (hoặc cặp số) mà thanh bên cạnh mô tả — một định danh, không phải giá trị đo.",
             "Giá trị của số ấy in ở cuối thanh và có cách tính của khối chứa biểu đồ.",
@@ -465,12 +409,10 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
 
 
 def _cot(section: str, *cols: str) -> str:
-    """Bộ chọn các ô của những cột dữ liệu ``cols`` trong khối ``section``."""
     return ", ".join(f"{section} td[data-col='{c}']" for c in cols)
 
 
 def _cau_keo_cot(f: dict[str, str]) -> list[Section]:
-    """Các cột của bảng cầu-kèo không phải điểm tổng hợp: mỗi cột một phép tính."""
     raw = _ev([_CAU_KEO, _ket_qua(f)], [
         "Cột «Bằng chứng» in các tín hiệu THÔ của số ấy, trước khi chuẩn hoá min–max để tính điểm.",
         "ML = xác suất THÔ của mô hình cầu-kèo, trước khi co về nền; cầu = số lần số ấy được ghép từ một cặp vị trí chữ số trên bảng kết quả, cộng qua 30 kỳ gần nhất (đếm thô, không phải điểm).",
@@ -501,7 +443,6 @@ def _cau_keo_cot(f: dict[str, str]) -> list[Section]:
 def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     page = _thong_ke(f, "Dựng các bảng tần suất, gan, đầu đuôi và cặp từ cùng một sổ kết quả.")
     sections = [
-        # Nhãn số của ô ma trận và của thanh/hàng: định danh, không phải giá trị đo.
         _sec(".matrix-cell > b, .num-pill", "Số được mô tả", _ev([_ket_qua(f)], [
             "Nhãn là số 00–99 (hoặc cặp số) mà ô, thanh hay hàng này mô tả — một định danh, không phải giá trị đo.",
             "Giá trị của số ấy in ngay cạnh nhãn (trong ô, ở cuối thanh, hoặc ở các cột của hàng); mỗi giá trị có cách tính của khối chứa nó.",
@@ -520,7 +461,6 @@ def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
 
 
 def _vung(region: str) -> tuple[Evidence, list[Section]]:
-    """Trang kết quả theo tỉnh của một miền — dữ liệu vùng, tách khỏi sổ XSMB."""
     return _ev([{
         "title": f"Sổ kết quả {region} đã lưu",
         "snippet": "Kết quả theo tỉnh/thành mỗi ngày quay, từ giải tám tới Đặc Biệt; lưu riêng, "
@@ -547,7 +487,6 @@ def _vung(region: str) -> tuple[Evidence, list[Section]]:
 
 
 def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tuple[Evidence, list[Section]]:
-    """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
     evidence = _ev([{
         "title": "Sổ kết quả Vietlott đã xác thực",
         "snippet": "Kết quả bảy sản phẩm đang phát hành, đối chiếu giữa các nguồn theo đúng mã kỳ và "
@@ -584,7 +523,6 @@ def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tupl
 
 
 def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
-    """Trang Lô VIP nhiều nháy: mọi số là kiểm chứng ngoài mẫu so với chọn bừa cùng kỳ."""
     loc: Source = {
         "title": "Mô hình Lô VIP, cặp xiên 2 và lượt thử thứ hai",
         "snippet": (
@@ -658,16 +596,14 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
 
 
 def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
-    """Trang → (bằng chứng mặc định, ghi đè theo khối). Phủ MỌI trang xuất bản."""
-    tk = lambda *extra: (_thong_ke(f, *extra), [])  # noqa: E731
-    cau = lambda *extra: (_cau(f, *extra), [])  # noqa: E731
+    tk = lambda *extra: (_thong_ke(f, *extra), [])
+    cau = lambda *extra: (_cau(f, *extra), [])
     home = _trang_chu(f)
     return {
         "index.html": home,
         "landing.html": home,
         "landing_desktop.html": home,
         "live.html": (_ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Dự đoán trong ngày là 10 số đứng đầu bảng Cầu Kèo, chụp cho đúng ngày quay trước giờ quay; " + _GHI_CHU_CAU_KEO]), [
-            # Trang tải bản chụp theo ngày quay LÚC CHẠY, nên không ghi ngày lúc dựng trang.
             _sec("#live-predictions", "Dự đoán trong ngày · Cầu Kèo", _cau_keo_ev(
                 {k: v for k, v in f.items() if k != "target"},
                 "Số hiển thị là 10 số có điểm cầu-kèo cao nhất trong bảng đã chụp cho đúng ngày quay "
@@ -955,11 +891,6 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
 
 
 def registry(page_name: str, data_dir: Path | None = None) -> dict:
-    """Khối bằng chứng của một trang, hoặc ``{}`` nếu trang không có mục.
-
-    Trang lạ (ví dụ trang dựng trong phép kiểm) vẫn nhận bằng chứng chung
-    của sổ kết quả, để không có con số nào mở ra một ngăn kéo rỗng.
-    """
     f = facts(str(data_dir or ROOT / "data"))
     page, sections = _catalog(f).get(page_name, (_thong_ke(f), []))
     return {"schema": SCHEMA_VERSION, "page": page, "sections": sections, "values": {}}
@@ -970,15 +901,7 @@ def covered_pages() -> set[str]:
 
 
 def registry_json(page_name: str, data_dir: Path | None = None) -> str:
-    """JSON an toàn để đặt trong ``<script type="application/json">``.
-
-    ``<`` được thoát thành ``\\u003c`` để không chuỗi nào đóng được thẻ
-    script sớm, và ``&`` thành ``\\u0026`` cho lượt chuẩn hoá HTML phía sau.
-    """
     return json_for_html_script(registry(page_name, data_dir))
-
-
-# --- Bằng chứng theo từng giá trị ----------------------------------------
 
 
 def _pct(x: float) -> str:
@@ -989,17 +912,10 @@ def _vi(x: float, digits: int = 3) -> str:
     return f"{x:.{digits}f}".replace(".", ",")
 
 
-#: Sàn của luật trust cũ: dưới mức này thì độ tin KHÔNG thể do luật ấy tính ra.
 _SAN_TRUST_CU = 0.35
 
 
 def _trust_policy(row: dict) -> str:
-    """Luật đã tính ``model_trust`` của dòng: ``"current"``, ``"legacy"`` hay ``"unknown"``.
-
-    Thiếu cột phiên bản KHÔNG có nghĩa là luật cũ: ``ml_predict`` trước khi có
-    cột ấy vẫn có thể chạy luật mới. Chỉ khẳng định được khi tệp ghi phiên bản,
-    hoặc khi độ tin dưới sàn 0,35 — điều luật cũ không thể sinh ra.
-    """
     from ml.ml_train import TRUST_POLICY_VERSION
 
     version = pd.to_numeric(pd.Series([row.get("trust_policy_version")]), errors="coerce").iloc[0]
@@ -1010,13 +926,6 @@ def _trust_policy(row: dict) -> str:
 
 
 def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -> list[tuple[str, dict]]:
-    """Bằng chứng tính toán cho từng hàng của bảng top ML, theo thứ tự hàng.
-
-    Đọc đúng các cột ``ml_predict`` ghi ra: xác suất thô, ``model_trust`` và
-    ``quality_pass``. Với LOTO, tỉ lệ nền suy ra chính xác từ phép trộn
-    ``p = trust·thô + (1 − trust)·nền``; Đặc Biệt còn chuẩn hoá sau khi trộn
-    nên chỉ ghi hai bước, không bịa một con số nền.
-    """
     f = facts(str(data_dir or ROOT / "data"))
     label = "LOTO" if mode == "loto" else "Đặc Biệt"
     out: list[tuple[str, dict]] = []
@@ -1026,8 +935,6 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
     for row in df.to_dict("records"):
         n, p, raw, trust = int(row["number"]), float(row["prob"]), float(row["raw_model_prob"]), float(row["model_trust"])
         steps = [f"Thành phần ML cho số {n:02d} xác suất thô {_pct(raw)}."]
-        # Đặc Biệt là đúng một trong 100 lớp: ml_predict chuẩn hoá SAU khi trộn,
-        # ở MỌI mức trust — kể cả 1, khi xác suất thô cộng lại khác 100%.
         norm = ", rồi chuẩn hoá để 100 số cộng lại 100%" if mode == "de" else ""
         if trust <= 0.0:
             steps.append(f"Độ tin model_trust = 0 (không có kỹ năng thẩm định): mọi số nhận tỉ lệ nền{norm}: p = {_pct(p)}.")
@@ -1078,11 +985,6 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
 
 
 def tag_rows(table_html: str, ids: list[str], cols: tuple[int, ...] = ()) -> str:
-    """Gắn ``data-evidence-row`` cho các ``<tr>`` trong ``<tbody>``, theo thứ tự.
-
-    ``cols``: chỉ số cột (0 là cột đầu) dùng bằng chứng của hàng; cột khác —
-    ví dụ cột hạng "#" — rơi về bằng chứng của trang. Rỗng là mọi cột.
-    """
     start = table_html.find("<tbody")
     if start < 0 or not ids:
         return table_html
@@ -1100,7 +1002,6 @@ def tag_rows(table_html: str, ids: list[str], cols: tuple[int, ...] = ()) -> str
 
 
 def values_block(entries: list[tuple[str, dict]]) -> str:
-    """Khối JSON ``[data-app-evidence-values]`` mà ``app-evidence.js`` gộp vào danh mục."""
     if not entries:
         return ""
     return f'<script type="application/json" data-app-evidence-values>{json_for_html_script(dict(entries))}</script>'

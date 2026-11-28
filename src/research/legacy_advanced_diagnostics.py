@@ -1,19 +1,5 @@
 from __future__ import annotations
 
-"""Exact-semantic research diagnostics recovered from the legacy ``xoso`` repo.
-
-The modern VLA research battery already contains stronger permutation/FDR tests,
-but several legacy questions had distinct statistical semantics.  This module
-preserves those questions explicitly without feeding any production predictor:
-
-* aggregate 2x2 Loto repeat independence across number/day transitions;
-* weekday x final digit of the full special prize (7x10 contingency table);
-* ACF of the full five-digit special-prize value with a Bartlett screening band;
-* rolling N-day 00..99 coverage with both the historical simple benchmark and a
-  benchmark derived from empirical marginal hit probabilities.
-
-These are falsification/descriptive diagnostics only.
-"""
 
 import argparse
 import json
@@ -157,9 +143,6 @@ def rolling_coverage(
             [int(hit[start : start + window].any(axis=0).sum()) for start in range(n - window + 1)],
             dtype=float,
         )
-        # Exact historical benchmark from the legacy implementation.  It treats
-        # the 27 prize endings as independent uniform draws and is retained only
-        # for semantic comparability.
         legacy_expected = 100.0 * (1.0 - (99.0 / 100.0) ** (27 * window))
         empirical_expected = float(np.sum(1.0 - np.power(1.0 - empirical_p, window)))
         rows.append(

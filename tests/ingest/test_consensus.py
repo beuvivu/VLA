@@ -53,7 +53,7 @@ class FakeSource:
 
 def _lottery(tmp_path: Path, sources: list[FakeSource]) -> Lottery:
     paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
-    return Lottery(paths=paths, http=object(), sources=sources)  # type: ignore[arg-type]
+    return Lottery(paths=paths, http=object(), sources=sources)
 
 
 def test_consensus_accepts_two_matching_sources(tmp_path: Path) -> None:
@@ -63,7 +63,7 @@ def test_consensus_accepts_two_matching_sources(tmp_path: Path) -> None:
 
     assert lot.fetch(d, min_agreement=2) is True
     assert lot.has_date(d)
-    audit = lot._fetch_audit[d.isoformat()]  # regression: audit is part of persisted provenance contract
+    audit = lot._fetch_audit[d.isoformat()]
     assert audit["agreement"] == 2
     assert audit["accepted"] is True
     assert audit["ambiguous_tie"] is False
@@ -94,7 +94,6 @@ class CountingSource(FakeSource):
 
 
 def test_the_primary_result_is_taken_without_asking_the_fallbacks(tmp_path: Path) -> None:
-    """Chính sách từ 13-10-2026: nguồn chính trả đủ kỳ thì không gọi nguồn dự phòng nào."""
     d = date(2026, 10, 12)
     primary = CountingSource("xoso.com.vn", _result(d, special=38287))
     backups = [CountingSource("mketqua.net", _result(d, special=11111)),
@@ -147,43 +146,30 @@ def test_consensus_rejects_equal_independent_group_tie(tmp_path: Path) -> None:
     assert audit["ambiguous_tie"] is True
 
 
-# --- Ngày không quay -------------------------------------------------------
-#
-# XSMB nghỉ dịp Tết và suốt đợt giãn cách 01-22/4/2020. Vào những ngày đó trang
-# nguồn vẫn trả kết quả gần nhất, nên trình cào ghi lại như thể đó là kỳ của
-# ngày ấy. Đo trên kho: 50 bản ghi bịa, trong đó 4 bản lọt qua CẢ kiểm đồng
-# thuận hai nguồn — mọi nguồn cùng đọc một trang tin nên ở dạng hỏng này chúng
-# không độc lập.
-
-
 def test_rejects_a_draw_identical_to_the_previous_day(tmp_path: Path) -> None:
-    """Hai kỳ liền kề trùng khít có xác suất 10^-107 (107 chữ số giải). Không
-    phải "hiếm" mà là bất khả: trùng khít luôn là hiện vật."""
     yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
     stale = _result(today, special=22601)
 
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale)]
     assert lot.fetch(today, min_agreement=1) is False, "ngày không quay bị ghi thành kỳ"
     assert not lot.has_date(today)
 
 
 def test_a_source_still_showing_the_stored_draw_hands_over_to_the_next(tmp_path: Path) -> None:
-    """Đo 00:37 ngày 13-10-2026: trang theo ngày 13-10 của hai nguồn dự phòng hiện trọn kỳ
-    12-10. Nguồn trước trùng khít thì phải hỏi nguồn sau, không kết luận "không quay"."""
     yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
     fresh = _result(today, special=22602)
-    lot._sources = [  # type: ignore[attr-defined]
+    lot._sources = [
         FakeSource("a", _result(today, special=22601)),
         FakeSource("b", fresh),
     ]
     assert lot.fetch(today, min_agreement=1) is True
-    assert lot._data[today].special == 22602  # type: ignore[attr-defined]
+    assert lot._data[today].special == 22602
     assert not lot.is_no_draw(today)
 
 
@@ -193,23 +179,20 @@ def test_only_when_every_answer_repeats_is_the_day_a_non_draw(tmp_path: Path) ->
     assert lot.fetch(yesterday, min_agreement=1) is True
 
     stale = _result(today, special=22601)
-    lot._sources = [FakeSource("a", stale), FakeSource("b", None), FakeSource("c", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale), FakeSource("b", None), FakeSource("c", stale)]
     assert lot.fetch(today, min_agreement=1) is False
     assert lot.is_no_draw(today)
     assert not lot.has_date(today)
 
 
 def test_consensus_does_not_rescue_a_repeated_draw(tmp_path: Path) -> None:
-    """Đồng thuận hai nguồn KHÔNG cứu được: mọi nguồn cùng đọc một trang
-    tin nên chúng nhất trí về chính kết quả cũ. Bốn bản ghi đã lọt vào 393 kỳ
-    gốc đúng theo đường này."""
     yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
     stale = _result(today, special=22601)
 
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", stale), FakeSource("b", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale), FakeSource("b", stale)]
     assert lot.fetch(today, min_agreement=2) is False
     assert not lot.has_date(today)
     audit = lot._fetch_audit[today.isoformat()]
@@ -218,52 +201,40 @@ def test_consensus_does_not_rescue_a_repeated_draw(tmp_path: Path) -> None:
 
 
 def test_looks_at_the_next_day_too_because_backfill_runs_backwards(tmp_path: Path) -> None:
-    """Backfill lấy từ mới về cũ: khi tới ngày D thì D+1 thường đã trong kho."""
     earlier, later = date(2026, 2, 15), date(2026, 2, 16)
     shared = _result(later, special=22601)
 
     lot = _lottery(tmp_path, [FakeSource("a", shared)])
     assert lot.fetch(later, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", _result(earlier, special=22601))]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", _result(earlier, special=22601))]
     assert lot.fetch(earlier, min_agreement=1) is False
 
 
 def test_a_genuinely_different_draw_is_still_accepted(tmp_path: Path) -> None:
-    """Chốt chặn không được rộng tay: chỉ trùng KHÍT mới bị loại."""
     yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
 
     lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
     assert lot.fetch(yesterday, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", _result(today, special=22602))]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", _result(today, special=22602))]
     assert lot.fetch(today, min_agreement=1) is True
     assert lot.has_date(today)
 
 
 def test_rejects_a_repeat_even_when_the_days_between_were_removed(tmp_path: Path) -> None:
-    """So kề nhau là chưa đủ — bản đó đã thủng thật trong sản xuất.
-
-    Sau khi dọn cụm Tết 2026, quy trình hàng ngày cào lại các ngày thiếu. Với
-    2026-02-17 thì cả 02-16 lẫn 02-18 đều đã bị xoá nên không còn ngày liền kề
-    nào để so, và bản bịa lọt lại vào kho. Hai bản ghi quay lại đúng như vậy.
-
-    Trùng khít ở BẤT KỲ đâu trong lịch sử đều là hiện vật: xác suất 10^-107
-    không đổi theo khoảng cách ngày.
-    """
-    kept, refetched = date(2026, 2, 15), date(2026, 2, 17)  # 02-16 đã bị dọn
+    kept, refetched = date(2026, 2, 15), date(2026, 2, 17)
     stale = _result(refetched, special=22601)
 
     lot = _lottery(tmp_path, [FakeSource("a", _result(kept, special=22601))])
     assert lot.fetch(kept, min_agreement=1) is True
 
-    lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
+    lot._sources = [FakeSource("a", stale)]
     assert lot.fetch(refetched, min_agreement=1) is False
     assert not lot.has_date(refetched)
 
 
 def test_refetching_the_same_date_is_not_treated_as_a_repeat(tmp_path: Path) -> None:
-    """Cào lại đúng ngày đã có phải là thao tác không đổi, không bị coi là bịa."""
     d = date(2026, 2, 15)
     lot = _lottery(tmp_path, [FakeSource("a", _result(d, special=22601))])
     assert lot.fetch(d, min_agreement=1) is True

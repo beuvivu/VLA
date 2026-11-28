@@ -1,5 +1,3 @@
-'Thống kê cửa sổ ngắn và bộ nhớ ngữ cảnh số học có giới hạn.'
-
 from __future__ import annotations
 
 from collections import deque
@@ -39,7 +37,6 @@ class _Association:
 
 
 class KnowledgeBaseManager:
-    'Lưu các liên hệ ngữ cảnh/kết quả đã quan sát cùng thống kê gần đây.\n\nNgữ cảnh được chụp trước khi biết kết quả. Độ tương đồng chỉ mô tả liên hệ, không xác lập nhân quả.'
 
     def __init__(
         self,
@@ -64,12 +61,10 @@ class KnowledgeBaseManager:
 
     @property
     def total_observations(self) -> int:
-        'Tổng số kỳ đã quan sát, độc lập với giới hạn lưu lịch sử.'
         return self._total_observations
 
     @property
     def history(self) -> np.ndarray:
-        'Ma trận kết quả theo thời gian, trả bản sao tách khỏi trạng thái.'
         if not self._history:
             return np.empty((0, self.n), dtype=np.uint8)
         return np.stack(self._history)
@@ -100,12 +95,11 @@ class KnowledgeBaseManager:
         return vector
 
     def ingest(self, cycle: int, outcome: Sequence[int]) -> None:
-        'Xác thực đầy đủ rồi ghi kỳ tiếp theo, không sửa state khi đầu vào sai.'
         cycle = _integer(cycle, "cycle")
         if cycle != self._total_observations:
             raise ValueError(f"expected cycle {self._total_observations}, got {cycle}")
         vector = self._validate_outcome(outcome)
-        context = self._context()  # The result has not entered history yet.
+        context = self._context()
         if context is not None:
             existing = next(
                 (index for index, rule in enumerate(self._rules) if np.array_equal(rule.context, context)),
@@ -125,7 +119,6 @@ class KnowledgeBaseManager:
         self._total_observations += 1
 
     def retrieve(self) -> tuple[np.ndarray, list[dict]]:
-        'Trả xác suất biên tổng k và bằng chứng của tối đa tám ngữ cảnh.'
         uniform = np.full(self.n, self.k / self.n)
         context = self._context()
         if context is None:
@@ -168,13 +161,10 @@ class KnowledgeBaseManager:
             + recent_weight * recent_signal
             + long_weight * long_signal
         )
-        # Each constituent is a valid marginal vector; this removes roundoff in
-        # their total without turning marginal values into categorical masses.
         probabilities *= self.k / probabilities.sum()
         return probabilities, matches
 
     def state_dict(self) -> dict:
-        'Xuất bản checkpoint JSON hữu hạn, không chia sẻ vùng nhớ nội bộ.'
         return {
             "version": 1,
             "n": self.n,
@@ -188,7 +178,6 @@ class KnowledgeBaseManager:
         }
 
     def load_state_dict(self, state: dict) -> None:
-        'Xác thực toàn bộ checkpoint rồi thay trạng thái nguyên tử.'
         if not isinstance(state, dict):
             raise TypeError("memory state must be a dictionary")
         try:

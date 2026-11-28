@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""CSP without unsafe-inline: externalize loaders + hash remaining style/script blocks."""
 from __future__ import annotations
 
 import base64
@@ -77,11 +76,11 @@ def rewrite_html(path: Path) -> bool:
     )
 
     style_hashes = []
-    for m in re.finditer(r"<style\b[^>]*>([\s\S]*?)</style>", html, re.I):
+    for m in re.finditer(r"<style\b[^>]*>([\s\S]*?)</style\b[^>]*>", html, re.I):
         style_hashes.append(sha256_csp(m.group(1)))
 
     script_hashes = []
-    for m in re.finditer(r"<script\b([^>]*)>([\s\S]*?)</script>", html, re.I):
+    for m in re.finditer(r"<script\b([^>]*)>([\s\S]*?)</script\b[^>]*>", html, re.I):
         attrs, body = m.group(1), m.group(2)
         if re.search(r"\bsrc\s*=", attrs, re.I):
             continue

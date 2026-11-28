@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""Regenerate ``reports/products.{md,json}``: coverage of all seven Vietlott products, exact
-odds and return to player of Keno / Bingo18 / Max 3D, randomness tests of the Keno, Bingo18
-and Max 3D histories, and the Max 3D ↔ Max 3D Pro digit cross-check.
-
-    python scripts/products_report.py
-"""
 
 from __future__ import annotations
 
@@ -18,11 +12,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.analytics.products import digit_cell_test, digit_replication, product_randomness, split_history  # noqa: E402
-from vietlott_engine.core.products import ProductHistory, read_jsonl  # noqa: E402
-from vietlott_engine.core.products import PRODUCT_INFO, SEED_FILES, ProductCode, load_product_history  # noqa: E402
-from vietlott_engine.game_theory import max3d  # noqa: E402
-from vietlott_engine.game_theory.fastgames import bingo18_odds, keno_odds  # noqa: E402
+from vietlott_engine.analytics.products import digit_cell_test, digit_replication, product_randomness, split_history
+from vietlott_engine.core.products import ProductHistory, read_jsonl
+from vietlott_engine.core.products import PRODUCT_INFO, SEED_FILES, ProductCode, load_product_history
+from vietlott_engine.game_theory import max3d
+from vietlott_engine.game_theory.fastgames import bingo18_odds, keno_odds
 
 SEED = Path(os.environ.get("VQE_PRODUCT_SEED_DIR") or ROOT / "data" / "seed")
 OUT = Path(os.environ.get("VQE_REPORTS_DIR") or ROOT / "reports")

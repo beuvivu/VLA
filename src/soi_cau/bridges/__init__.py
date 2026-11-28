@@ -1,5 +1,3 @@
-"""Quét cầu tọa độ ghép chéo ngày, kèm cổng kiểm định bắt buộc."""
-
 from soi_cau.bridges.scanner import (
     NUMBER_SPACE,
     SHADOW_KINDS,

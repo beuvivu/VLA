@@ -1,9 +1,3 @@
-"""Audit from draw 1, exclusion-aware targeted repair, and a rerunnable CLI.
-
-An observed maximum is NOT proof that the history reaches the present. Use an
-official latest probe or a documented --latest-ids boundary. Repairs are bounded
-and checkpointed; unresolved draws stay unresolved, never fabricated.
-"""
 from __future__ import annotations
 import argparse
 import asyncio
@@ -136,7 +130,6 @@ def analyze_game(game: str, rows: Iterable[dict[str,Any] | DrawRecord], *,
     for missing in report.missing_ids:
         index=bisect.bisect_left(ids,missing)
         hints=[]
-        # No synthetic dates for absent leading history.
         if index>0: hints.append(seen[ids[index-1]][0].date().isoformat())
         if 0<index<len(ids): hints.append(seen[ids[index]][0].date().isoformat())
         if hints:
@@ -152,9 +145,6 @@ def analyze_game(game: str, rows: Iterable[dict[str,Any] | DrawRecord], *,
             for t in times:
                 planned=datetime.combine(day,t,VN)
                 if day==last_day:
-                    # A precise afternoon draw leaves the evening slot outstanding.
-                    # With date-only history, two results cover both daily slots;
-                    # one result cannot prove which slot has been obtained.
                     if any(r[3]=="day" for r in last_day_records):
                         if len(last_day_records)>=2:
                             continue
@@ -207,10 +197,6 @@ def read_rows(path: Path) -> Iterable[dict]:
 
 
 def audit_rows(game: str, path: Path, repository: Any) -> Iterable[dict | DrawRecord]:
-    """Validated union of immutable seeds and persisted repairs, without duplicates.
-
-    Conflicting seed/repair rows are both retained so the audit exposes them.
-    """
     repaired={r.draw_id:r for r in repository.load(game)}
     finance_path=path.parent/f"prizes_{game_code(game)}.jsonl"
     finances={}
@@ -266,7 +252,6 @@ async def repair_missing(reports: list[GapReport], fetcher: Any, repository: Any
         for did in r.missing_ids:
             if did not in r.excluded_ids:
                 jobs.append((r,did))
-    # Prefer short internal/trailing gaps so a missing 83k-draw prefix cannot starve other products.
     jobs.sort(key=lambda job:(job[1]<(job[0].first_id or 1),job[0].game_type,job[1]))
     remaining=len(jobs)-min(max_draws,len(jobs))
     jobs=jobs[:max_draws]
@@ -359,11 +344,8 @@ async def _run(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Như `vietlott`, `vlm-update`, `vlm-forecast`: các đường dẫn mặc định tính từ thư
-    # mục dự án. Thiếu bước này, chạy ngoài thư mục ấy thì seed "rỗng" và lệnh vẫn
-    # thoát 0 với một báo cáo không kỳ nào.
     enter_project()
-    parser=argparse.ArgumentParser(description=__doc__)
+    parser=argparse.ArgumentParser()
     parser.add_argument("--seed-dir",type=Path,default=Path("data/seed"))
     parser.add_argument("--game",default="all",choices=["all",*SEED_FILES])
     parser.add_argument("--output",type=Path,default=Path("reports/vlm/missing_draws.json"))

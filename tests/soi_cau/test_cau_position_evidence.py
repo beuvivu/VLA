@@ -53,5 +53,4 @@ def test_next_probability_stays_a_probability_at_the_edges() -> None:
     low = _next_probability(pd.Series({"p_post": 0.001, "streak_shift": -0.01, "rule_kind": "active"}))
     assert high == pytest.approx(1 - 1e-6)
     assert low == pytest.approx(1e-6)
-    # Cầu bền không cộng kinh nghiệm chuỗi.
     assert _next_probability(pd.Series({"p_post": 0.3, "streak_shift": 0.5, "rule_kind": "stable"})) == 0.3

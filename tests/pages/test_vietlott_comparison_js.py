@@ -1,5 +1,3 @@
-"""Mọi mức khớp của mã trình duyệt phải cùng phân hạng với engine."""
-
 import json
 import shutil
 import subprocess

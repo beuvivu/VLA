@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""Bất biến đầu-cuối của chế độ đánh dấu cặp, đo trong trình duyệt thật.
-
-Bảng do JS dựng lúc chạy, nên đây là chỗ DUY NHẤT nhìn thấy được ``data-key``
-thật và lớp ``marked`` thật. Các bất biến cấu trúc nằm ở
-``tests/web/test_pair_marking.py`` và chạy ở mọi nơi; tệp này cần Chromium nên nó
-TỰ BỎ QUA khi không có. Bỏ qua thì không bảo vệ được gì, nên hai tệp bổ sung
-cho nhau chứ không thay nhau.
-"""
 
 import os
 from pathlib import Path
@@ -20,7 +12,7 @@ CHROMIUM = os.environ.get(
 )
 
 pytest.importorskip("playwright.sync_api", reason="cần playwright để đo trong trình duyệt")
-if not Path(CHROMIUM).exists():  # pragma: no cover - phụ thuộc máy chạy
+if not Path(CHROMIUM).exists():
     pytest.skip(f"không có Chromium tại {CHROMIUM}", allow_module_level=True)
 
 PAIR_RE = r"/\|(?:n|c)([0-9]{2}(?:-[0-9]{2})?)/"
@@ -88,7 +80,6 @@ def test_marking_one_cell_lights_every_cell_carrying_the_same_pair(page, path) -
 
 
 def test_a_pair_marked_on_one_page_is_still_marked_on_another(page) -> None:
-    """Giá trị thật của chế độ cặp: dõi MỘT con qua NHIỀU trang."""
     source, target = DOCS / "chu-ky-dac-biet.html", DOCS / "tan-suat-loto.html"
     _open(page, source)
     page.evaluate("try { localStorage.clear(); } catch (e) {}")

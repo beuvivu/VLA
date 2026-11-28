@@ -28,13 +28,6 @@ printf '%s\n' "== Unit/regression tests =="
 python -m pytest -q
 
 printf '%s\n' "== Source policy =="
-# Cổng này TỪNG chép cứng bảy tên miền vào đây. Hai lượt đổi chính sách nguồn
-# sau đó, bản chép lệch khỏi `src/ingest/sources.py` và CI đỏ suốt — đúng lớp lỗi mà
-# một bản sao danh sách luôn sinh ra. Danh sách đã có chỗ khai báo duy nhất
-# (`PRIMARY_SOURCE_NAMES`/`FALLBACK_SOURCE_NAMES`) và đã được ghim bởi
-# `tests/ingest/test_source_whitelist.py`. Nên ở đây chỉ kiểm các BẤT BIẾN mà một tệp
-# đơn lẻ không tự kiểm được: đăng ký, mã ẩn danh, nhóm độc lập và danh sách
-# đen chống lộ nguồn phải phủ khớp nhau.
 python - <<'PYSOURCE'
 from ingest.sources import (
     FALLBACK_SOURCE_NAMES,
@@ -57,8 +50,6 @@ listed = primary + fallback
 assert len(set(listed)) == len(listed), listed
 assert not (set(primary) & set(fallback)), (primary, fallback)
 
-# Không còn nguồn mồ côi: xoá một nguồn khỏi chính sách mà để lại lớp cào của
-# nó trong đăng ký là "xoá chưa tới nơi", và lần sau có người gọi lại được.
 registry = _source_registry()
 assert sorted(registry) == sorted(listed), (sorted(registry), sorted(listed))
 for name, source in registry.items():
@@ -68,29 +59,21 @@ assert [s.name for s in primary_sources()] == primary
 assert [s.name for s in fallback_sources()] == fallback
 assert [s.name for s in default_sources()] == listed, "tầng chính phải đứng trước tầng dự phòng"
 
-# Ẩn danh hoá: mọi nguồn phải có mã, mã không được trùng, và không mã nào
-# được chính là tên miền.
 assert sorted(SOURCE_PUBLIC_CODE) == sorted(listed), sorted(SOURCE_PUBLIC_CODE)
 codes = [SOURCE_PUBLIC_CODE[n] for n in listed]
 assert len(set(codes)) == len(codes), codes
 assert all(c not in n for c, n in zip(codes, listed)), codes
 
-# Danh sách đen chống lộ nguồn phải phủ HẾT tên miền thật, nếu không phép
-# ẩn danh hoá sẽ để lọt đúng cái nó sinh ra để chặn.
 blacklist = set(known_source_domains())
 missing = [n for n in listed if n not in blacklist]
 assert not missing, missing
 
 assert sorted(SOURCE_INDEPENDENCE_GROUP) == sorted(listed), sorted(SOURCE_INDEPENDENCE_GROUP)
 
-# Chính sách từ 13-10-2026: MỘT nguồn chính; dự phòng chỉ được gọi khi nó gặp sự cố. Mỗi
-# nguồn là một nhóm độc lập riêng, nên hai dự phòng nói khác nhau là thế hoà chứ không phải
-# một nguồn nói hai lần.
 assert len(primary) == 1, primary
 groups = [source_independence_key(n) for n in listed]
 assert len(set(groups)) == len(groups), groups
 
-# Nguồn đã nghỉ: không còn được gọi, nhưng vẫn bị danh sách đen chặn khỏi tải trọng công khai.
 retired = set(RETIRED_SOURCE_NAMES)
 assert not (retired & set(listed)), sorted(retired & set(listed))
 assert not (retired & set(registry)), sorted(retired & set(registry))
@@ -104,9 +87,6 @@ printf '%s\n' "== Data integrity + canonical statistics =="
 python src/ingest/validate_data.py --lookback-days 90 --out data/health.json
 python src/stats/statistical_signal.py --mode both
 python src/stats/significance_stats.py --windows 30,90,365
-# Rebuild the current production cầu-kèo artifacts and model pack from the
-# calendar-validated feature builder.  The final supervised anchor is necessarily
-# one day behind the latest canonical draw because its label is that latest draw.
 python src/ml/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20 --force-train
 python src/stats/statistical_matrices.py
 python src/stats/conditional_matrices.py --top 500
@@ -129,11 +109,6 @@ latest = pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"]).
 expected_target = (latest + timedelta(days=1)).isoformat()
 rows = len(pd.read_csv("data/xsmb.csv", usecols=["date"]))
 
-# XSMB nghỉ quay dịp Tết và suốt đợt giãn cách 01-22/4/2020, nên chuỗi ngày
-# CÓ ranh giới không liền kề — đó là thực tế, không phải lỗi. Ba khẳng định cũ
-# đòi 0 ranh giới bị bỏ qua; chúng chỉ xanh chừng nào 50 bản ghi bịa còn lấp
-# vào chỗ trống. Điều đáng kiểm là số ranh giới bỏ qua khớp đúng số ngày nghỉ
-# đã biết, và phép tính chỉ đếm chuyển tiếp +1 ngày thật.
 skip = sorted(json.loads(Path("data/non_draw_days.json").read_text(encoding="utf-8"))["ngay_khong_quay"])
 have = set(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"].astype(str))
 boundaries = sum(1 for d in skip if d not in have and _starts_a_gap(d, have))
@@ -239,8 +214,6 @@ for mode in ("loto", "de"):
     report = json.loads(Path("$TMP_PRED/meta_report_" + mode + ".json").read_text())
     assert report["status"] == pack["status"], mode
     if pack["status"] == "insufficient_history":
-        # Thiếu lịch sử là trạng thái được kiểm, không phải model đã học.
-        # Không nới sàn, bịa metric hoặc giữ lại challenger cũ đang bật.
         assert pack["model"] is None, mode
         assert pack["quality_pass"] is False and pack["meta_trust"] == 0.0, mode
         assert report["quality_pass"] is False and report["meta_trust"] == 0.0, mode
@@ -269,7 +242,6 @@ for mode in ("loto", "de"):
         "constant_logloss_skill",
     ):
         assert math.isfinite(float(pack[key])), (mode, key, pack[key])
-    # Bật mà không thắng dự báo hằng số là đúng lỗi của lượt 25-09-2026.
     if pack["quality_pass"]:
         assert float(pack["constant_logloss_skill"]) > 0.003, (mode, pack["constant_logloss_skill"])
     assert len(pack["validation_days"]) >= 15, mode
@@ -317,8 +289,6 @@ for path in ["models/cau_keo_loto.joblib", "models/cau_keo_de.joblib"]:
     obj = joblib.load(path)
     assert isinstance(obj, dict) and "model" in obj, path
     assert obj.get("features") == CAU_FEATURE_COLS, path
-    # Cầu-kèo rows are (anchor t -> target t+1).  The newest canonical draw is
-    # the newest *label*, so the latest trainable anchor is exactly one day prior.
     assert str(obj.get("trained_through_date")) == last_supervised_anchor, (
         path,
         obj.get("trained_through_date"),
@@ -356,10 +326,6 @@ print("OK cau-keo calendar-safe smoke")
 PYCAU
 
 printf '%s\n' "== Static GitHub Pages builders =="
-# build_docs.py dựng bốn trang soi-path. Trước đây nó KHÔNG nằm trong chuỗi
-# này, nên các trang đó là hiện vật cũ nằm im: mỗi lần đổi SITE_NAV là chúng
-# lệch khỏi phần còn lại và test điều hướng đỏ. Chạy TRƯỚC build_landing_page
-# vì cả hai cùng ghi docs/index.html và bản của landing mới là bản đúng.
 python src/pages/build_docs.py
 python src/pages/build_docs_ml.py
 python src/pages/build_dashboard.py
@@ -369,8 +335,6 @@ python src/pages/build_landing_page.py
 python src/pages/build_fun_prediction.py
 python src/pages/build_traditional_results.py
 python src/pages/build_regional_results.py
-# Lô VIP nhiều nháy: đo lại trên lịch sử hiện tại trước khi dựng (~25 s; lượt hai đóng băng ở ngày
-# đăng ký, chỉ đo lại khi đoạn ấy bị sửa), nếu không trang có thể in số đo của một lịch sử cũ.
 python src/forecast/multi_hit_report.py
 python src/pages/build_multi_hit_page.py
 python src/evaluation/cleanup_artifacts.py --retention-days 45
@@ -395,14 +359,6 @@ print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
 PYFUN
 
 printf '%s\n' "== Model skill vs baseline =="
-# Báo động khi mô hình tệ hơn đường cơ sở quá ngưỡng. Đợt hồi quy 12/2025-01/2026
-# (kỹ năng lô tô khoảng -73% suốt 22 ngày) đã trôi qua tám tháng không ai phát
-# hiện vì không có bước đối chứng nào như thế này.
-#
-# --require-baseline: lịch sử đã được sinh lại đối chứng cho toàn bộ 219 ngày,
-# nên thiếu cột baseline từ nay là dấu hiệu pipeline hỏng, không phải dữ liệu
-# chưa kịp tích. Không có cờ này, một thay đổi làm pipeline ngừng ghi đối chứng
-# sẽ tự tắt cổng trong im lặng - đúng lớp lỗi mà cổng sinh ra để chặn.
 python src/evaluation/check_baseline_skill.py --require-baseline
 
 printf '%s\n' "== Post-build production consistency =="

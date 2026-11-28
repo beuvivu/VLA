@@ -1,18 +1,3 @@
-"""Chấm mọi họ mô hình trên cùng một giao thức cuốn chiếu, ghi báo cáo.
-
-Đây là bước quyết định của toàn bộ nghiên cứu: nó thay câu hỏi "mô hình nào
-nghe có vẻ mạnh nhất" bằng "mô hình nào thật sự vượt được nền trên chính dữ
-liệu này". Hai câu hỏi đó cho hai câu trả lời khác nhau, và chỉ câu thứ hai
-kiểm chứng được.
-
-Ngoài điểm của từng mô hình, báo cáo còn chạy một phép kiểm đối chứng: chấm
-lại mô hình tốt nhất trên nhãn đã bị xáo trộn theo chu kỳ. Xáo trộn chu kỳ giữ
-nguyên cấu trúc tự tương quan trong chuỗi nhãn mà chỉ phá bỏ liên hệ giữa đặc
-trưng và nhãn, nên nó cho biết mức "kỹ năng" mà một mô hình thu được thuần túy
-nhờ tìm kiếm. Nếu điểm trên dữ liệu thật không cao hơn hẳn phân phối đó thì
-điểm ấy không phải bằng chứng.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -25,11 +10,10 @@ import pandas as pd
 
 import sys
 
-# Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from forecast.modeling.benchmark import (  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from forecast.modeling.benchmark import (
     BetaBinomialShrinkage,
     ClusterRate,
     Evaluation,
@@ -42,13 +26,6 @@ from forecast.modeling.benchmark import (  # noqa: E402
 
 
 def proposed_ensemble() -> ShrinkageEnsemble:
-    """Kiến trúc đề xuất: các họ mô hình rẻ, cộng nền giữ phần trọng số còn lại.
-
-    Bỏ cây tăng cường ra khỏi thành phần không phải vì nó yếu mà vì nó đắt:
-    trọng số của nó đo bằng cửa sổ bằng chứng 90 ngày, tức 90 lần khớp lại cho
-    mỗi lần thẩm định. Trên dữ liệu này nó nhận trọng số 0 giống mọi thành phần
-    khác, nên cái giá đó không mua được gì.
-    """
     return ShrinkageEnsemble(
         [BetaBinomialShrinkage(), MarkovChain(order=1, pooled=True), GapHazard(), ClusterRate(4)],
         evidence_window=90,
@@ -56,7 +33,6 @@ def proposed_ensemble() -> ShrinkageEnsemble:
 
 
 def circular_shift_check(counts: np.ndarray, model, *, warmup: int, shifts: int, seed: int) -> dict:
-    """Kỹ năng thu được khi nhãn bị xáo trộn chu kỳ — mức sàn của tìm kiếm."""
     rng = np.random.default_rng(seed)
     n = counts.shape[0]
     skills = []
@@ -73,7 +49,7 @@ def circular_shift_check(counts: np.ndarray, model, *, warmup: int, shifts: int,
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="data/xsmb.csv")
     parser.add_argument("--out-dir", default="data/research")
     parser.add_argument("--warmup", type=int, default=120)

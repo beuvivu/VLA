@@ -1,5 +1,3 @@
-"""Giữ bất biến dữ liệu và khả năng dựng lại khi thay hệ thống trình bày."""
-
 import json
 import re
 from pathlib import Path
@@ -12,7 +10,6 @@ from web.page_output import write_page
 
 
 def test_effect_toggle_does_not_pause_functional_updates() -> None:
-    """Live reveal bắt đầu opacity 0; pause toàn trang sẽ giữ số mới vô hình."""
     css = (Path(__file__).resolve().parents[2] / "src/web/templates/app_design.css").read_text()
     pause_rules = [selectors for selectors, declarations in re.findall(r"([^{}]+)\{([^{}]+)\}", css)
                    if re.search(r"animation-play-state\s*:\s*paused", declarations)]

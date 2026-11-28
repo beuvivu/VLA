@@ -1,23 +1,3 @@
-"""Bayesian number-rate model: Dirichlet–Multinomial conjugate prior with time decay.
-
-Model. Each drawn ball is treated as a categorical observation over n numbers with
-share vector θ ~ Dirichlet(α₀·1). Observations are exponentially down-weighted by
-their age (λ^age, 0 < λ ≤ 1), which turns the posterior into a filter:
-
-    α_i = α₀ + Σ_d λ^(D−1−d) · x_{d,i}
-
-Posterior marginals are Beta(α_i, A − α_i), A = Σα. The implied per-draw
-inclusion probability of number i is ≈ k·E[θ_i].
-
-The categorical likelihood ignores the without-replacement constraint inside one
-draw; the approximation error is O(k/n) and is irrelevant for ranking numbers.
-
-What this module can and cannot do. It quantifies uncertainty honestly and lets the
-data choose λ by one-step-ahead predictive log score (``tune_decay``). If draws are
-i.i.d. uniform, the Bayes factor favours the uniform model and the best λ is 1 with
-zero predictive skill — which is exactly what it finds on real Vietlott history.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -34,13 +14,13 @@ class NumberPosterior(BaseModel):
     inclusion_probability: float
     ci_low: float
     ci_high: float
-    lift: float  # inclusion probability / (k/n)
+    lift: float
 
 
 class PredictiveScore(BaseModel):
     decay: float
     draws_scored: int
-    mean_log_score_gain: float  # nats per draw vs uniform baseline (positive = better)
+    mean_log_score_gain: float
     standard_error: float
     t_statistic: float
 
@@ -58,7 +38,6 @@ class BayesianReport(BaseModel):
 
 
 class DirichletMultinomialModel:
-    """Conjugate Dirichlet posterior over number shares with exponential forgetting."""
 
     def __init__(self, n: int, k: int, alpha0: float = 1.0, decay: float = 1.0) -> None:
         if alpha0 <= 0:
@@ -69,7 +48,6 @@ class DirichletMultinomialModel:
         self.alpha = np.full(n, alpha0, dtype=np.float64)
         self.effective_draws = 0.0
 
-    # ------------------------------------------------------------------ fit
     def fit(self, h: DrawHistory) -> "DirichletMultinomialModel":
         w = decay_weights(len(h), self.decay)
         self.alpha = self.alpha0 + h.counts(w)
@@ -90,10 +68,8 @@ class DirichletMultinomialModel:
         hi = stats.beta.ppf((1 + level) / 2, self.alpha, a_total - self.alpha)
         return np.clip(self.k * lo, 0, 1), np.clip(self.k * hi, 0, 1)
 
-    # -------------------------------------------------------- model evidence
     @staticmethod
     def log_marginal_likelihood(counts: np.ndarray, alpha0: float) -> float:
-        """log p(sequence | Dirichlet(α₀)) for categorical observations with ``counts``."""
         counts = np.asarray(counts, dtype=np.float64)
         n, total = counts.size, counts.sum()
         a = n * alpha0
@@ -101,27 +77,16 @@ class DirichletMultinomialModel:
 
     @classmethod
     def log_bayes_factor_vs_uniform(cls, counts: np.ndarray, alpha0: float) -> float:
-        """log BF of 'unknown heterogeneous shares' vs 'fixed uniform shares 1/n'.
-
-        Negative values favour the uniform (fair) model.
-        """
         counts = np.asarray(counts, dtype=np.float64)
         return cls.log_marginal_likelihood(counts, alpha0) - counts.sum() * np.log(1.0 / counts.size)
 
     @classmethod
     def empirical_bayes_alpha0(cls, counts: np.ndarray, grid: np.ndarray | None = None) -> float:
-        """α₀ maximising the marginal likelihood (large α₀ ⇒ data look uniform)."""
         grid = np.logspace(-1, 5, 61) if grid is None else grid
         scores = [cls.log_marginal_likelihood(counts, a) for a in grid]
         return float(grid[int(np.argmax(scores))])
 
-    # --------------------------------------------------------------- scoring
     def predictive_log_score(self, h: DrawHistory, start: int = 100) -> PredictiveScore:
-        """Walk-forward one-step-ahead Bernoulli log score vs the k/n baseline.
-
-        Uses the recursive filter c_t = λ·c_{t−1} + x_{t−1}, so the model at step t
-        only ever sees draws < t.
-        """
         inc = h.incidence.astype(np.float64)
         d = len(h)
         if d <= start + 1:
@@ -139,7 +104,7 @@ class DirichletMultinomialModel:
             ll_base = np.sum(x * np.log(base) + (1 - x) * np.log(1 - base))
             gains.append(ll_model - ll_base)
             c = self.decay * c + x
-        from vietlott_engine.inference.predictive import diebold_mariano  # local import: avoid a cycle
+        from vietlott_engine.inference.predictive import diebold_mariano
 
         dm = diebold_mariano(np.asarray(gains))
         return PredictiveScore(
@@ -150,9 +115,7 @@ class DirichletMultinomialModel:
             t_statistic=dm.statistic,
         )
 
-    # -------------------------------------------------------------- sampling
     def sample_tickets(self, n_tickets: int, rng: np.random.Generator, temperature: float = 1.0) -> list[tuple[int, ...]]:
-        """Weighted sampling without replacement (Gumbel-top-k) from posterior shares."""
         logits = np.log(self.posterior_mean) / max(temperature, 1e-9)
         out = []
         for _ in range(n_tickets):
@@ -162,7 +125,6 @@ class DirichletMultinomialModel:
 
 
 def tune_decay(h: DrawHistory, grid: tuple[float, ...] = (0.9, 0.95, 0.98, 0.99, 0.995, 1.0), alpha0: float = 1.0, start: int = 100) -> list[PredictiveScore]:
-    """Evaluate predictive skill for each decay factor (empirical choice of λ)."""
     return [DirichletMultinomialModel(h.n, h.k, alpha0, lam).predictive_log_score(h, start) for lam in grid]
 
 

@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""Dựng và chèn bảng mô phỏng XSMB tất định cho ngày kế tiếp.
-
-The production models predict only the two-digit Loto/Đặc Biệt universe.  This module
-turns those probabilities into a clearly-labelled entertainment simulation of a
-full XSMB prize board while preserving the model probabilities as the auditable
-part of the output.  Prefix digits are synthetic and must never be interpreted as
-modelled five-/four-/three-digit prize probabilities.
-"""
 
 import argparse
 import hashlib
@@ -222,10 +214,6 @@ def write_artifacts(payload: dict[str, Any], data_dir: Path) -> tuple[Path, Path
     json_path = pred_dir / "fun_draw_next.json"
     csv_path = pred_dir / "fun_draw_next.csv"
 
-    # Replace both snapshots atomically.  A runner interruption must not leave
-    # a truncated JSON/CSV pair that the next page build interprets as a stale
-    # simulation.  Temporary files live beside the destination so os.replace
-    # remains atomic on the same filesystem.
     json_tmp: str | None = None
     csv_tmp: str | None = None
     try:
@@ -293,13 +281,11 @@ def _pct(value: float) -> str:
 
 
 def _short_date(iso: str) -> str:
-    """2026-09-30 -> 30/09; bảng nhật ký phải vừa màn hình điện thoại."""
     parts = iso.split("-")
     return f"{parts[2]}/{parts[1]}" if len(parts) == 3 else iso
 
 
 def _ledger_block(ledger: pd.DataFrame | None) -> str:
-    """Nhật ký: bảng đã hiện trước giờ quay so với kết quả thật, kỳ mới trước."""
     if ledger is None or ledger.empty:
         return ""
     total = fun_draw_ledger.summarize(ledger)
@@ -319,7 +305,6 @@ def _ledger_block(ledger: pd.DataFrame | None) -> str:
         cls = " is-hit" if verdict.startswith("Trúng") else ""
         rows.append(
             f"<tr class='fun-ledger-row{cls}'>"
-            # data-col: số mô phỏng, kết quả thật và phép chấm có bằng chứng riêng.
             f"<td title='{html.escape(row['target_date'])}' data-col='ky'>{html.escape(_short_date(row['target_date']))}</td>"
             f"<td data-col='sim'>{html.escape(row['special'])}</td><td data-col='actual'>{actual}</td>"
             f"<td data-col='verdict'>{verdict}</td><td data-col='loto'>{loto}</td></tr>"
@@ -353,7 +338,6 @@ def _render_board(
     simulation_only: bool = False,
     ledger: pd.DataFrame | None = None,
 ) -> str:
-    """Dựng riêng bảng trong thẻ trang chủ; trang cũ vẫn nhận cả bảng xác suất."""
     rows: list[str] = []
     for group in payload["groups"]:
         values = []
@@ -375,7 +359,6 @@ def _render_board(
         f'<tbody>{"".join(rows)}</tbody></table>'
     )
     if simulation_only:
-        # LOTO của chính 27 giải đang hiển thị, gồm Đặc Biệt và mọi nháy trùng.
         loto = sorted(item["value"][-2:] for group in payload["groups"] for item in group["values"])
         loto_rows = "".join(
             "<tr>" + "".join(f"<td>{html.escape(number)}</td>" for number in loto[start:start + 9]) + "</tr>"
@@ -564,8 +547,6 @@ def inject_into_html(
     if not path.exists() or path.stat().st_size == 0:
         return False
     soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
-    # Bảng mô phỏng có chỗ riêng ngay sau khối ma trận, đúng thứ tự đọc mong
-    # muốn. Vẫn nhận section#ket-qua làm dự phòng để không vỡ với trang cũ.
     target = soup.select_one("section#mo-phong") or soup.select_one("section#ket-qua")
     if target is None:
         raise RuntimeError(f"Không tìm thấy section#mo-phong hoặc section#ket-qua trong {path}")
@@ -607,7 +588,6 @@ def main() -> None:
     inputs = load_prediction_inputs(data_dir)
     payload = build_fun_draw(inputs)
     json_path, csv_path = write_artifacts(payload, data_dir)
-    # Sổ nhật ký: ghi bảng này nếu còn trước giờ khoá của kỳ, rồi chấm mọi kỳ đã quay.
     ledger = fun_draw_ledger.update(
         data_dir, payload, _prob_lookup(inputs.de), datetime.now(UTC)
     )

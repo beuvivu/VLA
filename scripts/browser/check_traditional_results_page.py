@@ -1,17 +1,3 @@
-"""Đo THẬT trang Sổ kết quả trong trình duyệt, thay vì đọc CSS bằng mắt.
-
-Vì sao cần: hai lỗi của trang này chỉ lộ ra khi RENDER.
-
-* Chân bảng lấn lề đo được là 1 px ở bản cũ — đọc CSS thì thấy
-  ``.tr-prizes`` không có đệm, nhưng không biết con số thật là bao nhiêu.
-* Bản sửa đầu tiên của tôi vẫn để chân tụt về 2 px, nhưng CHỈ ở tổ hợp
-  "màn hình ≤ 900 px + ẩn cả hai bảng phụ". Đọc mắt thường không ra; phép
-  quét 96 trạng thái ra ngay.
-
-Chạy:  python scripts/browser/check_traditional_results_page.py
-Cần:   pip install playwright  (trình duyệt đã có sẵn trong môi trường CI/dev)
-"""
-
 from __future__ import annotations
 
 import csv
@@ -22,18 +8,13 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PAGE = ROOT / "docs" / "so-ket-qua-truyen-thong.html"
 WIDTHS = (1440, 1180, 900, 760, 640, 390)
 
-#: Sàn cỡ chữ của ô cặp lô tô, mọi bố cục. Bản trước tụt xuống 9px ở bố cục
-#: 4 cột — đó là lý do có yêu cầu "tăng cỡ chữ".
 MIN_LOTO_PAIR_FS = 11.0
 
 
 def _weekday(value: str) -> int:
-    """Thứ của một nhãn ngày `YYYY-MM-DD`, không dính múi giờ."""
     from datetime import date as _date
 
     year, month, day = (int(part) for part in value.split("-"))
-    # `isoweekday()` cho thứ Hai = 1 … Chủ nhật = 7; JavaScript dùng Chủ
-    # nhật = 0, nên đưa về cùng quy ước với trang.
     return _date(year, month, day).isoweekday() % 7
 MIN_FOOTER_GAP_PX = 8
 
@@ -81,7 +62,6 @@ MIN_SIDE_INSET_PX = 8
 
 
 def _chromium(playwright):
-    """Trình duyệt của môi trường, không tải thêm."""
     for candidate in sorted((pathlib.Path("/opt/pw-browsers")).glob("chromium-*/chrome-linux/chrome")):
         return playwright.chromium.launch(executable_path=str(candidate), args=["--no-sandbox"])
     return playwright.chromium.launch(args=["--no-sandbox"])
@@ -102,7 +82,6 @@ def main() -> int:
         page.goto(PAGE.resolve().as_uri(), wait_until="load")
         page.wait_for_timeout(900)
 
-        # --- 1. Chân bảng và tràn ngang, mọi tổ hợp -------------------------
         scanned = 0
         for width in WIDTHS:
             page.set_viewport_size({"width": width, "height": 1000})
@@ -147,7 +126,6 @@ def main() -> int:
                                     f"({found[side]}px)")
         print(f"đã quét {scanned} tổ hợp bố cục × công tắc × bề rộng")
 
-        # --- 2. Tra cứu quá khứ, đối chiếu SỐ THẬT --------------------------
         page.set_viewport_size({"width": 1440, "height": 1000})
         checks = [
             (dates[0], dates[0][:8] + "28"),
@@ -168,8 +146,6 @@ def main() -> int:
             )
             page.wait_for_timeout(120)
             got = page.evaluate(
-                # `n` là số kỳ ĐƯỢC CHỌN, đọc từ ô tổng quan — không phải số
-                # thẻ đã dựng, vì danh sách dựng theo lô 100 kỳ một lần.
                 "() => ({ n: Number(document.getElementById('tr-result-count').textContent),"
                 " rendered: document.querySelectorAll('.tr-day').length,"
                 " special: [...document.querySelectorAll("
@@ -191,7 +167,6 @@ def main() -> int:
                     f"đang báo: {got['detail']!r}")
             print(f"  [{low}..{high}] -> {got['n']} kỳ, khớp CSDL")
 
-        # --- 3. Mốc nhanh ---------------------------------------------------
         for preset, want in (("10", 10), ("120", 120), ("1000", 1000), ("all", len(dates))):
             page.evaluate(
                 "(value) => { const p = document.getElementById('tr-period');"
@@ -202,10 +177,6 @@ def main() -> int:
             state = page.evaluate(
                 "() => ({ selected: Number(document.getElementById('tr-result-count').textContent),"
                 " rendered: document.querySelectorAll('.tr-day').length,"
-                # Soi thứ NHÌN THẤY, không soi thuộc tính. `hidden` chỉ ẩn được
-                # nhờ `display:none` mặc định của trình duyệt, và bất kỳ quy tắc
-                # `display` nào của tác giả cũng thắng nó — đúng lỗi đã để ô
-                # "Chưa có kết quả" nằm lì dưới trang suốt.
                 " more: getComputedStyle(document.getElementById('tr-more'))"
                 "   .display !== 'none' })"
             )
@@ -220,7 +191,6 @@ def main() -> int:
             if want > 100 and not state["more"]:
                 failures.append(f"mốc {preset}: còn kỳ chưa dựng mà không có nút xem thêm")
 
-        # --- 4. Nút "xem thêm" phải dựng tiếp đúng phần còn lại -------------
         page.evaluate(
             "() => { const p = document.getElementById('tr-period');"
             " p.value = 'all'; p.dispatchEvent(new Event('change', {bubbles: true})); }"
@@ -233,16 +203,6 @@ def main() -> int:
         print(f"  nút xem thêm: {before} -> {after} thẻ")
         if after != before + 100:
             failures.append(f"nút xem thêm dựng {after - before} thẻ, mong đợi 100")
-        # --- 4b. `hidden` phải THẬT SỰ ẩn -----------------------------------
-        #
-        # Thuộc tính `hidden` chỉ ẩn nhờ một dòng `display:none` trong biểu
-        # định kiểu mặc định của trình duyệt, và BẤT KỲ quy tắc `display` nào
-        # của tác giả cũng thắng nó. Ba phần tử của trang từng rơi vào bẫy ấy:
-        # ô chọn ngày (70px), nút xem thêm (56px) và ô "Chưa có kết quả"
-        # (220px) — cả ba mang `hidden` đúng lúc và cả ba hiện ra suốt.
-        #
-        # Quét ở MỌI trạng thái dưới đây, vì phần tử nào mang `hidden` còn tuỳ
-        # bộ lọc đang chọn.
         leaked: list[str] = []
         for setup in (
             "p.value = '30'",
@@ -266,12 +226,6 @@ def main() -> int:
             failures.extend(leaked)
         print("  mọi phần tử mang `hidden` đều thật sự bị ẩn ở 3 trạng thái bộ lọc")
 
-        # --- 5. Bảng lô tô theo đầu ----------------------------------------
-        #
-        # Trả TOÀN BỘ trạng thái về mặc định trước: phép quét ở trên kết thúc
-        # ở bề rộng 390 px với cả hai bảng phụ ĐANG ẨN. Không đặt lại thì
-        # bảng lô tô có bề rộng 0 và mọi phép so kích thước đạt một cách rỗng
-        # tuếch — bản đầu của đoạn này in ra "kéo giãn 0/0px" rồi báo đạt.
         page.set_viewport_size({"width": 1440, "height": 1000})
         page.evaluate(
             "() => { const p = document.getElementById('tr-period');"
@@ -294,9 +248,6 @@ def main() -> int:
             "   table_width: Math.round(t.getBoundingClientRect().width),"
             "   frame_width: Math.round(wrap.width) }; }"
         )
-        # "Lô tô" chứ không phải "Đuôi tương ứng": ô nay chứa CẶP hai chữ số,
-        # nên nhãn cũ mô tả sai thứ nằm bên dưới nó. Trùng luôn nhãn của trang
-        # tham chiếu (đã đọc cấu trúc: cột `['Đầu', 'Lô tô']`).
         if table["columns"] != ["Đầu", "LOTO"]:
             failures.append(f"bảng lô tô phải còn đúng hai cột, đang là {table['columns']}")
         if table["cells_per_row"] != 2:
@@ -305,8 +256,6 @@ def main() -> int:
             failures.append(
                 f"màu số đầu {table['head_colour']} phải trùng màu giải đặc biệt "
                 f"{table['special_colour']}")
-        # Chặn phép so rỗng: bảng bị ẩn cho bề rộng 0, và `0 < -3` là sai nên
-        # phép so dưới sẽ "đạt" mà không kiểm được gì.
         if table["frame_width"] < 200:
             failures.append(
                 f"khung bảng lô tô chỉ rộng {table['frame_width']}px — có lẽ đang bị ẩn")
@@ -316,7 +265,6 @@ def main() -> int:
         print(f"  bảng lô tô: {table['columns']}, kéo giãn "
               f"{table['table_width']}/{table['frame_width']}px, màu khớp giải đặc biệt")
 
-        # --- 6. Đánh dấu: chế độ mặc định là MỘT Ô --------------------------
         marked = "() => document.querySelectorAll('[data-marked]').length"
         pair_mode = page.query_selector("#tr-pair-mode")
         if pair_mode.is_checked():
@@ -336,7 +284,6 @@ def main() -> int:
             failures.append("có đánh dấu thì nút bỏ đánh dấu phải hiện")
 
         cell.click()
-        # Chờ QUÁ thời gian hiệu ứng chuyển màu (120 ms) rồi mới đo màu.
         page.wait_for_timeout(400)
         if page.evaluate(marked) != 0:
             failures.append("bấm lần 2 phải bỏ đánh dấu")
@@ -352,7 +299,6 @@ def main() -> int:
         page.wait_for_timeout(150)
         print("  mặc định: bấm ô giải và ô mini đều sáng đúng một ô")
 
-        # --- 7. Đánh dấu: chế độ CẶP TRÙNG ----------------------------------
         pair_mode.check()
         page.wait_for_timeout(100)
         cell.click()
@@ -379,7 +325,6 @@ def main() -> int:
         if page.evaluate(marked) != 0:
             failures.append("bấm lại ô đang sáng theo cặp phải tắt CẢ NHÓM")
 
-        # --- 8. Đổi chế độ không được xoá dấu đã có -------------------------
         pair_mode.uncheck()
         page.wait_for_timeout(100)
         cell.click()
@@ -414,16 +359,6 @@ def main() -> int:
             failures.append("phím Enter phải đánh dấu được")
         print("  sống qua dựng lại, xoá sạch, bàn phím Enter: đạt")
 
-        # --- Bộ lọc thứ trong tuần ------------------------------------
-        #
-        # Kiểm bằng cách ĐỌC LẠI NGÀY trên các thẻ đang hiện rồi tự tính thứ,
-        # chứ không hỏi lại chính hàm của trang — hỏi lại thì hai bên cùng sai
-        # vẫn "khớp".
-        #
-        # Chạy ở HAI múi giờ. `getDay()` đọc theo múi giờ máy người xem, nên
-        # một bản cài đặt hỏng vẫn đúng ở Việt Nam và chỉ sai ở nửa kia địa
-        # cầu — đo một múi giờ là bỏ lọt đúng lỗi ấy. Đã đo: với 2026-09-14
-        # (thứ Hai), `new Date(d).getDay()` trả 0 ở America/Los_Angeles.
         print("\nBộ lọc thứ trong tuần:")
         before_weekday = len(failures)
         weekday_js = """() => {
@@ -458,15 +393,9 @@ def main() -> int:
                 if found["days"] != [value]:
                     failures.append(
                         f"{label}: lọc ra các thứ {found['days']}, phải chỉ có [{value}]")
-                # Nhãn NGƯỜI XEM THẤY phải khớp thứ đã lọc. Logic đúng mà nhãn
-                # lệch thì với người dùng vẫn là hỏng.
                 if found["labels"] != [name]:
                     failures.append(
                         f"{label}: nhãn trên thẻ là {found['labels']}, phải là ['{name}']")
-            # Rỗng vì lọc thứ phải nói khác rỗng vì khoảng sai. Vòng trên để
-            # bộ lọc thứ ở giá trị cuối (thứ bảy), nên phải trả về "tất cả"
-            # trước khi đo khoảng — nếu không, khoảng thứ ba → thứ năm rỗng vì
-            # bộ lọc sót lại chứ không vì khoảng.
             tz_page.select_option("#tr-weekday", "all")
             tz_page.select_option("#tr-period", "custom")
             tz_page.wait_for_timeout(200)
@@ -475,10 +404,6 @@ def main() -> int:
             tz_page.dispatch_event("#tr-to", "change")
             tz_page.wait_for_timeout(250)
             in_range = tz_page.evaluate("() => document.querySelectorAll('.tr-day').length")
-            # Khoảng ba kỳ cuối phải hiện đúng ba kỳ, ở CẢ HAI múi giờ. Thiếu
-            # dòng này, một khoảng lọc hỏng (rỗng sẵn) vẫn cho phép kiểm "lọc
-            # thứ rỗng" bên dưới xanh — rỗng vì khoảng sai trông y như rỗng vì
-            # thứ không có kỳ nào.
             if in_range != len(dates[-3:]):
                 failures.append(
                     f"{timezone}: khoảng {dates[-3]} → {dates[-1]} hiện {in_range} kỳ,"
@@ -501,14 +426,9 @@ def main() -> int:
                         f"{timezone}: lời giải thích không nhắc tới thứ đã chọn:"
                         f" {state['detail']!r}")
             context.close()
-        # Đếm lỗi CỦA RIÊNG mục này. Bản đầu tôi viết `if not failures`, tức
-        # đọc danh sách lỗi toàn cục — nó in "xem lỗi bên dưới" cho mục này
-        # trong khi lỗi thật nằm ở một mục hoàn toàn khác. Một dòng báo cáo
-        # chỉ sai chỗ thôi cũng đủ làm người đọc đi tìm nhầm hướng.
         print(f"  7 thứ × 2 múi giờ, nhãn khớp, nhánh rỗng có giải thích:"
               f" {'đạt' if len(failures) == before_weekday else 'KHÔNG ĐẠT'}")
 
-        # --- Bảng lô tô: cỡ chữ, cặp đầy đủ, không vỡ khi nhiều cột --------
         print("\nBảng lô tô theo đầu:")
         before_loto = len(failures)
         loto_js = r"""() => {
@@ -556,8 +476,6 @@ def main() -> int:
                 if found["notPairs"]:
                     failures.append(
                         f"{label}: ô lô tô phải là cặp hai chữ số, thấy {found['notPairs']}")
-                # Ngưỡng đọc được. Bản trước để 9px ở bố cục 4 cột — nhỏ hơn
-                # cả cỡ chữ chú thích, và đó chính là thứ được yêu cầu sửa.
                 if found["miniFs"] < MIN_LOTO_PAIR_FS:
                     failures.append(
                         f"{label}: cỡ chữ cặp lô tô {found['miniFs']}px"

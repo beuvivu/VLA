@@ -1,42 +1,19 @@
 name: Kết quả XSMB gần thời gian thực
 
-# Vì sao có nhiều mốc và vì sao chúng ở phút lẻ
-# --------------------------------------------------
-# GitHub chạy workflow theo lịch ở mức "cố gắng tốt nhất", và trên kho này độ
-# trễ đo được là 2,5–4,5 GIỜ: mốc 11:00 UTC (18:00 giờ VN, trước kỳ quay) thực
-# tế nổ lúc 13:39–15:27 UTC, tức 20:39–22:26 giờ VN. Khi đó kỳ quay đã xong từ
-# lâu nên vòng thăm dò lấy được kết quả hoàn tất ngay lần đầu rồi thoát sau ~20
-# giây — dữ liệu vẫn đúng nhưng về muộn vài tiếng, và người xem không thấy số
-# hiện dần.
-#
-# Hai biện pháp ở đây chỉ giảm xác suất trượt chứ KHÔNG loại bỏ được độ trễ:
-#   1. Nhiều mốc trải từ sáng sớm, và lượt đến sớm CHỜ trong runner tới khung
-#      quay: chỉ cần một mốc rơi vào khoảng 14:08-18:35 giờ VN.
-#   2. Phút lẻ: hàng đợi của GitHub dồn nặng nhất ở phút :00 và :30.
-# Cách chắc chắn là gọi từ bộ lập lịch bên ngoài — xem repository_dispatch bên
-# dưới và hướng dẫn trong tài liệu.
 on:
   workflow_dispatch:
   repository_dispatch:
-    # Cho phép một bộ lập lịch bên ngoài kích hoạt đúng giờ, không qua hàng đợi
-    # lịch của GitHub. Đây là đường duy nhất chạy đúng giờ một cách chắc chắn.
     types: [live-window]
   schedule:
-    # Đo lại 10-09 -> 05-10-2026: mốc 06:37 UTC nổ trễ 4,6-8,6 GIỜ, tức
-    # 18:15-23:11 giờ VN — gần như luôn sau khi kỳ quay đã xong, nên số không
-    # bao giờ hiện dần. Mốc nay dời vào sáng sớm (trễ 4,3-5,6 giờ ở 00:15 UTC)
-    # để rơi vào buổi chiều, và lượt đến sớm chờ tối đa 240 phút tới 18:08.
-    # Tám mốc cách nhau <= 45 phút phủ mọi độ trễ 1-9,9 giờ; mốc 11:07 giữ lại
-    # để lượt nổ muộn vẫn kích hoạt hoàn tất dữ liệu ngày.
-    - cron: "19 1 * * *"    # 08:19 VN
-    - cron: "2 2 * * *"     # 09:02 VN
-    - cron: "47 2 * * *"    # 09:47 VN
-    - cron: "29 3 * * *"    # 10:29 VN
-    - cron: "11 4 * * *"    # 11:11 VN
-    - cron: "53 4 * * *"    # 11:53 VN
-    - cron: "37 5 * * *"    # 12:37 VN
-    - cron: "17 6 * * *"    # 13:17 VN
-    - cron: "7 11 * * *"    # 18:07 VN
+    - cron: "19 1 * * *"
+    - cron: "2 2 * * *"
+    - cron: "47 2 * * *"
+    - cron: "29 3 * * *"
+    - cron: "11 4 * * *"
+    - cron: "53 4 * * *"
+    - cron: "37 5 * * *"
+    - cron: "17 6 * * *"
+    - cron: "7 11 * * *"
 
 permissions:
   contents: write
@@ -49,12 +26,6 @@ concurrency:
 jobs:
   live:
     runs-on: ubuntu-latest
-    # Phải lớn hơn trần chờ (240 phút) cộng MAX_SECONDS (60 phút) cộng thời
-    # gian checkout/cài đặt — lượt nổ lúc 14:08 chờ 4 giờ rồi mới thăm dò.
-    # Trước đây job bị giết ở phút 50 trong khi vòng thăm dò được cấp 60 phút,
-    # nên với kỳ quay muộn (sau 18:50 giờ VN) job chết giữa chừng và bước
-    # "kích hoạt hoàn tất dữ liệu ngày" — vốn có điều kiện verified == 'true' —
-    # không bao giờ chạy, khiến dữ liệu ngày phải chờ cron kế tiếp.
     timeout-minutes: 315
     env:
       PYTHONPATH: ${{ github.workspace }}/src
@@ -86,21 +57,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Nếu job khởi động TRƯỚC khung quay, chờ tới lúc bắt đầu rồi mới thăm
-          # dò, để số hiện dần đúng lúc thay vì đăng một ảnh chụp rỗng. Chờ tối
-          # đa 240 phút: bộ lập lịch trễ 4-8 giờ, nên chờ trong runner là đường
-          # đúng giờ; mốc nào rơi sớm hơn nữa thì thoát để mốc sau xử lý.
           window_start_min=$((18 * 60 + 8))
           max_wait_seconds=$((240 * 60))
           waited=0
           while true; do
-            # Đọc đồng hồ MỘT lần và ép cơ số 10. `date +%H` trả "08", "09"
-            # có số 0 đứng đầu, và trong $(( )) bash đọc chúng là hệ bát
-            # phân: "08" không hợp lệ. Bash 5.2 khi ấy bỏ ngang CẢ vòng
-            # `while` và chạy tiếp sau `done` — `set -e` không bắt được — nên
-            # lượt nổ lúc 17:08, 16:09 hay trong giờ 08, 09 bỏ qua bước chờ,
-            # thăm dò ngay giờ trống rồi hết 60 phút đúng lúc kỳ quay bắt
-            # đầu. Hai lần gọi `date` riêng còn có thể vắt qua ranh giới phút.
             hhmm="$(date +%H%M)"
             now_min=$(( 10#${hhmm:0:2} * 60 + 10#${hhmm:2:2} ))
             (( now_min >= window_start_min )) && break
@@ -115,10 +75,6 @@ jobs:
             waited=$((waited + gap))
           done
 
-          # Lượt #164 chết vì GitHub trả HTTP 500 MỘT lần khi đẩy ảnh chụp:
-          # với `set -e`, một lỗi thoáng qua giết cả vòng thăm dò 60 phút.
-          # Mỗi ảnh chụp giờ được thử lại có giới hạn, giãn cách tăng dần kèm
-          # nhiễu; hết lượt thì KHÔNG thoát mà để vòng thăm dò kế tiếp đẩy lại.
           push_snapshot() {
             local attempt
             for attempt in 1 2 3; do
@@ -139,8 +95,6 @@ jobs:
           while true; do
             python src/ingest/live_sync.py --out "$live_path" --min-agreement 1
 
-            # Ignore checked_at timestamps when deciding whether the user-visible
-            # payload changed, so we do not create needless force-pushes.
             payload_hash="$(python - <<'PY'
           import hashlib, json
           import os
@@ -162,14 +116,6 @@ jobs:
               fi
             fi
 
-            # Chỉ dừng khi kết quả đã xác minh VÀ chính ảnh chụp ấy đã lên
-            # nhánh live — nếu không, người xem kẹt ở ảnh chụp dở dang.
-            #
-            # Còn `verified` thì theo NGUỒN, không theo lần đẩy: nó kích hoạt
-            # hoàn tất dữ liệu ngày, và chuỗi ấy (update-data rồi
-            # post-finalization) tự ghi ảnh chụp chuẩn lên nhánh live từ
-            # data/xsmb.csv. Nếu đẩy hỏng tới hết giờ, đó chính là đường sửa
-            # nhánh live; giữ lại cờ thì nhánh live kẹt tới cron kế tiếp.
             status="$(python -c "import json, os; print(json.load(open(os.environ['LIVE_PATH']))['status'])")"
             if [[ "$status" == "complete_verified" ]]; then
               verified="true"
@@ -216,8 +162,6 @@ jobs:
               {"ref": branch, "inputs": {"reason": "live_verified"}}
           ).encode("utf-8")
 
-          # Thử lại CHỈ với lỗi thoáng qua (5xx, mạng). Lỗi 4xx là quyền hoặc
-          # cấu hình sai: thử lại chỉ che nó đi, nên dừng ngay và làm đỏ.
           for attempt in range(1, 5):
               req = urllib.request.Request(
                   url,

@@ -1,5 +1,3 @@
-'Phân phối tập đúng k phần tử và ba chuyên gia học từ quá khứ.'
-
 from __future__ import annotations
 
 import asyncio
@@ -18,7 +16,6 @@ def _cardinality(n: int, k: int) -> tuple[int, int]:
 
 
 class SubsetDistribution:
-    'P(S) tỷ lệ với exp(tổng logit của S), chỉ trên tập có đúng k phần tử. Quy hoạch động miền log tính chuẩn hóa và các biên trong O(nk).'
 
     def __init__(self, logits: Sequence[float], k: int):
         try:
@@ -35,12 +32,6 @@ class SubsetDistribution:
         self._dp = np.full((self.n + 1, self.k + 1), -np.inf, dtype=np.longdouble)
         self._dp[:, 0] = 0
         for i, value in enumerate(self._logits, 1):
-            # Normalize each column by the best j-subset's score. Sorting
-            # makes its baseline identical across rows, so even 1e308 ties
-            # retain their log multiplicity rather than losing log(2).
-            # Row i reads only row i-1, so all columns j = 1..min(i, k) are
-            # one elementwise ufunc call: the same longdouble operations per
-            # cell as a scalar loop over j, without its interpreter overhead.
             m = min(i, self.k)
             penalty = value - self._logits[:m]
             self._dp[i, 1:m + 1] = np.logaddexp(self._dp[i - 1, 1:m + 1],
@@ -54,11 +45,6 @@ class SubsetDistribution:
         adjoint[self.n, self.k] = 1
         marginal = np.zeros(self.n, dtype=np.longdouble)
         one = np.longdouble(1)
-        # P(include item i | j picks left among the first i items) depends only
-        # on the finished forward table, so the whole n x k matrix is one
-        # elementwise pass: row r = i-1, column c = j-1. Each cell gets the same
-        # longdouble operations as the former per-cell scalar code; cells with
-        # j > i are never read.
         excluded = self._dp[:-1, 1:]
         included = self._dp[:-1, :-1] + (self._logits[:, None] - self._logits[None, :self.k])
         with np.errstate(invalid='ignore'):
@@ -70,11 +56,6 @@ class SubsetDistribution:
         probability = np.where(np.isneginf(excluded), one, probability)
         complement = one - probability
         for i in range(self.n, 0, -1):
-            # Every column of row i is read before row i-1 is written, so one
-            # vector step per row. The row sum is accumulated left to right
-            # (np.cumsum), and cell j of row i-1 receives the "stay" share from
-            # cell j before the "move" share from cell j+1, exactly as before:
-            # marginals and every downstream gradient stay bit-for-bit.
             m = min(i, self.k)
             mass = adjoint[i, 1:m + 1]
             moved = mass * probability[i - 1, :m]
@@ -88,7 +69,6 @@ class SubsetDistribution:
 
     @property
     def marginals(self) -> np.ndarray:
-        'Trả bản sao xác suất xuất hiện từng nhãn, có tổng bằng k.'
         if self._marginals is None:
             self._marginals = self._differentiate()
         return self._marginals.copy()
@@ -108,7 +88,6 @@ class SubsetDistribution:
         selected = self._logits[np.sort(self._rank[labels])]
         deficit = np.sum(selected - self._logits[:self.k], dtype=np.longdouble)
         value = deficit - self._dp[self.n, self.k]
-        # IEEE double cannot represent a log loss larger than its maximum.
         return min(0.0, float(value))
 
 
@@ -120,7 +99,6 @@ class ExpertForecast:
 
 
 class AlgorithmEnsemble:
-    'Thống kê có smoothing, liên hệ Markov/đồ thị và MLP trực tuyến. Dự báo chỉ đọc snapshot; gradient NLL bằng xác suất biên trừ nhãn thực.'
 
     def __init__(self, n: int, k: int, seed: int = 42):
         self.n, self.k = _cardinality(n, k)
@@ -239,7 +217,6 @@ class AlgorithmEnsemble:
         })
 
     def predict_sync(self, history: np.ndarray, retrieved: np.ndarray) -> list[ExpertForecast]:
-        'Cùng ba phép tính bất biến, dùng trong giao dịch đồng bộ của engine Vietlott.'
         frozen_history, frozen_retrieved = self._history(history), self._retrieved(retrieved)
         weights = tuple(array.copy() for array in (self.w1, self.b1, self.w2, self.b2))
         return [self._statistical(frozen_history, frozen_retrieved),
@@ -247,7 +224,6 @@ class AlgorithmEnsemble:
                 self._neural(frozen_history, weights, self.steps)]
 
     async def predict(self, history: np.ndarray, retrieved: np.ndarray) -> list[ExpertForecast]:
-        'Điều phối ba chuyên gia trên cùng snapshot bất biến.'
         frozen_history, frozen_retrieved = self._history(history), self._retrieved(retrieved)
         weights = tuple(array.copy() for array in (self.w1, self.b1, self.w2, self.b2))
         for array in weights:
@@ -260,7 +236,6 @@ class AlgorithmEnsemble:
         ))
 
     def learn(self, history: np.ndarray, outcome: np.ndarray) -> None:
-        'Học đúng một kết quả nhị phân, với lịch sử chưa chứa kết quả đó.'
         frozen_history = self._history(history)
         try:
             observed = np.asarray(outcome, dtype=float)
@@ -290,7 +265,6 @@ class AlgorithmEnsemble:
                 'weights': {name: getattr(self, name).tolist() for name in ('w1', 'b1', 'w2', 'b2')}}
 
     def load_state_dict(self, state: dict) -> None:
-        'Xác thực toàn bộ JSON an toàn trước khi thay trạng thái đang dùng.'
         try:
             if (state['version'] != 1 or state['n'] != self.n or state['k'] != self.k or
                     any(isinstance(state[field], bool) or not isinstance(state[field], Integral) or

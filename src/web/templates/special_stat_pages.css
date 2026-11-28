@@ -1,4 +1,3 @@
-/* Bốn trang Đặc Biệt: cùng dữ liệu, màu chỉ mã hoá lượt hoặc khoảng theo kỳ. */
 body.app-specialstats-page .app-specialstats-shell{max-width:1200px;min-width:0;margin:0 auto;color:var(--ui-ink);font-size:14px;line-height:1.6}
 body.app-specialstats-page .app-specialstats-shell *{box-sizing:border-box}
 body.app-specialstats-page .app-specialstats-header{margin:0 0 16px;padding:0;border:0;background:none;box-shadow:none}
@@ -27,7 +26,7 @@ body.app-specialstats-page .app-specialstats-panel h2{margin:0 0 4px;color:var(-
 body.app-specialstats-page .app-specialstats-panel>header p{margin:0;color:var(--ui-ink-soft);font-size:13px;max-width:90ch}
 body.app-specialstats-page .app-specialstats-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 body.app-specialstats-page .app-specialstats-shell .sp-scroll{width:100%;min-width:0;max-width:100%;max-height:min(68vh,640px);margin:0;padding:0;overflow:auto;overscroll-behavior:contain;border:0;border-top:1px solid var(--ui-border);border-radius:0;background:var(--ui-surface);box-shadow:none;backdrop-filter:none;scrollbar-width:thin}
-/* Ma trận 00–99 luôn hiện đủ mười hàng; chỉ cuộn ngang khi khung hẹp. */
+
 body.app-specialstats-page .app-specialstats-shell .app-special-matrix{max-height:none;height:auto;overscroll-behavior-y:auto}
 body.app-specialstats-page .app-specialstats-shell .sp-table{width:100%;min-width:600px;table-layout:fixed;margin:0;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums}
 body.app-specialstats-page .app-specialstats-shell .sp-table :is(th,td){padding:8px 16px;vertical-align:middle}

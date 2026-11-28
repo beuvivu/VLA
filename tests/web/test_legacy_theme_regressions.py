@@ -1,5 +1,3 @@
-"""Hai lớp CSS riêng không được ghi đè chủ đề hoặc màu ô dữ liệu."""
-
 import re
 from pathlib import Path
 
@@ -17,7 +15,6 @@ def _rule(css: str, selector: str) -> dict[str, str]:
 
 
 def test_detail_hover_keeps_the_row_transparent_and_marks_its_edge() -> None:
-    """Ghim lại nền hover sáng phải đỏ; viền không xoá màu ô nháy hoặc ô chọn."""
     css = (ROOT / "src/web/templates/stat_detail_pages.css").read_text()
     hover = _rule(css, ".sp-page .sp-table tbody tr:hover")
     assert hover["background"] == "transparent"
@@ -28,7 +25,6 @@ def test_detail_hover_keeps_the_row_transparent_and_marks_its_edge() -> None:
 
 
 def test_traditional_special_tail_inherits_the_shared_semantic_pair() -> None:
-    """Auto-dark và explicit-dark cùng dùng một cặp màu thay vì nhánh riêng."""
     css = (ROOT / "src/web/templates/traditional_results.css").read_text()
     tail = _rule(css, ".tr-special-tail")
     assert tail["background"] == "var(--ui-special-bg)"
@@ -38,7 +34,6 @@ def test_traditional_special_tail_inherits_the_shared_semantic_pair() -> None:
 
 
 def test_traditional_marking_inherits_the_shared_semantic_pair() -> None:
-    """Khôi phục palette sáng cục bộ phải bị phát hiện dù theme cha đã tối."""
     css = (ROOT / "src/web/templates/traditional_results.css").read_text()
     matches = re.findall(r"(?<![\w-])\.tr-results\s*\{([^{}]*)\}", css)
     assert matches

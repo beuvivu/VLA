@@ -1,5 +1,3 @@
-"""Sổ nhật ký bảng mô phỏng: khoá sau giờ quay, chấm đúng/lộn/LOTO, hiện trên trang."""
-
 from __future__ import annotations
 
 import json
@@ -81,7 +79,6 @@ def _xsmb(path: Path, rows: dict[str, list[str]]) -> None:
 
 
 def _prizes(special: str, loto_tails: list[str]) -> list[str]:
-    """27 giải: Đặc Biệt ``special`` và 26 giải còn lại có đuôi ``loto_tails``."""
     tails = iter(loto_tails)
     return [special] + [("1" * (FIELD_WIDTH_MAP[f] - 2)) + next(tails) for f in PRIZE_FIELDS[1:]]
 
@@ -102,8 +99,6 @@ def test_a_board_is_recorded_before_the_cutoff_and_the_last_one_before_it_wins()
 
 
 def test_the_same_board_recorded_again_keeps_the_first_recording_time() -> None:
-    """Lượt pipeline chạy lại trên cùng dữ liệu (11-11-2026) ghi lại dòng chỉ để đổi `recorded_at_utc`.
-    Cùng bảng thì giữ nguyên dòng; bảng khác vẫn thay bảng cũ, và mang giờ của chính nó."""
     first = _row("2026-10-01", "11111", "2026-09-30T20:00+07:00")
     frame = L.record(L.empty_ledger(), first, _utc("2026-09-30T20:00+07:00"))
     again = L.record(frame, _row("2026-10-01", "11111", "2026-10-01T09:02+07:00"), _utc("2026-10-01T09:02+07:00"))
@@ -112,7 +107,7 @@ def test_the_same_board_recorded_again_keeps_the_first_recording_time() -> None:
     other_loto = L.record(frame, _row("2026-10-01", "11111", "2026-10-01T09:02+07:00", loto=["12"] * 26),
                           _utc("2026-10-01T09:02+07:00"))
     assert other_loto["recorded_at_utc"].tolist() == ["2026-10-01T02:02:00Z"]
-    other_special = L.record(frame, _row("2026-10-01", "22211", "2026-10-01T09:02+07:00"),   # cùng đuôi
+    other_special = L.record(frame, _row("2026-10-01", "22211", "2026-10-01T09:02+07:00"),
                              _utc("2026-10-01T09:02+07:00"))
     assert other_special["special"].tolist() == ["22211"]
 
@@ -150,7 +145,6 @@ def test_scoring_separates_exact_reversed_and_counts_loto_positions() -> None:
     assert scored.loc["2026-09-28", ["exact", "reversed"]].tolist() == ["1", "0"]
     assert scored.loc["2026-09-29", ["exact", "reversed"]].tolist() == ["0", "1"]
     assert scored.loc["2026-09-30", ["exact", "reversed"]].tolist() == ["0", "0"]
-    # Ba vị trí mô phỏng mang 42, và 42 có về; 99 không về.
     assert scored.loc["2026-09-28", "loto_hits"] == "3"
     total = L.summarize(scored.reset_index())
     assert (total["days"], total["exact"], total["reversed"]) == (3, 1, 1)
@@ -181,7 +175,6 @@ def test_update_writes_a_ledger_that_survives_a_reread(tmp_path: Path) -> None:
     frame = L.read_ledger(data)
     assert frame["special"].tolist() == ["27124"]
     assert frame["reversed"].tolist() == ["1"]
-    # Hạng 1 là xác suất cao nhất: 99 đứng đầu, 24 đứng thứ 76.
     assert frame["model_rank"].tolist() == ["76"]
 
 
@@ -218,7 +211,6 @@ def test_backfill_applies_the_same_cutoff_to_git_history(tmp_path: Path) -> None
 
 
 def test_backfill_reads_commits_from_before_the_data_regrouping(tmp_path: Path) -> None:
-    """Commit trước 24-10-2026 giữ bảng ở chỗ cũ; nạp lại phải đọc cả chỗ cũ lẫn chỗ mới."""
     repo = tmp_path / "repo"
     old = legacy_data_path("forecast/predict")
     legacy = repo / "data" / old
@@ -236,7 +228,6 @@ def test_backfill_reads_commits_from_before_the_data_regrouping(tmp_path: Path) 
     run("config", "user.email", "t@example.invalid")
     run("config", "user.name", "t")
     (legacy / "fun_draw_next.json").write_text(json.dumps(_payload("2026-09-30", "22224")), encoding="utf-8")
-    # Đuôi 24 có xác suất cao nhất: hạng 1 chỉ ra được khi đọc được vector ở chỗ cũ.
     pd.DataFrame({"number": range(100), "prob": [0.5 if n == 24 else 0.005 for n in range(100)]}).to_csv(
         legacy / "predict_next_de_all_2026-09-30.csv", index=False
     )

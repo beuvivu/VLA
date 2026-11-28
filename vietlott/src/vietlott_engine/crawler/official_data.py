@@ -1,16 +1,3 @@
-"""Official vietlott.vn draw records ("canonical" schema 1.0) → engine objects.
-
-A canonical record is what vietlott.vn's draw-detail page says about one draw: result,
-the prize table (winners per tier, jackpot value), the page URL, its SHA-256 and the
-official PDF. The public dataset ``pqminh-4/vietlott-data`` (MIT code) publishes these
-records for Mega 6/45, Power 6/55, Lotto 5/35, Max 3D and Max 3D Pro, collected from a
-machine in Vietnam (vietlott.vn rejects non-Vietnamese IPs); ``crawler.sources.
-vietlott_official`` produces the same records when run from Vietnam.
-
-Jackpot value on a detail page is per winning ticket when there are winners, so the pot
-of a draw is value × max(1, winners) — the convention used everywhere in the engine.
-"""
-
 from __future__ import annotations
 
 import unicodedata
@@ -107,7 +94,6 @@ def import_canonical(rows: list[dict], game: GameCode) -> CanonicalImport:
 
 
 def draws_to_seed_rows(draws: list[Draw]) -> list[dict]:
-    """Mirror JSONL format used by ``JsonlFileSource`` (bonus appended to the numbers)."""
     rows = []
     for d in sorted(draws, key=lambda x: x.draw_id):
         res = list(d.numbers) + ([d.bonus] if d.bonus is not None else [])

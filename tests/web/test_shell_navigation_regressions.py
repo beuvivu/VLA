@@ -1,4 +1,3 @@
-"""Chặn lỗi đã quan sát trên điều hướng đang xuất bản."""
 from bs4 import BeautifulSoup
 import pytest
 from web.app_shell import header_html, panel_html, wrap_page

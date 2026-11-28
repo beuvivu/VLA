@@ -1,5 +1,3 @@
-"""Calibration (size) and power checks for every v2 inference procedure."""
-
 from __future__ import annotations
 
 import itertools
@@ -40,7 +38,6 @@ def _ar1(rng: np.random.Generator, t: int, phi: float, cols: int = 1) -> np.ndar
     return e
 
 
-# ------------------------------------------------------- multiple testing
 def test_holm_by_and_westfall_young_fwer() -> None:
     assert np.allclose(holm([0.01, 0.04, 0.03, 0.2]), [0.04, 0.09, 0.09, 0.2])
     assert benjamini_yekutieli([0.01, 0.04, 0.03, 0.2])[0] == pytest.approx(0.04 * (1 + 1 / 2 + 1 / 3 + 1 / 4))
@@ -58,7 +55,6 @@ def test_per_number_finds_planted_hot_ball() -> None:
     assert fair.min_westfall_young_p > 0.01
 
 
-# ------------------------------------------------------ power & equivalence
 def test_analytic_power_matches_simulation() -> None:
     rng = np.random.default_rng(1)
     n, k, d = 45, 6, 1000
@@ -69,7 +65,6 @@ def test_analytic_power_matches_simulation() -> None:
     rej, realized = 0, np.zeros(n)
     for _ in range(200):
         g = np.log(w)[None, :] + rng.gumbel(size=(d, n))
-        # Gumbel top-k ≠ conditional Bernoulli exactly, so measure the realised deviation
         h = DrawHistory.from_arrays(MEGA_645, np.argpartition(-g, k, axis=1)[:, :k] + 1)
         realized += h.counts() / d
         rej += frequency_chi_square(h).p_value < 0.05
@@ -100,7 +95,6 @@ def test_exact_ticket_distribution_under_fair_and_tilted_draws() -> None:
     assert np.allclose(incl, target, atol=1e-8)
 
 
-# ------------------------------------------------------------- hierarchical
 def test_hierarchical_fair_vs_heterogeneous() -> None:
     fair = hierarchical_report(make_history(MEGA_645, 1371, seed=21))
     assert fair.log10_bayes_factor_material_vs_fair < 0 and fair.tau_relative_upper95 < 0.06
@@ -111,7 +105,6 @@ def test_hierarchical_fair_vs_heterogeneous() -> None:
     assert het.pooled_best_ticket_rtp > het.fair_ticket_rtp
 
 
-# ---------------------------------------------------------------- e-values
 def test_subset_distribution_is_normalised() -> None:
     w = np.random.default_rng(0).random(9) + 0.2
     subs = np.array(list(itertools.combinations(range(1, 10), 4)))
@@ -139,12 +132,11 @@ def test_ticket_eprocess_is_valid_for_any_predictable_tickets() -> None:
         draws = np.argpartition(rng.random((400, 45)), 6, axis=1)[:, :6]
         inc = np.zeros((400, 45), bool)
         inc[np.arange(400)[:, None], draws] = True
-        ticket = np.arange(6)  # the same fixed ticket every draw: maximally "correlated"
+        ticket = np.arange(6)
         crossings += ticket_eprocess("x", inc[:, ticket].sum(axis=1).astype(float), mu).max_log10_wealth >= np.log10(20)
     assert crossings / 200 <= 0.08
 
 
-# ------------------------------------------------------------ change points
 def test_changepoint_detects_local_regime_only() -> None:
     w = np.ones(45)
     w[:3] = 2.5
@@ -155,7 +147,6 @@ def test_changepoint_detects_local_regime_only() -> None:
     assert fair.window_scan.p_value > 0.01
 
 
-# ---------------------------------------------------- forecast comparison
 def test_diebold_mariano_size_with_autocorrelation() -> None:
     rng = np.random.default_rng(6)
     rej = sum(diebold_mariano(_ar1(rng, 500, 0.5)[:, 0]).p_value_two_sided < 0.05 for _ in range(300))
@@ -176,7 +167,6 @@ def test_spa_size_and_power() -> None:
     assert res.best_strategy == "2" and res.p_value_consistent < 0.01
 
 
-# --------------------------------------------------------------- decisions
 def test_payout_distribution_and_kelly() -> None:
     calc = EVCalculator(MEGA_645)
     ticket = (33, 35, 37, 40, 42, 45)

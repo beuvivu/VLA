@@ -1,5 +1,3 @@
-"""Max 3D / Max 3D+ / Max 3D Pro: exact odds and bao (system) plays (rules only, no draw data)."""
-
 from __future__ import annotations
 
 import asyncio
@@ -13,7 +11,7 @@ from vietlott_engine.game_theory.max3d import PRODUCTS, Max3DBaoAnalysis, Produc
 router = APIRouter(prefix="/max3d", tags=["max3d"])
 
 
-def _product(code: str):  # type: ignore[no-untyped-def]
+def _product(code: str):
     try:
         return get_product(code)
     except KeyError as exc:
@@ -22,7 +20,6 @@ def _product(code: str):  # type: ignore[no-untyped-def]
 
 @router.get("", response_model=list[ProductSummary])
 def products() -> list[ProductSummary]:
-    """Prize tables, exact tier probabilities and payback of every Max 3D product."""
     return [product_summary(p) for p in PRODUCTS.values()]
 
 
@@ -33,7 +30,6 @@ def product(product: str) -> ProductSummary:
 
 @router.post("/{product}/analyse", response_model=Max3DBaoAnalysis)
 async def analyse(product: str, body: Max3DRequest) -> Max3DBaoAnalysis:
-    """One play or a bao: plays generated, cost, exact P(any prize) and EV, simulated payout distribution."""
     prod = _product(product)
     try:
         return await asyncio.to_thread(analyse_bao, prod, body.kind, body.numbers, body.sims, body.seed, body.stake_multiple)

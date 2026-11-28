@@ -1,16 +1,3 @@
-"""Chạy bộ kiểm định cấu trúc và phân tích công suất, ghi báo cáo tái lập được.
-
-Đây là bước NÊN chạy trước khi đầu tư vào bất kỳ mô hình nào. Nó trả lời hai
-câu hỏi mà mọi lựa chọn thuật toán phía sau đều phụ thuộc vào:
-
-1. Dữ liệu có mang cấu trúc nào để học không?
-2. Với lịch sử hiện có, hiệu ứng nhỏ nhất ta đủ sức phát hiện là bao nhiêu?
-
-Câu hỏi thứ hai quan trọng hơn người ta thường nghĩ. Nếu ngưỡng phát hiện cao
-hơn mọi hiệu ứng hợp lý trong miền, thì mọi kết quả dương tính sẽ là dương tính
-giả, và việc so sánh mô hình trở thành so sánh may rủi.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -23,20 +10,18 @@ import pandas as pd
 
 import sys
 
-# Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from stats.randomness_battery import (  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from stats.randomness_battery import (
     DEFAULT_SIMULATIONS,
     lag1_mutual_information,
     minimum_detectable_lift,
     run_battery,
     simulate_draws,
 )
-from core.xsmb_domain import baseline_rate  # noqa: E402
+from core.xsmb_domain import baseline_rate
 
-#: Số giả thuyết của các họ đã quét trong kho, dùng cho phân tích công suất.
 HYPOTHESIS_FAMILIES: tuple[tuple[str, int], ...] = (
     ("một mô hình duy nhất", 1),
     ("20 đặc trưng đã xây", 20),
@@ -46,12 +31,6 @@ HYPOTHESIS_FAMILIES: tuple[tuple[str, int], ...] = (
 
 
 def replication_check(counts: np.ndarray, *, simulations: int, seed: int) -> dict:
-    """Tín hiệu ở nửa đầu lịch sử có lặp lại ở nửa sau không.
-
-    Phép kiểm quyết định cho bất kỳ phát hiện nào. Cấu trúc thật thì lặp lại;
-    nhiễu được khớp quá mức thì không. Đây là thứ phân biệt được hai trường hợp
-    mà giá trị p trên toàn bộ dữ liệu không phân biệt nổi.
-    """
     half = counts.shape[0] // 2
     rng = np.random.default_rng(seed)
     null = np.array(
@@ -74,7 +53,7 @@ def replication_check(counts: np.ndarray, *, simulations: int, seed: int) -> dic
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="data/xsmb.csv")
     parser.add_argument("--out-dir", default="data/research")
     parser.add_argument("--simulations", type=int, default=DEFAULT_SIMULATIONS)
@@ -84,7 +63,6 @@ def main() -> int:
     tensor = DigitTensor.from_raw(pd.read_csv(args.raw))
     counts = tensor.loto_counts.astype(np.int16)
 
-    # Thứ thật của từng kỳ: sổ vắng mọi ngày không quay, nên chỉ số hàng chia 7 không phải là thứ.
     weekdays = tensor.dates.dayofweek.to_numpy()
     results = run_battery(counts, simulations=args.simulations, seed=args.seed, weekdays=weekdays)
     base = baseline_rate("loto")

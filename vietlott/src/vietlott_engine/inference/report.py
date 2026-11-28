@@ -1,5 +1,3 @@
-"""One-call inferential summary ("fairness certificate") for a game's history."""
-
 from __future__ import annotations
 
 from pydantic import BaseModel

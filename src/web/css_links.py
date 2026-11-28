@@ -1,13 +1,9 @@
-"""Critical Rendering Path optimized stylesheet links (CSP-safe, no inline)."""
-
 from __future__ import annotations
 
 
 try:
     from web.critical_css_generated import CRITICAL_CSS as _GENERATED
 except ImportError:
-    # Chỉ khi module sinh ra CHƯA có; module có mà hỏng thì phải nổ, không lặng
-    # lẽ lùi về bản dự phòng.
     _GENERATED = None
 
 _FALLBACK_CRITICAL = (
@@ -44,9 +40,7 @@ _FALLBACK_CRITICAL = (
 CRITICAL_CSS = _GENERATED or _FALLBACK_CRITICAL
 
 
-
 def stylesheet_link() -> str:
-    """CRP head links without inline script/style handlers (CSP 'self' only)."""
     parts = [
         '<link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />',
         '<link rel="stylesheet" href="assets/critical.css" />',

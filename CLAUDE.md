@@ -2,8 +2,15 @@
 
 ## Ngôn ngữ
 
-Mọi trao đổi với chủ dự án bằng **tiếng Việt**. Docstring và chú thích trong
-mã nguồn cũng tiếng Việt.
+Mọi trao đổi với chủ dự án bằng **tiếng Việt**.
+
+## Mã nguồn không có chú thích — 27-11-2026
+
+Theo chủ dự án: mã nguồn KHÔNG mang chú thích, docstring hay chỉ dẫn (Python, JS, CSS, workflow,
+shell, cấu hình). Giải thích đặt trong `documentation/`, mô tả PR và lời nhắn commit. Chỉ giữ: `# noqa`
+mà ruff còn cần, chỉ thị `eslint-disable`, dòng shebang, và mốc mà mã tìm theo chuỗi
+(`<!-- SNAPSHOT:BEGIN -->` của `README.j2`). Lệnh không đọc `__doc__`
+(`argparse.ArgumentParser()` không mô tả). `tests/repo/test_no_source_comments.py` canh.
 
 ## Bảo mật — tuyệt đối
 
@@ -75,7 +82,7 @@ Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridg
 hành CI, triển khai), `web` (công cụ dựng và hậu xử lý trang: critical CSS, khung điều hướng, CSP,
 DOM; tách khỏi `ops` 24-10-2026), `browser` (kiểm trên Chromium), `reference` (đọc trang tham
 chiếu), `release` (bốn kịch bản chốt phát hành), `research` (phép đo tái lập được). Script nằm
-đúng hai cấp dưới gốc kho (`parents[2]`), có docstring nói nó làm gì, và mọi đường dẫn `scripts/…`
+đúng hai cấp dưới gốc kho (`parents[2]`), và mọi đường dẫn `scripts/…`
 được nhắc ở đâu trong kho phải trỏ tệp có thật. 22/40 script Python không có argparse: `--help` là
 chạy thật và ghi đè tệp (`extract_critical_css`, `replicate_top5_special` từng bị chạy nhầm như thế).
 
@@ -696,7 +703,7 @@ và xác suất soi đường ổn định lệch 4,5·10⁻⁷. Mọi phép ch�
 `src/soi_cau/bridge_rules.py` + `build_bridge_pages.py` in bảy trang `docs/soi-cau-*.html`
 (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, Đặc Biệt theo thứ, LOTO theo thứ) và
 `docs/tao-phoi-tuan.html`. Mọi kiểu dùng cặp vị trí a < b, số `10·d[a]+d[b]`; chỉ
-luật "bước trúng" khác nhau — ghi trong docstring và bị ghim từng ô bởi
+luật "bước trúng" khác nhau — bị ghim từng ô bởi
 `tests/soi_cau/test_bridge_rules.py` với `tests/fixtures/bridge_reference_2026-09-28.json`.
 Hai điểm dễ sai: hai nháy BẤT ĐỐI XỨNG (số lộn về hai nháy KHÔNG tính); bộ số là
 "số giữ nguyên trong một bộ qua các kỳ", không phải "ĐB rơi vào bộ". Hai trang

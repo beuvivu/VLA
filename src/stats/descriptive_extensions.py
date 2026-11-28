@@ -2,13 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Extended descriptive statistics preserved from the legacy repositories.
-
-The outputs are intentionally descriptive. They provide user-facing recency,
-head-table, sum/touch gap and pair evidence without feeding any score directly
-into the production predictor. Any artifact labeled in ``days`` uses real
-calendar dates; draw-index intervals remain explicitly labeled ``*_draws``.
-"""
 
 import argparse
 import json
@@ -37,7 +30,6 @@ def _de_values(two: pd.DataFrame) -> np.ndarray:
 
 
 def build_head_table(two: pd.DataFrame, *, lookback_days: int) -> pd.DataFrame:
-    """Count 00..99 occurrences inside an inclusive calendar-day window."""
     if two.empty or "date" not in two.columns:
         raise ValueError("head table requires non-empty data with a date column")
     days = max(1, int(lookback_days))

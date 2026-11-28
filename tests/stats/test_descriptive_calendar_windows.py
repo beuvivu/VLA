@@ -6,8 +6,6 @@ from stats.descriptive_extensions import build_head_table
 
 
 def test_head_table_uses_calendar_window_not_last_n_rows() -> None:
-    # Four observations but only two fall inside the inclusive 3-calendar-day
-    # window ending on Aug-10. A row-count implementation would incorrectly use 3.
     df = pd.DataFrame(
         {
             "date": pd.to_datetime(
@@ -22,5 +20,4 @@ def test_head_table_uses_calendar_window_not_last_n_rows() -> None:
     assert int(out["draw_rows"].iloc[0]) == 2
     assert out["window_start"].iloc[0] == "2026-08-08"
     assert out["window_end"].iloc[0] == "2026-08-10"
-    # Two prize positions across two included draws -> four total observations.
     assert int(out["count"].sum()) == 4

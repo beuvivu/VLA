@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
 
-// Chạy bộ dựng thật để kiểm bộ lọc trên đúng cấu trúc lịch được xuất bản.
 function calendar(mobile = false) {
   const fixture = JSON.parse(execFileSync(process.env.APP_TEST_PYTHON || 'python3', ['-c', `
 import json, sys

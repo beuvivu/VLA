@@ -1,5 +1,3 @@
-"""Workflow dùng token của job để dispatch phải được cấp quyền Actions ghi."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,7 +9,6 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _dispatch_permission_issues(document: dict) -> list[str]:
-    """Quyền cấp job thay toàn bộ quyền workflow, không cộng dồn từng khóa."""
     issues: list[str] = []
     for name, job in document.get("jobs", {}).items():
         runs = "\n".join(step.get("run", "") for step in job.get("steps", []))
@@ -43,7 +40,6 @@ def _dispatch_permission_issues(document: dict) -> list[str]:
 def test_dispatch_permission_gate_handles_job_overrides(
     workflow_permissions, job_permissions, expected,
 ) -> None:
-    """Ghim luật trên mẫu để thiếu quyền không thể bị bỏ qua lặng lẽ."""
     job = {"steps": [{"run": 'POST /repos/owner/repo/actions/workflows/update.yml/dispatches'}]}
     if job_permissions is not None:
         job["permissions"] = job_permissions

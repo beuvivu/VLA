@@ -122,10 +122,6 @@ def _load_calibration(data_dir: Path, mode: str) -> CalibParams:
         ):
             return CalibParams(mode=mode)
         p = j.get("params") or {}
-        # Nút isotonic là tùy chọn: tệp ghi trước khi có chúng vẫn nạp nguyên
-        # vẹn thành phép hiệu chuẩn tham số. Nút HỎNG thì `CalibParams` ném
-        # ValueError và khối `except` bên dưới rơi về hiệu chuẩn đồng nhất —
-        # đúng cách fail-closed của hàm này.
         return CalibParams(
             mode=mode,
             a=float(p.get("a", 1.0)),
@@ -188,7 +184,6 @@ def _meta_prediction(
         fallback["reason"] = "stacked model mode mismatch"
         return linear_prob.copy(), 0.0, fallback
     if pack.get("status") == "insufficient_history":
-        # Trạng thái này không có estimator và không được trộn vào forecast.
         fallback.update(
             reason="insufficient_history",
             history_days=pack.get("history_days"),
@@ -263,17 +258,8 @@ def _blend_linear(vectors: dict[str, np.ndarray], weights: EnsembleWeights) -> n
     )
 
 
-
 def top_frames(df_all: pd.DataFrame, mode: str) -> dict[int, pd.DataFrame]:
-    """Các danh sách top-4/8/10 từ bảng đã xếp theo xác suất giảm dần.
-
-    LOTO: tối đa ``pick_diversity.MAX_PER_TAIL`` con cùng đuôi — ngày
-    28-09-2026 cả 10 con đuôi 4, gần như MỘT lần đặt. Đặc Biệt giữ thứ tự
-    thuần. Tệp ``*_all`` không đi qua hàm này nên giữ nguyên.
-    """
     out = {}
-    # diversified_order lấy đuôi từ CHỈ SỐ, nên vector phải xếp theo con số
-    # 00..99 — không theo vị trí dòng của bảng đã sắp xếp.
     by_number = df_all.set_index(df_all["number"].astype(int))["prob"]
     probs = by_number.reindex(range(100)).to_numpy(dtype=float)
     for n in (4, 8, 10):
@@ -308,10 +294,6 @@ def main() -> None:
     vectors, available, reasons = _load_probs(data_dir, args.mode, anchor)
     effective_weights = renormalize_available_weights(configured_weights, available)
 
-    # Đặc Biệt: sàn xác suất — không con nào bị tuyên bố bất khả thi. `p_stable`
-    # là ĐIỂM XẾP HẠNG chứ không phải phân phối: nó gán đúng 0 cho trung vị
-    # 58/100 con mỗi kỳ, và trong 128/231 kỳ lịch sử gán 0 cho chính con đã về.
-    # LOTO: neo tổng về 100·nền — hai nhánh cầu vị trí thổi mức lên 3–11%.
     p_linear_raw = finalize_blend(_blend_linear(vectors, effective_weights), args.mode)
 
     all_components_available = all(available.get(key, False) for key in COMPONENT_KEYS)
@@ -330,8 +312,6 @@ def main() -> None:
             "reason": "bypassed because one or more ensemble components are unavailable",
         }
 
-    # Hiệu chuẩn phụ thuộc tổ hợp đủ năm thành phần; mô hình xếp chồng chỉ
-    # cần đúng các thành phần thuộc tầng mà nó đã được huấn luyện.
     p_meta, meta_trust, meta_info = _meta_prediction(
         models_dir,
         args.mode,

@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""Rebuild the bundled seed data (draws + per-draw prize data) from public sources.
-
-    python scripts/build_prize_dataset.py --vendor .vendor
-
-Clones (or reuses) three public repositories, merges and validates them, and writes:
-
-* data/seed/{power645,power655,power535}.jsonl   draws (mirror format)
-* data/seed/prizes_{mega645,power655,lotto535}.jsonl   reconciled prize records
-* data/seed/PRIZE_DATA_REPORT.json   reconciliation report
-
-Sources: vietvudanh/vietlott-data (draws), Compal123/vietlot-ai (draws + winners),
-leoodz/vn-vietlott (Power 6/55 full prize history). All MIT-licensed.
-"""
 
 from __future__ import annotations
 
@@ -26,16 +13,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from vietlott_engine.core.games import GAMES, GameCode  # noqa: E402
-from vietlott_engine.core.models import Draw  # noqa: E402
-from vietlott_engine.crawler.prize_sources import (  # noqa: E402
+from vietlott_engine.core.games import GAMES, GameCode
+from vietlott_engine.core.models import Draw
+from vietlott_engine.crawler.prize_sources import (
     COMPAL_FILES,
     parse_compal_winners,
     parse_leoodz_power,
     reconcile,
     records_to_jsonl,
 )
-from vietlott_engine.crawler.sources.mirror import MIRROR_FILES, JsonlFileSource  # noqa: E402
+from vietlott_engine.crawler.sources.mirror import MIRROR_FILES, JsonlFileSource
 
 REPOS = {
     "vietvudanh": "https://github.com/vietvudanh/vietlott-data",
@@ -74,7 +61,6 @@ def merge_draws(game: GameCode, base: list[Draw], compal_text: str, leoodz_raw: 
                 source="compal123",
             )
         except ValueError:
-            # e.g. Power draw #944 lacks its bonus ball in one mirror: repair from leoodz
             leo = leo_by_date.get(date.fromisoformat(row["date"][:10]))
             if leo is None or tuple(sorted(res[: spec.pick])) != leo.numbers:
                 continue
@@ -106,8 +92,6 @@ def main() -> int:
         compal_text = (roots["compal"] / "data" / COMPAL_FILES[game]).read_text(encoding="utf-8")
         leo = leoodz_raw if game == GameCode.POWER_655 else []
         draws, merge_info = merge_draws(game, base.draws, compal_text, leo)
-        # repair id gaps (e.g. Power #944: the mirror holds a corrupt record) from leoodz:
-        # a non-stale record dated strictly between the two neighbouring draws
         draws.sort(key=lambda d: d.draw_id)
         have = {d.draw_id: d for d in draws}
         for did in range(draws[0].draw_id + 1, draws[-1].draw_id):

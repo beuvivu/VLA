@@ -1,12 +1,8 @@
 (() => {
   "use strict";
 
-  // Các trang tự chứa dùng cùng một bộ dựng và cùng hành vi đánh dấu.
   if (window.TraditionalResults) return;
 
-  // Bản sao của PRIZE_SPEC bên Python: mã, nhãn, số lượng, độ rộng.
-  // `tests/web/test_traditional_results_page.py` buộc hai bản khớp nhau — lệch
-  // nhau thì trang vẫn dựng được nhưng cắt sai chuỗi và hiện số rác.
   const PRIZES = [
     ["special", "Đặc Biệt", 1, 5],
     ["prize1", "Giải Nhất", 1, 5],
@@ -27,10 +23,6 @@
     return node;
   };
 
-  // ---- Giải mã một dòng nén -------------------------------------------
-  // Một dòng là `YYYY-MM-DD` + 107 chữ số. Cắt theo đúng bảng độ rộng ở
-  // trên, và từ chối mọi dòng sai độ dài thay vì cắt bừa.
-
   function decode(row, metadata = {}) {
     if (typeof row !== "string" || row.length !== ROW_WIDTH) return null;
     const date = row.slice(0, DATE_WIDTH);
@@ -47,7 +39,6 @@
       }
       prizes.push({ code, name, width, values });
     }
-    // Không mang ký hiệu của kỳ trước sang ngày đang xem.
     const details = metadata && (!metadata.date || metadata.date === date) ? metadata : {};
     return {
       date, prizes,
@@ -57,8 +48,6 @@
     };
   }
 
-  /** Bảng đầu/đuôi tính TẠI TRÌNH DUYỆT thay vì nhúng sẵn — 20 mảng mỗi kỳ
-   *  nhân 2 399 kỳ là phần lớn dung lượng của bản trước. */
   function headTail(draw) {
     const heads = Array.from({ length: 10 }, () => []);
     const tails = Array.from({ length: 10 }, () => []);
@@ -73,7 +62,6 @@
     return { heads, tails };
   }
 
-  /** Toàn bộ 27 số LOTO của một kỳ, tăng dần. */
   function lotoNumbers(draw) {
     const out = [];
     for (const prize of draw.prizes) {
@@ -82,32 +70,6 @@
     return out.sort();
   }
 
-  /** Thứ trong tuần của một ngày `YYYY-MM-DD`, theo chuẩn JS (Chủ nhật = 0).
-   *
-   *  ĐỌC KỸ CHỖ NÀY. Hai cách viết hiển nhiên đều SAI:
-   *
-   *      new Date(value).getDay()                     // sai
-   *      new Date(value + "T12:00:00+07:00").getDay() // cũng sai
-   *
-   *  `getDay()` trả về thứ theo múi giờ CỦA MÁY NGƯỜI XEM, không phải theo
-   *  múi giờ đã dựng nên mốc thời gian. Đã đo trong Chromium với ngày
-   *  2026-09-14 (thứ Hai ở Việt Nam):
-   *
-   *      múi giờ người xem      +07 trưa   new Date(d)   Date.UTC
-   *      Asia/Ho_Chi_Minh          1 ✓         1 ✓          1 ✓
-   *      Europe/London             1 ✓         1 ✓          1 ✓
-   *      America/Los_Angeles       0 ✗         0 ✗          1 ✓
-   *      Pacific/Honolulu          0 ✗         0 ✗          1 ✓
-   *      Australia/Sydney          1 ✓         1 ✓          1 ✓
-   *
-   *  Người xem ở bờ Tây nước Mỹ sẽ thấy mọi kỳ lệch một ngày, và bộ lọc
-   *  "Thứ hai" trả về toàn các kỳ Chủ nhật — sai âm thầm, không báo lỗi.
-   *
-   *  `Date.UTC` dựng mốc từ ba con số rời, và `getUTCDay()` đọc lại cũng
-   *  bằng UTC, nên múi giờ người xem không chen vào được ở cả hai đầu. Ngày
-   *  quay XSMB vốn là một NHÃN LỊCH, không phải một thời điểm — đối xử với
-   *  nó như nhãn mới đúng.
-   */
   function weekdayOf(value) {
     const [year, month, day] = value.split("-").map(Number);
     return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
@@ -121,16 +83,6 @@
       .format(new Date(`${value}T12:00:00+07:00`));
   }
 
-  // ---- Dựng giao diện ---------------------------------------------------
-
-  /** Dãy đuôi của một chữ số đầu.
-   *
-   *  Ô hiển thị MỘT chữ số đuôi, nhưng giá trị để đánh dấu là cả CẶP
-   *  ``đầu + đuôi``. Bản trước lấy chính nội dung ô làm khoá, tức một chữ số
-   *  đơn lẻ — bấm ô "2" làm sáng 159 ô mini ở mọi hàng đầu khác nhau và
-   *  KHÔNG ô giải nào. Đó không phải cặp LOTO, nên nó vô nghĩa với người
-   *  soi cầu.
-   */
   function renderDigitList(draw, headDigit, tails) {
     const box = el("div", "tr-digit-list");
     if (!tails || tails.length === 0) {
@@ -138,16 +90,6 @@
       return box;
     }
     tails.forEach((tail, index) => {
-      // Hiện TRỌN cặp hai chữ số, không phải mỗi chữ số đuôi.
-      //
-      // Đã đọc cấu trúc bảng loto của trang tham chiếu: hai cột `['Đầu',
-      // 'LOTO']`, và ô nội dung là `'02; 08;'` — tức cặp đầy đủ.
-      //
-      // Việc này còn chữa một chỗ vô lý sẵn có của trang ta: ô mini vốn đã
-      // mang cặp đầy đủ trong `data-value` để đánh dấu, nhưng người xem chỉ
-      // THẤY một chữ số. Bấm vào ô hiện chữ "2" rồi thấy các ô giải chứa
-      // "32" sáng lên thì không cách nào đoán ra vì sao. Nay cái thấy và cái
-      // được đánh dấu là một.
       const pair = `${headDigit}${tail}`;
       const mini = el("span", "tr-mini", pair);
       mini.dataset.value = pair;
@@ -251,7 +193,6 @@
     side.append(renderHeadTail(draw));
     if (includeLoto) side.append(renderLoto(draw));
     grid.append(side);
-    // Khối phụ dựng sẵn phía máy chủ (ô cầu vị trí) được CHUYỂN sang, không dựng lại.
     if (extra) grid.append(extra);
     article.append(grid);
     return article;
@@ -260,29 +201,9 @@
   function createMarks(resultsNode, options = {}) {
     const pairMode = options.pairMode || { checked: false };
     const clearButton = options.clearButton || null;
-    // ---- Đánh dấu số bằng cú nhấp (soi cầu) -------------------------------
-    //
-    // Dùng MỘT bộ bắt sự kiện đặt trên vùng kết quả, không gắn từng ô. Vùng này
-    // có tới hàng chục nghìn ô số và danh sách được dựng lại mỗi lần đổi bộ lọc;
-    // gắn từng ô sẽ tốn bằng đó lượt đăng ký mỗi lần dựng.
-    //
-    // HAI kho đánh dấu, không phải một:
-    //
-    //   markedCells   khoá theo Ô CỤ THỂ — "ngày | giải | vị trí". Đây là chế
-    //                 độ mặc định: bấm ô nào thì đúng ô ấy đổi màu.
-    //   markedValues  khoá theo CẶP SỐ hai chữ số. Chỉ dùng khi người xem bật
-    //                 ô "Tự động đánh dấu cặp trùng".
-    //
-    // Vì sao tách đôi thay vì một kho có cờ: một ô có thể đang sáng vì chính nó
-    // được bấm, HOẶC vì cặp số của nó đang được đánh dấu. Gộp vào một kho thì
-    // không phân biệt được hai trường hợp ấy, và cú bấm tiếp theo sẽ xử lý sai.
-    //
-    // Cả hai đều khoá theo DỮ LIỆU chứ không theo phần tử, nên dựng lại danh
-    // sách — đổi bố cục, xem thêm, đổi khoảng — không làm mất dấu.
     const markedCells = new Map();
     const markedValues = new Set();
 
-    /** Cặp hai chữ số của một ô. Ô giải lấy hai số cuối; ô mini đã mang sẵn. */
     function markValue(node) {
       if (node.dataset.value) return node.dataset.value;
       const text = (node.textContent || "").trim();
@@ -312,18 +233,10 @@
       }
     }
 
-    /** Một cú bấm, bốn nhánh — và thứ tự giữa chúng là phần quan trọng.
-     *
-     *  Quy tắc bao trùm: **bấm vào ô đang sáng thì nó tắt**, bất kể nó sáng vì
-     *  lý do gì. Nếu nó sáng theo cặp thì cả cặp cùng tắt — đúng như lúc nó
-     *  sáng lên. Hai nhánh tắt phải đứng TRƯỚC hai nhánh bật, nếu không một ô
-     *  đang sáng theo cặp sẽ bị thêm dấu ô chồng lên và bấm mãi không tắt.
-     */
     function toggleMark(node) {
       const value = markValue(node);
       const cell = markCell(node);
       const clearPairCells = () => {
-        // Giữ danh tính cả ô đã rời DOM sau khi đổi bộ lọc hoặc bố cục.
         for (const [key, ownValue] of markedCells) {
           if (ownValue === value) markedCells.delete(key);
         }
@@ -349,7 +262,6 @@
       if (toggleMark(node)) paintMarks();
     });
 
-    // Bàn phím: ô số phải bấm được bằng Enter/Space, không chỉ bằng chuột.
     resultsNode.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       const node = event.target.closest(".tr-number, .tr-mini");
@@ -359,8 +271,6 @@
       node.click();
     });
 
-    // Đổi chế độ KHÔNG xoá dấu đã có. Người xem bật chế độ cặp, đánh vài dấu,
-    // rồi tắt đi — những dấu ấy phải còn nguyên, vì họ không hề bỏ chọn chúng.
     if (pairMode.addEventListener) {
       pairMode.addEventListener("change", () => paintMarks());
     }
@@ -374,11 +284,6 @@
     return { paintMarks, clear };
   }
 
-  // ---- Vị trí chữ số của một cầu ----------------------------------------
-  //
-  // 107 vị trí, cùng cách đánh số với src/soi_cau/position_bridges.py: ĐB 0–4, G1 5–9, G2 10–19 …
-  // G7 99–106. Suy từ PRIZES ở trên nên không có bản sao thứ hai để trôi lệch. Một cầu "AxB" ghép
-  // chữ số ở vị trí A với chữ số ở vị trí B của cùng một kỳ.
   const SHORT = { special: "ĐB", prize1: "G1", prize2: "G2", prize3: "G3", prize4: "G4", prize5: "G5",
     prize6: "G6", prize7: "G7" };
   const POSITIONS = [];
@@ -389,7 +294,6 @@
   }
   const BRIDGE = "data-bridge-mark";
 
-  /** "ĐB · chữ số 5", "G4.2 · chữ số 4": cùng cách gọi với trang Live và trang soi cầu. */
   function positionLabel(pos) {
     const spec = POSITIONS[pos];
     if (!spec) return "";
@@ -397,7 +301,6 @@
     return `${prize} · chữ số ${spec.digit + 1}`;
   }
 
-  /** Dựng lại chữ số của một ô; `roles` = {chữ số → "a" | "b"} được bọc để tô. */
   function paintCell(cell, roles) {
     const value = cell.dataset.bridgeValue || cell.textContent.trim();
     const digit = (k) => {
@@ -407,7 +310,6 @@
       return span;
     };
     const kids = [];
-    // Ô Đặc Biệt bọc hai số cuối trong .tr-special-tail; giữ nguyên vỏ ấy khi dựng lại.
     const special = Boolean(cell.querySelector(".tr-special-tail") || cell.dataset.bridgeTail);
     const tailFrom = special ? value.length - 2 : value.length;
     for (let k = 0; k < tailFrom; k += 1) kids.push(digit(k));
@@ -421,7 +323,6 @@
     cell.replaceChildren(...kids);
   }
 
-  /** Gỡ dấu cầu: trả mọi ô đã tô về đúng chữ như lúc dựng. */
   function clearBridge(root) {
     if (!root) return;
     for (const cell of root.querySelectorAll(`[${BRIDGE}]`)) {
@@ -430,8 +331,6 @@
     }
   }
 
-  /** Tô hai vị trí `a`, `b` của kỳ `date` trên các bảng trong `root`. Trả về số ô đã tô — 0 khi kỳ ấy
-   *  không có trên bảng (bảng đang hiện kỳ khác, hay bộ lọc đã ẩn nó): khi ấy không tô gì cả. */
   function markBridge(root, date, a, b) {
     clearBridge(root);
     if (!root || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return 0;
@@ -451,7 +350,6 @@
     return cells.size;
   }
 
-  /** Ô "cầu đẹp nhất" cạnh bảng: đưa chuột hay Tab tới một cầu thì hai vị trí của nó sáng trên bảng. */
   function bindBridgeChips(resultsNode, date) {
     const chipOf = (target) => target && target.closest && target.closest("[data-bridge-a][data-bridge-b]");
     const show = (event) => {

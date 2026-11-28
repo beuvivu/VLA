@@ -1,10 +1,3 @@
-"""Ghi lại một trang đã ghi phải ra ĐÚNG trang ấy (`page_output.write_page`, 11-11-2026).
-
-`regional-results.yml` ghi lại mọi trang qua `scripts/web/refresh_navigation.py` mỗi đêm, rồi pipeline dựng
-mới chúng mỗi chiều. Tới 11-11-2026 sáu trang thống kê chi tiết không phải điểm bất động: khối CSS
-`ui-source-detail-layout` bị bỏ qua khi đã có, trong khi `refine_page` bóc rồi chèn lại khối của nó ở cuối
-`<head>`. Hai workflow vì thế đổi chỗ khối ấy qua lại, mỗi lần 112 dòng trên mỗi trang, hai commit mỗi ngày.
-"""
 from __future__ import annotations
 
 import shutil
@@ -32,15 +25,14 @@ def _site(tmp_path: Path) -> Path:
 @pytest.mark.parametrize("name", DETAIL_PAGES)
 def test_a_detail_page_written_twice_is_the_same_page(tmp_path: Path, name: str) -> None:
     page = _site(tmp_path) / name
-    write_page(page, SOURCE.format(body="12 · 34"))   # như pipeline: dựng mới
+    write_page(page, SOURCE.format(body="12 · 34"))
     first = page.read_bytes()
-    write_page(page, first.decode("utf-8"))            # như workflow miền: ghi lại trang đã có
+    write_page(page, first.decode("utf-8"))
     assert page.read_bytes() == first
     assert first.decode("utf-8").count(f'id="{page_output._SOURCE_DETAIL_STYLE_ID}"') == 1
 
 
 def test_a_detail_page_with_stale_layout_css_gets_the_current_css(tmp_path: Path) -> None:
-    """Bỏ qua trang đã có khối cũng giữ mãi CSS cũ khi `stat_detail_pages.css` đổi."""
     page = _site(tmp_path) / "lo-gan.html"
     write_page(page, SOURCE.format(body="12"))
     stale = page.read_text(encoding="utf-8").replace(
@@ -73,8 +65,6 @@ def _page(stamp: str, board: bool) -> str:
 
 
 def test_a_home_page_written_in_two_steps_gets_the_committed_bytes_back(tmp_path: Path) -> None:
-    """Trang chủ ghi hai bước (khung rồi bảng mô phỏng): so từng lần ghi với tệp trên đĩa thì không thấy
-    kết quả cuối chỉ khác dấu giờ; so với bản HEAD sau mỗi bước thì thấy (lượt chạy lại 14-11-2026)."""
     def git(*args: str) -> str:
         return subprocess.run(["git", *args], cwd=tmp_path, capture_output=True, text=True, check=True).stdout
 
@@ -87,10 +77,10 @@ def test_a_home_page_written_in_two_steps_gets_the_committed_bytes_back(tmp_path
     git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "đầu")
     committed = home.read_bytes()
 
-    home.write_text(_page("2026-11-14 13:12 UTC", board=False), encoding="utf-8")   # bước khung
-    other.write_text(_page("2026-11-14 13:12 UTC", board=True), encoding="utf-8")   # đổi thật
+    home.write_text(_page("2026-11-14 13:12 UTC", board=False), encoding="utf-8")
+    other.write_text(_page("2026-11-14 13:12 UTC", board=True), encoding="utf-8")
     assert page_output.keep_committed_pages_when_only_stamps_changed(tmp_path) == []
-    home.write_text(_page("2026-11-14 13:12 UTC", board=True), encoding="utf-8")    # bước chèn bảng
+    home.write_text(_page("2026-11-14 13:12 UTC", board=True), encoding="utf-8")
     assert page_output.keep_committed_pages_when_only_stamps_changed(tmp_path) == ["docs/index.html"]
     assert home.read_bytes() == committed
     assert "13:12" in other.read_text(encoding="utf-8")

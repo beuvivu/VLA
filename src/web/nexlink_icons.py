@@ -1,4 +1,3 @@
-"""Exact vectors from the requested Nexlink shell; no hand-drawn substitutes."""
 from functools import cache
 from html import escape
 import json
@@ -16,7 +15,6 @@ def _source(name: str) -> str:
     if name not in _NAMES:
         raise ValueError(f'Unknown Nexlink icon: {name}')
     svg = (_ASSETS / f'{name}.svg').read_text().strip()
-    # Preserve every path, primitive and opacity. Only adapt theme color tokens.
     svg = svg.replace('var(--bs-heading-color)', 'currentColor')
     svg = svg.replace('var(--bs-primary)', 'currentColor').replace('#1C274C', 'currentColor')
     return re.sub(r' class="[^"]*"', '', svg, count=1)
@@ -47,5 +45,4 @@ _NAVIGATION = {
 
 
 def navigation_icon(key: str) -> str:
-    """Use the same Flaticon Rounded outlines as Nexlink's expanded sidebar."""
     return nexlink_icon(_NAVIGATION[key])

@@ -1,4 +1,3 @@
-"""Bản xuất bản phải theo đúng nguồn đã kiểm, không giữ CSS tạm khi dựng."""
 from pathlib import Path
 
 import pytest

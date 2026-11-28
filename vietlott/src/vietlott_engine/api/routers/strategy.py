@@ -1,5 +1,3 @@
-"""Expected value, anti-popularity optimisation, wheels and backtests."""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -21,7 +19,6 @@ router = APIRouter(prefix="/games/{game}")
 
 
 def _popularity(spec: GameSpec, state: AppState, quick_pick_share: float | None, use_last_draw: bool) -> PopularityModel:
-    """Calibrated crowd model when ``data/calibration`` has one, literature prior otherwise."""
     history = None
     if use_last_draw:
         try:
@@ -74,7 +71,6 @@ class DecisionResponse(BaseModel):
 
 @router.post("/ev/decision", response_model=DecisionResponse, tags=["game-theory"])
 def decision(body: DecisionRequest, spec: GameSpec = Depends(resolve_game), state: AppState = Depends(get_state)) -> DecisionResponse:
-    """Full payout distribution and growth-optimal (Kelly) stake for one ticket."""
     calc = _calculator(spec, state)
     sold = body.tickets_sold
     values, probs = payout_distribution(calc, body.ticket, body.jackpot1, body.jackpot2, sold, special=body.special)
@@ -87,7 +83,6 @@ def decision(body: DecisionRequest, spec: GameSpec = Depends(resolve_game), stat
 
 @router.post("/ev/uncertainty", response_model=EVUncertainty, tags=["game-theory"])
 def uncertainty(body: UncertaintyRequest, spec: GameSpec = Depends(resolve_game), state: AppState = Depends(get_state)) -> EVUncertainty:
-    """EV as a distribution over crowd-behaviour and sales priors (with sensitivity ranking)."""
     if body.tickets_sold_low > body.tickets_sold_high:
         raise DataValidationError("tickets_sold_low must not exceed tickets_sold_high")
     try:

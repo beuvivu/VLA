@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Semantic, chronological positional-pattern research engine.
-
-The engine reproduces deterministic transformations that are publicly visible
-on Vietnamese lottery-analysis pages.  It does not claim that a historical
-streak predicts the next draw.  Pattern selection and evaluation on the same
-period is explicitly labelled as selection-bias risk.
-"""
 
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -147,7 +140,6 @@ def _column_value(row: pd.Series, position: PositionRef) -> int:
 
 
 def normalize_raw_draws(raw_history: pd.DataFrame) -> tuple[NormalizedDraw, ...]:
-    """Convert canonical raw prize rows into immutable semantic draws."""
     if "date" not in raw_history.columns:
         raise ValueError("raw history must contain date")
     work = raw_history.copy()
@@ -248,7 +240,6 @@ def evaluate_pattern(
     target_type: TargetType = "loto",
     as_of_date: object | None = None,
 ) -> PatternEvidence:
-    """Evaluate one lag-one pattern on exact consecutive calendar draws."""
     if target_type not in TARGET_TYPES:
         raise ValueError(f"unknown target_type: {target_type}")
     draws = _normalize_draw_sequence(history, as_of_date=as_of_date)
@@ -272,8 +263,6 @@ def evaluate_pattern(
         if target_type in {"de", "special"}:
             count = int(target.special_2d in candidates)
         else:
-            # Two-nháy means at least one individually predicted number occurs
-            # at least twice; counts from different candidates are not pooled.
             count = max((target.loto_counts[number] for number in candidates), default=0)
         hit = _criterion(target_type, count)
         target_dates.append(target.date)
@@ -294,8 +283,6 @@ def evaluate_pattern(
     support = len(hits)
     successes = sum(hits)
     active, longest = _runs(hits, target_dates)
-    # A stale earlier streak is not active when the newest draw cannot be
-    # evaluated because its exact preceding calendar draw is missing.
     if not target_dates or not draws or target_dates[-1] != draws[-1].date:
         active = 0
     histogram = {count: occurrence_counts.count(count) for count in sorted(set(occurrence_counts))}
@@ -332,7 +319,6 @@ def find_running_patterns(
     max_hypotheses: int = 50_000,
     max_results: int | None = None,
 ) -> PatternSearchResult:
-    """Find patterns currently successful for at least ``days_count`` draws."""
     if days_count < 1:
         raise ValueError("days_count must be >= 1")
     if minimum_support < 1:

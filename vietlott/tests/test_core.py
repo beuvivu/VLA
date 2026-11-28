@@ -16,7 +16,7 @@ def test_tier_probabilities_known_odds() -> None:
     assert POWER_655.total_combinations == 28_989_675
     p = POWER_655.tier_probabilities
     assert p["jackpot1"] == pytest.approx(1 / 28_989_675)
-    assert p["jackpot2"] == pytest.approx(6 / comb(55, 6))  # ≈ 1 / 4,831,613
+    assert p["jackpot2"] == pytest.approx(6 / comb(55, 6))
     assert p["first"] == pytest.approx(6 * 48 / comb(55, 6))
     assert MEGA_645.tier_probabilities["third"] == pytest.approx(comb(6, 3) * comb(39, 3) / comb(45, 6))
 
@@ -37,7 +37,7 @@ def test_draw_validation() -> None:
     d = Draw(game="power655", draw_id=1, draw_date="2017-08-01", numbers=[38, 5, 10, 14, 23, 24], bonus=35)
     assert d.numbers == (5, 10, 14, 23, 24, 38)
     with pytest.raises(ValidationError):
-        Draw(game="power655", draw_id=1, draw_date="2017-08-01", numbers=[1, 2, 3, 4, 5, 6])  # missing bonus
+        Draw(game="power655", draw_id=1, draw_date="2017-08-01", numbers=[1, 2, 3, 4, 5, 6])
     with pytest.raises(ValidationError):
         Draw(game="power655", draw_id=1, draw_date="2017-08-01", numbers=[1, 2, 3, 4, 5, 6], bonus=6)
     with pytest.raises(ValidationError):

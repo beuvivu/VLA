@@ -1,36 +1,3 @@
-"""Kiểm định cuốn chiếu và dò siêu tham số, không rò rỉ thời gian.
-
-Vì sao không dùng ``train_test_split`` hay ``KFold``
------------------------------------------------------
-
-Chia ngẫu nhiên trên chuỗi thời gian cho mô hình thấy ngày mai để dự đoán hôm
-nay. ``KFold`` cũng vậy. Sai lầm này không hiện ra thành lỗi — nó hiện ra thành
-kết quả *đẹp*, nên rất khó phát hiện nếu không chặn từ thiết kế.
-
-Ba tầng thời gian
-------------------
-
-Rò rỉ tinh vi nhất không nằm ở vòng huấn luyện mà ở **việc dò siêu tham số**:
-chọn tham số bằng cách nhìn điểm trên tập đánh giá rồi báo cáo chính điểm đó là
-một dạng rò rỉ, dù mỗi lần khớp riêng lẻ đều sạch. Vì vậy lịch sử chia làm ba
-đoạn không chồng lấn, theo đúng thứ tự thời gian::
-
-    [0 ────────── warmup) [warmup ────────── tune_end) [tune_end ────────── n)
-       khởi động             dò siêu tham số              đánh giá cuối
-
-Optuna chỉ nhìn thấy đoạn giữa. Đoạn cuối chỉ được chạm đúng một lần, sau khi
-tham số đã chốt.
-
-Cửa sổ trượt
--------------
-
-Mỗi lần khớp chỉ dùng ``window`` ngày gần nhất chứ không dùng toàn bộ quá khứ.
-Lý do thuộc về miền: nếu quy luật đổi thì dữ liệu cũ không chỉ vô ích mà còn có
-hại. Đây là cùng một lập luận đứng sau hệ số chiết khấu của bandit, và cũng
-mang cùng cái giá — cửa sổ ngắn thì thích ứng nhanh nhưng phương sai ước lượng
-cao hơn.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -48,11 +15,6 @@ from research.ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
-#: Không gian siêu tham số mặc định, cố ý hẹp.
-#:
-#: Hẹp là có chủ đích: không gian rộng trên dữ liệu gần như ngẫu nhiên chỉ làm
-#: tăng số giả thuyết được thử, và giá trị tốt nhất tìm được sẽ phản ánh may rủi
-#: của quá trình tìm kiếm chứ không phải cấu trúc trong dữ liệu.
 DEFAULT_SEARCH_SPACE: Final[dict[str, tuple[Any, ...]]] = {
     "max_depth": ("int", 2, 5),
     "n_estimators": ("int", 80, 320),
@@ -63,13 +25,6 @@ DEFAULT_SEARCH_SPACE: Final[dict[str, tuple[Any, ...]]] = {
 
 @dataclass(frozen=True)
 class Split:
-    """Một lát cắt cuốn chiếu.
-
-    Attributes:
-        train_start: Ngày đầu của cửa sổ huấn luyện, đã bao gồm.
-        train_stop: Ngày cuối của cửa sổ huấn luyện, không bao gồm.
-        predict_day: Ngày được dự đoán; luôn bằng ``train_stop``.
-    """
 
     train_start: int
     train_stop: int
@@ -83,14 +38,6 @@ class Split:
 
 
 class WalkForwardValidator:
-    """Đánh giá cuốn chiếu với cửa sổ trượt và dò siêu tham số tách biệt.
-
-    Attributes:
-        counts: Ma trận đếm toàn lịch sử.
-        window: Số ngày trong cửa sổ huấn luyện trượt.
-        warmup: Số ngày đầu chỉ dùng để tích lũy, không đánh giá.
-        refit_every: Khớp lại sau mỗi bấy nhiêu ngày.
-    """
 
     def __init__(
         self,
@@ -117,15 +64,6 @@ class WalkForwardValidator:
         self.refit_every = int(refit_every)
 
     def splits(self, start: int, stop: int) -> Iterator[Split]:
-        """Sinh các lát cắt cuốn chiếu trong khoảng ``[start, stop)``.
-
-        Args:
-            start: Ngày đầu tiên được dự đoán.
-            stop: Ngày cuối, không bao gồm.
-
-        Yields:
-            Lát cắt cho từng ngày.
-        """
         for day in range(start, stop):
             yield Split(
                 train_start=max(self.warmup - self.window, max(0, day - self.window)),
@@ -141,22 +79,6 @@ class WalkForwardValidator:
         stop: int,
         feature_filter: list[str] | None = None,
     ) -> PerformanceReport:
-        """Chấm một họ mô hình bằng cuốn chiếu trên ``[start, stop)``.
-
-        Args:
-            model_factory: Hàm không đối số trả về bộ học chưa khớp. Nhận
-                factory chứ không nhận thể hiện: mỗi lần khớp lại phải là một mô
-                hình mới, nếu không trạng thái của lần trước sẽ rò sang lần sau.
-            start: Ngày đầu tiên được dự đoán.
-            stop: Ngày cuối, không bao gồm.
-            feature_filter: Nếu đặt, chỉ dùng các cột đặc trưng này.
-
-        Returns:
-            Báo cáo hiệu năng trên khoảng đã cho.
-
-        Raises:
-            ValueError: Khi khoảng ngày không hợp lệ.
-        """
         if not self.warmup <= start < stop <= self.counts.shape[0]:
             raise ValueError(
                 f"khoảng [{start}, {stop}) phải nằm sau warmup={self.warmup} "
@@ -207,20 +129,6 @@ class WalkForwardValidator:
         seed: int = 0,
         timeout: float | None = None,
     ) -> dict[str, Any]:
-        """Dò siêu tham số trên đoạn giữa, không chạm đoạn đánh giá.
-
-        Args:
-            tune_start: Ngày đầu của đoạn dò.
-            tune_stop: Ngày cuối của đoạn dò, không bao gồm. Đoạn đánh giá cuối
-                phải bắt đầu từ đây trở đi.
-            n_trials: Số lần thử.
-            search_space: Không gian tham số; mặc định là ``DEFAULT_SEARCH_SPACE``.
-            seed: Hạt giống, để tái lập được.
-            timeout: Giới hạn giây cho toàn bộ quá trình dò.
-
-        Returns:
-            Bộ tham số tốt nhất tìm được.
-        """
         space = search_space or DEFAULT_SEARCH_SPACE
         if CAPABILITIES.optuna is None:
             LOGGER.warning("Thiếu optuna — chuyển sang dò ngẫu nhiên có kiểm soát hạt giống")
@@ -240,16 +148,11 @@ class WalkForwardValidator:
             report = self.evaluate(
                 lambda: TabularBooster(**params), start=tune_start, stop=tune_stop
             )
-            # Tối thiểu hóa log-loss. Không tối ưu Hit-Rate: nó không phải quy
-            # tắc chấm điểm chặt, nên chọn tham số theo nó sẽ chọn ra mô hình
-            # xếp hạng hơi tốt hơn mà xác suất tệ hơn hẳn.
             return report.logloss
 
         study = optuna.create_study(
             direction="minimize",
             sampler=optuna.samplers.TPESampler(seed=seed),
-            # Cắt tỉa theo trung vị: bỏ sớm những lần thử đang tệ hơn trung vị,
-            # nên phần lớn ngân sách dồn cho vùng tham số đáng quan tâm.
             pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=0),
         )
         study.optimize(objective, n_trials=n_trials, timeout=timeout, show_progress_bar=False)
@@ -264,7 +167,6 @@ class WalkForwardValidator:
 
     @staticmethod
     def _suggest(trial: Any, space: dict[str, tuple[Any, ...]]) -> dict[str, Any]:
-        """Dịch mô tả không gian tham số sang lời gọi Optuna."""
         params: dict[str, Any] = {}
         for name, spec in space.items():
             kind, low, high = spec[0], spec[1], spec[2]
@@ -285,7 +187,6 @@ class WalkForwardValidator:
         search_space: dict[str, tuple[Any, ...]],
         seed: int,
     ) -> dict[str, Any]:
-        """Đường lui khi không có Optuna: dò ngẫu nhiên với hạt giống cố định."""
         rng = np.random.default_rng(seed)
         best_params: dict[str, Any] = {}
         best_loss = float("inf")
@@ -298,12 +199,6 @@ class WalkForwardValidator:
                     if kind == "int"
                     else float(rng.uniform(float(low), float(high)))
                 )
-            # ruff B023 báo nhầm ở đây. Closure chỉ sai khi lambda được gọi
-            # SAU khi vòng lặp đã sang vòng kế; nhưng ``evaluate`` gọi
-            # ``model_factory()`` đồng bộ ngay trong thân nó và trả về trước
-            # khi vòng lặp tiếp tục, nên ``params`` luôn là dict của đúng
-            # vòng này. ``params`` cũng được GÁN LẠI (không mutate) mỗi
-            # vòng, nên ``best_params`` giữ tham chiếu dict cũ vẫn an toàn.
             report = self.evaluate(
                 lambda: TabularBooster(**params),  # noqa: B023
                 start=tune_start,

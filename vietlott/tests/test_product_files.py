@@ -1,11 +1,3 @@
-"""Tệp của kho sản phẩm: ghi nguyên tử và tất định (05-11-2026).
-
-* ``exclusions.json`` được MỌI lần nạp sản phẩm đọc (``load_exclusions``). Trước bản vá nó được ghi
-  thẳng bằng ``write_text``: chết giữa chừng để lại JSON cụt và mọi sản phẩm ngừng nạp được.
-* ``write_jsonl`` nén gzip với ``mtime=0`` để tệp tất định, nhưng ``GzipFile`` lấy tên từ tệp tạm, nên
-  header mang một tên ngẫu nhiên và hai lần ghi cùng nội dung ra hai tệp khác nhau.
-"""
-
 from __future__ import annotations
 
 import gzip
@@ -23,7 +15,6 @@ ROWS = [{"id": 1, "date": "2026-11-01", "result": list(range(1, 21))},
 
 
 def _gzip_name(data: bytes) -> str | None:
-    """Tên ghi trong header gzip (cờ FNAME), hoặc None."""
     return data[10:data.index(b"\0", 10)].decode("latin-1") if data[3] & 8 else None
 
 

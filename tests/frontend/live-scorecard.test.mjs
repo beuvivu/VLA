@@ -3,15 +3,12 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
-// Bảng đối chiếu của trang Live (src/web/assets/live-scorecard.js): mỗi danh sách đã đóng băng
-// là hai hàng song song, và một mục chỉ "trượt" khi phần kết quả liên quan đã đủ.
 const script = readFileSync(new URL('../../src/web/assets/live-scorecard.js', import.meta.url), 'utf8');
 const markup = '<section id="live-scorecard" data-board-root="https://example.test/board/" ' +
   'data-closed-days="https://example.test/closed.json" data-record-url="https://example.test/record.json">' +
   '<time id="live-scorecard-date"></time><div id="live-scorecard-summary"></div>' +
   '<table id="live-scorecard-table"><thead><tr><th>Danh sách</th></tr></thead></table></section>';
 
-// Đồng hồ cố định: 19:00 giờ VN ngày 22/10, tức tối của kỳ trong các sổ mẫu (kỳ đã quay hiện mặc định).
 const EVENING = '2026-10-22T12:00:00Z';
 function setup(t, fetcher, now = EVENING, before = '') {
   const dom = new JSDOM(before + markup, { runScripts: 'outside-only', url: 'https://example.test/live.html' });
@@ -40,7 +37,6 @@ const board = (date = '2026-10-22', extra = {}) => ({
   vectors: {}, missing: [], ...extra,
 });
 const ok = (value) => ({ ok: true, status: 200, json: async () => value });
-// Đủ 27 giải; `tails` là hai số cuối, Đặc Biệt đứng đầu.
 function prizes(tails, upto = 27) {
   const keys = [['special', 1], ['prize1', 1], ['prize2', 2], ['prize3', 6], ['prize4', 4], ['prize5', 6], ['prize6', 3], ['prize7', 4]];
   const out = {}; let i = 0;
@@ -76,13 +72,11 @@ test('Mỗi danh sách là hai hàng song song, mỗi nhóm một tbody gắn th
 
 test('Đang quay: số đã về chốt ngay, số chưa về là "chờ" chứ không "trượt"', async (t) => {
   const { api, d } = setup(t, async () => ok(board()));
-  // Mới về 10 giải, chưa có Đặc Biệt (Đặc Biệt quay sau cùng).
   const partial = prizes(FULL, 11);
   partial.special = [];
   await api.update({ draw_date: '2026-10-22', prizes: partial });
   assert.deepEqual(states(d, 'top', 'is-after'), ['hit', 'wait', 'wait']);
   assert.deepEqual(states(d, 'de', 'is-after'), ['wait'], 'Đặc Biệt chưa về thì chưa chấm');
-  // 29 và 92 mỗi số một nháy: cầu lộn cộng gộp hai chiều nên đủ hai nháy.
   assert.deepEqual(states(d, 'rules', 'is-after'), ['hit', 'wait', 'wait']);
   assert.match(d.querySelector('tbody[data-list-id="top"] .is-after .live-scorecard-stat').textContent,
     /Trúng 1\/3 · còn chờ 2/);
@@ -93,7 +87,6 @@ test('Đủ 27 giải: mục chưa về thành "trượt", Đặc Biệt và ch�
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.deepEqual(states(d, 'top', 'is-after'), ['hit', 'miss', 'miss']);
   assert.deepEqual(states(d, 'de', 'is-after'), ['hit']);
-  // Xiên 12 + 34: 34 không về nên trượt; chạm 3 khớp hàng đơn vị của 63.
   assert.deepEqual(states(d, 'rules', 'is-after'), ['hit', 'miss', 'hit']);
   const stat = d.querySelector('tbody[data-list-id="top"] .is-after .live-scorecard-stat');
   assert.match(stat.textContent, /Trúng 1\/3 = 33,3% · kỳ vọng 24,0%/);
@@ -112,7 +105,6 @@ test('Luật hai nháy cần đủ nháy; một nháy là chờ rồi trượt',
   const tens = api.outcome(prizes(['31', ...FULL.slice(1)]));
   assert.equal(api.judge({ on: 'special_digit', digits: [3] }, tens), 'hit', 'chạm cả hàng chục');
   assert.equal(api.judge({ on: 'special_digit', digits: [7] }, tens), 'miss');
-  // Cùng nghĩa với `board_record.item_hits` (Python đổi int): chữ số dạng chuỗi vẫn phải chấm đúng.
   assert.equal(api.judge({ on: 'special_digit', digits: ['3'] }, tens), 'hit', 'chữ số dạng chuỗi');
   assert.equal(api.judge({ on: 'special_digit', digits: ['7'] }, tens), 'miss');
 });
@@ -167,14 +159,10 @@ test('Xác suất toàn bảng 100 số chấm bằng Brier và xác suất củ
   assert.match(text, /cho số 63 là 1,99%/);
 });
 
-// ---- Vị trí đường cầu ---------------------------------------------------------------
-// 27 giá trị đúng độ rộng giải; `special` là giải Đặc Biệt, `tail7` là hai số cuối giải bảy cuối cùng.
 const WIDTHS = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2];
 function values(special, tail7 = '00') {
   return WIDTHS.map((w, i) => (i === 0 ? special : i === 26 ? tail7 : '9'.repeat(w)));
 }
-// Cầu 0×1 ghép hai chữ số đầu giải Đặc Biệt: 34 (10-19) → 56 (10-20) → 78 (10-21).
-// Kỳ 10-20 có giải bảy đuôi 43 (lộn của 34), kỳ 10-21 có đuôi 65 (lộn của 56): cả hai bước trúng.
 const DRAWS = {
   '2026-10-19': values('34111'),
   '2026-10-20': values('56111', '43'),
@@ -203,7 +191,6 @@ test('Chỉ số trước giờ quay của danh sách cầu mới bấm được
   assert.equal(chip(d, 'top'), null, 'Top LOTO không sinh từ cặp vị trí');
   assert.equal(d.querySelector('.is-after .live-scorecard-chip-btn'), null, 'hàng sau giờ quay không mở cầu');
   assert.equal(chip(d, 'bridge-loto').getAttribute('aria-expanded'), 'false');
-  // Sổ cũ (schema 1) không có vị trí: không nút nào.
   const plain = setup(t, async () => ok(board()));
   await plain.api.update({ draw_date: '2026-10-22', prizes: {} });
   assert.equal(plain.d.querySelector('.live-scorecard-chip-btn'), null);
@@ -222,22 +209,18 @@ test('Bấm số: đường cầu qua từng kỳ, tô hai vị trí và ô về
   assert.match(panel.querySelector('h3').textContent, /^78 · 87: 2 cầu báo mục này$/);
   assert.match(panel.querySelector('.live-bridge-where').textContent,
     /Vị trí 0 \(ĐB · chữ số 1\) ghép Vị trí 1 \(ĐB · chữ số 2\)/);
-  // Cầu chạy 2 kỳ: vẽ 3 bảng (2 bước), mới nhất ở trên.
   const days = [...panel.querySelectorAll('.live-bridge-day')];
   assert.deepEqual(days.map((day) => day.querySelector('h4').textContent), ['21/10/2026', '20/10/2026', '19/10/2026']);
   assert.match(days[0].querySelector('p').textContent, /Ghép 78 → báo 78 · 87 cho kỳ 22\/10\/2026 · kỳ trước báo 56 · 65: trúng/);
   assert.deepEqual([...days[0].querySelectorAll('.live-bridge-src')].map((s) => s.textContent), ['7', '8']);
-  // Chữ số hàng chục lấy ở vị trí a, hàng đơn vị ở vị trí b: đảo hai vị trí là ghép ra số lộn.
   assert.equal(days[0].querySelector('.live-bridge-src--a').textContent, '7');
   assert.equal(days[0].querySelector('.live-bridge-src--b').textContent, '8');
   assert.equal(days[0].querySelector('.live-bridge-src--a').getAttribute('aria-label'), 'Vị trí 0 (ĐB · chữ số 1): 7');
   assert.deepEqual([...days[0].querySelectorAll('.live-bridge-hit')].map((s) => s.textContent).join(''), '65',
     'đuôi 65 của kỳ 21/10 về theo cầu kỳ trước');
   assert.equal(days[2].querySelectorAll('.live-bridge-hit').length, 0, 'kỳ đầu không có kỳ trước để chấm');
-  // Trang nguồn mở đúng kỳ biên, đúng số ghép ở kỳ ấy và đúng cầu.
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-cau-loto.html?ngay=2026-10-21&so=78&vt=0x1');
-  // Sổ kết quả truyền thống mở cùng kỳ ghép số và tô cùng hai vị trí.
   assert.equal(panel.querySelector('.live-bridge-book').href,
     'https://example.test/so-ket-qua-truyen-thong.html?ngay=2026-10-21&vt=0x1');
 });
@@ -250,7 +233,6 @@ test('Đổi cầu, trang tự cập nhật và đóng bảng đều giữ đún
   let panel = d.getElementById('live-bridge-bridge-loto');
   assert.equal(panel.querySelector('[data-bridge-pick="1"]').getAttribute('aria-pressed'), 'true');
   assert.equal(panel.querySelectorAll('.live-bridge-day').length, 2, 'cầu chạy 1 kỳ: hai bảng');
-  // Kết quả về giữa chừng: bảng dựng lại nhưng cầu đang xem vẫn mở.
   await api.update({ draw_date: '2026-10-22', prizes: prizes(FULL, 5) });
   panel = d.getElementById('live-bridge-bridge-loto');
   assert.ok(panel, 'cập nhật trực tiếp không đóng bảng cầu');
@@ -271,7 +253,6 @@ test('Soi đường: một bảng kỳ gốc với độ trễ, liên kết mở
   assert.match(days[0].textContent, /Kỳ gốc · ghép 78 · trễ 1 ngày → báo 78 cho kỳ 22\/10\/2026/);
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-path-de-stable.html?number=78&path=L1-%5B0%2C1%5D');
-  // Soi đường: kỳ ghép số là kỳ gốc của đường, không phải kỳ cuối của chuỗi.
   assert.match(panel.querySelector('.live-bridge-book').href, /so-ket-qua-truyen-thong\.html\?ngay=2026-10-21&vt=0x1$/);
 });
 
@@ -290,7 +271,6 @@ test('Cầu Đặc Biệt chỉ tô giải Đặc Biệt: số lộn về ở gi
   const panel = d.getElementById('live-bridge-best-db');
   const days = [...panel.querySelectorAll('.live-bridge-day')];
   assert.equal(days.length, 3);
-  // Đuôi 65 của kỳ 21/10 nằm ở giải bảy: cầu LOTO tô nó, cầu Đặc Biệt thì không.
   assert.equal(days[0].querySelectorAll('.live-bridge-hit').length, 0);
   assert.match(panel.querySelector('.live-bridge-link').href,
     /soi-cau-vi-tri\.html\?vt=0x1&limit=5&exactlimit=0&lon=1&nhay=1&db=1#app-bridge-results$/);
@@ -312,8 +292,6 @@ test('Sang kỳ khác thì bảng cầu đang mở đóng lại', async (t) => {
   assert.equal(chip(d, 'bridge-loto').getAttribute('aria-expanded'), 'false');
 });
 
-// ---- Cầu đang chạy cho danh sách không sinh từ cặp vị trí (schema 3) ----------------------
-// Cầu 0×1 ghép 78 ở kỳ 21/10 (trang Cầu LOTO); cầu 105×106 ghép 65 từ giải bảy (trang Cầu Đặc Biệt).
 const RUNNING = {
   loto: { page: 'soi-cau-loto.html', title: 'Cầu LOTO', count: 3, mark: 'loto-lon', series: Object.keys(DRAWS),
     groups: { '78,87': { total: 1, bridges: [{ a: 0, b: 1, streak: 2 }] } } },
@@ -330,7 +308,6 @@ const runningBoard = (date = '2026-10-22') => board(date, {
       items: [{ label: '65', rule: { on: 'special', numbers: ['65'] }, prob: 0.011, base: 0.01 }] },
   ],
 });
-// Sổ theo ngày trong URL; lịch nghỉ quay mặc định rỗng (404), hoặc đúng danh sách truyền vào.
 const forDate = (make, closedDays = null) => async (url) => {
   if (url.endsWith('/closed.json')) return closedDays ? ok({ ngay_khong_quay: closedDays }) : { ok: false, status: 404 };
   const date = url.match(/(\d{4}-\d\d-\d\d)\.json$/)[1];
@@ -352,7 +329,6 @@ test('Danh sách không sinh từ cặp vị trí: bấm số tra cầu LOTO đa
   assert.equal([...days[0].querySelectorAll('.live-bridge-hit')].map((s) => s.textContent).join(''), '65');
   assert.equal(panel.querySelector('.live-bridge-link').href,
     'https://example.test/soi-cau-loto.html?ngay=2026-10-21&so=78&vt=0x1');
-  // Số lộn tra cùng nhóm; số không có cầu nào vẫn mở được và nói đúng là chưa có.
   item(d, 'cau-keo-loto', 1).click();
   assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^87: 1 cầu đang chạy/);
   item(d, 'cau-keo-loto', 2).click();
@@ -360,7 +336,6 @@ test('Danh sách không sinh từ cặp vị trí: bấm số tra cầu LOTO đa
   assert.equal(none.querySelector('h3').textContent, '99: chưa có cầu nào đang chạy trên trang Cầu LOTO ghép ra 99');
   assert.equal(none.querySelector('.live-bridge-picker'), null);
   assert.match(none.querySelector('.live-bridge-link').href, /soi-cau-loto\.html$/);
-  // Luật chạm chữ số không phải một số: không tra được, giữ dạng thường.
   const touch = [...d.querySelectorAll('tbody[data-list-id="rules"] .is-before .live-scorecard-chip')][2];
   assert.equal(touch.querySelector('button'), null);
   assert.ok(item(d, 'rules', 1), 'xiên 2 tra cả hai số');
@@ -399,7 +374,6 @@ test('Danh sách cầu bị bỏ vị trí (tính lại lệch) không rơi xu�
   assert.ok(item(d, 'cau-keo-loto', 0), 'danh sách không vị trí vẫn tra được');
 });
 
-// Hàng của một danh sách: lớp, chữ ô "Thời điểm" (lúc · kỳ) và kỳ của hàng.
 const rows = (d, id) => [...d.querySelectorAll(`tbody[data-list-id="${id}"] tr:not(.is-bridge)`)].map((r) => [
   r.className, r.querySelector('.live-scorecard-when').firstChild.textContent,
   r.querySelector('.live-scorecard-day').textContent, r.dataset.draw]);
@@ -411,7 +385,6 @@ test('Kỳ đã quay xong: mỗi danh sách ba hàng — trước giờ quay k�
   const done = { draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) };
   await api.update(done);
   assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json'], 'sổ của hai kỳ, tải độc lập');
-  // 19:00 giờ VN ngày 22/10: kỳ vừa quay là hôm nay, kỳ sắp quay là ngày mai.
   assert.deepEqual(rows(d, 'top'), [
     ['is-next', 'Trước giờ quay', 'kỳ 23/10 · ngày mai', '2026-10-23'],
     ['is-before', 'Trước giờ quay', 'kỳ 22/10 · hôm nay', '2026-10-22'],
@@ -426,7 +399,6 @@ test('Kỳ đã quay xong: mỗi danh sách ba hàng — trước giờ quay k�
   assert.match(lines[0], /^Kỳ sắp quay \(kỳ 23\/10 · ngày mai\): 5 danh sách, 11 mục, khoá lúc 18:10 · /,
     'sổ kỳ sắp quay chưa tới giờ khoá: chưa phải «đã đóng băng»');
   assert.match(lines[1], /^Kỳ vừa quay \(kỳ 22\/10 · hôm nay\): đã trúng/);
-  // Cùng một số ở hai hàng "Trước giờ quay" là hai nút riêng, mỗi nút mở cầu trong sổ của chính kỳ ấy.
   nextItem(d, 'cau-keo-loto', 0).click();
   assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
   assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
@@ -436,7 +408,6 @@ test('Kỳ đã quay xong: mỗi danh sách ba hàng — trước giờ quay k�
   assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
   assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
   assert.equal(d.querySelectorAll('.live-bridge').length, 1, 'mỗi lúc một bảng cầu');
-  // live.json cập nhật lại cùng kỳ: bảng cầu đang mở được giữ, không tải lại sổ.
   await api.update(done);
   assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
   assert.deepEqual(boards(urls), ['2026-10-22.json', '2026-10-23.json']);
@@ -451,7 +422,6 @@ test('Sáng hôm sau (giờ VN): hôm nay là kỳ sắp quay, hôm qua giữ d�
     assert.ok(states(morning.d, 'top', 'is-after').includes('hit'), 'có số về được tô lúc ' + now);
     assert.equal(morning.d.querySelector('time').dateTime, '2026-10-22', now);
   }
-  // 18:20 giờ VN ngày 23/10: kỳ 23/10 đang quay, chưa có kỳ sắp quay.
   const live = setup(t, forDate(runningBoard), '2026-10-23T11:20:00Z');
   await live.api.update({ draw_date: '2026-10-23', status: 'partial', prizes: prizes(FULL, 3) });
   assert.deepEqual(rows(live.d, 'top').map((r) => r[0] + ' ' + r[2]),
@@ -509,7 +479,6 @@ test('Kỳ sắp quay chưa có sổ: hàng của nó là khung chờ, không m�
   assert.match(pending.textContent, /Đang chờ tính danh sách cho kỳ này/);
   assert.match(d.getElementById('live-scorecard-summary').children[0].textContent,
     /^Kỳ sắp quay \(kỳ 23\/10 · ngày mai\): Đang chờ tính danh sách/);
-  // Hệ thống tính xong: lần hỏi lại sau 5 phút đặt số thật vào đúng hàng ấy.
   ready = true;
   clock += 5 * 60000 + 1;
   await api.update(done);
@@ -517,7 +486,6 @@ test('Kỳ sắp quay chưa có sổ: hàng của nó là khung chờ, không m�
   assert.equal(next.className, 'is-next');
   assert.equal(next.hasAttribute('aria-busy'), false);
   assert.deepEqual([...next.querySelectorAll('.live-scorecard-num')].map((n) => n.textContent), ['12', '34', '56']);
-  // Đang tải lần đầu: cũng là khung chờ.
   let release;
   const slow = setup(t, (url) => (url.endsWith('2026-10-23.json')
     ? new Promise((resolve) => { release = () => resolve(ok(runningBoard('2026-10-23'))); })
@@ -531,7 +499,6 @@ test('Kỳ sắp quay chưa có sổ: hàng của nó là khung chờ, không m�
   assert.match(loading.textContent, /Đang tải sổ phỏng đoán/);
   release();
   await first;
-  // Đã quá giờ khoá của kỳ ấy mà vẫn không có sổ: nói thẳng là không có, không treo khung chờ.
   const late = setup(t, (url) => (url.endsWith('2026-10-23.json') ? Promise.resolve({ ok: false, status: 404 })
     : forDate(runningBoard)(url)), '2026-10-23T11:20:00Z');
   await late.api.update(done);
@@ -546,7 +513,6 @@ test('Hàng trước giờ quay ghi giờ ghi sổ (giờ VN), kỳ sắp quay g
   const fetcher = forDate((date) => {
     const made = runningBoard(date);
     made.generated_at = stamps[date];
-    // Kỳ sắp quay: Top LOTO giữ 12 và 56, thay 34 bằng 90.
     if (date === '2026-10-23') made.lists[0].items = [loto('56', 0.25), loto('12', 0.24), loto('90', 0.23)];
     return made;
   });
@@ -559,7 +525,6 @@ test('Hàng trước giờ quay ghi giờ ghi sổ (giờ VN), kỳ sắp quay g
   assert.equal(d.querySelector('tbody[data-list-id="top"] .is-next .live-scorecard-overlap').textContent,
     'Trùng 2/3 mục với danh sách kỳ 22/10 · hôm nay');
   assert.equal(d.querySelector('tbody[data-list-id="top"] .is-before .live-scorecard-overlap'), null);
-  // Sổ không có giờ ghi (sổ cũ): không in dòng ấy.
   const plain = setup(t, forDate(runningBoard));
   await plain.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.equal(plain.d.querySelector('.live-scorecard-saved'), null);
@@ -577,7 +542,6 @@ test('Bấm số ở khối Dự đoán trong ngày: mở đúng số ấy trong
   assert.equal(item(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true', 'kỳ vừa quay mở ở hàng của nó');
   await api.reveal('2026-10-23', 'de', '65');
   assert.ok(d.getElementById('live-bridge-cau-keo-de'));
-  // Kỳ không có trên bảng: không làm gì.
   await api.reveal('2026-10-30', 'loto', '78');
   assert.ok(d.getElementById('live-bridge-cau-keo-de'));
 });
@@ -592,7 +556,6 @@ test('Kỳ sắp quay bỏ qua ngày nghỉ quay đã khai (Tết), như next_dr
   assert.equal(urls.filter((u) => u.endsWith('/closed.json')).length, 1);
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.equal(urls.filter((u) => u.endsWith('/closed.json')).length, 1, 'lịch nghỉ chỉ đọc một lần');
-  // Không đọc được lịch nghỉ: ngày lịch kế tiếp.
   const plain = setup(t, forDate(runningBoard), '2026-10-23T03:00:00Z');
   await plain.api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.equal(rows(plain.d, 'top')[0][3], '2026-10-23');
@@ -607,7 +570,6 @@ test('Lệnh mở số gắn với kỳ đã bấm: sổ tải xong là kỳ kh�
   const first = api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   await new Promise((resolve) => setTimeout(resolve, 0));
   const pending = api.reveal('2026-10-23', 'loto', '78');
-  // live.json sang kỳ 24/10 trước khi sổ 23/10 tải xong.
   await api.update({ draw_date: '2026-10-24', status: 'partial', prizes: {} });
   release();
   await pending;
@@ -631,8 +593,6 @@ test('Bấm số trước khi bảng biết có kỳ sắp quay (lịch nghỉ �
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
   assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/);
-  // Lệnh cho kỳ không có trên bảng bị bỏ ở lần cập nhật sau, không treo mãi: khi kỳ 24/10 về tới bảng
-  // (hôm sau), số 78 không tự mở ra.
   await api.reveal('2026-10-24', 'loto', '78');
   await api.update({ draw_date: '2026-10-22', status: 'complete_verified', prizes: prizes(FULL) });
   assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'true');
@@ -655,7 +615,6 @@ test('Sổ tải lại đổi chỗ các mục: bảng cầu đang mở giữ đ
   await api.update(done);
   nextItem(d, 'cau-keo-loto', 0).click();
   assert.match(d.getElementById('live-bridge-cau-keo-loto').querySelector('h3').textContent, /^78:/);
-  // Bản ghi lại trước giờ khoá: 87 lên đầu, 78 xuống thứ hai.
   order = ['87', '78', '99'];
   clock += 11 * 60000;
   await api.update(done);
@@ -663,7 +622,6 @@ test('Sổ tải lại đổi chỗ các mục: bảng cầu đang mở giữ đ
     'không lặng lẽ chuyển sang số 87 ở chỉ số cũ');
   assert.equal(nextItem(d, 'cau-keo-loto', 1).getAttribute('aria-expanded'), 'true');
   assert.equal(nextItem(d, 'cau-keo-loto', 0).getAttribute('aria-expanded'), 'false');
-  // Bản sau bỏ hẳn 78: bảng cầu đóng.
   order = ['87', '99', '12'];
   clock += 11 * 60000;
   await api.update(done);
@@ -671,7 +629,6 @@ test('Sổ tải lại đổi chỗ các mục: bảng cầu đang mở giữ đ
 });
 
 test('Sổ tải lại: soi đường giữ đúng cầu đã chọn khi hai đường chung cặp vị trí mà khác độ trễ', async (t) => {
-  // Như số 34 của path-loto-active trong sổ 05-11-2026: 14×39 ở trễ 6 và ở trễ 9.
   let paths = [{ a: 0, b: 1, streak: 3, lag: 1, base: '2026-10-21' }, { a: 0, b: 1, streak: 2, lag: 2, base: '2026-10-20' }];
   const make = () => board('2026-10-22', {
     schema: 2, draws: DRAWS,
@@ -680,7 +637,6 @@ test('Sổ tải lại: soi đường giữ đúng cầu đã chọn khi hai đ�
       items: [{ label: '78', rule: { on: 'special', numbers: ['78'] }, prob: 0.011, base: 0.01,
         bridges: paths, bridge_total: 2 }] }],
   });
-  // 18:00 giờ VN, trước giờ khoá 18:10: hai lần tải lại sau (18:11, 18:22) đều chưa cách giờ khoá 1 giờ.
   const start = '2026-10-22T11:00:00Z';
   const { api, d, w } = setup(t, forDate(make), start);
   let clock = Date.parse(start);
@@ -691,11 +647,9 @@ test('Sổ tải lại: soi đường giữ đúng cầu đã chọn khi hai đ�
   const pressed = () => [...d.getElementById('live-bridge-path-de-stable').querySelectorAll('[data-bridge-pick]')]
     .filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.textContent);
   assert.deepEqual(pressed(), ['0×1 · trễ 2 ngày · chuỗi 2']);
-  // Bản ghi lại y hệt: cầu trễ 2 vẫn được chọn, không về cầu trễ 1 chung cặp 0×1.
   clock += 11 * 60000;
   await api.update({ draw_date: '2026-10-22', prizes: {} });
   assert.deepEqual(pressed(), ['0×1 · trễ 2 ngày · chuỗi 2']);
-  // Bản sau đảo thứ tự hai đường: lựa chọn đi theo cầu trễ 2 lên đầu.
   paths = [paths[1], paths[0]];
   clock += 11 * 60000;
   await api.update({ draw_date: '2026-10-22', prizes: {} });
@@ -711,7 +665,6 @@ test('Sổ còn có thể được ghi lại tới giờ khoá: tải lại mỗ
     if (date === '2026-10-23') made.lists[0].items[0] = loto(version === 1 ? '12' : '90', 0.25);
     return made;
   };
-  // 19:00 giờ VN 22/10: sổ 22/10 đã khoá lúc 18:10 (chưa đủ 1 giờ), sổ 23/10 còn mở tới 18:10 hôm sau.
   const { api, d, w } = setup(t, async (url) => { urls.push(url); return forDate(make)(url); });
   let clock = Date.parse(EVENING);
   w.Date.now = () => clock;
@@ -727,11 +680,9 @@ test('Sổ còn có thể được ghi lại tới giờ khoá: tải lại mỗ
   await api.update(done);
   assert.deepEqual(boards(urls).slice(2).sort(), ['2026-10-22.json', '2026-10-23.json'], 'đủ 10 phút: tải lại cả hai');
   assert.equal(label(), '90', 'bản ghi lại của sổ kỳ sắp quay được hiện');
-  // Lần tải 19:11 đã cách giờ khoá của sổ 22/10 hơn 1 giờ: bản cuối, không tải nữa; sổ 23/10 vẫn tải lại.
   clock += 11 * 60000;
   await api.update(done);
   assert.deepEqual(boards(urls).slice(4), ['2026-10-23.json']);
-  // Tải lại hỏng: giữ bản đang hiện.
   const failing = setup(t, async (url) => (urls.length > 1000 ? null : forDate(make)(url)));
   let clock2 = Date.parse(EVENING);
   failing.w.Date.now = () => clock2;
@@ -742,7 +693,6 @@ test('Sổ còn có thể được ghi lại tới giờ khoá: tải lại mỗ
   assert.deepEqual(rows(failing.d, 'top').map((r) => r[0]), ['is-next', 'is-before', 'is-after']);
 });
 
-// Bảng kết quả đầu trang Live: 27 ô theo thứ tự giải (docs/live.html, #results).
 const resultsBoard = (vals) => '<div id="results">' + vals.map((v) => `<div class="slot">${v}</div>`).join('') + '</div>';
 
 test('Mở cầu: hai vị trí được tô trên bảng kết quả đầu trang khi bảng đang hiện đúng kỳ ghép số', async (t) => {
@@ -757,7 +707,6 @@ test('Mở cầu: hai vị trí được tô trên bảng kết quả đầu tra
   const note = d.querySelector('#live-bridge-cau-keo-loto .live-bridge-onboard');
   assert.match(note.textContent, /đang được tô trên bảng kết quả kỳ 21\/10\/2026/);
   assert.equal(note.querySelector('a').getAttribute('href'), '#results');
-  // Cầu ở hai giải khác nhau (giải bảy cuối), rồi đóng bảng: dấu được gỡ, ô trở lại chữ thường.
   item(d, 'cau-keo-de', 0).click();
   assert.deepEqual([...d.querySelectorAll('#results .live-board-src')].map((s) => s.textContent), ['6', '5']);
   assert.equal(slots[0].querySelector('.live-board-src'), null, 'cầu cũ không còn tô');
@@ -765,7 +714,6 @@ test('Mở cầu: hai vị trí được tô trên bảng kết quả đầu tra
   assert.equal(d.querySelector('#results [data-bridge-mark]'), null);
   assert.equal(slots[26].childNodes.length, 1);
   assert.equal(slots[26].textContent, '65');
-  // Đang tô thì live.json sang kỳ khác và sổ không khớp: bảng đối chiếu thành thông báo, dấu cũng được gỡ.
   item(d, 'cau-keo-loto', 0).click();
   assert.equal(d.querySelectorAll('#results .live-board-src').length, 2);
   await api.update({ draw_date: '2026-10-25', prizes: {} });
@@ -796,12 +744,10 @@ test('Danh sách cầu theo thứ: liên kết mang thêm thứ của kỳ biên
   const { api, d } = setup(t, async () => ok(weekly));
   await api.update({ draw_date: '2026-10-22', prizes: {} });
   item(d, 'bridge-loto-theo-thu', 0).click();
-  // 21/10/2026 là Thứ Tư: 2 theo cách đánh số 0 = Thứ Hai của trang soi cầu.
   assert.equal(d.querySelector('#live-bridge-bridge-loto-theo-thu .live-bridge-link').href,
     'https://example.test/soi-cau-loto-theo-thu.html?ngay=2026-10-21&so=78&vt=0x1&thu=2');
 });
 
-// Thành tích qua các kỳ (src/evaluation/board_record.py): khối thu gọn dưới bảng, chỉ tải khi mở.
 const RECORD = {
   version: 1, draws: 14, first: '2026-10-21', last: '2026-11-03',
   method: { simulations: 20000, adjust: 'Holm' },
@@ -816,7 +762,6 @@ const RECORD = {
   ],
 };
 
-// Như trình duyệt: đổi `open` là phát MỘT sự kiện toggle (jsdom tự phát, không cần phát tay).
 function openRecord(d) {
   const details = d.getElementById('live-record');
   details.open = true;
@@ -849,7 +794,6 @@ test('Thành tích nhiều kỳ: chỉ tải khi mở, một lần, in từng da
   assert.match(details.querySelector('.live-record-lead').textContent,
     /^Gộp mọi danh sách: trúng 117 mục, chọn bừa kỳ vọng 52,3 \(p = < 0,001\) — trúng nhiều hơn chọn bừa\.$/);
   assert.match(details.querySelector('.live-record-note').textContent, /20\.000 kỳ quay công bằng mô phỏng/);
-  // Đóng rồi mở lại: không tải lần nữa.
   closeRecord(d); await settle();
   openRecord(d); await settle(); await settle();
   assert.equal(urls.filter((u) => u.endsWith('/record.json')).length, 1);

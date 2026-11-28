@@ -5,22 +5,18 @@ services:
     build: .
     image: vietlott-quant-engine:latest
     ports:
-      # Chỉ máy chủ này: API không có đăng nhập cho lệnh đọc, và lệnh ghi chỉ có token khi
-      # VQE_API_TOKEN được đặt. Mở ra mạng thì đặt sau reverse proxy có xác thực.
       - "127.0.0.1:8000:8000"
     environment:
-      VQE_SOURCE: auto                   # vietlott (Vietnamese IP only) → nhanaz → github_mirror (README §1.7)
-      VQE_AUTO_UPDATE_ENABLED: "true"   # per-product windows, restart recovery, bounded retries
+      VQE_SOURCE: auto
+      VQE_AUTO_UPDATE_ENABLED: "true"
       VQE_HTTP_BACKEND: httpx
       TZ: Asia/Ho_Chi_Minh
       VQE_LOG_LEVEL: INFO
       VQE_API_TOKEN: ${VQE_API_TOKEN:-}
     volumes:
-      - vqe-data:/app/data               # DuckDB file + Parquet exports
+      - vqe-data:/app/data
     restart: unless-stopped
 
-  # Compatibility service for model/finance refresh only. Draw results are
-  # updated by the API's independent per-product scheduler above.
   scheduler:
     image: curlimages/curl:8.10.1
     depends_on:
@@ -44,19 +40,13 @@ services:
         done
     restart: unless-stopped
 
-  # One-off research job: `make docker-job` (or
-  # `VQE_UID=$(id -u) VQE_GID=$(id -g) docker compose --profile jobs run --rm backtest`).
-  # ./reports is a bind mount and keeps the HOST owner and mode, so on native Linux
-  # Docker the image's `vqe` user (UID 10001) cannot write it. The job therefore runs
-  # as the host user; everything else it writes lives under /tmp, which any UID can
-  # write. The default 10001 keeps Docker Desktop (which remaps ownership) working.
   backtest:
     image: vietlott-quant-engine:latest
     profiles: ["jobs"]
     user: "${VQE_UID:-10001}:${VQE_GID:-10001}"
     environment:
-      VQE_DATA_DIR: /tmp/vqe-jobdata     # separate DuckDB file: never contends with the API's lock
-      HOME: /tmp                         # an arbitrary host UID has no home directory in the image
+      VQE_DATA_DIR: /tmp/vqe-jobdata
+      HOME: /tmp
     volumes:
       - ./reports:/app/reports
     command:

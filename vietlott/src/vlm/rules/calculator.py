@@ -1,8 +1,3 @@
-"""Exact, pre-tax VND settlement. Shared pots use Fraction, never float.
-
-No unobserved jackpot winner count is assumed. For capped fixed prizes, a
-missing global count is explicitly reported as a nominal (uncapped) quote.
-"""
 from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
@@ -62,7 +57,6 @@ def matrix_cost(game: str, numbers: list[int], specials: list[int] | None = None
     if not spec.separate_special and specials:
         raise ValueError("this game does not sell a separate special selection")
     _, plays, documented, note = bao_kind(spec, len(nums), len(sp) if sp else 1)
-    # The existing engine can analyze research combinations; operational pricing is stricter.
     if len(nums) not in (spec.pick, *spec.bao_levels) or not documented or note:
         raise ValueError(note or "unsupported system size")
     return TicketCost(spec.code.value, plays, plays * spec.ticket_price)
@@ -80,7 +74,6 @@ class PowerJackpotDistribution:
 
 
 def power_jackpot_distribution(jackpot1: int, jackpot2: int, winners1: int, winners2: int) -> PowerJackpotDistribution:
-    """Inputs are pre-transfer pools and ALL winning units in this draw."""
     for value, label in [(jackpot1,"jackpot1"),(jackpot2,"jackpot2"),(winners1,"winners1"),(winners2,"winners2")]:
         _natural(value, label, 0)
     transfer = max(0, jackpot1 - 300_000_000_000) if winners1 == 0 and winners2 > 0 else 0
@@ -102,10 +95,6 @@ def settle_matrix(game: str, numbers: list[int], winning_numbers: list[int], *,
                   jackpot_pots: dict[str,int] | None = None,
                   total_jackpot_winners: dict[str,int] | None = None,
                   jackpot_pots_basis: str = "payable") -> Settlement:
-    """Settle against payable pools; pre-transfer Power pools require opt-in.
-
-    Published detail/canonical pools already include any redistributed amount.
-    """
     if jackpot_pots_basis not in ("payable", "pre_transfer"):
         raise ValueError("jackpot_pots_basis must be payable or pre_transfer")
     quote = matrix_cost(game,numbers,specials)

@@ -2,17 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Clickable evidence tables for "đường cầu" positions.
-
-The AI/ML layer scores numbers, while this module answers the practical UI
-question: *which concrete raw-result digit positions contributed to a number?*
-
-Each output row is one active/stable path rule:
-    base date + lag + rawdata position i + rawdata position j -> formed number
-
-The tables are descriptive/explainable evidence for historical ranking signals;
-they are not guaranteed future lottery outcomes.
-"""
 
 import argparse
 import csv
@@ -81,7 +70,6 @@ def _fmt2(n: int | float | str) -> str:
     return f"{int(float(n)):02d}"
 
 
-
 FIELD_DISPLAY_NAMES = {
     "special": "Giải Đặc Biệt",
     "prize1": "Giải nhất",
@@ -114,7 +102,6 @@ FIELD_DISPLAY_NAMES = {
 
 
 def _pretty_position_label(code: str) -> str:
-    """Convert technical position code, e.g. prize3_2.d4, to a UI label."""
     try:
         field, digit = code.split(".d", 1)
         digit_no = int(digit) + 1
@@ -151,7 +138,6 @@ def _filter_kind(paths: pd.DataFrame, params: PathParams, kind: Kind) -> pd.Data
 
 
 def _rule_score(row: pd.Series) -> float:
-    """Readable score for ordering explanation rows, not a betting signal."""
     p_mean = _safe_float(row.get("p_mean"))
     hits = _safe_float(row.get("hits"))
     trials = max(_safe_float(row.get("trials")), 1.0)
@@ -172,29 +158,16 @@ def _rule_score(row: pd.Series) -> float:
 
 
 def _next_probability(row: pd.Series) -> float | None:
-    """Xác suất trúng kỳ tới của đường cầu theo kinh nghiệm học từ MỌI cầu.
-
-    ``p_post`` (``path_prob.BridgeEvidence``), cộng phần kinh nghiệm theo chuỗi
-    với cầu đang chạy — đúng con số trang soi cầu in ở cột «Dự báo kỳ tới».
-    Thiếu cột (tệp dựng trước 16-10-2026) thì trả ``None``.
-    """
     p_post = pd.to_numeric(row.get("p_post"), errors="coerce")
     if pd.isna(p_post):
         return None
     shift = pd.to_numeric(row.get("streak_shift"), errors="coerce")
-    # Cùng hàm với bước gợi ý của trang soi cầu (cộng chuỗi, chặn biên).
     frame = pd.DataFrame({"p_post": [float(p_post)], "streak_shift": [0.0 if pd.isna(shift) else float(shift)]})
     kind = "active" if str(row.get("rule_kind", "")) == "active" else "stable"
     return float(rule_next_probability(frame, kind=kind)[0])
 
 
 def _row_reason(row: pd.Series) -> str:
-    """Lý do của một đường cầu: tỉ lệ TRONG MẪU kèm xác suất kỳ tới đã co.
-
-    Tỉ lệ lịch sử của một cầu được chọn ra từ hàng nghìn cầu mang lời nguyền
-    người thắng, nên câu không in nó như một xác suất ("p≈0,32"); con số dự
-    báo là hậu nghiệm Bayes thực nghiệm.
-    """
     current_streak = int(_safe_float(row.get("current_streak")))
     max_streak = int(_safe_float(row.get("max_streak")))
     hits = int(_safe_float(row.get("hits")))
@@ -243,7 +216,7 @@ def _build_positions_for_mode(
 
     rows: list[dict[str, object]] = []
     for kind in ("active", "stable"):
-        view = _filter_kind(all_paths, params, kind)  # type: ignore[arg-type]
+        view = _filter_kind(all_paths, params, kind)
         if view.empty:
             continue
 
@@ -299,7 +272,6 @@ def _build_positions_for_mode(
     if positions.empty:
         return pd.DataFrame(), pd.DataFrame()
 
-    # Prefer active over stable when the same exact raw path appears twice.
     positions["kind_priority"] = positions["rule_kind"].map({"active": 0, "stable": 1}).fillna(2).astype(int)
     positions = positions.sort_values(
         ["number", "kind_priority", "rule_score", "p_mean", "current_streak", "max_streak", "hits"],

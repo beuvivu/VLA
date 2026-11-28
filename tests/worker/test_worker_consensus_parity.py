@@ -1,16 +1,3 @@
-"""Hai bản đồng thuận nguồn phải cho kết quả giống hệt nhau.
-
-Cùng lý do với ``test_worker_parser_parity``: Worker chạy JavaScript nên có
-bản thứ hai của ``source_consensus_partial``. Nhưng chỗ này còn nguy hơn bản
-phân tích, vì nó quyết định ô nào được đánh dấu ĐÃ XÁC MINH — tức quyết định
-trang live nói "đã xác minh" hay "đang cập nhật".
-
-Khác bản phân tích, đầu vào ở đây là dữ liệu thuần chứ không phải HTML, nên
-không cần mẫu tay: sinh ngẫu nhiên có hạt giống cố định rồi so từng ca. Bộ
-sinh cố ý tạo ra đủ các thế khó — đồng thuận sạch, xung đột, hai tên miền
-cùng một nhà cung cấp, thế giằng nhóm bằng nhau, ô trống, và token hỏng.
-"""
-
 from __future__ import annotations
 
 import json
@@ -34,12 +21,6 @@ RUNNER = ROOT / "worker" / "test" / "run_consensus.mjs"
 
 
 def _require_node() -> str:
-    """Trả về đường dẫn ``node``; ngoài CI thì bỏ qua, trong CI thì HỎNG.
-
-    Bỏ qua trong CI là chốt chặn giả: bộ kiểm vẫn xanh trong khi phép so hai
-    bản mã chưa hề chạy. Ngoài CI thì bỏ qua là hợp lý — không phải máy nào
-    cũng cài Node.
-    """
     import os
 
     node = shutil.which("node")
@@ -52,8 +33,6 @@ def _require_node() -> str:
         pytest.skip("không có node trên máy chạy kiểm")
     return node
 
-#: Ba nguồn của danh mục, cộng một tên ngoài danh mục: tên lạ phải tự là nhóm của chính nó
-#: ở CẢ HAI bản, không được rơi vào nhóm của nguồn khác.
 SOURCE_NAMES = [*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES, "nguon-ngoai-danh-muc.example"]
 
 
@@ -67,9 +46,6 @@ def _cases(count: int = 400) -> list[dict[str, object]]:
     rng = random.Random(20260913)
     cases: list[dict[str, object]] = []
     for _ in range(count):
-        # Một "sự thật" chung để các nguồn có cơ hội đồng thuận; nếu mọi nguồn
-        # đều ngẫu nhiên độc lập thì gần như không bao giờ có ô được xác minh
-        # và phép so sẽ chỉ chạy qua một nhánh duy nhất.
         truth = {k: [_token(rng, k) for _ in range(EXPECTED_COUNTS[k])] for k in PRIZE_ORDER}
         chosen_sources = rng.sample(SOURCE_NAMES, rng.randint(1, len(SOURCE_NAMES)))
         rng.shuffle(chosen_sources)
@@ -82,15 +58,15 @@ def _cases(count: int = 400) -> list[dict[str, object]]:
                 for idx in range(EXPECTED_COUNTS[key]):
                     roll = rng.random()
                     if roll < 0.12:
-                        break               # nguồn dừng giữa chừng (trang live)
+                        break
                     if roll < 0.22:
-                        vals.append(_token(rng, key))        # sai khác
+                        vals.append(_token(rng, key))
                     elif roll < 0.27:
-                        vals.append("x" * 3)                 # token hỏng
+                        vals.append("x" * 3)
                     elif roll < 0.30:
-                        vals.append("")                      # ô rỗng
+                        vals.append("")
                     else:
-                        vals.append(truth[key][idx])         # khớp sự thật
+                        vals.append(truth[key][idx])
                 pmap[key] = vals
             partials.append([name, pmap])
         cases.append({"partials": partials, "min_agreement": rng.choice([1, 2, 2, 2, 3])})
@@ -116,9 +92,9 @@ def test_python_and_javascript_consensus_agree_on_every_case(tmp_path: Path) -> 
 
     lech: list[str] = []
     for n, (case, js) in enumerate(zip(cases, javascript, strict=True)):
-        partials = [(name, pmap) for name, pmap in case["partials"]]  # type: ignore[misc]
+        partials = [(name, pmap) for name, pmap in case["partials"]]
         merged, meta = source_consensus_partial(
-            partials, min_agreement=case["min_agreement"]  # type: ignore[arg-type]
+            partials, min_agreement=case["min_agreement"]
         )
         left = json.dumps({"merged": merged, "meta": meta}, sort_keys=True, ensure_ascii=False)
         right = json.dumps(js, sort_keys=True, ensure_ascii=False)
@@ -131,16 +107,11 @@ def test_python_and_javascript_consensus_agree_on_every_case(tmp_path: Path) -> 
 
 
 def test_the_generated_cases_actually_reach_every_branch() -> None:
-    """Bộ sinh phải chạm cả bốn nhánh, nếu không phép so chỉ kiểm một nhánh.
-
-    Bốn nhánh: có ô xác minh được, có xung đột, có thế giằng nhóm bằng nhau,
-    và có ô không nguồn nào cung cấp.
-    """
     verified = conflicted = tied = empty = 0
     for case in _cases():
-        partials = [(name, pmap) for name, pmap in case["partials"]]  # type: ignore[misc]
+        partials = [(name, pmap) for name, pmap in case["partials"]]
         _merged, meta = source_consensus_partial(
-            partials, min_agreement=case["min_agreement"]  # type: ignore[arg-type]
+            partials, min_agreement=case["min_agreement"]
         )
         if meta["verified_slots"]:
             verified += 1
@@ -159,13 +130,6 @@ def test_the_generated_cases_actually_reach_every_branch() -> None:
 
 
 def test_the_two_independence_tables_are_entry_for_entry_identical() -> None:
-    """Bảng nhóm nguồn phải khớp từng mục giữa hai bản.
-
-    Đây không phải kiểm thừa: bản JS đầu tiên tôi viết chỉ chép hai bản sao
-    minhngoc và để các nguồn còn lại rơi về tên miền đầy đủ. Phép so ngẫu
-    nhiên bắt được, nhưng chỉ sau khi một ô tình cờ có đúng một nguồn ủng hộ.
-    Chốt trực tiếp này đỏ ngay tức khắc và chỉ đúng dòng sai.
-    """
     import re
 
     from ingest.sources import SOURCE_INDEPENDENCE_GROUP

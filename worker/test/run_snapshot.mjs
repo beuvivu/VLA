@@ -1,7 +1,3 @@
-// Chạy `collectSnapshot` trên bộ ca dùng chung, thay lượt gọi từng nguồn bằng bảng giải cho sẵn.
-//
-// Đi qua `collectSnapshot` chứ không gọi thẳng `buildSnapshot`: luật chuyển nguồn (nguồn chính
-// hỏng thì chỉ hợp nhất dự phòng) nằm ở đó, và bản Python chạy luật ấy trong `fetch_snapshot`.
 import { readFileSync } from "node:fs";
 import { collectSnapshot, observation } from "../src/snapshot.js";
 

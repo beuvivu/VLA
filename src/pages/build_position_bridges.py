@@ -1,14 +1,3 @@
-"""Trang Soi cầu vị trí và ô "cầu đẹp nhất" cạnh bảng LOTO ở trang chủ.
-
-Đọc ``data/soi_cau/position_bridges/latest.json`` (do ``position_bridges.py`` sinh ngay
-sau mỗi kỳ quay) và dựng ``docs/soi-cau-vi-tri.html``. Trang nhúng 60 kỳ gần
-nhất; bộ máy trong trình duyệt (``templates/position_bridges.js``) tính lại cầu
-cho mọi tham số người xem chọn và vẽ đường cầu trên bảng kiểu Sổ kết quả.
-
-Phần "Cầu dài có đáng tin hơn?" là phép kiểm trên toàn lịch sử, không phải lời
-khuyên: nó trả lời bằng số đo câu hỏi mà cách soi cầu mặc nhiên coi là đúng.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -25,8 +14,6 @@ from web.web_security import json_for_html_script, security_meta_tags
 from core.paths import TEMPLATES
 
 PAGE = "soi-cau-vi-tri.html"
-#: Dưới cỡ mẫu này z không đáng tin (xấp xỉ chuẩn hỏng khi số lần trúng kỳ vọng
-#: chỉ vài lần), nên trang ghi "mẫu nhỏ" thay cho con số.
 MIN_ROWS = 200
 Z_ALERT = 3.0
 
@@ -60,7 +47,6 @@ def bridge_script() -> str:
 
 
 def analysis_css() -> str:
-    """Bố cục chung của các trang soi cầu, chỉ áp dụng trong họ trang này."""
     return (TEMPLATES / "bridge_workspace.css").read_text(encoding="utf-8")
 
 
@@ -77,7 +63,6 @@ def analysis_header(title: str, subtitle: str, meta=(), *, section="Soi cầu / 
 
 
 def link(cfg: dict, bridge: dict | None = None, *, base: str = PAGE) -> str:
-    """Đường dẫn tới đường cầu, cùng bộ tham số với trang đối chiếu."""
     params = {}
     if bridge is not None:
         params["vt"] = bridge["vt"]
@@ -87,18 +72,14 @@ def link(cfg: dict, bridge: dict | None = None, *, base: str = PAGE) -> str:
 
 
 def _chip(cfg: dict, bridge: dict) -> str:
-    """Một cầu trong ô trang chủ: cặp số, số bóng (nếu là số kép) và số ngày chạy."""
     numbers = pair_key(bridge["numbers"])
     shadow = bridge.get("shadow")
-    # Mỗi số một phần tử: "67,76" viết liền đọc như số thập phân 67,76.
-    num = lambda n: f'<span class="app-bridge-num">{html.escape(n)}</span>'  # noqa: E731
+    num = lambda n: f'<span class="app-bridge-num">{html.escape(n)}</span>'
     shown = ",".join(num(n) for n in numbers.split(","))
     extra = f'<i class="app-bridge-shadow">,{num(shadow)}</i>' if shadow else ""
     title = f'Vị trí {bridge["vt"]} · chạy {bridge["streak"]} ngày · {bridge.get("same_pair", 1)} cầu cùng báo cặp này'
     if shadow:
         title += f" · {shadow} là số bóng của {numbers}, chỉ tham khảo"
-    # data-bridge-a/b: đưa chuột hay Tab tới cầu thì hai vị trí của nó sáng trên bảng kết quả ngay cạnh
-    # (shared_results.js, bindBridgeChips).
     return (f'<li><a href="{html.escape(link(cfg, bridge))}" title="{html.escape(title)}"'
             f' data-bridge-a="{int(bridge["a"])}" data-bridge-b="{int(bridge["b"])}">'
             f'<b>{shown}{extra}</b>'
@@ -106,11 +87,6 @@ def _chip(cfg: dict, bridge: dict) -> str:
 
 
 def best_panel(report: dict | None, draw_date: str) -> str:
-    """Ô ba nhóm "cầu đẹp nhất" đặt cạnh bảng LOTO của khung kết quả hằng ngày.
-
-    Chỉ hiện khi báo cáo dựng từ ĐÚNG kỳ đang hiển thị — ô cầu của hôm qua đặt
-    cạnh kết quả hôm nay là sai lặng lẽ.
-    """
     if not report or report.get("source_date") != draw_date:
         return ('<aside class="app-bridge-best" aria-label="Soi cầu vị trí">'
                 '<div class="app-bridge-best-head"><h3>Soi cầu vị trí</h3></div>'
@@ -164,7 +140,6 @@ def _consensus_label(row: dict) -> str:
 
 
 def verdict(mode: dict) -> dict:
-    """Kết luận rút TỪ SỐ ĐO: có hàng nào (đủ mẫu) trúng nhiều hơn kỳ vọng rõ rệt?"""
     rows = [r for r in mode["streaks"]["rows"] + mode["consensus"]["rows"] if r["n"] >= MIN_ROWS]
     up = [r for r in rows if r["z"] >= Z_ALERT]
     limit = mode["limit"]
@@ -246,7 +221,6 @@ def form_card() -> str:
 
 
 def page_payload(report: dict) -> dict:
-    """Phần nhúng cho bộ máy trình duyệt: kỳ quay và dòng kiểm lịch sử rút gọn."""
     return {
         "source_date": report["source_date"],
         "target_date": report["target_date"],
@@ -329,7 +303,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path | None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--docs-dir", default="docs")
     args = parser.parse_args()

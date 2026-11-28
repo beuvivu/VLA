@@ -1,5 +1,3 @@
-"""Đẩy trang dẫn xuất, chỉ tự dựng lại manifest khi hai bot cùng cập nhật."""
-
 from __future__ import annotations
 
 import argparse
@@ -48,7 +46,6 @@ def _rebase(root: Path, branch: str) -> None:
         try:
             _refresh(root)
             _stage(root)
-            # Chỉ bỏ commit dẫn xuất khi sau dựng lại, index thật sự rỗng.
             empty = _git(root, "diff", "--cached", "--quiet", check=False).returncode == 0
             result = _git(root, "rebase", "--skip" if empty else "--continue", check=False)
         except Exception:
@@ -57,7 +54,6 @@ def _rebase(root: Path, branch: str) -> None:
 
 
 def push_generated_site(root: Path, branch: str) -> None:
-    """Chốt gói sau rebase; chỉ thử lại tối đa ba lần khi remote tiến lên."""
     root = root.resolve()
     _git(root, "check-ref-format", f"refs/heads/{branch}")
     if _git(root, "status", "--porcelain").stdout:
@@ -67,12 +63,10 @@ def push_generated_site(root: Path, branch: str) -> None:
         if (root / location).exists():
             raise RuntimeError("Đang có thao tác git chưa hoàn tất: " + state)
     if _git(root, "rev-parse", "--is-shallow-repository").stdout.strip() == "true":
-        # Checkout một commit chưa có đủ tổ tiên để xác định đúng điểm rebase.
         _git(root, "fetch", "--no-tags", "--unshallow", "origin", branch)
     for attempt in range(3):
         before = _fetch(root, branch)
         _rebase(root, branch)
-        # Một lần ghép sạch vẫn có thể giữ manifest của một cây chưa ghép.
         _refresh(root)
         _stage(root)
         if _git(root, "diff", "--cached", "--quiet", check=False).returncode:
@@ -80,7 +74,6 @@ def push_generated_site(root: Path, branch: str) -> None:
         pushed = _git(root, "push", "--porcelain", "origin", f"HEAD:refs/heads/{branch}", check=False)
         if pushed.returncode == 0:
             return
-        # Lỗi mạng, xác thực và hook không phải tín hiệu để thử lại.
         rejected = "[rejected]" in pushed.stdout and any(
             reason in pushed.stdout for reason in ("(fetch first)", "(non-fast-forward)")
         )
@@ -93,7 +86,7 @@ def push_generated_site(root: Path, branch: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--branch", required=True)
     args = parser.parse_args()
     try:

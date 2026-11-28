@@ -2,23 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Validation-gated domain challenger for the production cầu-kèo model.
-
-The baseline model in :mod:`cau_keo_ml` remains the champion.  This module adds
-Vietnamese lottery-domain relations only through leakage-safe, measurable
-features and promotes them into production probabilities only when they show
-positive out-of-sample skill.
-
-Chronological gate:
-- folds 1-2: screen each feature group independently versus the same baseline;
-- fold 3: confirm each screened group on later unseen dates;
-- fold 4: evaluate the combined confirmed challenger on an untouched final fold;
-- production blend is enabled only when both losses improve and their paired,
-  date-clustered bootstrap improvement intervals are strictly above zero.
-
-No deterministic relation (cặp/bộ/bóng/chạm/tổng) is treated as evidence of
-predictability by itself.  The relation merely defines candidate features.
-"""
 
 import argparse
 import csv
@@ -243,7 +226,6 @@ def walk_forward_ablation(
     *,
     mode: Mode,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
-    """Run four chronological folds with selection/confirmation/final gate."""
 
     data = frame.copy()
     data["anchor_date"] = pd.to_datetime(data["anchor_date"]).dt.normalize()
@@ -348,9 +330,6 @@ def walk_forward_ablation(
         if ok:
             confirmed.append(group)
 
-    # Keep the fourth fold untouched unless a challenger has survived both
-    # screening and confirmation.  The all-groups diagnostic belongs on the
-    # confirmation fold and can never consume the final holdout pre-selection.
     diagnostic_fold = fold3
     diagnostic_seed = 20260920 + diagnostic_fold.fold
     all_features = list(FEATURE_COLS) + list(ALL_DOMAIN_FEATURES)
@@ -586,7 +565,6 @@ def _ensure_baseline(
             trust_from_pack(joblib.load(model_path))
             return
         except MODEL_LOAD_ERRORS:
-            # Gói thiếu luật tin hiện hành: học lại nền thay vì đọc trust mặc định.
             pass
     run_baseline(
         mode=mode,
@@ -662,8 +640,6 @@ def run_mode(
     X_pred["domain_active"] = active
     X_pred["domain_groups"] = "|".join(selected_groups) if selected_groups else ""
     X_pred["ml_prob_raw"] = p_prod
-    # Co về nền theo kỹ năng của mô hình NỀN: thách đấu miền chỉ được bật khi
-    # hơn mô hình nền, nên chưa chứng minh được gì so với dự báo hằng số.
     baseline_trust, base_rate = trust_from_pack(pack)
     judged = _add_ai_judgement(
         X_pred, mode=mode, trust=baseline_trust, base_rate=base_rate
@@ -704,7 +680,6 @@ def run_mode(
     pack["domain_trained_through_date"] = str(
         pd.to_datetime(X_train["anchor_date"]).max().date()
     )
-    # Thách đấu học lại mỗi lượt; trên runner khác CPU số đo cổng lệch bit cuối mà dự báo trùng: giữ tệp cũ.
     dump_pack_unless_equivalent(pack, model_path, stamp_keys=PACK_STAMP_KEYS, predictions={
         "model": lambda model: predict_with_feature_allowlist(model, X_pred, FEATURE_COLS),
         "domain_challenger_model": lambda model: predict_with_feature_allowlist(model, X_pred, selected_features),
@@ -726,7 +701,6 @@ def run_mode(
         "final_logloss_skill": float(gate["final_logloss_skill"]),
         "policy": gate["policy"],
     }
-    # Đọc rồi ghi lại cả tệp: ghi dở thì lần sau `read_json_or_empty` trả {} và mất phần của mô hình nền.
     atomic_write_text(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     created.append(manifest_path)
 

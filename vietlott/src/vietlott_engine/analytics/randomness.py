@@ -1,17 +1,3 @@
-"""Randomness test battery for k-of-n lottery draws.
-
-H0 throughout: draws are independent, and each draw is a uniformly random k-subset
-of {1..n}. Every test uses the *exact* null of that design (hypergeometric,
-subset-sum, adjacency) rather than textbook approximations that assume sampling
-with replacement.
-
-Note on the frequency χ² test. Within one draw the k numbers are sampled without
-replacement, so per-number counts are negatively correlated:
-Cov = c·(I − J/n) with c = D·k(n−k)/(n(n−1)). The naive Σ(O−E)²/E is therefore
-*not* χ²(n−1); the correctly scaled statistic is Σ(O−E)²·n(n−1)/(D·k(n−k)) =
-naive·(n−1)/(n−k). The test suite verifies that its p-values are uniform under H0.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -31,7 +17,7 @@ from vietlott_engine.core.history import DrawHistory
 
 
 class TestResult(BaseModel):
-    __test__ = False  # not a pytest test class
+    __test__ = False
 
     name: str
     statistic: float
@@ -53,7 +39,6 @@ class RandomnessReport(BaseModel):
     verdict: str
 
 
-# ------------------------------------------------------------------ tests
 def frequency_chi_square(h: DrawHistory, mc_sims: int = 0, rng: np.random.Generator | None = None) -> TestResult:
     n, k, d = h.n, h.k, len(h)
     obs = h.counts()
@@ -87,10 +72,6 @@ def frequency_chi_square(h: DrawHistory, mc_sims: int = 0, rng: np.random.Genera
 
 
 def entropy_test(h: DrawHistory, mc_sims: int = 1000, rng: np.random.Generator | None = None) -> TestResult:
-    """Shannon entropy of the empirical number distribution vs its exact null (Monte Carlo).
-
-    A biased machine concentrates mass → *lower* entropy, so the test is one-sided.
-    """
     rng = rng or np.random.default_rng()
     n, k, d = h.n, h.k, len(h)
 
@@ -167,14 +148,12 @@ def adjacency_test(h: DrawHistory) -> TestResult:
 
 
 def repeat_test(h: DrawHistory) -> TestResult:
-    """Numbers repeated from the previous draw ~ Hypergeometric(n, k, k) under independence."""
     rep = (h.incidence[1:] & h.incidence[:-1]).sum(axis=1)
     obs = np.bincount(rep, minlength=h.k + 1)
     return _gof_test("repeat_from_previous", "G-test vs Hypergeometric(n, k, k) — serial independence", obs, hypergeom_pmf(h.n, h.k, h.k), [str(i) for i in range(h.k + 1)])
 
 
 def runs_test(series: np.ndarray, name: str = "runs_sum") -> TestResult:
-    """Wald–Wolfowitz runs test above/below the median (ties dropped)."""
     med = np.median(series)
     s = series[series != med] > med
     n1, n2 = int(s.sum()), int((~s).sum())
@@ -194,9 +173,7 @@ def ljung_box(series: np.ndarray, lags: int = 10, name: str = "ljung_box_sum") -
     return TestResult(name=name, statistic=q, df=lags, p_value=float(stats.chi2.sf(q, lags)), method=f"Ljung–Box Q({lags})", detail={"acf": [round(a, 4) for a in acf]})
 
 
-# ----------------------------------------------------------------- report
 def randomness_report(h: DrawHistory, mc_sims: int = 1000, seed: int | None = None, fdr: float = 0.05) -> RandomnessReport:
-    """Run the full battery and control the false discovery rate across tests."""
     h.require(30)
     rng = np.random.default_rng(seed)
     sums = h.numbers.sum(axis=1).astype(np.float64)

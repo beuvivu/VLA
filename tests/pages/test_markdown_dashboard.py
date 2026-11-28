@@ -6,8 +6,6 @@ from pathlib import Path
 
 
 def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> None:
-    # Ghi ra tệp tạm: dựng thẳng vào DASHBOARD.md của kho thì mỗi lần chạy
-    # pytest là cây làm việc bẩn.
     dashboard = tmp_path / "DASHBOARD.md"
     subprocess.run(
         [
@@ -46,16 +44,12 @@ def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> N
     for marker in required:
         assert marker in text, marker
 
-    # Heatmaps must always explain their color scale and standard analytical
-    # tables must expose a dedicated interpretation column.
     assert text.count("Đầu\\Đuôi") >= 12
     assert text.count("Màu | Khoảng giá trị | Ý nghĩa") >= 12
     assert text.count("| Ý nghĩa | Thanh so sánh |") >= 20
     assert text.count("▰") >= 20
     assert text.count("🟪") >= 10
 
-    # Prevent the previous bottom-page layout failure: the 31-column monthly
-    # board is replaced by calendar-shaped 7-column tables and lag panels render.
     assert "| month_key | 01 | 02 | 03 | 04 | 05 |" not in text
     assert "Multi-lag dependency Loto\n_Chưa có dữ liệu._" not in text
     assert "Multi-lag dependency Đặc Biệt\n_Chưa có dữ liệu._" not in text
@@ -65,14 +59,6 @@ def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> N
 
 
 def test_redirected_build_reports_the_path_it_actually_wrote(tmp_path: Path) -> None:
-    """Ghi một nơi mà báo cáo một nơi khác là nói dối người gọi.
-
-    Bản đầu của ``--output`` ghi đúng chỗ mới nhưng dòng cuối vẫn in và
-    ``stat()`` đường dẫn mặc định. Hai hậu quả: lệnh in ra kích thước của một
-    tệp cũ chẳng liên quan, và nếu DASHBOARD.md của kho không tồn tại thì nó
-    ném FileNotFoundError SAU KHI đã ghi xong — bản dựng chuyển hướng hỏng vì
-    một tệp nó không hề đụng tới.
-    """
     output = tmp_path / "board.md"
     result = subprocess.run(
         [sys.executable, "src/pages/build_markdown_dashboard_v3.py", "--output", str(output)],
@@ -87,7 +73,6 @@ def test_redirected_build_reports_the_path_it_actually_wrote(tmp_path: Path) -> 
 
 
 def test_the_conditional_table_puts_the_raw_rate_beside_its_baseline_in_evidence_order(tmp_path: Path) -> None:
-    # Bản cũ xếp lại theo tỉ lệ thô và gắn "Có mẫu lịch sử tương đối tốt hơn" cho mọi ô ≥ 10 kỳ.
     import pandas as pd
 
     from pages.build_markdown_dashboard_v3 import _conditional

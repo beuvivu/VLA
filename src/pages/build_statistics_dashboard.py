@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Build a modern, self-contained statistical matrix dashboard.
-
-The dashboard intentionally renders matrices, charts, and tables directly in
-HTML/CSS so the report still works when docs/statistics.html is opened as a
-standalone file outside the repository. It does not depend on external images,
-CDNs, or JavaScript frameworks.
-"""
 
 import html
 import calendar
@@ -44,7 +37,6 @@ PERIOD_TITLES = {
 def _read_csv(
     path: Path, *, dtype: dict[str, object] | str | None = None, nrows: int | None = None
 ) -> pd.DataFrame:
-    """Đọc CSV; thiếu/rỗng/hỏng thì DataFrame rỗng (luật ở ``safe_io``)."""
     return read_csv_or_empty(path, dtype=dtype, nrows=nrows, keep_default_na=False)
 
 
@@ -53,12 +45,10 @@ def _read_json(path: Path) -> dict:
 
 
 def _safe_columns(df: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
-    """Return available columns in requested order; keep rendering if some are absent."""
     if df.empty:
         return df
     available = [c for c in columns if c in df.columns]
     return df.loc[:, available].copy() if available else df.copy()
-
 
 
 def _number_to_int(value: object) -> int | None:
@@ -156,18 +146,6 @@ def _color_from_value(value: float, lo: float, hi: float, *, scheme: str) -> tup
         t = (value - lo) / (hi - lo)
     t = max(0.0, min(1.0, float(t)))
 
-    # Màu PHÂN TÍCH tách hẳn khỏi màu THƯƠNG HIỆU. Nền trang và điều hướng
-    # dùng indigo; nếu một thang nhiệt cũng là indigo thì "ô đang chọn" và "ô
-    # giá trị cao" trông như nhau. Bảng cũ có freq xanh lam và ai tím — cả hai
-    # đều nằm trong họ indigo, nên đã đổi sang năm sắc ngoài họ đó.
-    #
-    # Mỗi thang là MỘT sắc chạy nhạt -> đậm. Bảng cũ có "hot" đi hổ phách ->
-    # cam -> ĐỎ, tức đổi sắc giữa chừng; thang tuần tự đổi sắc là thang đọc sai
-    # thứ tự.
-    #
-    # Sàn tương phản của mọi thang liên tục là ~4,5:1, không phải do chọn màu
-    # mà do cấu trúc: thang nào cũng đi qua độ sáng mà cả chữ trắng lẫn chữ đen
-    # đều chỉ đạt chừng đó. Bậc giữa được dò để sàn cao nhất có thể.
     palettes = {
         "freq": [(234, 250, 244), (168, 227, 205), (27, 143, 109), (10, 79, 61)],
         "hot": [(255, 238, 240), (247, 179, 186), (207, 59, 59), (118, 31, 34)],
@@ -183,9 +161,6 @@ def _color_from_value(value: float, lo: float, hi: float, *, scheme: str) -> tup
     else:
         c = _mix(stops[2], stops[3], (t - 0.72) / 0.28)
     r, g, b = c
-    # Ngưỡng độ sáng cố định không đảm bảo được chuẩn AA: đo trên trang thật,
-    # chữ #f8fafc trên nền #f66b18 chỉ đạt 2,85:1. Chọn theo tỉ lệ tương phản
-    # thực tế thì mọi nền trong dải đều đạt ít nhất 4,50:1.
     text = readable_ink(f"#{r:02x}{g:02x}{b:02x}")
     return f"rgb({r},{g},{b})", text
 
@@ -227,7 +202,6 @@ def _number_map(df: pd.DataFrame, value_col: str) -> dict[int, float]:
 def _clickable_number(
     number: object, *, mode: str | None, source_title: str, source_value: str = ""
 ) -> str:
-    """Render a number pill that opens the evidence drawer when mode is known."""
     ns = _fmt2(number)
     if not ns:
         return html.escape(str(number))
@@ -267,7 +241,6 @@ def _evidence_payload(
     positions_loto: pd.DataFrame,
     positions_de: pd.DataFrame,
 ) -> dict[str, dict[str, dict[str, object]]]:
-    """Build compact JSON used by click-to-explain number panels."""
 
     def build_mode(
         mode: str, cau: pd.DataFrame, explain: pd.DataFrame, positions: pd.DataFrame
@@ -334,7 +307,6 @@ def _evidence_payload(
             ns = f"{n:02d}"
             row = summary_lookup.get(ns)
             summary = _row_dict_for_ui(row, summary_cols) if row is not None else {"number_str": ns}
-            # Normalize names so JS can consume either legacy or summary columns.
             if "ai_cau_score" not in summary and "cau_score" in summary:
                 summary["ai_cau_score"] = summary.get("cau_score", "")
             if "ai_prob_percent" not in summary and "prob_percent" in summary:
@@ -412,7 +384,6 @@ def _matrix(
                 f"<div class='{cell_class}' "
                 f"style='background:{bg};color:{fg}' "
                 f"{attrs}>"
-                # Ô gồm nhãn số và giá trị: giá trị là số chính của ô (Alt + Enter).
                 f"<b>{n:02d}</b><span data-evidence-primary>{html.escape(val_text)}{html.escape(suffix)}</span>"
                 "</div>"
             )
@@ -529,8 +500,6 @@ def _table(
     if highlight_col and highlight_col in view.columns:
         view = view.copy()
         view["_highlight"] = pd.to_numeric(view[highlight_col], errors="coerce").fillna(0.0)
-        # Ổn định: quicksort của numpy xếp dòng hoà theo lệnh vector của CPU (xem _sort_top của
-        # trang chủ), nên runner CI và máy khác in dòng hoà khác nhau.
         view = view.sort_values("_highlight", ascending=False, kind="stable")
     view = view.head(max_rows).copy()
     zfill = set(zfill_cols)
@@ -571,7 +540,6 @@ def _table(
                 width = max(4.0, min(100.0, float(x) / max_highlight * 100.0))
                 val_text = _display_cell(raw, c)
                 val = f"<div class='mini-bar'><i style='width:{width:.1f}%'></i><b>{val_text}</b></div>"
-            # data-col: danh mục bằng chứng cấp cách tính riêng cho từng cột.
             cells.append(f"<td class='{cell_class}' data-col='{html.escape(c)}'>{val}</td>")
         rows.append("<tr>" + "".join(cells) + "</tr>")
 
@@ -639,7 +607,6 @@ def _latest_by_period(
 
 
 def _full_special_value(value: object) -> str:
-    """Định dạng kết quả gốc; để trống giá trị thiếu hoặc sai độ rộng."""
     raw = str(value).strip()
     if not raw or len(raw) > 5 or not (raw.isascii() and raw.isdigit()):
         return ""
@@ -647,7 +614,6 @@ def _full_special_value(value: object) -> str:
 
 
 def _full_special_boards(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Dựng lịch năm chữ số từ kết quả gốc, giữ riêng hợp đồng thống kê đuôi số."""
     day_cols = [f"{day:02d}" for day in range(1, 32)]
     empty_week = pd.DataFrame(columns=["week_key", *WEEKDAY_COLS])
     empty_month = pd.DataFrame(columns=["month_key", *day_cols])
@@ -674,11 +640,6 @@ def _full_special_boards(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
 
 
 def _blank_missing(frame: pd.DataFrame) -> pd.DataFrame:
-    """Ô thiếu thành chuỗi rỗng; CHỈ cột có ô thiếu đổi sang object — đúng việc pandas vẫn ngầm làm.
-
-    pandas 3.1 cảnh báo `fillna("")` trên cột số sẽ bị cấm. Đổi tường minh từng cột cho cùng giá trị,
-    cùng kiểu và cùng cách in như trước (kiểm trên pandas 3.0.5 và 3.1.0).
-    """
     holes = frame.columns[frame.isna().any()]
     return frame.astype({column: object for column in holes}).fillna("")
 
@@ -709,7 +670,6 @@ def _board_month_table(df: pd.DataFrame) -> str:
 
 
 def _board_year_table(raw: pd.DataFrame) -> str:
-    """Lịch đủ mười hai tháng; năm lấy từ ngày lịch sử, không suy từ đuôi số."""
     heading = '<div class="card-head"><span class="type-badge table">Bảng</span><h3>Bảng Đặc Biệt theo năm</h3></div>'
     if raw.empty or "date" not in raw.columns:
         return f'<article class="viz-card app-year-card">{heading}<p>Chưa có lịch sử để lập bảng năm.</p></article>'
@@ -720,7 +680,6 @@ def _board_year_table(raw: pd.DataFrame) -> str:
         return f'<article class="viz-card app-year-card">{heading}<p>Chưa có lịch sử ngày hợp lệ để lập bảng năm.</p></article>'
     years = sorted(view["date"].dt.year.unique().tolist(), reverse=True)
     view["special"] = view.get("special", pd.Series("", index=view.index)).map(_full_special_value)
-    # Cùng cách xử lý bản ghi trùng của bảng tuần/tháng: lấy kết quả hợp lệ cuối.
     results = view.loc[view["special"].ne("")].drop_duplicates("date", keep="last")
     prizes = dict(zip(results["date"].dt.strftime("%Y-%m-%d"), results["special"], strict=True))
     options = "".join(
@@ -794,10 +753,6 @@ def _section(title: str, intro: str, body: str, anchor: str, *, eyebrow: str | N
     """
 
 
-#: 773 dòng văn bản nhúng, trích khỏi f-string của ``main``.
-#:
-#: Không nội suy biến nào (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên
-#: mọi dấu ngoặc phải viết đôi — cú pháp bị bóp méo chỉ vì chỗ đặt.
 _DASHBOARD_CSS = """\
     :root {
       /* Cột nội dung của trang — KHAI BÁO MỘT CHỖ.
@@ -1670,10 +1625,6 @@ _DASHBOARD_SCRIPT_YEAR = """\
       updateYearCalendar();
     });"""
 
-#: 33 dòng văn bản nhúng, trích khỏi f-string của ``main``.
-#:
-#: Không nội suy biến nào (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên
-#: mọi dấu ngoặc phải viết đôi — cú pháp bị bóp méo chỉ vì chỗ đặt.
 _DASHBOARD_SCRIPT_MAIN = """\
       // Cập nhật phần "Tạo lúc" theo đồng hồ hệ thống của máy đang xem.
       //
@@ -1709,10 +1660,6 @@ _DASHBOARD_SCRIPT_MAIN = """\
         setInterval(tick, 1000);
       })();"""
 
-#: 179 dòng văn bản nhúng, trích khỏi f-string của ``main``.
-#:
-#: Không nội suy biến nào (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên
-#: mọi dấu ngoặc phải viết đôi — cú pháp bị bóp méo chỉ vì chỗ đặt.
 _DASHBOARD_SCRIPT_EVIDENCE = """\
     function filterTable(input) {
       const card = input.closest('.table-card');
@@ -1957,15 +1904,6 @@ def main() -> None:
         )
     )
 
-    # Ô lớn của thẻ số liệu là chỗ cho MỘT GIÁ TRỊ. Thẻ AI/ML trước đây đặt
-    # vào đó một cái TÊN MỤC ("Cầu - Kèo & Xếp Hạng") — không phải giá trị
-    # nào cả, nên nó xuống hai dòng và phá nhịp cả hàng, trong khi ba thẻ kia
-    # chỉ có một dòng. Bỏ nền đi không chữa được chuyện ấy; nó chỉ khiến thẻ
-    # trông như bị lỗi dựng hình.
-    #
-    # Giá trị đúng cho thẻ này là KỲ MÀ TÍN HIỆU ĐANG TÍNH CHO. Nó là một số
-    # liệu thật, đặt cạnh "dữ liệu đến" thì thành một câu có nghĩa: dữ liệu
-    # tới ngày 14, tín hiệu tính cho ngày 15.
     target_date = ""
     if not cau_loto.empty and "predict_for_date" in cau_loto.columns:
         target_date = str(cau_loto["predict_for_date"].iloc[0] or "")

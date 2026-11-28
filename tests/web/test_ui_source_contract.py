@@ -1,11 +1,3 @@
-"""Source-level contracts for the VLA UI redesign.
-
-The contracts ensure the visible redesign is owned by reviewable source files,
-not only by a generated HTML snapshot. Path pages own their structure directly
-in Jinja; long detail-statistics pages own their durable layout in a dedicated
-source stylesheet that the page-output boundary applies by filename.
-"""
-
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,7 +46,6 @@ def test_detail_statistics_stylesheet_covers_every_reported_layout_problem() -> 
 
 
 def test_dashboard_builder_navigation_reaches_its_analysis_panels(tmp_path, monkeypatch) -> None:
-    """Mục lục không được dẫn tới id đã mất khi thay bố cục thẻ."""
     from bs4 import BeautifulSoup
     from pages.build_dashboard import main
 

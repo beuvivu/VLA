@@ -1,9 +1,3 @@
-"""Thước đo dự báo dùng chung: mỗi công thức được đối chiếu với đáp án biết trước.
-
-Hoà điểm là trường hợp thường gặp của tổ hợp XSMB (vector gần phẳng), nên phép kiểm trung tâm là
-vét cạn MỌI cách xếp các phần tử hoà rồi so kỳ vọng — không tin một công thức chỉ vì nó trông đúng.
-"""
-
 from __future__ import annotations
 
 import itertools
@@ -26,11 +20,9 @@ from evaluation.forecast_metrics import (
 
 
 def _brute_force(scores: np.ndarray, weights: np.ndarray, truth: int, k: int) -> tuple[float, float, float]:
-    """Trung bình trên mọi hoán vị phá hoà: (khối lượng Top-K, hạng, hạng nghịch đảo)."""
     n = len(scores)
     mass, rank, reciprocal, total = 0.0, 0.0, 0.0, 0
     for perm in itertools.permutations(range(n)):
-        # ``perm`` là khoá phá hoà: điểm cao trước, hoà thì theo vị trí trong hoán vị.
         order = sorted(range(n), key=lambda i: (-scores[i], perm.index(i)))
         mass += sum(weights[i] for i in order[:k])
         position = order.index(truth) + 1
@@ -62,11 +54,10 @@ def test_ties_are_shared_exactly_as_random_tie_breaking_would(scores: list[float
 
 
 def test_a_flat_forecast_scores_exactly_at_chance_on_every_ranking_metric() -> None:
-    """Vector phẳng không được có kỹ năng xếp hạng — kể cả khi mọi con trúng đều là số nhỏ."""
     rng = np.random.default_rng(3)
     flat = np.full((50, 100), 0.2377)
     hits = np.zeros((50, 100))
-    hits[:, :24] = 1.0  # xếp hoà "số nhỏ trước" sẽ cho Top-10 trúng 10/10
+    hits[:, :24] = 1.0
     truth = rng.integers(0, 100, size=50)
     assert top_k_mass(flat, hits, 10) == pytest.approx(np.full(50, 2.4))
     rank, reciprocal = rank_of_truth(flat, truth)
@@ -97,7 +88,6 @@ def test_chance_levels_are_the_exact_fair_draw_values() -> None:
     assert chance_reciprocal_rank(100) == pytest.approx(sum(1 / r for r in range(1, 101)) / 100)
     assert chance_presence(27) == pytest.approx(1 - 0.99**27)
     assert chance_presence(18) == pytest.approx(1 - 0.99**18)
-    # Vét cạn: 3 giải rút đều trên 4 số, hai số chỉ định trước.
     outcomes = list(itertools.product(range(4), repeat=3))
     exact = sum(1 for draw in outcomes if {0, 1} & set(draw)) / len(outcomes)
     assert chance_presence(3, size=4, picks=2) == pytest.approx(exact)
@@ -131,7 +121,6 @@ def test_bootstrap_interval_is_reproducible_and_resamples_whole_draws() -> None:
     assert first[0] < values.mean() < first[1]
     stderr = values.std(ddof=1) / 20
     assert first[1] - first[0] == pytest.approx(2 * 1.96 * stderr, rel=0.15)
-    # Bốn bản sao của cùng một kỳ là MỘT quan sát: khai cụm thì khoảng không hẹp lại.
     repeated = np.repeat(values, 4)
     clustered = cluster_bootstrap_ci(repeated, clusters=np.repeat(np.arange(400), 4), seed=9)
     naive = cluster_bootstrap_ci(repeated, seed=9)
@@ -156,7 +145,6 @@ def test_sign_flip_p_is_uniform_without_an_effect_and_small_with_one() -> None:
 
 
 def test_sign_flip_flips_a_whole_cluster_together() -> None:
-    """Mười cụm, mỗi cụm một hiệu lặp 50 lần: chỉ có 10 quan sát độc lập."""
     effects = np.array([1.0, -0.6, 0.9, 0.4, -0.2, 0.7, 0.5, -0.4, 0.8, 0.3])
     d = np.repeat(effects, 50)
     clusters = np.repeat(np.arange(10), 50)
@@ -171,7 +159,6 @@ def test_by_period_groups_draws_by_calendar_month_and_iso_week() -> None:
     assert [(m["period"], m["draws"], m["mean"]) for m in months] == [("2026-10", 2, 2.0), ("2026-11", 3, 7.0)]
     assert months[0]["stderr"] == pytest.approx(np.std([1.0, 3.0], ddof=1) / np.sqrt(2))
     weeks = by_period(dates, values, period="week")
-    # 01-11-2026 là Chủ nhật: còn thuộc tuần ISO 44 cùng 30 và 31-10.
     assert [(w["period"], w["draws"]) for w in weeks] == [("2026-W44", 3), ("2026-W45", 2)]
     with pytest.raises(ValueError):
         by_period(dates, values[:2])
@@ -191,7 +178,6 @@ def test_invalid_inputs_are_rejected_instead_of_scored() -> None:
 
 
 def _pairwise_auc(scores: np.ndarray, hits: np.ndarray) -> float:
-    """Định nghĩa gốc, đếm từng cặp: P(điểm con về > điểm con không về) + ½·P(bằng nhau)."""
     wins = ties = pairs = 0
     for a in np.flatnonzero(hits):
         for b in np.flatnonzero(~hits):
@@ -203,7 +189,7 @@ def _pairwise_auc(scores: np.ndarray, hits: np.ndarray) -> float:
 
 def test_auc_matches_the_pairwise_definition_including_ties() -> None:
     rng = np.random.default_rng(13)
-    scores = np.round(rng.random((6, 40)), 1)  # làm tròn một chữ số: rất nhiều khối hoà
+    scores = np.round(rng.random((6, 40)), 1)
     hits = rng.random((6, 40)) < 0.25
     hits[:, 0] = True
     got = auc_by_draw(scores, hits)
@@ -220,7 +206,7 @@ def test_auc_of_a_flat_forecast_is_exactly_one_half_and_degenerate_draws_are_und
     hits[0, :24] = True
     hits[1, 60:] = True
     assert auc_by_draw(flat, hits)[:2] == pytest.approx([0.5, 0.5])
-    assert np.isnan(auc_by_draw(flat, hits)[2])  # kỳ không có con nào về
+    assert np.isnan(auc_by_draw(flat, hits)[2])
     assert np.isnan(auc_by_draw(flat, np.ones((3, 100), dtype=bool))).all()
     with pytest.raises(ValueError):
         auc_by_draw(flat, hits[:, :50])
@@ -239,9 +225,8 @@ def test_within_draw_permutation_p_is_uniform_for_noise_and_small_for_a_real_ran
     null_p = np.array(null_p)
     assert (null_p < 0.05).mean() < 0.12 and 0.3 < np.median(null_p) < 0.7
     informative = rng.random((30, 100))
-    hits = rng.random((30, 100)) < 0.1 + 0.3 * informative  # điểm cao thì dễ về hơn
+    hits = rng.random((30, 100)) < 0.1 + 0.3 * informative
     assert within_draw_permutation_p(informative, hits, mean_auc, n_perm=500, seed=1) < 0.01
-    # Xáo trong từng kỳ giữ nguyên số con về của kỳ ấy.
     seen = []
     within_draw_permutation_p(informative, hits, lambda s, h: seen.append(h.sum(axis=1).tolist()) or 0.0, n_perm=3)
     assert all(row == hits.sum(axis=1).tolist() for row in seen)

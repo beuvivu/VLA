@@ -146,7 +146,6 @@ def test_artifacts_and_html_injection_are_idempotent(tmp_path: Path) -> None:
 
 
 def test_landing_simulation_does_not_repeat_its_neighbouring_prediction_panels(tmp_path: Path) -> None:
-    """Chèn lại bảng vẫn giữ đủ số và đích tra cứu trong đúng một thẻ mô phỏng."""
     data = tmp_path / "data"
     _write_prediction_fixture(data)
     payload = build_fun_draw(load_prediction_inputs(data))
@@ -187,7 +186,6 @@ def test_landing_simulation_does_not_repeat_its_neighbouring_prediction_panels(t
 
 
 def test_landing_loto_table_uses_all_simulated_prizes_and_refreshes_without_duplicates(tmp_path: Path) -> None:
-    """Bắt lỗi lấy top LOTO, bỏ Đặc Biệt, mất 00/nháy hoặc giữ bảng cũ khi chèn lại."""
     data = tmp_path / "data"
     _write_prediction_fixture(data)
     payload = build_fun_draw(load_prediction_inputs(data))

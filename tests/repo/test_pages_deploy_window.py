@@ -1,11 +1,3 @@
-"""Trang Vietlott không đè trang XSMB khi triển khai Pages (18-11-2026).
-
-Pages là MỘT site, mọi lần triển khai tải lên nguyên `docs/`. Ngày 18-11-2026 workflow trang Vietlott
-triển khai ảnh chụp git lúc 18:38:33 (giờ VN), đè trang kết quả XSMB mà `publish-results` đã triển khai
-lúc 18:35:52 nhưng chưa commit; trang chủ hiện kết quả hôm qua tới 18:41:09. Phép kiểm ghim cả LUẬT
-(`scripts/ops/pages_deploy_window.py`) lẫn chỗ workflow dùng nó, và chạy thật hai khối `run:` mới.
-"""
-
 from __future__ import annotations
 
 import importlib.util
@@ -29,7 +21,7 @@ assert _spec.loader is not None
 _spec.loader.exec_module(window)
 
 UTC = timezone.utc
-CANONICAL = datetime(2026, 11, 18, 11, 34, 29, tzinfo=UTC)  # commit «data: finalize XSMB 2026-11-18»
+CANONICAL = datetime(2026, 11, 18, 11, 34, 29, tzinfo=UTC)
 
 
 def _ledger(*days: str) -> str:
@@ -45,7 +37,6 @@ BOTH_19 = BOTH_18 + _forecasts(("loto", "2026-11-19"), ("de", "2026-11-19"))
 
 
 def test_the_night_of_18_11_is_replayed_as_a_yield() -> None:
-    """Đúng tình huống đã xảy ra: kỳ 18-11 đã chốt, chưa có dự báo 19-11, Vietlott triển khai 4 phút sau."""
     decision = window.decide(_ledger("2026-11-17", "2026-11-18"), BOTH_18, CANONICAL,
                              datetime(2026, 11, 18, 11, 38, 22, tzinfo=UTC))
     assert decision.deploy is False
@@ -65,7 +56,6 @@ def test_one_mode_alone_does_not_close_the_window() -> None:
 
 
 def test_the_next_draw_may_come_after_a_break_in_the_calendar() -> None:
-    """Dự báo mang ngày QUAY kế tiếp, không phải ngày lịch kế tiếp (nghỉ Tết)."""
     names = _forecasts(("loto", "2027-02-10"), ("de", "2027-02-10"))
     decision = window.decide(_ledger("2027-02-05"), names, None, datetime(2027, 2, 6, tzinfo=UTC))
     assert decision.deploy is True
@@ -95,12 +85,9 @@ def test_an_unknown_finalization_time_yields_and_a_missing_ledger_deploys() -> N
 def test_api_times_are_parsed_and_garbage_is_unknown() -> None:
     assert window.parse_time("2026-11-18T11:34:29Z") == CANONICAL
     assert window.parse_time("2026-11-18T18:34:29+07:00") == CANONICAL
-    assert window.parse_time("2026-11-18T11:34:29") == CANONICAL  # không múi giờ thì coi là UTC
+    assert window.parse_time("2026-11-18T11:34:29") == CANONICAL
     for garbage in ("", "   ", "null", "không phải giờ"):
         assert window.parse_time(garbage) is None
-
-
-# --- Đọc từ một ref git thật -----------------------------------------------------------------
 
 
 def _git(cwd: Path, *args: str) -> str:
@@ -132,7 +119,6 @@ def test_main_reads_the_ledger_and_forecasts_of_the_given_ref(tmp_path: Path, mo
     just_now = (datetime.now(UTC) - timedelta(minutes=3)).isoformat()
     assert window.main(["--repo", str(repo), "--ref", "HEAD", "--canonical-at", just_now]) == 0
     assert _outputs(out)["deploy"] == "false"
-    # Pipeline XSMB ghi dự báo kỳ sau: commit mới, cùng lệnh, giờ được triển khai.
     for name in _forecasts(("loto", "2026-11-19"), ("de", "2026-11-19")):
         (repo / "data" / "forecast" / "predict" / name).write_text("number,prob\n", encoding="utf-8")
     _git(repo, "add", "-A")
@@ -140,13 +126,9 @@ def test_main_reads_the_ledger_and_forecasts_of_the_given_ref(tmp_path: Path, mo
     out.unlink()
     window.main(["--repo", str(repo), "--ref", "HEAD", "--canonical-at", just_now])
     assert _outputs(out)["deploy"] == "true"
-    # Ref cũ vẫn đọc đúng ảnh chụp cũ: hàm đọc theo ref, không theo cây làm việc.
     out.unlink()
     window.main(["--repo", str(repo), "--ref", "HEAD~1", "--canonical-at", just_now])
     assert _outputs(out)["deploy"] == "false"
-
-
-# --- Chỗ workflow dùng luật ------------------------------------------------------------------
 
 
 def _steps() -> list[dict]:
@@ -189,11 +171,7 @@ def test_packaging_and_the_deploy_job_follow_the_window_decision(deploy: str, pa
     assert document["jobs"]["deploy"]["if"] == "needs.build.outputs.published == 'true'"
 
 
-# --- Chạy thật hai khối run: ------------------------------------------------------------------
-
-
 def _bash(block: str, cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    """Đúng lệnh shell GitHub dùng cho ``run:`` (bash --noprofile --norc -eo pipefail)."""
     return subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", block], cwd=cwd,
                           env={**os.environ, **env}, capture_output=True, text=True, check=False)
 
@@ -209,7 +187,6 @@ def test_the_sync_block_mirrors_the_branch_docs_including_deletions(tmp_path: Pa
     _git(tmp_path, "clone", "-q", "--bare", str(seed), str(origin))
     runner = tmp_path / "runner"
     _git(tmp_path, "clone", "-q", "--depth=1", f"file://{origin}", str(runner))
-    # XSMB đẩy trang mới SAU khi job Vietlott đã lấy mã.
     (seed / "docs" / "index.html").write_text("kỳ 18-11", encoding="utf-8")
     (seed / "docs" / "cu.html").unlink()
     _git(seed, "add", "-A")
@@ -240,13 +217,9 @@ def _fake_gh(tmp_path: Path, body: str) -> str:
 
 
 @pytest.mark.parametrize("gh_body,forecasts,deploy", [
-    # API trả giờ chốt vừa xong, chưa có dự báo kỳ sau: nhường.
     ('date -u -d "-4 min" +%Y-%m-%dT%H:%M:%SZ', BOTH_18, "false"),
-    # API hỏng: bước KHÔNG được đỏ, và vẫn nhường.
     ("echo 'HTTP 502' >&2; exit 1", BOTH_18, "false"),
-    # Chốt kỳ đã quá trần: triển khai lại.
     ('date -u -d "-3 hours" +%Y-%m-%dT%H:%M:%SZ', BOTH_18, "true"),
-    # Pipeline XSMB đã xong: triển khai.
     ('date -u -d "-4 min" +%Y-%m-%dT%H:%M:%SZ', BOTH_19, "true"),
 ])
 def test_the_window_block_runs_as_written(tmp_path: Path, gh_body: str, forecasts: list[str], deploy: str) -> None:

@@ -2,19 +2,6 @@ name: Kiểm thử liên tục
 
 on:
   push:
-    # Nhánh làm việc phải tự có tín hiệu, không chờ một PR nào mở.
-    #
-    # Trước đây danh sách chỉ có main/master, nên đẩy lên nhánh claude/** không
-    # khớp `push` và chỉ còn trông vào `pull_request`. Đo được: sáu lần đẩy
-    # liên tiếp lên một nhánh ĐANG CÓ PR MỞ không sinh lần chạy nào suốt hơn 45
-    # phút. Nhánh im lặng không đỏ, chỉ là không có gì chạy — nhìn hệt như đang
-    # chờ, nên phải kích hoạt tay từng lần mới biết mã có xanh hay không.
-    #
-    # Thêm `push` khiến một lần đẩy khớp CẢ HAI sự kiện. `concurrency` không
-    # gộp được chúng: github.ref là refs/heads/... với push nhưng
-    # refs/pull/N/merge với pull_request, tức hai nhóm khác nhau. Đã quan sát
-    # thấy hai lần chạy song song trên đúng một commit. Chặn ở điều kiện job
-    # bên dưới, không phải ở đây.
     branches: ["main", "master", "claude/**", "codex/**"]
   pull_request:
   workflow_dispatch:
@@ -23,9 +10,6 @@ permissions:
   contents: read
 
 concurrency:
-  # Một sự kiện PR sau merge có thể dùng ref main. Không để lượt PR đã được
-  # route bỏ qua hủy lượt push main trước khi bất kỳ job kiểm thử nào bắt đầu.
-  # Lượt chạy tay cũng có nhóm riêng; push mới cùng nhánh vẫn thay lượt cũ.
   group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
@@ -56,7 +40,6 @@ jobs:
               head_ref = os.environ.get("HEAD_REF", "")
               if not repo or not head_repo or not head_ref:
                   raise SystemExit("PR thiếu tên kho hoặc tên nhánh; không thể chọn cổng CI")
-              # Khớp đúng allowlist on.push.branches, phân biệt hoa/thường.
               push_covered = head_ref in ("main", "master") or head_ref.startswith(
                   ("claude/", "codex/")
               )
@@ -73,14 +56,7 @@ jobs:
     needs: route
     if: needs.route.outputs.run_checks == 'true'
     name: Chromium · ${{ matrix.shard.name }}
-    # Ghim 24.04: từ 23-10-2026 `ubuntu-latest` là 26.04 và Playwright 1.55 từ chối cài
-    # Chromium ở đó ("does not support chromium on ubuntu26.04-x64"), nên job chết ngay
-    # bước cài, trước mọi phép kiểm. Bỏ ghim cùng lúc nâng Playwright lên bản hỗ trợ 26.04.
     runs-on: ubuntu-24.04
-    # Một job duy nhất từng mất 22 phút (PR #210) tới 29 phút (PR #211, có 10 phút apt chậm) ngày
-    # 05-11-2026, trần 40 phút; riêng bước Vietlott UI 12 phút 17 giây. Ba nhóm chạy song song, đo
-    # trên lượt PR #210: khung + bảng + cầu ≈ 8,6 phút, mỗi nửa Vietlott (UI_SHARD theo giao diện
-    # sáng/tối) ≈ 6–7 phút. Trần giữ ~3 lần thời lượng đo được của nhóm dài nhất.
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -135,8 +111,6 @@ jobs:
           path: ui-browser-artifacts/
           retention-days: 7
   browser-gate:
-    # Giữ đúng TÊN kiểm cũ của job trình duyệt một khối: nhánh được bảo vệ có thể đang đòi tên ấy.
-    # Xanh khi và chỉ khi cả ba nhóm Chromium xanh.
     needs: [route, browser]
     if: always() && needs.route.outputs.run_checks == 'true'
     name: Giao diện Chromium sáng/tối và mobile
@@ -174,10 +148,6 @@ jobs:
           python-version-file: .python-version
 
       - name: Thiết lập Node 22
-        # Bốn phép kiểm đối chiếu Python/JS gọi `node` để chạy bản mã của
-        # Worker. Runner ubuntu-latest tình cờ có sẵn Node, nhưng trông vào
-        # thứ tình cờ thì một ngày nào đó nó biến mất và các phép kiểm ấy tự
-        # BỎ QUA — chốt chặn giả còn tệ hơn không có chốt. Ghim tường minh.
         uses: actions/setup-node@v7
         with:
           node-version: "22"
@@ -186,9 +156,6 @@ jobs:
         run: |
           python -m pip install --upgrade --no-cache-dir pip wheel setuptools
           python -m pip install --no-cache-dir -r requirements-dev.txt
-          # Trang Vietlott dựng từ engine `vietlott/`, và phép kiểm của trang đọc
-          # dữ liệu engine thật — thiếu duckdb, pydantic-settings… của engine là
-          # `test_vietlott_results.py` đỏ. Engine là dự án tự đủ, cài như gói.
           python -m pip install --no-cache-dir -e vietlott
 
       - name: Kiểm thử tương tác điều hướng

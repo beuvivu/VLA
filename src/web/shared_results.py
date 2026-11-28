@@ -1,5 +1,3 @@
-"""Bảng Sổ KQ dùng chung cho trang chủ, trang đích và sổ lịch sử."""
-
 from __future__ import annotations
 
 from datetime import date
@@ -10,10 +8,7 @@ from collections.abc import Mapping
 from web.web_security import json_for_html_script
 from core.paths import TEMPLATES
 
-#: Thứ tự giải, nhãn và độ rộng. Bên JS giữ một bản y hệt; chúng phải khớp
-#: nhau và ``tests/web/test_traditional_results_page.py`` kiểm điều đó.
 PRIZE_SPEC: tuple[tuple[str, str, int, int], ...] = (
-    # mã, nhãn, số lượng, độ rộng
     ("special", "Đặc Biệt", 1, 5),
     ("prize1", "Giải Nhất", 1, 5),
     ("prize2", "Giải Nhì", 2, 5),
@@ -38,19 +33,12 @@ PRIZE_FIELDS = {
     "prize7": tuple(f"prize7_{i}" for i in range(1, 5)),
 }
 
-#: Độ dài một dòng nén: 10 ký tự ngày + 107 chữ số giải.
 DATE_WIDTH = 10
 PRIZE_DIGITS = sum(PRIZE_COUNTS[code] * PRIZE_WIDTHS[code] for code in PRIZE_ORDER)
 ROW_WIDTH = DATE_WIDTH + PRIZE_DIGITS
 
 
 def encode_row(row: dict[str, str]) -> str | None:
-    """Một kỳ thành một chuỗi ``YYYY-MM-DD`` + 107 chữ số, hoặc ``None``.
-
-    Trả ``None`` cho mọi kỳ thiếu dữ liệu. KHÔNG bịa số 0 thay cho ô trống:
-    một kỳ thiếu phải biến mất khỏi sổ, chứ không được hiện ra như thể giải
-    ấy về 0000.
-    """
     draw_date = str(row.get("date", ""))[:DATE_WIDTH]
     try:
         date.fromisoformat(draw_date)
@@ -72,7 +60,6 @@ def encode_row(row: dict[str, str]) -> str | None:
 
 
 def decode_row(row: str, *, metadata: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
-    """Giải mã kỳ đầy đủ; chỉ gắn ký hiệu thuộc chính ngày đang dựng."""
     if not isinstance(row, str) or len(row) != ROW_WIDTH:
         return None
     draw_date = row[:DATE_WIDTH]
@@ -104,18 +91,15 @@ def decode_row(row: str, *, metadata: Mapping[str, Any] | None = None) -> dict[s
 
 
 def draw_from_row(row: Mapping[str, Any], metadata: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
-    """Chuyển dòng CSV sang hợp đồng bảng dùng chung, giữ nguyên số 0 đầu."""
     encoded = encode_row(dict(row))
     return decode_row(encoded, metadata=metadata) if encoded else None
 
 
 def shared_results_css() -> str:
-    """Mọi nơi nạp chính stylesheet Sổ KQ, không sao chép hay xấp xỉ CSS."""
     return (TEMPLATES / "traditional_results.css").read_text(encoding="utf-8")
 
 
 def shared_results_script() -> str:
-    """Bộ dựng DOM và đánh dấu duy nhất được nhúng vào từng trang tự chứa."""
     return (TEMPLATES / "shared_results.js").read_text(encoding="utf-8")
 
 
@@ -127,12 +111,6 @@ def _number_attrs(draw_date: str, code: str, index: int, pair: str) -> str:
 
 
 def render_draw(draw: Mapping[str, Any], *, include_loto: bool = True, extra: str = "") -> str:
-    """Bản HTML dự phòng chung, đủ dữ liệu trước lúc bộ dựng DOM khởi chạy.
-
-    ``extra`` là một khối đã dựng sẵn (vd. ô cầu vị trí ở trang chủ), đặt thành
-    cột thứ ba của lưới, cạnh bảng LOTO. Bộ dựng DOM chuyển nguyên khối ấy sang
-    bảng mới thay vì dựng lại.
-    """
     draw_date = str(draw["date"])
     parsed = date.fromisoformat(draw_date)
     weekday = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật")[parsed.weekday()]
@@ -198,7 +176,6 @@ def render_draw(draw: Mapping[str, Any], *, include_loto: bool = True, extra: st
 
 def render_result_board(draw: Mapping[str, Any] | None, *, board_id: str = "app-daily-results",
                         include_loto: bool = False, extra: str = "") -> str:
-    """Nhúng một bảng hoàn chỉnh với dữ liệu thật và đánh dấu chuột/bàn phím."""
     if not draw:
         return '<p class="tr-empty">Chưa có kết quả đầy đủ cho kỳ này.</p>'
     payload_id = f"{board_id}-data"

@@ -1,8 +1,3 @@
-"""Pipeline ba tác tử: cùng sổ học, căn cứ XAI và công bố shadow minh bạch.
-
-Từ 15-11-2026 module này mang luôn bộ nhớ (`knowledge.py`) và kiểm hồi cứu (`benchmark.py`) cũ.
-"""
-
 from __future__ import annotations
 
 import json
@@ -27,17 +22,10 @@ from forecast.online_learning import _history, _outcomes
 from .algorithms import AGENT_POLICY, LABELS, AlgorithmEnsemble, EnsembleResult
 
 
-# --- Bộ nhớ (trước 15-11-2026: xsmb_agents/knowledge.py) ------------------------------------------
-#
-# Adapter bộ nhớ: tiền tố lịch sử, ngữ cảnh và luật của kho hiện hữu.
-
 class KnowledgeBaseManager:
-    """Chuẩn hóa một tiền tố duy nhất cho mọi tác tử; không nhìn nhãn đích."""
 
     def __init__(self, frame: pd.DataFrame, *, target_date: str | None = None) -> None:
         if target_date is not None:
-            # Lọc TRƯỚC khi chuẩn hóa để cả dữ liệu tương lai hỏng cũng không
-            # thay đổi kết quả hoặc làm lộ thông tin cho dự báo quá khứ.
             frame = frame.loc[frame["date"].astype(str) < target_date]
         self.frame = _history(frame)
         gaps = set(missing_calendar_dates(self.frame["date"])) - known_non_draw_days()
@@ -46,54 +34,36 @@ class KnowledgeBaseManager:
 
     @cached_property
     def outcomes(self) -> dict[str, np.ndarray]:
-        """Chỉ báo theo kỳ: một lớp Đặc Biệt, tối đa 27 con LOTO."""
         return {mode: _outcomes(mode, self.frame) for mode in ("de", "loto")}
 
     @cached_property
     def memories(self) -> dict[str, ContextMemory]:
-        """Vectơ 300 chiều dùng lại bộ truy xuất và khoảng bỏ chồng cửa sổ."""
         return {mode: ContextMemory(y) for mode, y in self.outcomes.items()}
 
     def retrieve(self, mode: str, *, at: int | None = None, k: int = 20) -> list[dict]:
-        """K ngữ cảnh quá khứ đã biết kết quả, trước khoảng cách 30 kỳ."""
         t = len(self.frame) if at is None else at
         idx, similarities = self.memories[mode].neighbours(t, k)
         return [{"date": str(self.frame.iloc[int(i)]["date"]), "index": int(i),
                  "similarity": float(s)} for i, s in zip(idx, similarities, strict=True)]
 
     def analog_probability(self, mode: str, t: int) -> np.ndarray:
-        """Đặc trưng truy xuất có co về nền; chưa là xác suất công bố."""
         idx, _ = self.memories[mode].neighbours(t, 20)
         y = self.outcomes[mode]
         return (y[idx].sum(axis=0) + 100 * baseline_rate(mode)) / (len(idx) + 100)
 
     def short_memory(self, mode: str) -> dict:
-        """Tần suất hai cửa sổ gần nhất; số kỳ thực được ghi cùng mẫu số."""
         y = self.outcomes[mode]
         return {str(w): {"draws": min(w, len(y)), "rates": y[-w:].mean(axis=0).tolist()}
                 for w in (10, 30)}
 
     def matching_rules(self, document: dict) -> list[dict]:
-        """Chỉ truy xuất luật đã đăng ký; ảnh chụp cũ không thành bằng chứng mới."""
         current = self.outcomes["loto"][-1]
         return [{"id": r["id"], "text": r["text"], "status": r["status"],
                  "then": int(r["then"])} for r in document.get("rules", [])
                 if r.get("status") != "het-han" and current[int(r["if"])]]
 
 
-# --- Bộ máy dự báo (trước 15-11-2026: xsmb_agents/engine.py) --------------------------------------
-#
-# Pipeline ba tác tử: cùng sổ học, căn cứ XAI và công bố shadow minh bạch.
-
 def retire_superseded_ledgers(online_dir: Path) -> list[Path]:
-    """Cất nguyên sổ ba tác tử của định nghĩa đã nghỉ; sổ của định nghĩa đang chạy bắt đầu rỗng.
-
-    Mỗi định nghĩa tác tử có SỔ RIÊNG (họ ``online.AGENT_RECIPE``): trí nhớ Hedge, bước chọn
-    η/độ quên và cổng đề bạt không được thừa hưởng điểm do một bộ dự báo khác kiếm được. Sổ cũ chỉ
-    được ĐỔI TÊN thành ``agents_<mode>.<họ>.json`` — từng byte giữ nguyên, không chấm lại. Kiểm cả
-    hai sổ trước khi đổi tên cái nào; họ lạ (ví dụ của một bản triển khai mới hơn) hay bản cất đã
-    có đều làm dừng sạch.
-    """
     plan = []
     for mode in ("de", "loto"):
         path = Path(online_dir) / f"agents_{mode}.json"
@@ -117,30 +87,24 @@ def retire_superseded_ledgers(online_dir: Path) -> list[Path]:
 
 
 class MetaLearner:
-    """Adapter lõi Hedge hiện hữu; không có vòng chấm hoặc sổ học thứ hai."""
 
     def __init__(self, mode: str, path: Path) -> None:
         self.mode, self.path = mode, Path(path)
         self.state = online.load_state(self.path, mode, profile="agents")
-        # Sổ đúng họ chỉ chứa bản ghi của định nghĩa đang chạy; kiểm cả khối lưu trữ ngay khi nạp,
-        # trước mọi advance/save.
         if any(record.get("agent_policy") != AGENT_POLICY for record in online._all_records(self.state)):
             raise ValueError("Định nghĩa tác tử trong sổ không khớp họ sổ")
 
     def advance(self, frame: pd.DataFrame, incumbent: np.ndarray, target_date: str,
                 predictions: dict[str, np.ndarray], *, now: datetime) -> dict:
-        """Chốt mỗi kết quả đúng một lần và ghi trọng số đã chọn cho kỳ mới."""
         self.state, record = online.advance(self.state, frame, incumbent, target_date,
                                             now=now, expert_predictions=predictions)
         return record
 
     def save(self, *, forecast_target: str | None = None,
              clock: Callable[[], datetime] | None = None) -> None:
-        """Kiểm checksum, cấu trúc và điểm trước khi thay sổ nguyên tử."""
         online.save_state(self.path, self.state, forecast_target=forecast_target, clock=clock)
 
     def confidence_matrix(self) -> dict:
-        """Loss của từng tầng, cỡ mẫu thật và hiệu quả so với nền."""
         settled = [r for r in online._all_records(self.state) if online._is_scored(r)]
         rows = {}
         for name in online.AGENT_EXPERTS:
@@ -157,12 +121,6 @@ class MetaLearner:
         return rows
 
     def calibration_bands(self, probabilities: list[float] | np.ndarray) -> list[dict | None]:
-        """Sai số hiệu chuẩn theo nhóm, SE khối theo kỳ; thiếu mẫu trả null.
-
-        Đây là khoảng xấp xỉ cho nhóm xác suất tương tự, không phải chứng
-        minh về một con cụ thể hay xác suất mô hình đúng. Giải nén sổ một
-        lần cho cả vector; các con cùng nhóm dùng chung sai số và cỡ mẫu.
-        """
         width = .01 if self.mode == "de" else .05
         buckets = np.floor(np.asarray(probabilities, dtype=float) / width)
         residuals = {bucket: [] for bucket in np.unique(buckets)}
@@ -192,13 +150,9 @@ class MetaLearner:
 
 
 class PredictiveEngine:
-    """Điều phối ba lớp trên dữ liệu chuẩn, sổ tiến cứu và artifact hiện hữu."""
 
     def run(self, data_dir: Path, *, now: datetime | None = None) -> dict:
-        """Chạy dưới một khóa; ngắt giữa chừng được khôi phục từ sổ đóng băng."""
         data_dir = Path(data_dir)
-        # Đồng hồ thật được đọc SAU khi lấy khóa và SAU huấn luyện. ``now``
-        # chỉ là đồng hồ cố định được tiêm cho kiểm thử/tái hiện có chủ đích.
         clock = (lambda: online._clock(now)) if now is not None else (
             lambda: online._clock(now_vietnam()))
         with online._locked(data_dir / "forecast" / "agents" / "engine.lock"):
@@ -213,12 +167,8 @@ class PredictiveEngine:
         target = (online._date(anchor) + timedelta(days=1)).isoformat()
         kb_path = data_dir / "forecast" / "knowledge" / "kb.json"
         document = json.loads(kb_path.read_text(encoding="utf-8")) if kb_path.exists() else {}
-        # Luật được update bởi knowledge_base.py trong cùng lượt pipeline;
-        # snapshot cũ chỉ được nêu là cũ, không nâng trạng thái hay cộng xác suất.
         matches = knowledge.matching_rules(document)
         modes = {}
-        # Cất sổ của định nghĩa đã nghỉ, rồi nạp (và kiểm) CẢ HAI sổ trước khi chốt kỳ nào: sổ Đặc
-        # Biệt không được ghi xong rồi mới phát hiện sổ LOTO mang định nghĩa không hiểu được.
         retire_superseded_ledgers(data_dir / "forecast" / "online")
         learners = {mode: MetaLearner(mode, data_dir / "forecast" / "online" / f"agents_{mode}.json")
                     for mode in ("de", "loto")}
@@ -235,7 +185,6 @@ class PredictiveEngine:
                                          for name in ("statistical", "probabilistic", "pattern")},
                                         existing["agent_diagnostics"])
             else:
-                # Kiểm giờ và tiền tố trước tác vụ huấn luyện tốn thời gian.
                 if now >= datetime.combine(online._date(target), online.FORECAST_CUTOFF,
                                            online.VIETNAM_TZ):
                     raise ValueError("Đã quá cutoff 18:00 ICT, không tạo dự báo hồi cứu")
@@ -259,16 +208,12 @@ class PredictiveEngine:
         report = {"schema_version": 1, "anchor_date": anchor, "target_date": target,
                   "generated_at": min(item["generated_at"] for item in modes.values()),
                   "status": "shadow", "modes": modes}
-        # Khoá XẾP THEO TÊN. Kỳ đã có trong sổ được nạp lại từ sổ (ghi bằng `sort_keys`), kỳ mới thì dựng
-        # tại chỗ theo thứ tự chèn: không xếp thì lượt chạy lại ghi cùng nội dung với thứ tự khoá khác
-        # (11-11-2026: 271 dòng của báo cáo và cả tệp `xsmb-agents.json` đổi mà không giá trị nào đổi).
         atomic_write_text(data_dir / "forecast" / "agents" / "report.json",
                           json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False, sort_keys=True) + "\n")
         return report
 
     @staticmethod
     def explain(learner: MetaLearner, record: dict) -> dict:
-        """Vết chứng cứ cộng được về đúng vector; phân biệt công bố và ứng viên."""
         mode = learner.mode
         base = baseline_rate(mode)
         incumbent = np.asarray(record["experts"]["incumbent"])
@@ -319,18 +264,8 @@ class PredictiveEngine:
                 "candidate_top5": [items[i] for i in candidate_top], "items": items}
 
 
-# --- Kiểm hồi cứu (trước 15-11-2026: xsmb_agents/benchmark.py) ------------------------------------
-#
-# Kiểm hồi cứu theo tiền tố; không ghi vào bất kỳ sổ tiến cứu nào.
-
 def walk_forward(frame: pd.DataFrame, *, last: int = 60,
                  prediction_dir: Path | None = None) -> dict:
-    """Dựng từng kỳ từ đúng tiền tố, học loss kỳ trước rồi chấm kỳ hiện tại.
-
-    Đồng hồ lịch sử chỉ tồn tại trong bộ nhớ, không ghi/giả timestamp của
-    dự báo thật. Mô hình đã thiết kế sau khi xem lịch sử: số đo này chỉ chẩn
-    đoán, không phải bằng chứng tiến cứu hoặc giấy phép đề bạt.
-    """
     knowledge = KnowledgeBaseManager(frame)
     clean = knowledge.frame
     if not isinstance(last, int) or isinstance(last, bool) or not 1 <= last <= len(clean) - 3:

@@ -1,4 +1,3 @@
-"""Trang public hiển thị chẩn đoán thật và không biến backtest thành bằng chứng live."""
 import json
 import subprocess
 from pathlib import Path
@@ -52,7 +51,6 @@ def test_product_page_renders_multi_agent_section_without_changing_the_shell():
 
 
 def test_page_workflow_cannot_publish_a_stale_cached_summary(tmp_path):
-    """Chạy chính shell của workflow sau khi giả lập cache ghi đè bản mới."""
     workflow = yaml.safe_load((Path(b.ROOT) / '.github/workflows/vietlott-results.yml').read_text())
     steps = workflow['jobs']['build']['steps']
     restore = next(i for i, s in enumerate(steps) if s.get('uses', '').startswith('actions/cache/restore'))

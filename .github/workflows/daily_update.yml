@@ -1,35 +1,7 @@
 name: Thu thập XSMB đúng giờ
 
-# ĐƯỜNG CHẠY ĐÚNG GIỜ CHO KỲ QUAY HÀNG NGÀY
-#
-# Vì sao có tệp này, khi đã có live-results.yml và update-data.yml
-# ------------------------------------------------------------------
-# Hai workflow kia phụ thuộc vào việc bộ lập lịch của GitHub nổ 9-10 lần mỗi
-# ngày. Đo thật trên kho này trong 7 ngày:
-#
-#   * live-results.yml: 9 mốc/ngày, kỳ vọng ~63 lần nổ, THỰC TẾ 10 lần.
-#   * Mốc sớm nhất ngày 06-09 nổ lúc 12:58 UTC, trong khi mốc đầu là 06:37
-#     UTC — trễ 6 giờ 21 phút.
-#   * Với update-data.yml, mốc 11:33 UTC nổ lúc 13:57-15:05 UTC suốt 5 ngày
-#     liên tiếp (trễ 2h24m - 3h32m), và có ngày chỉ 6/9 mốc nổ.
-#
-# Đó KHÔNG phải nghẽn hàng đợi runner: mọi lần chạy đều có
-# run_started_at == created_at, tức chờ hàng đợi bằng 0 giây, và job chỉ chạy
-# 30-60 giây. Độ trễ nằm hoàn toàn ở khâu GitHub TẠO lần chạy. Vì thế việc
-# rải phút lẻ (kho này đã làm: 33, 41, 53, 7, 19...) không cứu được gì.
-#
-# Tệp này đảo ngược sự phụ thuộc đó:
-#   1. Đường chính là repository_dispatch từ bộ hẹn giờ BÊN NGOÀI (xem
-#      documentation/operations/on-time-trigger.md). Không đụng tới bộ lập
-#      lịch của GitHub.
-#   2. Một lần chạy tự thăm dò trong vòng lặp tới khi đủ 27 ô, nên chỉ cần
-#      được đánh thức MỘT lần thay vì mười lần.
-#   3. Lịch cron bên dưới là đường dự phòng: lượt đến sớm CHỜ trong runner
-#      tới khung quay, nên độ trễ của bộ lập lịch không còn đẩy kỳ về muộn.
-
 on:
   repository_dispatch:
-    # Đường ĐÚNG GIỜ. Bộ hẹn giờ bên ngoài POST vào lúc 18:10 giờ Việt Nam.
     types: [daily-collect]
 
   workflow_dispatch:
@@ -46,40 +18,19 @@ on:
         type: string
 
   schedule:
-    # Giờ UTC; Việt Nam là UTC+7.
-    #
-    # Đo lại 10-09 -> 05-10-2026 (26 ngày): bộ lập lịch của GitHub trên kho này
-    # trễ 4,3-5,6 giờ ở mốc 00:15 UTC và 4,6-8,6 giờ ở mốc 06:37 UTC. Lịch cũ
-    # (07:50-10:50 UTC, trần chờ 75 phút) vì thế nổ lúc 19:00-23:30 giờ VN —
-    # SAU hạn thăm dò 19:30, nên bộ thăm dò thoát mà không gọi nguồn lần nào.
-    # Kỳ về kho lúc 18:58-20:51 chỉ nhờ live-results kích hoạt hoàn tất.
-    #
-    # Cách sửa: đặt mốc vào SÁNG SỚM để độ trễ đẩy chúng rơi vào buổi chiều,
-    # và cho lượt đến sớm CHỜ trong runner tới khung quay (MAX_WAIT_MINUTES
-    # bên dưới, 260 phút: mọi lượt nổ từ 13:55 giờ VN đều chờ được). Bảy mốc
-    # cách nhau <= 44 phút: với mọi độ trễ đo được (4,3-8,6 giờ) có ít nhất
-    # BA mốc rơi vào khung chờ 13:55-18:35, vì GitHub còn bỏ mốc (05-10 không
-    # mốc nào nổ trong 7,7 giờ). Mô phỏng trên 26 ngày đo: 26/26 ngày thu được
-    # lúc 18:35 (tests/repo/test_workflows.py ghim phép tính này).
-    #
-    # Nổ quá sớm (GitHub bỗng đúng giờ) thì bước chặn cho thoát sau ~20 giây;
-    # khi ấy mốc 08:17 UTC (15:17 VN) tự chờ tới 18:15. Mốc cuối cũng là lưới
-    # an toàn: độ trễ lớn nhất đo được (8,2 giờ) vẫn giữ nó trước nửa đêm VN.
-    - cron: "13 1 * * *"    # 08:13 VN
-    - cron: "55 1 * * *"    # 08:55 VN
-    - cron: "37 2 * * *"    # 09:37 VN
-    - cron: "19 3 * * *"    # 10:19 VN
-    - cron: "1 4 * * *"     # 11:01 VN
-    - cron: "43 4 * * *"    # 11:43 VN
-    - cron: "27 5 * * *"    # 12:27 VN
-    - cron: "17 8 * * *"    # 15:17 VN — lưới an toàn cuối
+    - cron: "13 1 * * *"
+    - cron: "55 1 * * *"
+    - cron: "37 2 * * *"
+    - cron: "19 3 * * *"
+    - cron: "1 4 * * *"
+    - cron: "43 4 * * *"
+    - cron: "27 5 * * *"
+    - cron: "17 8 * * *"
 
 permissions:
   contents: read
 
 concurrency:
-  # KHÔNG dùng chung nhóm với daily-xsmb-pipeline: workflow này KÍCH HOẠT
-  # pipeline đó, nên chung nhóm sẽ tự khoá chính mình.
   group: daily-xsmb-collect
   cancel-in-progress: false
 
@@ -91,15 +42,9 @@ jobs:
       contents: read
       actions: write
 
-    # Chặn runner treo. Xấu nhất: đến sớm đúng mức trần MAX_WAIT_MINUTES (260)
-    # rồi thăm dò tới hạn 19:30 (75 phút nữa), cộng nới cho khâu cài đặt.
-    # GitHub giết mọi job quá 360 phút, nên trần chờ không thể lớn hơn nữa.
     timeout-minutes: 350
 
     env:
-      # Đặt TZ ở cấp job để MỌI bước — kể cả `date` trong shell — cùng một múi
-      # giờ. Đặt lẻ ở từng bước là cách sinh ra loại lỗi lệch 7 tiếng mà nhật
-      # ký không bao giờ chỉ ra được.
       TZ: Asia/Ho_Chi_Minh
       PYTHONPATH: ${{ github.workspace }}/src
       PYTHONUNBUFFERED: "1"
@@ -118,26 +63,11 @@ jobs:
           python-version-file: .python-version
 
       - name: Cài thư viện tối thiểu
-        # Lớp thăm dò không đụng tới pandas/sklearn, và cài cả requirements.txt
-        # sẽ thêm 2-3 phút vào đường găng ĐÚNG GIỜ. Nhưng "chỉ requests" là
-        # THIẾU: `fetch_results.py` nạp `sources` (bs4) và `dtos` (pydantic)
-        # ngay lúc import, nên nó sẽ chết ở dòng `import` đầu tiên.
-        #
-        # Lỗi này chưa từng nổ vì cổng "có nên chạy tiếp không" đóng ở CẢ 54
-        # lần chạy — bước thăm dò luôn bị bỏ qua. Ngày cổng mở thì nó nổ, và
-        # `continue-on-error: true` sẽ giữ việc XANH trong khi không cào được
-        # gì: hỏng im lặng, đúng thứ khó thấy nhất.
-        #
-        # `requirements-live.txt` là danh sách tối thiểu ĐÃ CÓ cho khung gần
-        # trực tiếp (live-results.yml dùng chính nó), toàn wheel nhỏ — không
-        # thêm một danh sách chép tay nào nữa.
         run: |
           python -m pip install --no-cache-dir --upgrade pip
           python -m pip install --no-cache-dir -r requirements-live.txt
 
       - name: Ghi nhận thời điểm khởi động
-        # Chênh lệch giữa mốc lịch và dòng này CHÍNH LÀ độ trễ của bộ lập
-        # lịch. Ghi lại để còn đo được, thay vì đoán.
         run: |
           echo "Sự kiện kích hoạt : $GITHUB_EVENT_NAME"
           echo "Giờ Việt Nam      : $(date '+%Y-%m-%d %H:%M:%S %Z')"
@@ -145,14 +75,6 @@ jobs:
 
       - name: Có nên chạy tiếp không
         id: gate
-        # Hai lý do để thoát sớm, cả hai đều là kết cục ĐÚNG chứ không phải lỗi.
-        #
-        # 1. Kỳ hôm nay đã nằm trong kho — một mốc trước đó đã làm xong. Tiếp
-        #    tục chỉ tốn yêu cầu vào nguồn tin và giữ runner vô ích.
-        # 2. Đến quá sớm. Bộ thăm dò chờ tới khung quay KHÔNG giới hạn, nên
-        #    trần chờ phải nằm trong timeout của job. 260 phút: lượt nổ từ
-        #    13:55 giờ VN chờ được — đó chính là đường đúng giờ khi bộ lập
-        #    lịch trễ 4-8 giờ. Nổ trước đó thì mốc sau lo.
         env:
           WINDOW_START: ${{ github.event.inputs.window_start || '18:15' }}
           MAX_WAIT_MINUTES: "260"
@@ -167,8 +89,6 @@ jobs:
           fi
 
           now_min=$(( $(date '+%-H') * 60 + $(date '+%-M') ))
-          # 10# ở CẢ hai vế: "08" không có tiền tố sẽ bị bash hiểu là bát phân
-          # và làm hỏng số học ngay khi ai đó đặt khung quay vào buổi sáng.
           win_min=$(( 10#${WINDOW_START%%:*} * 60 + 10#${WINDOW_START##*:} ))
           early=$(( win_min - now_min ))
 
@@ -184,23 +104,12 @@ jobs:
       - name: Thăm dò kết quả
         if: steps.gate.outputs.run == 'true'
         id: poll
-        # Không để bước này làm đỏ job: "chưa đủ số" là một kết cục hợp lệ khi
-        # nguồn chậm, và lưới an toàn phía sau sẽ thử lại. Đỏ giả làm người ta
-        # quen với việc bỏ qua cảnh báo.
         continue-on-error: true
-        # Đầu vào workflow_dispatch là văn bản tự do và runner thay ${{ }} TRƯỚC
-        # khi shell nhìn thấy dòng lệnh, nên dấu nháy trong YAML không bảo vệ
-        # được gì: một giá trị dạng  18:15" ; curl ... | sh ; echo "  trở thành
-        # một lệnh độc lập. Đưa qua env rồi tham chiếu "$VAR" thì shell nhận
-        # chuỗi làm DỮ LIỆU chứ không làm cú pháp. Chính tệp này đã dùng đúng
-        # cách ấy ở bước phía trên.
         env:
           WINDOW_START: ${{ github.event.inputs.window_start || '18:15' }}
           DEADLINE: ${{ github.event.inputs.deadline || '19:30' }}
         run: |
           set -euo pipefail
-          # Chốt chặn thứ hai: hình dạng HH:MM. Ngay cả khi cách truyền đổi
-          # về lối cũ, một giá trị không phải giờ cũng không đi xa hơn đây.
           for value in "$WINDOW_START" "$DEADLINE"; do
             if ! printf '%s' "$value" | grep -Eq '^([01][0-9]|2[0-3]):[0-5][0-9]$'; then
               echo "Giá trị giờ không hợp lệ: $value" >&2
@@ -226,9 +135,6 @@ jobs:
       - name: Kích hoạt quy trình hoàn tất
         if: steps.poll.outputs.verified == 'true'
         env:
-          # GITHUB_TOKEN kích hoạt được workflow_dispatch trên kho này — đã
-          # kiểm chứng: 11 trong 13 lần chạy workflow_dispatch của
-          # update-data.yml có actor là github-actions[bot].
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -271,14 +177,8 @@ jobs:
       - name: Kết luận
         if: always()
         env:
-          # Chuỗi cron của mốc đã kích hoạt lần chạy này; rỗng nếu chạy tay
-          # hoặc do repository_dispatch.
           FIRED_CRON: ${{ github.event.schedule }}
-          # Mốc lưới an toàn CUỐI CÙNG trong ngày. Phải khớp chính xác với
-          # mốc cuối ở khối `schedule` phía trên.
           LAST_CRON: "17 8 * * *"
-          # Đầu ra của bước khác cũng đi qua env, không thay thẳng vào khối lệnh
-          # (tests/repo/test_security_hardening.py: không có ${{ }} trong run:).
           POLL_VERIFIED: ${{ steps.poll.outputs.verified }}
           POLL_SLOTS: ${{ steps.poll.outputs.verified_slots || 0 }}
           GATE_RUN: ${{ steps.gate.outputs.run }}
@@ -287,9 +187,6 @@ jobs:
           verified="$POLL_VERIFIED"
           slots="$POLL_SLOTS"
 
-          # Bước chặn cho thoát sớm là kết cục ĐÚNG, không phải thiếu số: hoặc
-          # kỳ đã có trong kho, hoặc còn quá sớm và mốc sau sẽ lo. Báo đỏ ở đây
-          # sẽ dạy người ta bỏ qua cảnh báo của chính workflow này.
           if [ "$GATE_RUN" != "true" ]; then
             echo "::notice::Bỏ qua theo bước chặn; không thăm dò."
             exit 0
@@ -300,10 +197,6 @@ jobs:
             exit 0
           fi
 
-          # Thiếu số ở mốc SỚM là chuyện bình thường — mốc sau sẽ thử lại, nên
-          # chỉ cảnh báo. Nhưng thiếu số ở mốc CUỐI nghĩa là hôm nay không còn
-          # lần thử nào nữa: để job xanh lúc đó chính là silent fail, không ai
-          # biết dữ liệu đã hỏng cho tới khi tự mở trang ra xem.
           if [ "$FIRED_CRON" = "$LAST_CRON" ]; then
             echo "::error::Mốc cuối trong ngày mà mới có ${slots}/27 ô. Không còn lần thử nào cho kỳ hôm nay."
             exit 1

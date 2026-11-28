@@ -1,5 +1,3 @@
-"""Exact distribution and deterministic expert learning checks."""
-
 import asyncio
 import copy
 import itertools
@@ -150,7 +148,6 @@ if __name__ == '__main__':
 
 
 def _scalar_reference(logits, k):
-    """Bản quy hoạch động vô hướng trước khi vector hoá theo cột (19-10-2026)."""
     values = np.asarray(logits, dtype=np.longdouble)
     n = len(values)
     order = np.argsort(-values, kind='stable')
@@ -193,7 +190,6 @@ def _scalar_reference(logits, k):
 
 
 class VectorisedRecursionTests(unittest.TestCase):
-    """Vector hoá theo cột không được đổi một bit nào: biên đi vào gradient của MLP và sổ live."""
 
     def test_columns_vectorised_recursion_is_bit_identical_to_the_scalar_loop(self):
         rng = np.random.default_rng(20261019)

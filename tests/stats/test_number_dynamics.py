@@ -10,8 +10,6 @@ from stats.number_dynamics import build_dynamics_signal, transition_posterior
 def _synthetic_loto(days: int = 240) -> np.ndarray:
     rng = np.random.default_rng(7)
     hit = (rng.random((days, 100)) < 0.16).astype(np.int8)
-    # Inject a clear lag-1 relationship to verify that the transition matrix can
-    # recover signal while still applying Bayesian shrinkage.
     for t in range(days - 1):
         if hit[t, 12]:
             hit[t + 1, 34] = 1

@@ -1,5 +1,3 @@
-"""Đường cầu phải truy được ngày nguồn, vị trí và kết quả, kể cả số 0 đầu."""
-
 import json
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -139,7 +137,6 @@ def test_source_template_owns_clear_steps_and_token_colors():
 
 @pytest.fixture(scope="module")
 def path_layout_browser(tmp_path_factory):
-    """Dựng cả bốn biến thể từ nguồn, gồm Đặc Biệt đang chạy có dữ liệu mẫu."""
     playwright = pytest.importorskip("playwright.sync_api")
     folder = tmp_path_factory.mktemp("path-layout")
     root = Path(__file__).resolve().parents[2]
@@ -228,7 +225,6 @@ def _assert_equal_path_panels(browser_page):
 @pytest.mark.parametrize("mode,kind", [("loto", "active"), ("loto", "stable"),
                                       ("de", "active"), ("de", "stable")])
 def test_path_panels_share_visible_borders_and_follow_detail_after_filtering(path_layout_browser, mode, kind):
-    """Đo khung thật sau mỗi thao tác; bảng dài không được áp chiều cao lên căn cứ."""
     browser, base = path_layout_browser
     context = browser.new_context(viewport={"width": 1600, "height": 1000}, reduced_motion="reduce")
     browser_page = context.new_page()

@@ -1,11 +1,3 @@
-"""Bước đồng bộ không đi lấy lại ngày không quay.
-
-Đo trên log Actions ngày 05-10-2026: ``sync.py --fill-missing-days-back 365``
-mất 59 giây, trong đó ~36 giây là hỏi lại bốn ngày Tết 2026 — ngày đã nằm sẵn
-trong ``data/non_draw_days.json`` — mỗi ngày hai lần kèm thời gian ngủ, rồi kết
-luận "will retry in next run" để lượt sau làm lại y như vậy.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -35,7 +27,6 @@ def _result(d: date, *, special: int) -> Result:
 
 @dataclass
 class CountingSource:
-    """Nguồn giả: trả kết quả theo ngày, hoặc kết quả CŨ cho ngày không quay."""
 
     answers: dict[date, Result]
     calls: list[date] = field(default_factory=list)
@@ -53,24 +44,21 @@ def _target() -> date:
 
 @pytest.fixture
 def setup(tmp_path: Path, monkeypatch):
-    """Kho có đủ 10 ngày gần nhất trừ ba lỗ: ``gap_known``, ``gap_fresh``, ``gap_real``."""
     sleeps: list[float] = []
     monkeypatch.setattr(sync.time, "sleep", sleeps.append)
     target = _target()
-    # Mọi lỗ đều ngoài cửa sổ đồng thuận hai nguồn (2 ngày gần nhất).
     gap_known, gap_fresh, gap_real = (target - timedelta(days=k) for k in (5, 6, 8))
     source = CountingSource(answers={})
     paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
-    lot = Lottery(paths=paths, http=object(), sources=[source])  # type: ignore[arg-type]
+    lot = Lottery(paths=paths, http=object(), sources=[source])
     for k in range(10):
         day = target - timedelta(days=k)
         if day not in (gap_known, gap_fresh, gap_real):
-            lot._data[day] = _result(day, special=10000 + k)  # type: ignore[attr-defined]
+            lot._data[day] = _result(day, special=10000 + k)
     lot.generate_dataframes()
     monkeypatch.setattr(lot, "dump", lambda: None)
-    # Ngày không quay MỚI: nguồn trả nguyên kỳ đã lưu ngay trước đó.
     before = gap_fresh - timedelta(days=1)
-    source.answers[gap_fresh] = _result(gap_fresh, special=lot._data[before].special)  # type: ignore[attr-defined]
+    source.answers[gap_fresh] = _result(gap_fresh, special=lot._data[before].special)
     return lot, source, sleeps, (gap_known, gap_fresh, gap_real)
 
 
@@ -89,8 +77,6 @@ def test_a_day_in_the_non_draw_ledger_is_never_requested(setup) -> None:
 
 
 def test_a_day_found_to_be_non_draw_is_not_retried(setup, caplog) -> None:
-    """Trùng khít một kỳ đã lưu có xác suất 10^-107: thử lại vài giây sau không
-    đổi được kết luận, chỉ tốn thời gian."""
     lot, source, _, (_, gap_fresh, _) = setup
     with caplog.at_level("WARNING"):
         _run(lot, set())
@@ -102,11 +88,9 @@ def test_a_day_found_to_be_non_draw_is_not_retried(setup, caplog) -> None:
 
 
 def test_an_ordinary_miss_is_still_retried(setup) -> None:
-    """Nguồn im lặng KHÁC ngày không quay: đó có thể là lỗi mạng, phải thử lại."""
     lot, source, sleeps, (gap_known, gap_fresh, gap_real) = setup
     _run(lot, {gap_known.isoformat()})
     assert source.calls.count(gap_real) == 3
-    # Chỉ lỗ thật mới có thời gian chờ; ngày không quay vừa phát hiện thì không.
     assert [s for s in sleeps if s] == pytest.approx([0.8, 1.6, 2.4])
     assert not lot.is_no_draw(gap_real)
 
@@ -125,20 +109,17 @@ def test_by_default_ensure_up_to_date_skips_the_shipped_ledger(setup, monkeypatc
 
 
 def test_a_twin_inside_the_recent_window_is_still_retried(tmp_path: Path, monkeypatch) -> None:
-    """Kỳ mới vừa quay: trang nguồn có thể còn hiện kỳ trước và bộ phân tích
-    đóng dấu ngày được hỏi lên đó. Trong cửa sổ đồng thuận, trùng khít CHƯA chắc
-    là ngày không quay, nên phải thử lại để kịp lấy kết quả vừa đăng."""
     monkeypatch.setattr(sync.time, "sleep", lambda s: None)
     target = _target()
     paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
     first, second = CountingSource(answers={}, name="a"), CountingSource(answers={}, name="b")
-    lot = Lottery(paths=paths, http=object(), sources=[first, second])  # type: ignore[arg-type]
+    lot = Lottery(paths=paths, http=object(), sources=[first, second])
     for k in range(1, 10):
         day = target - timedelta(days=k)
-        lot._data[day] = _result(day, special=10000 + k)  # type: ignore[attr-defined]
+        lot._data[day] = _result(day, special=10000 + k)
     lot.generate_dataframes()
     monkeypatch.setattr(lot, "dump", lambda: None)
-    stale = _result(target, special=lot._data[target - timedelta(days=1)].special)  # type: ignore[attr-defined]
+    stale = _result(target, special=lot._data[target - timedelta(days=1)].special)
     first.answers[target] = second.answers[target] = stale
 
     sync.ensure_up_to_date(

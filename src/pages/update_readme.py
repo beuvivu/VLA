@@ -236,7 +236,6 @@ def _replace_automation_block(text: str) -> str:
         _, post = rest.split(end, 1)
         return pre.rstrip() + "\n\n" + block + "\n" + post.lstrip()
 
-    # Remove the legacy schedule section so README cannot show contradictory times.
     legacy = re.compile(
         r"\n## Lịch daily finalization\n.*?(?=\n## (?:Dashboard|Bảng điều khiển)\n)",
         re.DOTALL,

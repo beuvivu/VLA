@@ -1,25 +1,3 @@
-"""Portfolio optimiser: maximise the probability of winning *at least one* prize per draw
-for a fixed budget of B tickets ("tăng tần suất trúng giải").
-
-What can and cannot be improved
--------------------------------
-* P(a given ticket wins any tier) is fixed by the rules (Mega 2.38 %, Power 1.33 %,
-  Lotto 5/35 9.60 %). Nothing changes it.
-* The expected payout of B tickets is B × the single-ticket EV for *any* choice of
-  tickets (linearity of expectation) — except jackpot sharing, handled elsewhere.
-* What *does* depend on the choice is the overlap between tickets: P(at least one
-  prize) = P(∪ events) ≤ B·p. Tickets that share numbers tend to win together; tickets
-  spread over the pool rarely do. A bao ticket is the extreme of overlap.
-
-Method (sample-average approximation of a maximum-coverage problem):
-1. Simulate S draws (bitmasks).
-2. Greedy selection from a random candidate pool — a (1−1/e)-approximation for coverage.
-3. Local search: replace single numbers (and Lotto special numbers) while the number of
-   covered draws increases.
-4. Re-evaluate on an *independent* sample (no optimisation bias) with a 95 % interval;
-   compare with B independent quick picks and with the B·p upper bound.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -39,8 +17,8 @@ class CoverageResult(BaseModel):
     p_at_least_one_ci95: tuple[float, float]
     p_random_tickets: float
     p_random_ci95: tuple[float, float]
-    upper_bound: float  # min(1, B·p): disjoint events
-    expected_prizes_per_draw: float  # identical for every portfolio of B tickets
+    upper_bound: float
+    expected_prizes_per_draw: float
     evaluation_draws: int
     note: str
 
@@ -54,7 +32,6 @@ def _sim_draws(spec: GameSpec, size: int, rng: np.random.Generator) -> tuple[np.
     order = np.argpartition(rng.random((size, n)), k, axis=1)
     w = order[:, :k] + 1
     if spec.bonus_mode == "same_drum":
-        # Bóng thứ k+1 rút đều từ n-k bóng còn lại, không thuộc bộ chính.
         sp = order[:, k] + 1
     else:
         sp = rng.integers(1, int(spec.bonus_pool_size or 1) + 1, size) if spec.separate_special else np.zeros(size, int)
@@ -62,7 +39,6 @@ def _sim_draws(spec: GameSpec, size: int, rng: np.random.Generator) -> tuple[np.
 
 
 def _win_matrix(spec: GameSpec, ticket_masks: np.ndarray, ticket_sp: np.ndarray, draw_masks: np.ndarray, draw_sp: np.ndarray, min_main: dict) -> np.ndarray:
-    """(tickets, draws) bool: ticket wins a tier at or above the threshold."""
     m = np.bitwise_count(ticket_masks[:, None] & draw_masks[None, :])
     if spec.separate_special:
         hit = ticket_sp[:, None] == draw_sp[None, :]
@@ -74,7 +50,6 @@ def _win_matrix(spec: GameSpec, ticket_masks: np.ndarray, ticket_sp: np.ndarray,
 
 
 def _thresholds(spec: GameSpec, min_tier: str) -> dict:
-    """Smallest main-match count that reaches ``min_tier`` (or better), per special condition."""
     order = [t.name for t in spec.tiers]
     if min_tier not in order:
         raise ValueError(f"unknown tier {min_tier!r}; choose from {order}")
@@ -159,8 +134,6 @@ def optimise_coverage(
         if not improved:
             break
 
-    # unbiased evaluation on fresh draws, in chunks; the baseline draws a *new* random
-    # portfolio for every simulated draw, so it estimates E over quick-pick portfolios
     rng_eval = np.random.default_rng(None if seed is None else seed + 1)
     hits = 0
     hits_rand = 0

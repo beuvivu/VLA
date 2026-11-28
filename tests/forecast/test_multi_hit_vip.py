@@ -1,11 +1,3 @@
-"""Bộ lọc lô nhiều nháy: không nhìn trước, bắt được tín hiệu cài sẵn, không báo tin cậy giả.
-
-Kết luận đo trên 4 228 kỳ thật (top-5 trúng 2,91%, chọn bừa trên cùng các kỳ 2,91%) nằm ở
-``documentation/research/2026-10-08-lo-nhieu-nhay.md``. Các phép kiểm dưới đây ghim các LUẬT
-khiến con số ấy đáng tin: đặc trưng chỉ đọc quá khứ, trọng số chọn trên các kỳ trước, và bộ lọc
-đủ nhạy để thấy tín hiệu khi tín hiệu có thật.
-"""
-
 from __future__ import annotations
 
 import json
@@ -28,7 +20,6 @@ def test_the_base_rate_is_the_binomial_tail() -> None:
 
 
 def test_the_any_multi_chance_counts_every_fair_draw_exactly() -> None:
-    """Đếm thẳng mọi kỳ quay của một xổ số tí hon: n con, mỗi kỳ ``per_draw`` lô."""
     from itertools import product
 
     for n, per_draw, k in ((5, 3, 2), (6, 4, 3), (4, 5, 1), (4, 5, 4)):
@@ -36,7 +27,6 @@ def test_the_any_multi_chance_counts_every_fair_draw_exactly() -> None:
         good = sum(any(d.count(x) >= 2 for x in range(k)) for d in draws)
         assert m.any_multi_chance(k, per_draw, n) == pytest.approx(good / len(draws), rel=1e-12)
     assert m.any_multi_chance(1) == pytest.approx(m.base_rate(), rel=1e-12)
-    # Cả 100 con: kỳ có ít nhất một con về hai lần — phần bù của bài toán ngày sinh.
     birthday = np.prod([1 - i / 100 for i in range(m.LOTO_PER_DRAW)])
     assert m.any_multi_chance(100) == pytest.approx(1 - birthday, rel=1e-12)
     assert m.any_multi_chance(5) == pytest.approx(0.1411, abs=1e-4)
@@ -67,7 +57,6 @@ def test_a_draw_s_features_never_read_that_draw_or_later() -> None:
     before = m.build_raw_features(m.counts_matrix(draws), cfg)
     after = m.build_raw_features(m.counts_matrix(changed), cfg)
     assert np.array_equal(before[: t + 1], after[: t + 1])
-    # Không rỗng: hàng ngay sau kỳ bị đổi PHẢI thấy sự thay đổi.
     assert not np.array_equal(before[t + 1], after[t + 1])
 
 
@@ -75,7 +64,7 @@ def test_weights_are_chosen_only_from_the_draws_before() -> None:
     model = _model(m.mock_history(100, seed=4))
     t = model.cfg.first_evaluated + 5
     lure = 17
-    model._hits[t, lure] = 10_000          # kỳ t "trúng" khổng lồ với vector trọng số 17
+    model._hits[t, lure] = 10_000
     assert model.select_weights(t) != lure
     assert model.select_weights(t + 1) == lure
 
@@ -90,9 +79,6 @@ def test_rhythm_needs_equal_spacing_and_to_be_due_now() -> None:
 
 
 def test_co_occurrence_learns_a_lagged_pair() -> None:
-    # 11 về kỳ trước thì 77 về 2 nháy kỳ sau. Hai lịch sử giống hệt nhau trừ kỳ cuối: một bản có
-    # 11 về 10 nháy, bản kia thay bằng 12. Chỉ phép ghép cặp CÓ ĐỘ TRỄ mới làm co_lift của 77
-    # tăng rõ ở bản có 11; ghép cùng kỳ thì chênh lệch chỉ là nhiễu (đo: dưới 0,07).
     rng = np.random.default_rng(9)
     draws = rng.integers(0, 100, size=(300, 27))
     for t in range(1, 300):
@@ -145,7 +131,7 @@ def test_a_constant_feature_carries_no_information(method: str) -> None:
 def test_confidence_comes_from_the_test_not_from_a_hand_threshold() -> None:
     assert m.model_confidence(0.005, 1.5) == "High"
     assert m.model_confidence(0.03, 1.2) == "Medium"
-    assert m.model_confidence(0.001, 0.8) == "Low"     # "có ý nghĩa" nhưng KÉM nền
+    assert m.model_confidence(0.001, 0.8) == "Low"
     assert m.number_confidence("Low", 0.5, 0.03) == "Low"
     assert m.number_confidence("High", 0.04, 0.03) == "Low"
 
@@ -161,9 +147,6 @@ def test_the_cli_runs_on_mock_data_and_writes_the_report(tmp_path, capsys) -> No
 
 
 def test_ties_are_broken_the_same_unbiased_way_in_every_path() -> None:
-    """Mọi thành phần bằng 0 thì mọi con hoà. Chọn trọng số, backtest và dự báo đều phải phá hoà
-    bằng ``rank_order``, không phải thứ tự số: phá theo thứ tự số thì hoà nào cũng chọn 00–04,
-    và phép chọn trọng số thưởng cho một chiến lược "chọn 00–04" không ai khai báo."""
     model = _model(m.mock_history(150, seed=11))
     model.components[:] = 0.0
     model._hits, model._auc = model._score_all_weights()
@@ -181,7 +164,6 @@ def test_ties_are_broken_the_same_unbiased_way_in_every_path() -> None:
 
 
 def test_until_pins_the_history_a_published_measurement_used(tmp_path) -> None:
-    """CSV lịch sử dài thêm mỗi ngày; ``--until`` phải cắt đúng các kỳ tới ngày chốt."""
     frame = m.mock_history(120, seed=12)
     csv = tmp_path / "history.csv"
     frame.to_csv(csv, index=False)
@@ -196,9 +178,6 @@ def test_until_pins_the_history_a_published_measurement_used(tmp_path) -> None:
 
 
 def test_the_backtest_compares_with_random_picks_on_the_same_draws() -> None:
-    """Mỗi kỳ chỉ quay trong 60 con nên tỉ lệ ≥ 2 nháy thật (~4,5%) cao hơn lý thuyết 2,975%. Bộ
-    lọc bị ép chọn ngẫu nhiên (mọi thành phần bằng 0, hoà phá bằng hoán vị) thì trúng đúng như
-    chọn bừa — so với mức nền lý thuyết nó sẽ trông "hơn nền" ×1,5 và nhận Confidence High."""
     rng = np.random.default_rng(14)
     draws = rng.integers(0, 60, size=(400, m.LOTO_PER_DRAW))
     model = m.VIPMultiHitModel(draws)

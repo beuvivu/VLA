@@ -1,8 +1,3 @@
-"""Browser TLS transport, bounded retry, optional solver and pinned clearance.
-
-Proxies are supplied by the operator. Clearance is scoped to origin, proxy,
-browser and solver User-Agent. No challenge response is accepted as draw data.
-"""
 from __future__ import annotations
 import asyncio
 import os
@@ -47,7 +42,6 @@ class ScraperConfig:
 
     @classmethod
     def from_env(cls) -> ScraperConfig:
-        # Credentials remain in memory; they never enter error messages or reports.
         return cls(proxies=tuple(p.strip() for p in os.getenv("VLM_PROXIES","").split(",") if p.strip()))
 
 
@@ -71,7 +65,6 @@ def is_challenge(response: httpx.Response) -> bool:
 
 
 class FlareSolverrSolver:
-    """Optional external service. It may fail on unsupported challenge types."""
     def __init__(self, endpoint: str, timeout_s: float = 60) -> None:
         self.endpoint, self.timeout_s = endpoint, timeout_s
 
@@ -110,7 +103,6 @@ class FlareSolverrSolver:
 
 
 class AsyncScraper:
-    """Compatible get/post/set_cookie interface for existing Vietlott sources."""
     def __init__(self, config: ScraperConfig | None = None, *,
                  requester: Callable[...,Awaitable[httpx.Response]] | None = None,
                  solver: ChallengeSolver | None = None,
@@ -158,7 +150,6 @@ class AsyncScraper:
                                              http_version=CurlHttpVersion.V2_0,**kwargs)
         if len(res.content)>self.config.max_response_bytes:
             raise ScrapeError("response exceeds configured size limit")
-        # libcurl has already decoded gzip/br and chunked transfer encoding.
         headers={k:v for k,v in res.headers.items() if k.lower() not in ("content-encoding","content-length","transfer-encoding")}
         return httpx.Response(res.status_code,content=res.content,headers=headers,
                               request=httpx.Request(method,url))
@@ -218,8 +209,6 @@ class AsyncScraper:
                         if is_challenge(solved.response) or solved.response.status_code>=400:
                             raise ScrapeError("solver returned a challenge")
                         ua=solved.user_agent.lower()
-                        # FlareSolverr uses Chrome even if the blocked attempt was
-                        # Firefox; pair its clearance UA with the same browser family.
                         solved_browser="firefox" if "firefox/" in ua else "chrome" if "chrome/" in ua else browser
                         self._sticky[origin]=(proxy,solved_browser,solved,time.monotonic()+self.config.clearance_ttl_s)
                         self.stats["solved"]+=1
@@ -247,7 +236,6 @@ class AsyncScraper:
             except (httpx.TransportError,TimeoutError) as exc:
                 last=type(exc).__name__
             except Exception as exc:
-                # curl exceptions may contain proxy credentials; keep only their class.
                 if exc.__class__.__module__.startswith("curl_cffi"):
                     last=type(exc).__name__
                 else:

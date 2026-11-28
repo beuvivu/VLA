@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Exact calendar alignment primitives for time-dependent analytics.
-
-Row adjacency is not a time interval.  Every algorithm that claims a one-day or
-N-day lag must either use these index pairs or explicitly require a contiguous
-daily series.  This prevents a missing canonical date from silently turning a
-2-day jump into a "next-day" transition.
-"""
 
 import json
 from collections.abc import Iterable, Sequence
@@ -33,7 +26,6 @@ def normalize_dates(dates: Sequence[object] | pd.Series | pd.Index) -> pd.Dateti
 def calendar_lag_pairs(
     dates: Sequence[object] | pd.Series | pd.Index, lag_days: int
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return source/target indices separated by exactly ``lag_days`` calendar days."""
     if lag_days <= 0:
         raise ValueError("lag_days must be >= 1")
     idx = normalize_dates(dates)
@@ -41,9 +33,6 @@ def calendar_lag_pairs(
         empty = np.array([], dtype=np.int32)
         return empty, empty.copy()
 
-    # The dates are already sorted and unique (``normalize_dates`` enforces
-    # both), so the "does date + lag exist?" lookup is a binary search rather
-    # than a Python dict walk over every timestamp. ~2.7x faster and identical.
     wanted = idx + pd.Timedelta(days=int(lag_days))
     position = idx.searchsorted(wanted)
     in_range = position < len(idx)
@@ -74,23 +63,6 @@ def missing_calendar_dates(
 
 @lru_cache(maxsize=1)
 def known_non_draw_days() -> frozenset[str]:
-    """Những ngày XSMB không quay, đọc từ ``data/non_draw_days.json``.
-
-    XSMB nghỉ dịp Tết mỗi năm và suốt đợt giãn cách 01-22/4/2020. Vào những
-    ngày đó trang nguồn vẫn trả kết quả gần nhất, nên trình cào từng ghi lại
-    như thể đó là kỳ của ngày ấy — 50 bản ghi bịa, 4 trong số đó lọt qua cả
-    kiểm đồng thuận hai nguồn (mọi nguồn cùng đọc một trang tin nên ở dạng
-    hỏng này chúng không độc lập).
-
-    Chính dữ liệu bịa đó đã làm chuỗi ngày trông liền mạch. Sau khi loại
-    chúng, kiểm tra liền mạch phải phân biệt được hai việc khác hẳn nhau:
-
-    * **không quay** — hợp lệ, ngày đó không tồn tại kỳ nào;
-    * **cào hụt** — hỏng, phải báo lỗi.
-
-    Returns:
-        Tập ngày ``YYYY-MM-DD``; rỗng nếu chưa có tệp.
-    """
     path = REPO_ROOT / "data" / "non_draw_days.json"
     if not path.exists():
         return frozenset()
@@ -103,21 +75,6 @@ def unexpected_gap_dates(
     *,
     allow_missing: Iterable[str] | None = None,
 ) -> list[str]:
-    """Ngày vắng mà KHÔNG giải thích được bằng lịch nghỉ quay.
-
-    Ba nơi trong kho từng tự kiểm chuỗi ngày liền mạch bằng mã riêng
-    (``calendar_alignment``, ``production_audit``, ``research.ml_engine.schema``). Cả ba
-    đều coi mọi ngày vắng là hỏng, nên chúng chỉ xanh chừng nào 50 bản ghi bịa
-    còn lấp vào chỗ trống — tức là bất biến được bảo đảm bởi chính dữ liệu sai.
-
-    Args:
-        dates: Chuỗi ngày cần kiểm.
-        allow_missing: Ngày được phép vắng; mặc định
-            :func:`known_non_draw_days`.
-
-    Returns:
-        Các ngày vắng cần báo động, tăng dần.
-    """
     allowed = (
         known_non_draw_days() if allow_missing is None else frozenset(allow_missing)
     )
@@ -130,21 +87,6 @@ def require_daily_contiguous(
     context: str = "time series",
     allow_missing: Iterable[str] | None = None,
 ) -> pd.DatetimeIndex:
-    """Bắt buộc chuỗi ngày liền mạch, trừ những ngày vốn không có kỳ quay.
-
-    Args:
-        dates: Chuỗi ngày cần kiểm.
-        context: Tên ngữ cảnh, đưa vào thông báo lỗi.
-        allow_missing: Ngày được phép vắng. Mặc định lấy
-            :func:`known_non_draw_days`; truyền tập rỗng để đòi liền mạch
-            tuyệt đối.
-
-    Returns:
-        Chỉ mục ngày đã chuẩn hoá.
-
-    Raises:
-        ValueError: Nếu còn ngày vắng không nằm trong danh sách cho phép.
-    """
     idx = normalize_dates(dates)
     missing = unexpected_gap_dates(idx, allow_missing=allow_missing)
     if missing:

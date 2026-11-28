@@ -1,27 +1,10 @@
-// Bộ máy thống kê chạy phía trình duyệt.
-// Toàn bộ lịch sử được nhúng vào trang nên mọi bộ lọc là tức thì, không gọi
-// mạng. Xem docstring của src/pages/build_stat_pages.py để biết vì sao.
 "use strict";
 const DRAWS = window.__D_DEMO_DRAWS__ || window.__D_DRAWS__ || [];
-// Kỳ vọng số NHÁY của một con mỗi kỳ: 27 lô chia đều 100 số. Bảng nào đếm đủ nháy (countLoto)
-// thì so với mốc này; 1 − 0,99²⁷ ≈ 23,8% là tỉ lệ có mặt ÍT NHẤT một lần — một phép đếm khác,
-// và đem nó làm kỳ vọng cho số nháy thì "so kỳ vọng" thổi lên 27/23,77 ≈ 1,14 lần.
 const NHAY_PER_DRAW = 27 / 100;
 const PAIR_BASELINE = 1 - 2 * Math.pow(0.99, 27) + Math.pow(0.98, 27);
 
-// Mốc "cực đại do ngẫu nhiên" của 4950 cặp, tra theo số kỳ ĐANG CHỌN.
-//
-// Mốc này tăng theo độ dài lịch sử: 7,7 ở 30 kỳ, 39,9 ở 393, 177,2 ở 2442.
-// Ghi chú cố định một con số là sai ngay khi người dùng bấm bộ lọc — chọn
-// "30 kỳ" mà vẫn đọc mốc của toàn bộ lịch sử thì lệch tới 25 lần, và bảng
-// tuyên bố "bất thường" cho dữ liệu hoàn toàn ngẫu nhiên.
-//
-// Công thức đóng cần hàm phân phối nhị thức, quá nặng để tính lại trong
-// trình duyệt mỗi lần lọc. Thay vào đó dựng sẵn một lưới và nội suy tuyến
-// tính: 22 điểm cho sai số tối đa 0,67% (dưới 0,15% với mọi N >= 30).
 const PAIR_CHANCE_GRID = window.__D_PAIR_CHANCE__ || [];
 
-/** Cực đại ngẫu nhiên và khoảng 90% cho ``n`` kỳ; null nếu chưa có lưới. */
 function pairChanceMaximum(n) {
   const g = PAIR_CHANCE_GRID;
   if (!g.length || n <= 0) return null;
@@ -42,7 +25,6 @@ function pairChanceMaximum(n) {
   return null;
 }
 
-/** Viết lại ghi chú mốc ngẫu nhiên theo số kỳ đang chọn. */
 function updateChanceNote(nDraws) {
   const el = $("sp-chance");
   if (!el) return;
@@ -58,26 +40,6 @@ function updateChanceNote(nDraws) {
 const $ = (id) => document.getElementById(id);
 const pad2 = (n) => String(n).padStart(2, "0");
 
-// --- Bộ dựng DOM ------------------------------------------------------------
-//
-// Trang này từng ghép bảng bằng chuỗi rồi gán thẳng vào cây DOM. Mỗi chỗ như
-// thế là một cống HTML: trình duyệt PHÂN TÍCH lại chuỗi thành thẻ, nên bất kỳ
-// ký tự nào lọt vào từ dữ liệu cũng có thể thành mã đánh dấu. Ba hàm dưới đây
-// thay hẳn lối ấy — chuỗi chỉ đi vào `textContent` hoặc `setAttribute`.
-//
-// `tests/repo/test_security_hardening.py` canh: không tệp nào trong `src/` hay
-// `docs/` được phép gọi lại một cống HTML, kể cả trong chú thích.
-//
-// Thứ tự khoá trong `attrs` LÀ thứ tự thuộc tính in ra. Giữ đúng thứ tự của
-// bản chuỗi cũ để phép so DOM giữa hai bản là so từng byte, không phải so
-// "tương đương về ý nghĩa".
-
-/** Dựng một phần tử: thẻ, thuộc tính, con.
- *
- * Giá trị thuộc tính rỗng, `null`, `undefined` hay `false` thì BỎ HẲN thuộc
- * tính — bản chuỗi cũ nối `title="..."` chỉ khi có nội dung, nên giữ nguyên
- * quy ước ấy. `true` cho thuộc tính cờ (`checked`), in ra `checked=""`.
- */
 function mk(tag, attrs, kids) {
   const node = ["svg", "path"].includes(tag)
     ? document.createElementNS("http://www.w3.org/2000/svg", tag)
@@ -93,9 +55,6 @@ function mk(tag, attrs, kids) {
   return node;
 }
 
-/** Nối con vào `node`: phần tử giữ nguyên, mảng nối lần lượt, còn lại thành
- * CHỮ. Số 0 là nội dung thật nên không bị bỏ; chuỗi rỗng thì bỏ, vì bản cũ
- * nối chuỗi rỗng cũng không sinh ra nút nào. */
 function put(node, kids) {
   if (kids === null || kids === undefined || kids === false || kids === "") return node;
   if (Array.isArray(kids)) {
@@ -106,26 +65,11 @@ function put(node, kids) {
   return node;
 }
 
-/** Thay TOÀN BỘ con của `node`. Đây là chỗ thay cho phép gán chuỗi HTML. */
 function fill(node, kids) {
   node.textContent = "";
   return put(node, kids);
 }
 
-/** Các kỳ nằm trong dải đang chọn. */
-/** Thứ trong tuần của nhãn ngày `YYYY-MM-DD`, chuẩn JS (Chủ nhật = 0).
- *
- *  KHÔNG dùng `new Date(d).getDay()`. `getDay()` đọc theo múi giờ MÁY NGƯỜI
- *  XEM, không phải múi giờ đã dựng nên mốc. Đã đo trong Chromium với
- *  2026-09-14 (thứ Hai ở Việt Nam): cả `new Date(d).getDay()` lẫn
- *  `new Date(d + "T12:00:00+07:00").getDay()` đều trả 0 (Chủ nhật) khi người
- *  xem ở America/Los_Angeles hoặc Pacific/Honolulu — bộ lọc "Thứ hai" khi ấy
- *  trả về toàn kỳ Chủ nhật, âm thầm, không báo lỗi.
- *
- *  Ngày quay là một NHÃN LỊCH chứ không phải một thời điểm. `Date.UTC` dựng
- *  mốc từ ba con số rời và `getUTCDay()` đọc lại cũng bằng UTC, nên múi giờ
- *  người xem không chen vào được ở cả hai đầu.
- */
 function weekdayOf(value) {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
@@ -136,8 +80,6 @@ function selected() {
   const from = fromInput && fromInput.value;
   const to = toInput && toInput.value;
   let rows = DRAWS;
-  // Trang chỉ có mốc nhanh không có ô ngày: chính nút đang chọn xác định
-  // N kỳ cuối. Không suy khoảng từ ngày lịch vì lịch sử có ngày nghỉ quay.
   if (!fromInput && !toInput) {
     const active = document.querySelector(".sp-chips .sp-chip.on[data-days]");
     const count = active ? Number(active.dataset.days) : 0;
@@ -145,8 +87,6 @@ function selected() {
   }
   if (from) rows = rows.filter((r) => r.d >= from);
   if (to) rows = rows.filter((r) => r.d <= to);
-  // Lọc thứ chạy SAU khi đã chốt khoảng, không phải trước: yêu cầu là "các
-  // ngày Thứ 2 TRONG khoảng đã chọn".
   const weekday = $("sp-weekday");
   if (weekday && weekday.value !== "all") {
     const want = Number(weekday.value);
@@ -157,12 +97,6 @@ function selected() {
   return rows;
 }
 
-/** Nhãn ngày hôm nay theo giờ Việt Nam, hoặc "" nếu không dựng được.
- *
- *  Phải quy về múi giờ Việt Nam chứ không dùng đồng hồ máy: người xem ở bờ
- *  Tây nước Mỹ lúc 19h ngày 14 đang là 09h ngày 15 ở Việt Nam, nên "hôm nay"
- *  của họ lệch một ngày so với lịch quay.
- */
 function todayInVietnam() {
   try {
     return new Intl.DateTimeFormat("en-CA", {
@@ -173,20 +107,12 @@ function todayInVietnam() {
   }
 }
 
-/** Kỳ hôm nay đã có kết quả chưa. Trả về nhãn ngày nếu CHƯA, "" nếu rồi.
- *
- *  Cột chờ phải TÔN TRỌNG bộ lọc thứ. Nó được chèn vào sau khi lọc xong, nên
- *  nếu không tự kiểm thì nó lách qua: đã đo, lọc "Thứ hai" và lọc "Chủ nhật"
- *  đều hiện cột 15-09, trong khi 15-09-2026 là thứ Ba. Một cột chờ nằm sai
- *  thứ thì phá đúng cái mục đích người ta bật bộ lọc lên.
- */
 function pendingDay(rows) {
   const today = todayInVietnam();
   if (!today) return "";
   const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
   if (!latest || today <= latest) return "";
   const from = $("sp-from"), to = $("sp-to");
-  // Kỳ chờ chỉ đi cùng dải tới kết quả mới nhất; xem quá khứ không thêm hôm nay.
   if ((from && from.value > today) || (to && to.value && to.value < latest)) return "";
   const weekday = $("sp-weekday");
   if (weekday && weekday.value !== "all" && weekdayOf(today) !== Number(weekday.value)) {
@@ -203,35 +129,11 @@ function setCount(rows) {
   el.textContent = `${rows.length} kỳ · ${first} → ${last}`;
 }
 
-/** Giải Đặc Biệt ĐỦ 5 CHỮ SỐ, nhấn hai số cuối.
- *
- * Trang gốc liệt kê trọn giải Đặc Biệt chứ không chỉ hai số cuối. Dữ liệu
- * nhúng vốn đã giữ đủ 5 chữ số; bản trước cắt bớt ngay lúc dựng bảng nên
- * người đọc mất phần đầu và không đối chiếu được với kết quả gốc.
- */
 function specialFull(value) {
   const s = String(value).padStart(5, "0");
   return mk("span", { class: "sp-de" }, [s.slice(0, 3), mk("b", null, s.slice(3))]);
 }
 
-// --- Ô bảng Đặc Biệt: sáu trường ------------------------------------------
-//
-// Trang tham chiếu không hiện mỗi con số mà là sáu trường, và có sáu ô đánh
-// dấu để bật/tắt từng trường. Giải mã từ dữ liệu thật của họ, kiểm trên 24 ô:
-//
-//   '570 68 4 6 8 C 13'
-//    │   │  │ │ │ │ └─ Bộ
-//    │   │  │ │ │ └─── Chẵn/Lẻ  (theo Đuôi)
-//    │   │  │ │ └───── Đuôi     (chữ số hàng đơn vị)
-//    │   │  │ └─────── Đầu      (chữ số hàng chục)
-//    │   │  └───────── Tổng     ((Đầu + Đuôi) mod 10)
-//    │   └──────────── hai số cuối
-//    └──────────────── ba số đầu
-//
-// Bộ gom một con với bóng-dương và số lộn của nó: 68 thuộc bộ 13 vì 6 có
-// bóng 1 và 8 có bóng 3. Bảng tra dựng sẵn phía Python từ
-// number_reference.bo_family_id, không cài lại công thức ở đây — một bản chép
-// thứ hai là một bản sẽ trôi khỏi bản gốc.
 const BO_LOOKUP = window.__D_BO__ || [];
 
 const DE_FIELDS = [
@@ -257,17 +159,14 @@ let SHOWN = new Set(DE_FIELDS.map((f) => f.key));
 try {
   const saved = localStorage.getItem(FIELD_KEY);
   if (saved) SHOWN = new Set(JSON.parse(saved));
-} catch (e) { /* cửa sổ ẩn danh ném lỗi ngay ở lệnh đọc */ }
+} catch (e) {   }
 
-/** Ô bảng Đặc Biệt đầy đủ: giải 5 số cộng các trường đang bật. */
 function specialCell(value, iso) {
   const s = String(value).padStart(5, "0");
   const two = s.slice(3);
   const dau = +two[0];
   const duoi = +two[1];
 
-  // Mỗi trường mang title riêng: người đọc trỏ vào con số là biết nó là gì,
-  // không phải đối chiếu ngược lên hàng chú giải rồi đếm cột.
   const tip = (key) => (DE_FIELDS.find((f) => f.key === key) || {}).hint || "";
   const parts = [];
   if (iso && SHOWN.has("ngay")) {
@@ -280,10 +179,6 @@ function specialCell(value, iso) {
   if (SHOWN.has("dau")) parts.push(mk("i", { class: "sp-f", title: `Đầu — ${tip("dau")}` }, dau));
   if (SHOWN.has("duoi")) parts.push(mk("i", { class: "sp-f", title: `Đuôi — ${tip("duoi")}` }, duoi));
   if (SHOWN.has("chanle")) {
-    // HAI ký tự: chẵn/lẻ của Đầu rồi của Đuôi. Hai trang tham chiếu khác nhau
-    // ở chỗ này — hainhay chỉ ghi một ký tự theo Đuôi, thongkemienbac ghi cả
-    // hai. Lấy bản hai ký tự vì nó chứa trọn thông tin của bản kia.
-    // Kiểm trên 15 ô thật: 49 -> "CL" (Đầu 4 chẵn, Đuôi 9 lẻ).
     parts.push(mk("i", { class: "sp-f", title: `Chẵn/Lẻ — ${tip("chanle")}` },
       `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}`));
   }
@@ -291,23 +186,11 @@ function specialCell(value, iso) {
     parts.push(mk("i", { class: "sp-f", title: `Bộ — ${tip("bo")}` }, BO_LOOKUP[+two] || ""));
   }
 
-  // Gọi lại specialFull thay vì chép cách dựng: hai bản dựng cùng một thứ là
-  // hai bản sẽ lệch nhau khi ai đó sửa một bên.
-  //
-  // Trả về MẢNG nút, không phải chuỗi. Người gọi đẩy thẳng mảng ấy vào `put`.
   return parts.length
     ? [specialFull(s), mk("span", { class: "sp-fields" }, parts)]
     : [specialFull(s)];
 }
 
-/** Hàng chú giải sáu trường, dựng từ một ô THẬT của kỳ gần nhất.
- *
- * Câu hỏi đầu tiên người đọc đặt ra trước bảng này là "chữ nhỏ dưới mỗi ô
- * nghĩa là gì". Trước đây trang có sáu ô bật/tắt nhưng không nói trường nào
- * đứng ở đâu, nên muốn biết thì phải đoán. Chú giải lấy đúng kỳ mới nhất thay
- * vì một ví dụ bịa: số trong chú giải trùng với số ở hàng đầu bảng, đối chiếu
- * được ngay.
- */
 function renderLegend() {
   const box = $("sp-legend");
   if (!box) return;
@@ -327,10 +210,6 @@ function renderLegend() {
     chanle: `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}`,
     bo: BO_LOOKUP[+two] || "—",
   };
-  // Liệt kê đủ các con cùng bộ với ô mẫu. Ví dụ cố định kiểu "68 thuộc bộ 13"
-  // vô dụng khi kỳ mới nhất ra 04 — bộ của 04 chính là 04, câu giải thích đọc
-  // thành lặp lại. Đọc thẳng bảng tra ra danh sách thì ví dụ nào cũng nói được
-  // điều gì đó, và vẫn chỉ có một nguồn duy nhất là bảng dựng phía Python.
   const bo = BO_LOOKUP[+two];
   const family = [];
   for (let n = 0; n < 100 && bo; n += 1) {
@@ -373,7 +252,6 @@ function renderLegend() {
   ]);
 }
 
-/** Gắn sáu ô đánh dấu bật/tắt trường. */
 function bindFieldToggles(render) {
   const box = $("sp-fields-toggle");
   if (!box) return;
@@ -391,26 +269,14 @@ function bindFieldToggles(render) {
   });
 }
 
-/** Hai số cuối, dùng cho phép ĐẾM chứ không phải để hiển thị. */
 function lastTwo(value) {
   return String(value).padStart(5, "0").slice(-2);
 }
 
-/** Dựng bảng từ tiêu đề và các hàng. */
 function table(el, headers, rows, opts) {
   opts = opts || {};
   if (!opts.windowed && typeof renderFrequencyWindow === 'function' &&
       renderFrequencyWindow(el, headers, rows, opts)) return;
-  // Tiêu đề cột cũng phải ĐÁNH DẤU ĐƯỢC.
-  //
-  // Bố cục hai chiều là bất đối xứng: cùng một con số, ở chiều ngang nó là
-  // NHÃN HÀNG (`<td class="cell">`, bấm được), còn ở chiều dọc nó là TIÊU ĐỀ
-  // CỘT (`<th>` trần, không class, không khoá). Trình xử lý khớp
-  // `closest("td.cell")` nên `<th>` không bao giờ trúng — và người dùng thấy
-  // đúng thế: bấm vào số ở chiều ngang thì ăn, ở chiều dọc thì không.
-  //
-  // Khoá của tiêu đề dùng CÙNG lược đồ danh tính với nhãn hàng, nên một con
-  // số đánh dấu ở chiều này vẫn sáng khi đổi sang chiều kia.
   const headRow = mk("tr");
   headers.forEach((h, i) => {
     const headKey = opts.headKey && opts.headKey(i);
@@ -426,32 +292,12 @@ function table(el, headers, rows, opts) {
     const tr = mk("tr");
     r.forEach((c, i) => {
       const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
-      // Khoá theo DANH TÍNH ô khi người gọi cung cấp được, chứ không theo vị trí.
-      //
-      // Bảng ma trận ĐỔI CHIỀU được, tức nó bị chuyển vị. Khoá vị trí
-      // `id:hàng:cột` vì thế trỏ sang một ô hoàn toàn khác sau khi đổi chiều:
-      // đã đo, một dấu đặt ở chiều dọc mang khoá `sp-matrix-grid:0:0` và sang
-      // chiều ngang thì khoá ấy rơi vào ô nhãn "00".
-      //
-      // Hệ quả nhìn thấy được là bấm KHÔNG ĂN: cú bấm rơi trúng một ô đang
-      // mang dấu lạc thì nó GỠ dấu thay vì thêm, nên người dùng thấy chiều
-      // dọc "không bấm được" trong khi chiều ngang thì được.
       const baseKey = opts.key ? opts.key(y, i) : `${el.id}:${y}:${i}`;
-      // Cặp hai chữ số mà ô này ĐẠI DIỆN, do chính hàm vẽ khai báo. Không có
-      // nó thì khoá chỉ mang vị trí, `markPair` không đọc ra gì, và ô tick
-      // "Tự động đánh dấu cặp trùng" lặng lẽ không làm gì cả.
       const pair = opts.pairOf ? opts.pairOf(y, i) : pairInKey(baseKey);
       const key = pair && !pairInKey(baseKey) ? `${baseKey}|n${pair}` : baseKey;
       const on = (MARKS.has(key) || (pair && PAIR_MARKS.has(pair))) ? " marked" : "";
-      // Ô rỗng phải TỰ NÓI ra rằng ngày đó không có kỳ. Không đánh dấu thì một
-      // vùng trống trông như lỗi hiển thị, và người đọc không phân biệt được
-      // "không về" với "chưa tải xong".
       const blank = (c === "" || c === null || c === undefined) ? " is-empty" : "";
-      // Ô CÓ VỀ phải nổi lên khỏi nền, không chỉ khác ở chỗ có chữ. Và khi
-      // bảng mang nghĩa "số nháy" thì con số ấy còn quyết định cấp màu.
       let state = "";
-      // Lịch tuần không có cột nhãn: cả bảy cột đều là dữ liệu thật, kể cả
-      // cột Thứ 2. Các bảng còn lại mặc định giữ cột đầu làm nhãn hàng.
       const isDataCell = opts.rowHead === false || i > 0;
       if (!blank && isDataCell) {
         state = " sp-hit";
@@ -476,64 +322,21 @@ function table(el, headers, rows, opts) {
     return tr;
   });
 
-  // Dải rỗng phải nói ra là rỗng. Không có nhánh này thì bảng giữ nguyên số
-  // liệu của dải TRƯỚC trong khi bộ đếm đã báo "0 kỳ" — số cũ được trình bày
-  // như thể thuộc về dải mới. Tái hiện được: chọn Từ ngày 09-09-2026 đến
-  // 01-01-2020 (dải ngược) thì bộ đếm ra "0 kỳ" mà ba bảng vẫn đủ 40 hàng.
   const empty = mk("tr", null,
     mk("td", { class: "sp-empty-row", colspan: headers.length },
       "Không có kỳ nào trong dải đã chọn. Kiểm lại Từ ngày / Đến ngày — " +
       "chọn ngược thứ tự cũng cho dải rỗng."));
   fill(el, [thead, mk("tbody", null, rows.length ? body : empty)]);
 
-  // Cột đầu chỉ được dính và tô nền khi nó là NHÃN HÀNG. Bảng lịch tuần có
-  // cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa ra một cột tiêu đề
-  // không tồn tại, và mắt đọc lệch ngay.
   el.classList.toggle("has-rowhead", opts.rowHead !== false);
-  // Bảng mang mã màu số nháy tự khai ra, để sọc ngựa vằn và nền hover
-  // tránh đường — chúng cụ thể hơn nên nếu không tránh thì chúng thắng.
   el.classList.toggle("sp-nhay", !!opts.nhay);
 }
 
-// --- Tô sáng ô để so sánh ---------------------------------------------------
-//
-// Các bảng này dài hàng chục hàng và người đọc thường muốn dõi theo vài ô rời
-// rạc — chẳng hạn cùng một ngày qua nhiều tháng. Không có cách đánh dấu thì họ
-// phải nhớ bằng mắt, và chỉ cần cuộn một cái là mất dấu.
-//
-// Lưu theo từng máy bằng localStorage: đây là tiện ích cá nhân, không phải dữ
-// liệu chung. Bọc try/catch vì cửa sổ ẩn danh và trình duyệt chặn lưu trữ sẽ
-// ném lỗi ngay ở lệnh đọc, và một trang trắng thì tệ hơn hẳn việc mất dấu.
-// Đổi tên kho có CHỦ Ý. Dấu lưu theo lược đồ cũ là khoá vị trí, nên nếu nạp
-// lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
-// lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
 const MARK_SCOPE = (window.__D_DEMO_DRAWS__ ? "demo." : "");
-// Ba bảng đổi từ tọa độ hàng sang danh tính: không nạp lại khóa vị trí cũ.
 const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet|giai-db-ngay-mai)\.html$/.test(location.pathname) ? ".identity-v3" : "";
 const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index") + MARK_IDENTITY_SUFFIX;
 
-// Dấu Ô theo TỪNG TRANG, dấu CẶP theo TOÀN SITE — hai phạm vi khác nhau vì hai
-// thứ được đánh dấu có bản chất khác nhau.
-//
-// Khoá ô là `sp-grid:12:3`: nó chỉ có nghĩa bên trong đúng bảng đã sinh ra nó,
-// nên mang sang trang khác là vô nghĩa. Còn "34" là 34 ở mọi trang.
-//
-// Trước đây cả hai dùng chung khoá theo trang, và hệ quả đo được là ô tick
-// "Tự động đánh dấu cặp trùng" KHÔNG làm được gì trên năm trang mà mỗi con chỉ
-// hiện một lần (chu kỳ, bộ số, ngày mai, tổng hợp, cặp lộn): đánh dấu theo cặp
-// ở đó sáng đúng một ô, y hệt đánh dấu thường. Giá trị thật của chế độ này là
-// dõi MỘT con qua NHIỀU trang, và phạm vi theo trang đã cắt mất đúng điều đó.
 const PAIR_KEY = "sp.pairmarks.v1." + MARK_SCOPE;
-// HAI kho, không phải một.
-//
-//   MARKS       khoá theo Ô CỤ THỂ. Đây là chế độ mặc định: bấm ô nào thì
-//               đúng ô ấy đổi màu, không ô nào khác.
-//   PAIR_MARKS  khoá theo CẶP SỐ. Chỉ dùng khi bật "tự động đánh dấu cặp
-//               trùng".
-//
-// Vì sao tách đôi thay vì một kho có cờ: một ô có thể đang sáng vì chính nó
-// được bấm, HOẶC vì cặp số của nó đang được đánh dấu. Gộp lại thì không phân
-// biệt được hai trường hợp ấy và cú bấm tiếp theo xử lý sai.
 let MARKS = new Set();
 let PAIR_MARKS = new Set();
 try {
@@ -551,11 +354,6 @@ function saveMarks() {
   } catch (e) {}
 }
 
-// Bảng ma trận rộng tới 120 cột; mắt lạc cột là chuyện thường. Trỏ vào ô nào
-// thì làm nổi tiêu đề cột đó. Gắn MỘT trình xử lý trên document thay vì trên
-// từng ô: 100 x 120 ô là 12 000 trình xử lý.
-// Dóng CHỮ THẬP. Bản trước chỉ đánh dấu cột; trên ma trận 100 hàng thì dóng
-// ngược lại theo hàng mới là việc khó hơn, và nó không hề có.
 function bindColumnHint() {
   let lastTable = null, lastIndex = -1, lastRow = null, lastCell = null;
   const clear = () => {
@@ -583,30 +381,15 @@ function bindColumnHint() {
   document.addEventListener("mouseleave", clear, true);
 }
 
-/** Cặp hai chữ số mà một ô đại diện, hoặc null nếu ô không mang cặp nào.
- *
- *  Đọc từ KHOÁ chứ không từ chữ trong ô: chữ trong ô là SỐ NHÁY ("1", "2"),
- *  không phải con lô. Lấy nhầm nó thì bấm ô "2" sẽ làm sáng mọi ô có 2 nháy
- *  — một tập hợp chẳng có nghĩa gì với người soi cầu.
- */
 const PAIR_IN_KEY = /\|(?:n|c)([0-9]{2}(?:-[0-9]{2})?)/;
 
-/** Cặp đã nằm sẵn trong khoá, hoặc null. Dùng chung cho table() và markPair(). */
 function pairInKey(key) {
   const found = PAIR_IN_KEY.exec(key || "");
   return found ? found[1] : null;
 }
 
-/** Chuẩn hoá một con số thành cặp hai chữ số cho khoá, hoặc null nếu không phải.
- *
- *  Nhận cả số nguyên (34), chuỗi đã đệm ("07"), và cặp lộn ("34 - 66").
- *  Trả null cho chữ số đơn 0-9 và cho mọi thứ không phải số: trang Đầu/Đuôi và
- *  trang theo Tổng chỉ có chữ số đơn, gắn cặp ở đó là bịa ra một danh tính
- *  không tồn tại.
- */
 function asPair(value) {
   if (value === null || value === undefined) return null;
-  // Pair identifiers come from numeric data, never from formatted cell markup.
   const raw = String(value).trim();
   const two = /^([0-9]{2})$/.exec(raw);
   if (two) return two[1];
@@ -619,12 +402,6 @@ function markPair(td) {
   return pairInKey(td.dataset.key);
 }
 
-/** ``opts.pairOf`` cho bảng danh sách: cặp nằm ở một số cột đã biết.
- *
- *  Bảng danh sách mỗi con chỉ hiện MỘT lần trong một bảng, nhưng cùng con ấy
- *  lại xuất hiện ở các bảng khác trên cùng trang (gan hiện tại / gan cực đại /
- *  cặp lô gan). Đánh dấu theo cặp là cách duy nhất để dõi một con qua cả ba.
- */
 function pairCols(body, ...cols) {
   const want = new Set(cols);
   return (y, i) => (want.has(i) ? asPair((body[y] || [])[i]) : null);
@@ -648,17 +425,10 @@ function paintMarks() {
   updateMarkCount();
 }
 
-/** Một cú bấm, bốn nhánh — và thứ tự giữa chúng là phần quan trọng.
- *
- *  Quy tắc bao trùm: bấm vào ô ĐANG SÁNG thì nó tắt, bất kể nó sáng vì lý do
- *  gì. Hai nhánh tắt phải đứng TRƯỚC hai nhánh bật; nếu không, một ô đang
- *  sáng theo cặp sẽ bị chồng thêm dấu ô và bấm mãi không tắt.
- */
 function toggleMark(td) {
   const key = td.dataset.key;
   const pair = markPair(td);
   const clearPairCells = () => {
-    // Một cặp đã chọn theo nhóm không giữ thêm dấu riêng chồng bên dưới.
     for (const saved of MARKS) if (pairInKey(saved) === pair) MARKS.delete(saved);
   };
   if (pair !== null && PAIR_MARKS.has(pair)) {
@@ -682,12 +452,9 @@ function bindMarking() {
     paintMarks();
   });
 
-  // Đổi chế độ KHÔNG xoá dấu đã có: người xem bật chế độ cặp, đánh vài dấu,
-  // rồi tắt đi — những dấu ấy phải còn nguyên vì họ không hề bỏ chọn chúng.
   const pairBox = $("sp-pair-mode");
   if (pairBox) pairBox.addEventListener("change", paintMarks);
 
-  // Cặp dùng chung toàn site: tab đang mở cũng phải thấy thay đổi ngay.
   window.addEventListener("storage", (ev) => {
     const pairsChanged = ev.key === PAIR_KEY || ev.key === null;
     const cellsChanged = ev.key === MARK_KEY || ev.key === null;
@@ -732,11 +499,9 @@ function updateMarkCount() {
   }
 }
 
-/** Màu nền heat-map: 0 = nhạt nhất, 1 = đậm nhất. */
 function heat(value, max) {
   if (!max) return "";
   const t = Math.min(1, value / max);
-  // Dừng ở 0.55 để chữ tối luôn còn tương phản trên nền.
   return `background:rgba(124,58,237,${(t * 0.55).toFixed(3)})`;
 }
 
@@ -746,20 +511,11 @@ function countLoto(rows) {
   return c;
 }
 
-// --- Từng trang ------------------------------------------------------------
-
-// --- Ma trận tần suất: số × ngày -------------------------------------------
-//
-// Bố cục của trang tham chiếu: một chiều là 100 con lô, chiều kia là từng kỳ,
-// ô là số lần con đó về trong kỳ đó. Đổi được chiều ngang/dọc, và có bộ chọn
-// để chỉ hiện những con đang quan tâm.
-//
-// Hiển thị trọn dải đã chọn, kể cả 365 ngày và toàn bộ lịch sử.
 let MATRIX_GAN = new Array(100).fill(0);
 let MATRIX_RECENT = new Array(100).fill(0);
 
 const PICK_KEY = "sp.picked." + (window.__D_DEMO_DRAWS__ ? "demo." : "") + (location.pathname.split("/").pop() || "index");
-let PICKED = null;   // null = hiện tất cả
+let PICKED = null;
 try {
   const saved = localStorage.getItem(PICK_KEY);
   if (saved) PICKED = new Set(JSON.parse(saved));
@@ -776,7 +532,6 @@ function isPicked(n) {
   return PICKED === null || PICKED.has(n);
 }
 
-/** Lưới 00-99 bấm để chọn, kèm bốn nút nhanh. */
 function bindPicker(render) {
   const box = $("sp-picker");
   if (!box) return;
@@ -816,20 +571,10 @@ function bindPicker(render) {
     }
     const num = ev.target.dataset.num;
     if (num === undefined) return;
-    // Bấm một con số 00-99 MỞ POPUP chu kỳ gan, không lọc ngay.
-    //
-    // Hai yêu cầu đụng nhau ở đây: "bấm số thì hiện popup" và "bấm ô thì đổi
-    // màu, bấm lại thì bỏ". Chúng không thể cùng nằm trên một phần tử. Ô trên
-    // MA TRẬN giữ việc đổi màu (đó là thứ vừa được sửa và người dùng đang
-    // dùng); chip 00-99 nằm NGOÀI ma trận nên nhận việc mở popup.
-    //
-    // Việc lọc không mất đi — nó chuyển vào trong popup, sau khi người xem
-    // đã thấy chu kỳ gan rồi mới quyết định có lọc hay không.
     openGanPopup(pad2(+num));
   });
 }
 
-/** Ma trận số × ngày; đổi chiều theo bộ chọn. */
 function renderLotoMatrix(rows) {
   const grid = $("sp-matrix-grid");
   if (!grid) return;
@@ -850,26 +595,15 @@ function renderLotoMatrix(rows) {
     return c;
   });
 
-  // Con số trong mỗi ô CHÍNH LÀ số nháy của con lô đó trong kỳ đó, nên bảng
-  // này là chỗ duy nhất mà phân cấp màu theo nháy mang đúng nghĩa.
   const opts = { nhay: true };
   const vertical = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
-  // Danh tính một ô là CẶP (con số, ngày kỳ) — thứ không đổi khi chuyển vị.
-  // Ô nhãn hàng (cột 0) mang danh tính của chính thực thể nó gán nhãn.
-  // Đảo MỘT lần và giữ luôn chỉ số gốc. Bản đầu tôi viết `shown.indexOf(r)`
-  // ngay trong vòng dựng ô — trên ma trận 100 ngày × 100 số thì đó là một
-  // triệu phép quét tuyến tính, tức tự tạo ra một vấn đề hiệu năng khi đang
-  // đi sửa lỗi khác.
   const byDate = shown.map((r, i) => ({ d: r.d, c: per[i] })).reverse();
-  // Số kỳ GAN của mỗi con: đếm từ kỳ mới nhất lùi lại tới lần về gần nhất.
-  // `byDate` đã xếp mới-nhất-trước nên chỉ cần quét tới lần đầu gặp giá trị > 0.
   const ganOf = new Array(100).fill(byDate.length);
   for (let n = 0; n < 100; n += 1) {
     for (let k = 0; k < byDate.length; k += 1) {
       if (byDate[k].c[n]) { ganOf[n] = k; break; }
     }
   }
-  // Tổng lần về trong 30 kỳ gần nhất — nguồn cho biểu đồ cột mini.
   const recent30 = new Array(100).fill(0);
   for (let k = 0; k < Math.min(30, byDate.length); k += 1) {
     for (let n = 0; n < 100; n += 1) recent30[n] += byDate[k].c[n] || 0;
@@ -877,26 +611,16 @@ function renderLotoMatrix(rows) {
   MATRIX_GAN = ganOf;
   MATRIX_RECENT = recent30;
 
-  // Sắp xếp CON SỐ, không phải sắp xếp ngày. Ngày luôn theo trục thời gian;
-  // đảo nó đi thì ma trận mất nghĩa. Thứ người ta muốn đổi thứ tự là dãy số.
   const sort = ($("sp-sort") || {}).value || "num";
   if (sort !== "num") {
     const totalOf = (n) => byDate.reduce((sum, r) => sum + (r.c[n] || 0), 0);
     const score = sort.startsWith("gan") ? (n) => ganOf[n] : totalOf;
     const dir = sort.endsWith("-asc") ? 1 : -1;
-    // Hoà nhau thì giữ thứ tự 00 -> 99, để bảng không nhảy lung tung giữa các
-    // lần dựng khi nhiều con cùng điểm.
     nums.sort((a, b) => (score(a) - score(b)) * dir || a - b);
   }
-  // Kỳ hôm nay chưa quay thì vẫn CÓ MẶT trên bảng, dưới dạng ô chờ. Bỏ hẳn nó
-  // đi thì bảng trông như hôm nay không tồn tại; để nó trắng như ô "không về"
-  // thì tệ hơn, vì đó là một lời khẳng định SAI — chưa quay không phải là
-  // không về. `opts.pending` khiến `table()` gắn lớp riêng cho hàng/cột ấy.
   const waiting = pendingDay(shown);
   if (waiting) byDate.unshift({ d: waiting, c: new Array(100).fill(null), pending: true });
   opts.pending = (y, i) => (vertical ? byDate[y] : byDate[i - 1]);
-  // Ô nằm trong KHOẢNG GAN: chỉ số kỳ nhỏ hơn vị trí lần về gần nhất.
-  // Ô mà con số ấy chính là hai số cuối GIẢI ĐẶC BIỆT của kỳ đó.
   const deOf = new Map();
   shown.forEach((r) => deOf.set(r.d, String(r.s || "").slice(-2)));
   opts.de = (y, i) => {
@@ -911,7 +635,6 @@ function renderLotoMatrix(rows) {
     const num = vertical ? nums[i - 1] : nums[y];
     return day < ganOf[num];
   };
-  // Tooltip: số ngày chưa ra tính tới hôm nay.
   opts.title = (y, i) => {
     if (i === 0) return "";
     const num = vertical ? nums[i - 1] : nums[y];
@@ -925,9 +648,7 @@ function renderLotoMatrix(rows) {
     opts.key = (y, i) => (i === 0
       ? `m|d${byDate[y].d}`
       : `m|n${pad2(nums[i - 1])}|d${byDate[y].d}`);
-    // Chiều dọc: tiêu đề cột LÀ con số. Cùng khoá với nhãn hàng ở chiều ngang.
     opts.headKey = (i) => (i === 0 ? null : `m|n${pad2(nums[i - 1])}`);
-    // Cột mini phía trên con số: tổng lần về trong 30 kỳ gần nhất.
     opts.headExtra = (i) => (i === 0 ? "" : miniBar(recent30[nums[i - 1]]));
     table(grid, head, body, opts);
   } else {
@@ -937,26 +658,13 @@ function renderLotoMatrix(rows) {
     opts.key = (y, i) => (i === 0
       ? `m|n${pad2(nums[y])}`
       : `m|n${pad2(nums[y])}|d${byDate[i - 1].d}`);
-    // Chiều ngang: tiêu đề cột là NGÀY. Cùng khoá với nhãn hàng ở chiều dọc.
     opts.headKey = (i) => (i === 0 ? null : `m|d${byDate[i - 1].d}`);
-    // Chiều ngang, con số là NHÃN HÀNG nên cột mini đi kèm nhãn hàng.
     opts.cellExtra = (y, i) => (i === 0 ? miniBar(recent30[nums[y]]) : "");
     table(grid, head, body, opts);
   }
   renderNhayLegend(grid);
 }
 
-// --- Chu kỳ gan: tính, và popup chi tiết ------------------------------------
-
-/** Mọi chu kỳ gan của một con, theo chế độ.
- *
- *  `mode`: "loto" đọc 27 con lô của kỳ; "de" chỉ đọc hai số cuối giải đặc
- *  biệt. Hai chế độ cho hai chuỗi hoàn toàn khác nhau, nên không tái dùng
- *  kết quả của nhau được.
- *
- *  Trả về `{hits, cycles, current, max}` — `cycles` là độ dài từng quãng
- *  trượt GIỮA hai lần về, `current` là quãng đang chạy tính tới kỳ mới nhất.
- */
 function ganCycles(pair, mode) {
   const hits = [];
   for (let i = 0; i < DRAWS.length; i += 1) {
@@ -990,7 +698,6 @@ function openGanPopup(pair) {
     "data-gmode": value,
   }, label);
   const o = (nhan, so) => mk("div", null, [mk("span", null, nhan), mk("strong", null, so)]);
-  // Dãy số rỗng vẫn phải hiện một ô "—": để trống thì dải trông như chưa dựng.
   const day = (xs) => mk("div", { class: "sp-modal-days" },
     xs.length ? xs.map((x) => mk("span", null, x)) : mk("span", null, "—"));
   const body = [
@@ -1006,9 +713,6 @@ function openGanPopup(pair) {
     mk("p", { class: "sp-hint" }, "Độ dài 12 chu kỳ gan gần nhất (số kỳ trượt giữa hai lần về)"),
     day(g.cycles.slice(-12).reverse()),
   ];
-  // Nút lọc CHỈ có nghĩa ở trang có lưới chọn 00-99. Trang tần suất cặp lọc
-  // theo HỌ CẶP, nên một nút "chỉ xem số 07" ở đó bấm vào không đổi gì — và
-  // một nút không làm gì thì tệ hơn hẳn việc không có nút.
   if ($("sp-picker")) {
     body.push(mk("div", { class: "sp-modal-tabs" },
       mk("button", { type: "button", class: "sp-btn", "data-gfilter": pair },
@@ -1030,10 +734,6 @@ function openGanPopup(pair) {
 function bindGanPopup(render) {
   const host = $("sp-gan-modal");
   if (!host) return;
-  // `render` là THAM SỐ, không phải biến toàn cục. Bản đầu tôi gọi thẳng
-  // `render()` trong đây và nó ném "render is not defined" — nút lọc trong
-  // popup im lặng không làm gì, mà lỗi chỉ hiện trong console nên nhìn từ
-  // giao diện thì y như nút hỏng vô cớ.
   const redraw = typeof render === "function" ? render : () => {};
   host.addEventListener("close", () => {
     if (host.open) return;
@@ -1064,27 +764,11 @@ function bindGanPopup(render) {
   });
 }
 
-/** Cột mini: một vạch cao theo tổng lần về trong 30 kỳ.
- *
- *  Vẽ bằng một `<i>` có chiều cao tính sẵn, KHÔNG dùng SVG hay canvas: bảng
- *  có tới 100 tiêu đề và mỗi tiêu đề một biểu đồ, nên mỗi nút thừa đều nhân
- *  lên trăm lần. Một phần tử một thuộc tính là đủ để đọc được xu hướng.
- *
- *  Trần 30: 30 kỳ × tối đa vài nháy, nhưng thực tế hiếm khi quá 12. Cắt ở 12
- *  để dải giữa còn phân biệt được, thay vì dồn hết vào một phần tư dưới.
- */
 function miniBar(total) {
   const pct = Math.max(6, Math.min(100, Math.round((total / 12) * 100)));
   return mk("i", { class: "sp-mini-bar", style: `--h:${pct}%`, "aria-hidden": "true" });
 }
 
-/** Chú giải phân cấp số nháy.
- *
- * Bắt buộc phải có: xanh dương -> xanh lá -> cam không có trật tự tri giác,
- * nên nếu không nói ra ánh xạ thì người đọc chỉ thấy màu chứ không đọc được
- * thông tin. Đặt NGAY TRÊN ma trận, không giấu sau tooltip — điện thoại
- * không có chuột để trỏ vào.
- */
 function renderNhayLegend(grid) {
   const host = grid && grid.parentElement;
   if (!host || host.querySelector(".sp-nhay-legend")) return;
@@ -1133,27 +817,15 @@ function renderLotoFrequency() {
     rankBody, { numeric: [0, 2, 3, 4], pairOf: pairCols(rankBody, 1) });
 }
 
-// --- Số lộn -----------------------------------------------------------------
-//
-// "Lộn" là đảo hai chữ số: 01 <-> 10, 27 <-> 72. Chỉ có 45 cặp như vậy, vì
-// 10 số kép (00, 11, ... 99) đảo lại chính nó nên KHÔNG có số lộn.
-//
-// Kho từng gộp 10 số kép thành 5 họ "kép bóng" (00-55, 11-66, 22-77, 33-88,
-// 44-99) cho tròn 50 cặp. Nhưng BÓNG (0<->5, 1<->6, ...) là khái niệm khác hẳn
-// LỘN, nên bảng cũ trộn hai thứ và gọi chung là cặp lộn. Ở đây tách bạch: 45
-// cặp lộn thật, còn số kép liệt kê riêng đúng bản chất của nó.
-
-/** 45 cặp lộn thật, dạng [a, b] với a < b và b là a đảo chữ số. */
 function reversePairs() {
   const out = [];
   for (let a = 0; a < 100; a++) {
     const b = (a % 10) * 10 + Math.floor(a / 10);
     if (a < b) out.push([a, b]);
   }
-  return out;   // đúng 45 cặp
+  return out;
 }
 
-/** 10 số kép: đảo lại chính nó. */
 function doubleNumbers() {
   return Array.from({ length: 10 }, (_, d) => d * 11);
 }
@@ -1168,7 +840,6 @@ function renderReversePairs() {
   const pairs = reversePairs()
     .map(([a, b]) => [a, b, c[a], c[b], c[a] + c[b]])
     .sort((x, y) => y[4] - x[4]);
-  // Hai chiều, tổng lượt và số kép đều là lượt xuất hiện: cùng một trần màu.
   const maximum = Math.max(0, ...pairs.map(p => p[4]), ...doubleNumbers().map(n => c[n]));
 
   table($("sp-grid"),
@@ -1177,16 +848,10 @@ function renderReversePairs() {
       k + 1,
       `${pad2(p[0])} ↔ ${pad2(p[1])}`,
       p[2], p[3], p[4],
-      // Lệch giữa hai chiều: cặp lộn "cân" thì gần 0. Cột này mới là thứ đáng
-      // nhìn, vì tổng chỉ nói cặp đó gồm hai con hay về, không nói gì về LỘN.
       (p[2] - p[3] > 0 ? "+" : "") + (p[2] - p[3]),
     ]), {
       numeric: [0, 2, 3, 4, 5],
       key: (y, i) => `reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}`,
-      // Ô hiện "01 ↔ 10", KHÔNG phải dạng "01-10" mà asPair() nhận. Khai
-      // thẳng từ dữ liệu thay vì nới lỏng asPair(): dấu ↔ mang nghĩa LỘN, còn
-      // dấu - trong khoá mang nghĩa HỌ CẶP; trộn hai thứ là dựng lại đúng lỗi
-      // mà chú thích "lộn khác bóng" ở trên đã cảnh báo.
       pairOf: (y, i) => (i === 1 ? `${pad2(pairs[y][0])}-${pad2(pairs[y][1])}` : null),
     });
   $("sp-grid").prepend(mk("colgroup", null, [9,25,16.5,16.5,16.5,16.5].map(width => mk("col", {style: `width:${width}%`}))));
@@ -1206,12 +871,6 @@ function renderReversePairs() {
     "Số lượt · chung cho hai chiều, tổng và số kép");
 }
 
-// --- Ma trận 50 họ cặp × ngày ----------------------------------------------
-//
-// Bộ 50 họ lấy từ number_reference.all_cap_loto_50 và nhúng sẵn: 45 cặp lộn
-// thật cộng 5 cặp ghép hai số kép qua bóng (00-55, 11-66, 22-77, 33-88,
-// 44-99). Đọc từ chính trang tham chiếu thấy họ dùng đúng bộ này, nên đây là
-// bằng chứng chứ không phải suy đoán.
 const CAP50 = window.__D_CAP50__ || [];
 
 function renderPairMatrix(rows) {
@@ -1225,7 +884,6 @@ function renderPairMatrix(rows) {
     note.textContent = `${shown.length} kỳ × ${CAP50.length} họ cặp.`;
   }
 
-  // Mỗi ô: số lần HAI con của họ đó về trong kỳ, cộng lại.
   const per = shown.map((r) => {
     const c = new Array(100).fill(0);
     r.n.forEach((x) => { c[parseInt(x, 10)] += 1; });
@@ -1235,8 +893,6 @@ function renderPairMatrix(rows) {
   const label = ([a, b]) => `${pad2(a)}-${pad2(b)}`;
   const day = (r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`;
 
-  // Cùng lỗi với ma trận lô tô: bảng này cũng chuyển vị được, nên khoá đánh
-  // dấu phải theo danh tính (họ cặp, ngày kỳ) chứ không theo vị trí ô.
   const byDate = shown.map((r, i) => ({ d: r.d, t: day(r), c: per[i] })).reverse();
   const waiting = pendingDay(shown);
   if (waiting) {
@@ -1247,9 +903,6 @@ function renderPairMatrix(rows) {
   }
   const verticalPair = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
   const pendingAt = (y, i) => (verticalPair ? byDate[y] : byDate[i - 1]);
-  // Cùng hai thứ với ma trận lô tô, tính theo HỌ CẶP: số kỳ gan và tổng lần
-  // về trong 30 kỳ gần nhất. Trần biểu đồ cao gấp đôi vì mỗi ô cộng lần về
-  // của HAI con, nên giá trị điển hình cũng gấp đôi.
   const ganPair = new Array(CAP50.length).fill(byDate.length);
   const recentPair = new Array(CAP50.length).fill(0);
   for (let j = 0; j < CAP50.length; j += 1) {
@@ -1319,7 +972,6 @@ function renderPairFrequency() {
 function renderHeadTail() {
   const rows = selected();
   setCount(rows);
-  // Hai bảng cùng một phép đo dùng chung trần; nhiều lượt có nền đậm hơn.
   const shade = (value, max) => {
     if (!value) return "";
     const ratio = Math.min(1, value / Math.max(1, max));
@@ -1327,7 +979,6 @@ function renderHeadTail() {
       const rgb = low.map((v, i) => Math.round(v + (high[i] - v) * ratio));
       const linear = rgb.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
       const luminance = linear.reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
-      // Điểm giao tương phản trắng/đen; mọi mức nền đạt ít nhất 4,58:1.
       const ink = luminance > .179 ? "#000000" : "#ffffff";
       return `--app-hit-bg-${theme}:rgb(${rgb.join(",")});--app-hit-ink-${theme}:${ink};`;
     };
@@ -1379,11 +1030,6 @@ function renderHeadTail() {
   build($("sp-tail"), tail, "Chữ số đuôi");
   legend("app-head-tail-legend", rangeMax, false);
 
-  // Ba ma trận NGÀY x chữ số, đúng bố cục trang tham chiếu. Bảng gộp phía
-  // trên trả lời "chữ số nào hay ra", ma trận trả lời "hôm nào ra bao nhiêu
-  // lần" — hai câu hỏi khác nhau, và bản trước chỉ có câu đầu.
-  //
-  // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng Đặc Biệt.
   const recent = rows.slice(-20).reverse();
   const daily = recent.map(r => {
     const counts = {head:new Array(10).fill(0), tail:new Array(10).fill(0), sum:new Array(10).fill(0)};
@@ -1409,7 +1055,6 @@ function renderHeadTail() {
 }
 
 function specialGaps(rows = DRAWS) {
-  // Số kỳ chưa về, và chu kỳ dài nhất trong lịch sử, cho từng con 00-99.
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
@@ -1423,25 +1068,11 @@ function specialGaps(rows = DRAWS) {
   return { last, maxGap, hits, current: last.map((t) => (t < 0 ? n : n - 1 - t)), n };
 }
 
-// --- Lô gan -----------------------------------------------------------------
-//
-// Bố cục đọc được từ trang tham chiếu (thongkemienbac, thong-ke-lo-gan):
-//   1. Lô gan hiện tại: Bộ số | Ngày ra cuối cùng | Số kỳ gan | Gan cực đại
-//   2. Gan cực đại của cả 00-99, tách hai bảng 00-49 và 50-99
-//   3. Cặp lô gan: Cặp số | Ngày ra gần đây | Số kỳ gan | Gan cực đại
-//
-// "Gan" đếm theo KỲ chứ không theo ngày lịch. Hai cách này chỉ trùng nhau khi
-// ngày nào cũng quay; XSMB nghỉ Tết và nghỉ 01-22/04/2020, nên đếm theo ngày
-// lịch sẽ thổi phồng gan của mọi con ngay sau mỗi đợt nghỉ.
-
-/** Gan của từng con 00-99 trên LOTO (27 con mỗi kỳ). */
 function lotoGaps(rows = DRAWS) {
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
   rows.forEach((r, t) => {
-    // Một con có thể về nhiều lần trong cùng một kỳ. Với gan thì kỳ đó tính
-    // MỘT lần — về hai nháy không làm con số bớt gan hơn về một nháy.
     const seen = new Set(r.n.map((x) => parseInt(x, 10)));
     seen.forEach((k) => {
       hits[k] += 1;
@@ -1454,25 +1085,6 @@ function lotoGaps(rows = DRAWS) {
   return { last, maxGap, current, hits };
 }
 
-/** Gan của 50 cặp LOTO: cặp về khi MỘT TRONG HAI con có mặt trong kỳ.
- *
- * Định nghĩa này đọc ra từ chính số liệu trang tham chiếu, không phải đoán.
- * Bản đầu tôi lấy "cả hai con cùng về", và nó sai:
- *
- *   cặp     họ in          "cả hai"        "một trong hai"
- *   24-42   02-09, gan 7   23-08, gan 17   02-09, gan 7   <- khớp
- *   23-32   04-09, gan 5   04-09, gan 5    04-09, gan 5
- *   29-92   05-09, gan 4   18-08, gan 22   05-09, gan 4   <- khớp
- *
- * Cách "cả hai" trùng đúng một dòng, và trùng là do tình cờ. Nó cũng mâu thuẫn
- * với thống kê: hai con cùng về một kỳ có xác suất 5,49% nên gan cực đại phải
- * cỡ 100 kỳ, trong khi họ in 11-17. Đánh cặp lộn là đánh cả hai con nên trúng
- * một con là trúng — "một trong hai" mới là nghĩa người chơi dùng.
- *
- * CAP50 chứa SỐ NGUYÊN, còn ``r.n`` chứa chuỗi hai ký tự. So thẳng hai kiểu đó
- * thì 0 không bao giờ bằng "00": bản đầu báo cả 50 cặp "chưa từng về" trên
- * 2394 kỳ — kết quả vô lý mà bảng vẫn dựng ra bình thường, không lỗi nào.
- */
 function pairGaps(rows = DRAWS) {
   const last = new Array(CAP50.length).fill(-1);
   const maxGap = new Array(CAP50.length).fill(0);
@@ -1491,12 +1103,10 @@ function pairGaps(rows = DRAWS) {
   return { last, maxGap, current, hits };
 }
 
-/** Ngày dạng dd-mm-yyyy như trang tham chiếu, từ chuỗi ISO. */
 function viDate(d) {
   return `${d.slice(8)}-${d.slice(5, 7)}-${d.slice(0, 4)}`;
 }
 
-/** Ngày của một kỳ theo chỉ số. */
 function drawDate(i, rows = DRAWS) {
   return i < 0 ? "chưa về trong dải" : viDate(rows[i].d);
 }
@@ -1506,7 +1116,6 @@ function renderLoGan() {
   const g = lotoGaps(rows);
   setCount(rows);
 
-  // 1. Gan hiện tại, giảm dần.
   const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const ganBody = order.map((p) => [
     pad2(p[0]), drawDate(g.last[p[0]], rows), p[1], g.hits[p[0]] >= 2 ? g.maxGap[p[0]] : "—", g.hits[p[0]],
@@ -1514,7 +1123,6 @@ function renderLoGan() {
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     ganBody, { numeric: [2, 3, 4], pairOf: pairCols(ganBody, 0) });
-  // Chỉ tô màu giá trị đang hiển thị; dấu — không phải chu kỳ bằng không.
   const paint = (id, body, stats, prefix) => {
     const gapMax = Math.max(0, ...stats.current);
     const cycleMax = Math.max(0, ...stats.maxGap);
@@ -1532,7 +1140,6 @@ function renderLoGan() {
   };
   paint("sp-grid", ganBody, g, "app-loto-current");
 
-  // 2. Hai bảng ghi rõ "từ trước đến nay" vẫn dùng toàn bộ kho lịch sử.
   const all = rows.length === DRAWS.length ? g : lotoGaps();
   const historyMax = Math.max(0, ...all.maxGap);
   const half = (el, from, to) => {
@@ -1552,7 +1159,6 @@ function renderLoGan() {
   half($("sp-max-hi"), 50, 100);
   specialMetricLegend("app-loto-history-cycle-legend", "cycle", historyMax, "kỳ", undefined, all.hits.some(hits => hits >= 2));
 
-  // 3. Cặp lô gan.
   const pg = pairGaps(rows);
   const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const pairBody = pairOrder.map((p) => [
@@ -1565,7 +1171,6 @@ function renderLoGan() {
   paint("sp-pair-gan", pairBody, pg, "app-loto-pair");
 }
 
-/** Màu chỉ mô tả độ lớn của đúng giá trị đã tính, không tạo chỉ số dự báo. */
 function specialMetricCell(cell, value, maximum, metric, label, unit) {
   const level = value > 0 && maximum > 0 ? Math.min(3, Math.ceil(3 * value / maximum)) : 0;
   cell.classList.add("app-stat-metric", `app-stat-${metric}`, `app-stat-level-${level}`);
@@ -1575,7 +1180,6 @@ function specialMetricCell(cell, value, maximum, metric, label, unit) {
   cell.setAttribute("aria-label", `${label}: ${value} ${unit}`);
 }
 
-/** Chú giải công bố đúng khoảng giá trị của thang màu trong dải đang xem. */
 function specialMetricLegend(id, metric, maximum, unit, label, hasCycle = maximum > 0) {
   const legend = $(id);
   if (!legend) return;
@@ -1628,7 +1232,6 @@ function renderSpecialBySet() {
   specialMetricLegend("app-special-gap-legend", "gap", maximum, "kỳ");
 }
 
-/** LOTO của đúng một ngày: gom nháy, không bỏ số lặp hoặc suy từ Đặc Biệt. */
 function tomorrowLoto(draw, kind, date, missing) {
   const counts = new Map();
   for (const value of draw && Array.isArray(draw.n) ? draw.n : []) {
@@ -1655,7 +1258,6 @@ function renderTomorrow() {
   const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
   const matches = rows.filter(row => String(row.s).slice(-2) === number).slice().reverse();
   const format = value => value.split("-").reverse().join("/");
-  // Tra đúng ngày lịch, không lấy hàng kế tiếp: lịch sử có ngày thiếu/nghỉ.
   const entries = matches.map(row => {
     const [y, m, d] = row.d.split("-").map(Number);
     const nextDate = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
@@ -1685,7 +1287,6 @@ function renderTomorrow() {
   });
   const grid = $("sp-grid");
   table(grid, ["Ngày về", `Đặc Biệt về ${number}`, "LOTO cùng ngày", "Đặc Biệt hôm sau", "LOTO hôm sau"], body, {
-    // Giữ khóa hai ô Đặc Biệt khi thêm cột LOTO cạnh chúng.
     key: (y, x) => `tomorrow:${number}:${entries[y].row.d}:${[0, 1, "trigger-loto", 2, "next-loto"][x]}`,
     pairOf: (y, x) => x === 1 ? number : x === 3 && entries[y].next ? String(entries[y].next.s).slice(-2) : null,
   });
@@ -1698,48 +1299,12 @@ function renderTomorrow() {
     mk("div", {"data-number": suffix, "data-count": count}, [mk("b", null, suffix), mk("span", null, `${count} lần`)])));
 }
 
-
-function groupSpecial(keyOf, label) {
-  const rows = selected();
-  setCount(rows);
-  const groups = new Map();
-  rows.forEach((r) => {
-    const k = keyOf(r.d);
-    if (!groups.has(k)) groups.set(k, new Array(100).fill(0));
-    groups.get(k)[parseInt(lastTwo(r.s), 10)] += 1;
-  });
-  const keys = Array.from(groups.keys()).sort().reverse();
-  const head = [label, "Số kỳ", "Về nhiều nhất", "Số lần", "Không về"];
-  const body = keys.map((k) => {
-    const c = groups.get(k);
-    const total = c.reduce((a, b) => a + b, 0);
-    const best = c.indexOf(Math.max(...c));
-    const missing = c.filter((v) => v === 0).length;
-    return [k, total, pad2(best), Math.max(...c), missing];
-  });
-  table($("sp-grid"), head, body, { numeric: [1, 3, 4] });
-}
-
-// Khai báo bằng `function`, KHÔNG dùng `const`: boot() tra hàm qua
-// window[renderName], mà `const` ở cấp cao nhất của script cổ điển không tạo
-// thuộc tính trên window. Dùng const thì hai trang này im lặng không vẽ gì.
-// --- Ba bảng Đặc Biệt ------------------------------------------------------
-//
-// Bố cục lấy theo trang tham chiếu, đọc được cấu trúc thật bằng
-// .github/workflows/inspect-reference-pages.yml:
-//
-//   bang-dac-biet        53 hàng x 7 cột, hàng = tuần ISO, cột = Thứ 2..CN
-//   bang-dac-biet-thang  31 x 12 cho một năm, cộng bảng "cùng tháng nhiều năm"
-//   bang-dac-biet-nam    chọn Kiểu tuần (53x7) hoặc Kiểu tháng (31x12)
-
 const WEEKDAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
-/** Chỉ số thứ trong tuần, 0 = Thứ 2 (không phải Chủ nhật như getDay). */
 function mondayIndex(iso) {
   return (new Date(iso + "T00:00:00Z").getUTCDay() + 6) % 7;
 }
 
-/** Thứ Hai của tuần chứa ``iso``, dạng ISO. */
 function weekStart(iso) {
   const d = new Date(iso + "T00:00:00Z");
   d.setUTCDate(d.getUTCDate() - mondayIndex(iso));
@@ -1756,7 +1321,6 @@ function fillPicker(id, values, prefer) {
   return sel.value;
 }
 
-/** Lưới tuần: hàng = tuần, cột = thứ. Dùng cho cả trang tuần và Kiểu tuần. */
 function weekGrid(rows) {
   const byDate = {};
   rows.forEach((r) => { byDate[r.d] = r.s; });
@@ -1789,7 +1353,6 @@ function renderSpecialByWeek() {
       key: (y, i) => `special-week|week${grid.weeks[y]}|day${i}` });
 }
 
-/** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
 function monthGrid(year) {
   const byDate = {};
   DRAWS.filter((r) => r.d.slice(0, 4) === year).forEach((r) => { byDate[r.d] = r.s; });
@@ -1814,13 +1377,7 @@ const MONTH_HEAD = ["Ngày"].concat(
   Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1)));
 
 function renderSpecialYearByDay() {
-  // Hàng là NĂM, cột là ngày 1-31, cho MỘT tháng đã chọn. Tên hàm nói theo BỐ
-  // CỤC chứ không theo tên trang: hai trang này từng hiện đúng cùng một bảng
-  // và tên trang thì ngược với nội dung, nên đặt tên theo trục mà bảng trải ra
-  // là cách duy nhất để lần sau không lẫn lại.
   const months = Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1));
-  // Tháng chọn sẵn theo giờ Việt Nam, như mọi "hôm nay" khác của trang: `new Date().getMonth()`
-  // đọc đồng hồ máy người xem, nên tối 31 ở bờ Tây nước Mỹ (đã sang ngày 1 ở Việt Nam) chọn tháng trước.
   const today = todayInVietnam() || (DRAWS.length ? DRAWS[DRAWS.length - 1].d : "");
   const monthLabel = fillPicker("sp-month", months, months[(+today.slice(5, 7) || 1) - 1]);
   const month = months.indexOf(monthLabel) + 1;
@@ -1849,7 +1406,6 @@ function renderSpecialYearByDay() {
 }
 
 function renderSpecialDayByMonth() {
-  // Hàng là ngày 1-31, cột là THÁNG 1-12, cho MỘT năm đã chọn.
   const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
   const year = fillPicker("sp-year", years) || years[years.length - 1];
   setCount(DRAWS.filter((r) => r.d.slice(0, 4) === year));
@@ -1865,7 +1421,6 @@ function renderOverview() {
     ? `${rows.length} kỳ · ${viDate(rows[0].d)} → ${viDate(rows.at(-1).d)}`
     : "Không có kỳ phù hợp với bộ lọc";
   const counts = countLoto(rows);
-  // Bảng đếm đủ số nháy, nên mốc so sánh là 27/100 nháy mỗi kỳ.
   const expected = NHAY_PER_DRAW * rows.length;
   const total = rows.reduce((sum, row) => sum + row.n.length, 0);
   const s = specialGaps();
@@ -2014,7 +1569,6 @@ function renderOverview() {
       `So kỳ vọng = ${counts[number]} / ${expected.toLocaleString("vi-VN", {maximumFractionDigits: 2})} = ${body[index][3]}.`,
     ]));
     row.setAttribute("data-evidence-cols", "2,3");
-    // Căn cứ trên từng ô giữ phạm vi toàn lịch sử, bấm thường vẫn đánh dấu.
     row.cells[4].setAttribute("data-evidence-row", define(`overview-gan-${pad2(number)}`,
       `Số ${pad2(number)} · Gan Đặc Biệt trên toàn lịch sử`, globalSources, ganSteps(number)));
     row.cells[5].setAttribute("data-evidence-row", define(`overview-cycle-${pad2(number)}`,
@@ -2024,8 +1578,6 @@ function renderOverview() {
   if (block) fill(block, JSON.stringify(values));
   if (window.appEvidence) Object.entries(values).forEach(([id, entry]) => window.appEvidence.register(id, entry));
 }
-
-// --- Khởi động -------------------------------------------------------------
 
 function boot(renderName) {
   const render = window[renderName];
@@ -2055,9 +1607,6 @@ function boot(renderName) {
     from.value = DRAWS[Math.max(0, DRAWS.length - 90)].d;
     to.value = DRAWS[DRAWS.length - 1].d;
   }
-  // Trang tần suất CẶP không có lưới chọn 00-99, nên popup chu kỳ gan không
-  // có đường vào. Một ô chọn nhỏ đưa tính năng ấy tới cả hai trang mà không
-  // phải nhét lưới 100 nút vào trang vốn làm việc theo họ cặp.
   const ganPick = $("sp-gan-pick");
   if (ganPick) {
     ganPick.addEventListener("change", () => {
@@ -2070,8 +1619,6 @@ function boot(renderName) {
     quick.addEventListener("click", (ev) => {
       const days = ev.target.dataset.days;
       if (!days) return;
-      // Đặt mốc bằng cách lùi từ KỲ MỚI NHẤT CÓ DỮ LIỆU, không lùi từ hôm nay:
-      // lùi từ hôm nay sẽ hụt mất mấy kỳ mỗi khi kho chưa cập nhật tới hôm nay.
       const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
       if (!latest) return;
       const [y, m, d] = latest.split("-").map(Number);
@@ -2087,10 +1634,6 @@ function boot(renderName) {
    $("sp-sort")].forEach(
     (el) => el && el.addEventListener("change", render));
 
-  // Chỉ nút BÊN TRONG .sp-chips. "Xoá đánh dấu" từng dùng chung lớp .sp-chip
-  // nên nó cũng dính bộ xử lý này: dataset.days là undefined -> parseInt ra
-  // NaN -> nhánh "Tất cả" -> bấm xoá đánh dấu thì dải ngày âm thầm nhảy từ
-  // 90 kỳ lên 2 396 kỳ. Người dùng không hề yêu cầu điều đó.
   document.querySelectorAll(".sp-chips .sp-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".sp-chips .sp-chip").forEach((b) => b.classList.remove("on"));
@@ -2112,14 +1655,6 @@ function boot(renderName) {
   render();
 }
 
-
-// --- Cầu giải Đặc Biệt -------------------------------------------------------
-//
-// Ba khối, theo đúng bố cục đọc được từ trang tham chiếu:
-//   1. Ma trận 10x10 tần suất hai số cuối giải Đặc Biệt, xếp theo Đầu 0-9.
-//   2. Cặp lộn thật kèm số lần, sắp giảm dần.
-//   3. Kết quả ba kỳ gần nhất, đủ các giải.
-
 function renderSpecialBridge() {
   const rows = selected();
   setCount(rows);
@@ -2127,7 +1662,6 @@ function renderSpecialBridge() {
   const count = new Array(100).fill(0);
   rows.forEach((r) => { count[parseInt(lastTwo(r.s), 10)] += 1; });
 
-  // 1. Ma trận Đầu 0-9 x Đuôi 0-9.
   const head = ["Đầu / Đuôi"].concat(Array.from({ length: 10 }, (_, d) => `Đuôi ${d}`));
   const body = Array.from({ length: 10 }, (_, tens) =>
     [mk("b", null, `Đầu ${tens}`)].concat(Array.from({ length: 10 }, (_, ones) => {
@@ -2136,8 +1670,6 @@ function renderSpecialBridge() {
         ? [mk("b", null, pad2(n)), mk("i", { class: "sp-times" }, `${count[n]} lần`)]
         : [mk("span", { class: "sp-none" }, pad2(n)), mk("i", {class: "sp-times"}, "0 lần")];
     })));
-  // Ô ma trận LÀ con số: hàng là Đầu, cột là Đuôi, nên cặp suy thẳng từ toạ độ
-  // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
   table($("sp-grid"), head, body,
     { pairOf: (y, i) => (i === 0 ? null : pad2(y * 10 + (i - 1))) });
   $("sp-grid").prepend(mk("colgroup", null, [12,...Array(10).fill(8.8)].map(width => mk("col", {style: `width:${width}%`}))));
@@ -2150,7 +1682,6 @@ function renderSpecialBridge() {
   });
   specialMetricLegend("app-special-frequency-legend", "frequency", maximum, "lần");
 
-  // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
   const lon = $("sp-lon");
   if (lon) {
     const pairs = reversePairs()
@@ -2167,7 +1698,6 @@ function renderSpecialBridge() {
     specialMetricLegend("app-special-reverse-legend", "frequency", pairMaximum, "lần");
   }
 
-  // 3. Ba kỳ gần nhất, đủ giải.
   const recent = $("sp-recent");
   if (recent) {
     const last = DRAWS.slice(-3).reverse();
@@ -2180,20 +1710,6 @@ function renderSpecialBridge() {
     ])));
   }
 }
-
-
-// --- Giải Đặc Biệt theo TỔNG ------------------------------------------------
-//
-// Tổng = (Đầu + Đuôi) mod 10, nên có 10 giá trị 0-9. Ba bảng, theo bố cục đọc
-// được từ trang tham chiếu:
-//   1. Gan theo tổng: tổng nào lâu chưa về nhất.
-//   2. Chuyển tổng: hôm qua tổng X thì hôm nay tổng Y với xác suất bao nhiêu.
-//   3. Chẵn/lẻ hôm sau, theo tổng hôm qua.
-//
-// Bảng 2 và 3 là thống kê MÔ TẢ trên lịch sử, không phải dự báo đã hiệu
-// chuẩn. Ghi chú mốc ngẫu nhiên đi kèm nói rõ điều đó: với 10 giá trị, mức
-// ngẫu nhiên là 10% mỗi ô, và lệch vài phần trăm trên vài trăm kỳ là chuyện
-// thường.
 
 function tongOf(special) {
   const two = lastTwo(special);
@@ -2210,8 +1726,6 @@ function renderSpecialByTong() {
   }).forEach(([id, widths]) => $(id).prepend(mk("colgroup", null,
     widths.map(width => mk("col", {style: `width:${width}%`})))));
   if (!rows.length) {
-    // Không return trắng: bảng sẽ giữ số liệu của dải trước. Dựng lại cả ba
-    // với đúng tiêu đề của chúng để table() gắn dòng "dải rỗng".
     table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"], []);
     table($("sp-trans"), ["Tổng hôm trước", "Tổng hôm sau", "Số lần",
       "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"], []);
@@ -2224,7 +1738,6 @@ function renderSpecialByTong() {
     return;
   }
 
-  // 1. Gan theo tổng.
   const lastSeen = new Array(10).fill(-1);
   const hits = new Array(10).fill(0);
   rows.forEach((r, i) => { const t = tongOf(r.s); lastSeen[t] = i; hits[t] += 1; });
@@ -2246,9 +1759,6 @@ function renderSpecialByTong() {
   specialMetricLegend("app-special-gap-legend", "gap", gapMaximum, "kỳ");
   specialMetricLegend("app-special-total-frequency-legend", "frequency", countMaximum, "lần");
 
-  // 2. Chuyển tổng: đếm cặp (hôm qua, hôm nay) trên các kỳ LIỀN KỀ thật.
-  //    Bỏ qua ranh giới ngày nghỉ quay — nối hai kỳ cách nhau nhiều ngày lại
-  //    thành "hôm sau" là bịa ra một chuyển tiếp không tồn tại.
   const trans = Array.from({ length: 10 }, () => new Array(10).fill(0));
   const fromTotal = new Array(10).fill(0);
   for (let i = 1; i < rows.length; i++) {
@@ -2258,10 +1768,6 @@ function renderSpecialByTong() {
     trans[a][b] += 1; fromTotal[a] += 1;
   }
 
-  // Xếp theo TỈ LỆ là cách chắc chắn đẩy nhiễu lên đầu: một ô 3/9 cho 33 %
-  // và đứng trên mọi ô khác, dù ba lần thì chẳng nói lên điều gì. Xếp theo
-  // độ lệch CHUẨN HOÁ so với mức ngẫu nhiên 10 %, tức chia cho sai số chuẩn
-  // sqrt(p(1-p)/n) — cùng một độ lệch phần trăm trên mẫu lớn mới đáng kể.
   const P0 = 0.1;
   const flat = [];
   for (let a = 0; a < 10; a++) {
@@ -2291,7 +1797,6 @@ function renderSpecialByTong() {
     specialMetricLegend("app-special-transition-legend", "frequency", maximum, "lần");
   }
 
-  // 3. Chẵn/lẻ của tổng hôm sau, theo tổng hôm trước.
   const par = $("sp-parity");
   if (par) {
     const body = [];

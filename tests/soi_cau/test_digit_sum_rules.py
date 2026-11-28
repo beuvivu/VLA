@@ -1,9 +1,3 @@
-"""Quy tắc tổng – bóng – chạm phải ra ĐÚNG từng con số mà loạt bài tuần đã in.
-
-Ba kỳ gốc, chép nguyên từ ``data/xsmb.csv`` để phép kiểm không phụ thuộc dữ
-liệu tải về sau. Số mong đợi là số in trong bài (dạng ``xyx`` = ``xy`` và ``yx``).
-"""
-
 from __future__ import annotations
 
 import itertools
@@ -34,7 +28,6 @@ def _row(day: str) -> pd.Series:
 
 
 def _xyx(*codes: str) -> list[int]:
-    """``"676"`` → [67, 76]; ``"030"`` → [3, 30]; ``"88"`` → [88]."""
     out: set[int] = set()
     for code in codes:
         out.update({int(code[:2]), int(code[1:])} if len(code) == 3 else {int(code)})
@@ -44,11 +37,8 @@ def _xyx(*codes: str) -> list[int]:
 @pytest.mark.parametrize(
     "day, dau, duoi, cham",
     [
-        # 28-09: "tổng 2 số cuối ĐB 73 → 0, bóng 5"; "2 số đầu 55 → 0"; "giải nhất 70 → 7, bóng 2"
         ("2026-09-27", [0, 5], [0, 5], [2, 7]),
-        # 02-10: chỉ in chạm — "giải nhất 35 → 8, bóng 3"
         ("2026-10-01", None, None, [3, 8]),
-        # 05-10: "51 → 6, bóng 1"; "82 → 0, bóng 5"; "35 → 8, bóng 3"
         ("2026-10-04", [1, 6], [0, 5], [3, 8]),
     ],
 )
@@ -61,10 +51,8 @@ def test_head_tail_and_touch_digits_match_the_articles(day, dau, duoi, cham) -> 
 
 
 def test_touch_set_is_every_touch_paired_both_ways_with_the_first_three_special_digits() -> None:
-    # 28-09: "Chạm 2: 252 – 202 – 242 – 292; Chạm 7: 757 – 707 – 747 – 797" (ĐB 55473).
     assert r.dan_cham(_row("2026-09-27")) == _xyx(
         "252", "202", "242", "292", "757", "707", "747", "797")
-    # 02-10: "Chạm 8: 848 – 898 – 808 – 858 – 828 – 878; Chạm 3: 343 – 393 – 303 – 353 – 323 – 373".
     assert r.dan_cham(_row("2026-10-01")) == _xyx(
         "848", "898", "808", "858", "828", "878", "343", "393", "303", "353", "323", "373")
 
@@ -72,9 +60,9 @@ def test_touch_set_is_every_touch_paired_both_ways_with_the_first_three_special_
 @pytest.mark.parametrize(
     "day, g5, vip",
     [
-        ("2026-09-27", "545", "030"),  # 0566 → 05 tổng 5; 4304 → 04 tổng 4; 68612 → 12 tổng 3; 64870 → 64 tổng 0
-        ("2026-10-01", "909", "171"),  # 1896 → 18 tổng 9; 6691 → 91 tổng 0; 24807 → 07 tổng 7; 92635 → 92 tổng 1
-        ("2026-10-04", "676", "050"),  # 7927 → 79 tổng 6; 2889 → 89 tổng 7; 82614 → 14 tổng 5; 28235 → 28 tổng 0
+        ("2026-09-27", "545", "030"),
+        ("2026-10-01", "909", "171"),
+        ("2026-10-04", "676", "050"),
     ],
 )
 def test_loto_pairs_match_the_articles(day, g5, vip) -> None:
@@ -84,7 +72,6 @@ def test_loto_pairs_match_the_articles(day, g5, vip) -> None:
 
 
 def test_previous_draw_summary_is_counted_from_the_board() -> None:
-    """Kỳ 04-10: bài in nháy 51, 89; về cả cặp 080, 090, 353; câm đầu 7; đầu 8, đuôi 9 nhiều nhất."""
     s = r.tong_hop_ky(_row("2026-10-04"))
     assert (s["de"], s["de_dau"], s["de_duoi"], s["de_tong"]) == ("51", 5, 1, 6)
     assert s["lo_kep"] == []
@@ -95,7 +82,6 @@ def test_previous_draw_summary_is_counted_from_the_board() -> None:
 
 
 def test_zero_padding_follows_each_prize_width() -> None:
-    """G5 ``566`` là ``0566``: bỏ số 0 đầu thì 2 số đầu thành 56 và cặp lô sai."""
     assert r.giai(_row("2026-09-27"), "prize5_2") == "0566"
     assert r.giai(_row("2026-10-04"), "special") == "82951"
 
@@ -112,14 +98,11 @@ def test_backtest_expectation_is_the_exact_chance_of_a_same_size_random_pick() -
     rows = {row["rule"]: row for row in r.backtest(raw)}
     assert rows["dau_db"]["expected_rate"] == pytest.approx(0.2)
     assert rows["duoi_db"]["expected_rate"] == pytest.approx(0.2)
-    # Cặp lộn khác nhau: 1 − 0,98²⁷; cặp kép chỉ một số: 1 − 0,99²⁷ — trung bình nằm giữa.
     assert 1 - 0.99**27 < rows["lo_g5"]["expected_rate"] <= 1 - 0.98**27
-    # Lịch sử ngẫu nhiên: không quy tắc nào được lệch khỏi chọn bừa quá xa.
     assert all(abs(row["z"]) < 4 for row in rows.values())
 
 
 def test_backtest_finds_a_rule_that_really_works() -> None:
-    """Phép đo không mù: cài để đầu ĐB kỳ sau LUÔN là tổng 2 số cuối ĐB kỳ trước."""
     raw = _history(400, seed=4)
     special = raw["special"].to_numpy().copy()
     for t in range(1, len(special)):
@@ -132,17 +115,13 @@ def test_backtest_finds_a_rule_that_really_works() -> None:
 
 
 def test_frame_scoring_counts_a_week_as_won_by_a_single_hit() -> None:
-    """Khung 7 kỳ: hai chữ số đầu "nổ" với xác suất 1 − 0,8⁷ ngay cả khi chọn bừa."""
     rows = {row["rule"]: row for row in r.frame_backtest(_history(700, seed=5))}
     assert rows["dau_db"]["expected_rate"] == pytest.approx(1 - 0.8**7)
-    assert rows["dau_db"]["frames"] == 99  # mỗi Chủ Nhật có đủ khung 7 kỳ phía sau
-    # Dàn chạm mở hai khung mỗi tuần: Chủ Nhật → thứ Hai–Năm, thứ Năm → thứ Sáu–Chủ Nhật.
+    assert rows["dau_db"]["frames"] == 99
     assert rows["dan_cham"]["frames"] == 199
 
 
 def test_loto_chance_is_conditional_on_the_numbers_that_came_out() -> None:
-    """Kỳ 04-10 về 25 con khác nhau (51, 89 về hai nháy): bộ 2 con chọn bừa trúng với
-    1 − C(75,2)/C(100,2), không phải 1 − 0,98²⁷."""
     row = _row("2026-10-04")
     lotos = {value % 100 for value in ROWS["2026-10-04"]}
     rule = next(rule for rule in r.RULES if rule.key == "lo_g5")
@@ -160,7 +139,6 @@ def test_poisson_binomial_tail_is_exact() -> None:
             if sum(bits) >= k
         )
         assert r.poisson_binomial_sf(k, chances) == pytest.approx(brute)
-    # Cùng một xác suất thì là đuôi nhị thức.
     assert r.poisson_binomial_sf(30, [0.2] * 100) == pytest.approx(
         sum(math.comb(100, i) * 0.2**i * 0.8 ** (100 - i) for i in range(30, 101))
     )
@@ -172,14 +150,11 @@ def test_wilson_matches_its_textbook_values() -> None:
 
 
 def test_the_500_draw_report_matches_the_independent_implementation() -> None:
-    """Bộ ``xsmb_methods`` chủ dự án gửi (05-10-2026) cài đặt độc lập cùng năm quy
-    tắc và cùng cách chấm; báo cáo 500 kỳ 20-05-2025 → 05-10-2026 của nó in đúng
-    các số dưới đây. Hai cài đặt phải ra cùng một kết quả trên dữ liệu kho."""
     raw = pd.read_csv(ROOT / "data" / "xsmb.csv", dtype={"date": str})
     raw = raw[(raw["date"] >= "2025-05-20") & (raw["date"] <= "2026-10-05")]
     assert len(raw) == 500
     rows = {row["rule"]: row for row in r.backtest(raw)}
-    expected = {  # quy tắc: (trúng, mốc chọn bừa, p, p Holm)
+    expected = {
         "dau_db": (99, 0.200, 0.553, 1.000),
         "duoi_db": (100, 0.200, 0.509, 1.000),
         "dan_cham": (97, 0.177, 0.165, 0.827),

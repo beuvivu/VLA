@@ -1,5 +1,3 @@
-"""Lịch vạn niên phía trình duyệt, kèm kết quả Đặc Biệt đã xác thực."""
-
 import csv
 import re
 from datetime import date
@@ -9,9 +7,7 @@ from web.web_security import json_for_html_script
 from core.paths import TEMPLATES
 
 
-
 def load_special_results(repo_root: Path) -> dict[str, str]:
-    """Chỉ lấy ngày hợp lệ và giải đủ độ rộng; không suy ra số từ dữ liệu thiếu."""
     path = repo_root / "data" / "xsmb.csv"
     if not path.exists():
         return {}
@@ -30,7 +26,6 @@ def load_special_results(repo_root: Path) -> dict[str, str]:
 
 
 def render_calendar(repo_root: Path) -> str:
-    """Nhúng dữ liệu và tài nguyên để lịch hoạt động cả khi mở trang từ tệp."""
     results = load_special_results(repo_root)
     payload = json_for_html_script({"results": results, "latest": max(results, default="")})
     css = (TEMPLATES / "calendar_widget.css").read_text(encoding="utf-8")

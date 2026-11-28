@@ -1,19 +1,3 @@
-// Bản JS của `src/ingest/sources.py::extract_partial_prize_map`.
-//
-// VÌ SAO CÓ BẢN THỨ HAI
-// =====================
-// Worker chạy trên nền JavaScript nên không dùng lại được bản Python. Hai bản
-// cùng một logic là nợ kỹ thuật thật, không phải chuyện nhỏ: chúng sẽ trôi
-// lệch nhau, và lệch ở đây nghĩa là trang live hiển thị một dãy số khác với
-// dãy được ghi vào lịch sử.
-//
-// Chốt chặn là `tests/worker/test_worker_parser_parity.py`: nó chạy CẢ HAI bản trên
-// cùng một bộ mẫu HTML và đòi kết quả giống hệt nhau, từng ký tự. Sửa một bản
-// mà quên bản kia thì phép kiểm đỏ ngay.
-//
-// Những chỗ bản Python dựa vào BeautifulSoup mà bản này phải mô phỏng lại,
-// đều đo được trên chính bs4 và ghi rõ ngay tại chỗ.
-
 export const PRIZE_ORDER = [
   "special", "prize1", "prize2", "prize3",
   "prize4", "prize5", "prize6", "prize7",
@@ -35,11 +19,6 @@ export function emptyPrizeMap() {
   return out;
 }
 
-// --- Chuẩn hoá nhãn --------------------------------------------------------
-
-// Python: NFKD -> bỏ dấu tổ hợp -> Đ/đ thành D/d -> viết thường -> cắt lề.
-// Đ (U+0110) KHÔNG tự phân rã qua NFKD nên phải thay tay; đó là lý do bản
-// Python có đúng hai dòng replace ấy chứ không phải thừa.
 export function asciiFold(value) {
   return String(value)
     .normalize("NFKD")
@@ -69,12 +48,6 @@ export function labelKey(line) {
   return null;
 }
 
-// --- Bóc số ----------------------------------------------------------------
-
-// Python dùng `(?<!\w)[0-9]{n}(?!\w)`, và `\w` của Python trên chuỗi str là
-// Unicode: nó khớp cả chữ số toàn phần như "１". Vì thế `\w` của JS (chỉ ASCII)
-// KHÔNG tương đương — phải viết lại bằng thuộc tính Unicode, nếu không một
-// chuỗi như "１12345２" sẽ lọt qua ở bản JS mà bị chặn ở bản Python.
 const WORD_CHAR = "[\\p{L}\\p{N}_]";
 
 export function validTokens(text, key) {
@@ -92,17 +65,8 @@ export function validPrizeToken(value, key) {
   return new RegExp(`^[0-9]{${width}}$`).test(token) ? token : null;
 }
 
-// --- Hàng giải: dòng nhãn rồi các dòng hàng số ngay sau ---------------------
-
-// Khớp `_LINE_TOKEN` bên Python. `[0-9]` chỉ ASCII ở cả hai bên: chữ số toàn phần rơi
-// vào nhánh "khác", nên dòng chứa chúng bị loại.
 const LINE_TOKEN = /[0-9]+|[^\s0-9,;|]+/gu;
 
-/**
- * Giá trị của một dòng NẰM SAU nhãn giải, hoặc `null` nếu dòng ấy không phải hàng số.
- * Xem `_value_line_tokens` bên Python: giải 7 là nhãn cuối của bảng, và trước đây khối
- * số của nó kéo tới tận bảng lô tô hay ô chọn tháng.
- */
 export function valueLineTokens(line, key) {
   const width = EXPECTED_WIDTHS[key];
   const values = [];
@@ -122,8 +86,6 @@ export function prizeRowValues(lines, labelIdx, stopIdx, key) {
   }
   return values.slice(0, EXPECTED_COUNTS[key]);
 }
-
-// --- HTML thành các dòng văn bản -------------------------------------------
 
 const NAMED_ENTITIES = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
@@ -150,19 +112,13 @@ export function decodeEntities(text) {
   );
 }
 
-// Mô phỏng `BeautifulSoup(html,"lxml").get_text("\n", strip=True)`.
-//
-// Ba hành vi đo được trên chính bs4, không phải phỏng đoán:
-//   1. Nội dung <script>/<style> BỊ LOẠI (bs4 >= 4.9 xếp chúng ngoài get_text).
-//   2. Chú thích <!-- --> bị loại.
-//   3. Mỗi nút văn bản là MỘT dòng riêng. "ĐB<span>837</span>72" ra ba dòng
-//      chứ không phải "ĐB83772" — nên "837" và "72" không dính lại thành một
-//      giải năm chữ số. Thay mọi thẻ bằng xuống dòng cho đúng hành vi ấy.
 export function htmlToLines(html) {
   let text = String(html || "");
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
-  // Nhánh `[\s\S]*$` xử lý thẻ script/style không đóng: bỏ tới hết chuỗi thay
-  // vì để nguyên cả khối mã lọt vào phần văn bản.
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<!--[\s\S]*?--!?>/g, "");
+  } while (text !== previous);
   text = text.replace(
     /<(script|style)\b[^>]*>(?:[\s\S]*?<\/\1\s*>|[\s\S]*$)/gi,
     "\n",
@@ -175,8 +131,6 @@ export function htmlToLines(html) {
     .filter((line) => line.length > 0);
 }
 
-// --- Bóc khối giải ---------------------------------------------------------
-
 export function extractPartialPrizeMap(html) {
   const lines = htmlToLines(html);
   if (lines.length === 0) return emptyPrizeMap();
@@ -188,8 +142,6 @@ export function extractPartialPrizeMap(html) {
   });
   if (labels.length === 0) return emptyPrizeMap();
 
-  // Trang thật lặp lại nhãn giải ở menu và bảng thống kê. Chấm điểm mọi khối
-  // bắt đầu bằng nhãn đặc biệt rồi giữ khối đầy đủ nhất và đúng thứ tự nhất.
   let specialPositions = [];
   labels.forEach(([, key], n) => { if (key === "special") specialPositions.push(n); });
   if (specialPositions.length === 0) specialPositions = [0];
@@ -202,12 +154,11 @@ export function extractPartialPrizeMap(html) {
       const [lineIdx, key] = labels[pos];
       const keyOrder = PRIZE_ORDER.indexOf(key);
       if (pos > labelPos && key === "special") break;
-      if (keyOrder < seenOrder) break;  // một bảng khác đã bắt đầu
+      if (keyOrder < seenOrder) break;
       seenOrder = Math.max(seenOrder, keyOrder);
       const nextIdx = pos + 1 < labels.length ? labels[pos + 1][0] : lines.length;
       const values = prizeRowValues(lines, lineIdx, nextIdx, key);
       if (values.length > 0) prizeMap[key] = values;
-      // Hai nhãn giải 7 liền nhau ("Giải bảy" rồi "G7"): nhãn đầu chưa cho số thì đọc tiếp.
       const nextKey = pos + 1 < labels.length ? labels[pos + 1][1] : null;
       if (key === "prize7" && (prizeMap.prize7.length > 0 || nextKey !== "prize7")) break;
     }
@@ -224,8 +175,6 @@ export function extractPartialPrizeMap(html) {
     return [received, complete];
   };
 
-  // `max()` của Python giữ phần tử ĐẦU TIÊN khi hoà điểm. So sánh phải chặt
-  // (">") để giữ đúng cách phá hoà ấy.
   let best = candidates[0];
   let bestScore = score(best);
   for (let i = 1; i < candidates.length; i += 1) {

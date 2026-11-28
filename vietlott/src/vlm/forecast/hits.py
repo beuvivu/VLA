@@ -1,23 +1,3 @@
-"""Số khớp H của vé sáu số chính đã phát TRƯỚC kỳ quay, so với mốc ngẫu nhiên đúng luật.
-
-Với vé t số và kết quả k số chính rút từ n số, H = |vé ∩ kết quả|. Khi máy quay công bằng và vé
-được chốt trước kỳ quay thì H theo phân phối siêu bội, BẤT KỂ vé được chọn thế nào:
-
-    P(H = h) = C(t, h) · C(n − t, k − h) / C(n, k).
-
-Đơn vị quan sát là KỲ QUAY: các số trong một kỳ không độc lập, nên mọi kiểm định ở đây đếm kỳ,
-không đếm số. Số đặc biệt Power không bao giờ được cộng vào H — nó được chấm riêng ở nơi khác.
-
-H ≥ 4 là sự kiện hiếm (Mega ≈ 0,139%, Power ≈ 0,062% mỗi vé), nên module có phân tích công suất:
-với cỡ mẫu hiện có, chỉ một mức tăng rất lớn mới có thể được phát hiện; dưới ngưỡng ấy kết luận
-đúng là "chưa đủ bằng chứng", không phải "không có".
-
-Nhiều vé mỗi kỳ được tách bạch: chỉ số theo TỪNG vé khác với "ít nhất một vé đạt mức", và mốc
-ngẫu nhiên của "ít nhất một vé" phụ thuộc độ trùng giữa các vé nên được tính CHÍNH XÁC trên chính bộ
-vé ấy (liệt kê theo vùng giao của các vé); Monte Carlo chỉ là dự phòng khi danh mục quá lớn. Nhiều
-vé hơn KHÔNG phải dự báo tốt hơn.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -29,37 +9,21 @@ from scipy import stats
 from scipy.special import logsumexp
 
 LEVELS = (3, 4, 5, 6)
-#: Lưới hệ số tăng r của e-process cho xác suất dự đoán được (chốt 13-10-2026; đổi lưới là đổi phép kiểm).
 PREDICTABLE_LIFTS = (1.25, 1.5, 2.0, 3.0, 5.0, 10.0)
 
 
 def fair_hit_pmf(n: int, k: int = 6, ticket: int = 6) -> np.ndarray:
-    """P(H = h), h = 0..ticket, khi kết quả là k số rút đều từ n số (siêu bội).
-
-    Args:
-        n: Số số trong lồng cầu (45 Mega, 55 Power).
-        k: Số số chính được quay.
-        ticket: Số số trên vé.
-
-    Returns:
-        Mảng ticket + 1 xác suất, tổng bằng 1.
-
-    Raises:
-        ValueError: Tham số không hợp lệ.
-    """
     for value in (n, k, ticket):
         if type(value) is not int:
             raise ValueError('Tham số siêu bội phải là số nguyên')
     if not 1 <= k <= n or not 1 <= ticket <= n:
         raise ValueError('Cần 1 ≤ k ≤ n và 1 ≤ số trên vé ≤ n')
     total = comb(n, k)
-    # h > k hoặc k − h > n − ticket là bất khả: xác suất 0 (comb không nhận đối số âm).
     return np.array([comb(ticket, h) * comb(n - ticket, k - h) / total if 0 <= k - h <= n - ticket else 0.0
                      for h in range(ticket + 1)])
 
 
 def hit_count(ticket: Sequence[int], drawn: Sequence[int], n: int) -> int:
-    """|vé ∩ kết quả|, sau khi kiểm vé và kết quả đều là các số phân biệt trong 1..n."""
     for name, values in (('vé', ticket), ('kết quả', drawn)):
         if any(type(v) not in (int, np.int64, np.int32) for v in values):
             raise ValueError(f'{name} phải gồm số nguyên')
@@ -69,7 +33,6 @@ def hit_count(ticket: Sequence[int], drawn: Sequence[int], n: int) -> int:
 
 
 def clopper_pearson(successes: int, trials: int, confidence: float = 0.95) -> tuple[float, float]:
-    """Khoảng tin cậy chính xác cho tỷ lệ nhị thức (không dùng xấp xỉ chuẩn cho sự kiện hiếm)."""
     if trials < 1 or not 0 <= successes <= trials:
         raise ValueError('Số lần đạt phải trong 0..số kỳ')
     alpha = 1 - confidence
@@ -79,14 +42,6 @@ def clopper_pearson(successes: int, trials: int, confidence: float = 0.95) -> tu
 
 
 def summarize_hits(hits: Sequence[int], n: int, k: int = 6, ticket: int = 6) -> dict:
-    """Phân bố H của MỘT vé mỗi kỳ, so với siêu bội.
-
-    Returns:
-        draws, phân bố đếm và kỳ vọng, số khớp trung bình (khoảng tin cậy 95%, z theo phương sai
-        siêu bội chính xác), và cho mỗi mức L ∈ {3, 4, 5, 6}: số kỳ đạt, tỷ lệ, khoảng
-        Clopper–Pearson, tỷ lệ ngẫu nhiên, hệ số so với ngẫu nhiên và p một phía (nhị thức chính
-        xác, "tốt hơn ngẫu nhiên").
-    """
     h = np.asarray(hits, dtype=np.int64)
     if h.ndim != 1 or h.size == 0 or (h < 0).any() or (h > ticket).any():
         raise ValueError('Số khớp phải là vectơ khác rỗng trong 0..số trên vé')
@@ -120,7 +75,6 @@ def summarize_hits(hits: Sequence[int], n: int, k: int = 6, ticket: int = 6) -> 
 
 
 def _critical_count(p0: float, draws: int, alpha: float) -> int:
-    """Số kỳ đạt nhỏ nhất c để P₀(X ≥ c) ≤ α (kiểm định nhị thức một phía, chính xác)."""
     c = int(stats.binom.isf(alpha, draws, p0))
     while stats.binom.sf(c - 1, draws, p0) > alpha:
         c += 1
@@ -130,13 +84,6 @@ def _critical_count(p0: float, draws: int, alpha: float) -> int:
 
 
 def detectable_lift(p0: float, draws: int, alpha: float = 0.05, power: float = 0.8) -> dict:
-    """Hệ số tăng nhỏ nhất của tỷ lệ p₀ mà phép kiểm nhị thức một phía phát hiện với công suất cho trước.
-
-    Returns:
-        ``critical_reached`` (số kỳ phải đạt để bác bỏ), ``rate`` và ``lift`` = rate / p₀ cần có.
-        Khi số kỳ tới hạn vượt số kỳ (``attainable`` = False) không kết quả nào bác bỏ được H₀:
-        công suất bằng 0 ở MỌI tỷ lệ, nên ``rate`` và ``lift`` là None, không phải ×(1/p₀).
-    """
     if not 0 < p0 < 1 or draws < 1 or not 0 < alpha < 1 or not 0 < power < 1:
         raise ValueError('Tham số công suất không hợp lệ')
     c = _critical_count(p0, draws, alpha)
@@ -155,7 +102,6 @@ def detectable_lift(p0: float, draws: int, alpha: float = 0.05, power: float = 0
 
 
 def _critical_counts(p0: float, draws: np.ndarray, alpha: float) -> np.ndarray:
-    """``_critical_count`` cho cả một mảng số kỳ (vectơ hoá)."""
     c = stats.binom.isf(alpha, draws, p0).astype(np.int64)
     while (high := stats.binom.sf(c - 1, draws, p0) > alpha).any():
         c += high
@@ -165,14 +111,6 @@ def _critical_counts(p0: float, draws: np.ndarray, alpha: float) -> np.ndarray:
 
 
 def draws_needed(p0: float, lift: float, alpha: float = 0.05, power: float = 0.8, limit: int = 10_000_000) -> int | None:
-    """Số kỳ NHỎ NHẤT mà phép kiểm nhị thức chính xác đạt công suất cho trước với tỷ lệ lift·p₀.
-
-    Công suất của phép kiểm rời rạc không đơn điệu theo số kỳ (răng cưa: mỗi khi số kỳ đạt tới hạn
-    tăng một bậc, công suất tụt xuống), nên không tìm nhị phân được: tìm một mốc đủ bằng cách nhân
-    đôi (mốc cuối chặn ở ``limit``) rồi quét MỌI số kỳ tới mốc ấy. None nếu không số kỳ nào
-    ≤ ``limit`` đạt — kết luận ấy chỉ đưa ra sau khi đã quét hết 1..``limit``: công suất ở chính
-    ``limit`` thấp không loại được một số kỳ nhỏ hơn nằm trên đỉnh răng cưa.
-    """
     if lift <= 1 or lift * p0 >= 1:
         raise ValueError('Cần 1 < lift và lift·p₀ < 1')
     if limit < 1:
@@ -193,7 +131,6 @@ def draws_needed(p0: float, lift: float, alpha: float = 0.05, power: float = 0.8
 
 
 def poisson_binomial_sf(reached: int, probabilities: Sequence[float]) -> float:
-    """P(X ≥ reached) với X là tổng các Bernoulli độc lập xác suất khác nhau (quy hoạch động)."""
     dist = np.zeros(len(probabilities) + 1)
     dist[0] = 1.0
     for count, p in enumerate(probabilities, start=1):
@@ -204,18 +141,6 @@ def poisson_binomial_sf(reached: int, probabilities: Sequence[float]) -> float:
 
 def predictable_p_value(reached: Sequence[bool], probabilities: Sequence[float],
                         lifts: Sequence[float] = PREDICTABLE_LIFTS) -> float:
-    """p một phía LUÔN hợp lệ khi xác suất mốc p_t của mỗi kỳ chỉ phụ thuộc các kỳ TRƯỚC (dự đoán được).
-
-    Danh mục học lại sau mỗi kỳ nên p_t phụ thuộc các kết quả trước; khi ấy tổng các chỉ báo KHÔNG theo
-    Poisson–nhị thức của dãy p đã thực hiện (ba kỳ đủ để Poisson–nhị thức bác bỏ 5,84% ở α = 5%). Dưới
-    H₀, P(X_t = 1 | quá khứ) = p_t, nên tỉ số hợp lý của Bernoulli(min(r·p_t, 1)) so với Bernoulli(p_t)
-    nhân dồn là martingale không âm kỳ vọng 1, và trung bình đều trên lưới r cũng vậy. Theo bất đẳng thức
-    Ville, p = min(1, 1 / max_t E_t) hợp lệ ở mọi thời điểm, kể cả khi dừng theo dữ liệu.
-
-    Args:
-        reached: Chỉ báo đạt mức của từng kỳ, theo THỨ TỰ THỜI GIAN.
-        probabilities: p_t dưới H₀, tính trước kỳ t.
-    """
     r = np.asarray(lifts, dtype=float)
     if r.size == 0 or (r <= 1).any():
         raise ValueError('Cần lưới hệ số tăng r > 1')
@@ -227,7 +152,7 @@ def predictable_p_value(reached: Sequence[bool], probabilities: Sequence[float],
             raise ValueError('Xác suất ngoài [0, 1]')
         if p == 0:
             if x:
-                return 0.0  # đạt một mức bất khả dưới H₀
+                return 0.0
             continue
         if p == 1:
             continue
@@ -239,16 +164,6 @@ def predictable_p_value(reached: Sequence[bool], probabilities: Sequence[float],
 
 
 def any_ticket_tail(tickets: Sequence[Sequence[int]], n: int, k: int = 6, limit: int = 200_000) -> np.ndarray | None:
-    """P(số khớp TỐT NHẤT trong danh mục ≥ L), L = 0..k, CHÍNH XÁC khi kết quả là k số rút đều từ n số.
-
-    Hợp các vé được chia thành vùng theo tập vé chứa số ấy (vùng Venn). Kết quả rút đều nên số con rơi
-    vào từng vùng theo siêu bội nhiều chiều, P(c) = Π C(cỡ vùng, c_vùng) · C(n − |hợp|, k − Σc) / C(n, k),
-    và số khớp của mỗi vé là tổng c trên các vùng của nó. Liệt kê mọi c (số nguyên, không làm tròn) cho
-    phân phối của số khớp tốt nhất — kể cả mức hiếm mà một mẫu mô phỏng hữu hạn không bao giờ gặp.
-
-    Returns:
-        Mảng k + 1 phần tử; None khi cận số tổ hợp C(k + số vùng, k) vượt ``limit`` (dùng Monte Carlo).
-    """
     sets = [set(t) for t in tickets]
     regions: dict[tuple[bool, ...], int] = {}
     for v in set().union(*sets):
@@ -285,13 +200,6 @@ def any_ticket_tail(tickets: Sequence[Sequence[int]], n: int, k: int = 6, limit:
 
 
 def union_bounds(tickets: Sequence[Sequence[int]], n: int, k: int = 6) -> tuple[np.ndarray, np.ndarray]:
-    """Cận CHÍNH XÁC của P(ít nhất một vé ≥ L), L = 0..k, khi danh mục quá lớn để liệt kê.
-
-    Trên: Σ P(Aᵢ). Dưới: Bonferroni bậc hai Σ P(Aᵢ) − Σ_{i<j} P(Aᵢ ∩ Aⱼ) (không nhỏ hơn vé tốt nhất),
-    với P(Aᵢ ∩ Aⱼ) = P(Aᵢ) + P(Aⱼ) − P(Aᵢ ∪ Aⱼ) tính bằng ``any_ticket_tail`` trên hai vé. Ở mức hiếm
-    hai cận gần trùng nhau (sáu vé khác nhau: H = 6 đúng 6/C(n, 6)), nên một sự kiện mà mẫu mô phỏng
-    hữu hạn chưa gặp không kéo ước lượng xuống cận của MỘT vé.
-    """
     single = np.array([any_ticket_tail([t], n, k, limit=10**9) for t in tickets])
     total = single.sum(axis=0)
     joint = np.zeros(k + 1)
@@ -302,21 +210,6 @@ def union_bounds(tickets: Sequence[Sequence[int]], n: int, k: int = 6) -> tuple[
 
 def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequence[Sequence[int]], n: int,
                       k: int = 6, simulations: int = 20_000, seed: int = 20261013, exact_limit: int = 200_000) -> dict:
-    """Nhiều vé mỗi kỳ, số vé CỐ ĐỊNH: tách chỉ số từng vé với "ít nhất một vé đạt mức".
-
-    Mốc ngẫu nhiên của "ít nhất một vé ≥ L" phụ thuộc độ trùng giữa các vé, nên được tính chính xác
-    trên chính bộ vé (``any_ticket_tail``). Danh mục quá lớn để liệt kê (cận vượt ``exact_limit``)
-    mới dùng ``simulations`` kết quả rút đều (số ngẫu nhiên chung cho mọi kỳ, kèm sai số Monte Carlo);
-    khi ấy ước lượng bị kẹp vào cận chính xác ``union_bounds`` (Bonferroni bậc hai, tổng các vé) — mức
-    hiếm không gặp trong mẫu hữu hạn không thành xác suất 0, cũng không thành cận của một vé. Ước lượng
-    điểm ấy CHỈ dùng cho số kỳ vọng mô tả: phép kiểm của kỳ đó dùng cận TRÊN chính xác Σ P(Aᵢ), vì một
-    ước lượng thấp hơn xác suất thật làm p nhỏ đi. Mọi thừa số của e-process không tăng theo p_t, nên
-    p̃_t ≥ p_t vẫn cho siêu martingale — p chỉ có thể lớn hơn; Poisson–nhị thức cũng đơn điệu như thế.
-
-    ``p_value_greater`` là p luôn hợp lệ (``predictable_p_value``): danh mục của mô hình học lại sau
-    mỗi kỳ nên xác suất mốc phụ thuộc kết quả trước. ``p_value_fixed_portfolios`` (Poisson–nhị thức)
-    chỉ đúng khi MỌI danh mục được chốt trước cả cửa sổ. ``portfolios`` và ``drawn`` theo thứ tự thời gian.
-    """
     if len(portfolios) != len(drawn) or not portfolios:
         raise ValueError('Mỗi kỳ cần đúng một danh mục vé')
     size = len(portfolios[0])
@@ -327,9 +220,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
     per_ticket = []
     best = []
     fair_any = {level: [] for level in LEVELS}
-    null_for_test = {level: [] for level in LEVELS}  # chính xác, hoặc cận trên chính xác ở nhánh dự phòng
-    # Mọi kỳ dùng CÙNG các mô phỏng, nên ước lượng của các kỳ tương quan: sai số của tổng kỳ vọng
-    # phải tính từ tổng theo TỪNG mô phỏng, không cộng phương sai như thể độc lập.
+    null_for_test = {level: [] for level in LEVELS}
     aggregate = {level: np.zeros(simulations) for level in LEVELS}
     overlap, coverage = [], []
     for tickets, result in zip(portfolios, drawn):
@@ -349,7 +240,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
                 np.put_along_axis(incidence, sample, True, axis=1)
             monte_carlo_draws += 1
             index = np.asarray([[v - 1 for v in t] for t in tickets])
-            simulated = incidence[:, index].sum(axis=2).max(axis=1)  # (S,) số khớp tốt nhất trong danh mục
+            simulated = incidence[:, index].sum(axis=2).max(axis=1)
             lower, upper = union_bounds(tickets, n, k)
             for level in LEVELS:
                 reached = simulated >= level

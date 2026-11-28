@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Validate committed Excel outputs against canonical XSMB data.
-
-This validator checks *values*, not only Excel formatting. Every prize code in
-``xsmb.xlsx`` and ``xsmb-2-digits.xlsx`` must exactly match ``data/xsmb.csv``
-after canonical width formatting, and the latest daily workbook must contain all
-8 prize groups / 27 prize values without losing leading zeroes.
-"""
 
 import argparse
 import json

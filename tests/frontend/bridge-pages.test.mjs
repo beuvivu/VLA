@@ -5,8 +5,6 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
 
-// Bảy trang cầu vị trí và công cụ phôi tuần. Bộ máy JS phải đếm ra đúng từng ô
-// như `bridge_rules.py` — với tham số mặc định lẫn tham số người xem chọn.
 const build = `import json, sys
 sys.path.insert(0, "tests")
 import pandas as pd
@@ -242,7 +240,6 @@ test('trang bộ số chỉ tô giải Đặc Biệt khi nó rơi vào bộ mà 
         const draw = series[index];
         const expected = api.BO_ID[10 * prev.digits[a] + prev.digits[b]] === api.BO_ID[draw.two[0]];
         assert.equal(card.querySelector('.tr-number[data-value="0"]').classList.contains('is-hit'), expected);
-        // Nhãn nói đúng điều cầu báo (ĐB trong/ngoài bộ), tách khỏi việc cầu còn giữ bộ.
         const facts = card.querySelector('.app-cau-facts').textContent;
         assert.match(facts, expected ? /trong bộ/ : /ngoài bộ/);
         assert.doesNotMatch(facts, /Trúng theo cầu/);
@@ -322,7 +319,6 @@ test('dải không có cầu hiển thị trạng thái rỗng và chỉ số th
 test('mở với so/vt (từ trang Live): chọn sẵn đúng số và đúng cầu, tô hai vị trí trên bảng kết quả', async t => {
   const first = await open(t, fixture.pages.loto, '?ngay=2026-09-20');
   const { result } = first.window.BridgePages.state;
-  // Một số có ít nhất hai cầu, chọn cầu KHÔNG đứng đầu danh sách để phân biệt với lựa chọn mặc định.
   const number = Object.keys(result.counts).find((n) => result.counts[n] >= 2);
   const list = result.bridges.filter((b) => b.number === number);
   const chosen = list[list.length - 1];
@@ -335,9 +331,7 @@ test('mở với so/vt (từ trang Live): chọn sẵn đúng số và đúng c�
   assert.equal(card.dataset.date, '2026-09-20', 'bảng mới nhất là kỳ biên đã chọn');
   assert.deepEqual([...card.querySelectorAll('.app-cau-digit.is-src')].map((s) => Number(s.dataset.pos)).sort((x, y) => x - y),
     [chosen.a, chosen.b]);
-  // `so` không kèm cầu hợp lệ: chọn số, cầu đầu tiên.
   const bySo = await open(t, fixture.pages.loto, `?ngay=2026-09-20&so=${number}&vt=1x2`);
   assert.equal(bySo.window.document.querySelector('.app-cau-bridge[aria-pressed="true"]').textContent.split(' ·')[0], list[0].vt);
-  // Không có tham số: không chọn gì.
   assert.equal(first.window.document.querySelector('#app-cau-detail').childElementCount, 0);
 });

@@ -1,8 +1,6 @@
-// An explicit demo URL never changes or writes the embedded canonical history.
 if (new URLSearchParams(location.search).get("demo") === "1") {
   window.__D_DEMO_DRAWS__ = Array.from({length: 45}, (_, day) => {
     const n = [];
-    // Fixed shapes guarantee 0, 1, 2, 3, 4 and 5+ hits on both matrix types.
     [0, 1, 2, 3, 4, 5].forEach((count, index) => {
       for (let k = 0; k < count; k++) n.push(String(index).padStart(2, "0"));
     });

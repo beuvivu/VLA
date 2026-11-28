@@ -1,8 +1,3 @@
-"""Hiệu chỉnh nhiều kiểm định của kho (`stats.statistical_corrections`), bản DUY NHẤT từ 15-11-2026.
-
-BH không để giá trị thiếu làm mất các kiểm định hợp lệ; Holm thay ba bản chép (`digit_sum_rules`,
-`board_record`, `multi_hit_benchmark`).
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -37,17 +32,15 @@ def test_bh_fdr_is_bounded_monotone_in_rank_and_never_below_the_raw_p() -> None:
 
 
 def test_holm_steps_down_stays_monotone_and_keeps_the_input_order() -> None:
-    """Giá trị sách giáo khoa, đúng các ca ba bản chép cũ từng ghim."""
     assert holm([0.01, 0.04, 0.03, 0.005]) == pytest.approx([0.03, 0.06, 0.06, 0.02])
     assert holm([0.01, 0.04, 0.03, 0.5]) == pytest.approx([0.04, 0.09, 0.09, 0.5])
     assert holm([0.01, 0.04, 0.03]) == pytest.approx([0.03, 0.06, 0.06])
     assert holm([0.9, 0.9]) == [1.0, 1.0]
     assert holm([]) == []
-    assert holm((0.02, 0.02)) == [0.04, 0.04]   # hoà: cùng mức, không phụ thuộc vị trí
+    assert holm((0.02, 0.02)) == [0.04, 0.04]
 
 
 def own_corrections(source: str) -> list[str]:
-    """Hàm hiệu chỉnh (tên chứa holm / hochberg / fdr) TỰ cài đặt thay vì gọi bản ở `stats.statistical_corrections`."""
     import ast
     tree = ast.parse(source)
     shared = {alias.asname or alias.name for node in ast.walk(tree)
@@ -63,7 +56,6 @@ def own_corrections(source: str) -> list[str]:
 
 
 def test_multiple_testing_corrections_live_in_one_module() -> None:
-    """15-11-2026: Holm có ba bản chép, BH hai lớp bọc. Bản chép thứ tư sẽ lệch khỏi ba bản kia ở ca hoà."""
     from pathlib import Path
     src = Path(__file__).resolve().parents[2] / "src"
     found = {path.relative_to(src).as_posix(): names for path in src.rglob("*.py")

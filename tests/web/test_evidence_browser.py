@@ -1,5 +1,3 @@
-"""Số bị gấp hoặc lọc ẩn không được chọn bằng bàn phím trong Chromium thật."""
-
 import os
 from pathlib import Path
 

@@ -1,5 +1,3 @@
-"""Demo data must be explicit, deterministic and isolated from real XSMB draws."""
-
 from __future__ import annotations
 
 import json
@@ -41,7 +39,6 @@ console.log(JSON.stringify({same:window.__D_DRAWS__===canonical,
     assert len({row["d"] for row in rows}) == len(rows)
     assert all(len(row["n"]) == 27 for row in rows)
     assert all(row["n"][0] == row["s"][-2:] for row in rows)
-    # Both even and odd demo days retain every tier outside the priority star.
     tiers = {
         row["n"].count(f"{number:02d}")
         for row in rows for number in range(100)

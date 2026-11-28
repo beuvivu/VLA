@@ -1,6 +1,3 @@
-"""Trang Vietlott dựng từ engine ``vietlott/``: đủ 8 trang qua khung chung, không
-lộ nguồn, không bịa giá trị khuyết, và đọc đúng dữ liệu đã commit của engine."""
-
 from __future__ import annotations
 
 import copy
@@ -44,8 +41,8 @@ def _max_draw() -> dict:
 
 
 def _dashboard() -> dict:
-    latest = _matrix(1571, None)                       # jackpot kỳ mới CHƯA công bố
-    older = _matrix(1570, 123_456_789_000)             # kỳ trước có jackpot
+    latest = _matrix(1571, None)
+    older = _matrix(1570, 123_456_789_000)
     forecast = {"target_id": 1572, "target_date": "2026-10-07", "made_at": "2026-10-04T21:23:33+07:00",
                 "product": "mega645", "engine": "ml", "registered": True,
                 "components": [{"name": "main", "kind": "set",
@@ -104,7 +101,6 @@ def test_all_eight_pages_are_built_through_the_shell(built) -> None:
 
 
 def test_no_page_spells_out_a_data_source(built) -> None:
-    """Dữ liệu engine mang tên nguồn, đường dẫn và cảnh báo nhắc nguồn; không chữ nào ra trang."""
     for name, page in built.items():
         for marker in SOURCE_MARKERS:
             assert marker not in page, (name, marker)
@@ -118,7 +114,6 @@ def test_an_unpublished_jackpot_is_a_dash_not_the_previous_draw(built) -> None:
     assert cells == ["6 số chính", "—", "—"], cells
     assert "123.456.789.000" not in table, "jackpot kỳ trước bị mượn cho kỳ mới"
     assert "10.000.000 ₫" in table and ">12<" in table
-    # Kỳ trước vẫn hiện jackpot của chính nó trong lịch sử.
     assert "123.456.789.000 ₫" in mega
 
 
@@ -171,7 +166,6 @@ def test_comparisons_show_the_special_number_on_both_sides(built) -> None:
 
 
 def test_comparison_dashboard_scores_each_ticket_and_uses_engine_prize_tiers() -> None:
-    """Phần trăm cộng theo số chính của từng vé; số phụ có dấu hiệu riêng."""
     comparison = {
         "status": "matched", "target_id": 101, "target_date": "2026-10-07",
         "result": _matrix(101, None, numbers=(1, 2, 3, 4, 5, 6), bonus=7),
@@ -214,13 +208,12 @@ def test_comparison_summary_weights_by_total_selected_numbers() -> None:
     summary = soup.select_one('.vl-comparison-stat:last-child')
     assert summary.select_one('strong').get_text() == "71,4%"
     assert "5 / 7" in summary.get_text()
-    assert "chọn bừa 25,0%" in summary.get_text()        # Keno: 20 trong 80 số
+    assert "chọn bừa 25,0%" in summary.get_text()
     assert "Chưa phân hạng cược" in soup.get_text()
 
 
 @pytest.mark.parametrize(("product", "fair"), [("mega645", "13,3%"), ("power655", "10,9%"), ("lotto535", "14,3%")])
 def test_match_rate_is_printed_next_to_what_random_tickets_would_get(product, fair) -> None:
-    """13,3% số trùng của vé Mega đúng bằng chọn bừa; không có mốc thì nó trông như dự báo tốt."""
     comparison = {"status": "matched", "target_id": 1, "result": {"numbers": [1, 2, 3, 4, 5, 6]},
                   "tickets": [{"numbers": [1, 7, 8, 9, 10, 11], "matched_numbers": [1], "hits": 1}]}
     summary = BeautifulSoup(b.comparisons_markup(product, [comparison]), "html.parser").select_one('.vl-comparison-stat:last-child')
@@ -275,7 +268,6 @@ def test_max_comparison_highlights_whole_symbols_and_keeps_engine_tiers() -> Non
 
 @pytest.mark.parametrize(('hits', 'groups'), [(1, ['Đặc biệt']), (2, ['Đặc biệt', 'Nhất']), (0, [])])
 def test_pro_comparison_describes_single_number_matches_without_pair_prizes(hits, groups) -> None:
-    """Nhóm chứa bộ ba Pro chỉ là thống kê; một bộ ba chưa tạo thành vé cặp."""
     draw = _max_draw()
     if hits == 0:
         draw['prizes'][0]['numbers'][0] = '111'
@@ -331,7 +323,6 @@ def test_manual_comparison_widget_is_limited_to_matrix_products_and_loads_asset(
 
 
 def test_a_cache_path_from_the_repo_root_is_resolved_before_entering_the_engine(tmp_path, monkeypatch) -> None:
-    """Workflow truyền ``vietlott/data/forecast`` tính từ gốc kho; engine chạy sau chdir."""
     (tmp_path / "states").mkdir()
     monkeypatch.chdir(tmp_path)
     seen = []
@@ -362,7 +353,6 @@ def test_the_overview_says_no_product_deviates_when_none_does(built) -> None:
 
 
 def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> None:
-    """Max 3D / Pro lệch thật ở hàng đơn vị; trang tổng quan không được viết cứng "ngẫu nhiên"."""
     dashboard = _dashboard()
     dashboard["analysis"]["max3dpro"] = {"draws": 786, "last_id": 786, "last_date": "2026-10-01", "verdict": "ĐÃ",
                                          "evidence": {"found": True, "text": "Có bằng chứng.", "max_log10_wealth": 2.837},
@@ -375,24 +365,17 @@ def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> Non
     dashboard["analysis"]["max3d"] = {**dashboard["analysis"]["max3dpro"], "max_rtp": 0.5918}
     two = b.randomness_summary(dashboard["analysis"], {c: v[0] for c, v in b.PRODUCTS.items()})
     assert "ở Max 3D / Max 3D+ và Max 3D Pro;" in two and "0,63" in two
-    # RTP cao nhất lấy trên MỌI sản phẩm, kể cả sản phẩm không có tín hiệu.
     names = {c: v[0] for c, v in b.PRODUCTS.items()}
     dashboard["analysis"]["keno"] = {"evidence": {"found": False}, "max_rtp": 0.71}
     wide = b.randomness_summary(dashboard["analysis"], names)
     assert "mọi cửa của Max 3D / Max 3D+, Max 3D Pro và Keno mà mô hình tính được" in wide
     assert "RTP cao nhất là 0,71" in wide
-    # Mega không có RTP trong phân tích (jackpot dồn có thể vượt 1): không được gộp vào "mọi cửa".
     assert "Mega" not in wide.split("Dù vậy", 1)[1]
     dashboard["analysis"]["keno"]["max_rtp"] = 1.02
     assert "kỳ vọng âm" not in b.randomness_summary(dashboard["analysis"], names)
 
 
 def test_a_signal_must_clear_the_threshold_of_the_whole_family_of_products(tmp_path: Path) -> None:
-    """Engine kiểm từng sản phẩm ở e ≥ 20; bảy sản phẩm cùng được kết luận thì cần e ≥ 7/α = 140.
-
-    Max 3D (10^2,57) và Max 3D Pro (10^2,84) vượt cả 140; một sản phẩm chỉ đạt 10^1,5 (≈ 32) thì
-    với bảy sản phẩm, chừng ấy xảy ra do may rủi đủ thường để không được gọi là tín hiệu.
-    """
     assert b.family_threshold_log10() == pytest.approx(math.log10(140))
     weak = {"draws": 900, "last_id": 900, "last_date": "2026-10-01", "verdict": "Mô hình tự học ĐÃ tìm thấy độ lệch.",
             "evidence": {"found": True, "text": "Có bằng chứng kết quả lệch.", "max_log10_wealth": 1.5}}
@@ -420,7 +403,6 @@ def test_max_rtp_reads_every_bet_of_every_component() -> None:
 
 
 def test_the_real_engine_data_loads(tmp_path: Path) -> None:
-    """Đọc ĐÚNG dữ liệu đã commit của engine: 7 sản phẩm đều có kỳ mới nhất."""
     cwd = os.getcwd()
     dashboard = b.load(products=("mega645",))
     assert os.getcwd() == cwd, "engine phải trả lại thư mục làm việc"
@@ -437,7 +419,6 @@ def test_the_real_engine_data_loads(tmp_path: Path) -> None:
 
 
 def test_hero_jackpot_keeps_both_power_pools_and_missing_latest_values() -> None:
-    """Thẻ nổi bật không lấy jackpot cũ và không giấu pool chưa công bố."""
     latest = _matrix(100, 101_000_000_000)
     latest["prizes"][0]["label"] = "Jackpot 1"
     latest["prizes"].append({"code": "jackpot2", "label": "Jackpot 2", "pool": True,
@@ -463,7 +444,6 @@ def test_overview_hero_uses_an_available_product_without_borrowing_history() -> 
 
 
 def test_pick_boards_exist_only_for_six_number_products_and_have_a_local_asset(tmp_path: Path) -> None:
-    """Bộ số nháp không biến thành kết quả, dự báo hoặc giao dịch."""
     pages = b.build(tmp_path, dashboard=_dashboard())
     for path in pages:
         soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
@@ -487,7 +467,6 @@ def test_pick_boards_exist_only_for_six_number_products_and_have_a_local_asset(t
 
 
 def test_draft_numbers_have_evidence_for_user_input_instead_of_draw_results() -> None:
-    """Giải thích số nháp phải nói về lựa chọn cục bộ, không viện sổ kết quả."""
     from web.evidence_catalog import registry
 
     for file in ('vietlott-mega-645.html', 'vietlott-power-655.html'):
@@ -504,7 +483,6 @@ def test_draft_numbers_have_evidence_for_user_input_instead_of_draw_results() ->
     ('max3d', ['Nhất', 'Nhì', 'Ba', 'Khuyến khích'], []),
 ])
 def test_max_prize_rows_keep_labels_beside_whole_symbols(product, labels, special) -> None:
-    """Đổi nhãn nhóm hoặc tách chữ số sẽ làm sai giải và mất số 0 đầu."""
     draw = _max_draw()
     for group, label in zip(draw['prizes'], labels, strict=True):
         group['label'] = label
@@ -521,7 +499,6 @@ def test_max_prize_rows_keep_labels_beside_whole_symbols(product, labels, specia
 
 
 def test_lotto_forecast_keeps_independent_main_and_special_candidates() -> None:
-    """Hai danh sách có thứ hạng riêng; không ghép số đặc biệt cùng hạng thành vé."""
     forecast = {'components': [
         {'name': 'main', 'top': [{'numbers': [1, 2, 3, 4, 5]}, {'numbers': [6, 7, 8, 9, 10]}]},
         {'name': 'special', 'top': [{'numbers': [7]}, {'numbers': [12]}]},
@@ -536,7 +513,6 @@ def test_lotto_forecast_keeps_independent_main_and_special_candidates() -> None:
 
 @pytest.mark.parametrize('status', ['matched', 'pending', 'date_mismatch'])
 def test_comparison_tickets_have_individual_rows_with_shared_draw_metadata(status) -> None:
-    """Mỗi vé, kết quả và giải ở cùng tr; ô metadata không nhân đôi hay lệch hàng."""
     comparison = {'status': status, 'target_id': 101, 'target_date': '2026-10-07',
                   'result': _matrix(101, None, bonus=7), 'tickets': [
                       {'numbers': [1, 2, 3, 4, 5, 7], 'matched_numbers': [1, 2, 3, 4, 5], 'hits': 5,
@@ -566,7 +542,6 @@ def test_comparison_tickets_have_individual_rows_with_shared_draw_metadata(statu
 
 
 def test_max_comparison_marks_special_occurrences_without_coloring_equal_ordinary_symbols() -> None:
-    """Cùng một bộ ba có thể về ở hai giải; màu giải phải theo đúng vị trí nhóm."""
     draw = _max_draw()
     draw['prizes'][1]['numbers'][0] = '038'
     draw['numbers'] = [number for group in draw['prizes'] for number in group['numbers']]
@@ -610,7 +585,6 @@ def _lotto_waiting(target_id: int = 947) -> dict:
 
 
 def test_a_drawn_target_waiting_for_its_result_shows_the_numbers_registered_before_the_draw() -> None:
-    """Kết quả về trễ hàng giờ: thẻ không còn "Chưa có dự báo hợp lệ" mà hiện chính bộ số đã ghi."""
     data = _lotto_waiting()
     shown = b.shown_forecast(data, "2026-10-15T17:44:00+07:00")
     assert shown["target_id"] == 947 and shown["awaiting_result"] and shown["drawn"] is True
@@ -619,13 +593,11 @@ def test_a_drawn_target_waiting_for_its_result_shows_the_numbers_registered_befo
     assert "Kỳ #947" in text and "Đã quay, đang chờ kết quả" in text and "00:34 15/10/2026" in text
     assert [x.get_text() for x in soup.select(".vl-ball")] == ["03", "08", "14", "22", "31", "05"]
     assert "Chưa có dự báo hợp lệ" not in text
-    # Chỉ mượn đúng kỳ kế tiếp của kỳ mới nhất, không lấy một kỳ chờ nào khác.
     assert b.shown_forecast(_lotto_waiting(target_id=945)) is None
     assert b.shown_forecast({**data, "next_forecast": {"target_id": 948}})["target_id"] == 948
 
 
 def test_the_pre_draw_lock_window_is_not_called_drawn() -> None:
-    """Engine chuyển dự báo sang "chờ" từ 5 phút TRƯỚC giờ quay: lúc ấy kỳ chưa quay."""
     early = b.shown_forecast(_lotto_waiting(), "2026-10-15T12:57:00+07:00")
     text = BeautifulSoup(b.forecast_markup("lotto535", early), "html.parser").get_text(" ", strip=True)
     assert early["drawn"] is False and "Sắp quay, bộ số đã khoá" in text and "Đã quay" not in text
@@ -655,7 +627,7 @@ def test_the_coverage_note_prints_the_engine_exact_rates_not_hard_coded_ones() -
     text = BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text(" ", strip=True)
     assert "5 vé rời nhau, phủ 30/45 số" in text and "70,9%" in text and "11,9%" in text and "17,5%" in text
     assert "Xác suất và tiền thưởng kỳ vọng của từng vé không đổi" in text
-    assert "trúng giải" not in text  # Mega không có số đặc biệt
+    assert "trúng giải" not in text
     changed = {**COVERAGE, "any_ticket_ge": {"2": 0.5367, "3": 0.0665}}
     forecast["components"][0]["coverage"] = changed
     assert "53,7%" in BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text()
@@ -664,7 +636,6 @@ def test_the_coverage_note_prints_the_engine_exact_rates_not_hard_coded_ones() -
 
 
 def test_a_v2_lotto_forecast_prints_each_ticket_with_its_own_special_and_the_prize_rate() -> None:
-    """coverage-v2: vé thứ j mang số đặc biệt thứ j; mốc "ít nhất một vé trúng giải" in TỪ engine."""
     coverage = {"rule": "coverage-v2", "covered": 25, "pool": 35, "any_ticket_ge": {"2": 0.6, "3": 0.0693},
                 "one_ticket_ge": {"2": 0.15, "3": 0.0143}, "specials": 5, "any_ticket_prize": 0.45707,
                 "shared_special_prize": 0.14687, "one_ticket_prize": 0.09604}
@@ -682,7 +653,6 @@ def test_a_v2_lotto_forecast_prints_each_ticket_with_its_own_special_and_the_pri
     assert "một vé riêng lẻ: 9,6%" in text
     pending = {"components": forecast["components"]}
     assert [t["special"] for t in b._stored_tickets("lotto535", pending)] == [7, 3, 10, 1, 12]
-    # Lần ghi cũ (coverage-v1): một danh sách số đặc biệt riêng, năm vé chung số hạng nhất.
     old = {**forecast, "components": [forecast["components"][0] | {"coverage": {**coverage, "rule": "coverage-v1"}},
                                       {k: v for k, v in forecast["components"][1].items() if k != "per_ticket"}]}
     for key in ("any_ticket_prize", "shared_special_prize", "one_ticket_prize", "specials"):
@@ -706,7 +676,6 @@ def test_the_summary_counts_draws_where_some_published_ticket_hit_two_numbers() 
 
 
 def test_decimals_on_the_page_use_a_comma() -> None:
-    """Trang in số thập phân kiểu Việt: «9,2», không phải «9.2» (05-11-2026: sổ dự báo và nhiệt độ từng in dấu chấm)."""
     entry = {"draws": 1419, "last_id": 1419, "last_date": "2026-11-03", "verdict": "Chưa có tín hiệu.",
              "evidence": {"found": False, "text": "Chưa có bằng chứng."},
              "board": {"recorded": 15, "scored": 14, "hits": 13, "expected": 9.2}}

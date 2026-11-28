@@ -1,15 +1,3 @@
-"""Bảng thống kê ghi MỘT bản CSV, không kèm bản JSON (04-11-2026).
-
-``_dump_table`` của ``statistical_matrices`` và ``advanced_stats``, cùng ``conditional_matrices`` và
-``statistics_ai_overlay``, từng ghi mỗi bảng thêm một bản ``to_json(orient="records", indent=2)``: 52 tệp,
-64 MB trong ``data/stats/advanced`` (riêng ``period_frequency_loto_week.json`` 18,5 MB) mà không trang,
-Worker, workflow hay mã nào đọc — trang và manifest đọc CSV — trong khi mỗi lượt chốt viết lại chúng vào
-git. Tệp JSON thật (manifest, chẩn đoán) không có CSV cùng tên nên không bị luật này bắt.
-
-Đến 15-11-2026 phép kiểm chỉ quét ``data/stats/advanced``, nên ``significance_stats`` vẫn ghi sáu bản
-``number_significance_*.json`` (348 KB mỗi lượt) mà trang tổng quan chỉ đọc bản CSV. Nay quét MỌI thư mục
-có bảng CSV dưới ``data/stats``.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,7 +13,6 @@ SIGNIFICANCE = ROOT / "data" / "stats" / "significance"
 
 
 def json_twins(folder: Path) -> list[str]:
-    """Tệp ``.json`` có ``.csv`` cùng tên trong cùng thư mục."""
     return sorted(path.name for path in folder.glob("*.json") if path.with_suffix(".csv").exists())
 
 
@@ -38,7 +25,6 @@ def test_the_twin_rule_itself_finds_a_twin(tmp_path: Path) -> None:
 def test_the_committed_advanced_tables_have_no_json_twin() -> None:
     assert sorted(path.name for path in ADVANCED.glob("*.csv")), "thư mục rỗng — luật đang quét trên tập rỗng"
     assert json_twins(ADVANCED) == []
-    # Ba tệp JSON được đọc thật vẫn còn.
     assert {"statistics_manifest.json", "ai_ml_signal_diagnostics.json",
             "conditional_matrices_diagnostics.json"} <= {path.name for path in ADVANCED.glob("*.json")}
 

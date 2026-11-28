@@ -1,5 +1,3 @@
-"""Thống kê và kiểm định từng đài XSMT/XSMN: lịch sử công bằng không sinh phát hiện, độ lệch cài sẵn bị bắt."""
-
 from __future__ import annotations
 
 import json
@@ -23,7 +21,6 @@ def _one(rows: list[dict[str, str]], region: str = "mn") -> rs.StationHistory:
 
 
 def test_real_regional_ledgers_are_structurally_valid() -> None:
-    """Sổ đã commit của hai miền phải dựng được thành lịch sử từng đài."""
     root = Path(__file__).resolve().parents[2]
     for region in ("mt", "mn"):
         rows = rs.read_rows(root / "data" / "regions" / f"xs{region}.csv")
@@ -78,7 +75,6 @@ def test_quality_report_finds_gaps_missing_stations_and_copied_draws() -> None:
     assert report["station_draws"] == 30 and report["stations"] == 3 and report["origins"] == 1
     assert report["weekly_schedule"] == {"0": ["Đài A", "Đài B"], "1": ["Đài C"]}
     assert report["off_schedule"] == [] and report["repeated_draws"] == [] and report["cloned_draws"] == []
-    # Thứ Tư … Chủ nhật không đài nào quay: ngày lịch trống được liệt kê, không bị giấu.
     assert len(report["calendar_gaps"]) == 9 * 5
 
     week3 = (FIRST_DAY + timedelta(days=14)).isoformat()
@@ -131,19 +127,15 @@ def test_frequency_table_counts_presence_gap_and_exact_binomial_p() -> None:
 def test_cage_table_pools_every_prize_that_draws_from_the_same_cage() -> None:
     digits = np.zeros((1, 82), dtype=np.int8)
     ends = np.cumsum(SLOT_WIDTHS)
-    digits[0, ends - 1] = 7  # mọi giải: hàng đơn vị = 7
-    digits[0, ends - 2] = 3  # mọi giải: hàng chục = 3
+    digits[0, ends - 1] = 7
+    digits[0, ends - 2] = 3
     table = rs.cage_table(digits)
     assert table.sum(axis=1).tolist() == [18, 18, 17, 16, 12, 1]
     assert table[0, 7] == 18 and table[1, 3] == 18 and table[2, 0] == 17
     assert rs.position_table(digits).sum(axis=1).tolist() == [1] * 82
-    # Lồng đơn vị dồn cả 18 lần rút vào một quả: χ² = (18 − 1,8)²/1,8 + 9·1,8.
     units_only = np.zeros((6, 10))
     units_only[0, 7] = 18
     assert rs._chi_square_rows(units_only) == pytest.approx((18 - 1.8) ** 2 / 1.8 + 9 * 1.8)
-    # Phép theo lồng chỉ cộng năm lồng thấp. Hai kỳ giống hệt nhau, rồi đổi chữ số ĐẦU của Đặc Biệt
-    # (lồng trăm nghìn) ở kỳ thứ hai: lồng ấy từ "hai lần cùng một quả" thành "hai quả khác nhau",
-    # χ² của riêng nó đổi từ 18 xuống 8, nhưng thống kê theo lồng không được đổi.
     two = np.vstack([digits, digits])
     moved = two.copy()
     moved[1, ends[-1] - 6] = 9
@@ -154,7 +146,6 @@ def test_cage_table_pools_every_prize_that_draws_from_the_same_cage() -> None:
 
 
 def test_the_battery_computes_exactly_the_public_statistics() -> None:
-    """Tám cột của bộ kiểm là đúng tám hàm công khai, theo đúng thứ tự của ``TESTS``."""
     station = _one(station_rows("mn", "Đài A", 34, np.random.default_rng(31)))
     counts = station.counts
     present = counts > 0
@@ -183,19 +174,16 @@ def test_the_battery_computes_exactly_the_public_statistics() -> None:
 def test_repeat_lift_and_gap_ks_on_hand_built_histories() -> None:
     present = np.zeros((4, 100), dtype=bool)
     present[0, :10] = True
-    present[1, :5] = True  # 5/10 con vừa về lặp lại, 0/90 con chưa về xuất hiện
+    present[1, :5] = True
     assert rs.repeat_lift(present[:2]) == pytest.approx(0.5)
     assert rs.repeat_lift(np.zeros((3, 100), dtype=bool)) == 0.0
-    # Mọi con về đúng mỗi 2 kỳ: khoảng cách luôn bằng 2, hàm phân phối kinh nghiệm nhảy từ 0 lên 1 ở 2.
     periodic = np.zeros((40, 100), dtype=bool)
     periodic[::2] = True
-    # Hình học cho F(1) = b và F(2) = 1 − (1 − b)²; lệch lớn nhất là max(b, (1 − b)²) = (1 − b)².
     assert rs.gap_ks(periodic) == pytest.approx((1 - LOTO_BASELINE_RATE) ** 2, abs=1e-12)
     assert rs.gap_ks(np.zeros((5, 100), dtype=bool)) == 0.0
 
 
 def test_a_fair_station_gets_calibrated_p_values() -> None:
-    """Trên đài công bằng, p của từng phép phải gần đều: không phép nào tự sinh phát hiện."""
     rows = fair_region("mn", stations=40, draws=40, seed=6)
     small = []
     for station in rs.build_stations(rows, "mn"):
@@ -218,7 +206,7 @@ def test_a_station_result_does_not_depend_on_which_other_stations_exist() -> Non
     renamed = rs.StationHistory("mn", "Đài Khác", station.dates, station.tails, station.digits)
     other, _, _ = rs.station_battery(renamed, simulations=80, seed=3)
     assert [r["statistic"] for r in other] == [r["statistic"] for r in first]
-    assert [r["p_value"] for r in other] != [r["p_value"] for r in first]  # hạt giống theo tên đài
+    assert [r["p_value"] for r in other] != [r["p_value"] for r in first]
 
 
 def test_a_planted_cage_bias_is_flagged_by_name_and_a_fair_region_is_not(tmp_path: Path) -> None:
@@ -231,7 +219,6 @@ def test_a_planted_cage_bias_is_flagged_by_name_and_a_fair_region_is_not(tmp_pat
     assert list(flagged) == ["Đài Lệch"] and "Chữ số theo lồng" in flagged["Đài Lệch"]
     block = next(b for b in summary["tests"]["per_station"] if b["province"] == "Đài Lệch")
     cage = next(t for t in block["tests"] if t["test"] == "cage_uniformity")
-    # p mô phỏng chạm sàn 1/301; p dùng cho đa kiểm là đuôi χ²(45), nhỏ hơn nhiều bậc.
     assert cage["p_simulated"] == pytest.approx(1 / (SIMS + 1))
     assert cage["p_value"] == cage["p_asymptotic"] < 1e-12
     assert np.array(block["cage_counts"])[0, 6] < 45 * 18 * 0.06
@@ -289,7 +276,6 @@ def test_run_writes_one_csv_and_one_summary_per_region_and_reruns_byte_identical
     assert summary["region"] == "mn" and summary["data_through"] == max(
         (FIRST_DAY + timedelta(days=7 * 30 + i)).isoformat() for i in range(2)
     )
-    # Không dấu giờ trong tệp: chạy lại vào ngày khác vẫn ra đúng tệp ấy.
     today = datetime.now(UTC).date()
     stamped = {(today + timedelta(days=shift)).isoformat() for shift in (-1, 0, 1)}
     assert "generated" not in json.dumps(summary) and not any(day in json.dumps(summary) for day in stamped)

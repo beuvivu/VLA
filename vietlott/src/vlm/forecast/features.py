@@ -1,4 +1,3 @@
-"""Bounded streaming features. A snapshot is always emitted before its observation."""
 from __future__ import annotations
 
 from dataclasses import asdict
@@ -68,10 +67,6 @@ class FeatureState:
         ma = [np.mean(self.rows[-m:], axis=0) if self.rows else np.full(n, self.base) for m in (10, 50)]
         support = np.flatnonzero(prev > 0)
         if len(support):
-            # Đồng xuất hiện với các số kỳ trước, KHÔNG gồm chính số ấy. Đường chéo pairs[i, i] là
-            # tần suất của i, không phải cặp: gộp vào thì pair_link của số vừa về chỉ là lag1
-            # (tương quan 0,99 trên Mega). triples[i, a, b] đã bằng 0 khi hai chỉ số trùng nhau,
-            # nên chia cho số cặp có thứ tự THẬT m(m − 1), không phải |support|².
             inside = np.zeros(n, dtype=bool)
             inside[support] = True
             partners = len(support) - inside.astype(int)
@@ -115,7 +110,7 @@ class FeatureState:
 
     def observe(self, row: np.ndarray, draw_id: int, draw_date: str) -> None:
         row = self.validate(row)
-        self.snapshot(draw_id, draw_date)  # validate ordering before mutating state
+        self.snapshot(draw_id, draw_date)
         if self.last_id is not None and draw_id > self.last_id + 1:
             self.censored[:] = True
         divisor = 1 if isinstance(self.spec, SetSpec) else self.spec.per_draw
@@ -127,7 +122,6 @@ class FeatureState:
         decay = np.array([.5 ** (1 / 10), .5 ** (1 / 100)])[:, None]
         self.ema = decay * self.ema + (1 - decay) * rate
         self.pairs += np.outer(rate, rate)
-        # Distinct nodes only: repeat dice faces at different positions are different nodes.
         support = np.flatnonzero(present)
         a, b, c = np.meshgrid(support, support, support, indexing='ij')
         distinct = (a != b) & (a != c) & (b != c)

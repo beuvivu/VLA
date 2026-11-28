@@ -1,14 +1,3 @@
-"""Kiểm thử ``ml_engine``.
-
-Trọng tâm không phải "mô hình có tốt không" mà là **các bất biến mà mọi kết
-luận phía sau dựa vào**: không rò rỉ thời gian, phép trộn dồn trọng số đúng chiều,
-phát hiện trôi lệch có cả hai chiều, và cổng độ tin chỉ mở khi có kỹ năng đo được.
-
-Mỗi phép kiểm hành vi đều có đối chứng hai chiều. Kiểm một chiều thôi thì một
-hàm trả hằng số cũng qua được — và một hệ thống luôn im lặng không phân biệt
-được với một hệ thống hỏng.
-"""
-
 from __future__ import annotations
 
 import json
@@ -38,7 +27,6 @@ from core.xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
 
 
 def synthetic_counts(n_days: int, seed: int = 0) -> np.ndarray:
-    """Chuỗi công bằng: 27 lần rút độc lập, đều trên 00–99, có hoàn lại."""
     rng = np.random.default_rng(seed)
     draws = rng.integers(0, NUMBER_SPACE, size=(n_days, LOTO_DRAWS_PER_DAY))
     counts = np.zeros((n_days, NUMBER_SPACE), dtype=np.int16)
@@ -59,14 +47,8 @@ def matrix() -> ObservationMatrix:
     return synthetic_matrix(300, seed=11)
 
 
-# ---------------------------------------------------------------------------
-# Hợp đồng dữ liệu
-# ---------------------------------------------------------------------------
-
-
 class TestObservationMatrix:
     def test_baseline_is_the_domain_constant(self) -> None:
-        """Nền phải lấy từ miền, không phải bản sao tính lại."""
         assert BASELINE_RATE == LOTO_BASELINE_RATE
 
     def test_accepts_a_well_formed_matrix(self, matrix: ObservationMatrix) -> None:
@@ -76,14 +58,13 @@ class TestObservationMatrix:
 
     def test_rejects_a_day_with_the_wrong_number_of_draws(self) -> None:
         counts = synthetic_counts(20)
-        counts[7, 0] += 1  # 28 con thay vì 27
+        counts[7, 0] += 1
         with pytest.raises(SchemaError, match="27"):
             ObservationMatrix(
                 dates=pd.date_range("2025-01-01", periods=20, freq="D"), counts=counts
             )
 
     def test_rejects_a_gap_in_the_calendar(self) -> None:
-        """Kỳ cào hụt vẫn phải bị chặn: đó là dữ liệu thiếu, không phải ngày nghỉ."""
         dates = pd.DatetimeIndex(
             list(pd.date_range("2025-01-01", periods=10, freq="D"))
             + list(pd.date_range("2025-01-15", periods=10, freq="D"))
@@ -92,12 +73,6 @@ class TestObservationMatrix:
             ObservationMatrix(dates=dates, counts=synthetic_counts(20))
 
     def test_accepts_a_gap_that_falls_on_known_non_draw_days(self) -> None:
-        """Ngày XSMB không quay không phải lỗi dữ liệu.
-
-        Tết 2025 nghỉ 28-31/01. Đòi liền mạch tuyệt đối thì chuỗi thật bị từ
-        chối, và trước đây nó chỉ lọt vì 50 bản ghi bịa lấp vào chỗ trống —
-        bất biến được bảo đảm bởi chính dữ liệu sai.
-        """
         from core.calendar_alignment import known_non_draw_days
 
         assert "2025-01-28" in known_non_draw_days(), "cần mốc Tết 2025 để test"
@@ -123,7 +98,6 @@ class TestObservationMatrix:
         assert sliced.dates[0] == matrix.dates[10]
 
     def test_from_frame_matches_the_repository_tensor(self) -> None:
-        """Đối chiếu với DigitTensor đã được kho tin cậy từ trước."""
         from soi_cau.bridges import DigitTensor
 
         raw = pd.read_csv("data/xsmb.csv")
@@ -132,10 +106,9 @@ class TestObservationMatrix:
         assert np.array_equal(mine.counts.astype(int), theirs.loto_counts.astype(int))
 
     def test_from_frame_pads_prizes_that_lost_leading_zeros(self) -> None:
-        """CSV lưu giải dạng số nguyên nên '08' thành 8; phải đệm lại đúng."""
         raw = pd.read_csv("data/xsmb.csv")
         assert (raw["prize7_1"].astype(str).str.len() < 2).any(), "dữ liệu không còn ca kiểm này"
-        ObservationMatrix.from_frame(raw)  # không được ném lỗi
+        ObservationMatrix.from_frame(raw)
 
     def test_rejects_a_frame_missing_prize_columns(self) -> None:
         with pytest.raises(SchemaError, match="thiếu cột"):
@@ -156,11 +129,6 @@ class TestDailyRequest:
             DailyRequest.from_json({"anchor_date": "2026-09-06", "top_k": 500})
 
 
-# ---------------------------------------------------------------------------
-# Không rò rỉ thời gian — bất biến quan trọng nhất của cả module
-# ---------------------------------------------------------------------------
-
-
 class TestNoTemporalLeakage:
     def test_features_ignore_the_day_being_predicted(self, matrix: ObservationMatrix) -> None:
         before = build_features(matrix.counts, 200)
@@ -178,7 +146,6 @@ class TestNoTemporalLeakage:
     def test_training_table_labels_come_from_the_day_features_stop_at(
         self, matrix: ObservationMatrix
     ) -> None:
-        """Nhãn của ngày t là kết quả ngày t; đặc trưng chỉ tới t-1."""
         x, y, _ = build_training_table(matrix.counts, start=250, stop=252)
         assert x.shape[0] == 2 * NUMBER_SPACE
         expected = np.concatenate(
@@ -202,7 +169,6 @@ class TestFeatureMatrix:
         assert np.all(np.isfinite(built.values))
 
     def test_short_history_returns_zeros_with_the_right_width(self) -> None:
-        """Lịch sử ngắn phải giữ nguyên hình dạng, không đổi số cột."""
         counts = synthetic_counts(300, seed=3)
         early = build_features(counts, 10)
         late = build_features(counts, 200)
@@ -224,13 +190,7 @@ class TestFeatureMatrix:
             FeatureMatrix(values=np.zeros((NUMBER_SPACE, 3)), names=("a", "b"))
 
 
-# ---------------------------------------------------------------------------
-# Phép trộn
-# ---------------------------------------------------------------------------
-
-
 def _fair_losses(rng: np.random.Generator, probabilities: dict[str, np.ndarray]) -> dict:
-    """Log-loss cộng 100 con của từng cánh tay trên một kỳ rút công bằng."""
     counts = rng.multinomial(LOTO_DRAWS_PER_DAY, np.full(NUMBER_SPACE, 1 / NUMBER_SPACE))
     outcome = (counts > 0).astype(float)
     return {name: NUMBER_SPACE * score_day(p, outcome).logloss
@@ -264,7 +224,6 @@ class TestExponentialWeightsContract:
         assert min(mixer.weights().values()) >= mixer.share / 3 - 1e-15
 
     def test_update_is_the_exponential_weights_rule(self) -> None:
-        """Ghim công thức: w·e^(−η·ℓ), chuẩn hoá, rồi chia sẻ α/K."""
         mixer = ExponentialWeights(["a", "b"], learning_rate=2.0, share=0.1)
         mixer.update({"a": 0.3, "b": 0.8})
         raw = np.array([np.exp(-2.0 * 0.3), np.exp(-2.0 * 0.8)])
@@ -273,20 +232,17 @@ class TestExponentialWeightsContract:
 
     @pytest.mark.parametrize("share", [0.0, 0.001])
     def test_extreme_losses_that_reverse_keep_weights_finite(self, share) -> None:
-        """Chênh > 745 nat tràn dưới e⁻ˣ; trong miền xác suất, đảo chiều sau đó ra NaN."""
         mixer = ExponentialWeights(["a", "b"], share=share)
         mixer.update({"a": 0.0, "b": 1000.0})
         mixer.update({"a": 1000.0, "b": 0.0})
         weights = mixer.weights()
         assert all(np.isfinite(w) for w in weights.values())
-        # α = 0: hai lần chênh 1 000 nat triệt tiêu nhau. α > 0: sàn α/K cho b hồi phục hẳn.
         expected_b = 0.5 if share == 0.0 else 1.0 - share / 2
         assert weights["b"] == pytest.approx(expected_b)
         mixer.update({"a": 0.0, "b": 2000.0})
         assert mixer.weights()["a"] == pytest.approx(1.0 - share / 2)
 
     def test_absent_arm_keeps_its_mass(self) -> None:
-        """Cánh tay không dự báo không bị phạt, cũng không được thưởng."""
         mixer = ExponentialWeights(["a", "b", "c"], share=0.0)
         mixer.update({"a": 0.2, "b": 0.9})
         assert mixer.weights()["c"] == pytest.approx(1 / 3)
@@ -295,7 +251,6 @@ class TestExponentialWeightsContract:
 
 class TestExponentialWeightsLearns:
     def test_weight_moves_to_the_calibrated_arm(self) -> None:
-        """Đối chứng dương: cánh tay sai mức xác suất mất trọng số."""
         rng = np.random.default_rng(2)
         arms = {"nen": np.full(NUMBER_SPACE, BASELINE_RATE),
                 "lech": np.full(NUMBER_SPACE, 0.40)}
@@ -306,12 +261,6 @@ class TestExponentialWeightsLearns:
 
     @pytest.mark.parametrize("seed", [3, 4, 5])
     def test_pooled_forecast_stays_within_the_mixture_regret_of_the_best_arm(self, seed) -> None:
-        """Đối chứng âm: không có tín hiệu thì phép trộn không thua cánh tay tốt nhất.
-
-        Bandit cũ hỏng đúng ở đây: chênh thật bằng 0 mà trọng số nhảy theo bộ
-        sinh ngẫu nhiên, và mỗi lần nhảy là trả giá. Biên trộn được đo trực tiếp
-        so với chặn ``ln(K/α) + (T − 1)·ln(1/(1 − α))`` của hỗn hợp Bayes đầy đủ.
-        """
         rng = np.random.default_rng(seed)
         jitter = np.random.default_rng(seed + 100)
         arms = {"nen": np.full(NUMBER_SPACE, BASELINE_RATE)}
@@ -333,11 +282,9 @@ class TestExponentialWeightsLearns:
             mixer.update(losses)
         bound = np.log(len(arms) / mixer.share) + (days - 1) * np.log(1 / (1 - mixer.share))
         assert mixture <= min(totals.values()) + bound
-        # Nền là cánh tay đúng; các cánh tay nhiễu phải mất phần lớn trọng số.
         assert mixer.weights()["nen"] > 0.5
 
     def test_fixed_share_lets_it_follow_a_regime_change(self) -> None:
-        """Cánh tay từng tốt rồi gãy phải nhường lại; không chia sẻ thì chậm hơn."""
         arms = ("cu", "moi")
         tracking = ExponentialWeights(arms, share=0.01)
         frozen = ExponentialWeights(arms, share=0.0)
@@ -350,7 +297,6 @@ class TestExponentialWeightsLearns:
         assert frozen.weights()["moi"] < tracking.weights()["moi"]
 
     def test_is_deterministic(self) -> None:
-        """Không có bộ sinh ngẫu nhiên: cùng loss, cùng trọng số."""
         first, second = ExponentialWeights(["a", "b"]), ExponentialWeights(["a", "b"])
         for losses in ({"a": 0.5, "b": 0.6}, {"a": 0.7, "b": 0.4}):
             first.update(losses)
@@ -365,21 +311,14 @@ class TestExponentialWeightsLearns:
         assert report[0]["cumulative_logloss"] == pytest.approx(0.1)
 
 
-# ---------------------------------------------------------------------------
-# Trôi lệch khái niệm
-# ---------------------------------------------------------------------------
-
-
 class TestDriftDetection:
     def test_stays_quiet_on_a_stable_stream(self) -> None:
-        """Đối chứng âm: chuỗi ổn định không được báo động."""
         detector = ConceptDriftDetector(method="both")
         rng = np.random.default_rng(21)
         verdicts = detector.update_many(rng.binomial(1, 0.24, 300).astype(float))
         assert sum(v.drifted for v in verdicts) == 0
 
     def test_detects_a_real_regime_change(self) -> None:
-        """Đối chứng dương: đổi chế độ phải bị bắt."""
         detector = ConceptDriftDetector(method="both")
         rng = np.random.default_rng(22)
         detector.update_many(rng.binomial(1, 0.24, 200).astype(float))
@@ -387,12 +326,6 @@ class TestDriftDetection:
         assert any(v.drifted for v in verdicts)
 
     def test_pure_fallback_matches_river_closely(self) -> None:
-        """Đường lui phải là đường lui thật, không phải nhánh chết.
-
-        Bản đầu của ``_PureAdwin`` xét cả n điểm cắt nên phải hiệu chỉnh δ/n,
-        làm chặn quá rộng và không bao giờ báo động trên cùng dữ liệu mà river
-        bắt được. Lưới cấp số nhân sửa điều đó.
-        """
         delays = {}
         for prefer in (True, False):
             detector = ConceptDriftDetector(method="adwin", prefer_river=prefer)
@@ -407,7 +340,6 @@ class TestDriftDetection:
             assert abs(delays["pure"] - delays["river"]) < 60
 
     def test_pure_adwin_drops_the_stale_half(self) -> None:
-        """Ý nghĩa của 'adaptive windowing': cửa sổ phải co lại khi có trôi lệch."""
         adwin = _PureAdwin(delta=0.002)
         for _ in range(150):
             adwin.update(0.0)
@@ -427,7 +359,6 @@ class TestDriftDetection:
         assert len(detector._history) == 0
 
     def test_ks_alone_detects_variance_change_without_mean_change(self) -> None:
-        """KS bắt được kiểu trôi mà ADWIN bỏ sót: đổi hình dạng, giữ trung bình."""
         detector = ConceptDriftDetector(method="ks", reference_size=90, recent_size=40)
         rng = np.random.default_rng(24)
         detector.update_many(rng.normal(0.0, 0.05, 200))
@@ -435,13 +366,7 @@ class TestDriftDetection:
         assert any(v.drifted for v in verdicts)
 
 
-# ---------------------------------------------------------------------------
-# Chế độ an toàn
-# ---------------------------------------------------------------------------
-
-
 def _observe(controller: SafeModeController, gain: float, **flags) -> Mode:
-    """Một kỳ mà phép trộn hơn nền ``gain`` (tương đối) ở cả log-loss lẫn Brier."""
     return controller.observe(
         logloss=0.55 * (1 - gain), brier=0.18 * (1 - gain),
         baseline_logloss=0.55, baseline_brier=0.18, **flags,
@@ -450,7 +375,6 @@ def _observe(controller: SafeModeController, gain: float, **flags) -> Mode:
 
 class TestTrustGate:
     def test_starts_at_the_baseline_until_enough_evidence(self) -> None:
-        """Chưa đo đủ thì không tin, kể cả khi vài kỳ đầu rất đẹp."""
         controller = SafeModeController(window=60, min_days=30)
         assert controller.is_safe and controller.trust == 0.0
         for _ in range(29):
@@ -461,7 +385,6 @@ class TestTrustGate:
         assert controller.mode is Mode.NORMAL
 
     def test_trust_is_the_repository_rule_on_measured_skill(self) -> None:
-        """Ghim luật của kho: trust = clip(20·min(s_logloss, s_brier), 0, 1)."""
         controller = SafeModeController(window=10, min_days=5)
         for _ in range(10):
             controller.observe(logloss=0.548, brier=0.1795,
@@ -470,7 +393,6 @@ class TestTrustGate:
         assert controller.trust == pytest.approx(expected)
 
     def test_no_skill_means_the_baseline_exactly(self) -> None:
-        """Đối chứng âm: phép trộn kém nền thì dự báo công bố ĐÚNG bằng nền."""
         controller = SafeModeController(window=10, min_days=5)
         for _ in range(10):
             _observe(controller, -0.01)
@@ -479,7 +401,6 @@ class TestTrustGate:
         np.testing.assert_array_equal(controller.apply(loud), np.full(NUMBER_SPACE, BASELINE_RATE))
 
     def test_skill_opens_the_gate_and_publishes_the_mixture(self) -> None:
-        """Đối chứng dương: kỹ năng ≥ 5% thì trust = 1 và dự báo là phép trộn."""
         controller = SafeModeController(window=10, min_days=5)
         for _ in range(10):
             _observe(controller, 0.06)
@@ -487,7 +408,6 @@ class TestTrustGate:
         np.testing.assert_allclose(controller.apply(loud), loud)
 
     def test_only_the_window_counts(self) -> None:
-        """Kỹ năng cũ hơn cửa sổ không còn nâng độ tin."""
         controller = SafeModeController(window=10, min_days=5)
         for _ in range(50):
             _observe(controller, 0.5)
@@ -523,14 +443,8 @@ class TestTrustGate:
             SafeModeController(window=window, min_days=min_days)
 
 
-# ---------------------------------------------------------------------------
-# Chỉ số
-# ---------------------------------------------------------------------------
-
-
 class TestMetrics:
     def test_baseline_scores_exactly_zero_skill(self) -> None:
-        """Nền chấm chính nó phải ra 0; nếu không thì thước đo bị lệch."""
         tracker = PerformanceTracker()
         rng = np.random.default_rng(41)
         for _ in range(40):
@@ -546,7 +460,6 @@ class TestMetrics:
         assert report.paired_t == 0.0
 
     def test_an_oracle_scores_high(self) -> None:
-        """Đối chứng dương cho thước đo: kẻ biết đáp án phải được điểm cao."""
         tracker = PerformanceTracker()
         rng = np.random.default_rng(42)
         for _ in range(30):
@@ -563,7 +476,6 @@ class TestMetrics:
         assert report.hit_rate_at[10] > 9.0
 
     def test_random_hit_rate_is_the_honest_comparison_point(self) -> None:
-        """Mốc so cho Top-K là K/100 × số con thực về, không phải 0."""
         tracker = PerformanceTracker()
         rng = np.random.default_rng(43)
         for _ in range(50):
@@ -592,7 +504,6 @@ class TestMetrics:
 
 class TestEconomics:
     def test_break_even_occurrences_are_above_the_baseline(self) -> None:
-        """Luật trả mỗi nháy cần hơn nền 0,27 nháy khoảng 6,48% để hòa vốn."""
         economics = EconomicModel()
         assert economics.break_even_rate > LOTO_DRAWS_PER_DAY / NUMBER_SPACE
         assert economics.required_relative_lift() == pytest.approx(0.0648, abs=0.0001)
@@ -605,14 +516,8 @@ class TestEconomics:
             EconomicModel(stake=80.0, payout=23.0)
 
 
-# ---------------------------------------------------------------------------
-# Mô hình
-# ---------------------------------------------------------------------------
-
-
 @pytest.fixture(scope="module")
 def training(matrix: ObservationMatrix):
-    """Bảng huấn luyện dùng chung cho các phép kiểm mô hình."""
     return build_training_table(matrix.counts, start=180, stop=280)
 
 
@@ -635,7 +540,6 @@ class TestModels:
             TabularBooster().predict_proba(np.zeros((5, 3)))
 
     def test_ranking_booster_output_is_calibrated_to_probabilities(self, training, matrix) -> None:
-        """Điểm xếp hạng không phải xác suất; phải hiệu chỉnh trước khi dùng."""
         x, y, _ = training
         model = RankingBooster()
         model.fit(x, y)
@@ -650,7 +554,6 @@ class TestModels:
             RankingBooster().fit(x[:150], y[:150])
 
     def test_temporal_model_is_calibrated_near_the_baseline(self, matrix) -> None:
-        """Hồi quy: bản dùng pos_weight khai báo trung bình 0.49 so với nền 0.24."""
         model = TemporalSequenceModel(epochs=25)
         model.fit_sequence(matrix.hits)
         probabilities = model.predict_sequence(matrix.hits)
@@ -665,7 +568,6 @@ class TestModels:
         assert np.all(np.isfinite(probabilities))
 
     def test_ridge_fallback_shrinks_to_the_base_rate_not_to_zero(self, matrix, monkeypatch) -> None:
-        """λ rất lớn phải cho đúng tỉ lệ nền: bản cũ phạt cả hệ số chặn nên co về 0."""
         from research.ml_engine import models as learners
 
         monkeypatch.setattr(learners, "RIDGE_PENALTIES", (1e12,))
@@ -676,11 +578,6 @@ class TestModels:
                                    atol=1e-6)
 
     def test_ridge_fallback_without_signal_stays_at_the_base_rate(self) -> None:
-        """Đối chứng âm: chuỗi công bằng thì λ thẩm định chọn co mạnh, không sai mức.
-
-        Bản λ = 10 cố định khai báo xác suất lệch chuẩn 0,166 quanh nền, kẹp 9,5%
-        dự báo ở 10⁻⁶ và kém nền 61,5% log-loss trên 1 000 kỳ thật.
-        """
         hits = synthetic_matrix(300, seed=71).hits
         model = TemporalSequenceModel()
         model.backend = "linear"
@@ -694,7 +591,6 @@ class TestModels:
         assert loss < base * 1.002
 
     def test_ridge_fallback_finds_a_planted_temporal_signal(self) -> None:
-        """Đối chứng dương: có bạc nhớ thật thì λ thẩm định nới ra và dự báo hơn nền."""
         hits = planted_counts(300, seed=72) > 0
         model = TemporalSequenceModel()
         model.backend = "linear"
@@ -707,20 +603,12 @@ class TestModels:
         assert loss < base * 0.999
 
     def test_gru_capacity_exceeds_the_available_observations(self) -> None:
-        """Cảnh báo dung lượng phải kiểm được ở MỌI môi trường, kể cả không torch.
-
-        Bản đầu của phép kiểm này gọi ``parameter_count``, vốn phân nhánh theo
-        backend, nên nó đạt trên máy có PyTorch và đổ trên CI (không có torch)
-        với 1 401 tham số của đường lui tuyến tính. Khẳng định cần kiểm là về
-        *kiến trúc GRU*, nên phải hỏi hàm số học thuần.
-        """
         gru = TemporalSequenceModel.gru_parameter_count(64)
         assert gru == 38_372
         observations = 391 * NUMBER_SPACE
         assert gru > 0.9 * observations, "GRU 64 chiều xấp xỉ một tham số cho mỗi quan sát"
 
     def test_parameter_count_reports_the_backend_actually_running(self) -> None:
-        """Báo số tham số của GRU khi đang chạy tuyến tính là nói sai."""
         model = TemporalSequenceModel(hidden_size=64, lookback=14)
         if model.backend == "torch":
             assert model.parameter_count == TemporalSequenceModel.gru_parameter_count(64)
@@ -732,14 +620,8 @@ class TestModels:
             TemporalSequenceModel(lookback=14).fit_sequence(np.ones((10, NUMBER_SPACE)))
 
 
-# ---------------------------------------------------------------------------
-# Chọn đặc trưng
-# ---------------------------------------------------------------------------
-
-
 class TestFeatureSelection:
     def test_keeps_an_informative_column_and_drops_noise(self) -> None:
-        """Đối chứng hai chiều trên dữ liệu có tín hiệu cấy sẵn."""
         rng = np.random.default_rng(51)
         signal = rng.normal(size=800)
         noise = rng.normal(size=(800, 4))
@@ -754,7 +636,6 @@ class TestFeatureSelection:
         assert result.importance["tin_hieu"] > max(result.importance[name] for name in names[1:])
 
     def test_never_returns_an_empty_feature_set(self) -> None:
-        """Không cột nào vượt ngưỡng vẫn phải giữ tối thiểu vài cột."""
         rng = np.random.default_rng(52)
         x = rng.normal(size=(400, 5))
         y = rng.integers(0, 2, 400)
@@ -766,11 +647,6 @@ class TestFeatureSelection:
     def test_rejects_a_name_count_mismatch(self) -> None:
         with pytest.raises(ValueError, match="cột"):
             select_features(None, np.zeros((10, 3)), np.zeros(10), ("a", "b"))
-
-
-# ---------------------------------------------------------------------------
-# Kiểm định cuốn chiếu
-# ---------------------------------------------------------------------------
 
 
 class TestWalkForwardValidator:
@@ -790,14 +666,8 @@ class TestWalkForwardValidator:
         assert np.isfinite(report.logloss)
 
 
-# ---------------------------------------------------------------------------
-# Tầng điều phối
-# ---------------------------------------------------------------------------
-
-
 @pytest.fixture(scope="module")
 def pipeline(matrix: ObservationMatrix) -> ContinuousLearningPipeline:
-    """Pipeline dùng chung, tắt các cánh tay nặng để kiểm thử chạy nhanh."""
     config = PipelineConfig(
         window=120, warmup=120, refit_every=40, use_temporal=False, use_ranking=False
     )
@@ -806,7 +676,6 @@ def pipeline(matrix: ObservationMatrix) -> ContinuousLearningPipeline:
 
 class TestPipeline:
     def test_baseline_is_registered_as_a_competing_arm(self, pipeline) -> None:
-        """Điểm mấu chốt của kiến trúc: nền phải cạnh tranh sòng phẳng."""
         assert "baseline" in pipeline.aggregator.arm_names
 
     def test_run_produces_one_result_per_day(self, pipeline, matrix) -> None:
@@ -824,7 +693,6 @@ class TestPipeline:
         assert set(per_arm) >= {"baseline", "frequency", "gap_hazard"}
 
     def test_arms_are_scored_on_their_own_probabilities(self, pipeline, matrix) -> None:
-        """Chấm mỗi cánh tay trên xác suất của chính nó, nếu không phép trộn mù."""
         _, _, per_arm = pipeline.predict_day(285)
         result = pipeline.step(285)
         outcome = (matrix.counts[285] > 0).astype(float)
@@ -859,29 +727,13 @@ class TestPipeline:
             anchor_date=matrix.dates[-1], target_date=matrix.dates[-1] + pd.Timedelta(days=1)
         )
         record = pipeline.predict_next(request)
-        json.dumps(record)  # không được ném lỗi
+        json.dumps(record)
         assert len(record["top_k"]) == request.top_k
         assert all(len(entry["number"]) == 2 for entry in record["top_k"])
         assert record["baseline_rate"] == pytest.approx(BASELINE_RATE)
 
 
-# ---------------------------------------------------------------------------
-# Đối chứng hai chiều cho toàn kiến trúc
-# ---------------------------------------------------------------------------
-
-
 def planted_counts(n_days: int, seed: int, carried: int = 12) -> np.ndarray:
-    """Chuỗi cấy 'bạc nhớ' thuần thời gian, giữ ĐÚNG 27 lần rút mỗi kỳ.
-
-    Cấy ở mức *lần rút*, không ở mức đếm: thay giá trị của ``carried`` ô rút
-    (những ô có giá trị không thuộc tập hôm qua) bằng các con của hôm qua chưa
-    có mặt hôm nay. Số lần rút không đổi nên ``ObservationMatrix`` chấp nhận,
-    và thông tin cấy vào thuần là thứ tự thời gian.
-
-    Bản đầu của hàm này bật/tắt trực tiếp trên ma trận đếm và bị chính
-    ``ObservationMatrix`` từ chối vì làm hỏng bất biến 27 con — một minh chứng
-    rằng hợp đồng dữ liệu bắt được lỗi thật, kể cả lỗi trong bộ kiểm thử.
-    """
     rng = np.random.default_rng(seed)
     draws = rng.integers(0, NUMBER_SPACE, size=(n_days, LOTO_DRAWS_PER_DAY))
     for day in range(1, n_days):
@@ -907,11 +759,6 @@ def planted_counts(n_days: int, seed: int, carried: int = 12) -> np.ndarray:
 
 
 class TestArchitectureIsTwoSided:
-    """Luận điểm kiến trúc chính, kiểm cả hai chiều.
-
-    Im lặng khi không có tín hiệu thì dễ — một hàm trả hằng số cũng làm được.
-    Điều phải chứng minh là hệ thống *không* im lặng khi tín hiệu có thật.
-    """
 
     @staticmethod
     def _run(counts: np.ndarray):
@@ -929,7 +776,6 @@ class TestArchitectureIsTwoSided:
         return pipeline, results, pipeline.tracker.report()
 
     def test_planted_signal_is_found_and_baseline_yields(self) -> None:
-        """Đối chứng dương: có bạc nhớ thật thì nền nhường trọng số và cổng mở."""
         pipeline, results, report = self._run(planted_counts(360, seed=61))
         weights = pipeline.aggregator.weights()
         assert report.beats_baseline
@@ -937,16 +783,13 @@ class TestArchitectureIsTwoSided:
         assert report.hit_rate_at[10] > 2 * report.random_hit_rate_at[10]
         assert weights["baseline"] < 0.5 / len(weights)
         assert weights["tabular_boosting"] > weights["baseline"]
-        # Chưa đo đủ thì không tin: chỉ đúng min_days kỳ đầu về nền, sau đó tin hẳn.
         warmup = pipeline.config.trust_min_days
         assert all(r.mode == "safe" for r in results[:warmup])
         assert min(r.trust for r in results[warmup:]) == pytest.approx(1.0)
 
     def test_fair_data_keeps_the_system_quiet(self) -> None:
-        """Đối chứng âm: chuỗi công bằng không được kết luận là có tín hiệu."""
         pipeline, results, report = self._run(synthetic_counts(360, seed=61))
         assert not report.beats_baseline
         assert abs(report.logloss_skill) < 0.01
-        # Không có tín hiệu thì dự báo công bố gần như đúng bằng nền.
         assert np.mean([r.trust for r in results]) < 0.05
         assert sum(1 for r in results if r.mode == "safe") > len(results) // 2

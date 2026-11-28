@@ -1,5 +1,3 @@
-"""Trang dựng lại trên cùng dữ liệu chỉ khác giờ dựng thì GIỮ bản đang có (``page_output.write_page``)."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,8 +23,6 @@ def test_a_page_rebuilt_on_the_same_data_is_left_untouched(tmp_path: Path) -> No
     assert "2026-11-05T12:32:58Z" in page.read_text(encoding="utf-8")
 
 
-# Mỗi mẫu dấu giờ phải khớp đúng một trang đã xuất bản: trình dựng đổi định dạng mà mẫu không theo
-# thì mẫu chết, và trang lại bị ghi lại sau mỗi lượt chạy lại.
 @pytest.mark.parametrize(
     "pattern,page",
     list(zip(PAGE_BUILD_STAMPS, ["cap-lon-loto.html", "dashboard.html", "vietlott.html",

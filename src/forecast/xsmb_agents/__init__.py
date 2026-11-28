@@ -1,4 +1,3 @@
-"""Các giao diện điều phối XSMB, dùng chung lõi tri thức và tự học."""
 from .algorithms import AlgorithmEnsemble
 from .engine import MetaLearner, PredictiveEngine
 from .engine import KnowledgeBaseManager

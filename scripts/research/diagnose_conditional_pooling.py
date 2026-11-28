@@ -1,5 +1,3 @@
-"""Tái lập chẩn đoán oracle risk; không ghi hoặc sửa mã trong kho."""
-
 from __future__ import annotations
 
 import argparse
@@ -14,7 +12,6 @@ NAMES = ("old", "new", "hand60", "fully_pooled", "oracle", "raw")
 
 
 def fixture(seed: int, scenario: str):
-    """Giữ nguyên đặc biệt để phép tiêm không đổi nhãn nguồn các kỳ sau."""
     rng = np.random.default_rng(seed)
     draws = rng.integers(0, 100, size=(900, 27))
     truth = np.full((100, 100), 1 - 0.99**27)
@@ -37,7 +34,6 @@ def fixture(seed: int, scenario: str):
 
 def metrics(seed: int, scenario: str, fit_rows):
     draws, hit, truth = fixture(seed, scenario)
-    # Khớp 700 ngày tạo 699 cặp; chấm 199 cặp nguồn 700..898 → đích 701..899.
     sources = draws[:699, 0]
     trials = np.bincount(sources, minlength=100).astype(float)
     counts = np.zeros((100, 100))
@@ -45,7 +41,6 @@ def metrics(seed: int, scenario: str, fit_rows):
     base = hit[1:700].mean(axis=0)
     n = np.maximum(trials, 1)[:, None]
     excess = ((counts / n - base) ** 2).mean(axis=1) - (base * (1 - base) / n).mean(axis=1)
-    # Công thức cũ: không có 1−1/n và dùng phương sai tại trung bình các tâm.
     old = np.where(
         excess > 0,
         np.clip(base.mean() * (1 - base.mean()) / np.maximum(excess, 1e-99) - 1, 1e-6, 1e6),
@@ -54,8 +49,6 @@ def metrics(seed: int, scenario: str, fit_rows):
     new = fit_rows(counts, n[:, 0], base)
     strengths = (old, new, np.full(100, 60.0), np.full(100, 1e6))
     grids = [(counts + k[:, None] * base) / (trials[:, None] + k[:, None]) for k in strengths]
-    # Giữ fallback scalar của regression lịch sử để tái lập chính xác số đo.
-    # Test hợp đồng mới dùng baseline riêng từng số cho nguồn chưa quan sát.
     for grid in grids:
         grid[trials == 0] = base.mean()
     raw = counts / n
@@ -63,7 +56,6 @@ def metrics(seed: int, scenario: str, fit_rows):
     grids += [truth, raw]
     return {
         "brier": [float(np.mean((g[draws[700:899, 0]] - hit[701:900]) ** 2)) for g in grids],
-        # Phần oracle uncertainty là chung; so Brier kỳ vọng chỉ cần excess risk.
         "oracle_excess_risk": [float(np.mean((g - truth) ** 2)) for g in grids],
         "row42_oracle_excess_risk": [float(np.mean((g[42] - truth[42]) ** 2)) for g in grids],
         "row42_number17_probability": [float(g[42, 17]) for g in grids],
@@ -93,7 +85,7 @@ def summarize(records):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--seeds", type=int, default=1000)
     parser.add_argument("--scenarios", nargs="+", default=["null", "source42_prefers_first20"])

@@ -1,4 +1,3 @@
-"""Chuyên gia hỗn hợp Bayes của bộ chữ số trong ensemble ML (``vlm.forecast.bayes_expert``)."""
 import gzip
 import json
 from datetime import datetime, timezone
@@ -16,7 +15,6 @@ NOW = datetime(2026, 10, 31, tzinfo=timezone.utc)
 
 
 def max3d_series(size: int, *, six: float = 0.1, seed: int = 3) -> Series:
-    """Lịch sử Max 3D giả lập: 20 bộ ba mỗi kỳ; chữ số 6 ở hàng đơn vị về với xác suất ``six``."""
     rng = np.random.default_rng(seed)
     units = np.full(10, (1 - six) / 9)
     units[6] = six

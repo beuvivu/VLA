@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""Auto-extract Critical CSS from docs/assets/ui.css for CRP inlining.
-
-Usage:
-  python scripts/web/extract_critical_css.py
-
-Writes:
-  - docs/assets/critical.css
-  - src/web/critical_css_generated.py
-
-Run after editing docs/assets/ui.css (or wire into the Pages build).
-"""
 from __future__ import annotations
 
 import re
@@ -137,10 +126,6 @@ def extract(css_text: str) -> str:
         if prop in used_vars and "mesh" not in prop:
             root_decls.append(f"{prop}:{val.strip()}")
 
-    # Giá trị đỡ cho token mà quét không tìm thấy trong ui.css. Đây là BẢN SAO
-    # thứ tư của bảng màu, nên nó trôi được: trước khi sửa, danh sách này còn
-    # nguyên #F2F4FF/#4f46e5 của bảng cũ. Chỉ dùng khi ui.css thật sự không
-    # khai token đó, nên giữ giống ui.css chứ không nghĩ ra màu mới.
     for m in (
         "--ui-bg:#f0f4fd", "--ui-bg-2:#eaedff", "--ui-surface:#fff", "--ui-border:#e4e7f2",
         "--ui-ink:#202329", "--ui-ink-2:#262b35", "--ui-ink-soft:#5c6270",
@@ -154,8 +139,6 @@ def extract(css_text: str) -> str:
             root_decls.append(m)
 
     root_css = ":root{" + ";".join(root_decls) + ";color-scheme:light}"
-    # Critical CSS phải mang cả token tối. Bỏ chúng từng làm lần vẽ đầu
-    # trắng sáng dù người đọc đã lưu dark và runtime đã khôi phục đúng.
     def theme_rules(entries: list) -> str:
         parts = []
         for kind, selector, body in entries:
@@ -179,10 +162,6 @@ def extract(css_text: str) -> str:
     base = (
         "*,::before,::after{box-sizing:border-box}"
         "html{-webkit-text-size-adjust:100%}"
-        # Nền lấy TỪ TOKEN, không viết lại mã màu. Bản trước ghim
-        # `linear-gradient(162deg,#F2F4FF,#E6EAFB)` ngay ở đây, nên đổi bảng
-        # màu trong `ui_theme.py` xong thì khung vẽ đầu tiên vẫn là nền cũ:
-        # người đọc thấy nền cũ lóe lên rồi mới đổi.
         "body{margin:0;color:var(--ui-ink-2);"
         "background:linear-gradient(180deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);"
         "background-color:var(--ui-bg);font-family:var(--ui-font);font-size:14px;line-height:1.6;"

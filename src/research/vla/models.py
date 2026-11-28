@@ -1,22 +1,3 @@
-"""Mô hình ba tầng: tiên nghiệm Bayes → LightGBM tăng cường từ tiên nghiệm → hiệu chỉnh.
-
-Tầng 1 — ``DirichletPrior``. Đặc Biệt là một biến phân loại 100 lớp: tiên
-nghiệm Dirichlet đối xứng nồng độ ``α`` cập nhật bằng số đếm có suy giảm
-``2^{-(t-s)/h}`` cho xác suất hậu nghiệm dự báo ``(α/100 + S_n)/(α + W)``. LOTO
-là 100 biến Bernoulli: tiên nghiệm Beta trung bình ``μ0`` (tỉ lệ nền tích luỹ),
-độ mạnh ``α``: ``(α·μ0 + S_n)/(α + W)``. ``(h, α)`` chọn bằng logloss trên khối
-huấn luyện — tức Bayes thực nghiệm.
-
-Tầng 2 — LightGBM nhị phân trên từng cặp (kỳ, con số), khởi đầu từ ``logit``
-của tiên nghiệm (``init_score``): cây chỉ học PHẦN DƯ so với tiên nghiệm, nên
-khi đặc trưng không mang tín hiệu, dừng sớm giữ mô hình ở đúng tiên nghiệm.
-Hàm mất mát mặc định là logloss (quy tắc chấm điểm đúng); focal loss có sẵn
-nhưng làm méo xác suất, nên chỉ dùng khi có tầng 3 phía sau.
-
-Tầng 3 — hiệu chỉnh Platt hoặc isotonic trên khối thời gian RIÊNG nằm sau khối
-huấn luyện. Đặc Biệt được chuẩn hoá lại để mỗi kỳ tổng xác suất bằng 1.
-"""
-
 from __future__ import annotations
 
 import warnings
@@ -56,17 +37,11 @@ def normalize_rows(p: np.ndarray) -> np.ndarray:
 
 
 def row_logloss(mode: Mode, p: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """Logloss từng kỳ: Bernoulli trung bình (LOTO) hoặc phân loại (Đặc Biệt)."""
     if mode == "de":
         q = normalize_rows(p)
         return -np.log(np.clip((q * y).sum(axis=1), EPS, 1.0))
     q = np.clip(p, EPS, 1 - EPS)
     return -(y * np.log(q) + (1 - y) * np.log(1 - q)).mean(axis=1)
-
-
-# --------------------------------------------------------------------------
-# Tầng 1
-# --------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -76,7 +51,6 @@ class DirichletPrior:
     alpha: float = 100.0
 
     def matrix(self, hit: np.ndarray) -> np.ndarray:
-        """(T, 100): xác suất hậu nghiệm dự báo cho kỳ t+1 từ các kỳ ≤ t."""
         T = len(hit)
         S = decayed_sum(hit.astype(np.float64), self.half_life)
         W = decayed_sum(np.ones(T), self.half_life)[:, None]
@@ -94,7 +68,6 @@ class DirichletPrior:
         half_lives: tuple[float, ...] = (30.0, 90.0, 180.0, 365.0, 730.0, np.inf),
         alphas: tuple[float, ...] = (10.0, 30.0, 100.0, 300.0, 1000.0, 3000.0, 10000.0),
     ) -> DirichletPrior:
-        """Chọn (h, α) theo logloss trên các hàng ``rows`` (nhãn = kỳ t+1)."""
         y = hit[rows + 1].astype(np.float64)
         best, best_loss = cls(mode), np.inf
         for h in half_lives:
@@ -106,13 +79,7 @@ class DirichletPrior:
         return best
 
 
-# --------------------------------------------------------------------------
-# Tầng 3
-# --------------------------------------------------------------------------
-
-
 class Calibrator:
-    """Platt (hồi quy logistic trên logit) hoặc isotonic; ``none`` = đồng nhất."""
 
     def __init__(self, method: str = "platt"):
         if method not in {"platt", "isotonic", "none"}:
@@ -140,13 +107,7 @@ class Calibrator:
         return np.clip(out, EPS, 1 - EPS).reshape(shape)
 
 
-# --------------------------------------------------------------------------
-# Tầng 2 + ghép
-# --------------------------------------------------------------------------
-
-
 def focal_loss(z: np.ndarray, y: np.ndarray, gamma: float, alpha: float) -> np.ndarray:
-    """Focal loss nhị phân theo điểm thô ``z``: ``-w·(1-pt)^γ·log(pt)``."""
     p = np.clip(sigmoid(z), EPS, 1 - EPS)
     pt = np.where(y > 0.5, p, 1 - p)
     w = np.where(y > 0.5, alpha, 1 - alpha)
@@ -154,12 +115,6 @@ def focal_loss(z: np.ndarray, y: np.ndarray, gamma: float, alpha: float) -> np.n
 
 
 def focal_objective(gamma: float, alpha: float, step: float = 1e-3):
-    """Mục tiêu tuỳ biến cho LightGBM: đạo hàm bậc 1, 2 bằng sai phân trung tâm.
-
-    Sai phân trên một hàm vô hướng trơn là chính xác tới ``O(step²)`` và không
-    có rủi ro gõ sai công thức giải tích; đạo hàm bậc 2 bị chặn dưới để LightGBM
-    không chia cho số âm ở vùng lõm của focal loss.
-    """
 
     def objective(preds: np.ndarray, data: lgb.Dataset) -> tuple[np.ndarray, np.ndarray]:
         y = data.get_label()
@@ -182,15 +137,13 @@ def _raw_logloss(preds: np.ndarray, data: lgb.Dataset) -> tuple[str, float, bool
 @dataclass(frozen=True)
 class ModelConfig:
     calibration: str = "platt"
-    loss: str = "logloss"  # hoặc "focal"
+    loss: str = "logloss"
     focal_gamma: float = 1.0
     focal_alpha: float = 0.5
-    calib_rows: int = 300  # khối hiệu chỉnh: ngần này kỳ cuối của dữ liệu huấn luyện
-    valid_share: float = 0.15  # phần cuối khối học dành cho dừng sớm
+    calib_rows: int = 300
+    valid_share: float = 0.15
     learning_rate: float = 0.03
     num_leaves: int = 15
-    #: Chọn 500 bằng kiểm độ nhạy trên dữ liệu TỔNG HỢP (2000 không thấy tín hiệu
-    #: LOTO cài sẵn, z=1,1; 500 thấy, z=3,0), TRƯỚC khi chạy so sánh trên dữ liệu thật.
     min_data_in_leaf: int = 500
     lambda_l2: float = 10.0
     max_rounds: int = 400
@@ -201,7 +154,6 @@ class ModelConfig:
 
 
 class BayesianLGBModel:
-    """Tiên nghiệm Bayes + LightGBM phần dư + hiệu chỉnh. Huấn luyện theo hàng kỳ."""
 
     def __init__(self, mode: Mode, config: ModelConfig | None = None):
         self.mode = mode
@@ -211,7 +163,6 @@ class BayesianLGBModel:
         self.calibrator: Calibrator | None = None
         self.rounds = 0
 
-    # Mỗi hàng t sinh 100 dòng (t, n). Hàng ``rows`` phải đã có nhãn.
     def _design(self, X: np.ndarray, prior: np.ndarray, rows: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         feats = X[rows].reshape(len(rows) * 100, -1)
         base = logit(prior[rows]).reshape(-1)
@@ -233,8 +184,6 @@ class BayesianLGBModel:
         learn, cal = rows[:-n_cal], rows[-n_cal:]
         use_lgb = cfg.use_lgb and len(learn) >= 50
         if use_lgb:
-            # Tách khối dừng sớm TRƯỚC khi chọn tiên nghiệm: nhãn của ``va`` không
-            # được chạm vào (h, α), nếu không khối ấy hết là khối chưa chạm.
             n_valid = max(int(len(learn) * cfg.valid_share), 10)
             tr, va = learn[:-n_valid], learn[-n_valid:]
             self.prior = DirichletPrior.fit(self.mode, hit, tr)
@@ -263,8 +212,6 @@ class BayesianLGBModel:
             }
             feval = None
             if cfg.loss == "focal":
-                # Mục tiêu tuỳ biến: LightGBM trả điểm THÔ cho phép đo, nên dừng
-                # sớm theo logloss tự tính trên sigmoid của điểm ấy.
                 params["objective"] = focal_objective(cfg.focal_gamma, cfg.focal_alpha)
                 params["metric"] = "None"
                 feval = _raw_logloss
@@ -296,18 +243,12 @@ class BayesianLGBModel:
 
 
 class PriorOnlyModel(BayesianLGBModel):
-    """Chỉ tầng 1 (+ hiệu chỉnh), để đo phần đóng góp của LightGBM."""
 
     def __init__(self, mode: Mode, config: ModelConfig | None = None):
         super().__init__(mode, replace(config or ModelConfig(), use_lgb=False))
 
 
 class ConstantModel:
-    """Dự báo hằng số — CHÍNH mốc kỹ năng 0 của ``evaluator.cumulative_reference``.
-
-    LOTO: hàng t dự báo tỉ lệ về tích luỹ qua kỳ 0..t (mọi kỳ trước kỳ đích t+1);
-    Đặc Biệt: 1/100. Không học gì, nên ``fit`` không làm gì.
-    """
 
     def __init__(self, mode: Mode):
         self.mode = mode
@@ -322,13 +263,6 @@ class ConstantModel:
 
 
 class FrequencyModel:
-    """Mốc TẦN SUẤT THÔ của từng con — thứ mà "số nóng / số lạnh" ngầm coi là dự báo.
-
-    Hàng ``t`` dự báo kỳ ``t+1`` bằng tỉ lệ con ấy về trong ``window`` kỳ gần nhất tính tới hết kỳ
-    ``t`` (``window=None``: toàn bộ lịch sử), làm trơn bằng MỘT quan sát giả ở mức nền để log-loss
-    hữu hạn. Không co thêm: đây là mốc so sánh, không phải ứng viên. ``tien_nghiem`` là bản có co
-    của cùng ý tưởng; chênh giữa hai dòng trong bảng chính là giá của việc tin tần suất thô.
-    """
 
     def __init__(self, mode: Mode, window: int | None = None):
         if window is not None and window < 1:
@@ -357,30 +291,12 @@ class NeuralConfig:
     weight_decay: float = 1e-3
     epochs: int = 20
     batch_size: int = 512
-    #: Số kỳ gần nhất dùng để học (mỗi kỳ 100 dòng). Giới hạn để một lần học tính bằng giây.
     train_rows: int = 1000
     calib_rows: int = 300
     seed: int = 7
 
 
 class NeuralModel:
-    """Ứng viên MẠNG NƠ-RON: perceptron nhiều lớp trên chính ma trận đặc trưng của ``bayes_lgb``.
-
-    Cùng ba tầng với ``BayesianLGBModel`` để phép so sánh công bằng: tiên nghiệm Bayes (chọn trên
-    khối học), mạng học trên đặc trưng + logit tiên nghiệm, rồi hiệu chỉnh Platt trên khối thời
-    gian RIÊNG nằm sau khối học. Đặc trưng đã gồm tóm tắt chuỗi (gan, tần suất suy giảm nhiều
-    nhịp, chuyển Markov, cầu vị trí), nên mạng truyền thẳng thấy cùng thông tin mà một mạng chuỗi
-    phải tự rút ra — với ~4 000 kỳ, một GRU tự rút thì có nhiều tham số hơn số kỳ quan sát
-    (`research.ml_engine.models.TemporalSequenceModel` tính đúng con số ấy).
-
-    Số vòng học cố định, không dừng sớm bằng lát ngẫu nhiên: ``early_stopping`` của scikit-learn
-    xáo trộn dòng, tức trộn các con của cùng một kỳ vào hai phía.
-
-    Cấu hình mặc định KHÔNG chọn trên dữ liệu thật. Kiểm độ nhạy 16-11-2026 trên lịch sử tổng hợp
-    1 600 kỳ của ``TUNING_SEED`` với tín hiệu ``POWER_SIGNALS``: z = +3,9 (Đặc Biệt) và +2,5 (LOTO),
-    so với +5,8 và +1,1 của ``bayes_lgb`` trên cùng lịch sử. Năm cấu hình khác (rộng hơn, nhiều
-    vòng hơn, phạt mạnh hơn) không hơn ở cả hai chế độ.
-    """
 
     def __init__(self, mode: Mode, config: NeuralConfig | None = None):
         self.mode = mode
@@ -415,7 +331,6 @@ class NeuralModel:
             max_iter=cfg.epochs, early_stopping=False, shuffle=True, random_state=cfg.seed,
         )
         with warnings.catch_warnings():
-            # Số vòng cố định là chủ ý; cảnh báo "chưa hội tụ" không phải lỗi ở đây.
             warnings.simplefilter("ignore", category=ConvergenceWarning)
             self.network.fit(self.scaler.transform(design), hit[learn + 1].reshape(-1).astype(np.int64))
         self.calibrator = Calibrator("platt").fit(self._raw(X, prior, cal), hit[cal + 1].astype(np.float64))
@@ -426,22 +341,6 @@ class NeuralModel:
         p = self.calibrator.transform(self._raw(X, self.prior.matrix(hit), rows))
         return normalize_rows(p) if self.mode == "de" else p
 
-
-# --- Đối chứng ML production (trước 15-11-2026: backtest/production_ml.py) ------------------------
-#
-# Mô hình ML đang chạy production, huấn luyện lại theo walk-forward để làm đối chứng.
-#
-# Tái dựng đúng ``ml_train.train_one`` + ``ml_predict``: cùng bảng đặc trưng
-# (``ml_features.build_ml_table_from_history``), cùng cửa sổ 2 000 ngày, cùng
-# bốn khối thời gian (huấn luyện | hiệu chỉnh | chọn | thẩm định), cùng ba cấu
-# hình HistGradientBoosting + Platt, cùng độ tin ``model_trust`` co về tỉ lệ nền,
-# và Đặc Biệt được chuẩn hoá sau khi co. Chỉ khác: dữ liệu bị cắt tại mốc của
-# từng khối walk-forward.
-#
-# Đây là thành phần ``ml`` — một trong năm thành phần của tổ hợp production. Tổ
-# hợp đầy đủ (cầu, thống kê, hai nhánh đường đi, xếp chồng) không tái dựng được
-# cho 1 000 kỳ trong thời gian hợp lý; nó được so trên các kỳ có sổ ghi
-# ``data/evaluation/prob_eval/ensemble_history.csv``.
 
 def frames(history: History) -> tuple[pd.DataFrame, pd.DataFrame]:
     raw = pd.DataFrame(history.values, columns=list(PRIZE_FIELDS))
@@ -458,7 +357,7 @@ class ProductionMLModel:
         raw, two = frames(history)
         X, y = build_ml_table_from_history(mode, FeatureParams(), raw, two)
         index = {d: i for i, d in enumerate(pd.to_datetime(list(history.dates)))}
-        self.row = X["date"].map(index).to_numpy(dtype=np.int64)  # hàng neo t của từng dòng
+        self.row = X["date"].map(index).to_numpy(dtype=np.int64)
         self.X = X
         self.F = X[ml_train.FEATURE_COLUMNS].astype(np.float32).to_numpy()
         self.y = y.to_numpy(dtype=int)
@@ -505,7 +404,7 @@ class ProductionMLModel:
         for k, t in enumerate(rows):
             sel = self.row == t
             if not sel.any():
-                continue  # kỳ sau Tết: hàng không có trong bảng production
+                continue
             numbers = self.X.loc[sel, "number"].to_numpy(dtype=int)
             raw = self.clf.predict_proba(self.F[sel])[:, 1]
             out[k, numbers] = self.trust * raw + (1.0 - self.trust) * self.baseline

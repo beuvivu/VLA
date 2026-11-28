@@ -1,22 +1,3 @@
-"""Experts: each turns *past* draws into a full probability law for the next draw.
-
-Every group processes a chunk of T draws and returns
-
-* ``ll``   (T, J)        log-probability each expert gave to each draw, issued before it;
-* ``pred`` (T+1, J, D)   each expert's normalised prediction before each draw, the last row
-                         being the forecast for the next, unseen draw (set games: CB weights
-                         summing to 1 over the n numbers; digit games: per-position
-                         probabilities flattened to L·A). ``None`` for fixed experts, whose
-                         prediction is ``constant_pred``.
-
-State is carried between chunks, so running a history in one chunk or many gives the same
-result (tested) — that is what lets ``forecast update`` learn draw by draw.
-
-k-of-n draws use the conditional-Bernoulli law P(S) = Π_{i∈S} w_i / e_k(w) (exactly uniform
-when all w_i are equal); Power's bonus ball, drawn from the remaining n−k numbers, has
-P(b | S) = w_b / Σ_{i∉S} w_i. Digit games use independent categorical positions.
-"""
-
 from __future__ import annotations
 
 from math import lgamma, log
@@ -35,13 +16,11 @@ def log_comb(n: int, k: int) -> float:
 
 
 def _running_sum(x: np.ndarray, start: np.ndarray) -> np.ndarray:
-    """(T+1, …): value before each of the T rows, then after the last."""
     c = np.cumsum(np.asarray(x, dtype=np.float64), axis=0)
     return np.concatenate([start[None], start[None] + c], axis=0)
 
 
 def _running_ewma(x: np.ndarray, s0: np.ndarray, lam: float) -> np.ndarray:
-    """(T+1, …) exponentially weighted sums s ← λ·s + x, before each row then after the last."""
     if len(x) == 0:
         return s0[None].astype(np.float64)
     y, _ = lfilter([1.0], [1.0, -lam], np.asarray(x, dtype=np.float64), axis=0, zi=(lam * np.asarray(s0, dtype=np.float64))[None])
@@ -57,9 +36,7 @@ def _logit(p: np.ndarray | float) -> np.ndarray:
     return np.log(p) - np.log1p(-p)
 
 
-# ====================================================================== k-of-n games
 class SetExperts:
-    """Adaptive experts for k distinct numbers out of n (+ same-drum bonus)."""
 
     HALF_LIVES = (10, 100)
 
@@ -84,7 +61,6 @@ class SetExperts:
             "G": np.zeros(len(self.feature_names) + 1), "acc_g": np.zeros(len(self.feature_names) + 1), "acc_n": 0.0,
         }
 
-    # ------------------------------------------------------------------ features
     def _features(self, st: dict, x: np.ndarray) -> tuple[dict, dict]:
         t = len(x)
         p0 = self.p0
@@ -122,7 +98,7 @@ class SetExperts:
         t, n, k = len(x), self.spec.n, self.spec.k
         f, new = self._features(st, x)
         lp0 = float(_logit(self.p0))
-        phi = np.stack([f["L_all100"] - lp0, f["L_ew10"] - lp0, f["L_ew100"] - lp0, f["gap_z"], f["prev"], f["prev2"]], axis=-1)  # (T+1, n, F)
+        phi = np.stack([f["L_all100"] - lp0, f["L_ew10"] - lp0, f["L_ew100"] - lp0, f["gap_z"], f["prev"], f["prev2"]], axis=-1)
         logistic = self._online_logistic(new, phi, x)
         z = np.stack([
             np.zeros((t + 1, n)),
@@ -130,7 +106,7 @@ class SetExperts:
             f["L_ew10"], f["L_ew100"], -f["L_ew10"], -f["L_ew100"],
             0.15 * f["gap_z"], -0.15 * f["gap_z"], 0.2 * f["prev"], -0.2 * f["prev"],
             logistic,
-        ], axis=1)  # (T+1, J, n) log-odds
+        ], axis=1)
         z = np.clip(z - z.mean(axis=-1, keepdims=True), -5.0, 5.0)
         w = np.exp(z)
         pred = w / w.sum(axis=-1, keepdims=True)
@@ -138,9 +114,6 @@ class SetExperts:
         return ll, pred, new
 
     def _online_logistic(self, st: dict, phi: np.ndarray, x: np.ndarray) -> np.ndarray:
-        """Mini-batch AdaGrad on the per-number Bernoulli loss; batches are aligned to the
-        global draw count so chunking never changes the result. Predictions for a draw only
-        use parameters fitted on earlier batches."""
         t, n = len(x), self.spec.n
         out = np.empty(phi.shape[:2])
         theta, c = st["theta"].copy(), float(st["c"])
@@ -169,7 +142,6 @@ class SetExperts:
 
 
 def set_loglik(pred: np.ndarray, x: np.ndarray, bonus: np.ndarray | None, k: int, same_drum: bool) -> np.ndarray:
-    """log P(draw) under CB weights ``pred`` (T, J, n) for incidence ``x`` (T, n)."""
     logw = np.log(pred)
     ek = elementary_symmetric(pred, k)[..., k]
     ll = np.einsum("tjn,tn->tj", logw, x.astype(np.float64)) - np.log(ek)
@@ -181,7 +153,6 @@ def set_loglik(pred: np.ndarray, x: np.ndarray, bonus: np.ndarray | None, k: int
 
 
 class SetTilts:
-    """Fixed sparse hypotheses "number i comes up (1+ε) times as often": n·|ε| experts."""
 
     def __init__(self, spec: SetSpec, eps: tuple[float, ...] = TILT_EPS) -> None:
         self.spec, self.eps = spec, np.asarray(eps, dtype=np.float64)
@@ -198,10 +169,9 @@ class SetTilts:
     def run(self, st: dict, obs: dict) -> tuple[np.ndarray, None, dict]:
         x = np.asarray(obs["X"], dtype=bool)
         n, k = self.spec.n, self.spec.k
-        le = np.log1p(self.eps)  # (E,)
-        # e_k(w) = C(n−1,k) + (1+ε)·C(n−1,k−1) = C(n−1,k−1)·((n−k)/k + 1 + ε)
+        le = np.log1p(self.eps)
         logden = log_comb(n - 1, k - 1) + np.log((n - k) / k + 1 + self.eps)
-        ll = x[:, None, :] * le[None, :, None] - logden[None, :, None]  # (T, E, n)
+        ll = x[:, None, :] * le[None, :, None] - logden[None, :, None]
         if self.spec.bonus_same_drum and obs.get("bonus") is not None:
             b = np.asarray(obs["bonus"], dtype=np.int64) - 1
             hit = np.zeros_like(x)
@@ -210,9 +180,7 @@ class SetTilts:
         return ll.reshape(len(x), -1), None, st
 
 
-# ====================================================================== digit games
 class DigitExperts:
-    """Adaptive experts for m numbers × L independent positions over A symbols."""
 
     def __init__(self, spec: DigitSpec) -> None:
         self.spec = spec
@@ -227,7 +195,7 @@ class DigitExperts:
         return {"seen": 0.0, "count": np.zeros(la), "s20": np.zeros(la), "s200": np.zeros(la), "prev": np.zeros(la)}
 
     def run(self, st: dict, obs: dict) -> tuple[np.ndarray, np.ndarray, dict]:
-        c = np.asarray(obs["C"], dtype=np.float64)  # (T, L, A)
+        c = np.asarray(obs["C"], dtype=np.float64)
         t = len(c)
         big_a, m = self.spec.alphabet, self.spec.per_draw
         count = _running_sum(c, st["count"])
@@ -239,7 +207,7 @@ class DigitExperts:
         def dirichlet(cnt: np.ndarray, a: float) -> np.ndarray:
             return (cnt + a / big_a) / (cnt.sum(axis=-1, keepdims=True) + a)
 
-        pool = count.sum(axis=1, keepdims=True)  # (T+1, 1, A)
+        pool = count.sum(axis=1, keepdims=True)
         mu = m / big_a
         zrep = (prev - mu) / np.sqrt(mu * (1 - 1 / big_a))
         rep = np.exp(0.15 * zrep)
@@ -251,13 +219,12 @@ class DigitExperts:
             np.broadcast_to(dirichlet(pool, 100.0), count.shape), np.broadcast_to(dirichlet(pool, 1000.0), count.shape),
             dirichlet(s20, 50.0), dirichlet(s200, 50.0),
             cold / cold.sum(axis=-1, keepdims=True), rep / rep.sum(axis=-1, keepdims=True), anti / anti.sum(axis=-1, keepdims=True),
-        ], axis=1)  # (T+1, J, L, A)
+        ], axis=1)
         ll = np.einsum("tjla,tla->tj", np.log(q[:t]), c) if t else np.zeros((0, len(self.names)))
         return ll, q.reshape(t + 1, len(self.names), -1), new
 
 
 class DigitTilts:
-    """Fixed sparse hypotheses "symbol a at position l is (1+ε) times as likely"."""
 
     def __init__(self, spec: DigitSpec, eps: tuple[float, ...] = TILT_EPS) -> None:
         self.spec, self.eps = spec, np.asarray(eps, dtype=np.float64)
@@ -275,7 +242,7 @@ class DigitTilts:
         return {}
 
     def run(self, st: dict, obs: dict) -> tuple[np.ndarray, None, dict]:
-        c = np.asarray(obs["C"], dtype=np.float64)  # (T, L, A)
+        c = np.asarray(obs["C"], dtype=np.float64)
         big_l, big_a, m = self.spec.positions, self.spec.alphabet, self.spec.per_draw
         null = -m * big_l * log(big_a)
         ll = null + c[:, None, :, :] * np.log1p(self.eps)[None, :, None, None] - m * np.log((big_a + self.eps) / big_a)[None, :, None, None]

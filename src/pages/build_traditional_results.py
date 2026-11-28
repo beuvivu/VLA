@@ -1,27 +1,3 @@
-"""Dựng trang Sổ kết quả truyền thống từ cơ sở dữ liệu lịch sử cục bộ.
-
-Toàn bộ lịch sử được nhúng thẳng vào trang, ở dạng nén. Trang không gọi mạng
-ra ngoài và không phụ thuộc dịch vụ nào — mở là chạy.
-
-Vì sao nén, và vì sao điều đó là phần SỬA LỖI chứ không phải tối ưu
-==================================================================
-Bản trước nhúng ``limit=500`` kỳ ở dạng JSON đầy đủ, mỗi kỳ mang theo ``id``,
-``region``, ``province``, ``status``, ``source``, nhãn và độ rộng của từng
-giải, cộng hai mươi mảng ``head_tail``. Kết quả đo được:
-
-    500 kỳ, JSON đầy đủ     658 KB    phủ 2025-04-29 → 2026-09-14 (503 ngày)
-    2 399 kỳ, dạng nén      281 KB    phủ 2020-01-01 → 2026-09-14
-
-Tức bản nén vừa NHỎ HƠN 2,3 lần vừa phủ nhiều hơn 4,8 lần. Mọi thứ bị bỏ đi
-đều là thứ suy lại được ở trình duyệt: nhãn giải là hằng số, ``head_tail``
-tính từ chính các giải, còn ``region``/``province``/``status``/``source``
-giống hệt nhau ở cả 2 399 kỳ.
-
-Đây là nguyên nhân gốc của lỗi "không tra cứu được quá khứ": người dùng chọn
-một ngày trước 2025-04-29 thì bộ lọc chạy đúng, trả về rỗng, và trang báo
-"Chưa có kết quả trong khoảng đã chọn" — đọc như thể hôm ấy không quay.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -48,11 +24,6 @@ def _asset(name: str) -> str:
 
 
 def load_rows(repo_root: Path, *, limit: int | None = None) -> list[str]:
-    """Nạp lịch sử đã nén, kỳ mới nhất trước.
-
-    ``limit=None`` nghĩa là LẤY HẾT — và đó là mặc định có chủ ý. Giới hạn
-    mặc định 500 của bản trước chính là lỗi "không tra cứu được quá khứ".
-    """
     path = repo_root / "data" / "xsmb.csv"
     with path.open("r", encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -77,9 +48,6 @@ def embedded_payload(rows: list[str], *, generated: str, draw_metadata: dict[str
     }
 
 
-#: Các mốc nhanh. Trang tham chiếu có 11 lựa chọn (10/30/60/90/100/120…);
-#: bản trước chỉ có bốn, nên không có cách nào xem xa hơn 100 kỳ ngoài việc
-#: tự gõ ngày — mà gõ ngày thì lại rơi ra ngoài cửa sổ 500 kỳ đã nhúng.
 PERIOD_PRESETS: tuple[tuple[str, str], ...] = (
     ("10", "10 kỳ gần nhất"),
     ("30", "30 kỳ gần nhất"),
@@ -95,13 +63,6 @@ PERIOD_PRESETS: tuple[tuple[str, str], ...] = (
     ("custom", "Chọn khoảng ngày"),
 )
 
-#: Lọc theo thứ trong tuần. Trang tham chiếu có một ô `select name="dow"`
-#: với tám lựa chọn (đã đọc cấu trúc trang: "Chủ nhật, Thứ hai, Thứ ba…"),
-#: tức là "tất cả" cộng bảy thứ.
-#:
-#: GIÁ TRỊ là chỉ số thứ theo chuẩn JavaScript (Chủ nhật = 0). THỨ TỰ hiển
-#: thị thì bắt đầu từ Thứ hai, vì tuần của người Việt bắt đầu từ Thứ hai —
-#: không cần phải trùng thứ tự với giá trị.
 WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
     ("all", "Tất cả các thứ"),
     ("1", "Thứ hai"),
@@ -113,7 +74,6 @@ WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
     ("0", "Chủ nhật"),
 )
 
-#: Số cột hiển thị. Trang tham chiếu dùng bốn nút chọn bố cục.
 LAYOUT_CHOICES: tuple[tuple[str, str], ...] = (
     ("1", "1 cột"),
     ("2", "2 cột"),

@@ -1,5 +1,3 @@
-"""PR từ nhánh ngoài allowlist push vẫn phải chạy đủ hai job CI."""
-
 from __future__ import annotations
 
 import fnmatch
@@ -17,7 +15,6 @@ REPOSITORY = "beuvivu/VLA"
 
 
 def _route(script: str, event: str, branch: str, head_repo: str) -> tuple[int, str]:
-    """Chạy nguyên khối shell của job chọn cổng và đọc đầu ra GitHub Actions."""
     with TemporaryDirectory() as dirname:
         output_path = Path(dirname) / "github-output"
         env = {
@@ -88,7 +85,7 @@ def test_ci_event_coverage(
     job: str, event: str, branch: str, head_repo: str, should_run: bool
 ) -> None:
     workflow = _workflow()
-    events = workflow.get("on", workflow.get(True))  # PyYAML 1.1 đọc `on` thành boolean.
+    events = workflow.get("on", workflow.get(True))
     assert {"push", "pull_request", "workflow_dispatch"} <= set(events)
     push_branches = events["push"]["branches"]
     assert push_branches == ["main", "master", "claude/**", "codex/**"]
@@ -98,7 +95,6 @@ def test_ci_event_coverage(
     assert gate["if"] == "needs.route.outputs.run_checks == 'true'"
     script = _router(workflow)
 
-    # Push ngoài allowlist không tạo lượt chạy workflow để job chọn cổng xử lý.
     if event == "push" and not any(
         fnmatch.fnmatchcase(branch, pattern) for pattern in push_branches
     ):

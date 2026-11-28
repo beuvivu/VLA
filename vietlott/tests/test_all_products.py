@@ -1,7 +1,3 @@
-"""v3.2: all seven products — parsers, official records, store/sync, Keno/Bingo18 odds,
-randomness tests (size and power), Max 3D digit cross-check, Lotto two-phase accrual and
-rolldown forecast, API and CLI."""
-
 from __future__ import annotations
 
 import asyncio
@@ -41,7 +37,6 @@ from tests.test_vietlott_products import _records, _simulate_winners
 SEED = Path(__file__).resolve().parents[1] / "data" / "seed"
 
 
-# ------------------------------------------------------------------ fixtures (HTML)
 def _keno_html(rows: list[tuple[str, int, list[int]]]) -> str:
     trs = "".join(
         f"<tr><td><a href='#'>{d}</a> <a href='#'>#{i:07d}</a></td><td>{''.join(f'<span>{n:02d}</span>' for n in nums)}</td><td>Lớn</td><td>Chẵn</td></tr>"
@@ -78,7 +73,6 @@ DETAIL_645 = """
 """
 
 
-# ------------------------------------------------------------------ parsers
 def test_parse_keno_bingo_three_digit_lists() -> None:
     keno = parse_keno_html(_keno_html([("28/09/2026", 297327, list(range(1, 21))), ("28/09/2026", 297326, list(range(41, 61)))]))
     assert [r["id"] for r in keno] == [297327, 297326]
@@ -134,7 +128,6 @@ def test_bundled_official_seed_is_consistent() -> None:
         assert len(h) > 500 and len(np.unique(h.draw_ids)) == len(h)
 
 
-# ------------------------------------------------------------------ rules / odds
 def test_keno_distributions_and_rtp() -> None:
     for b in KENO_TABLE:
         assert sum(keno_hits_distribution(b).values()) == pytest.approx(1.0)
@@ -142,20 +135,20 @@ def test_keno_distributions_and_rtp() -> None:
     assert sum(split.values()) == pytest.approx(1.0) and split[10] == pytest.approx(0.2032, abs=1e-4)
     assert sum(v for x, v in split.items() if x >= 13) == pytest.approx(0.0980, abs=1e-4)
     bacs, sides = keno_odds()
-    for b in bacs:  # every bậc of the official table pays back ≈ 50–58 % (bậc 10: 57,7 %)
+    for b in bacs:
         assert 0.49 < b.return_to_player < 0.58, b.bac
-    assert any("20.000" in k and v > 0.6 for b in bacs for k, v in b.variants.items())  # the outlier variant is flagged, not used
+    assert any("20.000" in k and v > 0.6 for b in bacs for k, v in b.variants.items())
     assert {s.name for s in sides} >= {"Lớn (hoặc Nhỏ)", "Hòa Lớn–Nhỏ", "Chẵn (hoặc Lẻ)"}
 
 
 def test_keno_rtp_matches_simulation() -> None:
     rng = np.random.default_rng(3)
     draws = np.argsort(rng.random((60_000, 80)), axis=1)[:, :20] + 1
-    pick = np.arange(1, 6)  # bậc 5
+    pick = np.arange(1, 6)
     hits = np.isin(draws, pick).sum(axis=1)
     exact = keno_hits_distribution(5)
     freq = np.bincount(hits, minlength=6) / len(hits)
-    for m in range(6):  # hit-count law (the RTP itself is too noisy: 1-in-1,551 top prize)
+    for m in range(6):
         assert freq[m] == pytest.approx(exact[m], abs=4 * np.sqrt(exact[m] * (1 - exact[m]) / len(hits)) + 1e-4)
 
 
@@ -167,7 +160,6 @@ def test_bingo18_exact_odds() -> None:
         assert 0.45 < r.return_to_player < 0.62, r.bet
 
 
-# ------------------------------------------------------------------ randomness
 def _fair(product: ProductCode, n: int, rng: np.random.Generator, units_weights: np.ndarray | None = None) -> ProductHistory:
     if product == ProductCode.KENO:
         vals = np.sort(np.argsort(rng.random((n, 80)), axis=1)[:, :20] + 1, axis=1)
@@ -186,13 +178,13 @@ def test_fair_histories_pass_and_size_is_controlled() -> None:
         rep = product_randomness(_fair(product, 1500, rng))
         assert rep.min_q_value > 0.05, (product, [(t.name, t.p_value) for t in rep.tests])
     rejections = sum(product_randomness(_fair(ProductCode.BINGO18, 1500, rng)).min_q_value < 0.05 for _ in range(60))
-    assert rejections <= 8  # family-wise level ≈ 5 % (BH under the global null)
+    assert rejections <= 8
 
 
 def test_digit_bias_is_detected_and_replicated() -> None:
     rng = np.random.default_rng(5)
     w = np.ones(10)
-    w[6] = 1.25  # units digit 6 drawn 25 % too often
+    w[6] = 1.25
     a, b = _fair(ProductCode.MAX3D, 1200, rng, w), _fair(ProductCode.MAX3D_PRO, 800, rng, w)
     units = next(t for t in product_randomness(a).tests if t.name == "Chữ số hàng đơn vị")
     assert units.q_value < 1e-3
@@ -200,13 +192,12 @@ def test_digit_bias_is_detected_and_replicated() -> None:
     assert (rep.cell.position, rep.cell.digit) == ("đơn vị", 6) and rep.cell.confirm_p_value < 1e-4
     assert rep.per_number_multiplier_max > 1.05
     null = digit_replication(_fair(ProductCode.MAX3D, 1200, rng), _fair(ProductCode.MAX3D_PRO, 800, rng))
-    assert null.cell.confirm_p_value > 1e-3  # a selected-but-spurious cell does not replicate
+    assert null.cell.confirm_p_value > 1e-3
     first, second = split_history(a)
     assert len(first) + len(second) == len(a)
 
 
-# ------------------------------------------------------------------ Lotto: two-phase accrual
-def _simulate_two_phase(days: int = 420, cs: float = 0.078, cf: float = 0.375, refund: float = 5.64e9, p_win: float = 0.012, seed: int = 7):  # type: ignore[no-untyped-def]
+def _simulate_two_phase(days: int = 420, cs: float = 0.078, cf: float = 0.375, refund: float = 5.64e9, p_win: float = 0.012, seed: int = 7):
     spec = LOTTO_535
     rng = np.random.default_rng(seed)
     d0 = date(2024, 1, 1)
@@ -264,14 +255,13 @@ def test_rolldown_forecast_phase_and_backtest() -> None:
     h, ph, sold, _, owed = _simulate_two_phase(seed=9)
     off = rolldown_history_official(LOTTO_535, h, ph, sold)
     f = forecast_next_rolldown(LOTTO_535, h, ph, sold, off)
-    assert f.phase == ("slow" if owed > 0 else "fast") or abs(owed) < 0.6e9  # switch draw itself is ambiguous
+    assert f.phase == ("slow" if owed > 0 else "fast") or abs(owed) < 0.6e9
     assert f.draws_to_threshold >= 0 and f.draws_to_fast_phase >= 0
     bt = backtest_rolldown_forecast(LOTTO_535, h, ph, sold, off, start=60, step=5)
     assert bt["cases"] >= 20 and bt["median_abs_error_draws"] <= 3 and bt["spearman_rho"] > 0.8
 
 
-# ------------------------------------------------------------------ HTTP: proxy vs geo-block
-def _client(handler) -> AsyncHttpClient:  # type: ignore[no-untyped-def]
+def _client(handler) -> AsyncHttpClient:
     async def no_sleep(_: float) -> None:
         return None
 
@@ -346,7 +336,6 @@ def test_fetch_canonical_from_detail_pages() -> None:
     assert rows[0]["schema_version"] == "1.0" and imp.prizes[0].jackpot_pots == {"jackpot1": 2 * 79_409_173_250}
 
 
-# ------------------------------------------------------------------ store + sync
 def test_product_store_merges_seed_and_sync(tmp_path: Path) -> None:
     def row(i: int) -> dict:
         return {"id": str(i), "date": "2026-09-28", "result": [1 + (i + k) % 6 for k in range(3)]}
@@ -361,7 +350,7 @@ def test_product_store_merges_seed_and_sync(tmp_path: Path) -> None:
 
     seed = tmp_path / "seed"
     seed.mkdir()
-    (seed / SEED_FILES[ProductCode.BINGO18]).write_bytes(b"")  # empty seed file (gz handled by name)
+    (seed / SEED_FILES[ProductCode.BINGO18]).write_bytes(b"")
     store = ProductStore(tmp_path / "data", None)
 
     async def run() -> list[dict]:
@@ -394,7 +383,7 @@ def test_sync_canonical_prizes_into_repository() -> None:
 
     repo = InMemoryRepository()
 
-    async def run():  # type: ignore[no-untyped-def]
+    async def run():
         async with _client(handler) as c:
             return await sync_canonical_prizes(c, repo, MEGA_645, source="canonical", canonical_base_url="https://c", vietlott_base_url="https://v")
 
@@ -403,9 +392,8 @@ def test_sync_canonical_prizes_into_repository() -> None:
     assert len(repo.load_prizes(MEGA_645.code)) == 2
 
 
-# ------------------------------------------------------------------ API + CLI
 @pytest.fixture(scope="module")
-def api():  # type: ignore[no-untyped-def]
+def api():
     from fastapi.testclient import TestClient
 
     from vietlott_engine.api.main import create_app
@@ -416,14 +404,14 @@ def api():  # type: ignore[no-untyped-def]
         yield client
 
 
-def test_api_catalogue_covers_all_products(api) -> None:  # type: ignore[no-untyped-def]
+def test_api_catalogue_covers_all_products(api) -> None:
     rows = {r["code"]: r for r in api.get("/products").json()}
     assert set(rows) == {c.value for c in ProductCode}
     assert all(r["stored_draws"] > 500 for r in rows.values())
     assert rows["mega645"]["endpoints"] == "/games/mega645" and rows["keno"]["endpoints"] == "/products/keno"
 
 
-def test_api_product_endpoints(api) -> None:  # type: ignore[no-untyped-def]
+def test_api_product_endpoints(api) -> None:
     k = api.get("/products/keno/odds").json()
     assert len(k["bac"]) == 10 and k["side_bets"]
     assert len(api.get("/products/bingo18/odds").json()) == 23
@@ -435,7 +423,7 @@ def test_api_product_endpoints(api) -> None:  # type: ignore[no-untyped-def]
     assert c["cell"]["position"] in ("trăm", "chục", "đơn vị")
     assert api.get("/products/mega645/draws").status_code == 404
     ro = api.get("/games/lotto535/rolldown/official")
-    if ro.status_code == 200:  # needs data/calibration (bundled)
+    if ro.status_code == 200:
         body = ro.json()
         assert body["official"]["executed"] >= 10 and body["forecast"]["draws_to_threshold"] >= 0
     assert api.get("/products/nope/draws").status_code == 404
@@ -453,8 +441,6 @@ def test_cli_products(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_break_even_finds_first_crossing_with_convex_sales() -> None:
-    """Convex sales extrapolated far out bring EV back below the price; the first crossing
-    must still be found (v3.2 fix: Mega showed RTP > 1 at 100 tỷ but 'no break-even')."""
     from vietlott_engine.game_theory.ev import EVCalculator
 
     class ConvexSales:
@@ -466,23 +452,21 @@ def test_break_even_finds_first_crossing_with_convex_sales() -> None:
     t = [3, 9, 14, 22, 31, 38]
     be = calc.break_even_jackpot(t, tickets_sold=None)
     assert be is not None
-    sold = lambda j: int(ConvexSales().predict(j))  # noqa: E731
+    sold = lambda j: int(ConvexSales().predict(j))
     below = calc.evaluate_ev_only(t, be * 0.95, None, sold(be * 0.95))
     above = calc.evaluate_ev_only(t, be * 1.05, None, sold(be * 1.05))
     assert below < MEGA_645.ticket_price < above
-    assert calc.evaluate_ev_only(t, 1e14, None, sold(1e14)) < MEGA_645.ticket_price  # the far end is below again
+    assert calc.evaluate_ev_only(t, 1e14, None, sold(1e14)) < MEGA_645.ticket_price
 
 
 def test_no_announcement_the_day_after_an_executed_rolldown() -> None:
-    """Day d−1 crossed 12 tỷ at 13:00 and was itself a rolldown day: the 21:00 draw
-    distributed the pot, so a jackpot win on day d is not a pre-empted rolldown."""
     spec = LOTTO_535
     d0 = date(2026, 9, 7)
     dates = [d0, d0, d0 + timedelta(1), d0 + timedelta(1), d0 + timedelta(2), d0 + timedelta(2)]
     pots = np.array([11.5e9, 12.3e9, 12.5e9, 12.8e9, 6.1e9, 6.2e9])
     winners = np.zeros((6, len(spec.tiers)), dtype=np.int64)
     winners[:, 1:] = 50
-    winners[4, 0] = 1  # jackpot won at 13:00 the day after the rolldown
+    winners[4, 0] = 1
     nums = np.tile(np.arange(1, 6), (6, 1))
     h = DrawHistory.from_arrays(spec, nums, dates=np.array(dates, dtype="datetime64[D]"), bonus=np.ones(6, dtype=int))
     ph = PrizeHistory.align(h, _records(spec, h, winners, pots=pots[:, None]))

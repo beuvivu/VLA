@@ -1,14 +1,3 @@
-"""Bố cục của mã Vietlott trong ``vietlott/``.
-
-Vietlott là mã của VLA (kho VLM đã bỏ hẳn, 25-11-2026). Thư mục giữ bố cục gói
-riêng — ``pyproject.toml``, bộ kiểm riêng, engine tự tìm thư mục dự án — và các
-phép kiểm dưới đây canh để bố cục ấy không trôi.
-
-GitHub chỉ đọc workflow ở gốc kho, nên workflow của engine nằm ở
-``.github/workflows/vlm-*.yml`` và chạy trong thư mục con. Chúng KHÔNG được
-triển khai Pages: ``pages.yml`` là workflow triển khai duy nhất (CLAUDE.md).
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,7 +12,6 @@ PAGES_ACTIONS = ("actions/deploy-pages", "actions/upload-pages-artifact", "actio
 
 
 def test_the_engine_is_a_self_contained_project() -> None:
-    """Đủ những gì engine dùng để tự nhận ra thư mục dự án (``paths._is_project``)."""
     for rel in ("pyproject.toml", "src/vietlott_engine/__init__.py", "src/vlm/__init__.py",
                 "data/seed", "scripts/persist_site.py", "scripts/build_site.py", "tests/conftest.py"):
         assert (ENGINE / rel).exists(), rel
@@ -37,7 +25,6 @@ def _load(path: Path) -> dict:
 
 
 def pages_violations(document: dict) -> list[str]:
-    """Bước hoặc quyền triển khai Pages trong một workflow."""
     found = []
     if (document.get("permissions") or {}).get("pages"):
         found.append("permissions.pages")
@@ -52,12 +39,6 @@ def pages_violations(document: dict) -> list[str]:
 
 
 def cache_paths_outside_engine(document: dict) -> list[str]:
-    """Đường dẫn cache không nằm dưới ``vietlott/``.
-
-    ``working-directory`` chỉ áp lên ``run:``; ``actions/cache`` đọc đường dẫn
-    tính từ gốc workspace. Thiếu tiền tố thì cache lưu và khôi phục nhầm chỗ,
-    và trạng thái bộ dự báo âm thầm mất giữa các lần chạy.
-    """
     bad = []
     for job in (document.get("jobs") or {}).values():
         for step in job.get("steps") or []:
@@ -86,9 +67,6 @@ def _cache_paths(document: dict, action: str) -> list[list[str]]:
 
 
 def test_the_page_build_restores_exactly_what_the_engine_saves() -> None:
-    """``actions/cache`` tính phiên bản theo danh sách đường dẫn: khôi phục bằng một
-    danh sách khác bước lưu thì không bao giờ trúng cache nào, và trang mất bảng giải
-    mới lẫn trạng thái bộ dự báo mà không báo lỗi."""
     saved = {tuple(p) for name in ("vlm-results.yml", "vlm-update.yml")
              for p in _cache_paths(_load(ROOT / ".github" / "workflows" / name), "actions/cache/save")}
     assert len(saved) == 1, saved
@@ -97,7 +75,6 @@ def test_the_page_build_restores_exactly_what_the_engine_saves() -> None:
 
 
 def test_the_rules_themselves_catch_violations() -> None:
-    """Ghim chính LUẬT trên mẫu dựng sẵn: quét qua tệp thật có thể không bao giờ đỏ."""
     deploy = {
         "permissions": {"contents": "write", "pages": "write"},
         "jobs": {"deploy": {"environment": {"name": "github-pages"},
@@ -110,12 +87,6 @@ def test_the_rules_themselves_catch_violations() -> None:
 
 
 def test_installing_the_engine_never_swaps_a_package_vla_pinned() -> None:
-    """`vietlott-results.yml` cài `requirements.txt` RỒI `pip install -e vietlott` vào CÙNG môi trường.
-
-    Khoảng phiên bản engine khai cho một gói chung mà loại bản VLA ghim thì pip lặng lẽ thay bản ấy, và
-    trang Vietlott (mã VLA) chạy trên thư viện chưa ai kiểm. Ghim ĐÚNG bản ở VLA là luật của kho (joblib
-    của mô hình phụ thuộc scikit-learn); engine được khai khoảng, nhưng khoảng phải chứa bản VLA ghim.
-    """
     import re
     import tomllib
 

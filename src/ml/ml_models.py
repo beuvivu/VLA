@@ -7,21 +7,10 @@ from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 
-# Pack joblib ghi trước khi gom `src/` vào gói con (10-2026) nhắc lớp bằng tên module
-# phẳng ``ml_models``. Thiếu tên ấy thì unpickle ném ImportError, MODEL_LOAD_ERRORS bắt
-# lỗi và bước dự báo LẶNG LẼ coi pack là hỏng. Mọi nơi nạp pack đều import module này
-# (trực tiếp hoặc qua ml_train / meta_predictor / cau_keo_ml) trước khi gọi joblib.load.
 sys.modules.setdefault("ml_models", sys.modules[__name__])
 
 
 class PlattCalibratedClassifier(BaseEstimator, ClassifierMixin):
-    """Histogram gradient boosting followed by out-of-sample Platt scaling.
-
-    ``sample_weight`` support is deliberate: lottery history is a time series, so
-    daily retraining can emphasize recent observations without discarding older
-    regimes. Calibration is fitted on an untouched temporal calibration block;
-    downsampling that block would distort the real event prevalence.
-    """
 
     def __init__(self, base: HistGradientBoostingClassifier | None = None):
         self.base = base

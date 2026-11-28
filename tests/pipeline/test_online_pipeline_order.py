@@ -1,4 +1,3 @@
-"""Kiểm luồng điều phối thật, thay lệnh con bằng bộ ghi nhận lời gọi."""
 import sys
 import pipeline
 

@@ -1,12 +1,3 @@
-"""Co-occurrence (đồng xuất hiện) analysis.
-
-Under H0 a specific pair {i, j} appears together in a draw with probability
-q = k(k−1)/(n(n−1)), so O_ij ~ Binomial(D, q). With n(n−1)/2 pairs (990 for 6/45,
-1,485 for 6/55) dozens of pairs will look "hot" by chance alone; this module
-reports BH-adjusted q-values and a Monte Carlo test of global over-dispersion so
-that chance and signal are separated.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -40,10 +31,6 @@ class CooccurrenceReport(BaseModel):
 
 
 def cooccurrence_matrix(h: DrawHistory, decay: float = 1.0) -> np.ndarray:
-    """(n, n) matrix of (optionally exponentially decayed) joint appearance counts.
-
-    The diagonal holds the per-number counts.
-    """
     inc = h.incidence.astype(np.float64)
     if decay < 1.0:
         inc = inc * decay_weights(len(h), decay)[:, None]
@@ -66,7 +53,6 @@ def cooccurrence_report(h: DrawHistory, top: int = 15, mc_sims: int = 300, seed:
     obs = c[iu].astype(int)
     sd = np.sqrt(d * q * (1 - q))
     z = (obs - expected) / sd
-    # exact two-sided binomial p-values (doubling the smaller tail)
     p_hi = stats.binom.sf(obs - 1, d, q)
     p_lo = stats.binom.cdf(obs, d, q)
     p = np.minimum(1.0, 2 * np.minimum(p_hi, p_lo))

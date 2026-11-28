@@ -1,5 +1,3 @@
-"""Chạy bước xuất bản dashboard với Git thật và nhánh chính tiến lên."""
-
 from __future__ import annotations
 
 import os
@@ -20,7 +18,6 @@ pytestmark = pytest.mark.skipif(
 
 
 class DashboardRepo:
-    """Hai runner cục bộ cùng xuất bản một bảng là hàm của dữ liệu."""
 
     def __init__(self, tmp: Path) -> None:
         self.tmp = tmp
@@ -94,7 +91,6 @@ class DashboardRepo:
 
 
 def test_dashboard_is_rebuilt_after_main_advances(tmp_path: Path) -> None:
-    """Retry phải dùng dữ liệu mới, kể cả hai runner cùng đổi dashboard."""
     repo = DashboardRepo(tmp_path)
     (repo.other / "marker").write_text("m2", encoding="utf-8")
     (repo.other / "DASHBOARD.md").write_text("another dashboard", encoding="utf-8")
@@ -109,7 +105,6 @@ def test_dashboard_is_rebuilt_after_main_advances(tmp_path: Path) -> None:
 
 
 def test_dashboard_stops_after_bounded_rejected_pushes(tmp_path: Path) -> None:
-    """Lỗi quyền/remote dai dẳng phải đỏ, không báo đã xuất bản."""
     repo = DashboardRepo(tmp_path)
     attempts = tmp_path / "attempts"
     hook = repo.remote / "hooks/pre-receive"
@@ -124,7 +119,6 @@ def test_dashboard_stops_after_bounded_rejected_pushes(tmp_path: Path) -> None:
 
 
 def test_dashboard_retry_does_not_duplicate_an_already_published_build(tmp_path: Path) -> None:
-    """Một runner khác đã dựng đúng bảng thì kết thúc xanh, không thêm commit."""
     repo = DashboardRepo(tmp_path)
     (repo.other / "marker").write_text("m2", encoding="utf-8")
     subprocess.run([sys.executable, str(BUILDER)], cwd=repo.other, check=True)
@@ -138,7 +132,6 @@ def test_dashboard_retry_does_not_duplicate_an_already_published_build(tmp_path:
 
 
 def test_dashboard_retry_validates_the_rebuilt_page(tmp_path: Path) -> None:
-    """Bản sinh lại không đạt hợp đồng bố cục phải dừng trước khi push."""
     repo = DashboardRepo(tmp_path)
     (repo.other / BUILDER).write_text(
         "from pathlib import Path\nPath('DASHBOARD.md').write_text('broken')\n",

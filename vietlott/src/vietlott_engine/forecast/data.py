@@ -1,14 +1,3 @@
-"""Product histories → forecasting series (one or two *components* per product).
-
-* **set** component — k distinct numbers from 1..n (Mega, Power, Lotto main numbers, Keno):
-  observation = incidence row ``X`` (n,) plus, for Power, the bonus ball drawn from the same
-  drum (``bonus`` 1..n).
-* **digit** component — m numbers per draw, each with L independent positions over an
-  alphabet of A symbols (Max 3D / Pro: m=20, L=3, A=10 · Max 4D: m=6, L=4 · Bingo18: m=1,
-  L=3 dice, A=6 · Lotto 5/35 special number: m=1, L=1, A=12): observation = counts
-  ``C`` (L, A) of each symbol at each position.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -36,7 +25,7 @@ class DigitSpec:
     positions: int
     per_draw: int
     position_labels: tuple[str, ...]
-    symbol_offset: int = 0  # displayed symbol = index + offset (Bingo18 faces 1..6, Lotto special 1..12)
+    symbol_offset: int = 0
     kind: str = "digit"
 
 
@@ -66,7 +55,6 @@ CONFIGS: dict[ProductCode, ProductConfig] = {
 
 @dataclass
 class Series:
-    """Draws in id order; ``obs[component]`` holds that component's observation arrays."""
 
     product: ProductCode
     draw_ids: np.ndarray
@@ -77,7 +65,6 @@ class Series:
         return int(self.draw_ids.size)
 
     def after(self, draw_id: int | None) -> "Series":
-        """Draws with id > ``draw_id`` (all when None)."""
         keep = np.ones(len(self), bool) if draw_id is None else self.draw_ids > draw_id
         return Series(self.product, self.draw_ids[keep], self.dates[keep], {c: {k: v[keep] for k, v in o.items()} for c, o in self.obs.items()})
 
@@ -90,7 +77,6 @@ class Series:
 
 
 def digit_counts(digits: np.ndarray, alphabet: int) -> np.ndarray:
-    """(T, m, L) symbols 0..A−1 → (T, L, A) counts per position."""
     t, _, ll = digits.shape
     out = np.zeros((t, ll, alphabet), dtype=np.int32)
     for pos in range(ll):
@@ -99,7 +85,6 @@ def digit_counts(digits: np.ndarray, alphabet: int) -> np.ndarray:
 
 
 def to_digits(values: np.ndarray, width: int) -> np.ndarray:
-    """(T, m) integers → (T, m, width) decimal digits, most significant first."""
     v = np.asarray(values, dtype=np.int64)
     powers = 10 ** np.arange(width - 1, -1, -1)
     return (v[..., None] // powers) % 10
@@ -133,9 +118,7 @@ def product_series(h: ProductHistory) -> Series:
     return Series(code, h.draw_ids[order].copy(), h.dates[order].copy(), obs)
 
 
-def load_series(product: str | ProductCode, repository=None, store=None, seed_dir: Path | None = None) -> Series:  # type: ignore[no-untyped-def]
-    """The engine's current data for ``product``: the draw repository for Mega/Power/Lotto
-    (falling back to the bundled seed when it is empty), the product store for the rest."""
+def load_series(product: str | ProductCode, repository=None, store=None, seed_dir: Path | None = None) -> Series:
     code = get_product(product)
     if code in (ProductCode.MEGA_645, ProductCode.POWER_655, ProductCode.LOTTO_535):
         spec = get_game(GameCode(code.value))

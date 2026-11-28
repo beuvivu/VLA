@@ -1,4 +1,3 @@
-"""Source-backed next/update/fit/benchmark and validated JSONL input."""
 from __future__ import annotations
 
 import argparse

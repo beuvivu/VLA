@@ -1,18 +1,3 @@
-"""Chẩn đoán bộ bóc giải trên trang nguồn THẬT.
-
-Môi trường phát triển bị chặn mạng, nên script này chạy trên runner của Actions
-(``.github/workflows/diagnose-live-sources.yml``). Với từng nguồn trong danh mục và
-từng đường dẫn live/theo ngày của nó, script in ra:
-
-- mã HTTP và kích thước trang;
-- bảng giải mà ``sources.extract_partial_prize_map`` bóc được;
-- các nhãn giải tìm thấy, và các dòng văn bản ngay sau nhãn giải 7 (chỗ bộ bóc kéo
-  khối số của giải cuối ra quá bảng giải).
-
-``--out-dir`` lưu HTML thô để tải về đối chiếu. Workflow giữ tệp ấy một ngày và
-không đưa vào kho: nội dung trang là của bên nguồn.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -27,7 +12,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ingest.sources import (  # noqa: E402
+from ingest.sources import (
     EXPECTED_COUNTS,
     PRIZE_ORDER,
     _label_key,
@@ -35,13 +20,12 @@ from ingest.sources import (  # noqa: E402
     default_sources,
     extract_partial_prize_map,
 )
-from core.time_policy import VIETNAM_TZ  # noqa: E402
+from core.time_policy import VIETNAM_TZ
 
 AFTER_G7_LINES = 30
 
 
 def text_lines(html: str) -> list[str]:
-    """Đúng các dòng văn bản mà bộ bóc nhìn thấy."""
     soup = BeautifulSoup(html or "", "lxml")
     lines = [re.sub(r"\s+", " ", line).strip() for line in soup.get_text("\n", strip=True).splitlines()]
     return [line for line in lines if line]
@@ -60,7 +44,6 @@ def describe(html: str) -> list[str]:
         out.append(f"    --- {AFTER_G7_LINES} dòng từ nhãn giải 7 ở dòng {start} ---")
         for j in range(start, min(len(lines), start + AFTER_G7_LINES)):
             out.append(f"      {j:5d} {lines[j][:90]!r}")
-    # Vùng bảng giải: từ mỗi nhãn đặc biệt có chữ (không phải chữ số trần) tới hết 45 dòng.
     for start in [i for i, key, line in labels if key == "special"][:3]:
         out.append(f"    --- vùng bảng giải từ dòng {start} ---")
         for j in range(start, min(len(lines), start + 45)):
@@ -69,7 +52,7 @@ def describe(html: str) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--date", action="append", default=[],
         help="ngày quay YYYY-MM-DD, lặp được; không có là hôm nay giờ VN",
@@ -95,12 +78,11 @@ def main(argv: list[str] | None = None) -> int:
                         safe = re.sub(r"[^A-Za-z0-9]+", "_", f"{draw}_{source.name}_{kind}_{n}")
                         (args.out_dir / f"{safe}.html").write_text(html, encoding="utf-8")
                     print("\n".join(describe(html)))
-        # Đúng đường mà live_sync gọi: thấy ở đây là thấy trên trang live.
         print(f"\n----- {draw.isoformat()}: fetch_partial(live=True) như live_sync -----")
         for source in default_sources():
             try:
                 parsed = source.fetch_partial(draw, http, live=True)
-            except Exception as exc:  # noqa: BLE001 — chẩn đoán: in lỗi rồi đi tiếp
+            except Exception as exc:
                 print(f"  {source.name}: lỗi {type(exc).__name__}")
                 continue
             received = sum(len(parsed.get(k, [])) for k in PRIZE_ORDER)

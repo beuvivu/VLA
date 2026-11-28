@@ -1,16 +1,3 @@
-"""Design system dùng chung cho các trang tĩnh VLA.
-
-Trang sinh ra phải tự chứa: CSP là ``default-src 'self'`` nên không được nạp
-Tailwind hay web font từ CDN. Vì vậy module này nhúng sẵn một tập tiện ích
-kiểu Tailwind cùng các lớp component ngữ nghĩa (shell, card, table, badge).
-
-Ba nhóm API:
-
-* :data:`TAILWIND_LITE_CSS` / :func:`tailwind_style_tag` — biểu định kiểu.
-* :func:`shell_open` / :func:`shell_close` — khung trang căn giữa, cân đối.
-* :func:`render_table` / :func:`dataframe_table` — bảng dữ liệu đã canh cột.
-"""
-
 from __future__ import annotations
 
 import html
@@ -24,7 +11,6 @@ from web.page_output import write_page, write_stylesheet_text
 from core.paths import ASSETS, TEMPLATES
 
 
-# Căn lề theo loại dữ liệu: số/chỉ số canh phải, trạng thái canh giữa.
 ALIGN_LEFT = "left"
 ALIGN_CENTER = "center"
 ALIGN_RIGHT = "right"
@@ -636,12 +622,6 @@ background:var(--ui-surface);overflow:hidden;box-shadow:var(--ui-sh-sm)}
 
 
 def _column_align_rules(columns: int = 10) -> str:
-    """Sinh class căn lề theo vị trí cột.
-
-    Dùng cho bảng được ghép chuỗi ``<tr><td>`` thủ công, nơi không tiện gắn
-    class lên từng ô: chỉ cần thêm ``ui-r3`` (cột 3 canh phải) hoặc
-    ``ui-m2`` (cột 2 canh giữa) lên chính thẻ ``<table>``.
-    """
 
     parts = []
     for index in range(1, columns + 1):
@@ -657,19 +637,6 @@ def _column_align_rules(columns: int = 10) -> str:
 TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}\n" + (TEMPLATES / "compact_results.css").read_text(encoding="utf-8")
 
 
-#: Điều hướng dùng chung cho MỌI trang, theo luồng tra cứu tới nghiên cứu.
-#:
-#: Trước đây có ba bảng điều hướng ở ba tệp builder khác nhau, liệt kê những
-#: trang khác nhau và không bảng nào phủ hết 14 trang; hai trang soi cầu ổn định
-#: không được liên kết từ bất kỳ đâu. Một nguồn duy nhất khiến tình trạng đó
-#: không tái diễn được: thêm trang mà quên thêm vào menu sẽ bị test bắt.
-#: Nhãn ở đây là VĂN BẢN THUẦN, không phải HTML đã escape sẵn.
-#:
-#: Bản trước lưu "Gan &amp; nhịp" đã escape. Nơi dựng nào cũng gọi
-#: ``html.escape()`` một lần nữa nên thành "&amp;amp;" và hiện ra màn hình
-#: đúng chuỗi "Gan &amp; nhịp". Nơi nào quên escape thì lại hiện đúng — nên lỗi
-#: chỉ xuất hiện ở một số trang, càng khó truy. Escape thuộc về ranh giới dựng
-#: HTML, không thuộc về dữ liệu.
 LANDING_SECTIONS: list[tuple[str, str, str]] = [
     ("tong-quan", "Tổng quan", "Cập nhật, tín hiệu nóng và đường dẫn nhanh"),
     ("ket-qua", "Kết quả ngày", "Bảng kết quả đầy đủ theo giải"),
@@ -685,8 +652,6 @@ LANDING_SECTIONS: list[tuple[str, str, str]] = [
     ("backtest", "Kiểm định AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
 ]
 
-#: Mỗi mục chỉ khai một lần trong nhóm và cụm phù hợp. SITE_NAV ở dưới là
-#: bản phẳng cho các trình dựng và tìm kiếm đang dùng hợp đồng cũ.
 SITE_NAV_SECTIONS: tuple[
     tuple[str, tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...]], ...
 ] = (
@@ -840,15 +805,12 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = tuple(
 )
 
 
-#: Đích tìm kiếm bổ sung; không đổi nhóm sidebar hay mục đang hoạt động.
 SITE_SEARCH_EXTRAS: tuple[tuple[str, str, str], ...] = (
     ("landing_desktop.html", "Giao diện máy tính", "dashboard"),
 )
 
 
-#: Mọi trang HTML mà điều hướng phải phủ. Test đối chiếu với docs/*.html.
 def nav_targets() -> set[str]:
-    """Tập tệp .html mà :data:`SITE_NAV` trỏ tới, đã bỏ phần neo."""
 
     return {
         href.split("#", 1)[0]
@@ -861,47 +823,19 @@ def nav_targets() -> set[str]:
 STYLESHEET_NAME = "assets/ui.css"
 
 def write_stylesheet(docs_dir: Path) -> Path:
-    """Ghi biểu định kiểu dùng chung ra ``docs/assets/ui.css``.
-
-    Trước đây toàn bộ CSS nội tuyến trong từng trang: khoảng 250 KB lặp lại
-    trên 14 trang, không trang nào dùng lại được cache của trang nào. Một tệp
-    cùng nguồn hợp lệ với CSP hiện tại (``style-src 'self'``) nên không phải
-    nới chính sách bảo mật.
-    """
     target = Path(docs_dir) / STYLESHEET_NAME
     target.parent.mkdir(parents=True, exist_ok=True)
     write_stylesheet_text(target, TAILWIND_LITE_CSS)
-    # Phông đi cùng biểu định kiểu: @font-face trong CSS trỏ tới tệp cạnh nó,
-    # nên ghi CSS mà quên phông sẽ tạo ra một tham chiếu chết.
     write_font_assets(docs_dir)
     return target
 
 
-#: Thư mục chứa tài nguyên tĩnh đi kèm mã nguồn (phông chữ và giấy phép).
 ASSET_SOURCE_DIR: Final[Path] = ASSETS
 
-#: Các tệp phải sao chép sang ``docs/assets/`` mỗi lần dựng trang.
 FONT_ASSETS: Final[tuple[str, ...]] = ("InterVariable.woff2", "Inter-LICENSE.txt")
 
 
 def write_font_assets(docs_dir: Path) -> list[Path]:
-    """Sao chép phông tự host và giấy phép sang ``docs/assets/``.
-
-    Phải sao chép chứ không thể trỏ tới ``src/``: GitHub Pages chỉ phục vụ thư
-    mục ``docs/``. Và phải kèm giấy phép — SIL OFL cho phép phân phối lại nhưng
-    yêu cầu giữ nguyên văn bản giấy phép đi cùng tệp phông.
-
-    Args:
-        docs_dir: Thư mục gốc của trang tĩnh.
-
-    Returns:
-        Danh sách tệp đã ghi.
-
-    Raises:
-        FileNotFoundError: Khi thiếu tệp nguồn — im lặng bỏ qua sẽ khiến trang
-            xuất bản mà không có phông, và lỗi chỉ lộ ra ở trình duyệt người
-            dùng dưới dạng chữ rơi về phông hệ thống.
-    """
     target_dir = Path(docs_dir) / "assets"
     target_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
@@ -916,21 +850,11 @@ def write_font_assets(docs_dir: Path) -> list[Path]:
 
 
 def stylesheet_link() -> str:
-    """Thẻ liên kết tới biểu định kiểu dùng chung."""
 
     return f'<link rel="stylesheet" href="{STYLESHEET_NAME}" />'
 
 
 def app_shell_open(current: str = "", *, wide: bool = False) -> str:
-    """Mở vùng nội dung; khung điều hướng được gắn khi xuất trang.
-
-    Args:
-        current: Tên tệp trang hiện tại.
-        wide: Bỏ giới hạn chiều rộng tối đa của khung nội dung.
-
-    Returns:
-        Phần HTML mở khung; đóng bằng :func:`app_shell_close`.
-    """
     extra = " ui-shell-wide" if wide else ""
     return (
         f'<div class="ui-app" id="ui-app">'
@@ -938,88 +862,49 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
     )
 
 
-#: Vá riêng cho trang trực tiếp, chèn vào cuối thẻ ``<style>`` của chính nó.
-#:
-#: Trang này trước đây không dùng biểu định kiểu dùng chung. Khi nạp nó,
-#: trang nhận thêm quy tắc
-#: ``body{font-size:14px;line-height:1.6}`` cùng ``a{text-decoration:none}`` —
-#: hai thứ trang không tự khai báo nên chúng lọt xuống toàn bộ nội dung: đo
-#: được trang cao thêm 235px và liên kết ở đầu trang mất gạch chân.
-#:
-#: Ghim lại theo ``.wrap`` chứ không theo ``body``: ``.wrap`` bọc đúng phần
-#: nội dung của trang, còn khung điều hướng nằm NGOÀI nó nên vẫn giữ nguyên
-#: định kiểu dùng chung.
 _LIVE_PATCH = (
     ".wrap{font-size:16px;line-height:normal}"
     ".wrap a{text-decoration:underline}"
 )
 
-#: Khối điều hướng phẳng viết tay của trang trực tiếp.
 _LIVE_NAV = re.compile(r'<nav class="ui-live-nav".*?</nav>', re.S)
 
 
 def refresh_live_page(docs_dir: Path) -> Path | None:
-    """Làm mới khung điều hướng cho ``live.html``.
-
-    ``live.html`` là trang DUY NHẤT không do builder nào sinh ra: nó được viết
-    tay và commit thẳng. Cái giá của việc đó đã hiện rõ — khối điều hướng
-    trong tệp là bản chép tay của một :data:`SITE_NAV` cũ, nên nó vừa thiếu
-    hai nhóm mới, vừa còn nguyên cách gọi "lô tô" và "ĐB" mà cả dự án đã
-    chuẩn hoá thành "LOTO" và "Đặc Biệt". Chép tay lần nữa là lặp lại đúng
-    lỗi ấy, nên ở đây sinh lại từ nguồn.
-
-    Hàm chạy nhiều lần cho cùng một kết quả; write_page làm mới khung chung.
-
-    Args:
-        docs_dir: Thư mục gốc của trang tĩnh.
-
-    Returns:
-        Đường dẫn tệp đã ghi, hoặc ``None`` nếu tệp không tồn tại.
-    """
     path = Path(docs_dir) / "live.html"
     if not path.exists():
         return None
     text = path.read_text(encoding="utf-8")
     if STYLESHEET_NAME not in text:
         text = text.replace("<style>", f"{stylesheet_link()}\n  <style>", 1)
-    # Trang trực tiếp có khối điều hướng phẳng viết tay của riêng nó. Trước
-    # đây nó được THAY bằng bản dựng từ SITE_NAV; nay menu chân trang đã gỡ
-    # khỏi toàn bộ trang nên khối này bị xoá hẳn, không thay nữa.
     text = _LIVE_NAV.sub("", text)
     if _LIVE_PATCH not in text:
-        # Phải chèn vào đúng thẻ `<style>` của trang, và chèn CUỐI: trang có
-        # biểu định kiểu riêng nên chèn sớm sẽ bị chính nó đè mất.
         text = text.replace("</style>", f"{_LIVE_PATCH}\n  </style>", 1)
     write_page(path, text)
     return path
 
 
 def app_shell_close(current: str = "") -> str:
-    """Đóng vùng nội dung; điều hướng do page_output gắn một lần khi xuất."""
     return "</main></div>"
 
 
 def tailwind_style_tag() -> str:
-    """Trả về thẻ style CSP-safe; không gọi CDN bên ngoài."""
 
     return f'<style id="ui-tailwind-lite">{TAILWIND_LITE_CSS}</style>'
 
 
 def shell_open(*, wide: bool = False) -> str:
-    """Mở container căn giữa dùng chung cho mọi trang."""
 
     extra = " ui-shell-wide" if wide else ""
     return f'<div class="ui-shell{extra}">'
 
 
 def shell_close() -> str:
-    """Đóng container mở bởi :func:`shell_open`."""
 
     return "</div>"
 
 
 def page_header(title: str, subtitle: str = "", meta: Iterable[str] = ()) -> str:
-    """Dựng khối tiêu đề trang thống nhất (đã escape)."""
 
     parts = [
         '<header class="ui-header">',
@@ -1036,7 +921,6 @@ def page_header(title: str, subtitle: str = "", meta: Iterable[str] = ()) -> str
 
 
 def nav_links(links: Sequence[tuple[str, str]], current: str = "") -> str:
-    """Dựng thanh liên kết giữa các trang tĩnh."""
 
     if not links:
         return ""
@@ -1056,11 +940,6 @@ def card(
     flush: bool = False,
     lift: bool = False,
 ) -> str:
-    """Bọc nội dung trong một card thống nhất.
-
-    ``span`` là số cột (1..12) trên breakpoint ``lg``; ``flush`` bỏ padding thân
-    card để bảng chạm sát viền; ``lift`` bật hiệu ứng nâng khi rê chuột.
-    """
 
     classes = ["ui-card"]
     if lift:
@@ -1078,9 +957,6 @@ def card(
     )
 
 
-#: Hai màu chữ dùng cho ô tô nền. Chọn giữa chúng theo tỉ lệ tương phản THỰC
-#: TẾ, không theo ngưỡng độ sáng: một ngưỡng cố định luôn để lọt một dải nền
-#: tầm trung mà cả hai màu đều không đạt chuẩn.
 _INK_LIGHT: Final[str] = "#ffffff"
 _INK_DARK: Final[str] = "#0f172a"
 _INK_DARKEST: Final[str] = "#000000"
@@ -1090,7 +966,6 @@ WCAG_AA_LARGE: Final[float] = 3.0
 
 
 def _srgb_luminance(hex_color: str) -> float:
-    """Độ sáng tương đối theo WCAG của một màu ``#rrggbb``."""
     value = hex_color.lstrip("#")
     if len(value) == 3:
         value = "".join(ch * 2 for ch in value)
@@ -1100,28 +975,15 @@ def _srgb_luminance(hex_color: str) -> float:
 
 
 def contrast_ratio(foreground: str, background: str) -> float:
-    """Tỉ lệ tương phản WCAG giữa hai màu ``#rrggbb`` (1.0 tới 21.0)."""
     a, b = _srgb_luminance(foreground), _srgb_luminance(background)
     lo, hi = min(a, b), max(a, b)
     return (hi + 0.05) / (lo + 0.05)
 
 
 def readable_ink(background: str, *, minimum: float = WCAG_AA_NORMAL) -> str:
-    """Màu chữ đọc được trên ``background``, đảm bảo đạt ``minimum``.
-
-    Cách cũ dùng ngưỡng độ sáng cố định (``luminance < 0.42 → trắng``). Ngưỡng
-    kiểu đó bỏ sót cả một dải nền tầm trung: đo trên trang thật, chữ trắng nằm
-    trên nền xanh ``#8aacf5`` chỉ đạt 2,26:1 và trên nền cam ``#ea580c`` đạt
-    3,56:1 — đều dưới chuẩn AA cho chữ thường.
-
-    Chọn theo tỉ lệ thật thì luôn có lời giải: dải nền mà chữ trắng không đạt
-    và dải mà ``#0f172a`` không đạt chồng lấn nhau, nên thêm màu đen tuyền là
-    phủ kín mọi nền.
-    """
     candidates = (_INK_LIGHT, _INK_DARK, _INK_DARKEST)
     best = max(candidates, key=lambda ink: contrast_ratio(ink, background))
     if contrast_ratio(best, background) >= minimum:
-        # Ưu tiên #0f172a hơn đen tuyền khi cả hai cùng đạt: mềm mắt hơn.
         if best is _INK_DARKEST and contrast_ratio(_INK_DARK, background) >= minimum:
             return _INK_DARK
         return best
@@ -1129,7 +991,6 @@ def readable_ink(background: str, *, minimum: float = WCAG_AA_NORMAL) -> str:
 
 
 def _format_scalar(value: Any) -> str:
-    """Định dạng một giá trị đơn cho bảng, giữ nguyên độ chính xác có nghĩa."""
 
     if isinstance(value, bool):
         return "Có" if value else "Không"
@@ -1147,15 +1008,6 @@ def definition_table(
     label_of: Any = None,
     max_list: int = 6,
 ) -> str:
-    """Dựng bảng nhãn–giá trị từ một ánh xạ lồng nhau.
-
-    Thay cho việc đổ JSON thô ra thẻ ``<pre>``. Khối JSON thô đọc được với người
-    viết ra nó và gần như vô nghĩa với người dùng trang, lại còn lộ ra tên khóa
-    chưa dịch nằm cạnh nhãn đã dịch.
-
-    Dict lồng nhau được làm phẳng thành nhãn hai cấp thay vì lồng bảng trong
-    bảng: bảng lồng nhau trên màn hình hẹp là nguồn tràn ngang kinh điển.
-    """
     resolve = label_of or (lambda key: key)
     overrides = dict(labels or {})
 
@@ -1197,7 +1049,6 @@ def definition_table(
 
 
 def raw_details(payload: Any, *, summary: str = "Xem dữ liệu gốc (JSON)") -> str:
-    """Khối gập lại chứa JSON gốc, dành cho người muốn kiểm chứng số liệu."""
 
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     return (
@@ -1229,11 +1080,6 @@ def render_table(
     empty: str = "Chưa có dữ liệu.",
     key_column: int = -1,
 ) -> str:
-    """Dựng bảng đã canh cột, có header dính và vùng cuộn ngang riêng.
-
-    ``align`` nhận danh sách ``left``/``center``/``right`` theo từng cột. Khi bỏ
-    trống, cột được suy ra từ dữ liệu: giá trị số canh phải, còn lại canh trái.
-    """
 
     body_rows = [list(r) for r in rows]
     if not body_rows:
@@ -1278,12 +1124,9 @@ def dataframe_table(
     empty: str = "Chưa có dữ liệu.",
     key_column: int = -1,
 ) -> str:
-    """Bọc :func:`render_table` cho ``pandas.DataFrame`` đã định dạng sẵn."""
 
     if frame is None or getattr(frame, "empty", True):
         return f'<p class="ui-table-empty">{html.escape(empty)}</p>'
     headers = [str(c) for c in frame.columns]
     rows = frame.astype(object).where(frame.notna(), "").values.tolist()
     return render_table(headers, rows, align=align, empty=empty, key_column=key_column)
-
-

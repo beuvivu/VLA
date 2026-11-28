@@ -30,7 +30,7 @@ def test_clean_exact_width_tokens_still_parse():
 
 def test_embedded_alpha_is_rejected_not_repaired():
     pmap = _complete_map()
-    pmap["special"] = ["12a345"]  # stripping non-digits would incorrectly yield 12345
+    pmap["special"] = ["12a345"]
     assert _parse_result_from_prize_map(date(2026, 9, 1), prize_map=pmap) is None
 
 

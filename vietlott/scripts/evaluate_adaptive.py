@@ -1,8 +1,3 @@
-"""Benchmark tái lập: seed → train prefix → holdout score-before-learn.
-
-Chạy trong vietlott: PYTHONPATH=src python scripts/evaluate_adaptive.py --help.
-Không chạy collector, ghi checkpoint mô hình hay sửa ledger live.
-"""
 from __future__ import annotations
 
 import argparse
@@ -25,19 +20,6 @@ from vlm.forecast.pipeline import MLConfig
 
 
 def _source_provenance(source_root: Path, script_path: Path) -> dict[str, object]:
-    """Fingerprint Python dependencies and the benchmark runner from file bytes.
-
-    Args:
-        source_root: Source directory containing the imported forecast pipeline.
-        script_path: Executed benchmark script, including local modifications.
-
-    Returns:
-        Versioned manifest with per-file hashes and an ordered aggregate hash.
-        All Python files are included to cover indirect scoring dependencies.
-
-    Raises:
-        OSError: Source files cannot be read; an unverifiable run must not finish.
-    """
     def fail_on_scan_error(error: OSError) -> None:
         raise error
 
@@ -60,7 +42,6 @@ def _source_provenance(source_root: Path, script_path: Path) -> dict[str, object
 
 
 def _write_report(path: Path, report: dict) -> None:
-    """Thay báo cáo nguyên tử; giữ báo cáo cũ nếu serialize/write lỗi."""
     raw = json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False).encode('utf-8')
     if path.suffix == '.gz':
         raw = gzip.compress(raw, mtime=0)
@@ -79,7 +60,6 @@ def _write_report(path: Path, report: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Chạy cấu hình cố định và ghi provenance/trace ngoài mẫu."""
     parser = argparse.ArgumentParser(description='Đánh giá Vietlott ngoài mẫu, không tạo chứng nhận live')
     parser.add_argument('--seed-dir', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)

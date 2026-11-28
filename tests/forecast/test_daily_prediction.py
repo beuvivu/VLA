@@ -1,5 +1,3 @@
-"""Kiểm thử quy trình dự đoán hằng ngày, bọc tự khôi phục và workflow."""
-
 from __future__ import annotations
 
 import re
@@ -17,9 +15,6 @@ from core.xsmb_domain import FIELD_WIDTHS
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/daily_prediction.yml"
-
-
-# --- Bọc thử lại -----------------------------------------------------------
 
 
 def test_retry_gives_up_after_the_configured_attempts() -> None:
@@ -48,7 +43,6 @@ def test_retry_returns_as_soon_as_it_succeeds() -> None:
 
 
 def test_retry_does_not_swallow_programming_errors() -> None:
-    """Thử lại một lỗi lập trình chỉ làm log dài ra và che nguyên nhân thật."""
     calls = {"n": 0}
 
     def broken() -> None:
@@ -73,7 +67,6 @@ def test_retry_policy_validates_its_arguments() -> None:
 
 
 def test_first_available_names_the_source_it_used() -> None:
-    """Im lặng thoái lui sang nguồn dự phòng là cách sự cố kéo dài không ai biết."""
 
     def broken() -> str:
         raise RuntimeError("nguồn chính hỏng")
@@ -101,18 +94,13 @@ def test_first_available_needs_at_least_one_source() -> None:
         first_available([])
 
 
-# --- Workflow --------------------------------------------------------------
-
-
 def test_workflow_runs_at_the_vietnamese_draw_time() -> None:
-    """18:35 giờ Việt Nam là 11:35 UTC; GitHub cron luôn tính theo UTC."""
     text = WORKFLOW.read_text(encoding="utf-8")
     crons = re.findall(r'cron:\s*"([^"]+)"', text)
     assert utc_cron_for_vietnam(18, 35) in crons
 
 
 def test_workflow_shares_the_data_pipeline_concurrency_group() -> None:
-    """Hai quy trình cùng ghi vào kho phải xếp hàng, không tranh chấp."""
     text = WORKFLOW.read_text(encoding="utf-8")
     pipeline = (ROOT / ".github/workflows/update-data.yml").read_text(encoding="utf-8")
     group = re.search(r"concurrency:\s*\n\s*group:\s*(\S+)", text).group(1)
@@ -121,13 +109,6 @@ def test_workflow_shares_the_data_pipeline_concurrency_group() -> None:
 
 
 def test_workflow_retries_the_push() -> None:
-    """Thử lại có giới hạn, và mỗi lần thử bắt đầu lại từ ĐẦU nhánh chính.
-
-    Bản cũ `pull --rebase` lên cây cũ: lượt 36037174777 rebase xung đột, cây
-    kẹt giữa chừng và mọi lần thử sau chết vì "unmerged files". Hành vi thật
-    được chạy trong ``tests/repo/test_workflow_shell_behaviour.py``; ở đây chỉ
-    chặn việc ai đó đưa lại đúng câu lệnh ấy.
-    """
     text = WORKFLOW.read_text(encoding="utf-8")
     assert "for attempt in 1 2 3 4" in text
     assert 'git reset --hard "origin/${GITHUB_REF_NAME}"' in text
@@ -136,9 +117,6 @@ def test_workflow_retries_the_push() -> None:
 
 def test_workflow_pins_the_vietnamese_timezone() -> None:
     assert "TZ: Asia/Ho_Chi_Minh" in WORKFLOW.read_text(encoding="utf-8")
-
-
-# --- Bộ chặn hậu đoán ------------------------------------------------------
 
 
 def _history(days: int, end: str) -> pd.DataFrame:
@@ -153,7 +131,6 @@ def _history(days: int, end: str) -> pd.DataFrame:
 def test_runner_refuses_to_predict_a_draw_that_already_happened(
     tmp_path: Path,
 ) -> None:
-    """Kỳ đích đã quay xong thì đây là hậu đoán mang nhãn dự đoán."""
     raw = tmp_path / "xsmb.csv"
     _history(220, "2020-01-01").to_csv(raw, index=False)
     result = subprocess.run(
@@ -170,7 +147,7 @@ def test_runner_refuses_to_predict_a_draw_that_already_happened(
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # phép kiểm tự khẳng định mã bỏ qua riêng
+        check=False,
     )
     assert result.returncode == 3
     assert "hậu đoán" in result.stderr
@@ -192,14 +169,13 @@ def test_runner_refuses_stale_data(tmp_path: Path) -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # phép kiểm tự khẳng định mã bỏ qua riêng
+        check=False,
     )
     assert result.returncode == 3
     assert "cũ hơn" in result.stderr
 
 
 def test_published_bundle_carries_the_evidence_and_the_disclaimer() -> None:
-    """Xác suất không kèm bằng chứng sẽ bị đọc như một lời hứa."""
     import json
 
     path = ROOT / "data/predictions_today.json"

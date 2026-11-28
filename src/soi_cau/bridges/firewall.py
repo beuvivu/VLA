@@ -1,26 +1,3 @@
-"""Cổng bắt buộc giữa việc quét cầu và việc dùng cầu.
-
-Không có lớp này, bộ quét là một cỗ máy sinh phát hiện giả. Với 412.164 giả
-thuyết trên 386 ngày, kỳ vọng có khoảng 104.000 đường cầu "đang chạy 5 nhịp"
-ngay cả khi dữ liệu hoàn toàn không mang tín hiệu — chúng trông y hệt cầu thật:
-cùng chuỗi thắng, cùng bảng thống kê.
-
-Hai lớp sàng, theo đúng giao thức mà ``research_firewall`` đã thiết lập cho lớp
-nghiên cứu của kho:
-
-1. **Benjamini-Hochberg** trên *toàn bộ* họ đã thử, không phải trên phần đã lọc.
-   Lọc trước rồi mới chỉnh đa kiểm định chính là cách con số giả sống sót.
-2. **Max-statistic circular shift**: dịch vòng chuỗi kết quả để phá liên kết
-   ngày–kết quả mà vẫn giữ nguyên cấu trúc tự tương quan, rồi hỏi xem đường cầu
-   mạnh nhất trong họ có mạnh hơn đường mạnh nhất của các họ đã bị phá liên kết
-   hay không. Đây là phép kiểm chống data snooping ở cấp họ, không phải cấp
-   từng giả thuyết.
-
-Vì các phép biến đổi ``reverse_pair`` và ``bo`` đặt cược nhiều con, phép kiểm
-thực tế chạy trên ma trận trúng dựng lại chứ không trên chỉ số con — bản dùng
-chỉ số con trong ``research_firewall`` chỉ đúng cho giả thuyết một con.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -34,8 +11,6 @@ from soi_cau.bridges.scanner import DigitTensor
 from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 DEFAULT_Q_VALUE: Final[float] = 0.05
-#: Mỗi lần dịch tốn một lượt quét đầy đủ họ giả thuyết (khoảng 6 giây
-#: trên 412.164 giả thuyết), nên mặc định thấp và có thể nâng khi cần.
 DEFAULT_PERMUTATIONS: Final[int] = 30
 DEFAULT_SEED: Final[int] = 20260906
 _MIN_SHIFT: Final[int] = 5
@@ -43,11 +18,6 @@ _MIN_SHIFT: Final[int] = 5
 
 @dataclass(frozen=True)
 class SurvivorSet:
-    """Kết quả sàng lọc — kể cả khi không đường cầu nào sống sót.
-
-    ``tested`` luôn được mang theo. Báo cáo "tìm được 12 đường cầu" mà không nói
-    đã thử bao nhiêu giả thuyết là cách trình bày sai lệch nhất có thể ở đây.
-    """
 
     bridges: pd.DataFrame
     tested: int
@@ -67,7 +37,6 @@ class SurvivorSet:
 
     @property
     def passed_reality_check(self) -> bool:
-        """Họ giả thuyết có vượt được phép kiểm chống data snooping không."""
         if not np.isfinite(self.reality_check_p_value):
             return False
         return self.reality_check_p_value <= self.q_value
@@ -89,7 +58,6 @@ class SurvivorSet:
 
 
 class FirewallGate:
-    """Sàng một :class:`BridgeScanResult` xuống tập được phép dùng tiếp."""
 
     def __init__(
         self,
@@ -110,7 +78,6 @@ class FirewallGate:
         tensor: DigitTensor,
         scanner: BridgeScanner,
     ) -> SurvivorSet:
-        """Chạy BH-FDR trên toàn họ rồi kiểm chống data snooping trên phần sống sót."""
         frame = result.frame
         tested = int(len(frame))
         q = bh_fdr(frame["p_value"].to_numpy(dtype=float))
@@ -144,15 +111,7 @@ class FirewallGate:
         tensor: DigitTensor,
         scanner: BridgeScanner,
     ) -> dict[str, float | int]:
-        """Max-statistic circular shift trên TOÀN họ giả thuyết.
-
-        Phân phối rỗng phải lấy trên đúng không gian tìm kiếm đã sinh ra giá trị
-        quan sát. Lấy nó trên riêng tập đã sàng lọc — vốn được chọn *vì* mạnh —
-        sẽ hạ thấp phân phối rỗng một cách giả tạo và cho gần như mọi tập sống
-        sót đều "đạt". Cái giá là mỗi lần dịch tốn một lượt quét đầy đủ, nên số
-        lần dịch mặc định thấp hơn hẳn các phép kiểm rẻ tiền khác.
-        """
-        del survivors  # phân phối rỗng lấy trên toàn họ, không trên phần sống sót
+        del survivors
         target = scanner._target_for(tensor, result.target_type)
         n_days = target.shape[0]
         observed = scanner.family_max_skill(tensor, target, result.target_type)
@@ -174,8 +133,6 @@ class FirewallGate:
         )
         null_max = np.empty(len(shifts), dtype=float)
         for index, shift in enumerate(shifts):
-            # Dịch vòng kết quả, giữ nguyên ứng viên: phá liên kết ngày–kết quả
-            # mà không phá cấu trúc tự tương quan của cả hai chuỗi.
             shifted = np.roll(target, int(shift), axis=0)
             null_max[index] = scanner.family_max_skill(tensor, shifted, result.target_type)
 

@@ -12,7 +12,6 @@ from core.xsmb_domain import FIELD_WIDTH_MAP
 
 logger = logging.getLogger(__name__)
 
-#: Bố cục 27 giải: lấy từ ``core.xsmb_domain``, không khai lại.
 FIELD_WIDTHS: dict[str, int] = FIELD_WIDTH_MAP
 
 PRIZE_GROUPS: list[tuple[str, list[str]]] = [
@@ -140,8 +139,6 @@ def _write_df(ws, df: pd.DataFrame, *, freeze_row: int = 1) -> None:
         for col_idx, value in enumerate(row, start=1):
             cell = ws.cell(row=row_idx, column=col_idx, value=value)
             if isinstance(value, str):
-                # Store lottery codes as text, never as numeric cells with only
-                # cosmetic formatting; this survives workbook reopen/import.
                 cell.number_format = "@"
             cell.alignment = text_align
 
@@ -186,9 +183,6 @@ def _verify_sheet_roundtrip(path: Path, sheet: str, df: pd.DataFrame) -> None:
         for c_idx, expected in enumerate(row, start=1):
             cell = ws.cell(r_idx, c_idx)
             if isinstance(expected, str):
-                # OOXML/openpyxl serializes an empty string as a blank cell and
-                # reads it back as None. This is acceptable only for genuinely
-                # empty display cells (for example a loto head with no tails).
                 if expected == "" and cell.value is None:
                     continue
                 if not isinstance(cell.value, str) or cell.value != expected:
@@ -350,7 +344,6 @@ def _validate_daily_workbook(path: Path) -> int:
 
 
 def validate_excel_outputs(data_dir: Path) -> dict[str, int]:
-    """Verify workbooks preserve every lottery code and all 27 prize values."""
 
     excel_dir = data_dir / "excel"
     raw_path = excel_dir / "xsmb.xlsx"
@@ -377,16 +370,10 @@ def export_excel_outputs(
     data_dir: Path,
     latest_daily_only: bool = False,
 ) -> None:
-    """Export Excel workbooks with exact-width lottery codes.
-
-    Prize cells are stored as strings with Excel text format ``@``. The writer
-    validates all 27 prize fields and immediately reopens every workbook to
-    prove that leading zeroes and exact field widths survived serialization.
-    """
 
     try:
         import openpyxl  # noqa: F401
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         logger.warning("openpyxl is not available; skip Excel export: %s", exc)
         return
 

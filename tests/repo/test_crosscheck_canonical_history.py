@@ -1,11 +1,3 @@
-"""Bộ đối chiếu sổ chuẩn với nơi ghi khác (`scripts/ops/crosscheck_canonical_history.py`).
-
-Trang dựng sẵn theo hình dạng hai nơi ghi đã đọc trên runner ngày 23-11-2026: Minh Ngọc in bảy kỳ trên
-một trang theo ngày (tiêu đề «KẾT QUẢ XỔ SỐ Miền Bắc - dd/mm/yyyy», rồi «Ngày:» và ngày ở một liên kết),
-mketqua in một kỳ dưới dòng «… ngày dd-mm-yyyy». Số liệu là bảy kỳ thật 09 → 15-06-2024 của sổ chuẩn.
-Đảo luật được canh (tách kỳ sai chỗ, so lệch cột, bỏ trang) thì phép kiểm tương ứng đỏ.
-"""
-
 from __future__ import annotations
 
 import importlib.util
@@ -66,7 +58,6 @@ def _mketqua_page(day: date, row: dict[str, str], today: date = date(2026, 11, 2
 def test_the_ledger_columns_follow_the_prize_order(ledger: dict[date, dict[str, str]]) -> None:
     assert len(cc.FIELDS) == 27 and cc.FIELDS[:4] == ("special", "prize1", "prize2_1", "prize2_2")
     june15 = ledger[date(2024, 6, 15)]
-    # Số 0 đầu được giữ (05118, 00383, 026) và giải bảy là hai chữ số.
     assert (june15["prize3_2"], june15["prize3_4"], june15["prize6_2"]) == ("05118", "00383", "026")
     assert [june15[f"prize7_{i}"] for i in range(1, 5)] == ["13", "77", "96", "52"]
 
@@ -75,7 +66,7 @@ def test_the_ledger_columns_follow_the_prize_order(ledger: dict[date, dict[str, 
 def test_a_minhngoc_page_yields_each_of_its_seven_draws(ledger: dict[date, dict[str, str]], heading: bool) -> None:
     days = cc.split_days(cc.text_lines(_minhngoc_page(ledger, heading)), cc._MN_DAY)
     assert sorted(days) == sorted(ledger)
-    assert days == ledger  # từng kỳ đúng 27 ô của chính nó, không lẫn kỳ bên cạnh
+    assert days == ledger
 
 
 def test_a_draw_missing_a_prize_row_is_dropped_not_borrowed_from_the_next_draw(
@@ -124,7 +115,7 @@ def test_the_readers_fetch_each_page_once_and_exit_nonzero_on_a_difference(
         if "minhngoc" in url:
             return _minhngoc_page(ledger)
         day = date(*reversed([int(part) for part in url.rsplit("/", 1)[1].removesuffix(".html").split("-")]))
-        if day == date(2024, 6, 9):  # trang trả kỳ khác ngày hỏi: không được ghi cho ngày hỏi
+        if day == date(2024, 6, 9):
             return _mketqua_page(date(2024, 6, 8), altered[day])
         return _mketqua_page(day, altered[day])
 
@@ -174,7 +165,7 @@ class _Response:
     def iter_content(self, chunk_size: int):
         for chunk in self._chunks:
             if self._clock is not None:
-                self._clock[0] += 10.0  # mỗi mẩu tới sau 10 giây
+                self._clock[0] += 10.0
             yield chunk
 
 
@@ -189,11 +180,10 @@ class _Session:
 
 def test_a_page_is_read_as_utf8_and_abandoned_past_the_total_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
     body = "Ngày: 15/06/2024".encode()
-    # Tiêu đề không khai charset (requests đoán ISO-8859-1) mà chữ vẫn đúng.
     assert cc.fetch_with_deadline(_Session(_Response(200, [body[:5], body[5:]])), "u") == "Ngày: 15/06/2024"
     assert cc.fetch_with_deadline(_Session(_Response(404, [body])), "u") == ""
     clock = [0.0]
     monkeypatch.setattr(cc.time, "monotonic", lambda: clock[0])
     trickle = _Response(200, [b"x"] * 10, clock=clock)
     assert cc.fetch_with_deadline(_Session(trickle), "u", deadline=45.0) == ""
-    assert clock[0] == 50.0  # bỏ ngay mẩu đầu tiên vượt trần, không đọc hết
+    assert clock[0] == 50.0

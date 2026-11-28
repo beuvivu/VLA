@@ -1,5 +1,3 @@
-"""Bốn trang Đặc Biệt phải có đường đọc rõ và giữ đầy đủ bảng/bộ lọc."""
-
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -18,7 +16,6 @@ DRAWS = [{"d": "2026-10-01", "s": "00007", "n": ["07"] * 27}]
 
 @pytest.mark.parametrize("slug", SLUGS)
 def test_special_statistics_owns_the_filter_to_table_flow(tmp_path: Path, slug: str) -> None:
-    """Mất bộ lọc/bảng, menu sai trang hoặc tự chèn hero/guide phải bị phát hiện."""
     spec = next(page for page in PAGES if page.slug == slug)
     target = tmp_path / f"{slug}.html"
     write_page(target, render_page(spec, DRAWS, generated="2026-10-25T00:00:00Z"))
@@ -55,7 +52,6 @@ def test_special_statistics_owns_the_filter_to_table_flow(tmp_path: Path, slug: 
 
 
 def test_special_layout_keeps_the_existing_date_and_preset_modes() -> None:
-    """Đổi layout không được biến mặc định Tất cả thành 90 kỳ hay bỏ ô ngày."""
     for slug in SLUGS:
         spec = next(page for page in PAGES if page.slug == slug)
         page = BeautifulSoup(render_page(spec, DRAWS, generated=""), "html.parser")
@@ -68,7 +64,6 @@ def test_special_layout_keeps_the_existing_date_and_preset_modes() -> None:
 
 @pytest.mark.parametrize("slug", ["giai-db-ngay-mai", "lo-gan", "tan-suat-loto"])
 def test_special_statistics_overlay_stays_off_other_pages(slug: str) -> None:
-    """Lớp riêng không được thay bố cục trang hôm sau hoặc các thống kê khác."""
     spec = next(page for page in PAGES if page.slug == slug)
     page = BeautifulSoup(render_page(spec, DRAWS, generated=""), "html.parser")
     assert page.select_one(".app-specialstats-shell, #app-specialstats-style") is None

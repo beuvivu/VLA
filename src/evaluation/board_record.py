@@ -1,25 +1,3 @@
-"""Thành tích nhiều kỳ của sổ phỏng đoán: mỗi danh sách trúng bao nhiêu so với chọn bừa.
-
-Trang Live chấm sổ phỏng đoán (``prediction_board``) từng kỳ một, và một kỳ là mẫu quá nhỏ để nói
-danh sách nào có kỹ năng. Mô-đun này cộng dồn mọi kỳ đã có kết quả đầy đủ, cho từng danh sách:
-
-- số mục trúng, so với kỳ vọng khi chọn bừa (Σ ``base``, chính xác) và kỳ vọng theo xác suất trang
-  đã công bố (``prob``, thiếu thì ``base`` — đúng như cột "Xác suất · kết quả" của trang Live);
-- số kỳ có ít nhất một mục trúng, so với kỳ vọng khi chọn bừa;
-- p hai phía và p sau hiệu chỉnh Holm trên mọi danh sách, câu kết luận suy ra TỪ p ấy.
-
-Đơn vị chấm là KỲ, mốc là MÔ PHỎNG kỳ quay công bằng (27 đuôi hai số độc lập, đều trên 00–99): các mục
-trong một danh sách thường trùng nhau (cùng chữ số chạm, cặp lộn), nên số mục trúng của một kỳ không
-phải nhị thức — mô phỏng cho đúng phân phối ấy, kể cả tương quan giữa các mục. Tổng qua các kỳ: các kỳ
-độc lập, nên mốc của tổng được rút bằng cách ghép ngẫu nhiên một kỳ mô phỏng cho mỗi kỳ thật.
-
-Phép kiểm chung ("mọi danh sách") cộng mọi danh sách của CÙNG một kỳ trên CÙNG một kỳ mô phỏng — các
-danh sách cùng chấm một kết quả nên không độc lập với nhau — và là một phép kiểm duy nhất, không cần
-hiệu chỉnh.
-
-Kết quả tất định (hạt giống cố định): chạy lại trên cùng sổ và kết quả cho ra cùng từng byte, nên tệp
-chỉ đổi khi có kỳ mới.
-"""
 from __future__ import annotations
 
 import argparse
@@ -40,7 +18,6 @@ LOGGER = logging.getLogger(__name__)
 
 VERSION = 1
 OUT = Path("evaluation") / "board_record" / "record.json"
-#: Kỳ quay công bằng mô phỏng cho mỗi kỳ thật, và số lần ghép để rút mốc của tổng.
 SIMULATIONS = 20_000
 REPLICATES = 20_000
 SEED = 20261104
@@ -49,11 +26,7 @@ DRAWS_PER_DAY = 27
 PRIZE_COLUMNS = list(PRIZE_FIELDS)
 
 
-# --- Luật trúng: cùng nghĩa với ``judge`` của src/web/assets/live-scorecard.js ------------------------
-
-
 def item_hits(rule: dict, counts: np.ndarray, special: np.ndarray) -> np.ndarray:
-    """Mục ``rule`` trúng hay không trên từng kỳ (``counts``: kỳ × 100 số nháy, ``special``: đuôi ĐB)."""
     on = rule["on"]
     if on == "loto":
         numbers = sorted({int(n) for n in rule["numbers"]})
@@ -70,7 +43,6 @@ def item_hits(rule: dict, counts: np.ndarray, special: np.ndarray) -> np.ndarray
 
 
 def list_hits(items: list[dict], counts: np.ndarray, special: np.ndarray) -> np.ndarray:
-    """Số mục trúng của một danh sách trên từng kỳ."""
     total = np.zeros(len(special), dtype=np.int32)
     for item in items:
         total += item_hits(item["rule"], counts, special)
@@ -78,14 +50,12 @@ def list_hits(items: list[dict], counts: np.ndarray, special: np.ndarray) -> np.
 
 
 def outcome(values: list[str]) -> tuple[np.ndarray, np.ndarray]:
-    """Một kỳ thật dưới dạng (1 × 100 số nháy, [đuôi ĐB])."""
     tails = np.array([int(v) % 100 for v in values], dtype=np.int64)
     counts = np.bincount(tails, minlength=100).reshape(1, 100)
     return counts, tails[:1]
 
 
 def fair_draws(rng: np.random.Generator, n: int) -> tuple[np.ndarray, np.ndarray]:
-    """``n`` kỳ quay công bằng: 27 đuôi độc lập, đều trên 00–99; đuôi thứ nhất là của giải Đặc Biệt."""
     tails = rng.integers(0, 100, size=(n, DRAWS_PER_DAY))
     counts = np.zeros((n, 100), dtype=np.int16)
     rows = np.repeat(np.arange(n), DRAWS_PER_DAY)
@@ -93,18 +63,13 @@ def fair_draws(rng: np.random.Generator, n: int) -> tuple[np.ndarray, np.ndarray
     return counts, tails[:, 0]
 
 
-# --- Dữ liệu ------------------------------------------------------------------------------------------
-
-
 def complete_draws(data_dir: Path) -> dict[str, list[str]]:
-    """Kỳ đã quay đủ 27 giải trong sổ chuẩn ``xsmb.csv``: ngày → 27 giá trị theo thứ tự giải."""
     frame = pd.read_csv(data_dir / "xsmb.csv", dtype=str)
     frame = frame.dropna(subset=PRIZE_COLUMNS)
     return {str(row["date"])[:10]: [str(row[c]).strip() for c in PRIZE_COLUMNS] for _, row in frame.iterrows()}
 
 
 def scored_boards(data_dir: Path, draws: dict[str, list[str]]) -> list[dict]:
-    """Sổ phỏng đoán của các kỳ đã có kết quả đầy đủ, theo thứ tự ngày."""
     boards = []
     for path in sorted((data_dir / BOARD_DIR).glob("????-??-??.json")):
         if path.stem in draws:
@@ -112,11 +77,7 @@ def scored_boards(data_dir: Path, draws: dict[str, list[str]]) -> list[dict]:
     return boards
 
 
-# --- Thống kê -----------------------------------------------------------------------------------------
-
-
 def _tail_p(null: np.ndarray, observed: float) -> tuple[float, float]:
-    """p một phía trên và dưới của mốc Monte Carlo, có hiệu chỉnh +1 (không bao giờ bằng 0)."""
     n = len(null)
     return (1 + int((null >= observed).sum())) / (n + 1), (1 + int((null <= observed).sum())) / (n + 1)
 
@@ -133,7 +94,6 @@ def _round(value: float) -> float:
 
 def build_record(boards: list[dict], draws: dict[str, list[str]], *, simulations: int = SIMULATIONS,
                  replicates: int = REPLICATES, seed: int = SEED) -> dict[str, Any]:
-    """Thành tích từng danh sách và của mọi danh sách gộp lại, trên các kỳ ``boards``."""
     rng = np.random.default_rng(seed)
     sim_counts, sim_special = fair_draws(rng, simulations)
 
@@ -177,7 +137,6 @@ def build_record(boards: list[dict], draws: dict[str, list[str]], *, simulations
         family_sims.append(day_family)
 
     def null_total(per_draw: list[np.ndarray]) -> np.ndarray:
-        """Mốc của tổng qua các kỳ: mỗi kỳ thật ghép một kỳ mô phỏng rút ngẫu nhiên, độc lập."""
         picks = rng.integers(0, simulations, size=(replicates, len(per_draw)))
         return np.stack([per_draw[d][picks[:, d]] for d in range(len(per_draw))], axis=1).sum(axis=1)
 
@@ -185,9 +144,6 @@ def build_record(boards: list[dict], draws: dict[str, list[str]], *, simulations
     for row in rows:
         high, low = _tail_p(null_total(sims[row["id"]]), row["hits"])
         row["p_high"], row["p_low"] = high, low
-        # Làm tròn p TRƯỚC khi hiệu chỉnh: Holm nhân p với tới số danh sách, nên tính trên p chưa làm tròn
-        # rồi mới làm tròn thì p_holm đã in lệch Holm của chính các p đã in tới n·0,5·10⁻⁶ (17-11-2026:
-        # 1,2·10⁻⁵ trên 25 danh sách). Người đọc tính lại từ tệp phải ra đúng con số tệp in.
         row["p"] = _round(min(1.0, 2 * min(high, low)))
     for row, adjusted in zip(rows, holm([row["p"] for row in rows]), strict=True):
         row["p_holm"] = adjusted
@@ -223,7 +179,7 @@ def write_record(data_dir: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     args = parser.parse_args(argv)
     out = write_record(args.data_dir)

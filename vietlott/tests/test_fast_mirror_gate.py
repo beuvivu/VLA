@@ -1,9 +1,3 @@
-"""Cổng hồ sơ kiểm chứng của bản sao Keno/Bingo18 (01-11-2026); không gọi mạng thật.
-
-Bản sao cộng đồng chỉ được nhập khi nó trùng tuyệt đối mọi kỳ chính thức của seed mà nó chồng lên
-(đủ dài) VÀ mọi kỳ «trang đăng lại» độc lập của kho cộng đồng mà nó chồng lên (đủ nhiều). Mỗi phép
-kiểm dưới đây đảo đúng một điều kiện và đòi kho không tiến.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -20,9 +14,9 @@ from vietlott_engine.crawler.product_store import ProductStore, ProductSyncPipel
 from tests.test_fallback_sources import DRAW_COLS, _csv, _draw
 
 OFFICIAL = 'vietlott.vn/list'
-SEED_IDS = range(1, 13)        # 12 kỳ chính thức trong seed
-NEW_IDS = range(13, 21)        # 8 kỳ mới chỉ bản sao có
-CROSS_IDS = range(13, 18)      # 5 kỳ mới kho cộng đồng đăng lại từ trang thứ cấp
+SEED_IDS = range(1, 13)
+NEW_IDS = range(13, 21)
+CROSS_IDS = range(13, 18)
 
 
 def digits(did: int) -> list[int]:
@@ -70,13 +64,12 @@ def sync(tmp_path, *, seed_src=OFFICIAL, mirror_override=None, archive_override=
         write_seed(seed, src=seed_src)
     store = ProductStore(tmp_path / 'data', seed_dir=seed)
     if store_rows:
-        # Dòng đã nằm trong kho không mang xuất xứ: đếm chúng là để bản sao tự chứng nhận.
         store.upsert(ProductCode.BINGO18, [{'id': d, 'date': day(d), 'result': digits(d)} for d in SEED_IDS], 'mirror')
     archive = write_archive(tmp_path / 'archive', archive_override)
     text = mirror_text(mirror_override)
 
     async def run():
-        handler = lambda request: httpx.Response(200, text=text)  # noqa: E731
+        handler = lambda request: httpx.Response(200, text=text)
         async with AsyncHttpClient(transport=httpx.MockTransport(handler), rate_limit_per_s=10000, burst=1000) as client:
             pipe = ProductSyncPipeline(client, store, vietlott_base_url='https://official.test',
                                        mirror_base_url='https://mirror.test', canonical_base_url='https://canonical.test',
@@ -131,8 +124,6 @@ def test_the_mirror_is_refused_when_any_part_of_its_evidence_fails(tmp_path, mon
 
 @pytest.mark.parametrize('registered, expect_error', [([[6, 7]], False), ([[6, 6]], True), (None, True)])
 def test_only_gaps_audited_as_absent_everywhere_stop_counting_as_sync_errors(tmp_path, registered, expect_error):
-    """Khoảng hở 6–7 không nguồn nào có: nằm TRỌN trong sổ đã kiểm thì không đỏ; trùng một phần hay
-    không có sổ thì vẫn là lỗi. Sổ không thêm kết quả nào và không làm kho tiến qua khoảng hở mới."""
     seed = tmp_path / 'seed'
     seed.mkdir()
     with gzip.open(seed / 'bingo18.jsonl.gz', 'wt', encoding='utf-8') as fh:
@@ -159,8 +150,6 @@ def _feb(did: int) -> str:
 
 
 def _second_run(tmp_path, republished=()):
-    """Lượt thứ hai: kho đã có kỳ 13–38 từ bản sao; bản sao có 1–40; NhanAZ đăng lại 13–30 và 41–43
-    (mới hơn bản sao), cộng ``republished`` — các dòng thêm vào phân vùng tháng 2."""
     seed = tmp_path / 'seed'
     write_seed(seed)
     store = ProductStore(tmp_path / 'data', seed_dir=seed)
@@ -177,7 +166,7 @@ def _second_run(tmp_path, republished=()):
     text = '\n'.join(json.dumps({'date': _feb(d), 'id': f'{d:07d}', 'result': digits(d)}) for d in range(1, 41)) + '\n'
 
     async def run():
-        handler = lambda request: httpx.Response(200, text=text)  # noqa: E731
+        handler = lambda request: httpx.Response(200, text=text)
         async with AsyncHttpClient(transport=httpx.MockTransport(handler), rate_limit_per_s=10000, burst=1000) as client:
             pipe = ProductSyncPipeline(client, store, vietlott_base_url='https://official.test',
                                        mirror_base_url='https://mirror.test', canonical_base_url='https://canonical.test',
@@ -187,9 +176,6 @@ def _second_run(tmp_path, republished=()):
 
 
 def test_a_later_sync_cross_checks_on_the_mirror_window_and_waits_for_newer_republished_draws(tmp_path):
-    """Lượt production thứ hai ngày 01-11-2026: kho đã đuổi kịp bản sao, phần kho cộng đồng tải theo ngày của
-    kho chỉ còn kỳ MỚI HƠN bản sao, nên phép đối chiếu cũ ra 0 và cổng từ chối mọi lượt sau. Cửa sổ nay neo
-    theo ngày mới nhất của bản sao; kỳ đăng lại mới hơn là «chờ xác minh», không phải lỗi."""
     store, report = _second_run(tmp_path)
     assert store.max_draw_id(ProductCode.BINGO18) == 40
     assert mirror_attempt(report)['audit']['cross_checked'] == 18
@@ -202,8 +188,6 @@ def test_a_later_sync_cross_checks_on_the_mirror_window_and_waits_for_newer_repu
     pytest.param([(44, digits(44)), (44, digits(45))], id='hai-kết-quả-một-kỳ'),
 ])
 def test_a_republished_draw_the_engine_would_reject_is_an_error_not_awaiting(tmp_path, republished):
-    """Kho cộng đồng tự khai ``validation_status=valid``; lời khai ấy không thay được phép kiểm luật trò chơi
-    của engine. Kỳ mới hơn bản sao mà engine sẽ loại (chữ số ngoài 1–6, hai kết quả cho một mã) vẫn là lỗi."""
     store, report = _second_run(tmp_path, republished)
     assert store.max_draw_id(ProductCode.BINGO18) == 40
     assert report.continuity['awaiting_verification'] == 3
@@ -211,7 +195,6 @@ def test_a_republished_draw_the_engine_would_reject_is_an_error_not_awaiting(tmp
 
 
 def test_the_report_names_the_source_of_the_newest_draw_not_every_contributor(tmp_path):
-    """NhanAZ đưa kỳ mới nhất, bản sao chỉ lấp khoảng giữa: `latest_source` là nguồn của kỳ có mã lớn nhất."""
     store = ProductStore(tmp_path / 'data')
     store.upsert(ProductCode.BINGO18, [{'id': d, 'date': day(d), 'result': digits(d)} for d in range(1, 13)], 'seed')
 

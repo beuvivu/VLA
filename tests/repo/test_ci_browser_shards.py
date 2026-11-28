@@ -1,11 +1,3 @@
-"""Job Chromium của CI chạy song song ba nhóm mà KHÔNG bỏ sót phép kiểm nào của job một khối cũ.
-
-Ngày 05-11-2026 job một khối mất 22–29 phút (trần 40), riêng Vietlott UI 12 phút 17 giây; nay chia
-thành ba nhóm. Chia nhóm dễ làm rơi một bước hay một nửa trạng thái mà CI vẫn xanh, nên phép kiểm này
-ghim: mọi kịch bản cũ còn chạy, hai nửa Vietlott phủ đủ 8 trạng thái và không trùng, và job gác giữ
-đúng tên kiểm cũ.
-"""
-
 from __future__ import annotations
 
 import ast
@@ -35,7 +27,7 @@ def _shard_states():
     function = next(node for node in ast.parse(source).body
                     if isinstance(node, ast.FunctionDef) and node.name == "shard_states")
     namespace: dict = {}
-    exec(compile(ast.Module([function], []), "shard_states", "exec"), namespace)  # noqa: S102
+    exec(compile(ast.Module([function], []), "shard_states", "exec"), namespace)
     return namespace["shard_states"]
 
 

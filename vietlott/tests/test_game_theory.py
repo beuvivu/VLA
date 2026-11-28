@@ -40,15 +40,14 @@ def test_population_probabilities_normalised() -> None:
     model = PopularityModel(MEGA_645)
     rng = np.random.default_rng(1)
     uniform = np.sort(np.argpartition(rng.random((200_000, 45)), 6, axis=1)[:, :6] + 1, axis=1)
-    # E_uniform[p(c)]·C(n,k) must be 1 when p is a normalised distribution over combinations
     assert model.popularity_ratio(uniform).mean() == pytest.approx(1.0, rel=0.02)
 
 
 def test_patterns_are_popular_high_numbers_are_not() -> None:
     model = PopularityModel(POWER_655, last_draw=(14, 18, 21, 38, 48, 52))
-    ratio = lambda c: float(model.popularity_ratio(np.array([c]))[0])  # noqa: E731
+    ratio = lambda c: float(model.popularity_ratio(np.array([c]))[0])
     assert ratio((1, 2, 3, 4, 5, 6)) > 50
-    assert ratio((14, 18, 21, 38, 48, 52)) > 20  # copying the last result
+    assert ratio((14, 18, 21, 38, 48, 52)) > 20
     assert ratio((34, 37, 40, 43, 47, 53)) < 0.6
 
 

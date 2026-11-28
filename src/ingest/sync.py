@@ -18,11 +18,6 @@ logger = logging.getLogger(__name__)
 def latest_complete_draw_date(
     *, now: datetime, cutoff: dtime = DEFAULT_DRAW_CUTOFF
 ) -> date:
-    """Return the latest draw date that should have complete results.
-
-    XSMB is typically announced in the evening. If running before the cutoff time
-    (default 18:35 local), we treat "today" as not finished yet.
-    """
     return _latest_complete_draw_date(now=now, cutoff=cutoff)
 
 
@@ -46,19 +41,6 @@ def ensure_up_to_date(
     consensus_recent_days: int = 2,
     non_draw_days: Iterable[str] | None = None,
 ) -> list[datetime]:
-    """Fetch missing draw dates and fill recent holes.
-
-    Improvements:
-    - Uses draw cutoff to avoid fetching incomplete "today".
-    - Fills holes for the last N days (default 365).
-    - Retries failed dates (common with flaky sources / anti-bot).
-
-    Ngày không quay KHÔNG phải lỗ cần lấp. Ngày đã ghi trong
-    ``data/non_draw_days.json`` (``non_draw_days`` mặc định đọc tệp ấy) bị bỏ
-    khỏi danh sách cần lấy; ngày mà chính lần lấy này vừa xác định là không quay
-    thì không thử lại. Trước đó mỗi lượt pipeline hỏi lại bốn ngày Tết 2026,
-    mỗi ngày hai lần kèm thời gian ngủ: ~36 giây cho một kết luận đã biết.
-    """
     tz = ZoneInfo(tz_name)
     now = datetime.now(tz)
     target = latest_complete_draw_date(now=now, cutoff=cutoff)
@@ -68,13 +50,11 @@ def ensure_up_to_date(
 
     missing_set: set = set()
 
-    # 1) Always fetch forward from the latest stored date.
     if existing_last < target:
         for d in _daterange(existing_last + timedelta(days=1), target):
             if d not in existing_dates:
                 missing_set.add(d)
 
-    # 2) Also fill any holes within a recent window.
     hole_start = target - timedelta(days=fill_missing_days_back)
     for d in _daterange(hole_start, target):
         if d not in existing_dates:
@@ -104,9 +84,6 @@ def ensure_up_to_date(
             if lottery.has_date(d):
                 ok = True
                 break
-            # Trong cửa sổ gần, trùng khít còn có thể là trang nguồn CHƯA cập
-            # nhật kỳ mới (bộ phân tích đóng dấu ngày được hỏi lên kỳ cũ), nên
-            # vẫn thử lại. Ngoài cửa sổ thì trùng khít là ngày không quay.
             if lottery.is_no_draw(d) and age_days > consensus_recent_days:
                 break
             sleep_s = retry_backoff_s * attempt
@@ -155,9 +132,6 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     lot = Lottery()
-    # Always load the committed history before fetching. Without this step a
-    # scheduled run would start from an empty in-memory store and could overwrite
-    # the repository history with only the recent fill window.
     lot.load()
     fetched = ensure_up_to_date(
         lottery=lot,

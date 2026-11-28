@@ -14,9 +14,6 @@ from ml.ml_features import FeatureParams, build_ml_table
 from ml.ml_models import PlattCalibratedClassifier
 
 FEATURE_SCHEMA_VERSION = 2
-# Đổi công thức ``model_trust`` thì tăng số này: gói mô hình đã lưu mang trust
-# tính theo luật cũ, và ``ml_predict`` coi gói lệch phiên bản là cũ, học lại.
-# 2 = bỏ sàn 0,35 (03-10-2026).
 TRUST_POLICY_VERSION = 2
 FEATURE_COLUMNS = [
     "target_weekday",
@@ -48,7 +45,6 @@ FEATURE_COLUMNS = [
 def _time_splits(
     unique_days: pd.DatetimeIndex,
 ) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
-    """Four chronological blocks: train | calibration | selection | validation."""
     if len(unique_days) < 80:
         raise RuntimeError("At least 80 historical anchor days are required for ML training.")
     if len(unique_days) >= 180:
@@ -92,8 +88,6 @@ def _downsample(
 
 
 def _candidate_configs() -> list[dict[str, object]]:
-    # Deliberately conservative candidates. Model selection is temporal and the
-    # final validation block remains untouched until the winner is selected.
     return [
         {
             "name": "shallow_smooth",
@@ -143,8 +137,6 @@ def _fit_candidate(
     clf = PlattCalibratedClassifier(base=base)
     clf.fit(X_train, y_train, sample_weight=w_train)
     p_cal = clf.base_.predict_proba(X_cal)[:, 1]
-    # Calibration uses the untouched natural class prevalence. Recency weighting
-    # changes only the time emphasis; it does not rebalance positives/negatives.
     clf.fit_platt(p_cal, y_cal, sample_weight=w_cal)
     return clf
 
@@ -158,17 +150,6 @@ def _metrics(y: np.ndarray, p: np.ndarray) -> tuple[float, float]:
 
 
 def model_trust(logloss_skill: float, brier_skill: float) -> float:
-    """Mức tin mô hình thô khi trộn với tỉ lệ nền: ``p = trust·thô + (1 − trust)·nền``.
-
-    Kỹ năng lấy trên khối thẩm định chưa chạm (kém hơn trong hai thước đo).
-    Không có kỹ năng thì trust = 0, tức thành phần ML phát đúng tỉ lệ nền —
-    cùng tinh thần với ``_trust_from_skill`` của cầu kèo và ``meta_trust``.
-
-    Trước 03-10-2026 công thức có SÀN 0,35: kỹ năng bằng 0 vẫn trộn 35% mô
-    hình thô. Walk-forward 997 kỳ (học lại mỗi 50 kỳ) đo sàn ấy làm hỏng LOTO:
-    so với hằng số z = −2,40, bỏ sàn z = +0,06; bỏ sàn hơn sàn z = +2,44, đều ở
-    hai nửa giai đoạn (+1,52 / +1,92). Đặc Biệt ngang (z = −0,10).
-    """
     return float(np.clip(20.0 * max(0.0, min(logloss_skill, brier_skill)), 0.0, 1.0))
 
 
@@ -225,19 +206,15 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
         clf = _fit_candidate(cfg, X_train, y_train, w_train, X_cal, y_cal, w_cal)
         p_sel = clf.predict_proba(X_select)[:, 1]
         brier_sel, ll_sel = _metrics(y_select, p_sel)
-        # Log-loss is primary because the downstream ensemble consumes calibrated
-        # probabilities; Brier is a small tie-breaker for probability sharpness.
         score = ll_sel + 0.25 * brier_sel
         candidates.append((score, cfg, clf, brier_sel, ll_sel))
 
     candidates.sort(key=lambda item: item[0])
     _, best_cfg, clf, select_brier, select_ll = candidates[0]
 
-    # Untouched final validation metrics.
     p_val = clf.predict_proba(X_val)[:, 1]
     brier, ll = _metrics(y_val, p_val)
 
-    # A leakage-safe constant baseline learned only before the validation block.
     pre_val = X["date"] < val_start
     baseline_prob = float(np.clip(y_np[pre_val.to_numpy()].mean(), 1e-6, 1 - 1e-6))
     baseline_vec = np.full(len(y_val), baseline_prob, dtype=float)
@@ -246,13 +223,10 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
     brier_skill = float(1.0 - brier / baseline_brier) if baseline_brier > 0 else 0.0
     quality_pass = bool(logloss_skill > 0.0 and brier_skill > 0.0)
 
-    # Weak/noisy models stay in the ensemble but are shrunk toward the natural
-    # prevalence rather than being allowed to emit overconfident probabilities.
     trust = model_trust(logloss_skill, brier_skill)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     model_path = out_dir / f"ml_{mode}.joblib"
-    # Học lại trên cùng dữ liệu ở runner khác CPU: tham số lệch bit cuối mà dự báo trùng, giữ tệp cũ.
     dump_pack_unless_equivalent(
         {
             "model_type": "platt_temporal_hgb",

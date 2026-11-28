@@ -1,23 +1,3 @@
-"""Trang «Lô VIP nhiều nháy»: con số về ≥ 2 nháy và cặp xiên 2 cho kỳ tới, in TỪ phép đo.
-
-Đọc ``data/forecast/multi_hit/vip.json`` và ``data/forecast/multi_hit/benchmark.json`` (do ``multi_hit_report.py``
-sinh) rồi dựng ``docs/lo-vip-nhieu-nhay.html``. Trang gọn theo yêu cầu ngày 13-10-2026: năm con, năm
-cặp và một dòng số đo kiểm chứng cho mỗi khối ở trên cùng; phần giải thích thu vào mục «Chi tiết
-phép đo». Không con số hay kết luận nào ở đây được đặt tay:
-
-* năm con là DỰ BÁO cho kỳ kế tiếp của mô hình Lô VIP (``multi_hit_forecast``: kinh nghiệm cầu
-  kèo, cầu hai nháy, cầu LOTO và dữ liệu nhiều nháy), kèm lý do từng con; xác suất in ra được hiệu
-  chỉnh trên các lượt chọn ngoài mẫu, và dòng kinh nghiệm cầu hai nháy là số ĐẾM trên mọi kỳ;
-* tỉ lệ trúng, khoảng tin cậy, z, p và mức tin của mô hình là kiểm chứng walk-forward ngoài mẫu
-  trên mọi kỳ đã quay;
-* "hơn / không hơn chọn bừa" suy từ mức tin ấy (``multi_hit_vip.model_confidence``) và từ việc
-  ứng viên của lượt thử thứ hai có qua được giai đoạn kiểm hay không;
-* phép kiểm độ nhạy cho biết một kết luận âm có nghĩa: cùng giao thức PHẢI bắt được tín hiệu nhẹ
-  cài sẵn, nếu không thì trang ghi "chưa kết luận" thay vì "không hơn".
-
-Đây là khung thách đấu, không vào tổ hợp xác suất của pipeline.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -37,7 +17,6 @@ from web.web_security import security_meta_tags
 PAGE = "lo-vip-nhieu-nhay.html"
 DATA_DIR = "forecast/multi_hit"
 
-#: Tên hiển thị của các chiến lược trong ``multi_hit_benchmark.strategy_scores``.
 STRATEGY_LABELS = {
     "random": "Chọn bừa (đối chứng)",
     "multi_hot_30": "Nhiều kỳ ≥ 2 nháy nhất · 30 kỳ",
@@ -65,11 +44,7 @@ STRATEGY_LABELS = {
 }
 
 _LEVEL_WORD = {"High": "Cao", "Medium": "Trung bình", "Low": "Thấp"}
-#: Ngưỡng ``z`` mà một chiến lược ở giai đoạn kiểm "trông như có tín hiệu" khi đọc lướt.
 Z_GLANCE = 2.0
-
-
-# --------------------------------------------------------------------------- định dạng
 
 
 def _pct(value: float | None, digits: int = 2) -> str:
@@ -121,32 +96,19 @@ def strategy_label(name: str) -> str:
     return STRATEGY_LABELS.get(name, name)
 
 
-# --------------------------------------------------------------------------- kết luận
-
-
 class Loaded(NamedTuple):
-    """Hai tệp đo đã đối chiếu với lịch sử hiện tại."""
 
     vip: dict | None
     bench: dict | None
-    vip_state: str          # "current" | "behind" | "invalid" | "missing"
-    last_date: str          # kỳ mới nhất của sổ kết quả
-    behind_by: int          # số kỳ sổ có thêm sau lần đo mô hình
+    vip_state: str
+    last_date: str
+    behind_by: int
 
 
 def load(data_dir: Path) -> Loaded:
-    """Đọc hai tệp đo và đối chiếu từng tệp với lịch sử hiện tại.
-
-    Bước đo có thể hỏng giữa chừng (pipeline chạy mềm). Hai tệp vì thế có thể là số đo của một lịch
-    sử khác: ``vip.json`` của hôm qua sau khi đã có kỳ mới, hay ``benchmark.json`` của một lịch sử
-    mà một kỳ cũ đã được sửa. Tệp năm con không khớp thì trang không in top-k cho một kỳ đã quay;
-    tệp lượt hai không phải số đo của đúng đoạn lịch sử đã đăng ký (đến ``SECOND_ROUND_UNTIL``) thì
-    bị bỏ.
-    """
     folder = data_dir / DATA_DIR
 
     def read(name: str) -> dict | None:
-        """Tệp đọc không được (cụt, hỏng) thì trả ``{}``: có tệp nhưng không phải số đo hợp lệ."""
         path = folder / name
         if not path.exists():
             return None
@@ -170,18 +132,8 @@ def load(data_dir: Path) -> Loaded:
 
 
 def verdict(vip: dict, bench: dict | None) -> dict:
-    """Kết luận của trang, rút TỪ số đo; không có nhánh nào chọn câu chữ theo ý người viết.
-
-    * ``vip_beats_random``: mức tin của mô hình năm con là Trung bình/Cao, tức lift > 1 và p một phía < 0,05
-      trên kiểm chứng walk-forward.
-    * ``second_round_passes``: ứng viên duy nhất của lượt thử thứ hai qua giai đoạn kiểm.
-    * ``protocol_sensitive``: cùng giao thức bắt được tín hiệu cài sẵn. Không bắt được — hoặc
-      CHƯA CÓ số đo lượt hai và phép kiểm độ nhạy (thiếu tệp, hay tệp bị loại vì lịch sử đã đổi) —
-      thì một kết luận âm không có căn cứ: trang ghi "chưa kết luận".
-    """
     beats = vip["confidence"] in ("High", "Medium")
     second = None if bench is None else bool(bench["candidate_passes"])
-    # Đủ nhạy = tỉ lệ đạt trên nhiều lịch sử cài tín hiệu ≥ ngưỡng đặt trước, không phải một lượt may.
     sensitive = None if bench is None else bool(bench["power"]["sensitive"])
     reason = ""
     if beats or second:
@@ -198,8 +150,6 @@ def verdict(vip: dict, bench: dict | None) -> dict:
 
 _HEADLINE = {
     ("hon", ""): "Có bằng chứng hơn chọn bừa — cần kiểm lại trên các kỳ chưa từng thấy",
-    # Không bác bỏ được "không kỹ năng" chưa phải là chứng minh không có lợi thế: lợi thế nhỏ hơn mức
-    # phép kiểm độ nhạy thấy được vẫn tương thích với số đo. Vì vậy tiêu đề nói "không có bằng chứng".
     ("khong-hon", ""): "Không có bằng chứng hơn chọn bừa",
     ("chua-ket-luan", "giao-thuc-mu"): "Chưa kết luận được: giao thức không bắt được tín hiệu cài sẵn",
     ("chua-ket-luan", "thieu-so-do"): "Chưa kết luận được: chưa có số đo của lượt thử thứ hai và "
@@ -207,8 +157,6 @@ _HEADLINE = {
 }
 
 
-#: Luật chọn cặp không có lượt thử thứ hai hay phép kiểm độ nhạy riêng, nên khi chưa đạt thì chỉ nói
-#: "chưa có bằng chứng", không bao giờ "không hơn".
 _PAIR_HEADLINE = {
     "hon": "Có bằng chứng hơn chọn bừa — cần kiểm lại trên các kỳ chưa từng thấy",
     "chua-co-bang-chung": "Chưa có bằng chứng hơn chọn bừa",
@@ -216,12 +164,10 @@ _PAIR_HEADLINE = {
 
 
 def pair_verdict(section: dict) -> str:
-    """Kết luận của khối cặp, rút từ mức tin (p luôn hợp lệ trên các kỳ tiến cứu)."""
     return "hon" if section["confidence"] in ("High", "Medium") else "chua-co-bang-chung"
 
 
 def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
-    """(tiêu đề, đoạn giải thích) của kết luận, mọi con số lấy từ hai tệp đo."""
     v = verdict(vip, bench)
     bt = vip["backtest"]
     parts = [
@@ -260,9 +206,6 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
         parts.append("Chưa có số đo của lượt thử thứ hai, nên chưa biết phép đo có đủ nhạy để thấy "
                      "một tín hiệu nếu nó có.")
     return _HEADLINE[(v["state"], v["reason"])], " ".join(parts)
-
-
-# --------------------------------------------------------------------------- các khối
 
 
 def conclusion_card(vip: dict, bench: dict | None) -> str:
@@ -305,7 +248,6 @@ def conclusion_card(vip: dict, bench: dict | None) -> str:
 
 
 def _check_line(bt: dict, pro: dict, what: str) -> str:
-    """Một dòng số đo: tỉ lệ trúng đã kiểm trên mọi kỳ, và phần tiến cứu sau ngày chốt."""
     retro = (f"Đã kiểm {_count(bt['draws'])} kỳ: {what} trúng {_pct(bt['rate'])} · chọn bừa cùng kỳ "
              f"{_pct(bt['random_rate'])}")
     after = _date(pro["after"])
@@ -315,9 +257,6 @@ def _check_line(bt: dict, pro: dict, what: str) -> str:
 
 
 def day_line(vip: dict) -> str:
-    """Thước theo KỲ: kỳ có ít nhất một trong k con về ≥ 2 nháy, so với chọn bừa cùng kỳ và với mức mà
-    MỌI cách chọn k con đạt được khi quay công bằng — để người đọc thấy "đa số kỳ trượt" là bản chất
-    của phép chọn, không phải lỗi của một mô hình."""
     bt, pro, k = vip["backtest"], vip["prospective"], vip["config"]["top_k"]
     fair = bt["day_fair"]
     text = (f"Kỳ có ít nhất một trong {k} con về ≥ 2 nháy: {_count(bt['days_hit'])}/{_count(bt['draws'])} kỳ "
@@ -331,7 +270,6 @@ def day_line(vip: dict) -> str:
 
 
 def _strip(items: list[tuple[str, ...]], label: str, extra: str = "") -> str:
-    """Dải số: mỗi mục là (số, dòng phụ, …); mỗi dòng phụ một thẻ ``small``."""
     lis = "".join(f"<li><b>{html.escape(big)}</b>"
                   + "".join(f"<small>{html.escape(line)}</small>" for line in lines) + "</li>"
                   for big, *lines in items)
@@ -340,7 +278,6 @@ def _strip(items: list[tuple[str, ...]], label: str, extra: str = "") -> str:
 
 
 def reasons_list(vip: dict) -> str:
-    """Vì sao mô hình chọn từng con: các tín hiệu cầu kèo / cầu hai nháy đẩy con ấy lên nhiều nhất."""
     items = "".join(
         f'<li><b>{html.escape(p["number"])}</b> {html.escape(" · ".join(p["reasons"]) or "không có tín hiệu nổi bật")}</li>'
         for p in vip["picks"])
@@ -348,7 +285,6 @@ def reasons_list(vip: dict) -> str:
 
 
 def experience_line(vip: dict) -> str:
-    """Kinh nghiệm cầu hai nháy ĐẾM trên mọi kỳ: số cầu đang chạy báo một con → tỉ lệ ≥ 2 nháy kỳ sau."""
     parts = [f"{r['label']} → {_pct(r['rate'])} ({_count(r['observed'])}/{_count(r['seen'])} lần)"
              for r in reversed(vip["experience"])]
     return (f'<p class="app-vip-line app-vip-experience" data-evidence-split>Kinh nghiệm cầu hai nháy, '
@@ -357,7 +293,6 @@ def experience_line(vip: dict) -> str:
 
 
 def picks_card(vip: dict, bench: dict | None = None, *, picks: bool = True) -> str:
-    """Năm con cho kỳ tới, kết luận và một dòng số đo. ``picks=False``: số đo chậm hơn sổ, không in con."""
     v = verdict(vip, bench)
     head = ""
     if picks:
@@ -374,7 +309,6 @@ def picks_card(vip: dict, bench: dict | None = None, *, picks: bool = True) -> s
 
 
 def pairs_card(section: dict | None, *, picks: bool = True) -> str:
-    """Năm cặp xiên 2 cho kỳ tới, kết luận và một dòng số đo."""
     if section is None:
         return '<p class="ui-table-empty">Chưa đủ lịch sử để chọn cặp.</p>'
     window = section["config"]["window"]
@@ -417,7 +351,6 @@ def recent_card(vip: dict) -> str:
                      " ".join(_pair_chip(x) for x in p["picks"]) if p else "—",
                      str(p["hits"]) if p else "—"])
     hits = sum(r["multi"] for r in recent)
-    # Kỳ vọng của chọn bừa phụ thuộc số con về ≥ 2 nháy của TỪNG kỳ đang hiện, không phải trung bình.
     expected = sum(r["expected"] for r in recent)
     line = (f"{len(recent)} kỳ: lô trúng {hits}/{len(recent) * k} lượt ≥ 2 nháy (chọn bừa kỳ vọng "
             f"{_num(expected, 2)})")
@@ -480,7 +413,6 @@ def any_hit_card(bench: dict | None) -> str:
     n = bench["test_draws"]
     widest = max(ks, key=lambda k: abs(cand["multi"][k] - rnd["multi"][k]))
     gap = cand["multi"][widest] - rnd["multi"][widest]
-    # Hai cột đo trên CÙNG các kỳ nên là cặp: sai số chuẩn lấy từ hiệu từng kỳ, do bước đo tính.
     se = bench["any_hit"]["paired_se"]["multi"][widest]
     return (
         f'<p class="ui-muted">Tỉ lệ kỳ có ÍT NHẤT một con trong top-k trúng, trên '
@@ -586,11 +518,7 @@ def method_card(vip: dict) -> str:
     return '<ol class="app-vip-method">' + "".join(f"<li>{html.escape(i)}</li>" for i in items) + "</ol>"
 
 
-# --------------------------------------------------------------------------- trang
-
-
 def behind_notice(vip: dict, last_date: str, behind_by: int) -> str:
-    """Thay cho top-k khi số đo của mô hình chậm hơn sổ kết quả: top-k ấy là cho một kỳ đã quay."""
     return (
         f'<p class="ui-table-empty" data-vip-behind="{behind_by}">Chưa có xếp hạng cho kỳ kế tiếp: '
         f"số đo của mô hình dừng ở ngày {_date(vip['source_date'])}, còn sổ kết quả đã có thêm "
@@ -631,7 +559,6 @@ def _page(body: str, meta: str) -> str:
 
 
 def render_unavailable(last_date: str) -> str:
-    """Trang khi không có số đo nào khớp lịch sử hiện tại: không in con số nào của lịch sử khác."""
     body = card(
         '<p class="ui-table-empty" data-vip-unavailable>Chưa có số đo của mô hình khớp với sổ kết quả '
         f"hiện tại (đến ngày {_date(last_date)}). Trang không in số đo của một lịch sử khác; số đo "
@@ -659,7 +586,6 @@ def render(vip: dict, bench: dict | None, *, last_date: str = "", behind_by: int
         card(power_card(bench), title="Phép đo có đủ nhạy?", span=12, ident="app-vip-power"),
         card(method_card(vip), title="Cách đo", span=12, ident="app-vip-method"),
     ]
-    # Giải thích dài thu vào một mục mở rộng; nút "Cách đọc báo cáo" của phần đầu trang trỏ vào nó.
     body = (
         f'<div class="ui-grid">{"".join(top)}</div>\n'
         '<details class="app-lab-guide app-vip-details" id="app-lab-guide"><summary>Chi tiết phép đo '
@@ -674,7 +600,6 @@ def build(data_dir: Path, docs_dir: Path) -> Path | None:
     write_stylesheet(docs_dir)
     out = docs_dir / PAGE
     if got.vip is None:
-        # Thiếu tệp hay tệp không khớp lịch sử: vẫn GHI ĐÈ trang, đừng để trang cũ với số đo cũ.
         print(f"data/{DATA_DIR}/vip.json {'chưa có' if got.vip_state == 'missing' else 'không khớp'} — "
               "dựng trang chưa có số đo.")
         write_page(out, render_unavailable(got.last_date))
@@ -684,7 +609,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path | None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--docs-dir", default="docs")
     args = parser.parse_args()

@@ -1,11 +1,3 @@
-"""Phân tích 4 bước: làm sạch -> tần suất/cầu/tương quan -> Bayes/Markov -> Confidence.
-
-Mọi thống kê được tính một lần trên dữ liệu thật và N lần trên lịch sử giả lập
-CÔNG BẰNG cùng kích thước (27 giải x T kỳ, mỗi con 00-99 đều nhau). Giá trị
-"tin cậy" của một tín hiệu = tỉ lệ lịch sử công bằng có thống kê LỚN NHẤT
-(trên cả họ giả thuyết) còn nhỏ hơn tín hiệu ấy — tức 1 - p hiệu chỉnh đa kiểm.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -19,10 +11,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-# Thống kê, phân phối null và kiểm ngoài mẫu dùng CHUNG với trang production
-# (src/evaluation/confidence_matrix.py). Bản chép riêng từng lệch khỏi bản production:
-# review PR #104 bắt được script vẫn chấm Markov với null của thống kê khác.
-from evaluation.confidence_matrix import (  # noqa: E402
+from evaluation.confidence_matrix import (
     NAMES,
     SPLIT,
     digits,
@@ -40,7 +29,6 @@ def load(data_dir: Path) -> pd.DataFrame:
 
 
 def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
-    """Chạy phần dữ liệu thật, so với phân phối null, ghi report.json + decision_matrix.csv."""
     sys.path.insert(0, str(ROOT / "src"))
     N = len(null)
     col = {n: i for i, n in enumerate(NAMES)}
@@ -50,7 +38,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
 
     out: dict = {"n_sims": N}
 
-    # ---------------- Bước 1: làm sạch ----------------
     df = load(data_dir)
     raw = pd.read_csv(data_dir / "xsmb.csv")
     dates = pd.to_datetime(df["date"])
@@ -92,7 +79,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     draws = vals.to_numpy()
     T = len(draws)
 
-    # ---------------- Bước 2-3 trên toàn lịch sử ----------------
     s = stats(draws)
     summ = summarize(s)
     out["families"] = {
@@ -104,7 +90,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
         }
         for i, n in enumerate(NAMES)
     }
-    # tỉ lệ lịch sử công bằng có "Bayes ngây thơ" > 0,99 cho ít nhất một con
     out["naive_bayes_false_alarm"] = {
         t: float((null[:, col["bayes_post_max"]] > t).mean()) for t in (0.85, 0.95, 0.99)
     }
@@ -146,8 +131,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     ]
     out["year_blocks_corr"] = float(s["year_persist"])
 
-    # ---------------- Kiểm ngoài mẫu: chọn trên 2015-2023, đo trên 2024-nay ----------------
-    # z tính với phương sai theo từng kỳ quay (các lượt trúng cùng kỳ không độc lập).
     cut = int((dates < SPLIT).sum())
     Tte = T - cut
     out["oos"] = {
@@ -156,7 +139,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     }
     out["oos_span"] = (str(dates.iloc[cut].date()), str(dates.iloc[-1].date()), Tte)
 
-    # ---------------- Bước 4: ma trận quyết định cho kỳ kế tiếp ----------------
     last = draws[-1]
     Dl = digits(draws)[-1]
     best_loto = np.zeros(100)
@@ -236,7 +218,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
         m: {c: float(tab[tab["mode"] == m][f"c_{c}"].max()) for c in ("bayes", "markov", "cau")}
         for m in ("loto", "de")
     }
-    # các con VLA đang công bố cho kỳ 2026-09-28
     pred = json.load(open(data_dir / "predictions_today.json", encoding="utf-8"))
     vla_lo = [r["number"] for r in pred["top_lo_to"]]
     vla_de = pred["top_dac_biet"]["top_numbers"]
@@ -248,7 +229,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     out["vla_lo_probs"] = {r["number"]: r["probability"] for r in pred["top_lo_to"]}
     tab.to_csv(out_dir / "decision_matrix.csv", index=False)
 
-    # ---------------- Rủi ro/lợi nhuận: 10 000 kỳ kế tiếp giả lập ----------------
     rng = np.random.default_rng(928)
     sim = rng.integers(0, 100, size=(10_000, 27))
     picks = np.array([int(x) for x in vla_lo])
@@ -259,7 +239,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
         "mean_occurrences": float(occ.mean()),
         "p_zero_numbers_hit": float((days_any == 0).mean()),
         "p_ge_half": float((days_any >= len(picks) / 2).mean()),
-        # 0, 1, 2, 3, 4 và "≥ 5": ô cuối gộp MỌI kỳ có từ 5 con về trở lên.
         "dist_numbers_hit": np.bincount(days_any, minlength=6)[:5].tolist()
         + [int((days_any >= 5).sum())],
         "breakeven_loto_multiple_per_occurrence": 100 / 27,
@@ -268,7 +247,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     de_picks = np.array([int(x) for x in vla_de])
     out["fwd"]["p_de_in_top10"] = float(np.isin(sim[:, 0], de_picks).mean())
 
-    # ---------------- Vòng phản hồi: vector đã công bố vs kết quả ----------------
     from evaluation import skill_monitor as sm
 
     fb = {}
@@ -276,7 +254,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
         days, P, Y = sm.published_evaluation(data_dir, mode)
         if not len(days):
             continue
-        # Cùng quy ước chấm với trang production (Đặc Biệt theo 100 lớp).
         model = forecast_scores(mode, P, Y)
         base = forecast_scores(mode, np.full_like(P, sm.baseline_rate(mode)), Y)
         fb[mode] = {
@@ -303,7 +280,7 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--sims", type=int, default=10_000)
     ap.add_argument("--data-dir", type=Path, default=ROOT / "data")
     ap.add_argument("--out-dir", type=Path, default=Path("."))

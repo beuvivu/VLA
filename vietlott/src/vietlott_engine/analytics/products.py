@@ -1,10 +1,3 @@
-"""Randomness tests for Keno, Bingo18, Max 3D, Max 3D Pro and Max 4D histories.
-
-Each test compares the history with the exact law of a fair draw; p-values are adjusted
-together with Benjamini–Hochberg. With tens of thousands of draws these tests detect
-very small biases (e.g. Keno: a number drawn 1 % more often than 1/4 of the time).
-"""
-
 from __future__ import annotations
 
 from math import comb
@@ -38,12 +31,9 @@ class ProductRandomnessReport(BaseModel):
 
 
 def _g_test(observed: np.ndarray, expected_p: np.ndarray, min_expected: float = 5.0) -> tuple[float, int, float]:
-    """G-test with tail cells pooled until every expected count ≥ ``min_expected``."""
     n = observed.sum()
     exp = expected_p * n
     obs = observed.astype(float)
-    # pool consecutive cells left to right until each pooled cell expects ≥ min_expected; a short
-    # remainder joins the last pooled cell (totals are kept, so G = 2 Σ o log(o/e) stays valid)
     o_c, e_c = [], []
     acc_o = acc_e = 0.0
     for o, e in zip(obs, exp):
@@ -64,7 +54,6 @@ def _g_test(observed: np.ndarray, expected_p: np.ndarray, min_expected: float = 
 
 
 def _consecutive(h: ProductHistory) -> np.ndarray:
-    """Indices t ≥ 1 whose previous row is the previous draw (id difference 1)."""
     return np.flatnonzero(np.diff(h.draw_ids) == 1) + 1
 
 
@@ -88,13 +77,12 @@ def _chi2_uniform(counts: np.ndarray, factor: float = 1.0) -> tuple[float, int, 
     return chi, df, float(stats.chi2.sf(chi, df))
 
 
-# ------------------------------------------------------------------ Keno
 def keno_tests(h: ProductHistory) -> list[ProductTest]:
     v = h.values.astype(int)
     d = len(v)
     tests = []
     counts = np.bincount(v.ravel(), minlength=81)[1:]
-    chi, df, p = _chi2_uniform(counts, factor=(80 - 1) / (80 - 20))  # without-replacement correction
+    chi, df, p = _chi2_uniform(counts, factor=(80 - 1) / (80 - 20))
     hot, cold = int(np.argmax(counts)) + 1, int(np.argmin(counts)) + 1
     tests.append(ProductTest(name="Tần suất 80 số (χ² hiệu chỉnh)", statistic=chi, df=df, p_value=p, detail=f"nhiều nhất {hot} ({counts.max() / d:.4f}/kỳ), ít nhất {cold} ({counts.min() / d:.4f}/kỳ), kỳ vọng 0.2500"))
     law = np.array([comb(40, x) * comb(40, 20 - x) / comb(80, 20) for x in range(21)])
@@ -118,7 +106,6 @@ def keno_tests(h: ProductHistory) -> list[ProductTest]:
     return tests
 
 
-# ------------------------------------------------------------------ Bingo18
 def bingo18_tests(h: ProductHistory) -> list[ProductTest]:
     v = h.values.astype(int)
     d = len(v)
@@ -151,12 +138,10 @@ def bingo18_tests(h: ProductHistory) -> list[ProductTest]:
     return tests
 
 
-# ------------------------------------------------------------------ Max 3D / Max 4D
 DIGIT_NAMES = {3: ("trăm", "chục", "đơn vị"), 4: ("nghìn", "trăm", "chục", "đơn vị")}
 
 
 def digit_columns(v: np.ndarray, n_digits: int) -> list[np.ndarray]:
-    """Digit arrays from the most significant position to the units."""
     return [(v // 10 ** (n_digits - 1 - k)) % 10 for k in range(n_digits)]
 
 
@@ -192,12 +177,7 @@ def digit_tests(h: ProductHistory, n_digits: int = 3) -> list[ProductTest]:
     return tests
 
 
-def three_digit_tests(h: ProductHistory) -> list[ProductTest]:
-    return digit_tests(h, 3)
-
-
 class CellTest(BaseModel):
-    """One pre-specified (position, digit) hypothesis tested on a new sample."""
 
     product: str
     position: str
@@ -212,7 +192,6 @@ class CellTest(BaseModel):
 
 
 def digit_cell_test(h: ProductHistory, n_digits: int, position_from_right: int, digit: int, alternative: str = "greater") -> CellTest:
-    """Binomial test of a cell chosen *before* looking at ``h`` (e.g. the Max 3D units-digit 6)."""
     col = digit_columns(h.values.astype(int), n_digits)[n_digits - 1 - position_from_right].ravel()
     hits, n = int(np.sum(col == digit)), int(col.size)
     share = hits / n
@@ -247,20 +226,18 @@ class DigitCell(BaseModel):
     confirm_share: float
     confirm_hits: int
     confirm_trials: int
-    confirm_p_value: float  # one-sided, in the direction seen in the discovery sample
+    confirm_p_value: float
     confirm_z: float
 
 
 class DigitReplication(BaseModel):
-    """Pick the most deviant (position, digit) cell in a discovery sample, then test only
-    that cell — a single pre-specified hypothesis — on an independent sample."""
 
     discovery: str
     confirmation: str
     cell: DigitCell
     pooled_share: float
     pooled_ci95: tuple[float, float]
-    per_number_multiplier_max: float  # largest P(number)/0.001 implied by pooled digit shares
+    per_number_multiplier_max: float
     best_number: str
     note: str
 
@@ -277,9 +254,6 @@ def _most_deviant(v: np.ndarray) -> tuple[int, int, float]:
 
 
 def digit_replication(discovery: ProductHistory, confirmation: ProductHistory, discovery_label: str | None = None, confirmation_label: str | None = None) -> DigitReplication:
-    """Out-of-sample check of the strongest digit bias (Max 3D ↔ Max 3D Pro, or first half ↔
-    second half). Selection happens on ``discovery`` only, so the confirmation p-value is
-    honest; the pooled share and per-number multiplier are descriptive."""
     vd, vc = discovery.values.astype(int), confirmation.values.astype(int)
     pos, k, z = _most_deviant(vd)
     dd, dc = _digits(vd)[pos], _digits(vc)[pos]
@@ -320,7 +294,7 @@ def digit_replication(discovery: ProductHistory, confirmation: ProductHistory, d
 
 def split_history(h: ProductHistory, fraction: float = 0.5) -> tuple[ProductHistory, ProductHistory]:
     cut = int(len(h) * fraction)
-    part = lambda s: ProductHistory(h.product, h.draw_ids[s], h.dates[s], h.values[s], h.source)  # noqa: E731
+    part = lambda s: ProductHistory(h.product, h.draw_ids[s], h.dates[s], h.values[s], h.source)
     return part(slice(0, cut)), part(slice(cut, None))
 
 

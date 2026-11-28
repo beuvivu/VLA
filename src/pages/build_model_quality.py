@@ -1,16 +1,5 @@
 from __future__ import annotations
 
-"""Trang Chất lượng mô hình: báo cáo chẩn đoán, không phải bãi số.
-
-Bản cũ in hai bảng LogLoss/Brier. Nó trả lời "hơn kém đường cơ sở bao nhiêu"
-nhưng không trả lời "vì sao", mà "vì sao" mới quyết định phải sửa cái gì. Bản
-này dựng quanh phân rã Murphy: tách phần hiệu chỉnh khỏi phần phân biệt, rồi
-đặt độ sắc và độ phủ đánh giá cạnh nhau để không con số nào đọc lệch được.
-
-Biểu đồ vẽ bằng SVG nội tuyến: chính sách bảo mật của trang đặt
-``default-src 'self'`` nên không gọi được thư viện ngoài, và một biểu đồ vài
-chục điểm thì không đáng đánh đổi lấy phụ thuộc.
-"""
 
 import argparse
 import html
@@ -31,12 +20,6 @@ from web.ui_theme import (
 )
 from web.web_security import security_meta_tags
 
-#: Khung vẽ mặc định cho thẻ NỬA BỀ NGANG.
-#:
-#: Toạ độ người dùng phải xấp xỉ số pixel thật, nếu không cỡ chữ đi theo. SVG
-#: co giãn khớp bề ngang thẻ chứa, nên một viewBox rộng 520 nằm trong thẻ rộng
-#: 1 200px sẽ phóng mọi thứ lên 2,3 lần: nhãn trục đặt 10px hiện ra 23px, to
-#: hơn cả tiêu đề thẻ. Thẻ tràn bề ngang vì thế dùng khung riêng bên dưới.
 PLOT_W, PLOT_H = 520, 300
 WIDE_W, WIDE_H = 1120, 300
 PAD_L, PAD_R, PAD_T, PAD_B = 64, 16, 14, 36
@@ -49,12 +32,10 @@ def _scale(value, lo, hi, out_lo, out_hi):
 
 
 def _axes(x_label: str, y_label: str, ticks_x, ticks_y, w=PLOT_W, h=PLOT_H) -> str:
-    """Lưới và trục ở mức LÙI LẠI: dữ liệu phải là thứ đậm nhất trên khung."""
     parts = [
         f'<rect x="0" y="0" width="{w}" height="{h}" fill="none"/>',
     ]
     for index, (value, x) in enumerate(ticks_x):
-        # Nhãn ở hai mép bị khung cắt mất một nửa nếu vẫn canh giữa.
         anchor = "start" if index == 0 else ("end" if index == len(ticks_x) - 1 else "middle")
         parts.append(
             f'<line x1="{x:.1f}" y1="{PAD_T}" x2="{x:.1f}" y2="{h - PAD_B}" '
@@ -88,12 +69,6 @@ def _frame(body: str, label: str, w=PLOT_W, h=PLOT_H) -> str:
 
 
 def calibration_chart(rows: list[dict], base_rate: float, label: str) -> str:
-    """Xác suất dự báo so với tỉ lệ thực, từng nhóm phân vị.
-
-    Đường chéo là hiệu chỉnh hoàn hảo. Thanh dọc là khoảng Wilson 95%: thiếu
-    nó thì một nhóm 31 dòng trông ngang hàng một nhóm 11 680 dòng, và người
-    đọc kết luận sai về đúng cái nhóm ít tin cậy nhất.
-    """
     if not rows:
         return '<p class="ui-table-empty">Chưa đủ dữ liệu.</p>'
     lo = min(min(r["predicted"] for r in rows), min(r["ci_low"] for r in rows))
@@ -136,7 +111,6 @@ def calibration_chart(rows: list[dict], base_rate: float, label: str) -> str:
 
 
 def sharpness_chart(sharp: dict, label: str) -> str:
-    """Mô hình dám rời tỉ lệ nền bao xa. Vạch đứt là chính tỉ lệ nền."""
     bars = sharp.get("histogram") or []
     if not bars:
         return '<p class="ui-table-empty">Chưa đủ dữ liệu.</p>'
@@ -173,25 +147,10 @@ def sharpness_chart(sharp: dict, label: str) -> str:
 
 
 def skill_chart(skill: dict, label: str) -> str:
-    """Kỹ năng từng kỳ quanh mốc 0, kèm dải ±1,96·SE của trung bình.
-
-    Bảng cũ in "-0,08%" mỗi ngày mà không nói mức dao động thuần nhiễu là bao
-    nhiêu, nên không ai đọc ra được con số ấy có đáng kể hay không.
-
-    Thang dọc cắt ở phân vị 2-98 chứ không ôm trọn dải. Lịch sử này có vài kỳ
-    hỏng nặng đầu năm — một kỳ xuống tận −96% — và nếu để chúng định thang thì
-    227 kỳ còn lại dồn thành một vạch ngang, tức biểu đồ không nói gì về đoạn
-    mà người đọc quan tâm. Điểm nằm ngoài thang KHÔNG bị bỏ đi: nó được vẽ
-    thành hình tam giác ghim ở mép, và chú thích đếm rõ có bao nhiêu điểm như
-    thế. Cắt thang mà im lặng mới là giấu dữ liệu.
-    """
     points = skill.get("points") or []
     if len(points) < 2:
         return '<p class="ui-table-empty">Chưa đủ lịch sử.</p>'
     values = np.asarray([p["skill"] for p in points], dtype=float)
-    # Trung vị ± 6·IQR chứ không phải phân vị 2-98: lịch sử này có 20/229 kỳ
-    # hỏng nặng, nên phân vị 2 vẫn còn ở −84% và thang vẫn bị đè bẹp. Khoảng
-    # tứ phân vị không bị đuôi kéo, nên nó bám đúng phần thân của phân phối.
     q1, median, q3 = np.quantile(values, [0.25, 0.5, 0.75])
     iqr = float(q3 - q1)
     span = max(abs(median) + 6.0 * iqr, 1e-4)
@@ -209,9 +168,6 @@ def skill_chart(skill: dict, label: str) -> str:
                    (points[-1]["date"][5:], px(len(points) - 1))],
                   [(f"{v:+.1%}".replace(".", ","), py(v)) for v in (-span, 0.0, span)],
                   w=WIDE_W, h=WIDE_H)]
-    # Dải chỉ vẽ khi nó NẰM LỌT trong thang. Sai số chuẩn ở đây bị 25 kỳ hỏng
-    # thổi lên 1,5% — rộng hơn cả thang — nên vẽ ra thì nó phủ kín khung và
-    # người đọc tưởng toàn bộ nền là dải, chứ không đọc được gì.
     band = 1.96 * skill.get("stderr", 0.0)
     band_fits = 0 < band <= span
     if band_fits:
@@ -230,8 +186,6 @@ def skill_chart(skill: dict, label: str) -> str:
         tip = f"{point['date']}: {value:+.3%}".replace(".", ",")
         if value < -span or value > span:
             clipped += 1
-            # Tam giác chỉ RA NGOÀI khung: đáy nằm phía trong, đỉnh chạm mép.
-            # Chỉ vào trong thì nó trông như một điểm dữ liệu bình thường.
             base = y - 6.0 if value < 0 else y + 6.0
             body.append(
                 f'<path d="M{x - 4:.1f} {base:.1f} L{x + 4:.1f} {base:.1f} '
@@ -243,10 +197,6 @@ def skill_chart(skill: dict, label: str) -> str:
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.5" fill="var(--ui-chart-1)" opacity=".5">'
             f"<title>{html.escape(tip)}</title></circle>"
         )
-    # Đường tích luỹ NGẮT QUÃNG ở đoạn ra ngoài thang. Vẽ liền thì nó bị ghim
-    # bẹt vào mép và trông như một đường dữ liệu thật nằm ở −1,2%, trong khi
-    # giá trị thật ở đó là −7%. Đường đứt đoạn nói đúng rằng chỗ ấy không đọc
-    # được trên thang này.
     segments: list[list[str]] = []
     for i, point in enumerate(points):
         value = point["cumulative"]
@@ -264,9 +214,6 @@ def skill_chart(skill: dict, label: str) -> str:
                 f'<path d="{" ".join(segment)}" fill="none" stroke="var(--ui-chart-1)" '
                 f'stroke-width="2" stroke-linejoin="round"/>'
             )
-    # Chú thích PHẢI mô tả đúng những gì được vẽ. Bản trước nói "đường đậm là
-    # trung bình tích luỹ, dải xám là ±1,96·SE" trong khi cả hai đều nằm ngoài
-    # thang nên không có trên hình — người đọc đi tìm thứ không tồn tại.
     notes = ["Mỗi chấm là kỹ năng của một kỳ; đường ngang đậm là mốc 0."]
     if any(-span <= point["cumulative"] <= span for point in points):
         notes.append("Đường liền là trung bình tích luỹ, ngắt quãng ở đoạn ra ngoài thang.")
@@ -292,14 +239,7 @@ def skill_chart(skill: dict, label: str) -> str:
     return _frame("".join(body), label, w=WIDE_W, h=WIDE_H) + caption
 
 
-
 def _num(value, digits: int = 7) -> str:
-    """Số thập phân theo quy ước Việt Nam: dấu phẩy làm dấu thập phân.
-
-    Báo cáo cắt ngắn hoặc hỏng sẽ cho ``None`` ở chỗ chờ một con số. Trang
-    phải hiện dấu gạch chứ không được ném ``TypeError`` — một trang chẩn đoán
-    sập vì thiếu một trường thì đúng lúc cần nhất lại không đọc được gì.
-    """
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -310,7 +250,6 @@ def _num(value, digits: int = 7) -> str:
 
 
 def _count(value: int) -> str:
-    """Số đếm với dấu chấm phân nhóm nghìn, đúng quy ước Việt Nam."""
     return f"{int(value):,}".replace(",", ".")
 
 
@@ -319,12 +258,6 @@ def _pct(value: float, digits: int = 4) -> str:
 
 
 def murphy_table(mu: dict) -> str:
-    """Ba thành phần của Brier, kèm ý nghĩa của từng thành phần.
-
-    Cố tình là BẢNG chứ không phải cột chồng. Độ phân giải bằng khoảng 0,02%
-    độ bất định, nên trên cột chồng nó là một lát mỏng hơn một pixel — đúng
-    kiểu biểu đồ giấu mất chính con số đáng đọc nhất.
-    """
     share = mu["resolution_share_of_uncertainty"]
     rows = [
         ("Độ tin cậy", mu["reliability"], "càng nhỏ càng tốt",
@@ -353,7 +286,6 @@ def murphy_table(mu: dict) -> str:
 
 
 def calibration_table(rows: list[dict]) -> str:
-    """Bảng cho chính dữ liệu của biểu đồ hiệu chỉnh — để đọc được không cần màu."""
     if not rows:
         return '<p class="ui-table-empty">Chưa đủ dữ liệu.</p>'
     body = "".join(
@@ -372,7 +304,6 @@ def calibration_table(rows: list[dict]) -> str:
     )
 
 
-#: Ngưỡng đọc p trong hai câu kết luận dưới đây.
 READING_ALPHA = 0.05
 
 
@@ -387,7 +318,6 @@ def _p_text(value) -> str:
 
 
 def calibration_reading(error: dict) -> str:
-    """Câu đọc ECE, suy TỪ p của báo cáo: ECE dương không tự nó là lệch hiệu chỉnh."""
     p = error.get("p_value")
     if not isinstance(p, (int, float)) or p != p:
         return "Chưa đủ dữ liệu để so ECE với mốc của một dự báo hiệu chỉnh hoàn hảo."
@@ -399,7 +329,6 @@ def calibration_reading(error: dict) -> str:
 
 
 def ranking_reading(rank: dict) -> str:
-    """Câu đọc thứ hạng, suy TỪ p hoán vị của báo cáo."""
     p = rank.get("p_value")
     if not isinstance(p, (int, float)) or p != p:
         return "Chưa đủ kỳ để chấm thứ hạng."
@@ -414,7 +343,6 @@ def ranking_reading(rank: dict) -> str:
 
 
 def ranking_table(mode: str, block: dict) -> str:
-    """ECE và thước xếp hạng toàn vector, mỗi dòng đứng cạnh mức của kỳ quay công bằng và p của nó."""
     error, rank = block.get("calibration_error") or {}, block.get("ranking") or {}
     if "ece" not in error or "value" not in rank:
         return '<p class="ui-table-empty">Chưa đủ dữ liệu.</p>'
@@ -449,7 +377,6 @@ def ranking_table(mode: str, block: dict) -> str:
 
 
 def monthly_table(rows: list[dict]) -> str:
-    """Kỹ năng theo tháng lịch; mỗi tháng kèm số kỳ và khoảng 95% của chính nó."""
     if not rows:
         return '<p class="ui-table-empty">Chưa có kỳ đã công bố để gom theo tháng.</p>'
     body = []
@@ -493,7 +420,6 @@ _PRODUCT_WORDS = {"xsmb": "XSMB", "xsmt": "Miền Trung", "xsmn": "Miền Nam"}
 
 
 def _vn_day(value) -> str:
-    """``YYYY-MM-DD`` thành ``dd/mm/yyyy``; thiếu hoặc không phải ngày thì dấu gạch."""
     parts = str(value or "")[:10].split("-")
     if len(parts) == 3 and all(part.isdigit() for part in parts):
         return f"{parts[2]}/{parts[1]}/{parts[0]}"
@@ -501,7 +427,6 @@ def _vn_day(value) -> str:
 
 
 def registry_table(registry: dict) -> str:
-    """Sổ đăng ký mô hình: mỗi mắt xích của chuỗi dự báo, trạng thái đọc từ cổng của chính nó."""
     models = registry.get("models") or []
     if not models:
         return '<p class="ui-table-empty">Chưa có sổ đăng ký mô hình.</p>'
@@ -533,11 +458,6 @@ def registry_table(registry: dict) -> str:
 
 
 def coverage_cards(coverage: dict) -> str:
-    """Bao nhiêu phần lịch sử được chấm từ artifact THẬT đã phát hành.
-
-    Đặt ngay đầu trang vì nó đổi cách đọc mọi con số phía dưới: hai nhóm dòng
-    cho kết quả lệch nhau rất xa, nên một con số gộp là con số vô nghĩa.
-    """
     cards = []
     for row in coverage.get("by_mode", []):
         exact = row["exact_mean_skill"]
@@ -558,8 +478,6 @@ def coverage_cards(coverage: dict) -> str:
     return f'<div class="ui-kpi-grid" data-evidence-split>{joined}</div>'
 
 
-
-#: Lời cho từng trạng thái của bộ theo dõi kỹ năng (``skill_monitor``).
 _MONITOR_WORDS = {
     "chua_du": "Chưa đủ kỳ để kết luận.",
     "vung_0": "Trong vùng 0 — đúng như một kỳ quay công bằng.",
@@ -569,13 +487,6 @@ _MONITOR_WORDS = {
 
 
 def source_cards(report: dict) -> str:
-    """Các con số bên dưới chấm từ đâu, và kỹ năng ngoài mẫu đang ở vùng nào.
-
-    Trang từng chấm một bản DỰNG LẠI bỏ qua hiệu chỉnh — một mô hình khác mô
-    hình được công bố — và in "nhóm dựng lại −7,4%" lẫn Đặc Biệt 25,9%. Nay
-    chấm thẳng vector đã công bố; thẻ này nói rõ điều ấy và cho thấy kết luận
-    của bộ theo dõi, để người đọc không phải tự suy từ biểu đồ.
-    """
     monitor = {row["mode"]: row for row in report.get("monitor", [])}
     cards = []
     for mode, block in report.get("modes", {}).items():
@@ -606,17 +517,6 @@ def source_cards(report: dict) -> str:
 
 
 def _staleness(data_dir: Path, report: dict) -> str:
-    """Báo cáo có cũ hơn lịch sử đánh giá hiện có không.
-
-    Bước chẩn đoán chạy với ``allow_fail`` trong pipeline, nên khi nó hỏng thì
-    builder vẫn dựng trang từ ``report.json`` của lần chạy trước và xuất bản
-    như thường. Không có phép đối chiếu này thì một hỏng hóc lặng lẽ có thể
-    kéo dài nhiều ngày — đúng cách mà bộ ``post-finalization`` từng đỏ 130 lần
-    liên tiếp mà không ai thấy.
-
-    Returns:
-        Chuỗi mô tả độ lệch, hoặc chuỗi rỗng khi báo cáo còn đúng thời.
-    """
     history = data_dir / "evaluation" / "prob_eval" / "ensemble_history.csv"
     if not history.exists():
         return ""
@@ -641,7 +541,6 @@ def _staleness(data_dir: Path, report: dict) -> str:
 
 
 def build(data_dir: Path, docs_dir: Path) -> Path:
-    """Dựng ``docs/model-quality.html`` từ báo cáo chẩn đoán."""
     report_path = data_dir / "evaluation" / "model_quality" / "report.json"
     report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
     modes = report.get("modes", {})
@@ -812,9 +711,6 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 </body>
 </html>
 """
-    # Trang dùng token --ui-chart-1 của biểu định kiểu dùng chung. Dựng trang
-    # mà quên ghi lại biểu định kiểu thì token không tồn tại, `var()` rơi về
-    # giá trị rỗng và mọi nét dữ liệu tô ĐEN — đúng lỗi đã đo được ở bản đầu.
     write_stylesheet(docs_dir)
     out = docs_dir / "model-quality.html"
     write_page(out, page)
@@ -822,7 +718,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--docs-dir", default="docs")
     args = parser.parse_args()

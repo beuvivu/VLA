@@ -1,14 +1,3 @@
-"""Chấm điểm cuốn chiếu từng đặc trưng soi cầu so với đường cơ sở.
-
-Giao thức: với mỗi ngày trong cửa sổ kiểm, dựng đặc trưng từ lịch sử tính TỚI
-ngày hôm trước, xếp hạng 100 con theo từng cột đặc trưng, lấy 27 con đầu (đúng
-số con một kỳ sinh ra) rồi đo tỉ lệ trúng. Đường cơ sở là 0,2374 — tỉ lệ mà một
-con bất kỳ trúng, nên chọn 27 con ngẫu nhiên cũng đạt đúng mức đó.
-
-Con số cần đọc là t-statistic, không phải tỉ lệ trúng. Một đặc trưng đạt 0,245
-nghe như hơn đường cơ sở cho tới khi biết sai số chuẩn của nó là 0,008.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -21,14 +10,12 @@ import pandas as pd
 
 import sys
 
-# Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from soi_cau.features import FeatureContext, default_registry  # noqa: E402
-from core.xsmb_domain import LOTO_DRAWS_PER_DAY, baseline_rate  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from soi_cau.features import FeatureContext, default_registry
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY, baseline_rate
 
-#: |t| > 1,96 là ngưỡng hai phía 5%. Dưới mức đó thì không phân biệt được với nhiễu.
 SIGNIFICANCE_T = 1.96
 
 
@@ -48,8 +35,6 @@ def evaluate(
         if columns is None:
             columns, groups = matrix.columns, matrix.groups
         target = hits[anchor + 1]
-        # Xếp hạng giảm dần theo từng cột; hòa nhau thì lấy con nhỏ hơn trước để
-        # kết quả tất định, không phụ thuộc thứ tự sắp xếp của thư viện.
         order = np.lexsort(
             (
                 np.broadcast_to(np.arange(matrix.values.shape[0])[:, None], matrix.values.shape),
@@ -89,7 +74,7 @@ def evaluate(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="data/xsmb.csv")
     parser.add_argument("--out-dir", default="data/research")
     parser.add_argument("--warmup-days", type=int, default=180)

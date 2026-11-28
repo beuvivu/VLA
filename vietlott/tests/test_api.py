@@ -36,7 +36,7 @@ def test_draws_and_unknown_game(client: TestClient) -> None:
     r = client.get("/games/power655/draws?limit=3").json()
     assert r["total"] == 400 and len(r["draws"]) == 3 and r["draws"][0]["bonus"] is not None
     assert client.get("/games/keno/draws").status_code == 404
-    assert client.get("/games/lotto535/draws").status_code == 409  # known game, no data loaded
+    assert client.get("/games/lotto535/draws").status_code == 409
 
 
 @pytest.mark.parametrize(

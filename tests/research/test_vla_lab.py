@@ -1,5 +1,3 @@
-"""Phòng thử thách mô hình xác suất: không nhìn trước, đúng công thức, có độ nhạy."""
-
 from __future__ import annotations
 
 from dataclasses import replace
@@ -33,7 +31,6 @@ PARAMS = FeatureParams(community_every=60)
 
 
 def _perturb_after(history: History, t: int, seed: int) -> History:
-    """Thay mọi kỳ SAU ``t`` bằng kỳ ngẫu nhiên khác hẳn."""
     other = synthetic_history(len(history), seed, loto_signal=0.0, de_signal=0.0)
     values = history.values.copy()
     digits = history.digits.copy()
@@ -51,7 +48,6 @@ def test_features_never_look_at_the_draw_they_predict(mode: str) -> None:
     assert before.names == after.names
     for k, name in enumerate(before.names):
         assert np.array_equal(before.X[: t + 1, :, k], after.X[: t + 1, :, k]), name
-    # Và phép kiểm không rỗng: đổi tương lai thì hàng tương lai phải đổi.
     assert not np.array_equal(before.X[t + 1 :], after.X[t + 1 :])
 
 
@@ -65,14 +61,12 @@ def test_the_label_of_row_t_is_the_draw_after_t() -> None:
 
 def test_gap_zscore_shrinks_toward_the_geometric_cycle_and_learns_completed_cycles() -> None:
     hit = np.zeros((7, 1), dtype=bool)
-    hit[[0, 2, 6], 0] = True  # chu kỳ hoàn tất: 2 (kỳ 0→2) và 4 (kỳ 2→6)
+    hit[[0, 2, 6], 0] = True
     base = np.full(7, 0.5)
     z = gap_zscore(hit, base, prior_cycles=1.0)
-    # Kỳ 6: hai chu kỳ thật (2, 4) + một chu kỳ ảo mean 2, var 2 → mean 8/3.
     mean = (2 + 4 + 2) / 3
     second = (4 + 16 + (2 + 4)) / 3
     assert z[6, 0] == pytest.approx((0 - mean) / np.sqrt(second - mean**2))
-    # Kỳ 5: gan 3, chỉ có chu kỳ 2 + chu kỳ ảo.
     mean5, second5 = (2 + 2) / 2, (4 + 6) / 2
     assert z[5, 0] == pytest.approx((3 - mean5) / np.sqrt(second5 - mean5**2))
 
@@ -110,7 +104,7 @@ def test_calibration_repairs_an_overconfident_forecast() -> None:
     rng = np.random.default_rng(0)
     true = rng.uniform(0.1, 0.4, size=(4000, 1))
     y = (rng.random(true.shape) < true).astype(float)
-    sharp = 1 / (1 + np.exp(-3 * np.log(true / (1 - true))))  # nhọn gấp 3 lần
+    sharp = 1 / (1 + np.exp(-3 * np.log(true / (1 - true))))
     cal = Calibrator("platt").fit(sharp[:2000], y[:2000])
     fixed = cal.transform(sharp[2000:])
     before = row_logloss("loto", sharp[2000:], y[2000:]).mean()
@@ -140,12 +134,11 @@ def test_walk_forward_never_trains_on_a_draw_it_scores() -> None:
 
 
 def test_the_model_finds_a_planted_special_prize_signal() -> None:
-    """Công cụ đo không mù: Đặc Biệt kỳ sau = kỳ trước + 1 với xác suất 15%."""
     history = synthetic_history(1300, seed=11, loto_signal=0.0, de_signal=0.15)
     feats = build_features(history, "de", FeatureParams())
     hit = history.hits("de")
     T = len(history)
-    model = lambda: BayesianLGBModel("de", replace(ModelConfig(), threads=2))  # noqa: E731
+    model = lambda: BayesianLGBModel("de", replace(ModelConfig(), threads=2))
     res = backtest.run(model, feats.X, hit, T - 300, T - 1, refit_every=150)
     report = backtest.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
                                 np.full(res.probs.shape, 0.01))
@@ -162,7 +155,6 @@ def test_on_pure_noise_the_model_does_not_invent_skill() -> None:
     assert np.allclose(res.probs.sum(axis=1), 1.0)
     report = backtest.evaluate("de", res.probs, history.counts[res.targets], history.special[res.targets],
                                 np.full(res.probs.shape, 0.01))
-    # Không "phát hiện" kỹ năng giả, và dừng sớm + hiệu chỉnh giữ thiệt hại nhỏ.
     assert report["vs_reference"]["z"] < 2
     assert report["logloss_skill"] > -0.005
 
@@ -192,7 +184,7 @@ def test_roi_follows_the_payout_rules() -> None:
     p[:, 7] = 0.9
     p[:, 8] = 0.8
     counts = np.zeros((2, 100), dtype=int)
-    counts[0, 7] = 2  # hai nháy
+    counts[0, 7] = 2
     special = np.array([8, 1])
     lo = backtest.roi_top_k("loto", p, counts, special, 2, pay)
     assert lo["stake"] == 2 * 2 * 23 and lo["return"] == 2 * 80
@@ -201,7 +193,6 @@ def test_roi_follows_the_payout_rules() -> None:
 
 
 def test_a_calibrated_base_rate_never_places_a_positive_ev_bet() -> None:
-    """Ở đúng tỉ lệ nền, lô hoàn 0,94 và Đặc Biệt 0,70: không con nào đáng đánh."""
     pay = backtest.Payout()
     counts = np.zeros((5, 100), dtype=int)
     special = np.zeros(5, dtype=int)
@@ -209,12 +200,11 @@ def test_a_calibrated_base_rate_never_places_a_positive_ev_bet() -> None:
     de = backtest.roi_positive_ev("de", np.full((5, 100), 0.01), counts, special, pay)
     assert lo["bets"] == 0 and de["bets"] == 0
     hot = np.full((5, 100), 0.2365)
-    hot[:, 4] = 0.30  # vượt ngưỡng 80·E[nháy] > 23
+    hot[:, 4] = 0.30
     assert backtest.roi_positive_ev("loto", hot, counts, special, pay)["bets"] == 5
 
 
 def test_constant_model_is_the_skill_zero_reference() -> None:
-    """Mô hình hằng số trùng từng giá trị với mốc kỹ năng 0 của bộ chấm."""
     hit = np.zeros((10, 100), dtype=bool)
     hit[:5, :20] = True
     hit[5:, :40] = True
@@ -224,7 +214,6 @@ def test_constant_model_is_the_skill_zero_reference() -> None:
 
 
 def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> None:
-    """Nhãn của khối dừng sớm không được chạm vào việc chọn (h, α) của tiên nghiệm."""
     seen: list[np.ndarray] = []
     real_fit = DirichletPrior.fit.__func__
 
@@ -245,7 +234,6 @@ def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> Non
 
 
 def test_pmi_treats_missing_evidence_as_no_association() -> None:
-    """Cặp chưa từng gặp (và con chưa từng về) phải ra PMI ≈ 0, không phải log N."""
     from research.vla.features import _pmi
 
     left = np.array([0.0, 500.0, 500.0])
@@ -253,27 +241,25 @@ def test_pmi_treats_missing_evidence_as_no_association() -> None:
     joint = np.array([[0.0, 0.0, 0.0], [0.0, 500.0, 250.0], [0.0, 250.0, 100.0]])
     pmi = _pmi(joint, left, right, total=1000.0)
     assert abs(pmi[0, 0]) < 1e-12 and abs(pmi[0, 1]) < 1e-12
-    assert pmi[1, 2] == pytest.approx(0.0, abs=1e-12)  # 250 = 500·500/1000: độc lập
-    assert pmi[1, 1] > 0.6  # 500 so với kỳ vọng 250: gắn kết
-    assert pmi[2, 2] < -0.8  # 100 so với kỳ vọng 250: tránh nhau
+    assert pmi[1, 2] == pytest.approx(0.0, abs=1e-12)
+    assert pmi[1, 1] > 0.6
+    assert pmi[2, 2] < -0.8
 
 
 def test_target_weekday_follows_the_next_recorded_draw_across_a_break() -> None:
-    """Qua quãng nghỉ, thứ của kỳ đích là thứ của kỳ quay kế tiếp thật."""
     from research.vla.features import weekday_features
 
-    dates = ("2026-02-15", "2026-02-21", "2026-02-22")  # CN → (nghỉ Tết) → T7 → CN
+    dates = ("2026-02-15", "2026-02-21", "2026-02-22")
     sin, cos = weekday_features(dates)
     angle = np.arctan2(sin, cos) % (2 * np.pi)
     weekday = np.rint(angle * 7 / (2 * np.pi)).astype(int) % 7
-    assert weekday.tolist() == [5, 6, 0]  # thứ Bảy, Chủ Nhật, rồi giả định thứ Hai
+    assert weekday.tolist() == [5, 6, 0]
 
 
 def test_the_constant_reference_is_updated_through_each_target_draw() -> None:
-    """Mốc LOTO của kỳ đích k là tỉ lệ về qua kỳ 0..k-1, không đông cứng ở đầu khối."""
     hit = np.zeros((6, 100), dtype=bool)
-    hit[:3, :10] = True  # kỳ 0..2: 10% con về
-    hit[3:, :30] = True  # kỳ 3..5: 30% con về
+    hit[:3, :10] = True
+    hit[3:, :30] = True
     ref = backtest.cumulative_reference("loto", hit, np.array([3, 5]))
     assert ref[0] == pytest.approx(np.full(100, 0.10))
     assert ref[1] == pytest.approx(np.full(100, (0.1 * 3 + 0.3 * 2) / 5))
@@ -281,7 +267,6 @@ def test_the_constant_reference_is_updated_through_each_target_draw() -> None:
 
 
 def _planted_rates(history: History) -> tuple[float, float]:
-    """(tỉ lệ giải bảy thứ nhất = 73 sau kỳ có 37, tỉ lệ Đặc Biệt = kỳ trước + 1)."""
     from core.xsmb_domain import PRIZE_FIELDS
 
     seven = PRIZE_FIELDS.index("prize7_1")
@@ -296,10 +281,7 @@ def test_each_power_check_history_plants_only_its_own_signal() -> None:
 
     loto_73, loto_plus = _planted_rates(power_history("loto", 3000, seed=21))
     de_73, de_plus = _planted_rates(power_history("de", 3000, seed=21))
-    # Tín hiệu của chính chế độ có mặt ...
     assert loto_73 > 0.4 and de_plus > 0.12
-    # ... còn tín hiệu kia chỉ ở mức ngẫu nhiên (1/100): Đặc Biệt là một giải
-    # LOTO, nên cài "Đặc Biệt + 1" vào lịch sử LOTO là thêm một tín hiệu LOTO.
     assert loto_plus < 0.03 and de_73 < 0.03
 
 
@@ -347,7 +329,6 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
     bench.power_check(50)
     assert sorted(made) == ["de", "loto"]
     assert used == [("loto", "loto"), ("de", "de")]
-    # Độ nhạy công bố đo trên lịch sử CHƯA dùng để chọn siêu tham số.
     from research.vla.features import TUNING_SEED
 
     assert TUNING_SEED not in seeds
@@ -385,21 +366,18 @@ def test_the_recorded_production_comparison_never_mixes_reconstructed_rows() -> 
     assert out["reconstructed"]["production_recorded_logloss"] == pytest.approx((0.90 + 0.95 + 0.99) / 3)
 
 
-# --- Mốc tần suất thô và ứng viên mạng nơ-ron (16-11-2026) -----------------------------------
-
-
 def test_frequency_model_is_the_smoothed_raw_rate_of_the_draws_it_has_seen() -> None:
     hit = np.zeros((6, 100), dtype=bool)
-    hit[[0, 1, 4], 7] = True  # con 07 về ở kỳ 0, 1, 4
-    hit[:, 20:44] = True  # 24 con về mọi kỳ, giữ tỉ lệ nền quanh 24%
+    hit[[0, 1, 4], 7] = True
+    hit[:, 20:44] = True
     rows = np.array([1, 4])
     base = (np.cumsum(hit.mean(axis=1)) / np.arange(1, 7))[rows]
     whole = FrequencyModel("loto").predict(None, hit, rows)
-    assert whole[0, 7] == pytest.approx((2 + base[0]) / (2 + 1))  # kỳ 0..1: về 2/2
-    assert whole[1, 7] == pytest.approx((3 + base[1]) / (5 + 1))  # kỳ 0..4: về 3/5
+    assert whole[0, 7] == pytest.approx((2 + base[0]) / (2 + 1))
+    assert whole[1, 7] == pytest.approx((3 + base[1]) / (5 + 1))
     assert whole[1, 99] == pytest.approx((0 + base[1]) / (5 + 1))
     recent = FrequencyModel("loto", window=2).predict(None, hit, rows)
-    assert recent[1, 7] == pytest.approx((1 + base[1]) / (2 + 1))  # chỉ kỳ 3..4: về 1/2
+    assert recent[1, 7] == pytest.approx((1 + base[1]) / (2 + 1))
     special = np.zeros((6, 100), dtype=bool)
     special[np.arange(6), [5, 5, 9, 5, 1, 5]] = True
     q = FrequencyModel("de").predict(None, special, np.array([4]))
@@ -422,7 +400,6 @@ def test_frequency_model_never_reads_a_draw_after_the_row_it_forecasts_from(mode
 
 
 def test_raw_frequency_costs_more_log_loss_than_the_constant_on_a_fair_history() -> None:
-    """Tin tần suất thô trên lịch sử công bằng là trả giá: cửa sổ càng ngắn càng kém hằng số."""
     history = synthetic_history(700, seed=23, loto_signal=0.0, de_signal=0.0)
     hit = history.hits("loto")
     T = len(history)
@@ -449,9 +426,7 @@ def test_neural_model_is_reproducible_calibrated_in_level_and_blind_to_the_futur
     if mode == "de":
         assert first.sum(axis=1) == pytest.approx(np.ones(len(rows)))
     else:
-        # Platt trên khối riêng giữ MỨC ở quanh tỉ lệ nền (~23,8 con mỗi kỳ).
         assert abs(first.sum(axis=1).mean() - 100 * hit[:400].mean()) < 1.5
-    # Đổi mọi kỳ sau hàng huấn luyện cuối: mô hình đã học không đổi, dự báo từ hàng cũ không đổi.
     changed = _perturb_after(history, 400, seed=25)
     feats_changed = build_features(changed, mode, PARAMS)
     model = NeuralModel(mode, config).fit(feats_changed.X, changed.hits(mode), train)
@@ -462,11 +437,6 @@ def test_neural_model_is_reproducible_calibrated_in_level_and_blind_to_the_futur
 
 
 def test_the_neural_model_finds_a_planted_special_prize_signal() -> None:
-    """Công cụ đo không mù với ứng viên nơ-ron: Đặc Biệt kỳ sau = kỳ trước + 1 với xác suất 30%.
-
-    Đo 16-11-2026 trên ba hạt giống (11, 41, 77): z = 6,1 / 6,4 / 5,3. Ở tín hiệu 15% và lịch sử
-    1 300 kỳ mạng chỉ đạt z ≈ 1,3 trong khi LightGBM đạt > 3: mạng kém nhạy hơn ở lịch sử ngắn.
-    """
     history = synthetic_history(1300, seed=11, loto_signal=0.0, de_signal=0.30)
     feats = build_features(history, "de", FeatureParams())
     hit = history.hits("de")

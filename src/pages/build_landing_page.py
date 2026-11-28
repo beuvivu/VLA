@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-"""Build the modern Vietnamese lottery landing page.
-
-The landing page is intentionally self-contained: it embeds the latest draw,
-statistical matrices, AI/ML ranking, and cầu-position evidence into one HTML
-file so docs/index.html still works when opened directly from disk.
-"""
 
 import argparse
 import html
@@ -34,12 +28,10 @@ from web.ui_locale import COLUMN_LABELS, mode_label, value_label
 from core.xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
 from stats.conditional_reading import DISPLAY_COLUMNS as CONDITIONAL_DISPLAY
 from stats.conditional_reading import reading_note as conditional_reading_note
-from web.ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
+from web.ui_theme import readable_ink, stylesheet_link, write_stylesheet
 from web.web_security import json_for_html_script, security_meta_tags
 from web.page_output import write_page
 
-
-NAV_ITEMS = LANDING_SECTIONS
 
 PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
     ("special", "Đặc Biệt", ["special"], "special"),
@@ -65,10 +57,6 @@ PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
 PRETTY_COLS = COLUMN_LABELS
 
 
-#: Nhãn cột rút gọn cho hai bảng đường cầu. Tiêu đề dài như "Độ trễ (ngày)"
-#: hay "Chuỗi hiện tại" đặt sàn bề rộng cho cột chỉ chứa MỘT chữ số — đo được
-#: 99px và 102px cho ô hiện "13" và "3". Rút gọn ở đây thay vì sửa
-#: COLUMN_LABELS dùng chung, vì bảng thống kê bên trang khác còn chỗ rộng.
 PATH_TABLE_LABELS = {
     "lag_days": "Độ trễ",
     "current_streak": "Chuỗi",
@@ -77,7 +65,6 @@ PATH_TABLE_LABELS = {
     "rule_score": "Điểm",
 }
 
-# Căn lề và độ chính xác chỉ thuộc tầng hiển thị; không sửa bảng đầu vào.
 NUMERIC_TABLE_COLUMNS = frozenset({
     "count", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period",
     "top_k", "validation_days", "hit_any_days", "avg_hits_per_day", "val_brier",
@@ -193,7 +180,7 @@ def _last2_from_prize(col: str, value: Any) -> str:
 
 def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     color = hex_color.lstrip("#")
-    return tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+    return tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def _rgb_to_hex(rgb: Iterable[int]) -> str:
@@ -207,7 +194,6 @@ def _mix(low: str, high: str, t: float) -> str:
     return _rgb_to_hex(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-
 def _style_for_value(
     value: float, min_value: float, max_value: float, palette: str
 ) -> tuple[str, str]:
@@ -215,9 +201,6 @@ def _style_for_value(
     span = max(max_value - min_value, 1e-9)
     t = (value - min_value) / span
     bg = _mix(low, high, t)
-    # Chọn màu chữ theo tỉ lệ tương phản thực tế thay vì ngưỡng độ sáng cố
-    # định. Ngưỡng cũ (luminance < 0.42) để lọt cả một dải nền tầm trung: đo
-    # trên trang thật, chữ trắng trên nền #8aacf5 chỉ đạt 2,26:1.
     return bg, readable_ink(bg)
 
 
@@ -315,8 +298,6 @@ def _sort_top(df: pd.DataFrame, col: str, limit: int = 12, ascending: bool = Fal
         return pd.DataFrame()
     out = df.copy()
     out["_sort_value"] = pd.to_numeric(out[col], errors="coerce").fillna(0.0)
-    # Sắp xếp ỔN ĐỊNH: quicksort mặc định của numpy xếp các dòng hoà điểm theo lệnh vector của
-    # CPU, nên runner CI và máy khác in hai dòng cầu cùng điểm theo thứ tự ngược nhau.
     out = out.sort_values("_sort_value", ascending=ascending, kind="stable").drop(columns=["_sort_value"])
     return out.head(limit)
 
@@ -389,14 +370,6 @@ def _load_explain_map(repo_root: Path) -> dict[str, dict[str, Any]]:
 
 
 def _render_live_block(latest: Mapping[str, Any]) -> str:
-    """Khối quay trực tiếp, đặt ở vị trí ưu tiên hàng đầu.
-
-    Trang này là HTML tĩnh sinh sẵn, nên không thể tự biết lúc người dùng mở
-    trang là mấy giờ. Việc chuyển giữa "đang quay" và "đã có kết quả" do
-    JavaScript quyết định theo giờ Việt Nam ngay trên máy người xem — nếu để
-    phía dựng trang quyết định, mọi người mở trang sau đó sẽ thấy một trạng thái
-    đã cũ.
-    """
     date_text = html.escape(str(latest.get("date") or "—"))
     return f"""
       <section id="live" class="section card" data-live-block>
@@ -430,16 +403,12 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
             label = f"{value} lần" if value else "0"
             row_cells.append(
                 f"<button class='tiny-matrix-cell{active}' data-mode='loto' data-number='{n}' "
-                # Ô chỉ in nhãn số; giá trị nằm trong data-value — bằng chứng mở giá trị.
                 f"data-value='{html.escape(str(label))}' data-evidence-value='{html.escape(str(label))}' "
                 f"style='background:{bg};color:{fg}' title='{n}: {label}'>{n}</button>"
             )
         cells.append("".join(row_cells))
     header = "<div></div>" + "".join(f"<div class='matrix-head'>{i}</div>" for i in range(10))
-    # Trên màn hẹp ma trận có min-width 430px; phải bọc trong .matrix-wrap để
-    # phần dư cuộn ngang trong khung thay vì đẩy cả trang tràn ra ngoài.
     return f"<div class='matrix-wrap'><div class='tiny-matrix'>{header}{''.join(cells)}</div></div>"
-
 
 
 def _render_matrix_card(
@@ -493,7 +462,6 @@ def _render_matrix_card(
 
 
 def _label_parts(label: str) -> str:
-    """Nhãn cặp "09-90" thành hai phần tử số; nhãn khác giữ nguyên chữ."""
     parts = label.split("-")
     if len(parts) == 2 and all(p.isdigit() for p in parts):
         return "-".join(f"<span>{html.escape(p)}</span>" for p in parts)
@@ -557,18 +525,6 @@ def _render_bar_card(
 
 
 def _hit_ratio_column(df: pd.DataFrame) -> pd.DataFrame:
-    """Gộp ``hits`` và ``trials`` thành một cột ``hit_ratio`` dạng ``9/391``.
-
-    Hai cột riêng tốn 158px để hiện "3" và "379" — bề rộng do TIÊU ĐỀ "Số lần
-    trúng" đặt sàn chứ không phải do dữ liệu. Gộp lại còn ~90px mà không mất
-    thông tin nào, và "trúng/mẫu" đúng là cách khung căn cứ bên trái đã dùng.
-
-    Args:
-        df: Bảng có hai cột ``hits`` và ``trials``.
-
-    Returns:
-        Bản sao có thêm cột ``hit_ratio``; trả nguyên bản nếu thiếu cột nguồn.
-    """
     if df.empty or not {"hits", "trials"} <= set(df.columns):
         return df
     out = df.copy()
@@ -578,30 +534,7 @@ def _hit_ratio_column(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-
 def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
-    """Bảng tần suất cặp LOTO đồng xuất hiện, kèm mốc so sánh ngẫu nhiên.
-
-    ``src/stats/pair_stats.py`` đã tính bảng này hàng ngày vào
-    ``data/stats/pairs/top_unordered_pairs_top300.csv`` nhưng chưa trang nào hiển
-    thị nó.
-
-    Bảng bắt buộc kèm hai con số, nếu không nó gây hiểu sai: **kỳ vọng** của
-    một cặp bất kỳ, và **cực đại do ngẫu nhiên** trên toàn bộ 4950 cặp. Ở 393
-    kỳ, cặp dẫn đầu có 41 lần so với kỳ vọng 21.6 — nghe như quy luật, nhưng
-    cực đại trên dữ liệu ngẫu nhiên trung bình đã là 39.9. Thiếu cột so sánh
-    thì người đọc chỉ thấy "gấp đôi kỳ vọng".
-
-    Cả hai mốc đều tính lại theo độ dài lịch sử thật
-    (:func:`pair_chance_maximum`), không đóng cứng.
-
-    Args:
-        repo_root: Thư mục gốc của kho.
-        limit: Số cặp hiển thị.
-
-    Returns:
-        Chuỗi HTML của thẻ; chuỗi rỗng nếu chưa có dữ liệu.
-    """
     df = _read_csv(repo_root / "data" / "stats" / "pairs" / "top_unordered_pairs_top300.csv")
     if df.empty or "count" not in df.columns:
         return ""
@@ -666,7 +599,6 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
 
 
 def _pair_number_controls(pair: str) -> str:
-    """Hai số có đích chọn riêng, vẫn giữ cặp và thứ tự từ dữ liệu nguồn."""
     if not re.fullmatch(r"\d{2}-\d{2}", pair):
         return html.escape(pair)
     return '<span class="app-pair-values">' + '<span aria-hidden="true">–</span>'.join(
@@ -693,9 +625,6 @@ def _render_table(
         body = "<div class='empty'>Chưa có dữ liệu.</div>"
     else:
         table_cols = list(rows[0].keys())
-        # Lớp theo tên cột để CSS chỉnh bề rộng từng cột. Cách thay thế là
-        # nth-child, nhưng chỉ số cột đổi theo mỗi lần gọi _render_table nên
-        # quy tắc sẽ trượt sang cột khác lúc nào không hay.
         overrides = dict(labels or {})
         column_classes = {
             c: f"col-{html.escape(c)}" + (
@@ -716,8 +645,6 @@ def _render_table(
                 s = str(value)
                 cls = f' class="{column_classes[c]}"'
                 if c.endswith("rate") or c in {"hit_any_rate", "prob", "p_mean"}:
-                    # p_mean từng in nguyên 8 chữ số thập phân ("0.02544529"):
-                    # vừa rộng vô ích vừa không ai đọc tới số thứ tám.
                     s = _pct(value)
                 elif c in {"number", "number_str", "next_loto", "prev_loto", "prev_special_2d"}:
                     s = _fmt2(value)
@@ -753,9 +680,7 @@ def _render_table(
     """
 
 
-
 def _render_group_bars(repo_root: Path, period: str) -> str:
-    """Hiện đủ 0–9 từ tần suất đã chốt, kèm mẫu số và phạm vi quan sát."""
     df = _read_csv(repo_root / "data" / "stats" / "advanced" / "head_tail_total_loto_current.csv", dtype=str)
     if df.empty or not {"period_kind", "period_key", "group_type", "group_value", "freq"} <= set(df.columns):
         return "<div class='empty'>Chưa có dữ liệu đầu/đuôi/tổng.</div>"
@@ -773,8 +698,6 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     elif period == "day" and re.fullmatch(r"\d{4}-\d{2}-\d{2}", period_key):
         period_text = f"Ngày {period_key[8:]}/{period_key[5:7]}/{period_key[:4]}"
 
-    # Phạm vi chỉ đếm ngày thực sự có dữ liệu trong kỳ, không suy ra số kỳ
-    # từ độ dài tháng hoặc lấy ngày hôm nay thay ngày đã cập nhật.
     history = _read_csv(repo_root / "data" / "xsmb.csv", dtype=str)
     coverage = "Chưa có thông tin phạm vi ngày quan sát."
     if not history.empty and "date" in history.columns:
@@ -793,7 +716,6 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
 
     cards = []
     _, high = PALETTES["green"]
-    # Cùng phép đo tần suất LOTO nên cả ba biểu đồ giữ cùng sắc xanh lục.
     for group, title, label, description in (
         ("head", "Đầu · hàng chục", "Đầu", "Chữ số hàng chục của hai số cuối. Ví dụ: 68 có đầu 6."),
         ("tail", "Đuôi · hàng đơn vị", "Đuôi", "Chữ số hàng đơn vị của hai số cuối. Ví dụ: 68 có đuôi 8."),
@@ -836,7 +758,6 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
 
 
 def _render_daily_forecast(repo_root: Path, anchor_date: str) -> str:
-    """Thẻ gọn cạnh kết quả: chỉ hiện xác suất của đúng kỳ tiếp theo."""
     forecast = load_daily_forecast(repo_root / "data", anchor_date)
     heading = '<h3>Dự báo kỳ tiếp theo</h3>'
     if forecast is None:
@@ -889,15 +810,6 @@ def _render_daily_forecast(repo_root: Path, anchor_date: str) -> str:
     )
 
 
-#: Biểu định kiểu của trang tổng hợp.
-#:
-#: Trước đây 1 250 dòng CSS này nằm TRONG f-string của ``_render_html``,
-#: chiếm 76% một hàm dài 1 795 dòng. Nằm trong f-string nghĩa là mọi dấu
-#: ngoặc CSS phải viết đôi (``{{``/``}}``) — cú pháp CSS bị bóp méo chỉ vì
-#: chỗ đặt, và mỗi lần sửa một quy tắc là một lần phải nhớ nhân đôi.
-#:
-#: Khối này KHÔNG nội suy biến nào (đã kiểm: 0 chỗ), nên nó là văn bản
-#: thuần và thuộc về một hằng số, không thuộc về thân hàm.
 _LANDING_CSS = """\
     /* Thẻ dự báo lấp phần dưới hai bảng phụ, giữ nguyên bảng giải bên trái. */
     #app-daily-results .tr-day-extra { display: contents; }
@@ -1992,12 +1904,6 @@ _LANDING_CSS = """\
     }"""
 
 
-#: Mã JavaScript của trang tổng hợp.
-#:
-#: Cùng lý do như ``_LANDING_CSS``: 120 dòng này không nội suy biến nào
-#: (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên mọi dấu ngoặc khối và
-#: mọi object literal phải viết đôi — cú pháp JavaScript bị bóp méo chỉ vì
-#: chỗ đặt.
 _LANDING_SCRIPT = """\
     const APP_DATA = JSON.parse(document.getElementById('landing-data').textContent);
 
@@ -2163,22 +2069,6 @@ _LANDING_SCRIPT = """\
 def _render_html(
     repo_root: Path, *, desktop_view: bool = False, generated_at: str | None = None
 ) -> str:
-    """Dựng một bản trang tổng hợp.
-
-    Args:
-        repo_root: Thư mục gốc kho mã.
-        desktop_view: Gắn lớp ``desktop-view`` lên thẻ body.
-        generated_at: Mốc thời gian đã chốt sẵn. Bỏ trống thì lấy giờ hiện tại.
-
-    Returns:
-        Chuỗi HTML hoàn chỉnh.
-
-    ``generated_at`` phải nhận được từ bên ngoài vì hàm này được gọi HAI lần
-    cho hai bản của cùng một trang. Trước đây mỗi lần gọi tự lấy giờ riêng, nên
-    một lần dựng vắt qua ranh giới phút sẽ sinh ra hai trang ghi hai thời điểm
-    khác nhau — tái hiện được: index.html ghi "09:23 UTC" còn
-    landing_desktop.html ghi "09:24 UTC" cho cùng một lần chạy.
-    """
     latest = _latest_draw(repo_root)
     bridge_panel = (best_panel(load_position_bridges(repo_root / "data"), latest["date"])
                     if latest.get("draw") else "")
@@ -2192,8 +2082,6 @@ def _render_html(
         repo_root / "data" / "stats" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
     )
 
-    # Cùng phép xếp với bản chụp theo ngày mà trang trực tiếp đọc
-    # (``cau_keo_daily_top``): hai nơi phải ra đúng một bộ 10 số.
     ai_loto = top_by_cau_score(
         _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str)
     )
@@ -2280,7 +2168,6 @@ def _render_html(
     live_block = _render_live_block(latest)
 
     def _tile_desc(desc: str) -> str:
-        """Dòng phụ "2 số cuối: 61": chỉ 61 là kết quả, nên chỉ nó thành một giá trị."""
         label, sep, value = desc.rpartition(": ")
         if sep and value.isdigit():
             return f"{html.escape(label)}: <b>{html.escape(value)}</b>"
@@ -2593,30 +2480,10 @@ def _render_html(
 
 
 def _history_days(repo_root: Path) -> int:
-    """Số kỳ quay liên tục có trong tệp kết quả.
-
-    Args:
-        repo_root: Thư mục gốc của kho.
-
-    Returns:
-        Số dòng dữ liệu, hoặc 0 nếu chưa đọc được tệp.
-    """
     return int(len(read_csv_or_empty(repo_root / "data" / "xsmb.csv")))
 
 
 def _model_grade(repo_root: Path) -> str:
-    """Hạng chất lượng mô hình, quy từ kỹ năng log-loss đã đo.
-
-    Thẻ này cố ý KHÔNG hiện một con số phần trăm. Kỹ năng đo được nằm ở mức
-    một phần vạn, nên in ra "0,07%" sẽ gợi ý một độ chính xác mà phép đo không
-    có. Một chữ cái nói đúng điều cần nói: mô hình có vượt nền hay không.
-
-    Args:
-        repo_root: Thư mục gốc của kho.
-
-    Returns:
-        Một trong ``"A"``, ``"B"``, ``"C"`` hoặc ``"—"`` khi chưa có số liệu.
-    """
     scores = read_json_or_empty(repo_root / "data" / "research" / "model_scores.json")
     modes = scores.get("modes") if isinstance(scores, dict) else None
     if not isinstance(modes, dict) or not modes:
@@ -2630,24 +2497,9 @@ def _model_grade(repo_root: Path) -> str:
 
 
 def build_landing_page(*, repo_root: Path, docs_dir: Path | None = None) -> list[Path]:
-    """Dựng trang tổng hợp và ghi ra ``docs_dir``.
-
-    Args:
-        repo_root: Thư mục gốc kho, nơi ĐỌC dữ liệu.
-        docs_dir: Thư mục ghi kết quả. Mặc định ``repo_root/docs``.
-
-    Returns:
-        Danh sách tệp đã ghi.
-
-    Tách nơi ghi khỏi nơi đọc để test dựng được vào thư mục tạm. Trước đây hai
-    thứ này dính làm một, nên chạy bộ kiểm thử là ghi đè docs/ của kho thật:
-    cây làm việc bẩn sau mỗi lần chạy pytest, và bẩn theo dạng "ngược pha" vì
-    chuỗi builder đầy đủ cho ra HTML khác với một builder chạy lẻ.
-    """
     docs_dir = docs_dir if docs_dir is not None else repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)
-    # MỘT mốc thời gian cho cả hai bản: chúng là cùng một lần dựng.
     stamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
     html_doc = (
         "\n".join(

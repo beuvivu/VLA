@@ -3,29 +3,20 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
 
-// Vòng thăm dò của docs/live.html (trang viết tay duy nhất), chạy đúng mã của trang.
-// Trang xuất bản không được mang chú thích, nên lý do nằm ở đây:
-// - chỉ một lượt tải tại một thời điểm: đổi tab gọi load() khi lượt trước còn chờ thì hai
-//   phản hồi về lệch thứ tự, và bản cũ ("đang cập nhật") có thể đè bản mới ("đã xác minh");
-// - fetch có hạn: trình duyệt không tự đặt hạn, một kết nối treo làm đứng cả vòng thăm dò
-//   vài phút, đúng lúc đang quay số.
 const html = readFileSync(new URL('../../docs/live.html', import.meta.url), 'utf8');
 
 function setup(t, fetcher, extra = {}) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
-    pretendToBeVisual: true,                     // document.hidden = false, như tab đang mở
+    pretendToBeVisual: true,
     url: 'https://example.test/live.html',
-    virtualConsole: new VirtualConsole(),        // các script khác của khung không phải đối tượng kiểm
+    virtualConsole: new VirtualConsole(),
     beforeParse(window) {
       window.fetch = fetcher;
       window.LIVE_RAW_URL = 'https://example.test/live.json';
       Object.assign(window, extra);
     },
   });
-  // Lượt tải cuối (do timers.advance hay đổi tab gọi) có thể còn chạy sau câu kiểm cuối. Đóng
-  // cửa sổ giữa chừng thì schedule() đọc document đã đóng và ném unhandledRejection — node:test
-  // tính là phép kiểm hỏng (đỏ thật trên main ngày 31-10-2026). Chờ hàng đợi cạn rồi mới đóng.
   t.after(async () => {
     for (let round = 0; round < 3; round += 1) await tick();
     dom.window.close();
@@ -38,7 +29,6 @@ const snapshot = (status, drawDate = '2026-10-08', prizes = {}) => ({
 });
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-// Điều khiển thời gian của trang, giữ nguyên mã dựng ô và vòng tải thật.
 function clock() {
   let now = 0, nextId = 0;
   const timers = new Map();

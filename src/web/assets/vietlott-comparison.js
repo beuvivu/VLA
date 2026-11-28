@@ -1,8 +1,6 @@
-/* Đối chiếu hồi cứu trên thiết bị; không ghi vào sổ dự báo đã đăng ký. */
 (() => {
   "use strict";
 
-  // Mức giải và cơ chế số đặc biệt theo core/games.py của engine Vietlott.
   const games = {
     mega645: {
       name: "Mega 6/45", total: 6, maximum: 45, bonus: "none",

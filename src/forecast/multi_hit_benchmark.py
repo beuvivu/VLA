@@ -1,36 +1,3 @@
-"""Lượt thử thứ hai cho "lô nhiều nháy" (≥ 2 nháy một kỳ): dò rộng, chọn trước, kiểm một lần.
-
-Lượt đầu (``src/forecast/multi_hit_vip.py``, 08-10-2026) cho top-5 trúng 2,91%, đúng bằng chọn bừa. Lượt
-này hỏi câu rộng hơn: có CÁCH CHẤM NÀO trong các họ ý tưởng thường gặp — tần suất ở mọi cửa sổ,
-lô gan, lặp kỳ trước, theo thứ trong tuần, thiên lệch theo vị trí giải hay theo chữ số, hồi quy
-logistic và cây tăng cường trên toàn bộ đặc trưng — đưa top-5 lên trên mức nền không?
-
-Giao thức, cố định TRƯỚC khi chạy trên dữ liệu thật (đổi giao thức sau khi thấy kết quả là tự lừa):
-
-1. Mọi chiến lược cho điểm ``S[t, i]`` chỉ từ các kỳ < t. Hoà điểm được phá bằng nhiễu nhỏ cố
-   định theo hạt giống, để không chiến lược nào được lợi vì luôn chọn số nhỏ.
-2. Giai đoạn phát triển: kỳ ``WARMUP`` tới ``T − HOLDOUT``. Giai đoạn kiểm: ``HOLDOUT`` kỳ cuối.
-3. Chấm: số lượt trúng của top-k so với kỳ vọng khi chọn bừa k trong 100 con CÙNG KỲ ấy. Với
-   m_t con về ≥ 2 nháy ở kỳ t, chọn bừa trúng theo phân phối siêu bội: kỳ vọng k·m_t/100, phương
-   sai k·(m_t/100)·(1 − m_t/100)·(100 − k)/99. Cộng qua các kỳ ra điểm z. Phép so này giữ nguyên
-   độ dao động của chính các kỳ đã quay, nên không cần giả định 27 lô độc lập.
-4. Trên giai đoạn phát triển: p một phía của mọi chiến lược, hiệu chỉnh Holm. Chiến lược có z
-   cao nhất là ỨNG VIÊN DUY NHẤT.
-5. Giai đoạn kiểm chỉ quyết định ứng viên ấy: đạt khi p một phía < ``ALPHA``. Các chiến lược
-   khác vẫn được in ở giai đoạn kiểm để minh bạch, nhưng không dùng để kết luận (chọn cái tốt
-   nhất trên giai đoạn kiểm là rò rỉ).
-6. Độ nhạy: cùng giao thức trên lịch sử giả định có cài tín hiệu nhẹ phải tìm ra và qua được
-   giai đoạn kiểm (``--power-check``).
-
-Chạy thẳng module (lớp vỏ dòng lệnh cũ trong thư mục kịch bản nghiên cứu đã gỡ ngày 15-11-2026):
-
-    PYTHONPATH=src python3 src/forecast/multi_hit_benchmark.py --until 2026-10-12                 # dữ liệu thật, ~2 phút
-    PYTHONPATH=src python3 src/forecast/multi_hit_benchmark.py --until 2026-10-12 --power-check   # thêm kiểm độ nhạy
-    PYTHONPATH=src python3 src/forecast/multi_hit_benchmark.py --json /tmp/multi.json
-
-Trang «Lô VIP nhiều nháy» in kết quả của giao thức này qua ``multi_hit_report.py``.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -70,15 +37,11 @@ TOP_K = 5
 ALPHA = 0.01
 REFIT_EVERY = 250
 TIE_SEED = 20261012
-#: Phép kiểm độ nhạy: ba con được cài thêm ≥ 2 nháy với xác suất ``PLANT_RATE`` mỗi kỳ.
 PLANTED = (7, 38, 68)
 PLANT_RATE = 0.03
 
 
-# --------------------------------------------------------------------------- các chiến lược
-
 def _window_sums(values: np.ndarray, window: int | None) -> np.ndarray:
-    """``out[t] = Σ values[max(0, t − window) : t]`` cho t = 0..T (hàng T là kỳ kế tiếp)."""
     cum = np.vstack([np.zeros((1, values.shape[1])), np.cumsum(values, axis=0)])
     if window is None:
         return cum
@@ -87,7 +50,6 @@ def _window_sums(values: np.ndarray, window: int | None) -> np.ndarray:
 
 
 def _gap(counts: np.ndarray) -> np.ndarray:
-    """Số kỳ kể từ lần về gần nhất, tính ở đầu kỳ t (chưa về lần nào: t + 1)."""
     out = np.zeros((len(counts) + 1, N_NUMBERS))
     last = np.full(N_NUMBERS, -1)
     for t in range(len(counts) + 1):
@@ -98,7 +60,6 @@ def _gap(counts: np.ndarray) -> np.ndarray:
 
 
 def _same_weekday(counts: np.ndarray, weekdays: np.ndarray, weeks: int) -> np.ndarray:
-    """Tổng nháy ở ``weeks`` kỳ gần nhất CÙNG thứ với kỳ t (thứ của kỳ kế tiếp suy từ kỳ cuối + 1)."""
     out = np.zeros((len(counts) + 1, N_NUMBERS))
     history: dict[int, list[np.ndarray]] = {d: [] for d in range(7)}
     days = np.append(weekdays, (weekdays[-1] + 1) % 7 if len(weekdays) else 0)
@@ -112,12 +73,6 @@ def _same_weekday(counts: np.ndarray, weekdays: np.ndarray, weeks: int) -> np.nd
 
 
 def _positional_multi_prob(draws: np.ndarray, window: int | None, prior: float = 100.0) -> np.ndarray:
-    """P(con i về ≥ 2 nháy) nếu mỗi vị trí giải có phân phối hai số cuối RIÊNG (Poisson-nhị thức).
-
-    Xác suất của con i ở vị trí p là tần suất quá khứ ở chính vị trí ấy, làm trơn Dirichlet về
-    1/100 với độ mạnh ``prior``. Nếu máy quay hay bộ số ở vị trí nào đó lệch thật, đây là cách
-    duy nhất trong danh sách khai thác được độ lệch ấy một cách có nguyên tắc.
-    """
     n_draws = len(draws)
     onehot = np.zeros((n_draws, LOTO_PER_DRAW, N_NUMBERS), dtype=np.int32)
     onehot[np.arange(n_draws)[:, None], np.arange(LOTO_PER_DRAW)[None, :], draws] = 1
@@ -136,7 +91,6 @@ def _positional_multi_prob(draws: np.ndarray, window: int | None, prior: float =
 
 
 def _digit_score(draws: np.ndarray, prior: float = 10.0) -> np.ndarray:
-    """log P(chữ số hàng chục) + log P(chữ số hàng đơn vị), ước từ mọi lô quá khứ."""
     n_draws = len(draws)
     tens = np.zeros((n_draws, 10))
     units = np.zeros((n_draws, 10))
@@ -151,7 +105,6 @@ def _digit_score(draws: np.ndarray, prior: float = 10.0) -> np.ndarray:
 
 
 def _vip_v1(draws: np.ndarray) -> np.ndarray:
-    """Điểm của bộ lọc lượt đầu, trọng số chọn trên 30 kỳ ngay trước (walk-forward lồng nhau)."""
     model = VIPMultiHitModel(draws, config=VIPConfig())
     out = np.zeros((len(draws) + 1, N_NUMBERS))
     for t in range(model.cfg.first_evaluated, len(draws) + 1):
@@ -160,7 +113,6 @@ def _vip_v1(draws: np.ndarray) -> np.ndarray:
 
 
 def feature_tensor(draws: np.ndarray, weekdays: np.ndarray) -> tuple[np.ndarray, list[str]]:
-    """Mọi đặc trưng ``F[t, i, f]`` (hàng t chỉ đọc kỳ < t) cho hai mô hình học."""
     counts = counts_matrix(draws)
     multi = (counts >= 2).astype(float)
     raw = build_raw_features(counts, VIPConfig())
@@ -179,11 +131,6 @@ def feature_tensor(draws: np.ndarray, weekdays: np.ndarray) -> tuple[np.ndarray,
 
 
 def _learned(features: np.ndarray, labels: np.ndarray, start: int, kind: str) -> np.ndarray:
-    """Mô hình học, khớp lại mỗi ``REFIT_EVERY`` kỳ trên MỌI kỳ đã quay trước điểm khớp.
-
-    Hàng t của đặc trưng chỉ đọc kỳ < t và nhãn của kỳ t chỉ được dùng khi khớp ở điểm > t, nên
-    điểm ở kỳ t không chứa thông tin nào từ kỳ t trở đi.
-    """
     n_rows = features.shape[0]
     out = np.zeros((n_rows, N_NUMBERS))
     for fit_at in range(start, n_rows, REFIT_EVERY):
@@ -192,12 +139,12 @@ def _learned(features: np.ndarray, labels: np.ndarray, start: int, kind: str) ->
         if kind == "logit":
             scaler = StandardScaler().fit(x_train)
             model = LogisticRegression(C=0.01, max_iter=500).fit(scaler.transform(x_train), y_train)
-            predict = lambda x, m=model, s=scaler: m.predict_proba(s.transform(x))[:, 1]  # noqa: E731
+            predict = lambda x, m=model, s=scaler: m.predict_proba(s.transform(x))[:, 1]
         else:
             model = HistGradientBoostingClassifier(max_iter=150, learning_rate=0.05, max_leaf_nodes=15,
                                                    min_samples_leaf=200, l2_regularization=1.0,
                                                    random_state=0).fit(x_train, y_train)
-            predict = lambda x, m=model: m.predict_proba(x)[:, 1]  # noqa: E731
+            predict = lambda x, m=model: m.predict_proba(x)[:, 1]
         stop = min(fit_at + REFIT_EVERY, n_rows)
         block = features[fit_at:stop]
         out[fit_at:stop] = predict(block.reshape(-1, block.shape[-1])).reshape(stop - fit_at, N_NUMBERS)
@@ -206,7 +153,6 @@ def _learned(features: np.ndarray, labels: np.ndarray, start: int, kind: str) ->
 
 def strategy_scores(draws: np.ndarray, weekdays: np.ndarray, *, learned: bool = True,
                     include_vip: bool = True) -> dict[str, np.ndarray]:
-    """Điểm ``S[t, i]`` cho t = 0..T của mọi chiến lược. Hàng T là kỳ chưa quay."""
     counts = counts_matrix(draws)
     multi = (counts >= 2).astype(float)
     rng = np.random.default_rng(TIE_SEED)
@@ -237,11 +183,8 @@ def strategy_scores(draws: np.ndarray, weekdays: np.ndarray, *, learned: bool = 
     return out
 
 
-# --------------------------------------------------------------------------- chấm
-
 @dataclass(frozen=True)
 class Score:
-    """Kết quả của một chiến lược trên một khoảng kỳ."""
 
     draws: int
     picks: int
@@ -260,14 +203,12 @@ class Score:
 
 
 def top_k(scores: np.ndarray, k: int = TOP_K) -> np.ndarray:
-    """Chỉ số top-k mỗi hàng; hoà phá bằng nhiễu cố định (dưới mọi khác biệt thật của điểm)."""
     jitter = np.random.default_rng(TIE_SEED + 1).random(scores.shape) * 1e-9
     span = np.ptp(scores, axis=1, keepdims=True)
     return np.argsort(-(scores + jitter * np.where(span > 0, span, 1.0)), axis=1, kind="stable")[:, :k]
 
 
 def evaluate(scores: np.ndarray, multi: np.ndarray, rows: range, k: int = TOP_K) -> Score:
-    """Trúng của top-k so với chọn bừa k con trong CÙNG kỳ (siêu bội), cộng qua ``rows``."""
     rows = np.asarray(list(rows))
     picked = top_k(scores[rows], k)
     hits = int(np.take_along_axis(multi[rows], picked, axis=1).sum())
@@ -277,13 +218,11 @@ def evaluate(scores: np.ndarray, multi: np.ndarray, rows: range, k: int = TOP_K)
 
 
 def holm(p_values: dict[str, float]) -> dict[str, float]:
-    """p đã hiệu chỉnh Holm–Bonferroni theo tên (`stats.statistical_corrections.holm`)."""
     return dict(zip(p_values, holm_list(list(p_values.values())), strict=True))
 
 
 def any_hit_rates(scores: np.ndarray, counts: np.ndarray, rows: range,
                   ks: tuple[int, ...] = (1, 3, 5, 10, 20)) -> dict[str, dict[int, float]]:
-    """Tỉ lệ kỳ có ÍT NHẤT một con trong top-k trúng, cho "≥ 2 nháy" và cho "≥ 1 nháy"."""
     rows = np.asarray(list(rows))
     order = top_k(scores[rows], max(ks))
     out: dict[str, dict[int, float]] = {"multi": {}, "single": {}}
@@ -298,11 +237,6 @@ def any_hit_rates(scores: np.ndarray, counts: np.ndarray, rows: range,
 def run_protocol(draws: np.ndarray, weekdays: np.ndarray, *, holdout: int = HOLDOUT,
                  learned: bool = True, include_vip: bool = True,
                  scores: dict[str, np.ndarray] | None = None) -> dict:
-    """Toàn bộ giao thức: chấm giai đoạn phát triển, chọn ứng viên, kiểm một lần.
-
-    ``scores`` (dùng trong phép kiểm) thay danh sách chiến lược bằng điểm dựng sẵn; phải có
-    khoá ``random``.
-    """
     counts = counts_matrix(draws)
     multi = (counts >= 2).astype(float)
     n_draws = len(draws)
@@ -335,8 +269,6 @@ def run_protocol(draws: np.ndarray, weekdays: np.ndarray, *, holdout: int = HOLD
         },
     }
 
-
-# --------------------------------------------------------------------------- in
 
 def _row(name: str, s: Score, holm_p: float | None = None) -> str:
     extra = f"  Holm {holm_p:6.3f}" if holm_p is not None else ""
@@ -379,18 +311,13 @@ def to_json(result: dict) -> dict:
 
 def planted_history(n_draws: int, planted: tuple[int, ...] = PLANTED, plant_rate: float = PLANT_RATE,
                     seed: int = 7) -> tuple[np.ndarray, np.ndarray]:
-    """Lịch sử giả định có tín hiệu NHẸ: ba con nhận thêm ≥ 2 nháy với xác suất ``plant_rate``/kỳ.
-
-    0,03 đưa tỉ lệ ≥ 2 nháy của mỗi con được cài từ ~3% lên ~6%: một tín hiệu mà cả ba con cộng
-    lại chỉ chiếm 3 trên 100 số, tức top-5 trúng thêm chừng 0,09 lượt mỗi kỳ.
-    """
     frame = mock_history(n_draws, seed=seed, planted=planted, plant_rate=plant_rate)
     draws, labels = draws_from_frame(frame)
     return draws, pd.to_datetime(pd.Series(labels)).dt.day_of_week.to_numpy()
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--csv", default=str(ROOT / "data" / "xsmb-2-digits.csv"))
     parser.add_argument("--until", help="chỉ dùng các kỳ tới ngày này (YYYY-MM-DD) — để tái lập một phép đo")
     parser.add_argument("--power-check", action="store_true", help="thêm lịch sử giả định có cài tín hiệu")

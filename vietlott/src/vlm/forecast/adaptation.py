@@ -1,4 +1,3 @@
-"""Running statistics nhân quả, bộ nhớ O(features), dùng cho challenger tùy chọn."""
 from __future__ import annotations
 
 import numpy as np
@@ -7,11 +6,6 @@ from vlm.forecast.recovery import require_finite
 
 
 class RunningFeatureStats:
-    """Gộp mean/variance theo batch; chỉ cập nhật sau khi dự báo được chấm.
-
-    Drift là độ lệch mean batch so với thống kê trước batch, làm mượt EMA.
-    Đây là tín hiệu giám sát mô tả, không phải p-value hay xác suất trúng.
-    """
 
     def __init__(self, features: int) -> None:
         if type(features) is not int or features < 1:
@@ -24,7 +18,6 @@ class RunningFeatureStats:
 
     @property
     def std(self) -> np.ndarray:
-        """Độ lệch chuẩn population; cold start dùng scale 1."""
         return np.sqrt(self.m2 / self.samples) if self.samples else np.ones(self.features)
 
     def _batch(self, x: np.ndarray) -> np.ndarray:
@@ -34,7 +27,6 @@ class RunningFeatureStats:
         return batch
 
     def normalize(self, x: np.ndarray) -> np.ndarray:
-        """Chuẩn hóa bằng thống kê quá khứ, không học từ chính batch cần dự báo."""
         batch = self._batch(x)
         with np.errstate(over='raise', invalid='raise', divide='raise'):
             normalized = (batch - self.mean) / np.maximum(self.std, .05) if self.samples else batch.copy()
@@ -42,7 +34,6 @@ class RunningFeatureStats:
         return np.clip(normalized, -5, 5)
 
     def update(self, x: np.ndarray) -> None:
-        """Gộp batch theo Welford; lỗi giữ nguyên toàn bộ thống kê trước batch."""
         batch = self._batch(x)
         count = len(batch)
         total = self.samples + count
@@ -60,7 +51,6 @@ class RunningFeatureStats:
         self.samples, self.updates, self.drift_score = total, self.updates + 1, drift
 
     def report(self) -> dict:
-        """Trả thống kê và cảnh báo mô tả, không giữ hoặc công bố batch thô."""
         return {'samples':self.samples, 'updates':self.updates, 'mean':self.mean.tolist(),
                 'std':self.std.tolist(), 'drift_score':self.drift_score,
                 'drift_alert':bool(self.updates >= 8 and self.drift_score >= 3),
@@ -72,7 +62,6 @@ class RunningFeatureStats:
 
     @classmethod
     def from_dict(cls, data: dict, *, features: int) -> RunningFeatureStats:
-        """Phục hồi statistics sau khi kiểm shape, counters và finite."""
         out = cls(features)
         if data['features'] != features:
             raise ValueError('Incompatible feature statistics')

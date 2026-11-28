@@ -1,5 +1,3 @@
-"""Trang công khai theo ngay lượt engine hợp lệ, không chạy mã từ nhánh lạ."""
-
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -42,7 +40,6 @@ def test_page_refresh_follows_both_engine_workflows_without_a_cycle() -> None:
 def test_actual_build_guard_accepts_trusted_completed_updates_or_direct_events(
     event: str, conclusion: str | None, branch: str | None, repo: str | None, allowed: bool,
 ) -> None:
-    # Đọc CHÍNH biểu thức trong workflow; chỉ đổi toán tử Boolean sang cú pháp Python.
     guard = _workflow("vietlott-results.yml")["jobs"]["build"]["if"]
     expression = guard.replace("&&", " and ").replace("||", " or ")
     github = SimpleNamespace(event_name=event, repository="beuvivu/VLA", event=SimpleNamespace(
@@ -54,16 +51,11 @@ def test_actual_build_guard_accepts_trusted_completed_updates_or_direct_events(
 
 
 def test_results_sync_has_on_time_triggers_that_follow_the_externally_scheduled_xsmb_run() -> None:
-    """Lịch mười phút của GitHub chạy cách nhau 1–5 giờ; hai đường này mới chạy đúng giờ.
-
-    Đổi tên workflow XSMB mà không đổi ở đây thì ``workflow_run`` im lặng không bao giờ bắn.
-    """
     triggers = _workflow("vlm-results.yml")[True]
     assert triggers["repository_dispatch"]["types"] == ["vietlott-results"]
     follow = triggers["workflow_run"]
     assert follow["workflows"] == [_workflow("update-data.yml")["name"]]
     assert follow["types"] == ["completed"] and follow["branches"] == ["main"]
-    # Không vòng: lượt XSMB không theo lượt Vietlott.
     upstream = (_workflow("update-data.yml")[True].get("workflow_run") or {}).get("workflows", [])
     assert _workflow("vlm-results.yml")["name"] not in upstream
 

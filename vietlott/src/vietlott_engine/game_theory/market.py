@@ -1,16 +1,3 @@
-"""End-to-end market model per game: payout share → tickets sold → crowd calibration →
-validation → jackpot path → sales response. Produces the artefacts the EV engine uses.
-
-Power 6/55  : jackpot pots are published every draw → tickets sold from the accounting
-              identity; crowd calibrated with known sales (strongest identification).
-Lotto 5/35  : winners for every draw since launch, 7 tiers incl. the special number →
-              calibrated with per-draw sales scales.
-Mega 6/45   : prize data only since 09/2025 and no jackpot series → the Power crowd is
-              transferred (same players) and validated on Mega's winner counts; sales
-              N̂_t estimated from winners; the jackpot path is rebuilt from N̂_t and closed
-              on a published jackpot value.
-"""
-
 from __future__ import annotations
 
 import json
@@ -51,7 +38,7 @@ class Anchor(BaseModel):
     game: str
     draw_id: int
     value: float
-    kind: str = "exact"  # exact | lower_bound | approx
+    kind: str = "exact"
     source: str = ""
 
 
@@ -78,8 +65,8 @@ class MarketReport(BaseModel):
     jackpot_hits: dict | None = None
     jackpot_path: JackpotPath | None = None
     anchor_checks: list[dict] = []
-    rolldowns: RolldownHistory | None = None  # reconstruction from sales surges (no jackpot series needed)
-    official_rolldowns: OfficialRolldowns | None = None  # from the official jackpot series
+    rolldowns: RolldownHistory | None = None
+    official_rolldowns: OfficialRolldowns | None = None
     rolldown_forecast: RolldownForecast | None = None
     rolldown_forecast_backtest: dict | None = None
     transfer_check: dict | None = None
@@ -168,16 +155,11 @@ def build_lotto(h: DrawHistory, ph: PrizeHistory, anchors: list[Anchor] | None =
 
 def build_mega(h: DrawHistory, ph: PrizeHistory, power_cal: BehaviourCalibration, anchors: list[Anchor]) -> tuple[MarketReport, np.ndarray]:
     if ph.has_pots.mean() > 0.8:
-        # official jackpot series: same accounting route as Power; the Power crowd transfer
-        # is kept as an out-of-sample check of both calibrations
         rep, sold = build_power(h, ph)
         tr = transfer_calibration(power_cal, h, ph)
         own, other = np.asarray(rep.calibration.beta), np.asarray(tr.beta)
         tr_lc = level_check(tr, h, ph)
         own_p = rep.calibration.fit.holdout_lr_p_value
-        # selection rule (stated before looking at EV): keep Mega's own crowd fit unless it
-        # fails its out-of-sample test AND the transferred Power crowd explains the level of
-        # third-prize winners better
         use_transfer = own_p is not None and own_p > 0.05 and tr_lc.correlation > rep.level_check.correlation
         rep.transfer_check = {
             "beta_correlation_own_vs_power_transfer": float(np.corrcoef(own, other)[0, 1]),
@@ -261,7 +243,6 @@ def load_anchors(path: Path) -> list[Anchor]:
 
 
 def build_all(repo, out_dir: Path, anchors_path: Path | None = None) -> dict[str, MarketReport]:
-    """Run the three game pipelines and persist calibrations + reports + tickets sold."""
     out_dir.mkdir(parents=True, exist_ok=True)
     anchors = load_anchors(anchors_path) if anchors_path else []
     reports: dict[str, MarketReport] = {}

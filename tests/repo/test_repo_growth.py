@@ -1,17 +1,3 @@
-"""Bước theo dõi dung lượng kho hằng tuần (`scripts/ops/repo_growth.py`, `repo-growth.yml`), 06-11-2026.
-
-Bản kế hoạch dung lượng (`documentation/plans/2026-11-05-dung-luong-kho.md`) từng báo sai số hai lần:
-- «74 MB/tuần» vì cộng blob nén từng cái, bỏ qua delta;
-- «3 MB/ngày, gói 642 MB» vì đo trên bản clone NÔNG của phiên làm việc.
-Trên bản đầy đủ, gói là 608 MB và kho tăng 4–9 MB/ngày.
-
-Mỗi phép dưới đây ghim đúng một trong những luật đã chặn các lỗi ấy, trên kho git dựng sẵn có ngày
-commit cố định:
-- số đo là gói mỏng;
-- mốc đi theo nhánh chính;
-- bản nông bị từ chối;
-- workflow lấy đủ lịch sử.
-"""
 from __future__ import annotations
 
 import importlib.util
@@ -31,7 +17,7 @@ SCRIPT = ROOT / "scripts" / "ops" / "repo_growth.py"
 
 _spec = importlib.util.spec_from_file_location("repo_growth", SCRIPT)
 growth = importlib.util.module_from_spec(_spec)
-sys.modules["repo_growth"] = growth  # dataclass cần module đã đăng ký
+sys.modules["repo_growth"] = growth
 _spec.loader.exec_module(growth)
 
 T0 = datetime(2026, 1, 1, tzinfo=UTC)
@@ -64,7 +50,6 @@ def _commit(repo: Path, day: float, files: dict[str, bytes], message: str = "c")
 
 
 def _noise(size: int, seed: int) -> bytes:
-    """Byte ngẫu nhiên: zlib không nén được, nên kích thước nén ≈ kích thước thật."""
     return random.Random(seed).randbytes(size)
 
 
@@ -77,11 +62,6 @@ def repo(tmp_path: Path) -> Path:
 
 
 def test_growth_is_the_thin_pack_not_the_sum_of_compressed_blobs(repo: Path) -> None:
-    """Sửa 10 byte cuối của tệp 300 KB thì kho chỉ lưu thêm một delta nhỏ, không phải 300 KB.
-
-    Trong gói của chính kho, phiên bản MỚI giữ nguyên vẹn (`%(objectsize:disk)` ≈ 300 KB). Cộng số ấy
-    là cách bản rà soát 05-11 ra «74 MB/tuần».
-    """
     big = _noise(300_000, seed=1)
     _commit(repo, 0, {"data/excel/bang.bin": big})
     _commit(repo, 8, {"data/excel/bang.bin": big[:-10] + b"0123456789"})
@@ -90,16 +70,11 @@ def test_growth_is_the_thin_pack_not_the_sum_of_compressed_blobs(repo: Path) -> 
     on_disk = int(subprocess.run(["git", "cat-file", "--batch-check=%(objectsize:disk)"], cwd=repo,
                                  input=newest, capture_output=True, text=True, check=True).stdout)
     measured = growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=9))
-    assert on_disk > 290_000                      # trong gói của kho, bản mới nằm nguyên vẹn
-    assert 0 < measured.thin_pack_bytes < 20_000  # còn lượng kho phải lưu thêm chỉ là delta
+    assert on_disk > 290_000
+    assert 0 < measured.thin_pack_bytes < 20_000
 
 
 def test_the_directory_table_adds_up_to_the_thin_pack(repo: Path) -> None:
-    """Mỗi byte của gói mỏng thuộc đúng một dòng, kể cả byte của delta, không thêm byte nào khác.
-
-    `index-pack --fix-thin` nối đối tượng gốc của delta vào cuối gói để dựng chỉ mục; tính cả chúng
-    thì bảng cộng lại lớn hơn gói.
-    """
     big = _noise(100_000, seed=10)
     _commit(repo, 0, {"docs/trang.bin": big, "data/stats/bang.bin": _noise(50_000, seed=11)})
     _commit(repo, 8, {"docs/trang.bin": big[:-5] + b"abcde",
@@ -107,8 +82,8 @@ def test_the_directory_table_adds_up_to_the_thin_pack(repo: Path) -> None:
     measured = growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=9))
     table = dict(measured.breakdown)
     assert sum(table.values()) == measured.thin_pack_bytes - growth.PACK_FRAME
-    assert table["data/stats"] > 29_000           # tệp mới vào nguyên vẹn
-    assert table["docs"] < 1_000                  # tệp sửa chỉ là delta
+    assert table["data/stats"] > 29_000
+    assert table["docs"] < 1_000
     assert set(table) == {"docs", "data/stats", "data", growth.COMMITS}
     files = dict(growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=9), by_file=True).breakdown)
     assert sum(files.values()) == sum(table.values())
@@ -116,17 +91,10 @@ def test_the_directory_table_adds_up_to_the_thin_pack(repo: Path) -> None:
 
 
 def test_a_delta_the_existing_pack_chose_against_another_file_is_searched_again(repo: Path) -> None:
-    """Gói của bản clone kế thừa delta máy chủ đã chọn. Ngày 15-11-2026 năm trong bảy phiên bản
-    `docs/ket-qua-mien-trung.html` của tuần là delta với trang Miền Nam (134 KB mỗi bản) thay vì với bản
-    hôm trước của chính nó (1,7 KB): dùng lại delta ấy, tuần đo ra 24,5 MB; tìm lại từ đầu, 18,5 MB.
-
-    Dựng đúng hình dạng ấy: trong gói của kho, bản mới của trang A là delta với trang B, dù bản cũ của
-    chính A chỉ khác 10 byte.
-    """
     page = _noise(200_000, seed=20)
     _commit(repo, 0, {"docs/ket-qua-mien-trung.html": page, "docs/ket-qua-mien-nam.html": _noise(200_000, seed=21)})
     trung = page[:-10] + b"0123456789"
-    nam = trung[:140_000] + _noise(80_000, seed=22)    # lớn hơn và trùng 70%: git chọn nó làm gốc delta
+    nam = trung[:140_000] + _noise(80_000, seed=22)
     _commit(repo, 8, {"docs/ket-qua-mien-trung.html": trung, "docs/ket-qua-mien-nam.html": nam})
     new_trung, new_nam = (_git(repo, "rev-parse", f"HEAD:docs/{name}").strip()
                           for name in ("ket-qua-mien-trung.html", "ket-qua-mien-nam.html"))
@@ -138,17 +106,12 @@ def test_a_delta_the_existing_pack_chose_against_another_file_is_searched_again(
     _git(repo, "prune-packed")
     stored = {line.split()[0]: line.split() for line in _git(
         repo, "verify-pack", "-v", *map(str, pack_dir.glob("*.idx"))).splitlines() if line[:40] in {new_trung}}
-    assert stored[new_trung][-1] == new_nam              # trong gói của kho: A mới là delta với B mới
+    assert stored[new_trung][-1] == new_nam
     files = dict(growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=9), by_file=True).breakdown)
-    assert files["docs/ket-qua-mien-trung.html"] < 1_000   # tìm lại: delta với bản cũ của chính nó
+    assert files["docs/ket-qua-mien-trung.html"] < 1_000
 
 
 def test_the_window_starts_on_the_main_line_not_on_an_old_side_branch(repo: Path) -> None:
-    """Nhánh phụ commit ngày 4, gộp vào ngày 10: tệp của nó vào nhánh chính TRONG cửa sổ 5 → 12.
-
-    Không theo `--first-parent`, `rev-list --before` dừng ở chính commit nhánh phụ (ngày 4 là commit
-    mới nhất trước mốc), coi tệp ấy là cũ và bỏ khỏi số đo.
-    """
     _commit(repo, 0, {"a.txt": b"goc"})
     _git(repo, "checkout", "-q", "-b", "phu")
     _commit(repo, 4, {"docs/trang.bin": _noise(200_000, seed=2)}, "nhanh phu")
@@ -161,7 +124,6 @@ def test_the_window_starts_on_the_main_line_not_on_an_old_side_branch(repo: Path
 
 
 def test_a_shallow_clone_is_refused_instead_of_measured(repo: Path, tmp_path: Path) -> None:
-    """Bản nông có kích thước gói khác và thiếu chuỗi nhánh chính: đo ra số sai mà trông hợp lý."""
     for day in range(10):
         _commit(repo, day, {"data/so.bin": _noise(5_000, seed=day)})
     shallow = tmp_path / "nong"
@@ -187,7 +149,6 @@ def test_the_run_turns_red_only_when_the_week_grows_past_the_limit(repo: Path, t
 
 
 def test_a_week_without_new_commits_grows_by_nothing(repo: Path) -> None:
-    """Cửa sổ rỗng là 0 byte. Một gói rỗng vẫn có 32 byte đầu/đuôi, và chúng không được tính là tăng."""
     _commit(repo, 0, {"a.txt": b"goc"})
     measured = growth.measure(repo, "HEAD", days=7, now=T0 + timedelta(days=30))
     assert measured.thin_pack_bytes == 0
@@ -204,7 +165,6 @@ def test_a_history_younger_than_the_window_counts_every_object(repo: Path) -> No
 
 
 def test_new_files_are_grouped_by_the_directory_that_holds_them() -> None:
-    """`docs/a.html` vào `docs`, không đứng riêng: lượt thử đầu xếp từng trang thành một dòng."""
     assert growth.directory_of("docs/a.html") == "docs"
     assert growth.directory_of("data/stats/advanced/x.csv") == "data/stats"
     assert growth.directory_of("data/xsmb.json") == "data"
@@ -223,6 +183,5 @@ def test_the_weekly_workflow_measures_on_a_full_clone_and_can_turn_red() -> None
     assert checkout.get("with", {}).get("fetch-depth") == 0
     runs = [step for step in steps if "scripts/ops/repo_growth.py" in step.get("run", "")]
     assert len(runs) == 1
-    # Lượt vượt ngưỡng phải đỏ: không được nuốt mã thoát.
     assert not runs[0].get("continue-on-error") and not job.get("continue-on-error")
     assert "||" not in runs[0]["run"]

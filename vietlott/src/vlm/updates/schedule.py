@@ -1,8 +1,3 @@
-"""Polling windows and conservative freshness, independent of machine timezone.
-
-18:00 weekly draws finish by 18:30. Lotto uses a ten-minute publication grace.
-Fast games are polled every two minutes; no draw ID is inferred from a clock.
-"""
 from datetime import date, datetime, time, timedelta
 
 from vietlott_engine.core.products import ProductCode, get_product
@@ -36,7 +31,7 @@ def poll_interval(product: str, now: datetime) -> int:
     code, now = get_product(product), vietnam_time(now)
     minute = now.hour * 60 + now.minute
     if code in FAST:
-        live = 360 <= minute < 1335  # 06:00–22:15 includes final publication/recovery
+        live = 360 <= minute < 1335
     elif code == ProductCode.LOTTO_535:
         live = 780 <= minute < 840 or 1260 <= minute < 1320
     else:

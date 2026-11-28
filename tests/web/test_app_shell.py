@@ -1,18 +1,3 @@
-"""Khung ứng dụng phải dùng được bằng ngón tay, và không trang nào đánh rơi nó.
-
-Tệp này thay ``test_dock_on_mobile.py``. Dock nổi ở chân trang đã được khung
-hai cấp thay thế, nên những phép kiểm cũ soi một thành phần không còn tồn tại
-— và một phép kiểm quét qua tập rỗng là phép kiểm không thể đỏ. Các BÀI HỌC
-thì vẫn nguyên giá trị nên chúng được chuyển sang đây:
-
-* điều hướng phải chạm được bằng ngón tay ở 390px, không chỉ bằng con trỏ;
-* không phần tử nổi nào được che điều khiển điều hướng;
-* mọi trang xuất bản phải có điều hướng, không trang nào rơi khỏi danh sách.
-
-Thêm vào đó là các bất biến ĐO ĐƯỢC của trang tham chiếu mà bản dựng này phải
-giữ: dải chi tiết PHỦ LÊN nội dung chứ không đẩy nó.
-"""
-
 from __future__ import annotations
 
 import json
@@ -26,19 +11,14 @@ ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs"
 sys.path.insert(0, str(ROOT / "src"))
 
-#: MỌI trang đã xuất bản. Không lọc theo "trang nào có khung": lọc như thế thì
-#: phép kiểm tự định nghĩa phạm vi của mình, và một trang đánh rơi khung sẽ
-#: lặng lẽ rơi khỏi danh sách thay vì làm phép kiểm đỏ.
 PAGES = sorted(DOCS.glob("*.html"))
 
 def test_the_published_tree_holds_at_least_one_page() -> None:
-    """Chốt chặn cho mọi phép kiểm chạy theo tham số ở tệp này."""
     assert PAGES, "docs/ không có trang nào — các phép kiểm dưới sẽ quét tập rỗng"
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_every_published_page_carries_the_shell(page: Path) -> None:
-    """Không trang nào được đánh rơi khung dùng chung."""
     text = page.read_text(encoding="utf-8")
     for dau in ('class="app-rail"', 'class="app-panel"', 'class="app-header"',
                 'class="app-main"', 'id="app-toggle"'):
@@ -47,19 +27,6 @@ def test_every_published_page_carries_the_shell(page: Path) -> None:
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_no_published_page_carries_the_shell_twice(page: Path) -> None:
-    """Khung phải có ĐÚNG MỘT lớp, không phải "ít nhất một".
-
-    Phép kiểm trên chỉ đòi khung CÓ MẶT, nên nó xanh y nguyên khi trang mang
-    hai khung lồng nhau. Đã xảy ra thật với ``docs/live.html`` — trang duy
-    nhất viết tay và commit thẳng, nên mỗi lượt dựng đọc lại chính bản đã có
-    khung. Hệ quả nhìn thấy được, đo bằng ``elementFromPoint``: chữ thương
-    hiệu của khung NGOÀI nằm đúng trên nút tab đầu của dải TRONG, nên mục
-    điều hướng đầu tiên bấm không ăn.
-
-    Đếm từng dấu một chứ không đếm mỗi ``app-rail``: khung có thể nhân đôi
-    lệch nhau — bản hỏng của ``live.html`` có hai ``</main>`` nhưng chỉ một
-    thẻ kịch bản, vì lượt chuẩn hoá gộp hai thẻ ``src`` trùng nhau lại.
-    """
     text = page.read_text(encoding="utf-8")
     for dau in ('class="app-rail"', 'class="app-panel"', 'class="app-header"',
                 'class="app-main"', 'id="app-toggle"'):
@@ -82,12 +49,6 @@ def test_wrapping_a_versioned_page_keeps_one_shell(query: str) -> None:
 
 
 def test_wrapping_a_page_twice_gives_the_same_page() -> None:
-    """Bọc khung phải LUỸ ĐẲNG, và phải SỬA được trang đã bọc chồng.
-
-    Ghim chính LUẬT trên dữ liệu dựng sẵn, không dựa vào việc quét
-    ``docs/``: nếu một ngày nào đó không trang nào hỏng thì phép kiểm trên
-    vẫn xanh dù ``wrap_page`` đã hỏng hẳn. Ở đây trang hỏng được DỰNG RA.
-    """
     from web.app_shell import wrap_page
 
     goc = "<html><head></head><body><p>Nội dung thật</p></body></html>"
@@ -95,14 +56,8 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
     assert mot.count('class="app-rail"') == 1
     assert "<p>Nội dung thật</p>" in mot
 
-    # Bọc lại bản đã bọc: phải cho ra ĐÚNG bản cũ, không dày thêm một lớp.
     assert wrap_page(mot, "index.html") == mot
 
-    # Trang đã bọc chồng phải được SỬA, không phải được để yên.
-    #
-    # Dựng đúng hình dạng đã xảy ra: khung LỒNG NHAU, tức lớp ngoài chứa trọn
-    # lớp trong. Hai khung cạnh nhau là một hình dạng khác và chưa từng xảy
-    # ra — dựng nhầm nó thì phép kiểm đo một thứ không có thật.
     from web.app_shell import header_html, panel_html, rail_html
 
     than = mot.split("<body>", 1)[1].rsplit("</body>", 1)[0]
@@ -122,8 +77,6 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
     assert sua.count('class="app-rail"') == 1, "trang bọc chồng phải được bóc về một lớp"
     assert "<p>Nội dung thật</p>" in sua, "bóc khung không được đánh rơi nội dung"
 
-    # Và hình dạng mà `docs/live.html` thật sự mang: khung trong MẤT thẻ kịch
-    # bản, vì lượt chuẩn hoá gộp hai thẻ `src` trùng nhau lại làm một.
     mat_script = long_nhau.replace(
         '<script src="assets/app-shell.js" defer></script>', "", 1
     )
@@ -133,22 +86,11 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
 
 
 def _dock_script() -> str:
-    """Mẫu lịch sử từ ui_theme.dock_script ở c8854608 trước khi gỡ dock.
-
-    Giữ nguyên kịch bản đã phát hành để kiểm khả năng sửa trang cũ, độc lập
-    với trình dựng điều hướng hiện hành.
-    """
     return (Path(__file__).resolve().parents[1] / "fixtures" / "legacy_ui_dock_script.html").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("so_lop", [2, 8, 11, 12])
 def test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired(so_lop: int) -> None:
-    """Dựng lại ĐÚNG hình dạng mà pipeline đã tạo ra trên ``docs/live.html``.
-
-    Mỗi lượt: trang cũ + dock (nav + kịch bản) được bọc tiếp; nav bị gỡ, kịch
-    bản mồ côi nằm lại SAU đuôi khung cũ, và ``<main>`` phía trong bị đổi
-    thành ``<div>``. Đo được 11 lớp sau một ngày; trần bóc cũ là 8 vòng.
-    """
     import re
 
     from web.app_shell import header_html, panel_html, rail_html, wrap_page
@@ -179,8 +121,6 @@ def test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired(so_lop: int)
 
 
 def test_refreshing_the_live_page_again_and_again_keeps_one_shell(tmp_path: Path) -> None:
-    """Chính đường pipeline chạy mỗi lượt: ``refresh_live_page`` trên một
-    ``live.html`` viết tay. Trước bản sửa, mỗi lần gọi thêm đúng một lớp."""
     from web.ui_theme import refresh_live_page
 
     trang = tmp_path / "live.html"
@@ -202,17 +142,10 @@ def test_refreshing_the_live_page_again_and_again_keeps_one_shell(tmp_path: Path
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_no_published_page_carries_the_retired_dock_script(page: Path) -> None:
-    """Dock đã nghỉ; kịch bản của nó còn lại trên trang là mã chết — và trên
-    ``live.html`` chính nó đã làm bước bóc khung trượt."""
     assert _dock_script() not in page.read_text(encoding="utf-8")
 
 
 def test_the_rail_has_one_button_per_navigation_group() -> None:
-    """Dải biểu tượng phải phủ đúng các nhóm của mô hình điều hướng.
-
-    Ghim vào chính ``SITE_NAV`` chứ không vào một con số viết tay: thêm nhóm
-    mà quên dựng nút thì phép kiểm đỏ, và đổi số nhóm không làm nó đỏ oan.
-    """
     from web.ui_theme import SITE_NAV
 
     text = (DOCS / "statistics.html").read_text(encoding="utf-8")
@@ -220,7 +153,6 @@ def test_the_rail_has_one_button_per_navigation_group() -> None:
 
 
 def test_every_navigation_target_is_a_real_page() -> None:
-    """Không liên kết chết trong điều hướng."""
     from web.ui_theme import SITE_NAV
 
     thieu = [
@@ -263,13 +195,6 @@ def _mo(trinh_duyet, w: int, h: int, cam_ung: bool = False):
 
 
 def test_the_detail_panel_overlays_the_content_instead_of_pushing_it(trinh_duyet) -> None:
-    """Mở dải chi tiết KHÔNG được làm nội dung xếp lại.
-
-    Đây là hành vi đo được của trang tham chiếu: ``margin-left`` của vùng nội
-    dung giữ nguyên ở cả hai trạng thái. Nếu dải đẩy nội dung thì mỗi lần mở
-    menu là cả một bảng số phải dàn lại — thứ khó đọc nhất có thể làm với một
-    trang phân tích.
-    """
     pg = _mo(trinh_duyet, 1440, 900)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)
@@ -284,11 +209,6 @@ def test_the_detail_panel_overlays_the_content_instead_of_pushing_it(trinh_duyet
 
 
 def test_the_toggle_stays_clickable_while_the_panel_is_open(trinh_duyet) -> None:
-    """Mở rồi phải đóng lại được.
-
-    Dải chi tiết từng có ``z-index`` cao hơn thanh trên: nó phủ lên chính nút
-    đã mở nó, nên mở ra là không còn đường đóng.
-    """
     pg = _mo(trinh_duyet, 1440, 900)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)
@@ -311,17 +231,6 @@ def test_the_toggle_stays_clickable_while_the_panel_is_open(trinh_duyet) -> None
 
 
 def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
-    """Bài học của dock cũ, chuyển sang khung mới.
-
-    Dock từng CHẾT HẲN trên điện thoại: menu mở ra nhưng không ô nào nhận được
-    cú chạm — đo được 0/9 liên kết chạm được ở 390px trong khi máy bàn 9/9.
-
-    Bản trước chỉ đếm nhóm của trang đang mở và đòi ≥ 3 mục. Từ khi nhóm
-    "Thống kê" rút còn một mục, phép kiểm ấy đỏ mà không có lỗi nào, và tệ
-    hơn: nó chưa bao giờ nhìn tới sáu nhóm kia. Nay đi qua MỌI nhóm bằng chính
-    dải biểu tượng — đúng đường người dùng điện thoại đi — và đòi mọi mục của
-    ``SITE_NAV`` đều chạm được.
-    """
     from web.ui_theme import SITE_NAV
 
     pg = _mo(trinh_duyet, 390, 844, cam_ung=True)
@@ -338,8 +247,6 @@ def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
         hong = []
         panel = pg.locator(".app-panel").bounding_box()
         pg.mouse.move(panel["x"] + panel["width"] / 2, panel["y"] + panel["height"] / 2)
-        # Cuộn bằng đầu vào người dùng; không dùng cuộn DOM vì nó vẫn cuộn
-        # được phần tử overflow:hidden và che mất lỗi menu không vuốt được.
         pg.mouse.wheel(0, -10_000)
         pg.wait_for_timeout(100)
         for link in links.all():
@@ -367,7 +274,6 @@ def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
 
 
 def test_page_widgets_never_cover_links_in_the_open_menu(trinh_duyet) -> None:
-    """Thanh neo của ma trận không được nằm trên các mục cuối nhóm Soi cầu."""
     pg = _mo(trinh_duyet, 1440, 844)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.locator("#app-tab-5").click()
@@ -387,7 +293,6 @@ def test_page_widgets_never_cover_links_in_the_open_menu(trinh_duyet) -> None:
 
 
 def test_no_floating_element_covers_the_navigation_controls(trinh_duyet) -> None:
-    """Không phần tử nổi nào được đè lên thanh trên hay dải biểu tượng."""
     pg = _mo(trinh_duyet, 1440, 900)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)
@@ -414,7 +319,6 @@ def test_no_floating_element_covers_the_navigation_controls(trinh_duyet) -> None
 
 
 def test_the_theme_button_changes_resolved_theme_and_remembers(trinh_duyet) -> None:
-    """Mỗi lần bấm phải đổi màu thật, kể cả lần đầu đang theo hệ thống."""
     pg = _mo(trinh_duyet, 1440, 900)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)
@@ -430,7 +334,6 @@ def test_the_theme_button_changes_resolved_theme_and_remembers(trinh_duyet) -> N
 
 
 def test_the_search_only_offers_pages_that_exist(trinh_duyet) -> None:
-    """Ô tìm không được nhận chữ rồi trả về thứ không dẫn tới đâu."""
     pg = _mo(trinh_duyet, 1440, 900)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)

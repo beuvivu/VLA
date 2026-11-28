@@ -1,5 +1,3 @@
-"""Màu ba mức số đường cầu trên bảy trang, từ tám đường trở lên."""
-
 from copy import deepcopy
 from pathlib import Path
 

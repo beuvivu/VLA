@@ -1,21 +1,3 @@
-"""Kết quả Mega 6/45, Power 6/55 và Lotto 5/35 từ trang đăng lại ``xskt.com.vn``.
-
-Vì sao có nguồn này
--------------------
-Từ runner GitHub, trang nhà phát hành trả thách thức chống bot (đo 06-10-2026), nên chuỗi
-``auto`` rơi xuống bản sao cộng đồng trên GitHub. Bản sao ấy cập nhật chậm: đo trên kho ngày
-15-10-2026, kết quả vào dữ liệu trễ trung vị 5,6 giờ (Mega) đến 8,6 giờ (Lotto 5/35), có kỳ
-34 giờ — Lotto quay hai kỳ mỗi ngày nên dự báo kỳ 21:00 hầu như không kịp ghi trước giờ quay.
-``xskt.com.vn`` đăng kết quả ngay sau kỳ quay và đọc được từ runner (lớp Miền Trung/Nam của
-VLA đồng bộ từ đây mỗi ngày). Nguồn này đứng SAU bản sao trong ``fallback_order``: chỉ được hỏi
-khi các nguồn trước không có kỳ mới.
-
-Cấu trúc trang (HTML chép nguyên từ trang thật qua runner ngày 06-10-2026, ghim trong
-``tests/test_xskt_source.py``): mỗi kỳ là một ``table.result``; ô ``.kmt`` mang liên kết
-``/<sản phẩm>/ngay-D-M-YYYY`` (ngày quay) và ``#<số kỳ>``; ô ``.megaresult`` mang dãy số. Lotto
-5/35 đặt số đặc biệt trong ``<span>`` cuối dãy; Power 6/55 đặt số Jackpot 2 ở hàng "Số JP2".
-"""
-
 from __future__ import annotations
 
 import re
@@ -32,7 +14,6 @@ from vietlott_engine.crawler.sources.base import DrawSource, FetchResult
 
 log = get_logger(__name__)
 
-#: Trang tổng (các kỳ gần nhất) của từng sản phẩm.
 PAGES: dict[GameCode, str] = {
     GameCode.MEGA_645: "/xsmega645",
     GameCode.POWER_655: "/xspower",
@@ -51,8 +32,7 @@ def _money(text: str) -> int | None:
     return int(digits) if len(digits) >= 6 else None
 
 
-def _jackpots(table) -> tuple[int | None, int | None]:  # type: ignore[no-untyped-def]
-    """Giá trị Jackpot 1/2 từ bảng "Thống kê trúng giải" ngay sau bảng kết quả (nếu có)."""
+def _jackpots(table) -> tuple[int | None, int | None]:
     stats = table.find_next("table")
     if stats is None or "trunggiai" not in (stats.get("class") or []):
         return None, None
@@ -69,8 +49,7 @@ def _jackpots(table) -> tuple[int | None, int | None]:  # type: ignore[no-untype
     return jp1, jp2
 
 
-def _draw(spec: GameSpec, table) -> Draw | None:  # type: ignore[no-untyped-def]
-    """Một kỳ từ một ``table.result``; None khi bảng thiếu ngày, số kỳ hay đủ số."""
+def _draw(spec: GameSpec, table) -> Draw | None:
     head = table.find(class_="kmt")
     link = head.find("a", href=True) if head else None
     day = _DATE_IN_LINK.search(link["href"]) if link else None
@@ -98,13 +77,12 @@ def _draw(spec: GameSpec, table) -> Draw | None:  # type: ignore[no-untyped-def]
 
 
 def parse_page(spec: GameSpec, html: str) -> FetchResult:
-    """Mọi kỳ của ``spec`` trên một trang; bảng không đọc được ghi vào ``rejected``, không bịa."""
     out = FetchResult()
     seen: dict[int, Draw] = {}
     for table in BeautifulSoup(html or "", "html.parser").select("table.result"):
         try:
             draw = _draw(spec, table)
-        except ValueError as exc:  # số ngoài khoảng, trùng số, thiếu bonus… — Draw tự kiểm
+        except ValueError as exc:
             out.rejected.append((table.get_text(" ", strip=True)[:200], str(exc).splitlines()[0]))
             continue
         if draw is None:
@@ -117,7 +95,6 @@ def parse_page(spec: GameSpec, html: str) -> FetchResult:
 
 
 class XsktDrawSource(DrawSource):
-    """Trang tổng của sản phẩm trên ``xskt.com.vn``: vài kỳ gần nhất, mỗi kỳ có ngày và số kỳ."""
 
     name = "xskt"
 
@@ -131,12 +108,8 @@ class XsktDrawSource(DrawSource):
         response = await self.client.get(url)
         result = parse_page(spec, response.text)
         if not result.draws:
-            # Trang đổi cấu trúc hay trả trang lỗi: báo lỗi để chuỗi dự phòng hỏi nguồn sau,
-            # không coi là "không có kỳ mới".
             raise SourceError(f"{url}: không đọc được kỳ nào")
         result.draws = [d for d in result.draws if since_id is None or d.draw_id > since_id]
         if since_id is not None and result.draws and result.draws[0].draw_id != since_id + 1:
-            # Trang tổng chỉ có vài kỳ gần nhất: nhận nó sẽ để hở #since_id+1… mà lượt sau
-            # (since_id đã vượt) không bao giờ bù. Báo lỗi để chuỗi hỏi nguồn có đủ lịch sử.
             raise SourceError(f"{url}: trang bắt đầu ở #{result.draws[0].draw_id}, còn thiếu từ #{since_id + 1}")
         return result

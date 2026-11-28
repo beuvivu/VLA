@@ -1,20 +1,3 @@
-"""Trang kết quả hằng ngày phải có kết quả ngay sau khi live xác minh, không chờ phân tích.
-
-Đo ngày 12-10-2026 (lượt 38243236688), khi hoàn tất còn là MỘT job:
-
-* 18:31:48 live xác minh và gọi update-data (``reason=live_verified``);
-* 18:32:43 → 18:35:33 vòng chờ quay khống: ``sync.py --cutoff 18:35`` coi kỳ hôm nay
-  "chưa xong" nên không lấy gì; lấy thật chỉ mất 12 giây;
-* 18:36:06 → 18:40:44 pipeline thống kê/AI/ML, rồi mới triển khai Pages lúc 18:41:20.
-
-Cũng tối ấy update-data còn chạy thêm NĂM lượt cho cùng kỳ (mỗi lượt live-results thấy kỳ đã
-xác minh lại gọi), mỗi lượt ~8 phút; ba lượt viết lại dự báo LOTO đã công bố cho kỳ 13-10 dù sổ
-kết quả không đổi.
-
-Các phép kiểm dưới đây chạy nguyên khối ``run:`` lấy từ YAML; chỉ thay ``sync.py`` (ghi lại
-tham số) và đồng hồ ngủ (``sitecustomize`` đẩy đồng hồ giả thay vì ngủ thật).
-"""
-
 from __future__ import annotations
 
 import json
@@ -53,8 +36,6 @@ def _needs(job: dict) -> set[str]:
     return {needs} if isinstance(needs, str) else set(needs)
 
 
-#: Không ngủ thật: ``time.sleep`` đẩy đồng hồ đơn điệu giả, nên hạn chờ 15 phút của bước chờ
-#: kết quả chuẩn trôi qua trong tích tắc nếu kết quả không bao giờ tới.
 SITECUSTOMIZE = """
 import time
 _clock = [0.0]
@@ -64,8 +45,6 @@ time.sleep = _sleep
 time.monotonic = lambda: _clock[0]
 """
 
-#: ``sync.py`` giả: ghi lại tham số, rồi làm như sync thật LÚC 18:32 giờ VN — chỉ lấy kỳ hôm
-#: nay khi mốc cutoff không muộn hơn 18:32, nếu không thì kỳ mới nhất là hôm qua.
 FAKE_SYNC = """
 import json, sys
 from datetime import datetime, timedelta
@@ -86,7 +65,6 @@ Path("data/source_audit.json").write_text(
 
 
 class Runner:
-    """Một thư mục làm việc giả cho khối ``run:`` của update-data."""
 
     def __init__(self, tmp: Path) -> None:
         self.tmp = tmp
@@ -143,11 +121,7 @@ class Runner:
         return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-# --- Mốc cutoff của lượt live_verified ---------------------------------------
-
-
 def test_a_live_verified_run_fetches_today_at_once(tmp_path: Path) -> None:
-    """Live đã xác minh kỳ hôm nay; sync phải lấy ngay chứ không chờ mốc 18:35."""
     runner = Runner(tmp_path)
     runner.stored(runner.today - timedelta(days=1))
     out = runner.run("canonical", "canonical", event="workflow_dispatch", reason="live_verified")
@@ -159,7 +133,6 @@ def test_a_live_verified_run_fetches_today_at_once(tmp_path: Path) -> None:
 
 
 def test_other_runs_keep_the_1835_cutoff(tmp_path: Path) -> None:
-    """Lượt lịch và lượt phục hồi KHÔNG có bằng chứng live: kỳ hôm nay xong khi đã qua 18:35."""
     runner = Runner(tmp_path)
     runner.stored(runner.today - timedelta(days=3))
     runner.run("canonical", "canonical", event="repository_dispatch")
@@ -168,15 +141,7 @@ def test_other_runs_keep_the_1835_cutoff(tmp_path: Path) -> None:
     assert {c[c.index("--cutoff") + 1] for c in calls} == {"18:35"}
 
 
-# --- Bỏ lượt hoàn tất lặp lại -------------------------------------------------
-
-
 def test_a_repeated_live_verified_call_skips_only_the_pipeline(tmp_path: Path) -> None:
-    """Kỳ đã có dự báo kỳ sau: pipeline không chạy lại, nhưng lượt chạy KHÔNG bị bỏ cả lượt.
-
-    Hai tệp dự báo chỉ chứng minh phân tích đã xong, không chứng minh Pages hay hậu kiểm đã
-    thành công; bỏ cả lượt thì một lần triển khai hỏng không còn đường tự thử lại.
-    """
     runner = Runner(tmp_path)
     runner.stored(runner.today)
     runner.predicted(runner.today + timedelta(days=1))
@@ -190,7 +155,6 @@ def test_a_repeated_live_verified_call_skips_only_the_pipeline(tmp_path: Path) -
 def test_a_live_verified_call_runs_in_full_when_the_pipeline_did_not_finish(
     tmp_path: Path, missing: str
 ) -> None:
-    """Kết quả đã chốt nhưng chưa có dự báo kỳ sau (pipeline hỏng giữa chừng): chạy lại đủ."""
     runner = Runner(tmp_path)
     runner.stored(runner.today)
     runner.predicted(runner.today + timedelta(days=1), modes=[m for m in ("loto", "de") if m != missing])
@@ -199,7 +163,6 @@ def test_a_live_verified_call_runs_in_full_when_the_pipeline_did_not_finish(
 
 
 def test_a_live_verified_call_for_a_new_draw_runs_in_full(tmp_path: Path) -> None:
-    """Dự báo cho HÔM NAY có từ tối qua; nó không được làm lượt hôm nay bị coi là đã xong."""
     runner = Runner(tmp_path)
     runner.stored(runner.today - timedelta(days=1))
     runner.predicted(runner.today)
@@ -208,10 +171,8 @@ def test_a_live_verified_call_for_a_new_draw_runs_in_full(tmp_path: Path) -> Non
 
 
 def test_a_manual_run_always_runs_in_full(tmp_path: Path) -> None:
-    """Lượt gọi tay luôn chạy đủ, kể cả khi kỳ mà guard nhắm tới đã hoàn tất trọn vẹn."""
     runner = Runner(tmp_path)
     now = datetime.now(VN)
-    # Đúng mốc guard tính cho lượt không phải live_verified: qua 18:35 là hôm nay.
     target = runner.today if now.time() >= time(18, 35) else runner.today - timedelta(days=1)
     runner.stored(target)
     runner.predicted(target + timedelta(days=1))
@@ -219,12 +180,6 @@ def test_a_manual_run_always_runs_in_full(tmp_path: Path) -> None:
     assert out["target"] == target.isoformat()
     assert (out["run"], out["finalized"]) == ("true", "false")
 
-
-# --- Điều kiện chạy của từng job, đánh giá như GitHub ---------------------------
-#
-# Soi chuỗi trong ``if:`` không thấy được một dấu ngoặc đặt sai. Bộ đánh giá dưới đây dịch
-# đúng tập con cú pháp mà các điều kiện này dùng (``always()``, ``==``, ``!=``, ``&&``, ``||``,
-# ngoặc, chuỗi, tham chiếu ``needs.*``/``github.*``) sang Python rồi tính trên từng kịch bản.
 
 _TOKEN = re.compile(
     r"\s+|'[^']*'|\b(?:needs|github)(?:\.[A-Za-z0-9_-]+)+|\btrue\b|\bfalse\b"
@@ -250,13 +205,12 @@ def _condition(job: str):
         pos = match.end()
     expr = "".join(parts)
     needs = _needs(_jobs()[job])
-    # Không có always() thì GitHub ngầm thêm success(): mọi job được cần phải thành công.
     implicit = "always()" not in body
 
     def evaluate(ctx: dict) -> bool:
         if implicit and any(ctx[f"needs.{n}.result"] != "success" for n in needs):
             return False
-        return bool(eval(expr, {"__builtins__": {}}, {"ctx": ctx}))  # noqa: S307
+        return bool(eval(expr, {"__builtins__": {}}, {"ctx": ctx}))
 
     return evaluate
 
@@ -275,7 +229,6 @@ def _ctx(
 
 
 SCENARIOS = {
-    # tên: (ngữ cảnh, publish-results, update, deploy-pages, trigger-post-finalization)
     "kỳ mới": (_ctx(ready="true", finalized="false", update="success"), True, True, True, True),
     "đã xong, chạy lại": (_ctx(ready="true", finalized="true", update="skipped", publish="skipped"),
                           False, False, True, True),
@@ -284,7 +237,6 @@ SCENARIOS = {
                         False, False, False, False),
     "kết quả trước hỏng": (_ctx(ready="true", finalized="false", update="success", publish="failure"),
                            True, True, True, True),
-    # Guard đã ghi finalized=true rồi một bước sau của canonical hỏng: không được triển khai.
     "canonical hỏng sau guard": (_ctx(ready="", finalized="true", update="skipped", publish="skipped",
                                       canonical="failure"), False, False, False, False),
 }
@@ -298,9 +250,6 @@ def test_each_job_runs_exactly_when_it_should(name: str) -> None:
         for job in ("publish-results", "update", "deploy-pages", "trigger-post-finalization")
     )
     assert got == (publish, update, deploy, trigger), name
-
-
-# --- Trang kết quả đi trước pipeline -------------------------------------------
 
 
 def test_the_results_pages_do_not_wait_for_the_analytics_pipeline() -> None:
@@ -323,7 +272,6 @@ def test_the_results_pages_do_not_wait_for_the_analytics_pipeline() -> None:
 
 
 def test_the_full_deploy_comes_after_the_results_deploy() -> None:
-    """Hai lượt triển khai trong cùng một lượt chạy: bản đầy đủ phải là bản sau cùng."""
     assert {"update", "publish-results"} <= _needs(_jobs()["deploy-pages"])
 
 

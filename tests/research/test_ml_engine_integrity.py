@@ -1,5 +1,3 @@
-"""Hồi quy cho thứ tự dự báo–chấm–học và hợp đồng xác suất."""
-
 from __future__ import annotations
 
 import json
@@ -28,7 +26,6 @@ def observations():
 
 @pytest.fixture
 def pipeline(observations, monkeypatch):
-    # Giảm chi phí bộ cây, vẫn chạy thật toàn bộ fit/chọn đặc trưng/dự báo.
     booster = learners.TabularBooster
     monkeypatch.setattr(orchestration, "TabularBooster", lambda: booster(n_estimators=2))
     return ContinuousLearningPipeline(
@@ -128,7 +125,6 @@ def test_losses_distinguish_identical_rankings_with_wrong_probabilities(pipeline
 
 
 def test_drift_refits_next_day_and_records_mode_at_prediction(pipeline, monkeypatch):
-    # Cổng đang mở trước kỳ 70: đủ bằng chứng kỹ năng dương.
     for _ in range(pipeline.config.trust_min_days):
         pipeline.safe_mode.observe(logloss=0.5, brier=0.17,
                                    baseline_logloss=0.55, baseline_brier=0.18)
@@ -329,7 +325,6 @@ def test_failed_pipeline_refit_keeps_incumbent_arm_and_feature_columns(pipeline,
             raise RuntimeError("candidate failed")
 
     pipeline.arm_builders["tabular_boosting"] = Broken
-    # Chọn cột khác để chắc chắn model cũ vẫn nhận đúng schema riêng của nó.
     monkeypatch.setattr(orchestration, "select_features", lambda *args, **kwargs:
                         SimpleNamespace(kept=["number"], describe=lambda: "changed"))
     pipeline._refit(71)
@@ -403,7 +398,6 @@ def test_unavailable_arm_with_all_weight_falls_back_to_named_baseline(pipeline, 
 
 
 def test_mixer_learns_the_summed_log_loss_of_each_arm(pipeline):
-    """Trọng số là hậu nghiệm Bayes: loss của kỳ là log-loss CỘNG 100 con."""
     from research.ml_engine.aggregation import ExponentialWeights
 
     result = pipeline.step(70)
@@ -414,7 +408,6 @@ def test_mixer_learns_the_summed_log_loss_of_each_arm(pipeline):
 
 
 def test_trust_and_drift_read_the_mixture_before_the_gate(pipeline, monkeypatch):
-    """Đo trên dự báo đã qua cổng thì trust = 0 giữ dự báo bằng nền và cổng không bao giờ mở."""
     _, weights, per_arm = pipeline.predict_day(70)
     mixture = sum(weights[name] * per_arm[name] for name in weights)
     outcome = (pipeline.observations.counts[70] > 0).astype(float)
@@ -455,7 +448,6 @@ def test_arm_skill_is_paired_against_the_baseline_arm_on_shared_days():
     assert skill["tot"]["logloss_skill"] == pytest.approx((0.05 + 0.03 + 0.02) / 3 / 0.55)
     gain = np.array([0.05, 0.03, 0.02])
     assert skill["tot"]["paired_t"] == pytest.approx(gain.mean() / (gain.std(ddof=1) / np.sqrt(3)))
-    # "te" chỉ so trên hai kỳ nó có mặt, với nền của đúng hai kỳ ấy.
     assert skill["te"]["days"] == 2
     assert skill["te"]["logloss_skill"] == pytest.approx(-(0.10 + 0.15) / 2 / 0.525)
     assert [row["arm"] for row in orchestration.arm_skill(rows)][0] == "tot"
@@ -474,7 +466,6 @@ def _aggregation_benchmark():
 
 
 def test_aggregation_benchmark_uses_the_promotion_gate_error_bar():
-    """Phép đo thay bandit chấm z bằng đúng sai số của cổng đề bạt production."""
     from forecast import online_learning
 
     rng = np.random.default_rng(5)

@@ -10,8 +10,6 @@ import {
   rememberedRangeCount,
 } from "../src/traditional_results.js";
 
-// So đúng TÊN HOST, không so chuỗi con: "raw.githubusercontent.com" có thể nằm ở bất kỳ đâu
-// trong một URL của host khác.
 const hostOf = (url) => new URL(String(url)).hostname;
 
 class FakeKV {
@@ -19,7 +17,6 @@ class FakeKV {
   async get(key) { this.gets += 1; return this.store.get(key) ?? null; }
   async put(key, value, options = {}) {
     this.puts.push(key);
-    // Như Cloudflare KV: TTL dưới 60 giây bị từ chối.
     if (options.expirationTtl !== undefined && options.expirationTtl < 60) {
       throw new Error(`Invalid expiration_ttl of ${options.expirationTtl}. Expiration TTL must be at least 60.`);
     }
@@ -54,11 +51,10 @@ const xsktHtml = `
 <tr><td>G7</td><td>21 88 40 27</td></tr>
 </tbody></table>`;
 
-const NOW = Date.UTC(2026, 8, 13, 12);   // 19:00 giờ VN ngày 13-09-2026: kỳ mới nhất là 13-09
+const NOW = Date.UTC(2026, 8, 13, 12);
 const MINUTE = 60_000;
 const ctxOf = () => ({ pending: [], waitUntil(promise) { this.pending.push(promise); } });
 
-// Trang dự phòng chỉ có những ngày được nêu (cùng bộ giải, khác ngày).
 const pageWith = (...days) => days.map((day) => xsktHtml.replace("13-09-2026", day)).join("\n");
 
 function makeFetch(counter, { page = xsktHtml, primary = [primaryRow] } = {}) {
@@ -82,8 +78,6 @@ const query = {
 };
 
 const scenarios = {
-  // Khoảng ngày do KHÁCH chọn: không được thành khoá KV. Trước 15-11-2026 mỗi cặp from:to là một lượt
-  // ghi, nên ~900 yêu cầu làm cạn hạn mức ghi KV (gói Free 1 000/ngày, dùng chung với cron trang Live).
   async distinct_ranges_write_kv_bounded() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
@@ -99,7 +93,6 @@ const scenarios = {
     return { statuses: [...statuses], puts: kv.puts, keys: [...kv.store.keys()], counter };
   },
 
-  // Lỗi bất ngờ (KV hỏng…) không được đưa chi tiết nội bộ ra khách; thông báo tự soạn thì vẫn trả.
   async internal_errors_stay_internal() {
     const secret = "kv-internal-host.example:8443 token=abc";
     const broken = { async get() { throw new TypeError(secret); }, async put() { throw new TypeError(secret); } };
@@ -114,8 +107,6 @@ const scenarios = {
     };
   },
 
-  // Isolate lạnh, KV đã có bản tươi của ~4 000 kỳ: trả kết quả và "kỳ chuẩn trước" của trang Live mà KHÔNG
-  // `JSON.parse` trọn lịch sử (~20 ms, quá trần CPU 10 ms của gói Free).
   async cold_isolate_skips_full_parse() {
     const rows = [];
     for (let i = 0; i < 4000; i++) {
@@ -139,7 +130,6 @@ const scenarios = {
     let previous;
     try {
       payload = await buildTraditionalResults(q, { LIVE: cold }, { fetchImpl, nowUtcMs: NOW });
-      // Một isolate lạnh khác: trang Live hỏi kỳ chuẩn trước ngày cuối.
       const live = new FakeKV();
       for (const [key, value] of warm.store) live.store.set(key, value);
       previous = await latestCanonicalDrawBefore({ LIVE: live }, last, { fetchImpl, nowUtcMs: NOW });
@@ -155,7 +145,6 @@ const scenarios = {
     };
   },
 
-  // Tìm theo ngày đúng qua khoảng nghỉ quay (Tết) và ở hai đầu lịch sử.
   async ledger_lookup_across_gaps() {
     const rows = [];
     const gap = new Set(["2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20"]);
@@ -181,7 +170,6 @@ const scenarios = {
     };
   },
 
-  // Bản tươi sai hình dạng (hai kỳ đổi chỗ, cụt một ký tự, khuôn JSON cũ) không được dùng: tải lại lịch sử.
   async malformed_fresh_is_refetched() {
     const good = encodePrimaryLedger({
       "2026-09-11": parseXsktLedger(xsktHtml)["2026-09-13"],
@@ -213,7 +201,6 @@ const scenarios = {
     return out;
   },
 
-  // `days=30` và khoảng tự chọn trùng ngày: mỗi yêu cầu nhận đúng `query` của nó, theo cả hai thứ tự.
   async preset_and_range_keep_their_query() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
@@ -235,7 +222,6 @@ const scenarios = {
     return { ...out, preset_range: [preset.from, preset.to] };
   },
 
-  // Gọi lại cùng khoảng ngày: lấy từ đệm trong bộ nhớ isolate, không đọc KV, cùng nội dung; đệm có trần.
   async repeat_range_from_memory() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
@@ -253,7 +239,6 @@ const scenarios = {
     return { same_body: first === second, gets_on_repeat: getsOnRepeat, remembered: rememberedRangeCount(env) };
   },
 
-  // Bản tươi trong KV không đổi qua lần nạp lại: dùng lại đúng đối tượng hàng và các kỳ đã dựng sẵn.
   async unchanged_fresh_reuses_built_draws() {
     const kv = new FakeKV();
     const env = { LIVE: kv };
@@ -264,7 +249,6 @@ const scenarios = {
     return { cache: again.meta.primary_cache, same_draw_object: first.data[0] === again.data[0] };
   },
 
-  // Lịch sử chuẩn không đổi thì bản tốt cuối cùng không bị ghi lại; đổi thì ghi.
   async unchanged_history_keeps_last_good() {
     const kv = new FakeKV();
     const env = { LIVE: kv };
@@ -281,19 +265,18 @@ const scenarios = {
       const payload = await buildTraditionalResults(q, env, { fetchImpl, nowUtcMs: now });
       loads.push(payload.meta.primary_cache);
     };
-    await load();                                   // tải lần đầu: ghi bản tươi và bản tốt cuối cùng
-    await load();                                   // trong một phút: lấy từ bộ nhớ isolate
+    await load();
+    await load();
     now += 2 * MINUTE; kv.store.delete("traditional:primary:fresh:v2");
-    await load();                                   // bản tươi hết hạn, nội dung y hệt
+    await load();
     now += 2 * MINUTE; kv.store.delete("traditional:primary:fresh:v2");
     primary = [primaryRow, { ...primaryRow, date: "2026-09-13T00:00:00.000" }];
-    await load();                                   // có kỳ mới
+    await load();
     const lastGood = kv.puts.filter((key) => key === "traditional:primary:last-good:v2").length;
     const fresh = kv.puts.filter((key) => key === "traditional:primary:fresh:v2").length;
     return { loads, last_good_writes: lastGood, fresh_writes: fresh, fetches: counter.primary };
   },
 
-  // Bản tươi sống 5 phút từ 18:00 giờ VN (kỳ mới vào kho), ngoài khung sống tới 18:00, trong [60, 3600] giây.
   async fresh_ttl_policy() {
     const at = (hour, minute, second = 0) =>
       primaryFreshTtlSeconds(Date.UTC(2026, 10, 15, hour - 7, minute, second));
@@ -321,7 +304,6 @@ const scenarios = {
     };
   },
 
-  // Cron nạp lớp bù; yêu cầu chỉ ĐỌC nó, và lượt thứ hai lấy từ đệm phản hồi.
   async cron_fills_then_requests_read() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
@@ -350,7 +332,6 @@ const scenarios = {
     };
   },
 
-  // Nguồn dự phòng hỏng ở lượt cron: yêu cầu vẫn trả lịch sử chuẩn và báo ngày còn thiếu.
   async fallback_outage_keeps_primary() {
     const counter = { primary: 0, xskt: 0 };
     const fetchImpl = async (url) => {
@@ -376,8 +357,6 @@ const scenarios = {
     };
   },
 
-  // Khách đổi khoảng ngày liên tục: mỗi khoảng là một khoá đệm mới, nhưng yêu cầu không
-  // bao giờ gọi nguồn dự phòng.
   async amplification() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
@@ -395,7 +374,6 @@ const scenarios = {
     return { counter, statuses: [...new Set(statuses)] };
   },
 
-  // Ngày 13-09 vẫn thiếu (trang chưa có): cron tải lại, nhưng cách nhau tối thiểu 10 phút.
   async cron_refresh_is_spaced() {
     const counter = { primary: 0, xskt: 0 };
     const fetchImpl = makeFetch(counter, { page: pageWith("10-09-2026") });
@@ -408,10 +386,6 @@ const scenarios = {
     return { xskt_after_each: after };
   },
 
-  // Lịch sử chuẩn đủ mọi ngày trong cửa sổ trừ 11-09 (nghỉ quay) và 13-09. Trang có 10-09 và
-  // 13-09: 13-09 được bù, 11-09 nằm giữa hai ngày của trang mà trang không có → ghi "absent".
-  // Hết ngày thiếu thì cron không gọi nguồn nữa, kể cả khi đã quá 10 phút; nhưng sau 7 ngày dấu
-  // "absent" hết hạn và cron kiểm lại đúng một lần.
   async days_the_source_never_had_are_remembered() {
     const counter = { primary: 0, xskt: 0 };
     const primary = [];
@@ -439,8 +413,6 @@ const scenarios = {
     };
   },
 
-  // Cron chỉ nạp lớp bù khi wrangler.toml bật TRADITIONAL_FALLBACK_REFRESH. Đếm đúng trang sổ
-  // cuộn 500 ngày: bộ thu thập trang live cũng gọi cùng host, nên đếm theo host là gộp hai việc.
   async scheduled_refresh_needs_the_switch() {
     const run = async (vars) => {
       let ledgerFetches = 0;
@@ -467,7 +439,6 @@ const scenarios = {
     return { status: res.status };
   },
 
-  // Ngày cũ hơn cửa sổ 500 ngày của nguồn dự phòng: gọi cũng không có, nên không gọi.
   async out_of_window() {
     const counter = { primary: 0, xskt: 0 };
     const payload = await buildTraditionalResults(
@@ -478,7 +449,6 @@ const scenarios = {
     return { counter, unresolved: payload.meta.unresolved_dates };
   },
 
-  // Không gửi danh tính nguồn ra trình duyệt, như anonymiseSnapshot của live.json.
   async anonymised() {
     const counter = { primary: 0, xskt: 0 };
     const okEnv = { LIVE: new FakeKV() };
@@ -488,7 +458,7 @@ const scenarios = {
       ? new Response(JSON.stringify([primaryRow]), { status: 200 })
       : new Response("busy", { status: 503 }));
     const failingEnv = { LIVE: new FakeKV() };
-    try { await refreshFallbackOverlay(failingEnv, { fetchImpl: busy, nowUtcMs: NOW }); } catch { /* lỗi cron chỉ vào log */ }
+    try { await refreshFallbackOverlay(failingEnv, { fetchImpl: busy, nowUtcMs: NOW }); } catch {   }
     const failing = await buildTraditionalResults(query, failingEnv, { fetchImpl: busy, nowUtcMs: NOW });
     const text = JSON.stringify([ok, failing]).toLowerCase();
     return {
@@ -582,7 +552,7 @@ const scenarios = {
     const rows = parseXsktLedger(xsktHtml);
     const parsed = parseTraditionalQuery(
       new URL("https://worker/api/v1/traditional-results?days=30"),
-      { nowUtcMs: Date.UTC(2026, 8, 13, 10, 0) }, // 17:00 giờ Việt Nam
+      { nowUtcMs: Date.UTC(2026, 8, 13, 10, 0) },
     );
     return {
       dates: Object.keys(rows),

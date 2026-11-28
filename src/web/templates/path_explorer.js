@@ -1,6 +1,5 @@
 (() => {
   "use strict";
-  // Phần đối chiếu chỉ đọc dữ liệu đã công bố, không sửa xác suất hay điều kiện quét.
   function node(tag, cls, text) {
     const item = document.createElement(tag);
     if (cls) item.className = cls;

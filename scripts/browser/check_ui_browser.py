@@ -1,4 +1,3 @@
-"""Kiểm tra bản HTML đã xuất bản bằng Chromium, lưu ảnh để duyệt trực quan."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -18,7 +17,6 @@ class QuietHandler(SimpleHTTPRequestHandler):
 
 
 def contrast(colors):
-    """Độ tương phản từ màu đã phân giải trong Chromium, không chép token."""
     def luminance(color):
         rgb = [float(n.strip()) / 255 for n in color.split("(")[1].split(")")[0].split(",")[:3]]
         linear = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in rgb]
@@ -28,16 +26,13 @@ def contrast(colors):
 
 
 def check_no_native_tooltips(page):
-    """Không để title của HTML/SVG mở bong bóng; vẫn giữ tiêu đề tài liệu."""
     expect(page.locator("body [title], body svg title")).to_have_count(0)
     expect(page.locator("head > title")).to_have_count(1)
 
 
 def check_pointer_has_no_tooltip(page, target):
-    """Dùng chuột thật và chờ quá độ trễ cũ để bắt cả tooltip hẹn giờ."""
     page.mouse.move(1, 1)
     target.hover()
-    # Tooltip cũ đợi 150 ms; kiểm ngay sau hover sẽ bỏ lọt hồi quy ấy.
     page.wait_for_timeout(250)
     expect(page.locator("#app-evidence-tip")).to_be_hidden()
     expect(page.locator("#app-rail-tooltip")).to_be_hidden()
@@ -46,15 +41,6 @@ def check_pointer_has_no_tooltip(page, target):
 
 
 def check_evidence(page, name, width, dark):
-    """Mọi trang: một con số mở được nguồn & bằng chứng.
-
-    Trang chủ mở căn cứ bằng nhấp đúp. Các trang khác ưu tiên con số chưa có
-    chức năng nhấp (nhấp thường mở ngăn kéo). Trang mà
-    mọi con số đều đã có chức năng (ô đánh dấu của trang thống kê) thì dùng
-    Alt + nhấp. Rê chuột không được mở tooltip; chữ của giá trị phải đạt AA
-    trên nền ngăn kéo ở cả
-    hai chế độ màu; Escape đóng ngăn kéo.
-    """
     found = page.evaluate_handle("""() => {
       const root = document.getElementById('app-main');
       const inView = e => { const r = e.getBoundingClientRect();
@@ -98,8 +84,6 @@ def check_evidence(page, name, width, dark):
     page.keyboard.press("Escape")
     expect(drawer).not_to_be_visible()
     if width > 640 and not dark:
-        # Bàn phím: vùng chứa số nhận tiêu điểm, mũi tên chọn số, Enter mở.
-        # Trang tự dựng lại (live) có thể đã thay phần tử: lấy vùng còn gắn trên trang.
         page.wait_for_function("document.querySelector('#app-main [data-evidence-region]')")
         region = target.evaluate_handle(
             "e => (e.isConnected && e.closest('[data-evidence-region]')) || "
@@ -119,7 +103,6 @@ def check_evidence(page, name, width, dark):
 
 
 def check_evidence_keeps_existing_clicks(page):
-    """Ô đã có chức năng nhấp (đánh dấu) giữ nguyên; Alt + nhấp mới mở bằng chứng."""
     cell = page.locator("#sp-matrix-grid td.cell[data-key]").filter(has_text="1").first
     cell.scroll_into_view_if_needed()
     before = cell.evaluate("e => e.classList.contains('marked')")
@@ -136,9 +119,6 @@ def check_evidence_keeps_existing_clicks(page):
 
 
 def check_traditional_result_interactions(page):
-    """Sổ kết quả giữ bấm/Enter/Space, cặp trùng và Alt + bấm khi bỏ tooltip."""
-    # Kết thúc lượt bàn phím trước đó bằng thao tác chuột thật. Tooltip do
-    # bàn phím còn mở là hợp lệ; từ đây mọi focus đều do chuột tạo ra.
     page.locator("#tr-filter-title").click()
     results = page.locator("#tr-results")
     pair_mode = page.locator("#tr-pair-mode")
@@ -155,7 +135,6 @@ def check_traditional_result_interactions(page):
     expect(number).to_be_focused()
     expect(number).to_have_attribute("aria-pressed", "true")
     expect(page.locator("#app-evidence-drawer")).to_be_hidden()
-    # Lần bấm đã đưa focus vào số: focus do chuột cũng không mở tooltip.
     check_pointer_has_no_tooltip(page, number)
     number.press("Enter")
     expect(number).to_have_attribute("aria-pressed", "false")
@@ -185,7 +164,6 @@ def check_traditional_result_interactions(page):
 
 
 def check_year_calendar(page, width, initial=False):
-    """Đối chiếu lịch năm/tháng và bộ lọc trên DOM đã bố trí thật."""
     card = page.locator('[data-app-year-calendar]')
     year = card.locator('[data-app-year-select]')
     month = card.locator('[data-app-month-select]')
@@ -243,7 +221,6 @@ def main():
             for width in (390, 1440):
                 context = browser.new_context(viewport={"width": width, "height": 950}, color_scheme="light", reduced_motion="reduce")
                 page = context.new_page()
-                # A fixed draw fixture makes the LIVE forecast/date contract deterministic.
                 live_fixture = {
                     "draw_date": "2026-09-26", "status": "complete_verified",
                     "verified_complete": True, "progress_percent": 100,
@@ -257,14 +234,12 @@ def main():
                 page.route("**/live.json*", lambda route, _request, live_fixture=live_fixture: route.fulfill(
                     content_type="application/json", body=json.dumps(live_fixture)))
                 def forecast_route(route):
-                    # Kỳ 26-09 đã quay xong, nên khối dự đoán phải nhắm kỳ kế tiếp.
                     if not route.request.url.endswith("_2026-09-27.csv"):
                         route.fulfill(status=404, body="")
                         return
                     route.fulfill(content_type="text/csv", body=(
                         "predict_for_date,rank,number,cau_score,prob\n"
                         "2026-09-27,1,05,70.1,0.01\n2026-09-27,2,42,65.3,0.01\n"))
-                # Trang trực tiếp đọc bản chụp 10 số đầu bảng Cầu Kèo theo ngày quay.
                 page.route("**/ai_ml/daily/cau_keo_*_top10_*.csv", forecast_route)
                 errors = []
                 page.on("pageerror", lambda error, errors=errors: errors.append(str(error)))
@@ -297,10 +272,6 @@ def main():
                             search.press("Escape")
                             assert not page.locator("#app-global-search").is_visible()
                             if name in ("tan-suat-loto.html", "tan-suat-cap-loto.html"):
-                                # Ô được cuộn tới (bàn phím, scrollIntoView) không được nằm khuất
-                                # dưới cột nhãn dính: khoảng đệm cuộn trái ≥ bề rộng cột ấy, ở cả
-                                # hai chế độ. Không phụ thuộc dữ liệu — lỗi cũ chỉ lộ khi ô "1" đầu
-                                # tiên rơi vào cột bị cắt mép (31-10-2026, 390px).
                                 for mode in ("vertical", "horizontal"):
                                     page.locator(f'[data-app-orientation="{mode}"]').click()
                                     pad, label = page.evaluate(
@@ -310,8 +281,6 @@ def main():
                                     assert pad >= label - 1, (
                                         f"{name} {width}px {mode}: khoảng đệm cuộn {pad}px hẹp hơn cột nhãn dính "
                                         f"{label}px — ô cuộn tới nằm khuất dưới cột ấy")
-                                # Kiểm bảng chi tiết trong chế độ Ngang; thẻ Dọc được
-                                # kiểm riêng cùng biểu đồ và lịch sử từng số.
                                 if name == "tan-suat-cap-loto.html":
                                     picker = page.locator("details").filter(has=page.locator("#bf-pair-picker"))
                                     if picker.get_attribute("open") is None:
@@ -359,9 +328,7 @@ def main():
                     except Exception as error:
                         failures.append({"page": name, "width": width, "error": str(error)})
                         page.screenshot(path=str(OUT / f"failure-{name}-{width}.png"))
-                # Đóng modal phải trả focus về mục menu đã mở nó.
                 page.goto(base + "/tan-suat-cap-loto.html", wait_until="load")
-                # Reference header controls must work at both widths, with visible menus.
                 page.locator('#app-profile-toggle').click()
                 expect(page.locator('#app-profile-menu')).to_be_visible()
                 page.locator('#app-notifications-toggle').click()
@@ -393,7 +360,6 @@ def main():
                 assert not page.locator("#app-main").evaluate("e => e.inert")
                 expect(page.locator("#app-toggle")).to_be_focused()
                 if width == 390:
-                    # Mô phỏng người dùng đóng nền phủ khi đang chọn mục menu.
                     page.locator("#app-toggle").click()
                     sidebar.focus()
                     page.locator("#app-scrim").click(position={"x": 370, "y": 500})

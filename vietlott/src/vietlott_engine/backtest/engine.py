@@ -1,22 +1,3 @@
-"""Walk-forward backtesting engine (no look-ahead bias by construction).
-
-For every target draw t in [start, end):
-  1. view = history.upto(t).detached()  — an independent, read-only copy of draws < t
-  2. strategy.fit(view)                 — every ``refit_every`` draws
-  3. tickets = strategy.generate(view)  — validated (range, uniqueness, shape)
-  4. tickets are scored against draw t
-
-Structural guarantees: the strategy never holds a reference to arrays containing
-draw t or later (the prefix is copied, so ``ndarray.base`` cannot reach the future),
-and all arrays are read-only. ``LookAheadError`` is raised if a strategy returns
-malformed tickets or the view length ever disagrees with t.
-
-Statistics: per-ticket match counts are compared with the exact hypergeometric
-null (G-test, z-test on the mean); every strategy is compared with the quick-pick
-benchmark (Welch t-test on matches), with Benjamini–Hochberg control across
-strategies; ROI has a block-bootstrap 95% CI.
-"""
-
 from __future__ import annotations
 
 import time
@@ -67,19 +48,19 @@ class StrategyResult(BaseModel):
     expected_histogram: list[float]
     mean_matches: float
     expected_mean_matches: float
-    z_mean_matches: float  # cluster-robust by draw (tickets of one draw may be correlated)
-    z_iid: float  # naive, treats every ticket as independent (for reference)
-    design_effect: float  # variance inflation from within-draw ticket correlation
+    z_mean_matches: float
+    z_iid: float
+    design_effect: float
     gof_p_value: float
-    p_value_vs_null: float  # one-sided: more matches than chance?
+    p_value_vs_null: float
     q_value_vs_null: float | None = None
     p_holm: float | None = None
-    e_value_max: float  # max wealth of the anytime-valid bettor (≥ 1/α ⇒ reject for one strategy)
+    e_value_max: float
     e_value_final: float
     anytime_p_value: float
-    anytime_p_holm: float | None = None  # Holm across strategies (several bettors were run)
-    mde_matches: float  # smallest edge (matches/ticket) this backtest detects with 80% power
-    certified_edge_bound: float  # with 1−α confidence |edge| < this (TOST), matches/ticket
+    anytime_p_holm: float | None = None
+    mde_matches: float
+    certified_edge_bound: float
     certified_edge_bound_relative: float
     tier_counts: dict[str, int]
     tier_expected: dict[str, float]
@@ -138,9 +119,7 @@ class WalkForwardBacktester:
         self.tax = tax
         self.draw_means: dict[str, np.ndarray] = {}
 
-    # ------------------------------------------------------------ scoring
     def _score(self, tickets: np.ndarray, t: int) -> tuple[np.ndarray, np.ndarray, float]:
-        """Return (matches, tier_index or -1, payout) for tickets vs draw t."""
         inc = self.h.incidence[t]
         matches = inc[tickets - 1].sum(axis=1)
         bonus_hit = (tickets == self.h.bonus[t]).any(axis=1) if self.spec.has_bonus else np.zeros(len(tickets), bool)
@@ -166,7 +145,6 @@ class WalkForwardBacktester:
             raise LookAheadError(f"{name} returned invalid numbers")
         return arr
 
-    # ---------------------------------------------------------------- run
     def run_strategy(self, strategy: Strategy, start: int, end: int) -> tuple[StrategyResult, np.ndarray]:
         t0 = time.perf_counter()
         rng = np.random.default_rng([self.cfg.seed, zlib.crc32(strategy.name.encode())])
@@ -204,7 +182,6 @@ class WalkForwardBacktester:
         mu = k * k / n
         var = float(np.sum(null * (np.arange(k + 1) - mu) ** 2))
         z_iid = (matches.mean() - mu) / np.sqrt(var / n_tickets)
-        # draws are the independent units (martingale differences under H0): cluster-robust SE
         t_draws = draw_mean.size
         w = np.array([len(x) for x in all_matches], dtype=np.float64)
         wmean = float(np.sum(w * draw_mean) / w.sum())
@@ -275,17 +252,14 @@ class WalkForwardBacktester:
             r, m = self.run_strategy(s, start, end)
             results.append(r)
             matches[s.name] = m
-        # primary test: each strategy vs the exact hypergeometric null (cluster-robust), FDR and FWER
         pv = [r.p_value_vs_null for r in results]
         for r, q, ph, pa in zip(results, benjamini_hochberg(pv), holm(pv), holm([r.anytime_p_value for r in results])):
             r.q_value_vs_null, r.p_holm, r.anytime_p_holm = float(q), float(ph), float(pa)
-        # secondary: vs the quick-pick realisation actually played
         ref = matches.get("random")
         if ref is not None:
             for r in results:
                 if r.strategy != "random":
                     r.vs_random_p_value = float(stats.ttest_ind(matches[r.strategy], ref, equal_var=False).pvalue)
-        # data-snooping-robust: is the *best* strategy better than chance?
         mu = self.spec.pick**2 / self.spec.pool_size
         names = [r.strategy for r in results]
         diffs = np.column_stack([self.draw_means[nm] - mu for nm in names])

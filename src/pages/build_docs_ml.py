@@ -46,7 +46,6 @@ def _read_csv(path: Path) -> pd.DataFrame:
 
 
 def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
-    """Trả về (bảng đã canh cột, ngày dự báo)."""
 
     if df.empty:
         return (
@@ -68,11 +67,9 @@ def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
     gen_date = ""
     if "predict_for_date" in df.columns and len(df):
         gen_date = str(df["predict_for_date"].iloc[0])
-        # Ngày lặp lại trên mọi dòng nên đưa lên tiêu đề thay vì chiếm một cột.
         view = view.drop(columns=["predict_for_date"])
 
     view = view.rename(columns=column_label)
-    # Thêm thứ hạng để bảng hai/ba cột lấp đầy bề ngang thay vì dồn ra hai mép.
     view.insert(0, "#", range(1, len(view) + 1))
     align = [ALIGN_RIGHT, ALIGN_LEFT] + [ALIGN_RIGHT] * (len(view.columns) - 2)
     return dataframe_table(view, align=align, key_column=1), gen_date
@@ -85,7 +82,6 @@ def _date_badge(gen_date: str) -> str:
 
 
 def _base_page(body: str, page_title: str, current: str = "") -> str:
-    """Giữ khung chung; chỉ hai trang Top 10 nhận lớp trình bày ML riêng."""
     forecast_style = (
         '<style id="app-ml-forecast-style">'
         + (TEMPLATES / "ml_forecast.css").read_text(encoding="utf-8")
@@ -111,7 +107,6 @@ def _base_page(body: str, page_title: str, current: str = "") -> str:
 
 
 def _prediction_overview(frame: pd.DataFrame, date: str, mode: str) -> str:
-    """Đọc mức tin đã lưu, không suy từ xác suất và không mặc định thiếu thành 0."""
     trust = pd.to_numeric(frame.get("model_trust", pd.Series(dtype=float)), errors="coerce")
     complete = len(frame) > 0 and len(trust) == len(frame) and trust.between(0, 1).all()
     if not complete:
@@ -140,7 +135,6 @@ def _prediction_overview(frame: pd.DataFrame, date: str, mode: str) -> str:
 
 
 def _forecast_body(frame: pd.DataFrame, table: str, date: str, mode: str) -> str:
-    """Đưa kỳ dự báo và bảng lên trước; giữ giải thích kỹ thuật trong mục gập."""
     name = "LOTO" if mode == "loto" else "Đặc Biệt"
     current = f"ml_top10_{mode}.html"
     subtitle = (
@@ -195,11 +189,8 @@ def build() -> None:
 
     loto_table, loto_date = _prediction_table(loto_top)
     de_table, de_date = _prediction_table(de_top)
-    # Mỗi hàng mang bằng chứng tính toán riêng (xác suất thô, model_trust, phép
-    # co về nền); app-evidence.js mở nó khi người xem nhấp vào số trong hàng.
     loto_rows = ml_row_evidence(loto_top, "loto")
     de_rows = ml_row_evidence(de_top, "de")
-    # Cột 0 là hạng "#": bằng chứng xác suất của hàng không giải thích hạng.
     loto_table = tag_rows(loto_table, [ident for ident, _ in loto_rows], cols=(2, 3)) + values_block(loto_rows)
     de_table = tag_rows(de_table, [ident for ident, _ in de_rows], cols=(2, 3)) + values_block(de_rows)
 

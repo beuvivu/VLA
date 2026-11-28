@@ -1,13 +1,3 @@
-"""In toàn văn các bài phân tích của một trang tham chiếu để học CÁCH phân tích.
-
-Vì sao tồn tại: chủ dự án muốn hệ thống hoá phương pháp của một chuyên mục bài
-dự đoán XSMB thành thuật toán riêng. Proxy của môi trường phát triển chặn trang
-ấy; runner của Actions thì gọi được. Script chỉ ĐỌC và in ra log: danh sách bài
-của trang chuyên mục (theo các trang phân trang), rồi chữ của từng bài và các
-bảng trong bài. Không lưu nội dung vào kho. Mỗi URL gọi đúng một lần, có nhịp
-chờ giữa các lần.
-"""
-
 from __future__ import annotations
 
 import os
@@ -35,7 +25,7 @@ MAX_ROWS = int(os.environ.get("MAX_ROWS", "25"))
 def get(session: requests.Session, url: str) -> BeautifulSoup | None:
     try:
         response = session.get(url, timeout=TIMEOUT)
-    except Exception as exc:  # noqa: BLE001 - một trang hỏng không dừng cả lô
+    except Exception as exc:
         print(f"  LỖI MẠNG {url}: {type(exc).__name__}: {exc}")
         return None
     print(f"  HTTP {response.status_code}, {len(response.content) / 1024:.0f} KB  {url}")
@@ -51,22 +41,16 @@ PAGINATION = re.compile(r"([?&]page=\d+|/page/\d+)")
 
 
 def category_prefix(start: str) -> str:
-    """Tiền tố đường dẫn của bài: phần trước ``/type/``, hoặc thư mục cha của trang.
-
-    Không bao giờ rỗng hay chỉ là ``/``: tiền tố ấy khớp mọi liên kết điều hướng.
-    """
     path = urlparse(start).path
     prefix = path.split("/type/")[0].rstrip("/")
     if not prefix:
         prefix = path.rstrip("/").rsplit("/", 1)[0]
-    # Rỗng thì khớp mọi liên kết; chứa /type/ thì không bài nào lọt qua article_links.
     if not prefix or "/type" in prefix + "/":
         raise SystemExit("Không suy ra được tiền tố bài viết; đặt ARTICLE_PREFIX.")
     return prefix + "/"
 
 
 def article_links(soup: BeautifulSoup, base: str, prefix: str) -> list[str]:
-    """Liên kết CÙNG host tới bài dưới ``prefix``, trừ trang chuyên mục và trang phân trang."""
     host = urlparse(base).netloc
     out: list[str] = []
     for a in soup.find_all("a", href=True):
@@ -82,7 +66,6 @@ def article_links(soup: BeautifulSoup, base: str, prefix: str) -> list[str]:
 
 
 def page_links(soup: BeautifulSoup, base: str) -> list[str]:
-    """Liên kết phân trang CÙNG host của trang chuyên mục (``?page=``, ``/page/``)."""
     host = urlparse(base).netloc
     out: list[str] = []
     for a in soup.find_all("a", href=True):

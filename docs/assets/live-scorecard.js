@@ -1,19 +1,3 @@
-/* Bảng đối chiếu kỳ quay: mọi danh sách phỏng đoán đã đóng băng trước 18:10
-   (src/evaluation/prediction_board.py) đặt cạnh kết quả đang về. Mỗi danh sách là hai hàng
-   song song: "Trước giờ quay" (số và xác suất đã công bố) và "Sau giờ quay"
-   (từng số về hay không, tỉ lệ trúng thật so với kỳ vọng).
-
-   Danh sách sinh ra từ cặp vị trí (cầu đẹp nhất, soi cầu, soi đường) mang vị trí cầu trong sổ
-   (`bridges` của từng mục, `draws` của sổ). Danh sách khác (tổ hợp, Cầu Kèo, ML…) tra bảng
-   `running` của sổ: các cầu đang chạy trên trang Cầu LOTO / Cầu Đặc Biệt ghép ra đúng số ấy.
-   Bấm một số ở hàng "Trước giờ quay" mở hàng chi tiết: các cầu và đường cầu qua từng kỳ, tô hai
-   chữ số ghép thành số và ô về ở kỳ sau.
-
-   live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau. Khi kỳ ấy đã quay xong, mỗi danh sách có
-   BA hàng để tra trong một chỗ (yêu cầu 05-11-2026): "Trước giờ quay" của kỳ sắp quay (sổ đang mở), rồi
-   "Trước giờ quay" và "Sau giờ quay" của kỳ vừa quay — kỳ mà bảng kết quả đầu trang đang hiện —, nên dấu
-   về/trượt giữ tới phiên kế tiếp. Trong lúc đang quay chưa có kỳ sắp quay: hai hàng của kỳ đang quay.
-   Mỗi hàng ghi rõ kỳ (kèm hôm nay / hôm qua / ngày mai theo giờ VN); sổ của hai kỳ tải độc lập. */
 (function () {
   'use strict';
   var root = document.getElementById('live-scorecard');
@@ -24,12 +8,8 @@
   var LOTO_BASE = 1 - Math.pow(0.99, TOTAL);
   var RETRY_MISSING_MS = 300000;
   var RETRY_ERROR_MS = 60000;
-  // Sổ còn được pipeline ghi lại tới giờ khoá (sổ 05-11-2026 ghi bốn lần: 18:43, 20:17, 22:53 hôm trước
-  // và 15:39), và commit cuối trước giờ khoá có thể lên muộn vài phút. Nên một sổ được tải lại mỗi
-  // REFRESH_MS, cho tới khi lần tải đã cách giờ khoá quá SETTLE_MS: khi ấy nó là bản đóng băng cuối cùng.
   var REFRESH_MS = 600000;
   var SETTLE_MS = 3600000;
-  // Tên miền và đường dẫn dữ liệu không được viết thẳng ra trang (luật riêng tư của kho).
   var E = { h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bWFpbg==', p: 'ZGF0YS9ldmFsdWF0aW9uL3ByZWRpY3Rpb25fYm9hcmQv',
     c: 'ZGF0YS9ub25fZHJhd19kYXlzLmpzb24=', r: 'ZGF0YS9ldmFsdWF0aW9uL2JvYXJkX3JlY29yZC9yZWNvcmQuanNvbg==' };
   function d(k) { return atob(E[k]); }
@@ -37,14 +17,9 @@
   var title = document.getElementById('live-scorecard-date');
   var summary = document.getElementById('live-scorecard-summary');
   var table = document.getElementById('live-scorecard-table');
-  // `draw`: kỳ của live.json (vừa quay hoặc đang quay); `next`: kỳ sắp quay, chỉ có khi `draw` đã quay xong.
-  // `boards[ngày]`: sổ của đúng ngày ấy và trạng thái tải; chỉ giữ hai ngày đang hiện, nên phản hồi trễ của
-  // ngày cũ không còn chỗ để rơi vào. `open`: số đang mở đường cầu {date, list, item, bridge}.
   var state = { draw: '', next: '', boards: {}, last: null, open: null, focus: null, reveal: null, mark: null };
   var BRIDGES_SHOWN = 12;
 
-  // 107 vị trí chữ số của bảng kết quả, cùng cách đánh số với src/soi_cau/position_bridges.py:
-  // (nhãn ngắn, tên giải, số giải, số chữ số).
   var LAYOUT = [['ĐB', 'Đặc Biệt', 1, 5], ['G1', 'Giải Nhất', 1, 5], ['G2', 'Giải Nhì', 2, 5],
     ['G3', 'Giải Ba', 6, 5], ['G4', 'Giải Tư', 4, 4], ['G5', 'Giải Năm', 6, 4], ['G6', 'Giải Sáu', 3, 3],
     ['G7', 'Giải Bảy', 4, 2]];
@@ -74,7 +49,6 @@
     return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   }
 
-  // Tệp trong kho: trên trang Pages đọc từ nhánh chính, chạy cục bộ thì đọc đường dẫn tương đối.
   function dataUrl(path) {
     var host = location.hostname;
     if (host.endsWith(d('s'))) {
@@ -91,9 +65,6 @@
     return dataUrl(d('p') + date + '.json');
   }
 
-  // Lịch nghỉ quay (Tết…), đọc một lần: kỳ sắp quay bỏ qua những ngày ấy, cùng luật với
-  // forecast.multi_hit_forecast.next_draw_date — sổ của kỳ sắp quay mang đúng ngày quay thật.
-  // Không đọc được thì coi như không có ngày nghỉ nào.
   var closed = null;
   function closedDays() {
     if (!closed) {
@@ -113,7 +84,6 @@
     return value.toFixed(digits).replace('.', ',');
   }
 
-  // Kết quả đang về: số nháy của 100 số LOTO và hai số cuối Đặc Biệt (khi đã có).
   function outcome(prizes) {
     var counts = new Array(100).fill(0);
     var filled = 0;
@@ -134,7 +104,6 @@
     return { counts: counts, filled: filled, complete: filled === TOTAL, special: special };
   }
 
-  // 'hit' chốt ngay khi đủ điều kiện; 'miss' chỉ khi phần kết quả liên quan đã đủ.
   function judge(rule, o) {
     if (rule.on === 'loto') {
       var numbers = rule.numbers.map(Number);
@@ -151,8 +120,6 @@
       return rule.numbers.map(Number).indexOf(o.special) >= 0 ? 'hit' : 'miss';
     }
     if (rule.on === 'special_digit') {
-      // Đổi kiểu như hai nhánh trên và như `board_record.item_hits` (int(g)): so nghiêm ngặt chữ số "3" với 3
-      // là trượt, nên một sổ ghi chữ số dạng chuỗi sẽ bị chấm trượt toàn bộ ở đây mà Python vẫn chấm trúng.
       var tens = Math.floor(o.special / 10), units = o.special % 10;
       return rule.digits.map(Number).some(function (g) { return g === tens || g === units; }) ? 'hit' : 'miss';
     }
@@ -168,13 +135,8 @@
     return item.prob === null || item.prob === undefined ? item.base : item.prob;
   }
 
-  // Danh sách sinh từ cặp vị trí (src/evaluation/prediction_board.py, `attach_bridges`). Sổ bỏ `bridge` của
-  // một danh sách như thế khi cầu tính lại lệch số trang in; nó vẫn KHÔNG được tra bảng cầu đang chạy, vì câu
-  // "danh sách không chọn số theo cầu" khi ấy là sai.
   var POSITIONAL = /^(best|bridge|path)-/;
 
-  // Cầu của một mục: của chính danh sách (cầu đẹp nhất, soi cầu, soi đường), hoặc tra bảng cầu đang chạy
-  // của sổ cho danh sách không sinh từ cặp vị trí. null = mục không mở được (sổ cũ, luật nhiều chữ số).
   function source(list, item, board) {
     if (list.bridge || POSITIONAL.test(list.id)) {
       if (!list.bridge) return null;
@@ -201,7 +163,6 @@
       total: total, page: table.page, title: table.title, running: true, count: table.count, keys: keys };
   }
 
-  // Bộ chọn đúng một nút số: cùng danh sách và cùng mục có ở cả hai hàng "Trước giờ quay" (hai kỳ).
   function chipSelector(date, listId, index) {
     return '[data-bridge-date="' + date + '"][data-bridge-list="' + listId + '"][data-bridge-item="' + index + '"]';
   }
@@ -281,7 +242,6 @@
     return text + ' = ' + pct(t.hits / t.k, 1) + ' · kỳ vọng ' + pct(t.exp / t.k, t.exp / t.k < 0.05 ? 2 : 1);
   }
 
-  // Ô "Thời điểm" của một hàng: lúc (trước / sau giờ quay) và kỳ của hàng ấy.
   function whenCell(text, date, board) {
     var cell = el('td', 'live-scorecard-when', text);
     cell.appendChild(el('small', 'live-scorecard-day', drawLabel(date)));
@@ -290,8 +250,6 @@
     return cell;
   }
 
-  // Giờ ghi sổ theo giờ VN, "18:38 · 05/11": cho thấy danh sách kỳ sắp quay là lần tính SAU kỳ vừa quay, không
-  // phải số của kỳ trước. Sổ dựng lại từ git mang giờ của commit nguồn.
   function savedAt(value) {
     var at = Date.parse(value || '');
     if (isNaN(at)) return '';
@@ -306,8 +264,6 @@
     nums.appendChild(chips(list, board, o, false));
     var stat = el('td', 'live-scorecard-stat', beforeText(tally(list, o)));
     if (previous) {
-      // Mô hình đổi rất ít giữa hai kỳ liền nhau nên danh sách thường trùng nhiều: nói thẳng con số, kèm giờ ghi sổ
-      // ở cột kỳ, để người đọc không tưởng là số của kỳ trước bị chép sang.
       var before = previous.items.map(function (x) { return x.label; });
       var same = list.items.filter(function (x) { return before.indexOf(x.label) >= 0; }).length;
       stat.appendChild(el('small', 'live-scorecard-overlap', 'Trùng ' + same + '/' + list.items.length +
@@ -317,8 +273,6 @@
     return row;
   }
 
-  // Kỳ sắp quay chưa có sổ (hệ thống chưa tính xong sau kỳ vừa quay, hay đang tải): khung chờ, KHÔNG mượn số của
-  // kỳ nào khác. `size` là số mục của danh sách kỳ vừa quay, để khung giữ đúng chỗ.
   function pendingRow(date, size) {
     var entry = state.boards[date];
     var status = entry ? entry.status : 'loading';
@@ -340,12 +294,10 @@
     return row;
   }
 
-  // Giờ khoá sổ của một kỳ: 18:10 giờ VN ngày quay (fun_draw_ledger.cutoff_utc).
   function lockTime(date) {
     return Date.parse(date + 'T18:10:00+07:00');
   }
 
-  // Kỳ có sổ nhưng sổ ấy không có danh sách này (nguồn không khai đúng kỳ, ghi vào `missing` của sổ).
   function absentRow(board, className) {
     var row = el('tr', className + ' is-absent');
     row.dataset.draw = board.target_date;
@@ -355,8 +307,6 @@
     return row;
   }
 
-  // Một danh sách là một <tbody>: kỳ sắp quay ("Trước giờ quay"), rồi kỳ vừa quay ("Trước giờ quay", "Sau
-  // giờ quay"). `listNext` / `listDrawn` là danh sách cùng mã trong sổ của từng kỳ (thiếu thì null).
   function groupRows(id, listNext, listDrawn, next, drawn, o) {
     var nextDate = state.next;
     var tbody = el('tbody', 'live-scorecard-group');
@@ -408,11 +358,8 @@
     return { body: tbody, tally: t };
   }
 
-  // ---- Vị trí đường cầu -------------------------------------------------------------
-
   function two(n) { return String(n).padStart(2, '0'); }
   function reverse(n) { return 10 * (n % 10) + Math.floor(n / 10); }
-  // Khoá nhóm của hai trang cầu: cặp số ghép {n, lộn n}, xếp tăng (src/evaluation/prediction_board.py).
   function pairKey(n) {
     var r = reverse(n);
     return n === r ? two(n) : two(Math.min(n, r)) + ',' + two(Math.max(n, r));
@@ -424,8 +371,6 @@
     return 10 * Number(digits[a]) + Number(digits[b]);
   }
 
-  // Bộ của xy: một chữ số từ {x, bóng x} ghép một chữ số từ {y, bóng y}, cả hai chiều
-  // (src/soi_cau/bridge_rules.py, `_bo_tables`).
   function boMembers(n) {
     var x = Math.floor(n / 10), y = n % 10, out = [];
     [x, SHADOW[x]].forEach(function (p) {
@@ -434,14 +379,12 @@
     return out.filter(function (m, i) { return out.indexOf(m) === i; }).sort(function (u, v) { return u - v; });
   }
 
-  // Số mà cầu báo từ chữ số kỳ này, theo đúng luật của trang đã liệt kê nó.
   function told(n, mark) {
     if (mark === 'loto-lon' || mark === 'special-lon') return n === reverse(n) ? [n] : [n, reverse(n)];
     if (mark === 'bo') return boMembers(n);
     return [n];
   }
 
-  // Ô của kỳ sau "về" theo cầu kỳ trước: LOTO xét mọi giải, Đặc Biệt chỉ giải đầu.
   function foundCells(values, n, mark) {
     var tails = values.map(function (v) { return Number(v.slice(-2)); });
     if (mark === 'special-touch') {
@@ -460,7 +403,6 @@
     return 'Vị trí ' + pos + ' (' + POSITIONS[pos].label + ')';
   }
 
-  // Một giá trị giải: chữ số ở vị trí cầu tô đậm, hai số cuối "về" tô nền.
   function valueNode(values, index, bridge, found) {
     var value = values[index];
     var first = VALUE_FIRST[index];
@@ -505,10 +447,6 @@
     return told(n, mark).map(two).join(' · ');
   }
 
-  // Liên kết mở trang nguồn ở đúng cầu đang xem, để các bảng kết quả của trang ấy tô sẵn hai vị trí:
-  // soi cầu vị trí (`vt` + tham số chế độ), soi đường (`number` + mã đường `L<trễ>-[a,b]`), bảy trang soi cầu
-  // và hai trang tra cầu đang chạy (`ngay` = kỳ cuối của đường cầu, `so` = số ghép ở kỳ ấy, `vt`; trang theo
-  // thứ thêm `thu`, cùng cách đánh số 0 = Thứ Hai của bridge_pages.js).
   function bridgeLink(list, src, item, bridge, board) {
     var cfg = src.cfg;
     var q = new URLSearchParams();
@@ -535,9 +473,6 @@
     return src.page + '?' + q.toString();
   }
 
-  // Bảng kết quả đầu trang (docs/live.html, #results): 27 ô theo đúng thứ tự giải. Trước giờ quay nó hiện kỳ
-  // vừa quay — cũng là kỳ cuối mà cầu ghép số — nên hai vị trí của cầu đang mở được tô ngay trên đó. Chỉ tô khi
-  // MỌI ô trùng kết quả đã nhúng của kỳ ấy (bảng đang hiện kỳ khác, hay giải chưa hiện hết, thì không tô).
   var MARK = 'data-bridge-mark';
 
   function boardSlots(values) {
@@ -600,8 +535,6 @@
       var nHere = formed(values, bridge.a, bridge.b);
       var prev = t > 0 ? formed(draws[shown[t - 1]], bridge.a, bridge.b) : null;
       var found = prev === null ? [] : foundCells(values, prev, cfg.mark);
-      // Bộ số: một bước trúng là số ghép GIỮ NGUYÊN bộ qua hai kỳ (bridge_rules.step_matrix), không phải
-      // Đặc Biệt rơi vào bộ — nói đúng điều ấy.
       var step = prev === null ? '' : cfg.mark === 'bo' ? ' · cùng bộ với số ghép kỳ trước (' + two(prev) + ')'
         : ' · kỳ trước báo ' + toldText(prev, cfg.mark) + ': trúng';
       var caption = 'Ghép ' + two(nHere) + ' → báo ' + toldText(nHere, cfg.mark) +
@@ -621,7 +554,6 @@
     panel.id = 'live-bridge-' + list.id;
     var head = el('div', 'live-bridge-head');
     var shown = src.total > src.bridges.length ? ', hiện ' + src.bridges.length + ' cầu dài nhất' : '';
-    // Dấu hai chấm tách nhãn khỏi số cầu: nhãn đã có dấu « · » giữa số và số lộn.
     var text = !src.running
       ? item.label + ': ' + src.total + (cfg.type === 'path' ? ' đường cầu' : ' cầu') + ' báo mục này' + shown
       : src.total
@@ -638,7 +570,6 @@
     head.append(el('h3', '', text), close);
     panel.appendChild(head);
     if (src.running) {
-      // Nói thẳng đây là phép TRA, không phải lý do danh sách chọn số.
       panel.appendChild(el('p', 'live-bridge-note', 'Danh sách ' + list.title + ' không chọn số theo cầu. Đây là các cầu ' +
         'đang chạy từ ' + src.count + ' kỳ trở lên trên trang ' + src.title + ' mà kỳ cuối ghép ra đúng số này.'));
     }
@@ -676,7 +607,6 @@
       panel.appendChild(bridgePath(src, bridge, board));
     }
     if (bridge) {
-      // Kỳ ghép số của cầu: kỳ cuối của chuỗi; soi đường thì kỳ gốc của chính đường ấy.
       var source = cfg.type === 'path' ? bridge.base : (cfg.series || [])[(cfg.series || []).length - 1];
       var sourceValues = board.draws ? board.draws[source] : null;
       state.mark = { date: source, a: bridge.a, b: bridge.b, values: sourceValues };
@@ -694,7 +624,6 @@
     link.href = bridgeLink(list, src, item, bridge, board);
     panel.appendChild(link);
     if (bridge && validDate(source)) {
-      // Sổ kết quả truyền thống mở đúng kỳ ghép số và tô hai vị trí (traditional_results.js, `vt`).
       var book = el('a', 'live-bridge-link live-bridge-book', 'Xem trên Sổ kết quả →');
       book.href = 'so-ket-qua-truyen-thong.html?' + new URLSearchParams({ ngay: source, vt: bridge.a + 'x' + bridge.b });
       panel.appendChild(book);
@@ -702,7 +631,6 @@
     return panel;
   }
 
-  // Xác suất toàn bảng 100 số của tổ hợp: một kỳ đo được gì so với chọn bừa.
   function vectorLines(board, o) {
     var lines = [];
     var loto = board.vectors && board.vectors.loto;
@@ -726,9 +654,6 @@
     return lines;
   }
 
-  // ---- Hai kỳ trên một bảng ----------------------------------------------------------
-
-  // Ngày hôm nay theo giờ Việt Nam (UTC+7, không có giờ mùa hè).
   function todayVN() {
     return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
   }
@@ -739,7 +664,6 @@
     return day.toISOString().slice(0, 10);
   }
 
-  // "kỳ 05/11 · hôm nay": ngày của kỳ, kèm hôm nay / hôm qua / ngày mai khi đúng như thế theo giờ VN.
   function drawLabel(date) {
     var today = todayVN();
     var near = date === today ? 'hôm nay' : date === previousDay(today) ? 'hôm qua'
@@ -752,7 +676,6 @@
     return entry && entry.board ? entry.board : null;
   }
 
-  // Câu trạng thái của một kỳ chưa có sổ để đặt lên bảng.
   function statusText(date) {
     var entry = state.boards[date];
     var status = entry ? entry.status : 'loading';
@@ -770,7 +693,6 @@
       var one = tally(list, outcome(null));
       t.k += one.k; t.exp += one.exp; t.base += one.base;
     });
-    // Trước giờ khoá sổ còn có thể được ghi lại: nói "khoá lúc", chỉ sau đó mới là "đã đóng băng".
     var at = String(board.locks_at || '').slice(11, 16);
     var locked = !(Date.now() < Date.parse(board.locks_at));
     return board.lists.length + ' danh sách, ' + t.k + ' mục' + (locked ? ' đã đóng băng lúc ' : ', khoá lúc ') + at +
@@ -782,7 +704,6 @@
     var drawn = boardFor(state.draw);
     var next = state.next ? boardFor(state.next) : null;
     if (!drawn && !next) { message(statusText(state.draw)); return; }
-    // Kết quả trong live.json là của kỳ `draw`; kỳ sắp quay chưa có giải nào.
     var o = outcome(state.last && state.last.prizes);
     var ids = [], byId = {};
     [drawn, next].forEach(function (board, which) {
@@ -810,7 +731,6 @@
       state.focus = null;
       if (target) target.focus();
     }
-    // Tóm tắt theo đúng thứ tự các hàng: kỳ sắp quay trước, rồi kỳ vừa quay.
     var lines = [];
     if (state.next) {
       lines.push('Kỳ sắp quay (' + drawLabel(state.next) + '): ' + (next ? nextLine(next) : statusText(state.next)));
@@ -830,8 +750,6 @@
     root.dataset.state = drawn ? (o.complete ? 'complete' : (o.filled ? 'partial' : 'waiting')) : 'waiting';
   }
 
-  // Mỗi danh sách là một <tbody> riêng gắn thẳng vào bảng, sau <thead>: lồng <tbody> vào
-  // <tbody> là HTML sai và làm trình duyệt dựng lệch cột.
   function clearGroups() {
     Array.prototype.slice.call(table.tBodies).forEach(function (group) { group.remove(); });
   }
@@ -843,8 +761,6 @@
     root.dataset.state = 'empty';
   }
 
-  // Tải sổ của một ngày, một lần; 404 hay lỗi thì chờ rồi mới hỏi lại. Kết quả chỉ được dùng khi ngày ấy
-  // vẫn còn trên bảng (`entry` vẫn là chỗ của nó): phản hồi trễ của kỳ cũ bị bỏ.
   function ensure(date) {
     if (!date) return Promise.resolve();
     var entry = state.boards[date];
@@ -853,13 +769,11 @@
     return fetchBoard(date, entry);
   }
 
-  // Sổ đã tải đủ mới: vừa tải chưa tới REFRESH_MS, hoặc lần tải đã cách giờ khoá quá SETTLE_MS (bản cuối).
   function settled(entry) {
     var locks = Date.parse(entry.board.locks_at);
     return Date.now() - entry.fetchedAt < REFRESH_MS || (!isNaN(locks) && entry.fetchedAt >= locks + SETTLE_MS);
   }
 
-  // Tải lại hỏng thì giữ bản đang hiện (status vẫn 'ok'), chỉ hẹn lần thử sau.
   async function fetchBoard(date, entry) {
     entry.pending = true;
     if (!entry.board) entry.status = 'loading';
@@ -895,15 +809,10 @@
     if (state.boards[date] === entry && (date === state.draw || date === state.next)) render();
   }
 
-  // Danh tính một cầu trong danh sách của một số: cặp vị trí, cộng độ trễ với soi đường — hai đường cầu có thể
-  // chung cặp vị trí mà khác độ trễ (sổ 05-11-2026: số 34 của path-loto-active có 14×39 ở trễ 6 và trễ 9).
   function bridgeKey(b) {
     return b.a + 'x' + b.b + (b.lag === undefined || b.lag === null ? '' : '@' + b.lag);
   }
 
-  // Sổ vừa tải lại có thể đã đổi mục (sổ còn được ghi tới giờ khoá): số đang mở giữ đúng NHÃN của nó và cầu
-  // đang chọn giữ đúng danh tính (bridgeKey), không theo chỉ số cũ — chỉ số cũ có thể đã trỏ sang số khác. Số
-  // không còn trong bản mới thì đóng bảng cầu; cầu không còn thì về cầu đầu.
   function reconcileOpen(date, board) {
     var open = state.open;
     if (!open || open.date !== date) return;
@@ -923,7 +832,6 @@
       pick: pick < 0 ? '' : open.pick };
   }
 
-  // Mọi trạng thái "complete*" đều nghĩa là kỳ đã quay đủ 27 giải (như live-predictions.js).
   function finished(status) {
     return typeof status === 'string' && status.indexOf('complete') === 0;
   }
@@ -940,7 +848,6 @@
     return day;
   }
 
-  // Đặt hai kỳ của bảng; chỉ giữ sổ của đúng hai ngày ấy.
   function setDraws(draw, next) {
     if (draw !== state.draw) state.open = null;
     state.draw = draw;
@@ -949,7 +856,6 @@
       if (date !== draw && date !== next) delete state.boards[date];
     });
     if (state.open && state.open.date !== draw && state.open.date !== next) state.open = null;
-    // Lệnh mở số cho kỳ không còn trên bảng bị bỏ, không treo mãi.
     if (state.reveal && state.reveal.date !== draw && state.reveal.date !== next) state.reveal = null;
     title.dateTime = draw;
     title.textContent = draw ? dayLabel(draw) : 'Đang chờ ngày quay';
@@ -973,7 +879,6 @@
       setDraws(date, '');
       return refresh();
     }
-    // Giữ kỳ sắp quay đã biết trong lúc đọc lịch nghỉ, để bảng không chớp mất hàng của nó.
     if (date !== state.draw) setDraws(date, '');
     return closedDays().then(function (skip) {
       if (state.last !== snapshot) return undefined;
@@ -982,8 +887,6 @@
     });
   }
 
-  // Mở đúng số ấy trong bảng (bấm từ khối "Dự đoán trong ngày"): mục của danh sách Cầu Kèo cùng
-  // kiểu, không có thì mục đầu tiên nào chỉ gồm số ấy — trong sổ của đúng kỳ đã bấm.
   function applyReveal() {
     var want = state.reveal;
     var board = want ? boardFor(want.date) : null;
@@ -1007,14 +910,10 @@
   function reveal(date, mode, value) {
     if (!validDate(date) || (mode !== 'de' && mode !== 'loto')) return Promise.resolve();
     state.reveal = { date: date, list: 'cau-keo-' + mode, on: mode === 'de' ? 'special' : 'loto', number: two(Number(value)) };
-    // Chưa biết kỳ ấy có trên bảng không (live.json chưa về, lịch nghỉ đang tải): giữ lệnh, update() xử lý.
     if (date !== state.draw && date !== state.next) return Promise.resolve();
     return refresh();
   }
 
-  // Thành tích qua các kỳ đã quay (src/evaluation/board_record.py): mỗi danh sách trúng bao nhiêu so với chọn
-  // bừa, cộng dồn mọi kỳ đã có đủ 27 giải. Một kỳ là mẫu quá nhỏ; khối này là câu trả lời có cỡ mẫu. Chỉ tải khi
-  // người đọc mở khối, một lần (tải hỏng thì lần mở sau thử lại). Kết luận in TỪ p của tệp, không viết sẵn.
   var record = el('details', 'live-record');
   record.id = 'live-record';
   var recordTitle = el('summary', 'live-record-summary', 'Thành tích qua các kỳ đã quay');
@@ -1070,12 +969,10 @@
       tr.dataset.listId = row.id;
       var name = el('th', 'live-record-name');
       name.scope = 'row';
-      // Lớp riêng, không phải `span`/`small` chung: module bằng chứng bọc chữ số («10») trong span của nó.
       name.appendChild(el('span', 'live-record-title', row.title));
       if (row.group) name.appendChild(el('small', 'live-record-group', row.group));
       var verdict = el('td', 'live-record-verdict', row.verdict);
       verdict.dataset.verdict = verdictClass(row.verdict);
-      // Nhãn cột đi kèm từng ô: trên điện thoại bảng xếp thành khối và đầu cột bị ẩn.
       function cell(label, text) {
         var td = el('td', 'live-record-num', text);
         td.dataset.label = label;

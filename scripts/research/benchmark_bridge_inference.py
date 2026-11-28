@@ -1,41 +1,3 @@
-"""Đo ngoài mẫu phép suy luận cầu vị trí bằng Bayes thực nghiệm (16-10-2026).
-
-Bản cũ (``path_prob`` trước 16-10-2026): xác suất của một con là trung bình tỉ
-lệ trúng LỊCH SỬ của các cầu báo nó — các cầu được chọn top 300 trên khoảng
-5 671 cầu mỗi độ trễ — rồi co về nền với độ mạnh đặt tay
-``6·√(1 + 2·ln(5671/300))``. Tỉ lệ lịch sử của cầu được chọn mang lời nguyền
-người thắng: tổng LOTO của nhánh ổn định là 24,40 con mỗi kỳ, trong khi kỳ
-vọng thật là 23,77.
-
-Bản mới: mỗi cầu nhận xác suất trúng kỳ tới theo kinh nghiệm học từ MỌI cầu
-trong cửa sổ (``path_prob.BridgeEvidence``): tỉ lệ chung + phần riêng của cầu
-co theo mức chênh THẬT giữa các cầu (Bayes thực nghiệm, phương pháp mô men);
-nhánh "đang chạy" cộng phần kinh nghiệm theo độ dài chuỗi, học trên mọi cầu.
-
-Walk-forward trên ``--last`` kỳ cuối, cầu dựng lại mỗi kỳ bằng đúng tham số của
-pipeline — cửa sổ lấy từ mặc định của ``pipeline.py`` (``--window-days`` 2000, cũng là
-giá trị ``update-data.yml`` truyền vào), không viết cứng 365 như phép đo 04-10-2026. Mốc hằng số: tỉ lệ nền tích luỹ (LOTO), 1/100 (Đặc Biệt) — cùng mốc
-với ``benchmark_component_trust``.
-
-Luật quyết định chốt TRƯỚC khi đo:
-
-1. Nhánh cầu (vector in trên trang soi cầu): bản mới không kém bản cũ ở bất kỳ
-   ô nào trong bốn ô (LOTO/Đặc Biệt × đang chạy/ổn định) với z ≤ −2, và thắng
-   với z ≥ 2 ở ít nhất một ô.
-2. Tổ hợp (trọng số mặc định, ML/thống kê/cầu-kèo bằng tỉ lệ nền như đo
-   04-10-2026, chốt bằng ``finalize_blend``): bản mới không kém bản cũ với
-   z ≤ −2 ở cả hai chế độ.
-3. Tổ hợp mới không kém dự báo hằng số với z ≤ −2.
-
-    PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000
-
-Với cửa sổ 2 000 kỳ, một lượt mất khoảng 2,6 giờ trên 4 lõi; chạy theo phần rồi gộp::
-
-    for k in 1 2 3 4; do PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py \\
-        --last 2000 --parts 4 --part $k; done
-    PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000 --parts 4 --merge
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -52,24 +14,22 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from core.calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
-from ensemble.ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, finalize_blend  # noqa: E402
-from ingest.lottery import Lottery  # noqa: E402
-from core.path_models import PathParams, build_daily_targets, enumerate_position_pairs  # noqa: E402
-from soi_cau.path_prob import (  # noqa: E402
+from core.calendar_alignment import consecutive_next_pairs, normalize_dates
+from ensemble.ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, finalize_blend
+from ingest.lottery import Lottery
+from core.path_models import PathParams, build_daily_targets, enumerate_position_pairs
+from soi_cau.path_prob import (
     fit_paths_with_evidence,
     paths_to_dataframe,
     predict_from_fitted_paths_full,
     prepare_path_history,
 )
-from research.vla import backtest  # noqa: E402
-from core.xsmb_domain import TOTAL_DIGITS, baseline_rate  # noqa: E402
+from research.vla import backtest
+from core.xsmb_domain import TOTAL_DIGITS, baseline_rate
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "bridge_inference.json"
 MODES = ("loto", "de")
 KINDS = ("active", "stable")
-#: Cửa sổ production: ``pipeline.py`` mặc định ``--window-days 2000`` và truyền nó cho
-#: ``run_path_ui``; ``update-data.yml`` cũng truyền 2000. ``path_manifest_<mode>.json`` ghi lại.
 PRODUCTION_WINDOW_DAYS = 2000
 PATH_PARAMS = PathParams(lag_max=30, window_days=PRODUCTION_WINDOW_DAYS, min_trials=60,
                          min_max_streak=3, min_current_streak=3, top_rules_per_lag=300)
@@ -78,7 +38,6 @@ _PREPARED = None
 
 
 def legacy_prior_strength(n_screened: int, n_kept: int, base: float = 6.0) -> float:
-    """Độ co đặt tay của bản cũ (``selection_shrinkage_strength`` trước 16-10-2026)."""
     screened = max(int(n_screened), 1)
     kept = max(int(n_kept), 1)
     if kept >= screened:
@@ -87,7 +46,6 @@ def legacy_prior_strength(n_screened: int, n_kept: int, base: float = 6.0) -> fl
 
 
 def legacy_branch(stats_df: pd.DataFrame, raw_by_date: dict, anchor, *, kind: str, mode: str) -> np.ndarray:
-    """Tái lập đúng ``predict_from_fitted_paths_full`` trước 16-10-2026 (phạm vi "all")."""
     base = baseline_rate(mode)
     params = PATH_PARAMS
     paths = stats_df[stats_df["trials"] >= params.min_trials]
@@ -168,7 +126,6 @@ def _paired(new: np.ndarray, old: np.ndarray) -> dict:
 
 
 def decide(report: dict) -> dict:
-    """Áp luật quyết định đã chốt ở docstring lên báo cáo."""
     branch = [report[m]["branch_new_vs_old"][k]["z"] for m in MODES for k in KINDS]
     ensemble = [report[m]["ensemble_new_vs_old"]["z"] for m in MODES]
     constant = [report[m]["vs_constant"]["ensemble_new"]["z"] for m in MODES]
@@ -193,19 +150,11 @@ def _history():
     return raw, two, dates, {"loto": hit_loto, "de": hit_de}
 
 
-#: Đổi khuôn danh tính thì tăng số này: phần ghi theo khuôn cũ không gộp được với phần mới.
 IDENTITY_VERSION = 2
 SCRIPT = Path(__file__).resolve()
 
 
 def _code_digest(root: Path, script: Path) -> str:
-    """Băm MỌI mã có thể chạy trong phép đo: toàn bộ ``src/**/*.py`` và chính kịch bản này.
-
-    Không liệt kê tay vài module: phép đo còn chạy ``ensemble_utils``,
-    ``research.vla.backtest``, ``xsmb_domain``… và một danh sách tay sẽ sót
-    module mới. Băm rộng hơn cần thiết chỉ làm bước gộp từ chối thừa, không
-    bao giờ để lọt hai phần tính bằng hai logic khác nhau.
-    """
     digest = hashlib.sha256()
     for path in [*sorted((root / "src").rglob("*.py")), script]:
         digest.update(path.relative_to(root).as_posix().encode("utf-8") + b"\0")
@@ -214,11 +163,6 @@ def _code_digest(root: Path, script: Path) -> str:
 
 
 def run_identity(raw: pd.DataFrame, *, last: int, parts: int) -> dict:
-    """Danh tính một lượt đo: tham số, ảnh chụp dữ liệu, mã nguồn và thư viện số.
-
-    Mọi phần của cùng một lượt phải mang đúng danh tính này; bước gộp từ chối
-    phần cũ (dữ liệu hay mã đã đổi) hoặc phần chạy với ``--last``/``--parts`` khác.
-    """
     data = hashlib.sha256(raw.to_csv(index=False).encode("utf-8")).hexdigest()
     return {"identity_version": IDENTITY_VERSION,
             "last": int(last), "parts": int(parts), "window_days": PRODUCTION_WINDOW_DAYS,
@@ -228,17 +172,10 @@ def run_identity(raw: pd.DataFrame, *, last: int, parts: int) -> dict:
 
 
 def expected_targets(dates, last: int) -> list[int]:
-    """Chỉ số kỳ đích của ``last`` cặp (kỳ neo, kỳ kế) cuối — thứ tự mà các phần phải ghép lại thành."""
     return [int(t) for t in consecutive_next_pairs(dates)[1][-last:]]
 
 
 def run_part(last: int, workers: int, part: int, parts: int) -> dict:
-    """Chấm một phần (liên tiếp) của ``last`` kỳ cuối; trả về logloss TỪNG KỲ để gộp sau.
-
-    Với cửa sổ 2 000 kỳ, mỗi kỳ neo mất ~19 giây cho cả hai chế độ, nên 2 000 kỳ
-    vượt giới hạn thời gian của một lượt chạy; chia phần không đổi phép đo — bước
-    gộp nối đúng các kỳ theo thứ tự rồi mới tính z.
-    """
     raw, two, dates, hit = _history()
     source, target = consecutive_next_pairs(dates)
     source, target = source[-last:], target[-last:]
@@ -280,13 +217,6 @@ def run_part(last: int, workers: int, part: int, parts: int) -> dict:
 
 
 def merge(parts: list[dict], *, run: dict, expected_target: list[int]) -> dict:
-    """Nối các phần theo thứ tự kỳ đích rồi tính z và luật quyết định như một lượt liền.
-
-    Chỉ gộp khi mọi phần mang đúng danh tính ``run`` của lượt hiện tại (tham số,
-    dữ liệu, mã), đủ các phần 1..``parts``, và các kỳ đích nối lại TRÙNG từng
-    phần tử với ``expected_target``: các kỳ có thứ tự và không trùng chưa đủ —
-    một phần cũ hay chạy với ``--last`` khác vẫn qua được phép ấy.
-    """
     for p in parts:
         if p.get("run") != run:
             raise ValueError(f"phần {p.get('part')} thuộc lượt đo khác: {p.get('run')} ≠ {run}")
@@ -336,13 +266,12 @@ def merge(parts: list[dict], *, run: dict, expected_target: list[int]) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--last", type=int, default=2000)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--parts", type=int, default=1, help="chia --last kỳ thành ngần ấy phần liên tiếp")
     ap.add_argument("--part", type=int, default=0,
                     help="chỉ chấm phần này (1..parts) và ghi vào --parts-dir; 0 = chấm mọi phần rồi gộp")
-    # Tệp từng phần là sản phẩm trung gian: để ở data/tmp (đã .gitignore).
     ap.add_argument("--parts-dir", type=Path, default=ROOT / "data" / "tmp" / "bridge_inference_parts")
     ap.add_argument("--merge", action="store_true", help="chỉ gộp các phần đã có trong --parts-dir")
     ap.add_argument("--out", type=Path, default=OUT)

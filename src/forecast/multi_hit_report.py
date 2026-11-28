@@ -1,27 +1,3 @@
-"""Số đo cho trang «Lô VIP nhiều nháy»: trang chỉ in những gì tệp này đo được.
-
-Hai phần, hai nhịp:
-
-* ``vip.json`` — hằng ngày. Mô hình Lô VIP (``multi_hit_forecast``: kinh nghiệm cầu kèo, cầu hai
-  nháy, cầu LOTO và dữ liệu nhiều nháy) dự báo năm con về ≥ 2 nháy ở kỳ kế tiếp, kèm lý do từng con
-  và kiểm chứng walk-forward trên MỌI kỳ đã quay: mỗi kỳ chỉ dùng mô hình học trên các kỳ trước nó,
-  rồi so với chọn bừa trên CHÍNH các kỳ ấy. Kèm năm cặp xiên 2 (``multi_hit_pairs``) với kiểm chứng
-  walk-forward của riêng luật chọn cặp. ~60 giây trên 4 236 kỳ.
-* ``benchmark.json`` — đóng băng. Giao thức lượt thử thứ hai (``multi_hit_benchmark``): 22 chiến
-  lược chấm trên giai đoạn phát triển, một ứng viên kiểm MỘT lần trên 1 000 kỳ cuối, kèm phép kiểm
-  độ nhạy trên lịch sử có cài tín hiệu. Phép kiểm một lần chỉ có nghĩa khi nó thật sự chạy một lần:
-  nó đo trên lịch sử đến ``SECOND_ROUND_UNTIL`` (ngày đã chạy và công bố) và KHÔNG đo lại khi có kỳ
-  mới. Đo lại mỗi tháng trên 1 000 kỳ cuối trượt dần là nhìn lại gần như cùng một tập kiểm ở cùng
-  α, nên xác suất "đạt" chỉ do may cộng dồn quá 1%. Chỉ đo lại khi ``BENCHMARK_VERSION`` đổi hoặc
-  khi chính đoạn lịch sử đã đăng ký bị sửa.
-
-Không con số nào ở đây được đặt tay: kết luận "hơn / không hơn chọn bừa" trên trang suy từ ``z``,
-``p`` và mức tin mà chính các phép đo trả về.
-
-    python3 src/forecast/multi_hit_report.py                    # đo và ghi data/forecast/multi_hit/
-    python3 src/forecast/multi_hit_report.py --force-benchmark  # đo lại cả giao thức lượt hai
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -45,43 +21,17 @@ from forecast.multi_hit_vip import (any_multi_chance, base_rate, counts_matrix, 
 OUT_DIR = "forecast/multi_hit"
 VIP_FILE = "vip.json"
 BENCHMARK_FILE = "benchmark.json"
-#: Đổi định nghĩa một số đo thì tăng phiên bản của TỆP chứa nó: bản cũ bị bỏ và đo lại.
-#: 2: thêm dấu vân tay lịch sử và sai số chuẩn GHÉP CẶP của "ít nhất một con về".
-#: 3: lượt hai đóng băng ở lịch sử đến SECOND_ROUND_UNTIL, không còn đo lại theo cửa sổ trượt.
-#: 4: mức tin của bộ lọc dùng p luôn hợp lệ (e-process), vì trang xem lại kết quả mỗi ngày.
-#: 5: e-process chỉ chạy trên kỳ quay SAU VIP_FROZEN_AT (tiến cứu); hồi cứu chỉ còn để mô tả.
-#: 6: độ nhạy ước lượng trên POWER_SEEDS lịch sử cài tín hiệu, so với POWER_REQUIRED đặt trước.
-#: 7 (chỉ vip.json): thêm cặp xiên 2 cùng về (``multi_hit_pairs``).
-#: 8 (chỉ vip.json): năm con chọn bằng luật lô rơi theo tỉ lệ kỳ sau, thay bộ lọc VIP; bộ lọc ấy
-#:   đẩy con gan lên đầu (con 32 đứng đầu mười kỳ liền khi gan 10 → 19 kỳ).
-#: 9 (chỉ vip.json): năm con là DỰ BÁO của mô hình Lô VIP (``multi_hit_forecast``) từ kinh nghiệm cầu
-#:   kèo và cầu hai nháy, kèm lý do từng con; luật lô rơi chỉ liệt kê con vừa về nên đã nghỉ.
-#: 10 (chỉ vip.json): thêm thước theo KỲ — kỳ có ít nhất một con về ≥ 2 nháy — cạnh thước theo lượt,
-#:   cùng mức mọi cách chọn đạt được khi quay công bằng (``any_multi_chance``).
 MEASURE_VERSION = 10
-#: Phiên bản của benchmark.json. Tách khỏi MEASURE_VERSION vì lượt hai là phép kiểm MỘT lần đã
-#: đóng băng: đổi số đo hằng ngày không được buộc nó chạy lại. Chỉ tăng khi định nghĩa của chính
-#: lượt hai (hay phép kiểm độ nhạy của nó) đổi.
 BENCHMARK_VERSION = 6
-#: Độ nhạy của giao thức lượt hai: chạy lại trên chừng này lịch sử giả định độc lập (khác hạt giống)
-#: và coi là ĐỦ NHẠY khi tỉ lệ đạt ≥ POWER_REQUIRED. Một lịch sử duy nhất có thể may hay rủi.
 POWER_SEEDS = tuple(range(7, 27))
 POWER_REQUIRED = 0.8
-#: Ngày chốt của bộ lọc VIP đã nghỉ (lượt một). Tiến cứu của nó dừng ở 3 kỳ sau ngày này: trúng 0
-#: lượt so với 0,55 của chọn bừa. Năm con trên trang nay theo ``multi_hit_forecast.FROZEN_AT``.
 VIP_FROZEN_AT = "2026-10-12"
-#: Lưới hệ số cược λ của e-process một phía (cược top-k trúng NHIỀU hơn chọn bừa). Với k = 5 và tối
-#: đa 13 con về ≥ 2 nháy trong một kỳ, kỳ vọng chọn bừa ≤ 0,65 nên 1 + λ·(H − μ) > 0 với mọi λ ≤ 0,8.
 BET_GRID = (0.05, 0.1, 0.2, 0.4, 0.8)
-#: Lượt thử thứ hai là phép kiểm MỘT LẦN, đã chạy và công bố trên lịch sử đến ngày này. Muốn kiểm
-#: trên kỳ mới thì đăng ký phép kiểm tiến cứu mới với ngày bắt đầu mới, đừng dời ngày này.
 SECOND_ROUND_UNTIL = "2026-10-12"
-#: Số kỳ gần nhất của walk-forward in lên trang (mỗi kỳ: 5 con đã chọn và con nào trúng).
 RECENT_DRAWS = 10
 
 
 def wilson(hits: float, n: float, z: float = float(norm.ppf(0.975))) -> tuple[float, float]:
-    """Khoảng tin cậy Wilson 95% của một tỉ lệ; dùng được cả khi số trúng nhỏ."""
     if n <= 0:
         return (float("nan"), float("nan"))
     p = hits / n
@@ -92,12 +42,6 @@ def wilson(hits: float, n: float, z: float = float(norm.ppf(0.975))) -> tuple[fl
 
 
 def draw_level_interval(per_draw_hits, k: int) -> tuple[tuple[float, float], float]:
-    """Khoảng Wilson 95% của tỉ lệ trúng top-k, với cỡ mẫu hiệu dụng tính theo CỤM kỳ.
-
-    k con của cùng một kỳ chấm trên cùng 27 lô nên không phải k phép thử độc lập. Hệ số thiết kế
-    deff = phương sai số trúng từng kỳ / (k·p·(1 − p)); cỡ mẫu hiệu dụng = số lượt chọn / deff
-    (Kish), rồi Wilson trên cỡ mẫu ấy. Trả về (khoảng, deff).
-    """
     hits = np.asarray(per_draw_hits, dtype=float)
     picks = len(hits) * k
     if len(hits) < 2 or picks == 0:
@@ -110,15 +54,6 @@ def draw_level_interval(per_draw_hits, k: int) -> tuple[tuple[float, float], flo
 
 
 def anytime_p(hits, expected, grid: tuple[float, ...] = BET_GRID) -> tuple[float, float]:
-    """p LUÔN HỢP LỆ cho "top-k trúng nhiều hơn chọn bừa", đúng cả khi xem lại sau MỖI kỳ mới.
-
-    Trang chấm lại bộ lọc mỗi ngày trên lịch sử dài thêm một kỳ. So p của một lần xem với cùng ngưỡng
-    mỗi ngày thì sớm muộn sẽ vượt ngưỡng chỉ do may. Ở đây: với mỗi kỳ t, Hₜ là số lượt trúng của
-    top-k và μₜ = k·mₜ/100 là kỳ vọng của chọn bừa trong CÙNG kỳ; khi bộ lọc không có kỹ năng,
-    E[Hₜ − μₜ | các kỳ trước] = 0. Tích Π (1 + λ·(Hₜ − μₜ)) là martingale không âm, trung bình trên
-    lưới λ cũng vậy (e-process). Bất đẳng thức Ville: P(có lúc nào e ≥ 1/α) ≤ α, nên
-    p = 1 / max e (chặn ở 1) hợp lệ dù xem bao nhiêu lần. Trả về (p, max e).
-    """
     diff = np.asarray(hits, dtype=float) - np.asarray(expected, dtype=float)
     if diff.size == 0:
         return 1.0, 1.0
@@ -133,7 +68,6 @@ def anytime_p(hits, expected, grid: tuple[float, ...] = BET_GRID) -> tuple[float
 
 
 def load_raw(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Sổ kết quả đầy đủ và sổ hai số, đọc dạng chuỗi như mọi bước khác của pipeline."""
     return (pd.read_csv(data_dir / "xsmb.csv", dtype={"date": str}),
             pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype=str))
 
@@ -144,7 +78,6 @@ def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
 
 
 def history_fingerprint(draws: np.ndarray, labels: list[str], n: int | None = None) -> str:
-    """SHA-256 của ``n`` kỳ đầu (ngày và 27 lô): sửa bất kỳ ô nào trong đoạn ấy là đổi dấu vân tay."""
     n = len(draws) if n is None else n
     digest = hashlib.sha256()
     digest.update("\n".join(labels[:n]).encode("utf-8"))
@@ -152,18 +85,8 @@ def history_fingerprint(draws: np.ndarray, labels: list[str], n: int | None = No
     return digest.hexdigest()
 
 
-# --------------------------------------------------------------------------- lô rơi theo tỉ lệ kỳ sau
-
-
 def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastConfig | None = None,
                 prospective_after: str | None = None) -> dict:
-    """Năm con dự báo cho kỳ kế tiếp từ mô hình Lô VIP, và kiểm chứng walk-forward của chính mô hình ấy.
-
-    Toàn bộ walk-forward là MÔ TẢ hồi cứu: mô hình được thiết kế sau khi đã xem lịch sử ấy. Mức tin (và
-    vì vậy kết luận "hơn") chỉ suy từ e-process trên các kỳ có ngày > ``prospective_after`` (mặc định
-    ``multi_hit_forecast.FROZEN_AT``): một e-process chỉ kiểm soát báo nhầm khi quy tắc cược được chốt
-    TRƯỚC khi thấy dữ liệu nó chấm.
-    """
     cfg = cfg or forecast.ForecastConfig()
     after = forecast.FROZEN_AT if prospective_after is None else prospective_after
     table = forecast.build_table(raw, two, cfg)
@@ -174,7 +97,7 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
     draws, labels = draws_from_frame(ordered.reset_index(drop=True))
     counts = table.counts
     k = cfg.top_k
-    evaluated = table.anchors[wf.rows] + 1          # kỳ được dự báo
+    evaluated = table.anchors[wf.rows] + 1
     n_multi = (counts[evaluated] >= 2).sum(axis=1)
     hits = wf.hits
     picks_total = len(wf.rows) * k
@@ -188,14 +111,10 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
     pro_expected = per_draw_expected[later]
     p_anytime, e_max = anytime_p(pro_hits, pro_expected)
     pro_lift = float(pro_hits.sum() / pro_expected.sum()) if pro_expected.sum() > 0 else float("nan")
-    # Thước theo KỲ: kỳ "đạt" khi ít nhất một trong k con về ≥ 2 nháy. Mốc là chọn bừa k con trên
-    # chính kỳ ấy; mức ``day_fair`` là tỉ lệ mà mọi cách chọn k con đạt được khi quay công bằng.
     day_hit = hits > 0
     day_random = random_any_hit(n_multi, k)
     day_var = float((day_random * (1 - day_random)).sum())
     day_z = float((day_hit.sum() - day_random.sum()) / math.sqrt(day_var)) if day_var > 0 else 0.0
-    # Mức tin lấy p luôn hợp lệ của phần TIẾN CỨU: trang xem lại mỗi ngày (anytime_p), và mô hình được
-    # thiết kế sau khi đã xem phần hồi cứu.
     level = model_confidence(p_anytime, pro_lift)
     base = base_rate()
     recent = []
@@ -206,12 +125,9 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
             "date": labels[t],
             "picks": [{"number": f"{i:02d}", "hits": int(counts[t, i])} for i in wf.picks[j]],
             "multi": int(hits[j]),
-            # Chọn bừa k con trong CÙNG kỳ có m con về ≥ 2 nháy: kỳ vọng k·m/100 (siêu bội).
             "numbers_multi": multi_today,
             "expected": k * multi_today / 100,
         })
-    # Dự báo kỳ tới: mô hình và hiệu chỉnh của chính khối walk-forward chứa kỳ ấy, để ngày mai phần
-    # tiến cứu chấm đúng năm con người đọc đã thấy hôm nay.
     fc = wf.forecast
     model = fc.model
     last = len(table.anchors) - 1
@@ -254,7 +170,6 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
             "lift": _finite(hits.sum() / expected) if expected > 0 else None,
             "z": z,
             "p_value": float(norm.sf(z)),
-            # Xác suất TB đã in cho các con được chọn (hiệu chỉnh bằng các khối trước): so với tỉ lệ trúng.
             "predicted": float(wf.printed.mean()),
             "days_hit": int(day_hit.sum()),
             "day_rate": float(day_hit.mean()),
@@ -281,22 +196,12 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
     }
 
 
-# --------------------------------------------------------------------------- cặp xiên 2
-
-
 def _finite(value: float) -> float | None:
-    """JSON hợp chuẩn không có NaN: số không xác định ghi thành null."""
     return float(value) if math.isfinite(value) else None
 
 
 def pairs_section(draws: np.ndarray, labels: list[str], *,
                   prospective_after: str | None = None) -> dict | None:
-    """Năm cặp xiên 2 cho kỳ kế tiếp và kiểm chứng walk-forward của luật chọn cặp.
-
-    Như bộ lọc VIP: walk-forward trên lịch sử đến ngày chốt luật (``multi_hit_pairs.FROZEN_AT``) là
-    mô tả hồi cứu; mức tin chỉ suy từ p luôn hợp lệ trên các kỳ SAU ngày ấy. Lịch sử chưa dài hơn
-    cửa sổ của luật thì trả ``None``.
-    """
     after = pairs.FROZEN_AT if prospective_after is None else prospective_after
     if len(draws) <= pairs.WINDOW:
         return None
@@ -306,7 +211,6 @@ def pairs_section(draws: np.ndarray, labels: list[str], *,
     hits, expected = wf["hits"], wf["expected"]
     n = len(hits)
     diff = hits - expected
-    # Các cặp chung một con trúng/trượt cùng nhau: sai số lấy từ hiệu từng kỳ, không giả định độc lập.
     se = float(diff.std(ddof=1) * math.sqrt(n)) if n > 1 else float("nan")
     z = float(diff.sum() / se) if se > 0 else float("nan")
     (lo, hi), deff = draw_level_interval(hits, k)
@@ -367,20 +271,12 @@ def pairs_section(draws: np.ndarray, labels: list[str], *,
     }
 
 
-# --------------------------------------------------------------------------- giao thức lượt hai
-
-
 def _range_dates(span: tuple[int, int], labels: list[str]) -> list[str]:
     start, stop = span
     return [labels[start], labels[stop - 1]]
 
 
 def _rank_correlation(result: dict) -> float:
-    """Spearman giữa z giai đoạn phát triển và z giai đoạn kiểm, qua mọi chiến lược trừ chọn bừa.
-
-    Có tín hiệu thật thì chiến lược mạnh ở giai đoạn này cũng mạnh ở giai đoạn sau (lịch sử cài
-    tín hiệu cho +0,93); dao động ngẫu nhiên cho gần 0.
-    """
     names = [n for n in result["dev_scores"] if n != "random"]
     dev = [result["dev_scores"][n].z for n in names]
     test = [result["test_scores"][n].z for n in names]
@@ -394,12 +290,6 @@ def _score(s) -> dict:
 
 def paired_any_hit_se(candidate: np.ndarray, rival: np.ndarray, counts: np.ndarray, rows: range,
                       ks: tuple[int, ...] = (1, 3, 5, 10, 20)) -> dict[str, dict[str, float]]:
-    """Sai số chuẩn của HIỆU tỉ lệ "ít nhất một con về" giữa hai chiến lược chấm trên CÙNG các kỳ.
-
-    Hai tỉ lệ đo trên cùng kỳ quay (và hai bộ chọn có thể trùng nhau) nên là một cặp: phương sai
-    lấy từ hiệu từng kỳ dₜ = 1[ứng viên có con về] − 1[đối thủ có con về], không cộng hai phương sai
-    như với hai mẫu độc lập. Chọn top-k đúng như ``multi_hit_benchmark.any_hit_rates``.
-    """
     from forecast import multi_hit_benchmark as bm
 
     rows = np.asarray(list(rows))
@@ -415,12 +305,10 @@ def paired_any_hit_se(candidate: np.ndarray, rival: np.ndarray, counts: np.ndarr
 
 
 def registered_draws(labels: list[str]) -> int:
-    """Số kỳ của đoạn lịch sử mà lượt hai đã đăng ký: các kỳ có ngày ≤ ``SECOND_ROUND_UNTIL``."""
     return sum(1 for label in labels if str(label) <= SECOND_ROUND_UNTIL)
 
 
 def _planted_run(job: tuple[int, int]) -> dict:
-    """Một lượt giao thức lượt hai trên một lịch sử cài tín hiệu (hàm cấp module để chạy song song)."""
     from forecast import multi_hit_benchmark as bm
 
     n_draws, seed = job
@@ -430,10 +318,6 @@ def _planted_run(job: tuple[int, int]) -> dict:
 
 def power_estimate(n_draws: int, seeds: tuple[int, ...] = POWER_SEEDS, run=_planted_run,
                    workers: int | None = None) -> tuple[list[dict], dict]:
-    """Chạy giao thức trên từng lịch sử cài tín hiệu; trả (các lượt, tóm tắt độ nhạy).
-
-    Độ nhạy = tỉ lệ lượt mà ứng viên qua giai đoạn kiểm; ĐỦ NHẠY khi tỉ lệ ấy ≥ ``POWER_REQUIRED``.
-    """
     jobs = [(n_draws, seed) for seed in seeds]
     if workers == 1 or len(jobs) <= 1:
         runs = [run(job) for job in jobs]
@@ -442,9 +326,6 @@ def power_estimate(n_draws: int, seeds: tuple[int, ...] = POWER_SEEDS, run=_plan
         import os
         from concurrent.futures import ProcessPoolExecutor
 
-        # "spawn", không "fork": tiến trình cha đã khởi động OpenMP (cây tăng cường trên dữ liệu thật),
-        # và tách tiến trình bằng fork khi ấy làm tiến trình con kẹt cứng (đo 13-10-2026: 20 phút, 0% CPU).
-        # Mỗi tiến trình con một luồng OpenMP để các lượt song song không tranh nhau cùng lõi.
         saved = os.environ.get("OMP_NUM_THREADS")
         os.environ["OMP_NUM_THREADS"] = "1"
         try:
@@ -466,10 +347,6 @@ def power_estimate(n_draws: int, seeds: tuple[int, ...] = POWER_SEEDS, run=_plan
 
 
 def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
-    """Giao thức lượt hai trên đoạn lịch sử đã đăng ký, và cùng giao thức trên lịch sử có cài tín hiệu.
-
-    Chỉ đọc các kỳ đến ``SECOND_ROUND_UNTIL``: kỳ mới hơn không bao giờ vào phép kiểm một lần này.
-    """
     from forecast import multi_hit_benchmark as bm
 
     n = registered_draws(labels)
@@ -478,7 +355,7 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     scores = bm.strategy_scores(draws, weekdays)
     real = bm.run_protocol(draws, weekdays, scores=scores)
     planted_runs, power = power_estimate(len(draws))
-    planted = planted_runs[0]                    # lượt đầu: in chi tiết làm ví dụ
+    planted = planted_runs[0]
     cand = real["candidate"]
     strategies = [
         {"name": name, "dev": _score(real["dev_scores"][name]), "dev_holm": real["dev_holm"][name],
@@ -527,12 +404,6 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
 
 
 def benchmark_is_valid(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
-    """Bản đệm là số đo của ĐÚNG đoạn lịch sử đã đăng ký, và đoạn ấy chưa bị sửa.
-
-    Đoạn đã đăng ký là các kỳ đến ``SECOND_ROUND_UNTIL``; so dấu vân tay của đoạn ấy trên lịch sử
-    hiện tại. Sửa một kỳ cũ (ô lô hay ngày), cắt lịch sử, hay một bản đệm đo vượt ngày đăng ký đều
-    bị bắt; kỳ mới nối thêm sau ngày ấy thì không bao giờ làm bản đệm cũ đi.
-    """
     if not cached or cached.get("version") != BENCHMARK_VERSION:
         return False
     measured = int(cached.get("draws", 0))
@@ -542,13 +413,6 @@ def benchmark_is_valid(cached: dict | None, draws: np.ndarray, labels: list[str]
 
 
 def vip_status(vip: dict | None, draws: np.ndarray, labels: list[str]) -> str:
-    """Số đo bộ lọc so với lịch sử hiện tại: ``current``, ``behind`` hay ``invalid``.
-
-    * ``current``: đo trên đúng lịch sử hiện tại.
-    * ``behind``: đoạn đã đo còn nguyên nhưng sổ đã có thêm kỳ (bước đo hỏng sau kỳ mới). Kiểm chứng
-      vẫn đúng cho đoạn ấy, nhưng top-k là cho một kỳ ĐÃ quay.
-    * ``invalid``: thiếu tệp, khác phiên bản, hoặc đoạn đã đo bị sửa/cắt.
-    """
     if not vip or vip.get("version") != MEASURE_VERSION:
         return "invalid"
     measured = int(vip.get("draws", 0))
@@ -560,11 +424,7 @@ def vip_status(vip: dict | None, draws: np.ndarray, labels: list[str]) -> str:
 
 
 def benchmark_is_stale(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
-    """Đo lại CHỈ khi bản đệm không còn là số đo của đoạn đã đăng ký; kỳ mới không mở lại phép kiểm."""
     return not benchmark_is_valid(cached, draws, labels)
-
-
-# --------------------------------------------------------------------------- ghi
 
 
 def _read(path: Path) -> dict | None:
@@ -593,7 +453,7 @@ def run(data_dir: Path, *, force_benchmark: bool = False,
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--force-benchmark", action="store_true",
                         help="đo lại giao thức lượt hai dù bản đệm còn mới")

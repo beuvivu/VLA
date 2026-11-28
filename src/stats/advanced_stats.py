@@ -2,17 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Advanced statistics for Vietnam lottery (XSMB).
-
-This script adds higher-level statistics commonly displayed on Vietnamese
-lottery analysis sites.
-
-Important: The outputs are *statistics only* derived from historical results.
-No betting/prediction logic is included.
-
-Outputs are written under:
-  - data/stats/advanced/*.csv
-"""
 
 import argparse
 import logging
@@ -58,7 +47,6 @@ def _filter_last_days(df: pd.DataFrame, *, days: int) -> pd.DataFrame:
 
 
 def _flatten_2d_values(two_digit_df: pd.DataFrame) -> np.ndarray:
-    """Flatten all 2-digit values (excluding date) into a 1D int array."""
     if two_digit_df.empty:
         return np.array([], dtype=np.int16)
     vals = (two_digit_df.drop(columns=["date"]).to_numpy(dtype=np.int16, copy=False) % 100).ravel()
@@ -66,13 +54,11 @@ def _flatten_2d_values(two_digit_df: pd.DataFrame) -> np.ndarray:
 
 
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> None:
-    """Chỉ ghi CSV (như ``statistical_matrices._dump_table``): bản JSON kèm theo không ai đọc."""
     _ensure_dir(out_dir)
     write_code_csv(df, out_dir / f"{name}.csv", index=False)
 
 
 def compute_frequency(sparse_df: pd.DataFrame, *, window_days: int) -> pd.DataFrame:
-    """Legacy report facade over the canonical frequency implementation."""
     if sparse_df.empty:
         return pd.DataFrame(columns=["value", "freq", "days_hit", "max_nhay"])
     target = pd.to_datetime(sparse_df["date"]).max().normalize() + pd.Timedelta(days=1)
@@ -93,7 +79,6 @@ def compute_frequency(sparse_df: pd.DataFrame, *, window_days: int) -> pd.DataFr
 
 
 def compute_overdue(sparse_df: pd.DataFrame) -> pd.DataFrame:
-    """Legacy calendar-day lô-gan facade over the canonical gap API."""
     if sparse_df.empty:
         return pd.DataFrame(columns=["value", "last_seen", "days_since_last", "value_str"])
     target = pd.to_datetime(sparse_df["date"]).max().normalize() + pd.Timedelta(days=1)
@@ -112,11 +97,6 @@ def compute_overdue(sparse_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_cycle_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) -> pd.DataFrame:
-    """Cycle (gap) statistics for each number 00..99.
-
-    For each number, treat a day as "hit" if it appears at least once that day.
-    Compute min/max/mean gap between hit days, and current gap (overdue).
-    """
     if sparse_df.empty:
         cols = ["value", "hits", "current_gap", "min_gap", "max_gap", "mean_gap"]
         return pd.DataFrame(columns=cols)
@@ -126,17 +106,6 @@ def compute_cycle_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) 
         target,
         lookback_days=window_days,
     )
-    # Gan đếm theo KỲ QUAY, không theo ngày lịch.
-    #
-    # XSMB nghỉ Tết hằng năm và nghỉ 01-22/04/2020; lịch sử có 8 đợt nghỉ. Đếm
-    # theo ngày lịch thì mọi con lô đều bị cộng thêm đúng số ngày nghỉ ấy ngay
-    # sau mỗi đợt. Đo trên chính data/xsmb.csv: mốc 2020-04-23, con 00 có gan
-    # thật 6 kỳ nhưng đếm theo lịch ra 29 — thổi phồng gần năm lần.
-    #
-    # Bảng này nuôi bốn builder (trang chủ, statistics, statistical_matrices,
-    # markdown dashboard), trong khi trang lo-gan.html đếm theo kỳ và nói rõ
-    # điều đó ngay trên trang. Hai mặt cùng một khái niệm mà lệch định nghĩa
-    # thì luôn có một mặt sai; bản theo kỳ mới là bản đúng nghiệp vụ.
     out = canonical.rename(
         columns={
             "number": "value",
@@ -152,7 +121,6 @@ def compute_cycle_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) 
 
 
 def compute_daily_nhay_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) -> pd.DataFrame:
-    """How many days a number appears 1,2,3,4+ times ("nháy") in the window."""
     window = _filter_last_days(sparse_df, days=window_days)
     if window.empty:
         cols = ["value", "days_1", "days_2", "days_3", "days_4_plus", "max_nhay"]
@@ -179,7 +147,6 @@ def compute_daily_nhay_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 
 
 
 def compute_head_tail_total(two_digit_df: pd.DataFrame, *, window_days: int = 20) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Head (đầu), tail (đuôi), and total (tổng) stats for 2-digit lotto."""
     window = _filter_last_days(two_digit_df, days=window_days)
     values = _flatten_2d_values(window)
     if values.size == 0:
@@ -203,7 +170,6 @@ def compute_head_tail_total(two_digit_df: pd.DataFrame, *, window_days: int = 20
 
 
 def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Overdue for 'tổng Đặc Biệt' and 'chạm Đặc Biệt' based on special prize."""
     if raw_df.empty:
         empty = pd.DataFrame(columns=["key", "last_seen", "days_since_last"])
         return empty, empty
@@ -217,7 +183,6 @@ def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, p
     ones = last2 % 10
     totals = (tens + ones) % 10
 
-    # total overdue
     total_rows: list[dict[str, object]] = []
     for t in range(10):
         mask = totals == t
@@ -229,7 +194,6 @@ def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, p
             total_rows.append({"total": t, "last_seen": None, "days_since_last": None})
     total_df = pd.DataFrame(total_rows).sort_values("days_since_last", ascending=False, na_position="last", kind="stable")
 
-    # cham overdue (digit presence in last-2-digits)
     cham_rows: list[dict[str, object]] = []
     for d in range(10):
         mask = (tens == d) | (ones == d)
@@ -245,11 +209,6 @@ def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, p
 
 
 def compute_lo_roi(two_digit_df: pd.DataFrame, *, window_draws: int = 7) -> pd.DataFrame:
-    """Simple 'lô rơi' style repeats: numbers appearing >=2 times in last N draws.
-
-    Many sites define 'lô rơi' slightly differently; this implementation is a
-    reproducible baseline that is easy to extend.
-    """
     if two_digit_df.empty:
         return pd.DataFrame(columns=["value", "count_in_window", "days_in_window"])
 
@@ -259,7 +218,6 @@ def compute_lo_roi(two_digit_df: pd.DataFrame, *, window_draws: int = 7) -> pd.D
         return pd.DataFrame(columns=["value", "count_in_window", "days_in_window"])
 
     counts = np.bincount(flat, minlength=100)
-    # days_in_window: on how many of the last N draws did the number appear?
     mat = df.drop(columns=["date"]).to_numpy(dtype=np.int16, copy=False) % 100
     days_in_window = np.zeros(100, dtype=int)
     for i in range(mat.shape[0]):
@@ -305,35 +263,29 @@ def main() -> None:
     as_of = _as_of_date(raw)
     logger.info("Advanced stats as-of: %s", as_of)
 
-    # 1) Frequency (tần suất)
     freq = compute_frequency(sparse, window_days=args.freq_days)
     _dump_table(freq, out_dir=out.data_dir, name=f"freq_{args.freq_days}d")
 
-    # 2) Overdue (lô gan)
     overdue = compute_overdue(sparse)
     _dump_table(overdue, out_dir=out.data_dir, name="overdue")
     overdue_list = overdue[overdue["days_since_last"].fillna(-1).astype(int) >= args.min_overdue].copy()
     _dump_table(overdue_list, out_dir=out.data_dir, name=f"overdue_ge_{args.min_overdue}d")
 
-    # 3) Cycle stats (chu kỳ gan) + nháy distribution
     cycles = compute_cycle_stats(sparse, window_days=args.cycle_days)
     _dump_table(cycles, out_dir=out.data_dir, name=f"cycles_{args.cycle_days}d")
 
     nhay = compute_daily_nhay_stats(sparse, window_days=args.cycle_days)
     _dump_table(nhay, out_dir=out.data_dir, name=f"nhay_{args.cycle_days}d")
 
-    # 4) Head / tail / total (đầu, đuôi, tổng)
     head, tail, total = compute_head_tail_total(two, window_days=args.headtail_days)
     _dump_table(head, out_dir=out.data_dir, name=f"head_{args.headtail_days}d")
     _dump_table(tail, out_dir=out.data_dir, name=f"tail_{args.headtail_days}d")
     _dump_table(total, out_dir=out.data_dir, name=f"total_{args.headtail_days}d")
 
-    # 5) Special prize: total/chạm overdue
     total_db, cham_db = compute_special_total_overdue(raw)
     _dump_table(total_db, out_dir=out.data_dir, name="special_total_overdue")
     _dump_table(cham_db, out_dir=out.data_dir, name="special_cham_overdue")
 
-    # 6) Lô rơi baseline
     lo_roi = compute_lo_roi(two, window_draws=args.lo_roi_draws)
     _dump_table(lo_roi, out_dir=out.data_dir, name=f"lo_roi_last_{args.lo_roi_draws}_draws")
 

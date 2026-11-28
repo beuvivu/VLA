@@ -1,4 +1,3 @@
-"""Hồi quy cho ngữ cảnh nhân quả, lịch sử sửa và đơn vị suy luận kỳ quay."""
 from copy import deepcopy
 from datetime import date
 from itertools import combinations
@@ -70,7 +69,6 @@ def _scheduled_series(product, on_day=1):
 def test_report_portfolio_and_issue_share_scheduled_law(product, on_day):
     f = MLForecaster(product, MLConfig(backends=(), bootstrap=8, warmup=1, search_nodes=8))
     f.update(_scheduled_series(product, on_day))
-    # Ngày target ảnh hưởng trực tiếp tới law, đủ mạnh để phát hiện caller bỏ ngữ cảnh.
     comp = f.components['main']
     idx = comp.features.names.index('elapsed_days')
     comp.logistics[0].theta[idx] = 3

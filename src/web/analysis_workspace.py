@@ -1,4 +1,3 @@
-"""Hiển thị không gian phân tích tại ranh giới xuất trang, giữ nguyên dữ liệu."""
 from __future__ import annotations
 
 import re
@@ -40,7 +39,6 @@ class _Node:
 
 
 class _Layout(HTMLParser):
-    """Chỉ lập chỉ mục vị trí; không tuần tự hóa lại HTML hay mã chạy sẵn."""
     def __init__(self, source: str):
         super().__init__(convert_charrefs=False)
         self.source = source
@@ -77,7 +75,6 @@ class _Layout(HTMLParser):
 
 
 def workspace_pages() -> set[str]:
-    """Suy ra phạm vi từ điều hướng thật để trang bổ sung không bị bỏ sót."""
     from web.ui_theme import SITE_NAV_SECTIONS
     pages = set(_DETAIL)
     for group, sections in SITE_NAV_SECTIONS:
@@ -110,7 +107,6 @@ def _guide(filename: str) -> str:
 
 
 def refine_workspace(path: Path | str, page: str) -> str:
-    """Bổ sung phân cấp, đường đọc và khối điều khiển, lũy đẳng từng byte."""
     filename = Path(path).name
     if filename not in workspace_pages():
         return page
@@ -145,7 +141,6 @@ def refine_workspace(path: Path | str, page: str) -> str:
             annotate(hero, 'app-workspace-hero')
             edits.append((hero.end, hero.end, _guide(filename)))
         else:
-            # Các trang chi tiết cũ chỉ có h1 + mô tả; giữ nguyên hai nút này.
             end = heading.end
             if heading.parent:
                 siblings = heading.parent.children
@@ -155,7 +150,6 @@ def refine_workspace(path: Path | str, page: str) -> str:
             edits.append((heading.start, heading.start, '<header class="app-workspace-hero"><p class="app-workspace-eyebrow">' + escape(_brief(filename)[0]) + '</p>'))
             edits.append((end, end, '</header>' + _guide(filename)))
     else:
-        # Mẫu nhỏ dùng trong kiểm thử vẫn có thể đọc đúng khối điều khiển.
         target = next((n for n in layout.nodes if n.has('ui-shell') or n.has('path-shell')), body)
         if target:
             edits.append((target.opened, target.opened, _guide(filename)))
@@ -172,7 +166,6 @@ def refine_workspace(path: Path | str, page: str) -> str:
             annotate(node, 'app-workspace-table', attrs.strip())
         if node.tag == 'h3' and node.has('sp-subhead'):
             annotate(node, 'app-workspace-section-title')
-    # Áp dụng từ cuối về đầu giữ toàn bộ vị trí và byte của script nghiệp vụ.
     for start, end, replacement in sorted(edits, key=lambda edit: (edit[0], edit[1]), reverse=True):
         page = page[:start] + replacement + page[end:]
     return page

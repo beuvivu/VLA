@@ -1,4 +1,3 @@
-"""Chạy bộ điều phối ba tác tử XSMB và ghi báo cáo tiến cứu."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +9,7 @@ from core.atomic_io import atomic_write_text
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--benchmark-last", type=int,
                         help="Chỉ kiểm hồi cứu N kỳ; không ghi sổ hoặc phát dự báo tiến cứu")

@@ -2,16 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Date-safe AI/statistics overlay for the legacy 00..99 statistics dashboard.
-
-The historical ``statistical_matrices`` builder accepted any probability file
-that happened to exist. A structurally valid file from yesterday could therefore
-be displayed as today's ML signal. This canonical post-processor accepts only an
-artifact whose prediction target is exactly ``latest canonical date + 1 day``.
-If no current ML artifact exists, it keeps the descriptive statistical overlay
-but renormalizes the score over the non-ML factors and explicitly marks ML as
-unavailable instead of reusing stale probabilities.
-"""
 
 import argparse
 import json
@@ -60,7 +50,7 @@ def _validated_probability_frame(
         return None, "missing"
     try:
         df = pd.read_csv(path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return None, f"read_error:{type(exc).__name__}"
 
     if len(df) != 100 or "number" not in df.columns or "prob" not in df.columns:
@@ -108,11 +98,6 @@ def _validated_probability_frame(
 
 
 def _shown_path(path: Path, data_dir: Path) -> str:
-    """Đường dẫn ghi vào chẩn đoán, tính từ thư mục cha của `data/` («data/ai_ml/…»).
-
-    Tệp chẩn đoán được commit: ghi đường dẫn tuyệt đối thì nó mang thư mục làm việc của runner
-    (`/home/runner/work/…`) và đổi theo máy chạy dù nội dung không đổi.
-    """
     try:
         return (Path(data_dir.name) / Path(path).relative_to(data_dir)).as_posix()
     except ValueError:
@@ -368,16 +353,15 @@ def write_overlays() -> list[Path]:
     }
     for mode, sparse in (("loto", sparse_loto), ("de", sparse_de)):
         table, diag = build_overlay(
-            mode=mode,  # type: ignore[arg-type]
+            mode=mode,
             sparse_df=sparse,
             data_dir=paths.data_dir,
             expected_target=expected_target,
         )
-        # Chỉ CSV (trang và kiểm toán sản xuất đọc CSV); bản JSON kèm theo không ai đọc.
         csv_path = out_dir / f"ai_ml_signal_{mode}.csv"
         write_code_csv(table, csv_path, index=False)
         created.append(csv_path)
-        diagnostics["modes"][mode] = diag  # type: ignore[index]
+        diagnostics["modes"][mode] = diag
 
     diag_path = out_dir / "ai_ml_signal_diagnostics.json"
     diag_path.write_text(

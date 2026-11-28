@@ -132,7 +132,6 @@ test('Runtime không ghim color-scheme nội tuyến làm vô hiệu màu bản 
 test('API hệ thống bị chặn: màu CSS, nhãn nút và lần bấm đầu vẫn đồng bộ', () => {
   for (const options of [{ mediaMissing: true }, { mediaThrows: true }]) {
     const s = setup(options);
-    // Nhánh CSS khi OS tối vẫn hoạt động dù JavaScript không đọc được OS.
     const style = s.win.document.createElement('style');
     style.textContent = ':root{background:rgb(255,255,255)}' +
       ':root.dark,:root[data-ui-theme="dark"],:root:not([data-ui-theme="light"]){background:rgb(17,17,17)}';

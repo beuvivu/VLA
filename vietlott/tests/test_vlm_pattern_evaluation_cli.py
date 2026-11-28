@@ -1,4 +1,3 @@
-"""Kiểm CLI đánh giá chạy chuyên gia thật trên seed tạm, không sửa sổ live."""
 from __future__ import annotations
 
 import json
@@ -18,7 +17,6 @@ import pytest
 def test_cli_selects_independent_challengers_and_scores_real_seed(
     tmp_path: Path, flags: list[str], patterns: bool, multi_agent: bool,
 ) -> None:
-    """Bỏ sót hoặc nối nhầm cờ phải hỏng cấu hình hoặc phép chấm thật ngoài mẫu."""
     root = Path(__file__).resolve().parents[1]
     seed = tmp_path / 'seed'
     seed.mkdir()

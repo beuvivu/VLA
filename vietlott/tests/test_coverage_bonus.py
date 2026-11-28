@@ -1,4 +1,3 @@
-"""Coverage chấm số Jackpot 2 Power từ lồng còn lại, cùng luật phân hạng vé."""
 from dataclasses import replace
 from itertools import combinations
 from math import comb
@@ -17,7 +16,6 @@ def test_power_simulation_draws_a_bonus_outside_the_six_main_numbers():
 
 
 def test_power_jp2_coverage_matches_classification_and_exact_probability():
-    """Mỗi lớp m số trùng có đúng 6-m số trên vé trong 49 số còn lại."""
     ticket = set(range(1, 7))
     draws, bonuses, probabilities, expected = [], [], [], []
     for matched in range(7):
@@ -34,18 +32,15 @@ def test_power_jp2_coverage_matches_classification_and_exact_probability():
     wins = _win_matrix(POWER_655, _masks(np.array([sorted(ticket)])), np.array([0]),
                        _masks(np.array(draws)), np.array(bonuses), _thresholds(POWER_655, 'jackpot2'))[0]
     np.testing.assert_array_equal(wins, expected)
-    # JP1 có một bộ; JP2 có sáu bộ thay đúng một số bằng bóng đặc biệt.
     assert np.dot(wins, probabilities) == pytest.approx(7 / comb(55, 6))
 
 
 def test_power_jp2_optimisation_and_random_baseline_count_bonus_winners():
-    """Lồng nhỏ giữ đúng cơ chế Power để mức hiếm có thể kiểm bằng mẫu hữu hạn."""
     spec = replace(POWER_655, pool_size=8, pick=3, tiers=(
         PrizeTier('jackpot1', 3), PrizeTier('jackpot2', 2, bonus_required=True),
         PrizeTier('first', 2, fixed_amount=40_000_000)))
     result = optimise_coverage(spec, 1, 'jackpot2', sim_draws=400, eval_draws=20_000,
                                candidates=16, local_rounds=1, seed=12)
-    # Liệt kê độc lập cả bộ chính và từng bóng rút từ phần còn lại.
     ticket = {1, 2, 3}
     outcomes = [(set(main), bonus) for main in combinations(range(1, 9), 3)
                 for bonus in range(1, 9) if bonus not in main]

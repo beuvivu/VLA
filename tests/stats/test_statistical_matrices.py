@@ -29,7 +29,7 @@ def test_period_frequency_preserves_00_label() -> None:
 def test_special_boards_week_and_month() -> None:
     raw = pd.DataFrame(
         {
-            "date": ["2026-01-05", "2026-01-06"],  # Monday, Tuesday
+            "date": ["2026-01-05", "2026-01-06"],
             "special": [12304, 9007],
         }
     )
@@ -71,7 +71,6 @@ def test_reverse_pair_frequency_uses_kep_bong_instead_of_self_pairs() -> None:
     )
     out = _reverse_pair_frequency(_prepare_sparse(sparse), period="day")
 
-    # One canonical 50-pair row per family and date; no double can become AA-AA.
     assert len(out) == 100
     assert "77-77" not in set(out["pair"])
     assert set(out["pair"]) >= {"22-77", "13-31"}

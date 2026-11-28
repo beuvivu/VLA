@@ -1,28 +1,3 @@
-"""Quét toàn bộ họ cầu ghép chéo ngày bằng phép toán ma trận.
-
-Bố cục tính toán
-----------------
-Với mỗi bộ ba (độ trễ A, độ trễ B, bóng), khối ứng viên là một phép quảng bá duy
-nhất cho ra mảng ``(số ngày, 107, 107)``: ``cand[t, i, j]`` là con số mà cặp vị
-trí ``(i, j)`` dự đoán cho ngày ``t``. Ba phép biến đổi còn lại suy ra từ đó chứ
-không tính lại — ``reverse_concat`` là một phép quảng bá đối xứng, và
-``reverse_pair`` chỉ là phép hợp của hai ma trận trúng.
-
-Không có vòng lặp Python nào chạy trên ngày hay trên cặp vị trí.
-
-Điều lớp này cố tình KHÔNG làm
-------------------------------
-Nó không kết luận đường cầu nào đáng tin. Với 107 vị trí, chỉ riêng lag-1 đã có
-11.449 cặp có hướng; mở tới biên độ 7 kèm bóng cho hơn 400.000 giả thuyết, và ở
-quy mô đó hơn một trăm nghìn đường cầu sẽ "đang chạy 5 nhịp" thuần do ngẫu
-nhiên. Việc sàng lọc thuộc về :mod:`bridges.firewall`, và ``scan`` trả về đối
-tượng kết quả thô để chính con số "đã thử bao nhiêu giả thuyết" không bao giờ bị
-đánh rơi trên đường đi.
-
-Từ 15-11-2026 module này mang luôn tensor chữ số, đặc tả mẫu cầu và bảng bóng số (trước là `tensor.py`,
-`spec.py`, `shadow.py`): chỉ bộ quét dùng cả ba.
-"""
-
 from __future__ import annotations
 
 import math
@@ -45,22 +20,8 @@ from core.xsmb_domain import (
 )
 
 
-# --- Tensor chữ số (trước 15-11-2026: bridges/tensor.py) ------------------------------------------
-#
-# Ma trận chữ số theo vị trí trên bảng kết quả, dựng một lần cho toàn lịch sử.
-#
-# Mọi phép quét cầu đều đọc từ đây thay vì tự cắt lại DataFrame, nên chi phí dựng
-# trả một lần và phần quét còn lại thuần NumPy.
-#
-# Ràng buộc lịch là bắt buộc chứ không tùy chọn: ghép chéo ngày nói "vị trí A ở
-# ngày T−k", và chỉ số hàng chỉ tương đương ngày lịch khi chuỗi ngày liền mạch.
-# Trên chuỗi có lỗ hổng, ``values[t - k]`` lặng lẽ trỏ sang một ngày khác và mọi
-# đường cầu tìm được đều sai — nên lớp này từ chối dựng thay vì trả kết quả hỏng.
-
 NUMBER_SPACE: Final[int] = 100
 
-#: Chỉ số cột của hai chữ số cuối mỗi giải trong luồng chữ số phẳng.
-#: Hai chữ số cuối của một giải chính là con LOTO mà giải đó sinh ra.
 _LAST_TWO: Final[tuple[tuple[int, int], ...]] = tuple(
     (offset + width - 2, offset + width - 1)
     for offset, width in zip(
@@ -73,13 +34,6 @@ _LAST_TWO: Final[tuple[tuple[int, int], ...]] = tuple(
 
 @dataclass(frozen=True)
 class DigitTensor:
-    """Lịch sử đã số hóa: chữ số theo vị trí, số trúng theo ngày.
-
-    ``values`` có dạng ``(số ngày, 107)`` kiểu ``uint8``; ``values[t, p]`` là chữ
-    số ở vị trí ``p`` của ngày ``dates[t]``. ``loto_counts[t, n]`` là số lần con
-    ``n`` xuất hiện trong ngày ``t`` (0, 1 hoặc nhiều hơn — cầu hai nháy cần đếm
-    chứ không chỉ cần có), và ``de_index[t]`` là hai chữ số cuối của giải Đặc Biệt.
-    """
 
     values: np.ndarray
     dates: pd.DatetimeIndex
@@ -106,16 +60,13 @@ class DigitTensor:
         return int(self.values.shape[1])
 
     def loto_hits(self) -> np.ndarray:
-        """Ma trận ``(ngày, 100)`` kiểu bool: con số có về trong ngày hay không."""
         return self.loto_counts > 0
 
     def loto_double_hits(self) -> np.ndarray:
-        """Ma trận ``(ngày, 100)`` kiểu bool cho tiêu chí hai nháy."""
         return self.loto_counts >= 2
 
     @classmethod
     def from_raw(cls, df_raw: pd.DataFrame) -> DigitTensor:
-        """Dựng từ bảng kết quả thô, sau khi bắt buộc chuỗi ngày liền mạch."""
         if "date" not in df_raw.columns:
             raise ValueError("bảng kết quả thô thiếu cột 'date'")
         frame = df_raw.sort_values("date", kind="stable").reset_index(drop=True)
@@ -124,8 +75,6 @@ class DigitTensor:
         values = raw_digit_matrix(frame)
         labels = tuple(build_position_labels())
 
-        # Hai chữ số cuối của mỗi giải là con LOTO của giải đó; đếm bằng
-        # bincount theo hàng thay vì vòng lặp Python trên từng ngày.
         n_days = values.shape[0]
         pairs = np.empty((n_days, len(_LAST_TWO)), dtype=np.int16)
         for slot, (hi, lo) in enumerate(_LAST_TWO):
@@ -135,7 +84,6 @@ class DigitTensor:
         rows = np.repeat(np.arange(n_days), pairs.shape[1])
         np.add.at(counts, (rows, pairs.ravel()), 1)
 
-        # Giải Đặc Biệt là trường đầu tiên, nên hai chữ số cuối của nó là cột 0.
         de_index = pairs[:, 0].astype(np.int16)
 
         return cls(
@@ -146,17 +94,6 @@ class DigitTensor:
             de_index=de_index,
         )
 
-
-# --- Đặc tả mẫu cầu (trước 15-11-2026: bridges/spec.py) -------------------------------------------
-#
-# Định danh một đường cầu ghép chéo ngày.
-#
-# Khác biệt so với ``dynamic_cau.PatternSpec``: ở đó hai vị trí nguồn luôn lấy từ
-# *cùng một ngày* T−1. Ở đây mỗi vị trí mang độ trễ riêng, nên diễn đạt được đúng
-# thứ đặc tả yêu cầu — vị trí A ở ngày T−k ghép với vị trí B ở ngày T−k+1.
-#
-# Lớp này chỉ *đặt tên* cho một giả thuyết. Việc chấm điểm nằm ở ``scanner``, và
-# việc quyết định giả thuyết nào được phép đi tiếp nằm ở ``firewall``.
 
 TRANSFORM_CONCAT: Final[str] = "concat"
 TRANSFORM_REVERSE_CONCAT: Final[str] = "reverse_concat"
@@ -179,7 +116,6 @@ TARGET_TYPES: Final[tuple[str, ...]] = (TARGET_LOTO, TARGET_LOTO_2_NHAY, TARGET_
 
 @dataclass(frozen=True)
 class CrossDayPatternSpec:
-    """Một giả thuyết cầu: hai vị trí, hai độ trễ, một phép biến đổi, một bóng."""
 
     position_a: int
     position_b: int
@@ -196,7 +132,6 @@ class CrossDayPatternSpec:
 
     @property
     def span(self) -> int:
-        """Biên độ chạy: số ngày mà đường cầu trải qua."""
         return abs(self.lag_a - self.lag_b) + 1
 
     @property
@@ -208,30 +143,12 @@ class CrossDayPatternSpec:
 
 
 def default_lag_pairs(max_span: int = 3) -> tuple[tuple[int, int], ...]:
-    """Cặp độ trễ mặc định: lag-1 cùng ngày, rồi ghép chéo A(T−k) với B(T−k+1).
-
-    ``max_span=1`` cho đúng hành vi lag-1 của ``dynamic_cau``; mỗi nấc tăng thêm
-    một biên độ ``k`` và nhân đôi kích thước họ giả thuyết, nên giá trị này là
-    núm điều khiển trực tiếp của bài toán đa kiểm định.
-    """
     if max_span < 1:
         raise ValueError("max_span phải ít nhất bằng 1")
     pairs = [(1, 1)]
     pairs.extend((k, k - 1) for k in range(2, max_span + 1))
     return tuple(pairs)
 
-
-# --- Bóng số (trước 15-11-2026: bridges/shadow.py) ------------------------------------------------
-#
-# Quét song song giá trị thực và giá trị quy đổi theo bóng số.
-#
-# Bóng là một ánh xạ chữ số → chữ số, nên áp nó lên *nguồn* trước khi ghép cặp
-# giữ nguyên toàn bộ hình dạng vector của phép quét: không có nhánh nào rẽ riêng,
-# không có vòng lặp Python nào thêm vào.
-#
-# Hai bảng bóng lấy thẳng từ ``number_reference`` — nơi chúng đã được dùng cho các
-# trang thống kê — thay vì chép lại. Chép lại sẽ tạo ra hai nguồn sự thật có thể
-# trôi khỏi nhau mà không ai phát hiện.
 
 KIND_THUC: Final[str] = "thuc"
 KIND_BONG_DUONG: Final[str] = "bong_duong"
@@ -255,7 +172,6 @@ _TABLES: Final[dict[str, np.ndarray]] = {
 
 
 def shadow_table(kind: str) -> np.ndarray:
-    """Bảng tra cứu 10 phần tử cho một loại bóng."""
     try:
         return _TABLES[kind]
     except KeyError:
@@ -265,23 +181,15 @@ def shadow_table(kind: str) -> np.ndarray:
 
 
 def apply_shadow(kind: str, digits: np.ndarray) -> np.ndarray:
-    """Quy đổi một mảng chữ số bất kỳ theo bóng, giữ nguyên hình dạng."""
     if digits.size and (digits.min() < 0 or digits.max() > 9):
         raise ValueError("chữ số phải nằm trong 0..9")
     return shadow_table(kind)[digits]
 
 
-# --- Bộ quét ---------------------------------------------------------------------------------------
-
 _MAX_BO_MEMBERS: Final[int] = 8
 
 
 def _bo_membership() -> np.ndarray:
-    """Bảng ``(100, 8)``: các số cùng bộ, đệm bằng chính nó cho đủ chiều rộng.
-
-    Đệm bằng chính số đó là an toàn vì phép kiểm trúng dùng ``any``: một thành
-    viên lặp lại không thể biến một lần trượt thành lần trúng.
-    """
     table = np.empty((NUMBER_SPACE, _MAX_BO_MEMBERS), dtype=np.int16)
     for number in range(NUMBER_SPACE):
         members = sorted(int(item) for item in bo(number))
@@ -304,12 +212,6 @@ _MAX_SET_SIZE: Final[int] = int(_BO_SIZE.max())
 
 
 def _two_nhay_rate(set_size: int) -> float:
-    """P(ít nhất một con trong bộ ``set_size`` con về từ hai nháy trở lên).
-
-    Không có dạng đóng khi bộ có nhiều hơn một con, nhưng tính chính xác được:
-    điều kiện theo số lần rơi vào bộ trong 27 lượt, rồi nhân với xác suất các
-    lượt đó rơi vào những con khác nhau.
-    """
     n, m = LOTO_DRAWS_PER_DAY, int(set_size)
     if m <= 0:
         return 0.0
@@ -324,17 +226,6 @@ def _two_nhay_rate(set_size: int) -> float:
 
 
 def target_baseline_rate(target_type: str, set_size: int = 1) -> float:
-    """Tỉ lệ nền không thông tin cho một giả thuyết đặt cược ``set_size`` con.
-
-    Số con đặt cược là tham số bắt buộc, không phải chi tiết phụ. Một đường cầu
-    ``bo`` phát ra 8 con trúng thường xuyên hơn hẳn một đường phát ra 1 con, và
-    chấm cả hai bằng cùng một tỉ lệ nền sẽ tuyên bố *mọi* cầu bộ số là có ý
-    nghĩa — đo được trên dữ liệu thật: 100% cầu ``bo`` và 99% cầu ``reverse_pair``
-    lọt ngưỡng p<0,05, trong khi cầu một con cho đúng 4,45% như nhiễu thuần.
-
-    Dùng tỉ lệ lý thuyết chứ không ước lượng từ chính dữ liệu đang quét: một
-    đường cơ sở học từ dữ liệu sẽ hấp thụ đúng phần tín hiệu đang đi tìm.
-    """
     m = int(set_size)
     if m <= 0:
         return 0.0
@@ -342,12 +233,10 @@ def target_baseline_rate(target_type: str, set_size: int = 1) -> float:
         return float(min(1.0, m * UNIFORM_TWO_DIGIT_RATE))
     if target_type == TARGET_LOTO_2_NHAY:
         return _two_nhay_rate(m)
-    # LOTO: xác suất ít nhất một con trong bộ xuất hiện ở 27 lượt.
     return float(1.0 - (1.0 - m * UNIFORM_TWO_DIGIT_RATE) ** LOTO_DRAWS_PER_DAY)
 
 
 def baseline_rate_table(target_type: str) -> np.ndarray:
-    """Tra cứu tỉ lệ nền theo số con đặt cược, chỉ số 0..8."""
     return np.array(
         [target_baseline_rate(target_type, m) for m in range(_MAX_SET_SIZE + 1)],
         dtype=np.float64,
@@ -363,14 +252,6 @@ def _tail_probability(
     variance: np.ndarray,
     day_rate: np.ndarray,
 ) -> np.ndarray:
-    """P(số lần trúng >= quan sát) dưới giả thiết không có tín hiệu.
-
-    Chọn xấp xỉ theo chế độ chứ không dùng một công thức cho mọi trường hợp.
-    Với Đặc Biệt, kỳ vọng chỉ khoảng 3,9 lần trúng trên 386 ngày — vùng biến cố hiếm,
-    nơi xấp xỉ chuẩn thổi phồng đuôi và biến dao động thường thành phát hiện.
-    Poisson là xấp xỉ đúng cho tổng các Bernoulli hiếm và độc lập không đồng
-    nhất; với LOTO (tỉ lệ nền 0,24) thì chuẩn có hiệu chỉnh liên tục mới đúng.
-    """
     rare = float(np.max(day_rate)) <= _RARE_EVENT_RATE
     if rare:
         return np.asarray(stats.poisson.sf(successes - 1, expected), dtype=float)
@@ -380,12 +261,6 @@ def _tail_probability(
 
 @dataclass(frozen=True)
 class BridgeScanResult:
-    """Thống kê tóm tắt cho từng giả thuyết đã quét.
-
-    Cố ý không giữ ma trận trúng đầy đủ: với hơn 400.000 giả thuyết trên 386
-    ngày, riêng nó đã là 159 MB. Các cột nhận diện đủ để dựng lại đúng những giả
-    thuyết sống sót, và chỉ những giả thuyết đó mới cần tới ma trận.
-    """
 
     frame: pd.DataFrame
     target_type: str
@@ -397,12 +272,10 @@ class BridgeScanResult:
         return int(len(self.frame))
 
     def running(self, min_streak: int = 5) -> pd.DataFrame:
-        """Các đường cầu đang chạy ít nhất ``min_streak`` nhịp — CHƯA sàng lọc."""
         return self.frame[self.frame["current_streak"] >= min_streak]
 
 
 class BridgeScanner:
-    """Quét họ cầu ghép chéo ngày trên toàn bộ lịch sử."""
 
     def __init__(
         self,
@@ -421,13 +294,11 @@ class BridgeScanner:
         self.shadows = tuple(shadows)
         self.transformations = tuple(transformations)
 
-    # -- lõi vector hóa ----------------------------------------------------
 
     @staticmethod
     def _aligned_sources(
         tensor: DigitTensor, lag_a: int, lag_b: int, start: int
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Chữ số nguồn đã canh theo ngày mục tiêu ``start..n-1``."""
         n = tensor.n_days
         a = tensor.values[start - lag_a : n - lag_a]
         b = tensor.values[start - lag_b : n - lag_b]
@@ -435,7 +306,6 @@ class BridgeScanner:
 
     @staticmethod
     def _hits_for(candidates: np.ndarray, target: np.ndarray, target_type: str) -> np.ndarray:
-        """Ma trận trúng ``(ngày, 107, 107)`` cho một khối ứng viên."""
         rows = np.arange(candidates.shape[0])[:, None, None]
         if target_type == TARGET_DE:
             return candidates == target[:, None, None]
@@ -449,17 +319,10 @@ class BridgeScanner:
         *,
         expand_bo: bool,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Trả về (ma trận trúng, số con đặt cược) — hai thứ luôn đi cùng nhau.
-
-        Tách rời chúng là cách sinh ra lỗi chấm điểm nguy hiểm nhất ở đây: một
-        ma trận trúng không mang theo số con đặt cược sẽ bị chấm bằng tỉ lệ nền
-        sai và biến mọi cầu bộ số thành phát hiện giả.
-        """
         if not expand_bo:
             hits = self._hits_for(candidates, target, target_type)
             return hits, np.ones(candidates.shape, dtype=np.int16)
 
-        # Bộ số biến một ứng viên thành 4 hoặc 8 con; trúng nếu bất kỳ con nào về.
         members = _BO_TABLE[candidates]
         sizes = _BO_SIZE[candidates]
         if target_type == TARGET_DE:
@@ -467,11 +330,9 @@ class BridgeScanner:
         rows = np.arange(candidates.shape[0])[:, None, None, None]
         return target[rows, members].any(axis=-1), sizes
 
-    # -- API ---------------------------------------------------------------
 
     @property
     def start_index(self) -> int:
-        """Ngày mục tiêu đầu tiên chấm được, quyết định bởi độ trễ lớn nhất."""
         return max(max(pair) for pair in self.lag_pairs)
 
     def _target_for(self, tensor: DigitTensor, target_type: str) -> np.ndarray:
@@ -483,13 +344,6 @@ class BridgeScanner:
         return tensor.loto_hits()[start:]
 
     def _iter_blocks(self, tensor: DigitTensor, target: np.ndarray, target_type: str):
-        """Sinh từng khối (ma trận trúng, số con đặt cược, mô tả) của họ giả thuyết.
-
-        Cả ``scan`` lẫn phép kiểm chống data snooping đều đi qua đây, nên phân
-        phối của giả thuyết rỗng chắc chắn được lấy trên ĐÚNG không gian tìm
-        kiếm đã sinh ra giá trị quan sát. Hai đường duyệt riêng là cách phép kiểm
-        max-statistic lặng lẽ mất hiệu lực.
-        """
         start = self.start_index
         for lag_a, lag_b in self.lag_pairs:
             raw_a, raw_b = self._aligned_sources(tensor, lag_a, lag_b, start)
@@ -522,7 +376,7 @@ class BridgeScanner:
                         hits, sizes = self._evaluate_block(
                             forward, target, target_type, expand_bo=True
                         )
-                    else:  # pragma: no cover - đã chặn ở __init__
+                    else:
                         raise ValueError(transformation)
 
                     if transformation in (TRANSFORM_CONCAT, TRANSFORM_REVERSE_CONCAT):
@@ -531,7 +385,6 @@ class BridgeScanner:
                 cache.clear()
 
     def scan(self, tensor: DigitTensor, *, target_type: str = TARGET_LOTO) -> BridgeScanResult:
-        """Chấm điểm mọi giả thuyết trong họ và trả về thống kê tóm tắt."""
         if target_type not in TARGET_TYPES:
             raise ValueError(f"loại mục tiêu không hợp lệ: {target_type!r}")
         if tensor.n_days <= self.start_index:
@@ -560,12 +413,6 @@ class BridgeScanner:
         )
 
     def family_max_skill(self, tensor: DigitTensor, target: np.ndarray, target_type: str) -> float:
-        """Kỹ năng lớn nhất trên TOÀN họ với một chuỗi kết quả cho trước.
-
-        Đây là thống kê mà phép kiểm chống data snooping cần. Lấy max trên tập
-        đã sàng lọc thay vì trên toàn họ sẽ hạ thấp phân phối rỗng một cách giả
-        tạo và biến phép kiểm thành hình thức.
-        """
         rate_table = baseline_rate_table(target_type)
         best = -np.inf
         for hits, sizes, _ in self._iter_blocks(tensor, target, target_type):
@@ -580,12 +427,6 @@ class BridgeScanner:
         *,
         target_type: str,
     ) -> tuple[RebuiltBridges, np.ndarray]:
-        """Dựng lại đúng các con đặt cược của một tập giả thuyết đã chọn.
-
-        Bộ quét cố ý không giữ ma trận trúng đầy đủ của cả họ — với hơn 400.000
-        giả thuyết đó là 159 MB. Chỉ phần sống sót mới cần dựng lại, và ở quy mô
-        đó chi phí không đáng kể.
-        """
         if target_type not in TARGET_TYPES:
             raise ValueError(f"loại mục tiêu không hợp lệ: {target_type!r}")
         start = max(max(pair) for pair in self.lag_pairs)
@@ -621,7 +462,7 @@ class BridgeScanner:
             elif transformation == TRANSFORM_BO:
                 block = _BO_TABLE[forward][:, None, :]
                 size = _BO_SIZE[forward]
-            else:  # pragma: no cover - khung đã chặn từ __init__
+            else:
                 raise ValueError(transformation)
 
             members[:, slot, :] = block[:, 0, :]
@@ -644,14 +485,9 @@ class BridgeScanner:
         n_days = hits.shape[0]
         successes = hits.sum(axis=0, dtype=np.int32).ravel()
 
-        # Chuỗi đang chạy: đếm số True liên tiếp tính ngược từ ngày cuối. Phép
-        # cumprod trên mảng đã đảo chiều tắt ngay tại lần trượt đầu tiên.
         reversed_hits = hits[::-1].astype(np.uint8)
         streak = np.cumprod(reversed_hits, axis=0).sum(axis=0, dtype=np.int32).ravel()
 
-        # Kỳ vọng cộng dồn theo từng ngày, dùng đúng tỉ lệ nền của số con mà giả
-        # thuyết đặt cược ngày đó. Cộng dồn chứ không nhân n_days với một tỉ lệ
-        # duy nhất, vì reverse_pair đổi giữa 1 và 2 con tùy ngày.
         day_rate = rate_table[sizes]
         expected = day_rate.sum(axis=0).ravel()
         variance = np.maximum((day_rate * (1.0 - day_rate)).sum(axis=0).ravel(), 1e-9)
@@ -678,19 +514,11 @@ class BridgeScanner:
 
 @dataclass(frozen=True)
 class RebuiltBridges:
-    """Các con mà một nhóm giả thuyết đặt cược, dựng lại theo từng ngày.
-
-    Mọi phép biến đổi được quy về cùng một dạng — danh sách con có đệm — nên
-    phép kiểm chống data snooping chạy trên một đường duy nhất thay vì rẽ nhánh
-    theo từng loại cầu. Rẽ nhánh ở đó là nơi rất dễ để một loại cầu lặng lẽ bỏ
-    qua phép kiểm.
-    """
 
     members: np.ndarray
     sizes: np.ndarray
 
     def hits_for(self, target: np.ndarray, target_type: str) -> np.ndarray:
-        """Ma trận trúng ``(ngày, số giả thuyết)`` với một chuỗi kết quả bất kỳ."""
         if target_type == TARGET_DE:
             return (self.members == target[:, None, None]).any(axis=-1)
         rows = np.arange(self.members.shape[0])[:, None, None]
@@ -698,11 +526,6 @@ class RebuiltBridges:
 
 
 def _pad_members(*columns: np.ndarray) -> np.ndarray:
-    """Xếp các con đặt cược thành mảng rộng cố định, đệm bằng chính chúng.
-
-    Đệm bằng con đã có là an toàn vì phép kiểm trúng dùng ``any``: một con lặp
-    lại không thể biến lần trượt thành lần trúng.
-    """
     stacked = np.stack(columns, axis=-1).astype(np.int16)
     repeats = -(-_MAX_BO_MEMBERS // stacked.shape[-1])
     return np.tile(stacked, (1, 1, repeats))[:, :, :_MAX_BO_MEMBERS]

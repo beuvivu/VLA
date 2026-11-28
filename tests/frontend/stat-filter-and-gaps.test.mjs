@@ -6,7 +6,6 @@ import test from 'node:test';
 import {JSDOM} from 'jsdom';
 
 const root = new URL('../../', import.meta.url);
-// Có ngày nghỉ, số lặp cùng kỳ, hai lần về liên tiếp và số chỉ về một lần.
 const draws = [
   {d: '2026-09-01', s: '00000', n: ['00', '00', '12', ...Array(24).fill('99')]},
   {d: '2026-09-02', s: '00000', n: ['00', ...Array(26).fill('99')]},
@@ -77,7 +76,7 @@ for (const slug of ['tan-suat-loto', 'tan-suat-cap-loto']) {
     assert.deepEqual(pendingDates(d), []);
     change(dom, 'sp-to', '2026-09-07');
     assert.deepEqual(pendingDates(d), ['2026-09-08']);
-    change(dom, 'sp-weekday', '1'); // 08/09 là thứ Ba, không phải thứ Hai.
+    change(dom, 'sp-weekday', '1');
     assert.deepEqual(pendingDates(d), []);
   });
   test(`${slug}: hôm nay đã có kết quả thì không biến thành kỳ chờ khi lọc quá khứ`, t => {
@@ -89,7 +88,6 @@ for (const slug of ['tan-suat-loto', 'tan-suat-cap-loto']) {
 
 test('Lô gan: cực đại đếm kỳ trượt, số về liên tiếp có gan bằng không và khớp popup', t => {
   const dom = setup(t, 'lo-gan'), d = dom.window.document;
-  // 12 về ở chỉ số 0 và 4: ba kỳ 1,2,3 trượt; ngày nghỉ không là kỳ quay.
   assert.equal(rowFor(d, 'sp-grid', '12').cells[3].textContent, '3');
   assert.equal(rowFor(d, 'sp-max-lo', '12').cells[1].textContent, '3 kỳ');
   assert.equal(rowFor(d, 'sp-grid', '00').cells[3].textContent, '0');
@@ -102,7 +100,6 @@ test('Lô gan: cực đại đếm kỳ trượt, số về liên tiếp có gan
 
 test('Cặp gan: một trong hai số về là ngắt gan, hai lần liên tiếp không là một kỳ trượt', t => {
   const dom = setup(t, 'lo-gan'), d = dom.window.document;
-  // 12/21 có mặt ở chỉ số 0,2,4; mỗi khoảng chỉ có đúng một kỳ trượt.
   assert.equal(rowFor(d, 'sp-pair-gan', '12 - 21').cells[3].textContent, '1');
   assert.equal(rowFor(d, 'sp-pair-gan', '00 - 55').cells[3].textContent, '0');
   assert.equal(rowFor(d, 'sp-pair-gan', '34 - 43').cells[3].textContent, '—');
@@ -110,7 +107,6 @@ test('Cặp gan: một trong hai số về là ngắt gan, hai lần liên tiế
 
 test('Gan bằng không đã được quan sát giữ số 0 và chú giải, khác dải chưa đủ hai lần', t => {
   const dom = setup(t, 'lo-gan'), d = dom.window.document;
-  // Hai kỳ đầu liên tiếp có 00, còn 12 chỉ có mặt một lần.
   dom.window.__D_DRAWS__.splice(2);
   dom.window.eval('renderLoGan()');
   const zero = rowFor(d, 'sp-grid', '00').cells[3];

@@ -1,8 +1,3 @@
-"""Targeted official/AjaxPro and pinned GitHub archive adapters.
-
-Every fallback must yield exactly the requested game and draw id. A success
-with empty/stale data or an unrelated draw continues to the next source.
-"""
 from __future__ import annotations
 import asyncio
 import hashlib
@@ -29,7 +24,6 @@ class DrawSource(Protocol):
 
 
 class TextCache:
-    """Bounded shared cache: one fetch per URL while concurrent repairs wait."""
     def __init__(self, client: Any, capacity: int = 8) -> None:
         self.client, self.capacity = client, capacity
         self._cache: OrderedDict[str,str] = OrderedDict()
@@ -123,7 +117,6 @@ class OfficialSource:
         try:
             html=(await self.client.get(url)).text
             detail=parse_detail_page(html,url)
-            # Do not fill a missing id from the request: stale/error pages must fail.
             if detail["draw_id"]==draw_id and detail["draw_date"] and g in ("mega645","power655","lotto535","keno","bingo18"):
                 prizes=detail["prizes"]
                 return DrawRecord.from_legacy(g,detail | {"result":detail["numbers"],"prizes":prizes,
@@ -197,7 +190,6 @@ class MonthlyArchiveSource:
         else:
             filename="all.csv"
         url=f"{self.base_url}/draws/{product.value}/{filename}"
-        # Convert only the requested row; do not hydrate an entire month of models per id.
         selected=[r for r in read_csv(await self.cache.get(url)) if int(str(r["draw_id"]).lstrip("#"))==draw_id]
         if not selected:
             return None
@@ -226,8 +218,6 @@ class TargetedFetcher:
         for source in self.sources:
             name=getattr(source,"name",type(source).__name__)
             try:
-                # Bound the whole adapter (detail + Ajax), not just each request.
-                # A blocked first source must leave time for the mirrors.
                 async with asyncio.timeout(self.source_timeout_s):
                     row=await source.fetch(g,draw_id,date_hint)
                 if row is None:
@@ -237,7 +227,6 @@ class TargetedFetcher:
                 if row.draw_id!=draw_id or row.game_type.value!=g:
                     raise ValueError("source returned a different draw or game")
             except (SourceError,OSError,ValueError,KeyError,TypeError) as exc:
-                # Never persist exception strings that may embed credentials/cookies.
                 self.attempts.append({"source":name,"game_type":g,"draw_id":draw_id,"status":"rejected","error":type(exc).__name__})
                 continue
             self.attempts.append({"source":name,"game_type":g,"draw_id":draw_id,"status":"ok"})

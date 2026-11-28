@@ -11,11 +11,9 @@ from vietlott_engine.core.history import DrawHistory
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _ignore_local_dotenv():  # type: ignore[no-untyped-def]
-    """Disable installer .env files before module-scoped clients are created."""
+def _ignore_local_dotenv():
     with pytest.MonkeyPatch.context() as patch:
         patch.setitem(_config.Settings.model_config, "env_file", None)
-        # Offline tests opt out of the production background crawler.
         patch.setenv('VQE_AUTO_UPDATE_ENABLED', 'false')
         patch.setenv('VQE_ML_AUTO_UPDATE_ENABLED', 'false')
         _config.get_settings.cache_clear()
@@ -27,11 +25,6 @@ PROJECT = Path(__file__).resolve().parents[1]
 
 
 def find_workflows(project: Path = PROJECT) -> dict[str, Path]:
-    """Workflow của Vietlott theo tên bỏ tiền tố (``ci.yml``, ``update.yml``…).
-
-    GitHub chỉ đọc workflow ở gốc kho, nên chúng nằm ở ``<kho>/.github/workflows/vlm-*.yml``;
-    bỏ tiền tố ``vlm-`` để các phép kiểm hỏi bằng tên ngắn.
-    """
     host = project.parent / ".github" / "workflows"
     return {p.name.removeprefix("vlm-"): p for p in host.glob("vlm-*.yml")}
 
@@ -42,7 +35,6 @@ def workflow_files() -> dict[str, Path]:
 
 
 def make_history(spec: GameSpec, draws: int, seed: int = 0, weights: np.ndarray | None = None) -> DrawHistory:
-    """Synthetic history; ``weights`` (n,) plants a per-number bias (Plackett–Luce sampling)."""
     rng = np.random.default_rng(seed)
     n, k = spec.pool_size, spec.pick
     if weights is None:
@@ -69,11 +61,6 @@ def power_history() -> DrawHistory:
 
 
 def official_matrix_source(monkeypatch, service):
-    """Mega: nguồn ``vietlott`` đọc JSONL mẫu và gắn nhãn chính thức như nguồn thật.
-
-    Chỉ ``--full`` từ vietlott.vn được sửa kỳ đã lưu (``pipeline.conflicting_draws``), nên phép kiểm
-    journal của một bản sửa phải đi qua nguồn mang nhãn ấy.
-    """
     from vietlott_engine.crawler.sources.mirror import GithubMirrorSource
 
     class Official(GithubMirrorSource):

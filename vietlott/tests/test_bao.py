@@ -1,6 +1,3 @@
-"""Chơi bao: official catalogue, published prize examples, jackpot sharing, tax basis,
-crowd-aware EV, strategy comparison, and the Max 3D family."""
-
 from __future__ import annotations
 
 from math import comb
@@ -23,11 +20,10 @@ from vietlott_engine.game_theory.bao import (
 )
 
 
-def _styles(spec, level, specials=1):  # type: ignore[no-untyped-def]
+def _styles(spec, level, specials=1):
     return {(r["hits_in_set"], r["bonus"]): r["vietlott_style"] for r in bao_prize_table(spec, level, specials)}
 
 
-# ------------------------------------------------------------------ catalogue
 def test_catalog_matches_vietlott_price_list() -> None:
     mega = [(o.kind, o.plays, o.cost) for o in bao_catalog(MEGA_645)]
     assert mega == [
@@ -50,15 +46,14 @@ def test_undocumented_options_are_flagged_or_rejected() -> None:
         analyse_bao(MEGA_645, list(range(1, 17)), strict=True)
     r = analyse_bao(LOTTO_535, [1, 2, 3, 4, 5, 6], [1, 2])
     assert r.plays == 12 and not r.documented
-    assert analyse_bao(LOTTO_535, [1, 2, 3, 4, 5], [1, 2, 3]).documented  # bao số đặc biệt
+    assert analyse_bao(LOTTO_535, [1, 2, 3, 4, 5], [1, 2, 3]).documented
 
 
-# ------------------------------------------------------------- published examples
 def test_power_bao5_and_bao7_match_published_tables() -> None:
     b5 = _styles(POWER_655, 5)
     assert b5[(2, "not_in_fixed")] == "200.000"
     assert b5[(3, "not_in_fixed")] == "3.850.000"
-    assert b5[(4, "in_fixed")] == "Jackpot 2 (×2 phần) + 24.000.000"  # published: "Jackpot 2 + 24.000.000"
+    assert b5[(4, "in_fixed")] == "Jackpot 2 (×2 phần) + 24.000.000"
     assert b5[(5, "not_in_fixed")] == "Jackpot 1 + Jackpot 2 + 1.920.000.000"
     b7 = _styles(POWER_655, 7)
     assert b7[(3, "not_in_set")] == "200.000"
@@ -71,7 +66,7 @@ def test_power_bao5_and_bao7_match_published_tables() -> None:
 
 def test_mega_bao_tables() -> None:
     b5 = _styles(MEGA_645, 5)
-    assert b5[(2, "-")] == "120.000"  # published Bao 5 example
+    assert b5[(2, "-")] == "120.000"
     b7 = _styles(MEGA_645, 7)
     assert b7[(3, "-")] == "120.000" and b7[(4, "-")] == "1.020.000" and b7[(5, "-")] == "21.500.000"
     assert b7[(6, "-")] == "Jackpot + 60.000.000"
@@ -84,24 +79,23 @@ def test_lotto_bao4_returns_the_stake_whenever_the_special_hits() -> None:
     assert sum(o.probability for o in matched) == pytest.approx(1 / 12)
 
 
-# ------------------------------------------------------------- rules that matter
 def test_own_jackpot_plays_share_one_pot() -> None:
     plays = {"jackpot1": 1, "jackpot2": 6}
     jp = {"jackpot1": 50e9, "jackpot2": 5e9}
     _, gross, _ = ticket_payout(POWER_655, plays, jp)
-    assert gross == pytest.approx(55e9)  # not 50 + 6 × 5 tỷ
+    assert gross == pytest.approx(55e9)
     _, gross, _ = ticket_payout(POWER_655, plays, jp, co_winners={"jackpot2": 6})
     assert gross == pytest.approx(50e9 + 5e9 * 6 / 12)
     assert expected_share(6, 0.0) == 1.0 and expected_share(1, 2.0) == pytest.approx((1 - np.exp(-2)) / 2, rel=1e-6)
 
 
 def test_tax_basis_ticket_vs_play() -> None:
-    plays = {"first": 2, "second": 5}  # Mega Bao 7 with 5 hits: 21.5 tr
+    plays = {"first": 2, "second": 5}
     _, gross, net_ticket = ticket_payout(MEGA_645, plays, {}, tax=DEFAULT_TAX, tax_basis="ticket")
     _, _, net_play = ticket_payout(MEGA_645, plays, {}, tax=DEFAULT_TAX, tax_basis="play")
     assert gross == 21_500_000
     assert net_ticket == pytest.approx(gross - DEFAULT_TAX.rate * (gross - DEFAULT_TAX.threshold))
-    assert net_play == gross  # every single prize is below the threshold
+    assert net_play == gross
 
 
 def test_bao_ev_reduces_to_exact_without_other_players() -> None:
@@ -129,19 +123,17 @@ def test_compare_strategies_shapes() -> None:
     rows = {r.strategy: r for r in c.rows}
     bao, wheel = rows["Bao 8"], rows["Bao rút gọn (3 nếu về 3)"]
     spread = rows["Vé lẻ dàn đều (cùng ngân sách)"]
-    # a 3-if-3 wheel wins exactly when the bao wins (both need ≥ 3 drawn numbers in the set)
     assert wheel.p_any_prize == pytest.approx(bao.p_any_prize) and wheel.cost < bao.cost
     assert spread.p_any_prize > 5 * bao.p_any_prize
-    assert bao.p_profit > spread.p_profit  # bao: rarely wins, but a win usually covers the stake
+    assert bao.p_profit > spread.p_profit
 
 
-# ------------------------------------------------------------------ Max 3D family
 def test_max3d_published_figures() -> None:
     pro = max3d.product_summary(max3d.MAX3D_PRO)
-    assert pro.rtp_distinct_numbers == pytest.approx(0.55, abs=0.01)  # "tỷ lệ trả thưởng lên đến 55%"
-    assert pro.p_any_prize == pytest.approx(0.04, abs=0.002)  # "tỷ lệ có giải lên tới 4%"
+    assert pro.rtp_distinct_numbers == pytest.approx(0.55, abs=0.01)
+    assert pro.p_any_prize == pytest.approx(0.04, abs=0.002)
     plus = max3d.product_summary(max3d.MAX3D_PLUS)
-    assert plus.top_prize_odds == pytest.approx(500_000, rel=1e-3)  # "xác suất 1/500.000"
+    assert plus.top_prize_odds == pytest.approx(500_000, rel=1e-3)
     basic = max3d.product_summary(max3d.MAX3D)
     assert basic.rtp_distinct_numbers == pytest.approx(0.545, abs=0.005)
     assert max3d.play_distribution(max3d.MAX3D_PLUS, (333, 333)).return_to_player == pytest.approx(plus.rtp_distinct_numbers, abs=0.01)
@@ -169,9 +161,9 @@ def test_max3d_exact_vs_simulation() -> None:
     assert (pay > 0).mean() == pytest.approx(d.p_any_prize, abs=0.002)
     low = {"nam": 100_000, "sau": 40_000}
     ev_low = sum(d.tier_probabilities[t] * v for t, v in low.items())
-    sim_low = np.clip(pay, 0, 140_000).mean()  # low tiers only (higher tiers are rarer than 1/2,500)
+    sim_low = np.clip(pay, 0, 140_000).mean()
     assert sim_low == pytest.approx(ev_low, rel=0.05)
     r = max3d.analyse_bao(pro, "bao_bo_so", ["123", "456"], sims=50_000)
-    assert r.p_any_prize == pytest.approx(1 - (1 - 12 / 1000) ** 20)  # 6 + 6 distinct numbers
+    assert r.p_any_prize == pytest.approx(1 - (1 - 12 / 1000) ** 20)
     assert r.return_to_player == pytest.approx(d.return_to_player)
     assert r.p_top_prize == pytest.approx(36 / 1_000_000)

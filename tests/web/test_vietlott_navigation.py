@@ -1,4 +1,3 @@
-"""Vietlott có phân hệ riêng, đích thực và thống kê đúng cửa sổ công bố."""
 from bs4 import BeautifulSoup
 from web.app_shell import rail_html, panel_html
 from web.ui_theme import SITE_NAV_SECTIONS

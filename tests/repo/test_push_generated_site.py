@@ -1,5 +1,3 @@
-"""Hai bot ghi vào remote git thật phải giữ cả nội dung lẫn manifest chung."""
-
 import importlib.util
 from pathlib import Path
 import shutil
@@ -123,7 +121,6 @@ def test_push_race_replays_an_empty_generated_correction_safely(writers, tmp_pat
         if args[0] == "push":
             attempts.append(1)
             if len(attempts) == 1:
-                # Helper vừa tạo commit chỉ sửa manifest sau lần rebase sạch.
                 assert "chốt gói trang" in git(first, "log", "-1", "--format=%s").stdout
                 commit(second, "right.html", "Remote cập nhật lần hai")
                 git(second, "push", "-q", "origin", "main")

@@ -1,8 +1,5 @@
 name: VLM · Kiểm thử engine Vietlott
 
-# Chép từ VLM (.github/workflows/ci.yml). Engine sống trong thư mục con `vietlott/`
-# như một dự án tự đủ, nên mọi lệnh chạy trong thư mục ấy và chỉ thay đổi ở đó
-# mới kích hoạt workflow này.
 on:
   push:
     branches: ["main"]

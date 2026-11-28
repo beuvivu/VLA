@@ -1,15 +1,3 @@
-"""Chấm điểm cuốn chiếu mô hình xếp chồng so với đường cơ sở.
-
-Dùng ĐÚNG các hàm đo mà sản xuất dùng (``ensemble_utils``) và đúng định nghĩa
-điểm kỹ năng mà cổng ``check_baseline_skill`` đọc, nên con số ở đây so sánh trực
-tiếp được với lịch sử đánh giá trong ``data/evaluation/prob_eval/ensemble_history.csv``.
-
-Giao thức cuốn chiếu: huấn luyện trên lịch sử tính tới ngày T, dự đoán ngày T+1,
-rồi tiến lên. Huấn luyện lại theo chu kỳ ``refit_every`` ngày thay vì mỗi ngày —
-đây là đánh đổi chi phí có chủ đích và được ghi vào báo cáo, không phải chi tiết
-giấu đi.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -22,20 +10,19 @@ import pandas as pd
 
 import sys
 
-# Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from soi_cau.bridges import DigitTensor  # noqa: E402
-from ensemble.ensemble_utils import (  # noqa: E402
+from soi_cau.bridges import DigitTensor
+from ensemble.ensemble_utils import (
     bernoulli_brier,
     bernoulli_logloss,
     categorical_brier,
     categorical_logloss,
     skill_score,
 )
-from soi_cau.features import FeatureContext, default_registry  # noqa: E402
-from forecast.modeling import DeModel, LotoModel, build_training_data  # noqa: E402
-from core.xsmb_domain import baseline_rate  # noqa: E402
+from soi_cau.features import FeatureContext, default_registry
+from forecast.modeling import DeModel, LotoModel, build_training_data
+from core.xsmb_domain import baseline_rate
 
 SIGNIFICANCE_T = 1.96
 
@@ -92,8 +79,6 @@ def evaluate_mode(
         )
 
     frame = pd.DataFrame(rows)
-    # Chênh lệch theo từng ngày cho phép kiểm t ghép cặp — mạnh hơn nhiều so với
-    # so sánh hai trung bình độc lập, vì cùng một ngày chi phối cả hai vế.
     delta = frame["baseline_logloss"] - frame["logloss"]
     stderr = float(delta.std(ddof=1) / np.sqrt(len(delta))) if len(delta) > 1 else 0.0
     t_stat = float(delta.mean() / stderr) if stderr > 1e-12 else 0.0
@@ -118,7 +103,7 @@ def evaluate_mode(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="data/xsmb.csv")
     parser.add_argument("--out-dir", default="data/research")
     parser.add_argument("--warmup-days", type=int, default=180)

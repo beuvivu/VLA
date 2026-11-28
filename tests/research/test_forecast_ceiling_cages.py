@@ -1,5 +1,3 @@
-"""Phép quét chữ số theo lồng từng quý của kịch bản đo trần dự báo: lịch sử đều thì im, quý lệch thì bị bắt."""
-
 from __future__ import annotations
 
 import importlib.util
@@ -35,11 +33,9 @@ def test_cage_counts_pool_every_prize_by_place_value() -> None:
     frame = pd.DataFrame({"date": ["2024-01-01"], **{name: ["7" * width] for name, width in FIELD_WIDTHS}})
     frame["special"] = ["12345"]
     table = audit.cage_counts(frame)
-    # 27 giải có hàng đơn vị và chục; 23 có hàng trăm; 20 có hàng nghìn; 10 có hàng chục nghìn.
     assert table.sum(axis=1).tolist() == [27, 27, 23, 20, 10]
-    assert table[0, 5] == 1 and table[0, 7] == 26  # Đặc Biệt 12345: đơn vị là 5
-    assert table[4, 1] == 1 and table[4, 7] == 9  # chục nghìn của Đặc Biệt là 1
-    # Giá trị mất số 0 đầu vẫn được đọc đúng độ rộng của giải.
+    assert table[0, 5] == 1 and table[0, 7] == 26
+    assert table[4, 1] == 1 and table[4, 7] == 9
     frame["prize7_1"] = ["3"]
     assert audit.cage_counts(frame)[1, 0] == 1
 
@@ -59,14 +55,13 @@ def test_a_quarter_with_one_overdrawn_units_digit_is_flagged_after_correction() 
     rng = np.random.default_rng(3)
     in_quarter = raw["date"].str.startswith(("2023-04", "2023-05", "2023-06"))
     for name, _width in FIELD_WIDTHS:
-        swap = in_quarter & (rng.random(len(raw)) < 0.06)  # 6% số lần đổi hàng đơn vị thành 2
+        swap = in_quarter & (rng.random(len(raw)) < 0.06)
         raw.loc[swap, name] = raw.loc[swap, name].str[:-1] + "2"
     report = audit.cage_windows(raw)
     worst = report["most_extreme"][0]
     assert (worst["quarter"], worst["cage"]) == ("2023Q2", "đơn vị")
     assert worst["q_value"] < 0.05 and report["q_below_005"] >= 1 and report["min_p_bonferroni"] < 0.05
     assert int(np.argmax(worst["counts"])) == 2
-    # Lồng khác của cùng quý không bị kéo theo.
     others = [row for row in report["most_extreme"] if row["quarter"] == "2023Q2" and row["cage"] != "đơn vị"]
     assert all(row["q_value"] > 0.05 for row in others)
 
@@ -74,7 +69,7 @@ def test_a_quarter_with_one_overdrawn_units_digit_is_flagged_after_correction() 
 def test_short_quarters_are_skipped_and_an_empty_history_reports_no_cells() -> None:
     audit = _script()
     assert audit.cage_windows(_history(20, seed=4)) == {"cells": 0}
-    report = audit.cage_windows(_history(100, seed=5))  # quý 1 đủ 90 kỳ, quý 2 chỉ 10 kỳ
+    report = audit.cage_windows(_history(100, seed=5))
     assert report["cells"] == 5
 
 

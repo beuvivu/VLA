@@ -1,17 +1,3 @@
-"""Markov-chain models of draw-to-draw dependence.
-
-1. ``NumberTransitionModel`` — an n×n matrix P(j ∈ draw t+1 | i ∈ draw t).
-   Under independence every entry equals k/n. Significance is assessed with a
-   permutation test that shuffles the *order* of draws: it preserves each draw
-   exactly and destroys only temporal structure, which is precisely the null we
-   care about ("the machine has no memory").
-
-2. ``StateMarkovChain`` — a first-order chain over a discrete summary of each draw
-   (sum tercile, odd count, repeats). Reports the transition matrix, stationary
-   distribution, a G-test of first order vs order 0, and the mutual information
-   between consecutive states (bits). MI ≈ 0 ⇔ no exploitable memory.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -37,12 +23,10 @@ class NumberTransitionModel:
 
     @property
     def transition(self) -> np.ndarray:
-        """Smoothed P(j next | i now), shrunk toward k/n with ``smoothing`` pseudo-draws."""
         prior = self.k / self.n
         return (self.joint + self.smoothing * prior) / (self.row_totals[:, None] + self.smoothing)
 
     def predict(self, last_numbers: np.ndarray | list[int]) -> np.ndarray:
-        """Inclusion probabilities for the next draw given the last draw (sums to k)."""
         rows = self.transition[np.asarray(last_numbers, dtype=int) - 1]
         p = rows.mean(axis=0)
         return p * self.k / p.sum()
@@ -132,16 +116,15 @@ class StateMarkovChain:
 
 
 def draw_state_features(h: DrawHistory) -> dict[str, tuple[np.ndarray, list[str]]]:
-    """Discrete per-draw states used by the feature chains."""
     support, probs = subset_sum_distribution(h.n, h.k)
     cdf = np.cumsum(probs)
     t1, t2 = support[np.searchsorted(cdf, 1 / 3)], support[np.searchsorted(cdf, 2 / 3)]
     sums = h.numbers.sum(axis=1)
     sum_state = np.digitize(sums, [t1 + 0.5, t2 + 0.5])
     odd = (h.numbers % 2 == 1).sum(axis=1)
-    odd_state = np.clip(odd - 2, 0, 2)  # ≤2, 3, ≥4
+    odd_state = np.clip(odd - 2, 0, 2)
     rep = np.concatenate([[0], (h.incidence[1:] & h.incidence[:-1]).sum(axis=1)])
-    rep_state = np.clip(rep, 0, 2)  # 0, 1, ≥2
+    rep_state = np.clip(rep, 0, 2)
     return {
         "sum_tercile": (sum_state, [f"≤{t1}", f"{t1 + 1}–{t2}", f">{t2}"]),
         "odd_count": (odd_state, ["≤2", "3", "≥4"]),

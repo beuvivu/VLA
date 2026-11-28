@@ -1,5 +1,3 @@
-"""Inferential statistics endpoints (v2)."""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
@@ -18,7 +16,6 @@ router = APIRouter(prefix="/games/{game}/inference", tags=["inference"])
 
 @router.get("/report", response_model=InferenceReport)
 def full_report(spec: GameSpec = Depends(resolve_game), sims: int = Query(1000, ge=200, le=20_000), alpha: float = Query(0.05, gt=0, lt=0.5), seed: int | None = 0, state: AppState = Depends(get_state)) -> InferenceReport:
-    """Fairness certificate: per-number FWER, power/equivalence, hierarchical Bayes, e-processes, change points."""
     return inference_report(state.history(spec), sims=sims, alpha=alpha, seed=seed)
 
 

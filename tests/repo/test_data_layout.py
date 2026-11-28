@@ -1,14 +1,3 @@
-"""Bố cục ``data/`` sau khi gom thư mục dẫn xuất theo gói sinh ra chúng (24-10-2026).
-
-Bảng chuyển là ``core.paths.DATA_MOVES`` (tên cũ → ``<nhóm>/<tên>``). Gốc ``data/`` chỉ còn
-sổ chuẩn, tệp có người đọc từ bên ngoài kho bằng địa chỉ cố định, và thư mục đã mang tên gói.
-
-Đường dẫn cũ hỏng LẶNG LẼ: phần lớn bước pipeline coi tệp vắng là "chưa có dữ liệu" và đi
-tiếp, nên một chỗ còn ghi ``data_dir / "predict"`` chỉ làm trang thiếu một khối. Trang Live đọc
-sổ phỏng đoán bằng đường dẫn mã hoá base64 (luật riêng tư cấm viết thẳng), nên phép thay chuỗi
-không thấy nó — luật dưới đây giải mã trước khi soi.
-"""
-
 from __future__ import annotations
 
 import ast
@@ -21,9 +10,7 @@ from pathlib import Path
 from core.paths import DATA_MOVES, legacy_data_path
 
 ROOT = Path(__file__).resolve().parents[2]
-#: Nhóm chức năng dưới ``data/``: trùng tên gói ``src/`` sinh ra dữ liệu ấy.
 GROUPS = {rel.split("/")[0] for rel in DATA_MOVES.values()}
-#: Thư mục ở gốc ``data/`` không thuộc nhóm nào, kèm lý do.
 ROOT_DIRS = {
     "ai_ml": "trang Live đọc ai_ml/daily bằng địa chỉ thô cố định",
     "ensemble": "đã mang tên gói ensemble",
@@ -32,24 +19,19 @@ ROOT_DIRS = {
     "regions": "sổ chuẩn XSMT/XSMN",
     "vietlott": "lưu trữ sqlite cũ, không còn được ghi",
 }
-#: Tệp được nhắc tên cũ có chủ ý.
 EXEMPT = {
     "tests/privacy_helpers.py": "vẫn chặn tiền tố cũ cho bản sao còn sót",
     "tests/repo/test_data_layout.py": "mẫu dựng sẵn của chính luật",
 }
-#: Kiểm kê đóng băng ở ngày lập; ghi đường dẫn của thời điểm ấy.
 FROZEN_SNAPSHOTS = {"documentation/qa/2026-10-09-python-dependencies.json"}
 _NAMES = "|".join(sorted(DATA_MOVES, key=len, reverse=True))
 _RETIRED = re.compile(rf"(?<![\w/.-])data/({_NAMES})(?![\w-])")
 _B64 = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{8,}={0,2}(?![A-Za-z0-9+/=])")
-#: Vế trái của phép ghép mà KHÔNG phải thư mục dữ liệu (``documentation/history``, ``scripts/reference``).
 _NOT_DATA_LEFT = re.compile(r"documentation|scripts|\bsrc\b|tests|vietlott|docs", re.I)
-#: Hằng số đường dẫn: tên kết thúc bằng một trong các đuôi này.
 _PATH_CONSTANT = re.compile(r"(?:DIR|OUT|LEDGER|PATH|ROOT)$")
 
 
 def _decoded(text: str) -> list[str]:
-    """Chuỗi base64 trong ``text`` giải được thành chữ UTF-8."""
     out = []
     for match in _B64.finditer(text):
         token = match.group(0)
@@ -63,7 +45,6 @@ def _decoded(text: str) -> list[str]:
 
 
 def retired_mentions(text: str) -> list[str]:
-    """``data/<tên cũ>`` viết thẳng hoặc giấu trong base64."""
     found = [m.group(0) for m in _RETIRED.finditer(text)]
     for plain in _decoded(text):
         found += [f"base64:{m.group(0)}" for m in _RETIRED.finditer(plain)]
@@ -71,7 +52,6 @@ def retired_mentions(text: str) -> list[str]:
 
 
 def missing_encoded_paths(text: str, root: Path) -> list[str]:
-    """Đường dẫn ``data/…`` giấu trong base64 mà kho không có."""
     return [plain for plain in _decoded(text) if plain.startswith("data/") and not (root / plain).exists()]
 
 
@@ -80,11 +60,6 @@ def _head(value: object) -> str | None:
 
 
 def retired_joins(source: str) -> list[str]:
-    """Đường dẫn tương đối với ``data/`` còn bắt đầu bằng tên cũ.
-
-    Ba dạng: ``x / "predict"`` (vế trái chưa có nhóm và không phải thư mục khác của kho),
-    ``Path("predict")`` và hằng số đường dẫn ``OUT_DIR = "predict"``.
-    """
     bad = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div) and isinstance(node.right, ast.Constant):
@@ -104,7 +79,6 @@ def retired_joins(source: str) -> list[str]:
 
 
 def data_root_offenders(top_level: set[str]) -> list[str]:
-    """Thư mục ở gốc ``data/`` không phải nhóm, không có lý do, hoặc là tên đã chuyển."""
     return sorted(
         f"{name}: đã chuyển tới data/{DATA_MOVES[name]}" if name in DATA_MOVES else f"{name}: chưa thuộc nhóm nào"
         for name in top_level

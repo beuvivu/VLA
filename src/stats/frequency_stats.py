@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-"""Canonical frequency statistics with explicit temporal and count semantics."""
 
 from dataclasses import dataclass
 from typing import Literal
@@ -30,12 +29,6 @@ class FrequencyConfig:
 
 
 def prepare_sparse_history(history: pd.DataFrame) -> pd.DataFrame:
-    """Normalize a date + 00..99 occurrence-count table.
-
-    Values are non-negative integer occurrence counts.  A value greater than
-    zero means that the number appeared in that draw; a value of two or more
-    preserves nháy multiplicity.
-    """
     if "date" not in history.columns:
         raise ValueError("history must contain a date column")
     work = history.copy()
@@ -78,7 +71,6 @@ def history_before(
     *,
     config: FrequencyConfig | None = None,
 ) -> pd.DataFrame:
-    """Return only information observable strictly before ``as_of_date``."""
     cfg = config or FrequencyConfig()
     data = prepare_sparse_history(history)
     cutoff = pd.Timestamp(as_of_date).normalize()
@@ -99,7 +91,6 @@ def compute_frequency_stats(
     lookback_days: int | None = None,
     lookback_draws: int | None = None,
 ) -> pd.DataFrame:
-    """Compute occurrence and draw-level frequency separately for 00..99."""
     window = history_before(
         history,
         as_of_date,
@@ -163,7 +154,6 @@ def compute_group_frequency_stats(
     lookback_days: int | None = None,
     lookback_draws: int | None = None,
 ) -> pd.DataFrame:
-    """Compute occurrence and any-member draw counts for canonical digit groups."""
     window = history_before(
         history,
         as_of_date,

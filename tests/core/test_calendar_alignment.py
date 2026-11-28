@@ -43,7 +43,5 @@ def test_contiguity_guard_reports_gap() -> None:
 
 
 def test_markov_does_not_cross_calendar_gap() -> None:
-    # With only two observations separated by two calendar days there is no
-    # legitimate next-day transition to estimate.
     df = _two_digit_frame(["2026-08-01", "2026-08-03"])
     assert compute_markov_for_loto(df).empty

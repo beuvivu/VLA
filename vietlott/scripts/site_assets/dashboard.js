@@ -7,8 +7,6 @@
   const draws = new Map(), expanded = new Set();
   let busy = false;
   const $ = id => document.getElementById(id);
-  // Mọi nút được dựng bằng createElement và nội dung chữ đi qua Text node: dữ liệu
-  // từ JSON không bao giờ được trình duyệt phân tích thành thẻ.
   function h(tag, attrs, ...kids) {
     const el = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs || {})) {
@@ -178,7 +176,6 @@
     ];
   }
   function rememberDetails() {
-    // toggle events are queued; read the live state before replacing any cards.
     document.querySelectorAll('.card-details').forEach(detail=>{
       const key=detail.dataset.detail;
       detail.open?expanded.add(key):expanded.delete(key);
@@ -203,7 +200,6 @@
   function renderSnapshot(next=snapshot) {
     rememberDetails();
     const choice=next.products.some(p=>p.product===selected)?selected:'all';
-    // Prepare every section before replacing the last good data or any live DOM.
     const current=visible(next,choice);
     const markup={
       'hero-panel':heroMarkup(next),

@@ -11,7 +11,6 @@ from vietlott_engine.core.history import DrawHistory
 
 
 class SpyStrategy(Strategy):
-    """Records what it is shown and tries to cheat."""
 
     name = "spy"
 
@@ -29,7 +28,6 @@ class SpyStrategy(Strategy):
 
 
 class RepeatLastDrawStrategy(Strategy):
-    """Replays the most recent *known* result — a popular real-world 'system'."""
 
     name = "repeat_last"
 
@@ -49,7 +47,7 @@ def test_scoring_matches_manual_computation(power_history: DrawHistory) -> None:
     manual = [len(set(range(1, 7)) & set(power_history.numbers[t].tolist())) for t in range(100, 200)]
     assert matches.tolist() == manual
     prize = {3: 50_000, 4: 500_000, 5: 40_000_000}
-    expected_payout = sum(prize.get(m, 0) for m in manual)  # no 5+bonus/6 in a 100-draw synthetic sample
+    expected_payout = sum(prize.get(m, 0) for m in manual)
     if res.jackpot_hits == 0:
         assert res.payout == expected_payout
 
@@ -58,7 +56,7 @@ def test_invalid_tickets_are_rejected(mega_history: DrawHistory) -> None:
     class Bad(Strategy):
         name = "bad"
 
-        def generate(self, history, n_tickets, rng):  # noqa: ANN001
+        def generate(self, history, n_tickets, rng):
             return np.array([[1, 1, 2, 3, 4, 5]])
 
     with pytest.raises(LookAheadError):
@@ -74,8 +72,8 @@ def test_random_strategy_is_consistent_with_null(mega_history: DrawHistory) -> N
     assert all(r.q_value_vs_null is not None for r in rep.results)
     assert "No strategy matched more numbers than chance" in rep.conclusion
     assert rep.spa is not None and rep.spa.p_value_consistent > 0.05
-    assert by["hot_50"].design_effect > 1.2  # overlapping tickets inflate the variance…
-    assert abs(by["random"].design_effect - 1) < 0.3  # …independent quick picks do not
+    assert by["hot_50"].design_effect > 1.2
+    assert abs(by["random"].design_effect - 1) < 0.3
     assert all(r.certified_edge_bound > abs(r.mean_matches - r.expected_mean_matches) for r in rep.results)
     assert by["wheel_9_3if3"].tickets % rep.draws_evaluated == 0
     assert rep.to_markdown().startswith("# Walk-forward backtest")
@@ -83,7 +81,7 @@ def test_random_strategy_is_consistent_with_null(mega_history: DrawHistory) -> N
 
 def test_repeating_last_draw_has_no_edge(mega_history: DrawHistory) -> None:
     rep = WalkForwardBacktester(mega_history, BacktestConfig(start=100, bootstrap_samples=50)).run([RepeatLastDrawStrategy()])
-    assert abs(rep.results[0].z_mean_matches) < 4  # worth exactly k²/n matches, like any ticket
+    assert abs(rep.results[0].z_mean_matches) < 4
 
 
 def test_power_bonus_tier(power_history: DrawHistory) -> None:
@@ -93,7 +91,7 @@ def test_power_bonus_tier(power_history: DrawHistory) -> None:
         def __init__(self, target: int, full: DrawHistory) -> None:
             self.target, self.full = target, full
 
-        def generate(self, history, n_tickets, rng):  # noqa: ANN001
+        def generate(self, history, n_tickets, rng):
             nums = list(self.full.numbers[self.target][:5]) + [int(self.full.bonus[self.target])]
             return np.array([nums])
 

@@ -1,5 +1,3 @@
-/* Hiệu ứng trang trí độc lập với nội dung và điều hướng. Không giấu con trỏ
-   gốc; chỉ cập nhật vị trí khi thật sự có thao tác chuột. */
 (function () {
   "use strict";
 
@@ -22,7 +20,7 @@
 
   try {
     if (window.localStorage.getItem("app-motion") === "off") { preference = "off"; }
-  } catch (error) { /* Chế độ riêng tư vẫn cho phép đổi hiệu ứng trong phiên này. */ }
+  } catch (error) {   }
 
   function revealAll() {
     reveals.forEach(function (node) { node.classList.add("app-is-revealed"); });
@@ -74,7 +72,6 @@
         pointer.target.closest("a[href], button, [role='button']");
       cursor.classList.toggle("app-cursor--active", Boolean(interactive));
     }
-    /* Giới hạn độ lệch ở 6px; không dịch chuyển bảng hoặc nội dung số liệu. */
     var x = Math.max(-1, Math.min(1, pointer.x / Math.max(1, window.innerWidth) * 2 - 1)) * 6;
     var y = Math.max(-1, Math.min(1, pointer.y / Math.max(1, window.innerHeight) * 2 - 1)) * 6;
     decorations.forEach(function (node) {
@@ -108,7 +105,7 @@
       if (reduced.matches) { return; }
       preference = preference === "on" ? "off" : "on";
       try { window.localStorage.setItem("app-motion", preference); }
-      catch (error) { /* Lựa chọn trong phiên vẫn có hiệu lực khi bộ nhớ bị chặn. */ }
+      catch (error) {   }
       syncState();
     });
   }

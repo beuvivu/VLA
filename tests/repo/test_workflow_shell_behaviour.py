@@ -1,28 +1,3 @@
-"""Chạy THẬT các khối shell của workflow, thay vì đọc chúng như chuỗi.
-
-Vì sao cần
-==========
-
-`tests/repo/test_workflows.py` soi văn bản workflow: có mốc cron này, có biến
-kia. Cách đó không thấy được ba lỗi đã làm hỏng việc thật trên kho này, vì cả
-ba đều là lỗi HÀNH VI của vài dòng bash:
-
-* ``live-results.yml`` tính phút trong ngày bằng
-  ``$(( $(date +%H) * 60 + $(date +%M) ))``. Bash đọc "08" và "09" là hệ bát
-  phân; bash 5.2 khi ấy bỏ ngang cả vòng chờ mà ``set -e`` không bắt được.
-  Lượt nổ lúc 17:08 thăm dò ngay giờ trống 17:08–18:08 rồi hết giờ đúng lúc
-  kỳ quay bắt đầu; lượt nổ trong giờ 08, 09 thăm dò khi chẳng có gì để thăm.
-* Cũng bước ấy: lượt #164 chết vì GitHub trả HTTP 500 MỘT lần khi đẩy ảnh
-  chụp. Với ``set -e``, một lỗi thoáng qua giết cả vòng thăm dò 60 phút.
-* ``daily_prediction.yml``, lượt 36037174777: rebase xung đột để cây ở giữa
-  chừng, ba lần thử lại sau đều chết vì "unmerged files".
-
-Mỗi phép kiểm dưới đây lấy nguyên khối ``run:`` từ YAML và chạy nó bằng đúng
-lệnh shell GitHub dùng. Chỉ những thứ chạm ra ngoài bị thay: đồng hồ, lệnh
-ngủ, nguồn dữ liệu, và (cho bước live) lệnh đẩy. Bước ghi dự đoán thì chạy
-git THẬT trên một kho trần cục bộ, vì lỗi của nó nằm chính ở trạng thái git.
-"""
-
 from __future__ import annotations
 
 import json
@@ -49,7 +24,6 @@ pytestmark = pytest.mark.skipif(
 
 
 def _step(workflow: str, job: str, key: str) -> dict:
-    """Bước có ``id`` hoặc ``name`` là ``key`` trong ``job``."""
     doc = yaml.safe_load((ROOT / ".github/workflows" / workflow).read_text(encoding="utf-8"))
     for step in doc["jobs"][job]["steps"]:
         if key in (step.get("id"), step.get("name")):
@@ -58,7 +32,6 @@ def _step(workflow: str, job: str, key: str) -> dict:
 
 
 def _shell_command(step: dict, script: Path) -> list[str]:
-    """Đúng lệnh GitHub dùng để chạy một khối ``run:`` trên ubuntu-latest."""
     if step.get("shell") == "bash":
         return ["bash", "--noprofile", "--norc", "-eo", "pipefail", str(script)]
     return ["bash", "-e", str(script)]
@@ -69,17 +42,7 @@ def _write_exe(path: Path, body: str) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
 
-# ---------------------------------------------------------------------------
-# live-results.yml — bước "poll"
-# ---------------------------------------------------------------------------
-
-
 class LiveHarness:
-    """Chạy bước thăm dò với đồng hồ giả, nguồn giả và lệnh đẩy giả.
-
-    ``sleep`` giả không ngủ mà đẩy đồng hồ giả tới trước, nên một lượt chờ 68
-    phút chạy trong vài phần mười giây mà vẫn đi qua đúng các phút thật.
-    """
 
     def __init__(self, tmp: Path) -> None:
         self.tmp = tmp
@@ -154,7 +117,7 @@ class LiveHarness:
             capture_output=True,
             text=True,
             timeout=120,
-            check=False,  # phép kiểm tự khẳng định mã thoát
+            check=False,
         )
 
     def lines(self, name: str) -> list[str]:
@@ -183,9 +146,6 @@ def live(tmp_path: Path) -> LiveHarness:
 
 @pytest.mark.parametrize(
     "start",
-    # 17:08 và 17:09:30 là hai phút bát phân TRƯỚC khung: dòng cũ bỏ qua bước
-    # chờ và thăm dò ngay giờ trống. 17:00:40 ngủ 68 phút rồi thức ở phút bát
-    # phân 18:08; 18:10 là mốc bộ hẹn giờ ngoài được hướng dẫn dùng.
     [
         "17:00:40",
         "17:08:00",
@@ -195,7 +155,6 @@ def live(tmp_path: Path) -> LiveHarness:
         "18:09:59",
         "18:10:00",
         "19:08:00",
-        # Bộ lập lịch trễ 4-8 giờ: lượt nổ buổi chiều CHỜ tới khung quay.
         "14:08:00",
         "16:09:00",
     ],
@@ -215,9 +174,6 @@ def test_live_poll_starts_polling_at_every_minute_of_the_draw_window(
 
 @pytest.mark.parametrize("start", ["08:08:00", "09:09:00", "09:59:00", "13:37:00", "14:07:00"])
 def test_live_poll_leaves_too_early_starts_to_a_later_slot(live: LiveHarness, start: str) -> None:
-    """Giờ 08, 09 và phút 08, 09 là số bát phân: trước đây lượt nổ lúc ấy bỏ
-    qua trần chờ và thăm dò 60 phút giữa giờ trống, thay vì thoát sạch để mốc
-    sau xử lý."""
     result = live.run(_vn(start), statuses=["complete_verified"])
 
     assert result.returncode == 0, result.stderr[-600:]
@@ -226,7 +182,6 @@ def test_live_poll_leaves_too_early_starts_to_a_later_slot(live: LiveHarness, st
 
 
 def test_a_transient_push_error_does_not_end_the_live_window(live: LiveHarness) -> None:
-    """Lượt #164: một lần HTTP 500 khi đẩy từng giết cả vòng thăm dò."""
     result = live.run(_vn("18:20"), statuses=["live", "complete_verified"], push_failures=1)
 
     assert result.returncode == 0, result.stderr[-600:]
@@ -238,8 +193,6 @@ def test_a_transient_push_error_does_not_end_the_live_window(live: LiveHarness) 
 def test_a_verified_result_is_republished_until_the_push_goes_through(
     live: LiveHarness,
 ) -> None:
-    """Đẩy hỏng hết lượt thử của một vòng thì vòng SAU phải đẩy lại, và chỉ
-    dừng khi chính ảnh chụp đã xác minh lên được nhánh live."""
     result = live.run(_vn("18:30"), statuses=["complete_verified"], push_failures=4)
 
     assert result.returncode == 0, result.stderr[-600:]
@@ -251,13 +204,6 @@ def test_a_verified_result_is_republished_until_the_push_goes_through(
 def test_a_push_that_never_recovers_ends_at_the_time_limit_not_a_crash(
     live: LiveHarness,
 ) -> None:
-    """Hỏng dai dẳng thì hết giờ và báo, không chết giữa chừng, không lặp mãi.
-
-    Và VẪN phát ``verified=true``: cờ ấy kích hoạt hoàn tất dữ liệu ngày, và
-    chuỗi update-data → post-finalization ghi ảnh chụp chuẩn lên nhánh live
-    từ ``data/xsmb.csv`` — đường sửa duy nhất cho nhánh live khi đẩy từ đây
-    hỏng dai dẳng. Giữ cờ lại thì nhánh live kẹt ở ảnh chụp dở tới cron kế.
-    """
     result = live.run(
         _vn("18:30"), statuses=["complete_verified"], push_failures=10**6, max_seconds=120
     )
@@ -270,10 +216,6 @@ def test_a_push_that_never_recovers_ends_at_the_time_limit_not_a_crash(
 
 
 def test_the_live_harness_itself_catches_the_octal_bug(live: LiveHarness, tmp_path: Path) -> None:
-    """Ghim chính LUẬT trên mẫu dựng sẵn: vòng chờ cũ, chạy qua đúng khung
-    này lúc 17:08, phải vấp lỗi bát phân và rơi ra khỏi vòng mà không ngủ.
-    Nếu khung giả hỏng (``date`` giả không được dùng, đồng hồ không đi) thì
-    các phép kiểm trên xanh vô nghĩa — phép này đỏ."""
     script = tmp_path / "old.sh"
     script.write_text(
         "while true; do\n"
@@ -300,22 +242,15 @@ def test_the_live_harness_itself_catches_the_octal_bug(live: LiveHarness, tmp_pa
         check=False,
     )
     assert "value too great for base" in result.stderr
-    # Đúng cơ chế đã đo: set -e KHÔNG dừng bước, vòng bị bỏ ngang, không ngủ.
     assert result.returncode == 0
     assert "ra khỏi vòng, now_min=[]" in result.stdout
     assert (tmp_path / "sleeps").read_text(encoding="utf-8") == ""
-
-
-# ---------------------------------------------------------------------------
-# daily_prediction.yml — bước "Ghi kết quả vào kho"
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(("predictor_code", "step_code"), [(0, 0), (3, 0), (1, 1), (2, 2), (124, 124)])
 def test_prediction_step_only_skips_the_explicit_unavailable_exit_code(
     tmp_path: Path, predictor_code: int, step_code: int,
 ) -> None:
-    """Lỗi nhập, mô hình hoặc timeout phải làm đỏ bước, khác dữ liệu chưa về."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     _write_exe(bin_dir / "python", f"exit {predictor_code}\n")
@@ -337,12 +272,6 @@ def test_prediction_step_only_skips_the_explicit_unavailable_exit_code(
 
 
 class PredictionRepo:
-    """Kho trần cục bộ đóng vai GitHub, cộng hai bản sao đóng vai hai runner.
-
-    Bộ sinh dự đoán giả ghi ``top`` bằng nội dung ``data/marker`` — tức dự
-    đoán là hàm của dữ liệu trên nhánh, đúng như bộ thật — và mỗi lần chạy
-    một dấu thời gian mới.
-    """
 
     def __init__(self, tmp: Path) -> None:
         self.tmp = tmp
@@ -353,13 +282,9 @@ class PredictionRepo:
             'if [[ "$1" == "src/forecast/modeling/run_daily_prediction.py" ]]; then\n'
             '  if [[ "${PREDICTION_EXIT_CODE:-0}" != 0 ]]; then exit "$PREDICTION_EXIT_CODE"; fi\n'
             '  n=$(( $(cat "$FAKE_DIR/stamp") + 1 )); echo "$n" > "$FAKE_DIR/stamp"\n'
-            # Mỗi lần chạy lệch 1e-11 — đúng cỡ nhiễu đo được giữa hai runner
-            # (commit b8afdc7f). `data/shift` là thay đổi CÓ NGHĨA của dữ liệu.
             "  shift=$(cat data/shift 2>/dev/null || echo 0)\n"
             '  p=$(awk -v n="$n" -v s="$shift"'
             " 'BEGIN{printf \"%.17g\", 0.23923968902 + n * 1e-11 + s}')\n"
-            # `lift` = p trừ đường cơ sở: số nhỏ mang nguyên nhiễu TUYỆT ĐỐI,
-            # nên lệch tương đối lớn — đúng hình dạng làm bản so đầu trượt.
             '  lift=$(awk -v p="$p" \'BEGIN{printf "%.17g", p - 0.23765728565289646}\')\n'
             '  printf \'{"date": "2026-09-25", "generated_at_local": "t%s",'
             ' "generated_at_utc": "t%s", "top": "%s", "p": %s, "lift": %s}\\n\''
@@ -369,7 +294,6 @@ class PredictionRepo:
             "fi\n"
             f'exec {sys.executable} "$@"\n',
         )
-        # Lệnh ngủ giữa các lần thử không có gì để kiểm; bỏ qua cho nhanh.
         _write_exe(self.bin / "sleep", "exit 0\n")
         (tmp / "stamp").write_text("0", encoding="utf-8")
         self.env = {
@@ -390,8 +314,6 @@ class PredictionRepo:
         self.git(tmp, "clone", str(self.remote), str(seed))
         (seed / "data").mkdir()
         (seed / "data/marker").write_text("m1\n", encoding="utf-8")
-        # Nhánh chính có dữ liệu m1 nhưng dự đoán còn dựng trên m0: kỳ mới
-        # vừa về, dự đoán chưa sinh lại.
         (seed / "data/predictions_today.json").write_text(
             '{"date": "2026-09-25", "generated_at_local": "t0",'
             ' "generated_at_utc": "t0", "top": "m0"}\n',
@@ -407,7 +329,6 @@ class PredictionRepo:
         ).stdout
 
     def runner(self, name: str) -> Path:
-        """Một runner: lấy nhánh chính rồi chạy bước "Sinh dự đoán"."""
         path = self.tmp / name
         self.git(self.tmp, "clone", str(self.remote), str(path))
         subprocess.run(
@@ -431,7 +352,7 @@ class PredictionRepo:
             capture_output=True,
             text=True,
             timeout=120,
-            check=False,  # phép kiểm tự khẳng định mã thoát
+            check=False,
         )
 
     def remote_file(self, path: str) -> str:
@@ -442,8 +363,6 @@ class PredictionRepo:
 
 
 def test_two_runs_predicting_the_same_draw_do_not_wedge_the_retry_loop(tmp_path: Path) -> None:
-    """Tái hiện lượt 36037174777: hai runner cùng sinh dự đoán cho một kỳ, một
-    runner đẩy trước. Runner sau phải kết thúc XANH, không kẹt giữa rebase."""
     repo = PredictionRepo(tmp_path)
     first = repo.runner("first")
     second = repo.runner("second")
@@ -457,9 +376,6 @@ def test_two_runs_predicting_the_same_draw_do_not_wedge_the_retry_loop(tmp_path:
 
 
 def test_a_prediction_is_rebuilt_on_the_data_it_is_pushed_on_top_of(tmp_path: Path) -> None:
-    """Nhánh chính tiến lên với dữ liệu mới trong lúc runner đang chạy. Dự đoán
-    lên kho phải dựng trên dữ liệu MỚI ấy — không phải bản dựng trên dữ liệu
-    cũ được rebase lên trên nó, thứ mà `pull --rebase` cũ vui vẻ đẩy lên."""
     repo = PredictionRepo(tmp_path)
     runner = repo.runner("runner")
     other = tmp_path / "other"
@@ -477,7 +393,6 @@ def test_a_prediction_is_rebuilt_on_the_data_it_is_pushed_on_top_of(tmp_path: Pa
 def test_prediction_retry_only_skips_the_explicit_unavailable_exit_code(
     tmp_path: Path, predictor_code: int, step_code: int,
 ) -> None:
-    """Remote tiến lên rồi mô hình hỏng khi dựng lại cũng phải làm đỏ lượt chạy."""
     repo = PredictionRepo(tmp_path)
     runner = repo.runner("runner")
     other = tmp_path / "other"
@@ -494,8 +409,6 @@ def test_prediction_retry_only_skips_the_explicit_unavailable_exit_code(
 
 
 def test_a_timestamp_or_float_noise_change_is_not_committed(tmp_path: Path) -> None:
-    """Tám commit cho cùng một kỳ trong một đêm. Sau bản sửa đầu (chỉ bỏ qua
-    dấu thời gian) vẫn còn: b8afdc7f chỉ khác xác suất ở chữ số thứ mười."""
     repo = PredictionRepo(tmp_path)
     first = repo.runner("first")
     repo.push_from(first, "data: dự đoán cho kỳ 2026-09-25")
@@ -512,7 +425,6 @@ def test_a_timestamp_or_float_noise_change_is_not_committed(tmp_path: Path) -> N
 
 
 def test_a_meaningful_probability_change_is_still_committed(tmp_path: Path) -> None:
-    """Sai số cho phép chỉ nuốt nhiễu, không nuốt thay đổi thật."""
     repo = PredictionRepo(tmp_path)
     first = repo.runner("first")
     repo.push_from(first, "data: dự đoán cho kỳ 2026-09-25")
@@ -529,15 +441,9 @@ def test_a_meaningful_probability_change_is_still_committed(tmp_path: Path) -> N
     assert published["p"] == pytest.approx(0.23923968902 + 0.001, abs=1e-6)
 
 
-# ---------------------------------------------------------------------------
-# live-results.yml — bước kích hoạt hoàn tất dữ liệu ngày
-# ---------------------------------------------------------------------------
-
-
 def _run_dispatch_step(
     tmp: Path, replies: list[int]
 ) -> tuple[subprocess.CompletedProcess[str], list[dict]]:
-    """Chạy bước dispatch với một máy chủ cục bộ đóng vai API GitHub."""
     import threading
     from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -545,7 +451,7 @@ def _run_dispatch_step(
     queue = list(replies)
 
     class Handler(BaseHTTPRequestHandler):
-        def do_POST(self) -> None:  # noqa: N802 — tên do http.server đặt
+        def do_POST(self) -> None:
             body = self.rfile.read(int(self.headers["Content-Length"]))
             seen.append(
                 {
@@ -587,7 +493,7 @@ def _run_dispatch_step(
             capture_output=True,
             text=True,
             timeout=60,
-            check=False,  # phép kiểm tự khẳng định mã thoát
+            check=False,
         )
     finally:
         server.shutdown()
@@ -595,7 +501,6 @@ def _run_dispatch_step(
 
 
 def test_the_finalization_dispatch_retries_a_transient_server_error(tmp_path: Path) -> None:
-    """Lỗi 5xx một lần không được làm dữ liệu ngày phải chờ tới cron kế tiếp."""
     result, seen = _run_dispatch_step(tmp_path, [502, 204])
 
     assert result.returncode == 0, result.stderr[-600:]
@@ -606,20 +511,13 @@ def test_the_finalization_dispatch_retries_a_transient_server_error(tmp_path: Pa
 
 
 def test_the_finalization_dispatch_does_not_retry_a_permission_error(tmp_path: Path) -> None:
-    """403 là quyền hoặc cấu hình sai: thử lại chỉ che nó đi. Phải đỏ ngay."""
     result, seen = _run_dispatch_step(tmp_path, [403])
 
     assert result.returncode != 0
     assert len(seen) == 1
 
 
-# ---------------------------------------------------------------------------
-# post-finalization.yml — bước "Xuất bản ảnh chụp chuẩn lên nhánh live"
-# ---------------------------------------------------------------------------
-
-
 def _run_live_reconcile_push(tmp_path: Path, failures: int) -> tuple[subprocess.CompletedProcess, int]:
-    """Chạy nguyên khối đẩy ảnh chụp chuẩn với ``git push`` giả bị từ chối ``failures`` lần."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (tmp_path / "push_failures").write_text(str(failures), encoding="utf-8")
@@ -660,8 +558,6 @@ def _run_live_reconcile_push(tmp_path: Path, failures: int) -> tuple[subprocess.
 
 
 def test_a_concurrent_live_push_does_not_fail_the_canonical_reconcile(tmp_path: Path) -> None:
-    """Lượt 45607100671: live-results.yml đẩy nhánh live cùng giây, máy chủ từ chối «cannot lock
-    ref» và cả lượt kiểm toán đỏ, ảnh chụp chuẩn không lên. Một lần bị từ chối phải được đẩy lại."""
     result, pushes = _run_live_reconcile_push(tmp_path, failures=1)
 
     assert result.returncode == 0, result.stderr[-600:]
@@ -669,7 +565,6 @@ def test_a_concurrent_live_push_does_not_fail_the_canonical_reconcile(tmp_path: 
 
 
 def test_a_live_push_that_never_recovers_fails_the_reconcile(tmp_path: Path) -> None:
-    """Không còn vòng nào sau bước này: hỏng dai dẳng phải đỏ, không xanh giả, không lặp mãi."""
     result, pushes = _run_live_reconcile_push(tmp_path, failures=10**6)
 
     assert result.returncode != 0
@@ -677,19 +572,11 @@ def test_a_live_push_that_never_recovers_fails_the_reconcile(tmp_path: Path) -> 
     assert "Không đẩy được ảnh chụp chuẩn" in result.stdout
 
 
-# ---------------------------------------------------------------------------
-# vietlott-results.yml — bước "Giữ bản tóm tắt mô hình đã commit"
-# ---------------------------------------------------------------------------
-
-
 def _git_in(repo: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True)
 
 
 def test_the_page_build_keeps_every_tracked_forecast_file_the_cache_overwrote(tmp_path: Path) -> None:
-    """Lượt 45781875880: cache lưu trước khi gộp PR #238 đè transfer.json đã commit, cây làm việc bẩn và
-    bước đẩy trang từ chối. Sau bước này, mọi tệp git THEO DÕI khớp mẫu cache phải về đúng bản HEAD
-    (kể cả tệp thêm sau này), còn tệp trạng thái chưa theo dõi mà cache mang về thì giữ nguyên."""
     doc = yaml.safe_load((ROOT / ".github/workflows/vietlott-results.yml").read_text(encoding="utf-8"))
     steps = doc["jobs"]["build"]["steps"]
     cache = next(s for s in steps if str(s.get("uses", "")).startswith("actions/cache/restore"))
@@ -707,7 +594,7 @@ def test_the_page_build_keeps_every_tracked_forecast_file_the_cache_overwrote(tm
     _git_in(repo, "init", "-q")
     _git_in(repo, "add", ".")
     _git_in(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "goc")
-    for name in tracked:  # cache cũ đè mọi tệp đã commit
+    for name in tracked:
         (forecast / name).write_text('{"cu": true}', encoding="utf-8")
     (forecast / "state-mega645.json").write_text('{"trang_thai": 1}', encoding="utf-8")
 

@@ -1,5 +1,3 @@
-"""Phần điều hành phải phản ánh báo cáo, không tạo trạng thái nghiên cứu giả."""
-
 import json
 from pathlib import Path
 
@@ -18,7 +16,6 @@ def _render(tmp_path: Path, diagnostics: dict, firewall: dict) -> BeautifulSoup:
 
 
 def test_overview_keeps_family_counts_and_holdout_scope_separate(tmp_path: Path) -> None:
-    """Cộng nhầm kỳ giữ lại hoặc dùng số giả thuyết làm số đạt sẽ bị chặn."""
     page = _render(tmp_path, {"draw_days": 123, "end_date": "2026-10-06"}, {
         "anchor_date": "2026-10-05", "modes": {
             "loto": {"hypotheses": 20, "fdr_significant_train": 2,
@@ -36,7 +33,6 @@ def test_overview_keeps_family_counts_and_holdout_scope_separate(tmp_path: Path)
 
 
 def test_missing_reports_are_unknown_instead_of_zero_or_live(tmp_path: Path) -> None:
-    """Thiếu báo cáo không được biến thành kết luận không có tín hiệu."""
     page = _render(tmp_path, {}, {})
     assert [el.get_text(strip=True) for el in page.select("[data-lab-metric]")] == ["—"] * 4
     assert "Chưa có báo cáo" in page.select_one(".rl-overview").get_text()
@@ -45,7 +41,6 @@ def test_missing_reports_are_unknown_instead_of_zero_or_live(tmp_path: Path) -> 
 
 
 def test_lab_navigation_reaches_all_existing_research_tables(tmp_path: Path) -> None:
-    """Menu phải dẫn đến nội dung thật, giữ đầy đủ cả các bảng ít nổi bật."""
     page = _render(tmp_path, {}, {})
     links = page.select(".rl-nav a[href^='#']")
     assert len(links) >= 5
@@ -56,7 +51,6 @@ def test_lab_navigation_reaches_all_existing_research_tables(tmp_path: Path) -> 
 
 
 def test_venue_cards_print_the_measured_reading_or_say_nothing_is_measured(tmp_path: Path) -> None:
-    """Thẻ đài quay in câu kết luận và từng dãy TỪ tệp số đo; thiếu tệp thì nói chưa có, không bịa."""
     empty = _render(tmp_path / "trong", {}, {})
     assert "Chưa có số đo theo đài quay." in empty.select_one("#rl-venue").get_text()
     assert "Chưa có số đo theo đài." in empty.select_one("#rl-venue-tests").get_text()
@@ -86,7 +80,6 @@ def test_venue_cards_print_the_measured_reading_or_say_nothing_is_measured(tmp_p
 
 
 def test_cage_bayes_card_prints_the_measured_rows_or_says_nothing_is_measured(tmp_path: Path) -> None:
-    """Thẻ bộ máy Bayes theo đoạn in câu đọc, từng năm và dòng tiến cứu TỪ tệp số đo; thiếu tệp thì nói chưa có."""
     empty = _render(tmp_path / "trong", {}, {})
     assert "Chưa có số đo của bộ máy Bayes theo đoạn." in empty.select_one("#rl-cage-bayes").get_text()
 

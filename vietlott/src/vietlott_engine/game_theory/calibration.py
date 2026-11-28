@@ -1,46 +1,3 @@
-"""Calibrate the player-behaviour (number-popularity) model on real winner counts.
-
-Why winner counts identify behaviour
-------------------------------------
-Let p(c) be the share of all tickets that hold combination c. For a draw with winning
-set W, the expected number of tickets with exactly m matches is
-
-    E[y_m | W] = N · Σ_c p(c)·1{|c∩W| = m} = N · P_m(W).
-
-If everybody picked uniformly at random, P_m(W) would equal the hypergeometric H_m for
-every W. Real crowds over-pick some numbers (birthdays, lucky numbers…), so draws whose
-winning numbers are "popular" produce *more* winners than N·H_m and unpopular draws
-fewer. Across ~1,400 draws with different W this variation identifies the popularity
-weights — no survey needed. Averaged over uniformly random W, E_W[P_m(W)] = H_m exactly
-for *any* p, which also pins down the absolute scale of N (see ``sales.py``).
-
-Model
------
-    p(c, σ) = q · U(c)·U(σ) + (1 − q) · Π_{i∈c} w_ti / e_k(w_t) · π_t(σ)
-
-* q: share of quick-pick (uniform) tickets;
-* w_ti = exp(β_i + Σ_d γ_d X_tid): static per-number weight β_i plus dynamic effects
-  — X_t1 = number was drawn last draw, X_t2 = "hot" (count in the last 10 draws,
-  standardised), X_t3 = "overdue" (standardised log gap);
-* π_t(σ) ∝ exp(η_σ + γ_s·1{σ = previous special}) for Lotto 5/35's special number.
-
-Tier probabilities are exact: P(|c∩W| = m) under the product form is
-e_m(w_W)·e_{k−m}(w_L)/e_k(w) (elementary symmetric polynomials), with analytic
-gradients ∂log e_j(S)/∂β_i = w_i·e_{j−1}(S∖i)/e_j(S).
-
-Likelihood
-----------
-* Ticket sales N_t known up to a per-year scale (Power 6/55, from the jackpot accounting
-  identity): y_tg ~ NegBin(mean = N_t·e^{c_year}·P_tg, dispersion φ_g). The negative
-  binomial absorbs the heavy tails created by syndicates and large "bao" tickets.
-* N_t unknown (Mega 6/45, Lotto 5/35): y_t· | Σ_g y_tg ~ Multinomial over tiers — the
-  exact conditional likelihood when counts are Poisson; N_t then has the closed-form
-  estimate N̂_t = Σ_g y_tg / Σ_g P_tg.
-
-Ridge penalties keep the 35–55 static weights stable; standard errors are sandwich
-(robust) estimates with draws as independent units.
-"""
-
 from __future__ import annotations
 
 import json
@@ -65,11 +22,8 @@ Cond = Literal["any", "hit", "miss"]
 DYNAMIC_FEATURES = ("last_draw", "hot10", "overdue")
 
 
-# ------------------------------------------------------------------ tiers
 def observation_groups(spec: GameSpec) -> list[tuple[str, tuple[str, ...], tuple[tuple[int, Cond], ...]]]:
-    """(group label, data tiers summed, model components (m main matches, special condition))."""
     if spec.code == GameCode.POWER_655:
-        # the bonus ball only splits 5-match tickets into JP2 / first prize: merged
         return [
             ("6", ("jackpot1",), ((6, "any"),)),
             ("5", ("jackpot2", "first"), ((5, "any"),)),
@@ -87,9 +41,7 @@ def observation_groups(spec: GameSpec) -> list[tuple[str, tuple[str, ...], tuple
     return groups
 
 
-# --------------------------------------------------------------- features
 def dynamic_features(h: DrawHistory) -> np.ndarray:
-    """(D, n, 3) features known *before* each draw: last draw, hot (10 draws), overdue."""
     inc = h.incidence.astype(np.float64)
     d, n = inc.shape
     k = h.k
@@ -117,7 +69,6 @@ def dynamic_features(h: DrawHistory) -> np.ndarray:
 
 
 def next_draw_features(h: DrawHistory) -> np.ndarray:
-    """(n, 3) features for the draw after the last one in ``h``."""
     if len(h) == 0:
         return np.zeros((h.n, len(DYNAMIC_FEATURES)))
     ext = DrawHistory.from_arrays(h.spec, np.vstack([h.numbers, h.numbers[-1:]]))
@@ -134,18 +85,17 @@ def static_feature_matrix(n: int) -> np.ndarray:
     ).astype(np.float64)
 
 
-# ------------------------------------------------------------------- data
 @dataclass
 class CalibrationData:
     spec: GameSpec
-    winning: np.ndarray  # (T, k) 1-based
-    special: np.ndarray  # (T,) 1-based special number (separate drum) or 0
-    prev_special: np.ndarray  # (T,) previous draw's special or 0
-    y: np.ndarray  # (T, G)
-    n_known: np.ndarray  # (T,) tickets sold, NaN when unknown
-    year_index: np.ndarray  # (T,)
+    winning: np.ndarray
+    special: np.ndarray
+    prev_special: np.ndarray
+    y: np.ndarray
+    n_known: np.ndarray
+    year_index: np.ndarray
     years: list[int]
-    features: np.ndarray  # (T, n, D)
+    features: np.ndarray
     draw_ids: np.ndarray
     dates: np.ndarray
     groups: list = field(default_factory=list)
@@ -200,14 +150,13 @@ def build_calibration_data(h: DrawHistory, ph: PrizeHistory, tickets_sold: np.nd
     )
 
 
-# ------------------------------------------------------------------ model
 @dataclass
 class ParamLayout:
     n: int
     d: int
-    b: int  # special-number pool (0 if none)
-    years: int  # year scales for draws with known sales
-    nu: int  # free log-scale per draw with unknown sales
+    b: int
+    years: int
+    nu: int
 
     @property
     def size(self) -> int:
@@ -235,7 +184,6 @@ def nb_loglik(y: np.ndarray, mu: np.ndarray, phi: np.ndarray) -> np.ndarray:
 
 
 def profile_log_scale(p: np.ndarray, y: np.ndarray, phi: np.ndarray, iters: int = 30) -> np.ndarray:
-    """Per-draw MLE of ν in μ_g = e^ν·P_g under NB(φ_g) — vectorised Newton."""
     nu = np.log(np.maximum(y.sum(axis=1), 0.5) / p.sum(axis=1))
     for _ in range(iters):
         mu = np.exp(nu)[:, None] * p
@@ -250,8 +198,6 @@ def profile_log_scale(p: np.ndarray, y: np.ndarray, phi: np.ndarray, iters: int 
 
 @dataclass
 class Penalty:
-    """Gaussian priors (ridge penalties). ``beta_mean`` lets a game borrow strength from
-    another game's calibration (same player population): β ~ N(β_prior, 1/beta)."""
 
     beta: float = 2.0
     gamma: float = 0.5
@@ -263,22 +209,19 @@ class Penalty:
 
 
 def _r_and_dlogr(w: np.ndarray, winning: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
-    """r (T, k+1) = P(m matches) under the product form; dlogr (T, k+1, n)."""
     t_count, n = w.shape
     rows = np.arange(t_count)[:, None]
     widx = winning - 1
-    e_all = elementary_symmetric(w, k)  # (T, k+1)
-    w_w = w[rows, widx]  # (T, k)
+    e_all = elementary_symmetric(w, k)
+    w_w = w[rows, widx]
     e_w = elementary_symmetric(w_w, k)
     e_l = e_all.copy()
     for j in range(k):
         e_l = divide_out(e_l, w_w[:, j])
     ms = np.arange(k + 1)
     r = e_w[:, ms] * e_l[:, k - ms] / e_all[:, k : k + 1]
-    # derivative of log e_k(all)
     h_all = divide_out(np.broadcast_to(e_all[:, None, :], (t_count, n, k + 1)), w)
-    d_all = w * h_all[:, :, k - 1] / e_all[:, k : k + 1]  # (T, n)
-    # members of L
+    d_all = w * h_all[:, :, k - 1] / e_all[:, k : k + 1]
     in_w = np.zeros((t_count, n), dtype=bool)
     in_w[rows, widx] = True
     h_l = divide_out(np.broadcast_to(e_l[:, None, :], (t_count, n, k + 1)), w)
@@ -287,9 +230,8 @@ def _r_and_dlogr(w: np.ndarray, winning: np.ndarray, k: int) -> tuple[np.ndarray
         j = k - m
         if j >= 1:
             dlogr[:, m, :] = np.where(in_w, 0.0, w * h_l[:, :, j - 1] / e_l[:, j : j + 1])
-    # members of W
     for pos in range(k):
-        h_w = divide_out(e_w, w_w[:, pos])  # (T, k+1)
+        h_w = divide_out(e_w, w_w[:, pos])
         col = widx[:, pos]
         for m in range(1, k + 1):
             dlogr[np.arange(t_count), m, col] += w_w[:, pos] * h_w[:, m - 1] / e_w[:, m]
@@ -314,9 +256,8 @@ class BehaviourModel:
         )
         k = self.spec.pick
         self.h = np.array([self.spec.match_probability(m) for m in range(k + 1)])
-        self.phi = np.full(len(data.groups), 1e6)  # NB dispersion per group (≈ Poisson initially)
+        self.phi = np.full(len(data.groups), 1e6)
 
-    # -------------------------------------------------------------- core
     def _u(self, cond: Cond) -> float:
         if cond == "any":
             return 1.0
@@ -352,7 +293,6 @@ class BehaviourModel:
         return sc
 
     def probabilities(self, theta: np.ndarray, need_grad: bool = True):
-        """Group probabilities P (T, G) and the pieces needed for gradients."""
         par = self.layout.split(theta)
         d = self.data
         beta_t = par["beta"][None, :] + np.einsum("tnd,d->tn", d.features, par["gamma"])
@@ -376,7 +316,6 @@ class BehaviourModel:
         return p, dict(r=r, dlogr=dlogr, q=q, pi=pi, pi_s=pi_s, par=par)
 
     def loglik(self, theta: np.ndarray, need_grad: bool = True, per_draw: bool = False):
-        """NB log-likelihood; returns (total, gradient or per-draw scores, per-draw values)."""
         d = self.data
         p, aux = self.probabilities(theta, need_grad)
         p = np.maximum(p, 1e-300)
@@ -388,8 +327,8 @@ class BehaviourModel:
         if not need_grad:
             return float(ll_t.sum()), None, ll_t
         dmu = d.y / mu - (d.y + phi) / (mu + phi)
-        score = dmu * sc[:, None]  # dℓ/dP
-        dlogscale = np.sum(dmu * mu, axis=1)  # dℓ/dlog(scale)
+        score = dmu * sc[:, None]
+        dlogscale = np.sum(dmu * mu, axis=1)
         q, r, dlogr, pi, pi_s = aux["q"], aux["r"], aux["dlogr"], aux["pi"], aux["pi_s"]
         k = self.spec.pick
         coef = np.zeros((d.size, k + 1))
@@ -454,10 +393,6 @@ class BehaviourModel:
         return -(ll - pv), -(grad - pg)
 
     def update_dispersion(self, theta: np.ndarray) -> None:
-        """Method-of-moments NB dispersion per tier group, Var = μ + μ²/φ.
-
-        Draws with a free scale ν_t lose one degree of freedom; residuals of those draws
-        are inflated by G/(G−1) to compensate."""
         p, aux = self.probabilities(theta, need_grad=False)
         mu = self.scales(aux["par"])[:, None] * p
         y = self.data.y
@@ -484,13 +419,7 @@ class BehaviourModel:
         self.result = res
         return theta
 
-    # ------------------------------------------------------------ inference
     def sandwich(self, theta: np.ndarray, eps: float = 1e-5) -> np.ndarray:
-        """Robust covariance H⁻¹ (Σ_t s_t s_tᵀ) H⁻¹ with draws as independent units.
-
-        The Hessian is formed by finite differences of the analytic gradient for the
-        structural parameters; per-draw scale parameters ν_t are profiled out (Schur
-        complement), which keeps the cost independent of the number of draws."""
         lay = self.layout
         n_struct = lay.size - lay.nu
         _, per_t, _ = self.loglik(theta, per_draw=True)
@@ -500,7 +429,6 @@ class BehaviourModel:
             e[i] = eps
             hess[i] = (self.objective(theta + e)[1] - self.objective(theta - e)[1]) / (2 * eps)
         if lay.nu:
-            # ν-block is diagonal (each ν_t only enters its own draw): exact NB curvature
             par = lay.split(theta)
             p, _ = self.probabilities(theta, need_grad=False)
             u = self.unknown_idx
@@ -510,7 +438,7 @@ class BehaviourModel:
             diag = np.sum(phi * mu * (y + phi) / (mu + phi) ** 2, axis=1)
             off = n_struct + np.arange(lay.nu)
             hess[off, off] = diag
-            hess[np.ix_(off, np.arange(n_struct))] = hess[np.ix_(np.arange(n_struct), off)].T  # fill ν rows from struct rows
+            hess[np.ix_(off, np.arange(n_struct))] = hess[np.ix_(np.arange(n_struct), off)].T
         hess = 0.5 * (hess + hess.T)
         if lay.nu:
             a_ = hess[:n_struct, :n_struct]
@@ -527,7 +455,6 @@ class BehaviourModel:
         return hinv @ (per_t.T @ per_t) @ hinv
 
     def null_theta(self) -> np.ndarray:
-        """Uniform crowd (q → 1) with scales re-profiled for that model."""
         th = np.zeros(self.layout.size)
         par = self.layout.split(th)
         par["a"][:] = 30.0
@@ -542,7 +469,6 @@ class BehaviourModel:
         return th
 
     def fitted_scale(self, theta: np.ndarray) -> np.ndarray:
-        """Tickets sold implied by the fit (known N × year scale, or e^ν)."""
         return self.scales(self.layout.split(theta))
 
 
@@ -558,7 +484,6 @@ def _r_only(w: np.ndarray, winning: np.ndarray, k: int) -> np.ndarray:
     return e_w[:, ms] * e_l[:, k - ms] / e_all[:, k : k + 1]
 
 
-# ----------------------------------------------------------------- results
 class Coefficient(BaseModel):
     name: str
     estimate: float
@@ -574,11 +499,11 @@ class FitStats(BaseModel):
     lr_statistic: float
     df: int
     lr_p_value: float
-    deviance_explained: float  # share of the null-model excess deviance removed
+    deviance_explained: float
     holdout_draws: int | None = None
     holdout_loglik_gain_per_draw: float | None = None
     holdout_lr_p_value: float | None = None
-    tier3_r2: float | None = None  # variance of log(observed / expected-under-uniform) explained
+    tier3_r2: float | None = None
 
 
 class BehaviourCalibration(BaseModel):
@@ -589,7 +514,7 @@ class BehaviourCalibration(BaseModel):
     tickets_known: bool
     quick_pick_share: float
     quick_pick_share_se: float
-    beta: list[float]  # static per-number log-weights (number 1..n), centred
+    beta: list[float]
     beta_se: list[float]
     gamma: dict[str, float]
     gamma_se: dict[str, float]
@@ -599,13 +524,11 @@ class BehaviourCalibration(BaseModel):
     year_scale: dict[str, float] = {}
     feature_effects: list[Coefficient]
     fit: FitStats
-    popularity_spread: dict[str, float]  # distribution of model popularity ratios over random tickets
+    popularity_spread: dict[str, float]
     most_popular_numbers: list[int]
     least_popular_numbers: list[int]
 
-    # ----------------------------------------------------------- usage
     def popularity_model(self, history: DrawHistory | None = None, pattern_priors: bool = True, seed: int = 7) -> PopularityModel:
-        """Popularity model for the *next* draw (dynamic effects from ``history``)."""
         spec = get_game(self.game)
         beta = np.asarray(self.beta, dtype=np.float64).copy()
         if history is not None and len(history):
@@ -641,11 +564,6 @@ def _coef(name: str, est: float, se: float) -> Coefficient:
 
 
 def _holdout_gain(model_train: BehaviourModel, theta: np.ndarray, test: CalibrationData) -> tuple[float, float]:
-    """Out-of-sample log-likelihood gain per draw vs the uniform crowd.
-
-    Structural parameters come from the training fit; nuisance scales (year scales for
-    known sales, ν_t per draw otherwise) are re-profiled on the test draws for *both*
-    models, so only the behavioural part is being compared."""
 
     def ll_profiled(th: np.ndarray) -> np.ndarray:
         m = BehaviourModel(test, model_train.penalty, model_train.fit_q)
@@ -669,23 +587,6 @@ def _holdout_gain(model_train: BehaviourModel, theta: np.ndarray, test: Calibrat
     return float(gain.mean()), p
 
 
-def prior_from(other: "BehaviourCalibration", spec: GameSpec, strength: float = 8.0) -> Penalty:
-    """Penalty centred on another game's calibration (numbers 1..n of the other game).
-
-    Used for Mega 6/45, whose 161 draws with prize data carry little information alone:
-    its players are the same population as Power 6/55's, so Power's per-number weights
-    (restricted to 1–45) and quick-pick share are the prior mean."""
-    b = np.asarray(other.beta[: spec.pool_size], dtype=np.float64)
-    return Penalty(
-        beta=strength,
-        gamma=4.0,
-        a_mean=float(logit(np.clip(other.quick_pick_share, 0.02, 0.98))),
-        a_sd=0.5,
-        beta_mean=b - b.mean(),
-        gamma_mean=np.array([other.gamma[f] for f in DYNAMIC_FEATURES]),
-    )
-
-
 def calibrate(
     h: DrawHistory,
     ph: PrizeHistory,
@@ -696,7 +597,6 @@ def calibrate(
     compute_se: bool = True,
     prior_source: str | None = None,
 ) -> BehaviourCalibration:
-    """Fit on all draws with prize data; report a chronological hold-out evaluation."""
     data = build_calibration_data(h, ph, tickets_sold)
     if data.size < 50:
         raise ValueError(f"only {data.size} draws with prize data; need ≥ 50")
@@ -709,7 +609,6 @@ def calibrate(
     df = model.layout.n - 1 + model.layout.d + (model.layout.b + 0 if model.layout.b else 0) + (1 if fit_q else 0)
     lr = max(0.0, 2 * (ll - ll0))
 
-    # hold-out: refit on the first (1 − f) of draws, score the rest
     holdout_draws = holdout_gain = holdout_p = None
     if holdout_fraction > 0:
         cut = int(data.size * (1 - holdout_fraction))
@@ -727,7 +626,6 @@ def calibrate(
     q_se = float(q * (1 - q) * se_par["a"][0])
 
     beta = par["beta"] - par["beta"].mean()
-    # feature regression of β on interpretable static features (WLS, sandwich-propagated SEs)
     xf = np.column_stack([np.ones(spec.pool_size), static_feature_matrix(spec.pool_size)])
     keep = xf[:, 1:].std(axis=0) > 0
     xf = np.column_stack([xf[:, 0], xf[:, 1:][:, keep]])
@@ -738,7 +636,6 @@ def calibrate(
     cov_c = proj @ cov_b @ proj.T
     feat = [_coef(nm, coef[i + 1], np.sqrt(max(cov_c[i + 1, i + 1], 0))) for i, nm in enumerate(names)]
 
-    # tier-3 R² (known-N games): how much of the winner-count surprise the model explains
     r2 = None
     if model.known.any():
         g3 = [i for i, g in enumerate(data.groups) if g[0] in ("3", "third")][0]
@@ -749,7 +646,6 @@ def calibrate(
         pred = np.log(p[m_, g3] / model.h[3])
         r2 = float(1 - np.var(obs - pred) / np.var(obs))
 
-    # popularity spread over random tickets for the next draw
     cal_partial = dict(game=spec.code.value, quick_pick_share=q, beta=beta.tolist(), gamma={f: float(v) for f, v in zip(DYNAMIC_FEATURES, par["gamma"])})
     pop = PopularityModel(spec, PopularityParams(quick_pick_share=q), beta=beta + next_draw_features(h) @ par["gamma"], last_draw=None)
     rng = np.random.default_rng(0)
@@ -806,32 +702,22 @@ def load_calibration(game: str | GameCode, directory: Path) -> BehaviourCalibrat
         return None
     try:
         return BehaviourCalibration.load(path)
-    except (ValueError, json.JSONDecodeError) as exc:  # pragma: no cover - corrupted file
+    except (ValueError, json.JSONDecodeError) as exc:
         log.warning("ignoring unreadable calibration %s: %s", path, exc)
         return None
 
 
-# --------------------------------------------------------------- validation
 class LevelCheck(BaseModel):
-    """Does the model's predicted popularity of each winning set explain *how many*
-    third-prize winners there were, after removing the smooth sales trend?"""
 
     game: str
     draws: int
     correlation: float
     permutation_p_value: float
-    slope: float  # regression of detrended log winners on predicted log popularity (1 = perfect scale)
+    slope: float
     method: str
 
 
 def level_check(cal: BehaviourCalibration, h: DrawHistory, ph: PrizeHistory, window: int = 7, permutations: int = 5000, seed: int = 0) -> LevelCheck:
-    """Non-parametric validation that does not need ticket sales.
-
-    Sales move smoothly from draw to draw (jackpot size, weekday) while the winning set
-    is random, so log y3_t minus a rolling median of its neighbours (self excluded)
-    isolates the popularity effect. Under a uniform crowd its correlation with the
-    model's predicted log(P3_t/H3) is zero.
-    """
     spec = h.spec
     data = build_calibration_data(h, ph, None)
     g3 = [i for i, g in enumerate(data.groups) if g[0] in ("3", "third", "fifth")][0]
@@ -868,16 +754,11 @@ def level_check(cal: BehaviourCalibration, h: DrawHistory, ph: PrizeHistory, win
 
 
 def transfer_calibration(source: BehaviourCalibration, h: DrawHistory, ph: PrizeHistory) -> BehaviourCalibration:
-    """Apply another game's calibrated crowd to this game (numbers 1..n) and evaluate it.
-
-    Nothing is fitted on the target game except the per-draw sales scales ν_t, so the
-    reported likelihood gain over a uniform crowd is an honest out-of-sample test."""
     spec = h.spec
     data = build_calibration_data(h, ph, None)
     b = np.asarray(source.beta[: spec.pool_size], dtype=np.float64)
     b = b - b.mean()
     model = BehaviourModel(data)
-    # dispersion borrowed by match count from the source game (same crowd, same syndicates)
     src_groups = observation_groups(get_game(source.game))
     by_m = {comps[0][0]: phi for (_, _, comps), phi in zip(src_groups, source.dispersion)}
     model.phi = np.array([by_m.get(comps[0][0], 1e6) for _, _, comps in data.groups])
@@ -930,9 +811,6 @@ def transfer_calibration(source: BehaviourCalibration, h: DrawHistory, ph: Prize
 
 
 def fitted_tickets_sold(cal: BehaviourCalibration, h: DrawHistory, ph: PrizeHistory) -> np.ndarray:
-    """N̂_t (aligned with ``h``; NaN without prize data) from winner counts and the crowd model.
-
-    Uses E[y_g] = N·P_g(W_t): the NB-weighted profile estimate of N for each draw."""
     data = build_calibration_data(h, ph, None)
     model = BehaviourModel(data)
     model.phi = np.asarray(cal.dispersion) if len(cal.dispersion) == len(data.groups) else np.full(len(data.groups), 20.0)

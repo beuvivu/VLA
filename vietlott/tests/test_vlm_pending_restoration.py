@@ -1,4 +1,3 @@
-"""Khôi phục phải đối chiếu law phát hành đầu tiên trước khi nhận kết quả mới."""
 from __future__ import annotations
 
 import copy

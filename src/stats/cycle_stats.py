@@ -15,14 +15,6 @@ def _gap_series_calendar(
     hit_dates: list[date],
     all_dates: list[date],
 ) -> tuple[int, int, float, float]:
-    """Return absence gaps in real calendar days.
-
-    ``current_gap`` is calendar days since the latest hit. ``max_gap`` includes
-    the left/right boundary absence and completed between-hit absence segments.
-    ``mean_gap``/``median_gap`` describe completed/boundary-left absence segments,
-    preserving the historical cycle-table intent without treating missing rows as
-    elapsed lottery days.
-    """
     if not all_dates:
         return 0, 0, float("nan"), float("nan")
     if not hit_dates:
@@ -52,7 +44,6 @@ def build_cycle_tables(out_dir: str = "data/stats/cycle") -> None:
 
     dates = [d.to_pydatetime().date() for d in pd.to_datetime(df2["date"])]
 
-    # DE: 2 digits from special
     de = (df2["special"].astype(int) % 100).tolist()
 
     rows_de = []
@@ -73,7 +64,6 @@ def build_cycle_tables(out_dir: str = "data/stats/cycle") -> None:
         )
     de_df = pd.DataFrame(rows_de).sort_values(["current_gap", "max_gap"], ascending=[False, False])
 
-    # LOTO: any 2-digit appearance in day
     cols = [c for c in df2.columns if c != "date"]
     loto_sets = [set(int(r[c]) for c in cols) for _, r in df2.iterrows()]
     rows_loto = []
@@ -99,7 +89,6 @@ def build_cycle_tables(out_dir: str = "data/stats/cycle") -> None:
     write_code_csv(de_df, out / "cycle_de.csv", index=False)
     write_code_csv(loto_df, out / "cycle_loto.csv", index=False)
 
-    # Aggregates by head/tail/total (DE)
     def head(x: int) -> int:
         return x // 10
 

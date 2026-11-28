@@ -3,21 +3,6 @@ from __future__ import annotations
 from core.lottery_codes import write_code_csv
 from core.table_cuts import cut_ranked
 
-"""Research-only extensions preserved from the final legacy repository audit.
-
-These diagnostics deliberately remain outside the production probability ensemble.
-They recover useful descriptive/falsification capabilities that were present in the
-legacy ``xoso`` repository but not exposed with equivalent semantics in VLA:
-
-- calendar-day number and pair recency/gap evidence for Loto and De;
-- De weekday profiles;
-- per-number next-day transition independence tests with FDR control;
-- per-number Loto presence ACF with Bartlett screening bands;
-- full-special KS uniformity and Ljung-Box aggregate dependence diagnostics;
-- cumulative coverage / coupon-collector context.
-
-Nothing in this module is a betting rule or an automatic predictor weight.
-"""
 
 import argparse
 import json
@@ -55,13 +40,6 @@ def _presence_matrix(two: pd.DataFrame, mode: Mode) -> np.ndarray:
 
 
 def _gap_metrics(hit_dates: pd.DatetimeIndex, all_dates: pd.DatetimeIndex) -> dict[str, float | int | None]:
-    """Return explicitly labelled calendar-gap metrics.
-
-    ``completed_interval_*`` is the distance in calendar days between hit dates.
-    ``max_observed_absence_days`` counts days with no hit, including left/right
-    boundary segments. This makes the old ``max_gap`` semantics explicit instead
-    of mixing completed cycles with boundary-censored absences.
-    """
     if len(all_dates) == 0:
         return {
             "current_absence_days": None,
@@ -421,24 +399,16 @@ def ljung_box_even_tail_count(two: pd.DataFrame, *, lags: int = 10) -> dict[str,
     }
 
 
-#: Bảng đầy đủ 4 950 cặp: ra đĩa và lên artifact, nằm trong `.gitignore`.
 PAIR_FULL_TABLE = "pair_recency_loto.csv"
-#: Bản cắt (`cut_pair_recency`): git theo dõi.
 PAIR_CUT_TABLE = "pair_recency_loto_top.csv"
 PAIR_CUT_ROWS = 300
 
 
 def cut_pair_recency(pair: pd.DataFrame, rows: int = PAIR_CUT_ROWS) -> pd.DataFrame:
-    """Bản cắt để ghi vào git (11-11-2026): `rows` cặp đầu bảng, tức độ nâng đồng xuất hiện cao nhất.
-
-    Không trang nào đọc bảng này (trang cặp đọc `data/stats/descriptive_ext/pair_recency_loto.csv`, một
-    bảng khác). Mỗi kỳ đổi số ngày vắng của gần như mọi cặp, nên git không lấy được delta của bảng đầy đủ.
-    """
     return cut_ranked(pair, rows=rows)
 
 
 def write_pair_recency(pair: pd.DataFrame, out: Path) -> tuple[Path, Path, int]:
-    """Ghi bảng cặp đầy đủ và bản cắt; trả hai đường dẫn và số dòng của bản cắt."""
     full_path, cut_path = out / PAIR_FULL_TABLE, out / PAIR_CUT_TABLE
     cut = cut_pair_recency(pair)
     write_code_csv(pair, full_path, index=False)
@@ -478,14 +448,6 @@ def run_extensions(
         if name != PAIR_FULL_TABLE:
             write_code_csv(table, out / name, index=False)
     _, _, pair_cut_rows = write_pair_recency(pair, out)
-
-    randomness = {"ks_full_special": ks, "ljung_box_even_tail_count": ljung}
-    (out / "randomness_extensions.json").write_text(
-        json.dumps(randomness, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (out / "coverage_coupon.json").write_text(
-        json.dumps(coverage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
 
     manifest = {
         "schema_version": 1,

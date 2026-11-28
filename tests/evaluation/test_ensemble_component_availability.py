@@ -116,11 +116,6 @@ def test_explicit_string_false_availability_is_not_truthy() -> None:
 
 
 def test_learners_ignore_cau_recorded_under_an_older_definition() -> None:
-    """Trước 04-10-2026 cột ``p_cau`` là xác suất THÔ; sau đó là bản đã co về nền.
-
-    Bộ học trọng số và tầng xếp chồng không được học trên hỗn hợp hai định
-    nghĩa, còn trang Chất lượng — dựng lại thứ ĐÃ công bố — vẫn đọc dòng cũ.
-    """
     current = _history_day("2026-10-06")
     legacy = _history_day("2026-10-01").drop(columns=[policy_column("cau")])
     older = _history_day("2026-10-02")
@@ -131,7 +126,6 @@ def test_learners_ignore_cau_recorded_under_an_older_definition() -> None:
     assert availability_from_history_day(legacy)["cau"] is True
     assert availability_from_history_day(legacy, current_policy=True)["cau"] is False
     assert availability_from_history_day(older, current_policy=True)["cau"] is False
-    # Thành phần không đổi định nghĩa không bị ảnh hưởng.
     assert availability_from_history_day(legacy, current_policy=True)["ml"] is True
 
 
@@ -161,7 +155,6 @@ def test_history_records_the_definition_each_component_declares(tmp_path, monkey
     full.assign(trust_policy_version=COMPONENT_POLICY["cau"]).to_csv(
         dirs["ai_ml"] / "cau_keo_loto_all.csv", index=False
     )
-    # Đặc Biệt: tệp cầu-kèo không khai phiên bản — phải ghi là KHÔNG rõ, không đoán.
     full.assign(prob=0.01).to_csv(dirs["ai_ml"] / "cau_keo_de_all.csv", index=False)
     argv = ["record_pred_history.py", "--data-dir", str(data), "--path-ui-dir", str(dirs["path_ui"]),
             "--ml-dir", str(dirs["ml"]), "--out-dir", str(dirs["history"]),
@@ -172,7 +165,6 @@ def test_history_records_the_definition_each_component_declares(tmp_path, monkey
     loto = pd.read_csv(dirs["history"] / "pred_loto.csv")
     de = pd.read_csv(dirs["history"] / "pred_de.csv")
     assert (loto[policy_column("cau")] == COMPONENT_POLICY["cau"]).all()
-    # Trang Chất lượng dựa vào cột này để dựng lại đúng phép chốt đã công bố.
     assert (loto[BLEND_POLICY_COLUMN] == BLEND_POLICY).all()
     assert de[policy_column("cau")].isna().all()
     assert recorder._policy_version(full.assign(trust_policy_version=[1] * 99 + [2])) != 1

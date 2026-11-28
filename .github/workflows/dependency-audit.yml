@@ -1,13 +1,7 @@
 name: Kiểm lỗ hổng thư viện Python
 
-# Dependabot không còn mở PR cập nhật pip từ khi kho dùng Python 3.15 (`.python-version`): bộ cập nhật
-# báo `tool_version_not_supported` (hỗ trợ tới 3.14), nên các bản vá bảo mật không còn tự đến. Workflow
-# này thay phần cảnh báo ấy: cài ĐÚNG các bản đã ghim như CI và pipeline, rồi đối chiếu MỌI gói đã cài
-# (kể cả gói kéo theo) với cơ sở lỗ hổng của PyPI/OSV. Có lỗ hổng thì lượt chạy đỏ, GitHub báo cho chủ
-# dự án, và bảng lỗ hổng nằm ở trang tóm tắt của lượt chạy. Nó chỉ đọc, không mở PR hay sửa tệp nào.
 on:
   schedule:
-    # Thứ Hai 10:17 giờ VN: ngoài khung quay số và ngoài giờ GitHub hay dồn lịch.
     - cron: "17 3 * * 1"
   workflow_dispatch:
   push:
@@ -16,7 +10,6 @@ on:
       - "requirements*.txt"
       - "vietlott/pyproject.toml"
       - "scripts/ops/audit_install_set.py"
-      # Workflow nào thêm hay đổi lệnh `pip install` thì tập gói bị chấm cũng đổi.
       - ".github/workflows/*.yml"
 
 permissions:
@@ -39,23 +32,16 @@ jobs:
         with:
           python-version-file: .python-version
       - name: Cài đúng các bản đã ghim
-        # pip được nâng trước: nó cũng bị chấm, và bản đi kèm runner có thể cũ hơn bản đã vá.
         run: |
           python -m pip install --upgrade pip
           python -m pip install --no-cache-dir -r requirements-dev.txt -r requirements-live.txt
           python -m pip install --no-cache-dir pip-audit==2.10.1
       - name: Cài thêm gói mà workflow cài thẳng trong lệnh cài
-        # Gói viết thẳng trong `pip install` của một workflow mà requirements không có — như playwright của job
-        # Chromium — cũng chạy trên runner, nên cũng phải bị chấm: bản ghim nếu
-        # workflow ghim, bản mới nhất nếu không (đúng thứ workflow ấy sẽ cài). Đọc từ chính các workflow
-        # (scripts/ops/audit_install_set.py) để gói thêm sau này không lọt.
         run: |
           python scripts/ops/audit_install_set.py > audit-extra.txt
           cat audit-extra.txt
           python -m pip install --no-cache-dir -r audit-extra.txt
       - name: Đối chiếu với cơ sở lỗ hổng
-        # pip-audit chỉ ghi `--output` khi có gì để báo (lỗ hổng, gói bị bỏ qua): lượt sạch không có tệp, và
-        # `cat` thẳng tệp ấy từng biến lượt sạch đầu tiên (04-11-2026) thành đỏ.
         run: |
           status=0
           python -m pip_audit --strict --progress-spinner off --desc on --format markdown --output audit.md || status=$?
@@ -83,8 +69,6 @@ jobs:
         with:
           python-version-file: .python-version
       - name: Cài engine với mọi phần tuỳ chọn mà các workflow vlm-* cài
-        # Phần tuỳ chọn đọc từ chính các workflow (job ML của vlm-ci.yml cài `.[dev,ml]`: xgboost, lightgbm),
-        # nên phần thêm sau này cũng bị chấm. `.[dev]` trước để có pyyaml cho kịch bản đọc workflow.
         run: |
           python -m pip install --upgrade pip
           python -m pip install --no-cache-dir -e ".[dev]"
@@ -93,9 +77,6 @@ jobs:
           python -m pip install --no-cache-dir -e ".[$extras]"
           python -m pip install --no-cache-dir pip-audit==2.10.1
       - name: Đối chiếu với cơ sở lỗ hổng
-        # Chính engine cài -e và không có trên PyPI. `--strict` coi gói bị `--skip-editable` bỏ qua là lỗi
-        # chí mạng (lượt đầu 04-11-2026 đỏ vì thế), nên chấm danh sách ĐÃ CÀI trừ gói editable, đúng từng bản
-        # (`--no-deps`: không giải lại phụ thuộc); mọi gói engine kéo theo vẫn bị chấm, `--strict` vẫn giữ.
         run: |
           python -m pip freeze --all --exclude-editable > installed.txt
           status=0

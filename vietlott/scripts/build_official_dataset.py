@@ -1,24 +1,4 @@
 #!/usr/bin/env python3
-"""Rebuild the bundled seed data from official vietlott.vn records.
-
-    python scripts/build_official_dataset.py --vendor .vendor
-
-* Mega 6/45, Power 6/55, Lotto 5/35, Max 3D, Max 3D Pro: ``pqminh-4/vietlott-data``
-  canonical records — vietlott.vn draw-detail pages (result, winners per tier, jackpot
-  value, page SHA-256, official PDF), collected from Vietnam.
-* Keno, Bingo18: ``vietvudanh/vietlott-data`` (vietlott.vn results lists).
-* All 8 products (incl. Max 4D) and the not-confirmed draws: ``NhanAZ-Data/vietlott-research``
-  (community archive; fills gaps — Keno from 2019, Lotto draws the canonical file lacks).
-* Optional ``--v130-dir``: the snapshot of Vietlott Quant Engine 1.3.0, cross-checked and used
-  as the last fill layer.
-
-Official records always win; lower layers only add draw ids the higher ones lack, and every
-disagreement is listed. Writes ``data/seed/`` (draws, prize records, product histories,
-``exclusions.json``, ``keno_rules_official.json``), ``OFFICIAL_DATA_REPORT.json`` (comparison
-with the seed it replaces) and ``DATA_MERGE_REPORT.json`` (per-source overlap and conflicts).
-Run it on a machine in Vietnam after ``vietlott products sync`` to use your own
-crawl instead (``--canonical-dir``).
-"""
 
 from __future__ import annotations
 
@@ -32,12 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.games import GameCode  # noqa: E402
-from collections import Counter  # noqa: E402
+from vietlott_engine.core.games import GameCode
+from collections import Counter
 
-from vietlott_engine.core.products import DIGIT_PRODUCTS, EXCLUSIONS_FILE, ProductCode, SEED_FILES, drop_ids, parse_product_rows, read_jsonl, write_jsonl  # noqa: E402
-from vietlott_engine.crawler.official_data import CANONICAL_GAMES, draws_to_seed_rows, import_canonical  # noqa: E402
-from vietlott_engine.crawler.prize_sources import records_from_jsonl, records_to_jsonl  # noqa: E402
+from vietlott_engine.core.products import DIGIT_PRODUCTS, EXCLUSIONS_FILE, ProductCode, SEED_FILES, drop_ids, parse_product_rows, read_jsonl, write_jsonl
+from vietlott_engine.crawler.official_data import CANONICAL_GAMES, draws_to_seed_rows, import_canonical
+from vietlott_engine.crawler.prize_sources import records_from_jsonl, records_to_jsonl
 
 REPOS = {
     "pqminh-4_vietlott-data": "https://github.com/pqminh-4/vietlott-data",
@@ -57,7 +37,7 @@ def ensure_repo(vendor: Path, name: str, update: bool) -> Path:
     return dest
 
 
-def compare_prizes(old_path: Path, new_records) -> dict:  # type: ignore[no-untyped-def]
+def compare_prizes(old_path: Path, new_records) -> dict:
     if not old_path.exists():
         return {"previous_records": 0}
     old = {r.draw_id: r for r in records_from_jsonl(old_path.read_text(encoding="utf-8"))}
@@ -84,7 +64,6 @@ def compare_prizes(old_path: Path, new_records) -> dict:  # type: ignore[no-unty
 
 
 def history_map(product: ProductCode, rows: list[dict]) -> dict[int, tuple[str, list[int], str]]:
-    """id → (date, values, origin) for one layer (origin from the row's ``data_source``)."""
     h, _ = parse_product_rows(product, rows, "layer")
     origin = {}
     for r in rows:
@@ -95,7 +74,6 @@ def history_map(product: ProductCode, rows: list[dict]) -> dict[int, tuple[str, 
 
 
 def merge_layers(product: ProductCode, layers: list[tuple[str, list[dict]]]) -> tuple[list[dict], dict]:
-    """Union of layers by draw id; earlier layers win; conflicts are counted and listed."""
     merged: dict[int, tuple[str, list[int], str]] = {}
     stats: dict = {"layers": []}
     for label, rows in layers:
@@ -128,8 +106,6 @@ def merge_layers(product: ProductCode, layers: list[tuple[str, list[dict]]]) -> 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    # Mặc định trong thư mục engine (đã .gitignore), như Makefile và README. Thư mục cố định dưới /tmp dùng
-    # chung: ai dựng sẵn nó với kho git giả thì `ensure_repo` dùng luôn và dữ liệu ấy được gộp vào data/seed.
     ap.add_argument("--vendor", default=str(ROOT / ".vendor"))
     ap.add_argument("--canonical-dir", help="directory with <game>.jsonl canonical records (default: pqminh-4 clone)")
     ap.add_argument("--update", action="store_true", help="git pull the source repositories first")
@@ -154,10 +130,10 @@ def main() -> int:
         report["sources"]["v130"] = str(a.v130_dir)
     merge: dict = {"policy": "official records first; lower layers only add missing draw ids; every disagreement listed", "products": {}}
 
-    def archive_draws(product: ProductCode):  # type: ignore[no-untyped-def]
+    def archive_draws(product: ProductCode):
         return asyncio.run(archive.draws(product)) if archive else None
 
-    def v130_draws(product: ProductCode):  # type: ignore[no-untyped-def]
+    def v130_draws(product: ProductCode):
         if not a.v130_dir:
             return None
         from vietlott_engine.crawler.sources.vqe130 import import_v130
@@ -192,7 +168,7 @@ def main() -> int:
                 "added_draws": [int(r["draw_id"]) for r in add],
                 "added_by_origin": dict(Counter(r.get("data_source") for r in add)),
             }
-            rows = rows + add  # fill draws the official file lacks (with their prize tables)
+            rows = rows + add
         merge["products"][name] = mstat
         imp = import_canonical(rows, game)
         old_draws = {}

@@ -1,4 +1,3 @@
-"""ML probability reports. Synchronous handlers run in FastAPI's worker threads."""
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from vietlott_engine.api.deps import AppState, get_state
@@ -40,6 +39,5 @@ def next_draw(product: str, top_n: int = Query(5, ge=1, le=100),
 
 @router.post('/{product}/fit')
 def fit(product: str, config: MLConfig, state: AppState = Depends(get_state)) -> dict:
-    """An explicit fit resets prior online weights and live evidence for this product."""
     model, _, summary = _run(state, product, config=config, refit=True)
     return {**model.report(), 'learning':summary}

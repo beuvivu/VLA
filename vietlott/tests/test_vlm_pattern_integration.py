@@ -1,4 +1,3 @@
-"""Chuyên gia mẫu hình phải nhân quả và không nhận bằng chứng của chính sách cũ."""
 from copy import deepcopy
 import gzip
 import json
@@ -178,10 +177,8 @@ def test_explicit_pattern_refit_keeps_or_scores_existing_issue(tmp_path, result_
 
 
 def _strip_pattern_keys(data: dict) -> dict:
-    """Checkpoint v5 do production ghi TRƯỚC khi có challenger mẫu hình: cấu hình và component không có khoá
-    ``patterns``."""
     data = deepcopy(data)
-    data['version'] = 5  # bản production ghi từ 31-10-2026; bật challenger không được buộc tăng phiên bản
+    data['version'] = 5
     data['config'].pop('patterns', None)
     for component in data['components'].values():
         component.pop('patterns', None)
@@ -190,9 +187,6 @@ def _strip_pattern_keys(data: dict) -> dict:
 
 @pytest.mark.parametrize('product', ['max3d', 'mega645'])
 def test_a_production_v5_checkpoint_without_pattern_keys_loads_and_publishes_the_same_law(tmp_path, product):
-    """Gộp với chuyên gia hỗn hợp Bayes (checkpoint v5, 31-10-2026): bật tắt mẫu hình là khoá TUỲ CHỌN trong
-    cùng phiên bản. Tắt thì checkpoint production đã có phải nạp nguyên vẹn và cho đúng từng bit luật cũ —
-    không học lại, không mất bằng chứng live."""
     from tests.test_vlm_bayes_expert import NOW, max3d_series
     if product == 'max3d':
         series = max3d_series(60, six=0.13)
@@ -212,8 +206,6 @@ def test_a_production_v5_checkpoint_without_pattern_keys_loads_and_publishes_the
 
 
 def test_digit_components_carry_the_bayes_expert_and_the_pattern_experts_in_the_same_order_they_predict():
-    """Tên chuyên gia và hàng xác suất phải cùng thứ tự (cơ sở → bayes → mẫu hình): lệch thì trọng số của
-    chuyên gia này chấm điểm cho chuyên gia khác mà không lỗi nào báo."""
     from tests.test_vlm_bayes_expert import NOW, max3d_series
     from vlm.forecast.bayes_expert import NAME as BAYES_NAME
     model = MLForecaster('max3d', MLConfig(bootstrap=40, warmup=8, tree_every=64, tree_buffer=16, search_nodes=20,

@@ -24,8 +24,6 @@ class _FakeLottery:
 
 def _frames(dates: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
     dt = pd.to_datetime(dates)
-    # The calendar guards execute before raw path-digit extraction.  Still use
-    # realistic prize-column names so the fixture documents the expected shape.
     data: dict[str, object] = {
         "date": dt,
         "special": [10000 + i for i in range(len(dt))],

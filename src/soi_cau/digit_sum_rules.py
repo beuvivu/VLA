@@ -1,31 +1,3 @@
-"""Phương pháp "tổng – bóng – chạm" học từ chuyên mục bài dự đoán XSMB tham chiếu.
-
-Chủ dự án yêu cầu (05-10-2026) đọc kỹ các bài trong chuyên mục, học cách phân
-tích của từng bài và hệ thống hoá thành thuật toán riêng. Đã đọc trọn 10 bài
-(28-09 → 05-10-2026) qua ``.github/workflows/inspect-reference-articles.yml``.
-
-Hai loạt bài, hai mức tái lập được:
-
-* **Loạt bài tuần** viết rõ công thức, và mọi con số in trong bài tính lại
-  ĐÚNG từ bảng kết quả của kho (ghim trong ``tests/soi_cau/test_digit_sum_rules.py``).
-  Đó là năm quy tắc dưới đây.
-* **Loạt bài hằng ngày** gọi tên phương pháp ("bạch thủ theo cầu chạy 7 ngày",
-  "lô rơi liên tiếp 3 ngày") nhưng con số in ra KHÔNG khớp chính phương pháp ấy
-  khi tính lại; đầu – đuôi đề của 7 bài không khớp bất kỳ luật tổng hai vị trí
-  cố định nào. Phần ấy không tái lập được nên không thành quy tắc ở đây —
-  ``documentation/research/2026-10-05-phuong-phap-bai-du-doan.md`` ghi chi tiết.
-
-Mọi quy tắc đọc ĐÚNG MỘT kỳ gốc và chỉ dùng tổng hai chữ số (mod 10) và bóng
-(x ↔ x + 5 mod 10). Kiểm lịch sử (``backtest``) chấm mỗi quy tắc trên từng kỳ
-kế tiếp với xác suất trúng chính xác của một bộ số cùng cỡ chọn ngẫu nhiên.
-
-Cách chấm (06-10-2026, đối chiếu với bộ ``xsmb_methods`` chủ dự án gửi — cùng
-năm quy tắc, ra cùng bộ số ở cả 500 kỳ của bộ ấy): mốc LOTO là xác suất CÓ ĐIỀU
-KIỆN theo đúng số con khác nhau đã về ở kỳ được chấm, p một phía là đuôi phân
-phối Poisson-nhị thức (mỗi kỳ một xác suất riêng), kèm khoảng Wilson 95% và p
-đã hiệu chỉnh Holm cho năm quy tắc kiểm cùng lúc.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -41,65 +13,51 @@ import pandas as pd
 from core.xsmb_domain import FIELD_WIDTHS
 from stats.statistical_corrections import holm
 
-#: Thứ tự giải đúng như bảng kết quả, kèm số chữ số của mỗi giải.
 _WIDTH = dict(FIELD_WIDTHS)
 
 
 def bong(digit: int) -> int:
-    """Bóng dương – âm: 0↔5, 1↔6, 2↔7, 3↔8, 4↔9."""
     return (int(digit) + 5) % 10
 
 
 def tong(text: str) -> int:
-    """Tổng các chữ số, lấy hàng đơn vị (``"82"`` → 0, ``"35"`` → 8)."""
     return sum(int(c) for c in text) % 10
 
 
 def giai(row: pd.Series, field: str) -> str:
-    """Chuỗi chữ số đủ độ dài của một giải (``566`` của G5 → ``"0566"``)."""
     return f"{int(row[field]):0{_WIDTH[field]}d}"
 
 
 def cap_lon(x: int, y: int) -> list[int]:
-    """Cặp lộn ``xy`` và ``yx`` (bài viết ghi ``xyx``, ví dụ ``676`` = 67 và 76)."""
     return sorted({10 * x + y, 10 * y + x})
 
 
 @dataclass(frozen=True)
 class Rule:
-    """Một quy tắc: tên, loại đích, và hàm từ kỳ gốc ra bộ số/chữ số."""
 
     key: str
     label: str
-    target: str  # "dau_db" | "duoi_db" | "db" | "loto"
+    target: str
     make: Callable[[pd.Series], list[int]]
     formula: str
 
 
 def dau_db(row: pd.Series) -> list[int]:
-    """Đầu Đặc Biệt: tổng 2 số CUỐI giải Đặc Biệt, kèm bóng."""
     t = tong(giai(row, "special")[-2:])
     return sorted({t, bong(t)})
 
 
 def duoi_db(row: pd.Series) -> list[int]:
-    """Đuôi Đặc Biệt: tổng 2 số ĐẦU giải Đặc Biệt, kèm bóng."""
     t = tong(giai(row, "special")[:2])
     return sorted({t, bong(t)})
 
 
 def cham(row: pd.Series) -> list[int]:
-    """Chạm: tổng 2 số cuối giải nhất, kèm bóng."""
     t = tong(giai(row, "prize1")[-2:])
     return sorted({t, bong(t)})
 
 
 def dan_cham(row: pd.Series) -> list[int]:
-    """Dàn đề chạm: mỗi chạm ghép thẳng và lộn với 3 số đầu Đặc Biệt cùng bóng của chúng.
-
-    Ví dụ kỳ 04-10-2026: chạm 8 và 3; ba số đầu 829 cùng bóng 374 cho 8x/x8 và
-    3x/x3 với x ∈ {8, 2, 9, 3, 7, 4}.
-    """
     digits = {int(c) for c in giai(row, "special")[:3]}
     digits |= {bong(d) for d in digits}
     out: set[int] = set()
@@ -110,12 +68,10 @@ def dan_cham(row: pd.Series) -> list[int]:
 
 
 def lo_g5(row: pd.Series) -> list[int]:
-    """Lô cặp: tổng 2 số đầu G5.2 ghép tổng 2 số cuối G5.4, lấy cả lộn."""
     return cap_lon(tong(giai(row, "prize5_2")[:2]), tong(giai(row, "prize5_4")[-2:]))
 
 
 def lo_vip(row: pd.Series) -> list[int]:
-    """Song thủ lô: tổng 2 số cuối G2.1 ghép tổng 2 số đầu giải nhất, lấy cả lộn."""
     return cap_lon(tong(giai(row, "prize2_1")[-2:]), tong(giai(row, "prize1")[:2]))
 
 
@@ -134,11 +90,6 @@ RULES: tuple[Rule, ...] = (
 
 
 def tong_hop_ky(row: pd.Series) -> dict:
-    """Các "điểm nhấn" mà mọi bài dùng để tóm tắt kỳ trước.
-
-    Đề đầu/đuôi/tổng; lô kép; lô về ≥ 2 nháy; cặp lô về cả hai chiều (bài ghi
-    ``xyx``); đầu, đuôi không về con nào (câm); đầu, đuôi về nhiều nhất.
-    """
     special = giai(row, "special")[-2:]
     lotos = [int(row[field]) % 100 for field, _ in FIELD_WIDTHS]
     counts = np.bincount(lotos, minlength=100)
@@ -161,12 +112,6 @@ def tong_hop_ky(row: pd.Series) -> dict:
 
 
 def hit_and_chance(rule: Rule, picks: list[int], nxt: pd.Series) -> tuple[bool, float]:
-    """Trúng hay không ở kỳ kế, và xác suất trúng của một bộ ngẫu nhiên cùng cỡ.
-
-    LOTO: kỳ về m con khác nhau thì một bộ k con chọn ngẫu nhiên trượt hết với
-    xác suất C(100 − m, k) / C(100, k) — chính xác cho đúng kỳ ấy, thay cho xấp
-    xỉ 1 − (1 − k/100)²⁷ coi 27 giải như 27 lần rút độc lập.
-    """
     k = len(picks)
     special = int(nxt["special"]) % 100
     if rule.target == "dau_db":
@@ -180,7 +125,6 @@ def hit_and_chance(rule: Rule, picks: list[int], nxt: pd.Series) -> tuple[bool, 
 
 
 def poisson_binomial_sf(hits: int, chances: list[float]) -> float:
-    """P(X ≥ hits) khi phép thử thứ i trúng với xác suất ``chances[i]``, độc lập."""
     dist = np.zeros(len(chances) + 1)
     dist[0] = 1.0
     for i, p in enumerate(chances):
@@ -191,7 +135,6 @@ def poisson_binomial_sf(hits: int, chances: list[float]) -> float:
 
 
 def wilson(hits: int, n: int, z: float = 1.959963984540054) -> tuple[float, float]:
-    """Khoảng tin cậy Wilson 95% cho tỉ lệ hits/n."""
     if n == 0:
         return 0.0, 1.0
     rate = hits / n
@@ -202,7 +145,6 @@ def wilson(hits: int, n: int, z: float = 1.959963984540054) -> tuple[float, floa
 
 
 def verdict(n: int, hits: int, chances: list[float]) -> dict:
-    """Tỉ lệ trúng, mốc chọn bừa, z, p một phía và khoảng Wilson của một chuỗi chấm."""
     expected = float(sum(chances))
     variance = float(sum(p * (1.0 - p) for p in chances))
     low, high = wilson(hits, n)
@@ -224,11 +166,6 @@ def with_holm(rows: list[dict]) -> list[dict]:
 
 
 def backtest(raw: pd.DataFrame) -> list[dict]:
-    """Chấm mỗi quy tắc: kỳ gốc t → kỳ t+1, trên toàn bộ lịch sử.
-
-    ``expected`` cộng xác suất trúng chính xác của một bộ ngẫu nhiên cùng cỡ ở
-    từng kỳ (bộ đổi cỡ khi có số kép), nên z và p so đúng với "chọn bừa".
-    """
     raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     rows = [raw.iloc[i] for i in range(len(raw))]
     out = []
@@ -249,8 +186,6 @@ def backtest(raw: pd.DataFrame) -> list[dict]:
     return with_holm(out)
 
 
-#: Khung áp dụng theo đúng loạt bài tuần: kỳ gốc (thứ, 0 = thứ Hai) → các thứ
-#: của kỳ được chấm. Chủ Nhật mở khung đầu tuần, thứ Năm mở khung cuối tuần.
 FRAMES: dict[str, dict[int, tuple[int, ...]]] = {
     "dau_db": {6: (0, 1, 2, 3, 4, 5, 6)},
     "duoi_db": {6: (0, 1, 2, 3, 4, 5, 6)},
@@ -261,12 +196,6 @@ FRAMES: dict[str, dict[int, tuple[int, ...]]] = {
 
 
 def frame_backtest(raw: pd.DataFrame) -> list[dict]:
-    """Chấm kiểu bài viết: "nổ" nếu trúng ÍT NHẤT MỘT lần trong cả khung.
-
-    Khung dài làm tỉ lệ "nổ" cao dù quy tắc không có kỹ năng: hai chữ số đầu
-    Đặc Biệt trong 7 kỳ "nổ" với xác suất 1 − 0,8⁷ ≈ 79%. ``expected_rate`` là
-    xác suất ấy của một bộ ngẫu nhiên cùng cỡ, tính kỳ theo kỳ.
-    """
     raw = raw.sort_values("date", kind="stable").reset_index(drop=True)
     dates = pd.to_datetime(raw["date"])
     rows = [raw.iloc[i] for i in range(len(raw))]
@@ -304,7 +233,6 @@ def frame_backtest(raw: pd.DataFrame) -> list[dict]:
 
 
 def next_picks(raw: pd.DataFrame) -> dict:
-    """Bộ số mỗi quy tắc báo cho kỳ kế tiếp, từ kỳ cuối của lịch sử."""
     last = raw.sort_values("date", kind="stable").iloc[-1]
     return {
         "base_date": str(last["date"])[:10],
@@ -315,7 +243,7 @@ def next_picks(raw: pd.DataFrame) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="data/xsmb.csv")
     ap.add_argument("--out", default="")
     args = ap.parse_args()

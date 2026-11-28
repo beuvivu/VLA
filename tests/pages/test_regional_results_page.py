@@ -37,7 +37,6 @@ OTHER_PRIZES = {
 
 
 def sample_rows() -> list[dict[str, str]]:
-    """Hai đài cùng ngày và một ngày thiếu đài, có đủ mọi độ dài giải."""
     rows = []
     for prize, (_, values) in PRIZES.items():
         for index, value in enumerate(values):
@@ -60,14 +59,12 @@ def test_regional_pages_render_without_seed_data():
 
 
 def test_regional_pages_offer_every_saved_date_and_station_in_the_filters():
-    """Bỏ một ngày hoặc đài khỏi bộ chọn sẽ khiến dữ liệu ấy không tra được."""
     soup = BeautifulSoup(render("mt", sample_rows()), "html.parser")
     assert [node.get("value") for node in soup.select("#rg-date option")] == ["", "2026-10-05", "2026-10-04"]
     assert [node.get("value") for node in soup.select("#rg-province option")] == ["", "Huế", "Thừa Thiên Huế"]
 
 
 def test_regional_pages_never_name_where_the_data_comes_from():
-    """Luật riêng tư của kho: không vẽ danh tính nguồn dữ liệu ra trình duyệt."""
     from ingest.sources import REGIONAL_SOURCE_NAMES
 
     row = {"date": "2026-10-05", "province": "Cà Mau", "prize": "ĐB", "value": "030118"}
@@ -81,7 +78,6 @@ def test_regional_pages_never_name_where_the_data_comes_from():
 
 @pytest.mark.parametrize("region", ["mt", "mn"])
 def test_each_province_and_prize_keeps_all_original_digits(region: str) -> None:
-    """Cắt Đặc Biệt còn 5 số, ép integer hay trộn hai cột đều làm đỏ."""
     soup = BeautifulSoup(render(region, sample_rows()), "html.parser")
     table = soup.select_one('.rg-draw[data-date="2026-10-05"] table')
     assert table is not None
@@ -109,7 +105,6 @@ def test_each_province_and_prize_keeps_all_original_digits(region: str) -> None:
 
 @pytest.mark.parametrize("region", ["mt", "mn"])
 def test_accessible_number_names_keep_the_full_result_and_draw_context(region: str) -> None:
-    """Đọc riêng 2 số cuối làm người dùng bàn phím mất số gốc và đài quay."""
     soup = BeautifulSoup(render(region, sample_rows()), "html.parser")
     rows = soup.select('.rg-draw[data-date="2026-10-05"] tbody tr')
     for row, (prize, (label, values)) in zip(rows, PRIZES.items(), strict=True):
@@ -126,7 +121,6 @@ def test_accessible_number_names_keep_the_full_result_and_draw_context(region: s
 
 @pytest.fixture(scope="module")
 def regional_browser_effects() -> dict:
-    """Chạy bộ lọc và đánh dấu thật trên DOM, không thay bằng bộ giả."""
     node = os.environ.get("CODEX_PRIMARY_RUNTIME_NODE") or shutil.which("node")
     if not node or not (ROOT / "tests/frontend/node_modules/jsdom").exists():
         pytest.skip("Cần Node và npm ci --prefix tests/frontend để kiểm hành vi DOM")
@@ -178,7 +172,6 @@ dom.window.close();
 
 
 def test_marks_use_the_same_click_keyboard_and_pair_rules_as_the_northern_board(regional_browser_effects) -> None:
-    """Thiếu bộ đánh dấu hoặc bỏ tỉnh khỏi khóa ô sẽ làm sáng sai số."""
     effects = regional_browser_effects
     assert effects["click"] == ["030118"]
     assert effects["pressed"] == "true"
@@ -191,7 +184,6 @@ def test_marks_use_the_same_click_keyboard_and_pair_rules_as_the_northern_board(
 
 
 def test_province_filter_hides_only_other_stations_and_keeps_saved_digits(regional_browser_effects) -> None:
-    """Tìm chuỗi trong cả thẻ sẽ lẫn Huế với Thừa Thiên Huế, không lọc cột."""
     effects = regional_browser_effects
     assert effects["provinceDates"] == ["2026-10-05"]
     assert effects["provinceColumns"] == ["Huế"]
@@ -205,7 +197,6 @@ def test_province_filter_hides_only_other_stations_and_keeps_saved_digits(region
 
 
 def test_a4_pdf_keeps_every_full_result_from_all_four_stations(tmp_path: Path) -> None:
-    """Giữ min-width/overflow của màn hình khi in sẽ cắt số ở đài cuối."""
     playwright = pytest.importorskip("playwright.sync_api")
     fitz = pytest.importorskip("fitz")
     from web.page_output import write_page
@@ -241,9 +232,6 @@ def test_a4_pdf_keeps_every_full_result_from_all_four_stations(tmp_path: Path) -
     assert Counter(printed) == Counter(row["value"] for row in rows)
 
 
-# --- Khối «Kiểm định ngẫu nhiên và mốc xác suất» ---------------------------------------------
-
-
 def _evidence(root: Path, region: str = "mn") -> dict:
     from pages.build_regional_results import load_evidence
 
@@ -253,7 +241,6 @@ def _evidence(root: Path, region: str = "mn") -> dict:
 
 
 def test_the_evidence_block_prints_the_sentences_of_the_measurement_files_verbatim() -> None:
-    """Trình dựng không tự viết kết luận: hai câu đọc là câu của tệp số đo, từng chữ."""
     evidence = _evidence(ROOT)
     soup = BeautifulSoup(render("mn", sample_rows(), evidence), "html.parser")
     block = soup.select_one("details#rg-evidence")
@@ -277,7 +264,6 @@ def test_the_evidence_block_tables_carry_the_numbers_of_the_files() -> None:
     first = table.select("tbody tr")[0].find_all("td")
     gain = models["tan_suat"]["mean_gain"]
     assert first[0].get_text() == f"{gain:.5f}".replace(".", ",")
-    # Mô hình thêm sau khi đã nhìn dữ liệu phải được ghi rõ ngay cạnh tên.
     late = [row for row in table.select("tbody tr") if "thêm sau khi đã nhìn dữ liệu" in row.get_text()]
     assert len(late) == sum(1 for m in models.values() if m.get("post_hoc")) >= 1
     flagged = [b for b in evidence["summary"]["tests"]["per_station"] if b.get("cage_counts")]
@@ -285,7 +271,7 @@ def test_the_evidence_block_tables_carry_the_numbers_of_the_files() -> None:
     assert len(cage_tables) == len(flagged)
     for table, block in zip(cage_tables, flagged, strict=True):
         body = table.select("tbody tr")
-        assert len(body) == 5  # năm lồng của phép kiểm; lồng trăm nghìn không in
+        assert len(body) == 5
         assert [int(td.get_text()) for td in body[0].find_all("td")[:10]] == block["cage_counts"][0]
         assert block["province"] in soup.find(id=table["aria-labelledby"]).get_text()
 
@@ -313,7 +299,6 @@ def _copy_measurements(target: Path) -> None:
 
 
 def test_half_a_conclusion_is_never_printed(tmp_path: Path) -> None:
-    """Thiếu một tệp, hoặc hai tệp nói về hai ngày dữ liệu khác nhau: trang không in khối kiểm định."""
     from pages.build_regional_results import load_evidence
 
     assert load_evidence(tmp_path, "mn") is None
@@ -336,11 +321,6 @@ def test_half_a_conclusion_is_never_printed(tmp_path: Path) -> None:
 
 
 def test_measurements_older_than_the_ledger_are_not_printed(tmp_path: Path) -> None:
-    """Kết quả mới đã về mà bước phân tích hỏng: hai tệp số đo cũ vẫn khớp nhau, nhưng trang không in chúng.
-
-    Đúng tình huống của ``regional-results.yml``: bước phân tích ``continue-on-error``, trang vẫn dựng
-    và triển khai. So hai tệp với nhau thôi thì kết luận của kỳ trước nằm cạnh bảng của kỳ mới.
-    """
     from pages.build_regional_results import load_evidence, load_rows
 
     _copy_measurements(tmp_path)
@@ -350,13 +330,12 @@ def test_measurements_older_than_the_ledger_are_not_printed(tmp_path: Path) -> N
     newer = (date.fromisoformat(latest) + timedelta(days=1)).isoformat()
     fresh = rows + [{**row, "date": newer} for row in rows if row["date"] == latest]
     assert load_evidence(tmp_path, "mn", fresh) is None
-    # Không truyền sổ thì hàm tự đọc sổ trên đĩa: ghi kỳ mới vào sổ cũng phải tắt khối.
     ledger = tmp_path / "data/regions/xsmn.csv"
     with ledger.open("a", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writerows(row for row in fresh if row["date"] == newer)
     assert load_evidence(tmp_path, "mn") is None
-    assert load_evidence(tmp_path, "mn", []) is None  # sổ rỗng: không có ngày nào để khớp
+    assert load_evidence(tmp_path, "mn", []) is None
 
 
 def test_only_the_registrations_of_this_region_are_listed(tmp_path: Path) -> None:
@@ -376,7 +355,6 @@ def test_only_the_registrations_of_this_region_are_listed(tmp_path: Path) -> Non
 
 @pytest.mark.parametrize(("region", "filename"), [("mt", "ket-qua-mien-trung.html"), ("mn", "ket-qua-mien-nam.html")])
 def test_the_published_page_shows_the_committed_measurements(region: str, filename: str) -> None:
-    """Trang đã xuất bản in đúng câu của số đo đã commit — không phải của một lượt chạy khác."""
     soup = BeautifulSoup((ROOT / "docs" / filename).read_text(encoding="utf-8"), "html.parser")
     block = soup.select_one("details#rg-evidence")
     evidence = _evidence(ROOT, region)

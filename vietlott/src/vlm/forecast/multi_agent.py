@@ -1,4 +1,3 @@
-"""Nhóm chuyên gia lồng nhau: giữ nguyên phân phối tập khi nối vào pipeline thật."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -12,11 +11,6 @@ from vlm.multi_agent.models import AlgorithmEnsemble, SubsetDistribution
 
 
 class MultiAgentExpert:
-    """Ba lớp cùng bộ nhớ và meta; checkpoint/giao dịch do MLForecaster quản lý.
-
-    Các điểm số ở đây là hồi cứu theo thứ tự thời gian. Chỉ ledger live của
-    MLForecaster được dùng để chứng nhận và quyết định xác suất công bố.
-    """
 
     def __init__(self, n: int, k: int, seed: int = 42) -> None:
         self.n, self.k, self.seed = n, k, seed
@@ -42,20 +36,17 @@ class MultiAgentExpert:
                 'explanations': [{'expert': f.name, 'evidence': f.evidence} for f in forecasts]}
 
     def distribution(self) -> tuple[np.ndarray, np.ndarray]:
-        """Trả bốn phân phối con; tuyệt đối không xấp xỉ mixture bằng tích các biên."""
         packet = self._packet()
         z = np.array(packet['logits']) / packet['temperature']
         return np.exp(z - z.max(axis=1, keepdims=True)), np.array(packet['weights'])
 
     def group_log_likelihood(self, expert_log_likelihoods: np.ndarray) -> float:
-        """Gộp likelihood bốn con theo đúng trọng số trước khi nhận nhãn."""
         if np.asarray(expert_log_likelihoods).shape != (4,):
             raise ValueError('Nhóm đa thuật toán phải có đúng bốn likelihood.')
         weights = self.meta.weights(self.meta.context(self.knowledge.history))
         return float(logsumexp(np.log(weights) + expert_log_likelihoods))
 
     def learn(self, outcome: np.ndarray) -> None:
-        """Chấm snapshot trước, cập nhật meta/neural/bộ nhớ sau, mỗi kỳ đúng một lần."""
         row = self.ensemble._history(np.asarray(outcome).reshape(1, -1))[0]
         packet = self._packet()
         labels = np.flatnonzero(row).tolist()
@@ -65,7 +56,6 @@ class MultiAgentExpert:
         self.knowledge.ingest(cycle, labels)
 
     def report(self) -> dict:
-        """Chẩn đoán đọc từ trạng thái thật, phân biệt rõ hồi cứu với bằng chứng live."""
         packet = self._packet()
         return {'observations': self.knowledge.total_observations,
                 'weights': dict(zip(EXPERT_NAMES, packet['weights'], strict=True)),

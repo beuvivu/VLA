@@ -1,10 +1,3 @@
-"""Bảy kiểu cầu vị trí: đếm đúng từng ô như trang tham chiếu thứ hai, luật từng
-kiểu đúng trên dữ liệu dựng sẵn, và trang xuất bản mang đủ dữ liệu cho bộ máy JS.
-
-Số đối chiếu nằm trong ``tests/fixtures/bridge_reference_2026-09-28.json`` — đọc
-từ trang ấy (dữ liệu đến 28-09-2026) qua workflow ``inspect-reference-bridge.yml``.
-"""
-
 from __future__ import annotations
 
 import json
@@ -42,7 +35,6 @@ def history():
     ("loto-theo-thu-tat-ca", "loto", 3, None),
 ])
 def test_every_cell_matches_the_reference_page(history, page, kind, count, weekday) -> None:
-    """Từng ô của bảng đầu 0–9, tổng số cầu và cầu dài nhất — không xấp xỉ."""
     dates, digits, values = br.weekday_subset(*history, weekday)
     found = br.find(kind, digits, values, count=count)
     tally = br.tally(found["bridges"], kind)
@@ -59,8 +51,6 @@ def test_special_prize_pairs_rank_like_the_reference(history) -> None:
 
 
 def test_the_set_bridges_are_exactly_the_32_decoded_position_pairs(history) -> None:
-    """Các cặp vị trí này dựng lại từ lớp đánh dấu chữ số của trang tham chiếu —
-    chúng ghim chính LUẬT bộ số chứ không chỉ con số tổng."""
     found = br.find("bo-so", history[1], history[2], count=2)
     assert sorted(b["vt"] for b in found["bridges"]) == sorted(REF["bo_so_positions"])
 
@@ -72,7 +62,6 @@ def test_a_set_is_both_digits_and_their_shadows_both_ways() -> None:
 
 
 def _draws(rows: list[dict[int, int]]) -> tuple[np.ndarray, np.ndarray]:
-    """Các kỳ dựng sẵn: ĐB = 99999, mọi giải khác 0, trừ chỉ số được đặt."""
     values = np.zeros((len(rows), 27), dtype=np.int64)
     values[:, 0] = 99999
     for t, row in enumerate(rows):
@@ -85,7 +74,6 @@ def _draws(rows: list[dict[int, int]]) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _step(kind: str, rows: list[dict[int, int]], **kw) -> bool:
-    """Cặp vị trí 5×6 (hai chữ số đầu của G1) qua một bước."""
     digits, values = _draws(rows)
     pa, pb = br.pair_index(True)
     p = int(np.flatnonzero((pa == 5) & (pb == 6))[0])
@@ -93,12 +81,12 @@ def _step(kind: str, rows: list[dict[int, int]], **kw) -> bool:
 
 
 @pytest.mark.parametrize(("kind", "next_draw", "expected"), [
-    ("loto", {23: 54}, True),            # chỉ số lộn về vẫn là trúng
-    ("bach-thu", {23: 54}, False),       # bạch thủ không tính số lộn
+    ("loto", {23: 54}, True),
+    ("bach-thu", {23: 54}, False),
     ("bach-thu", {23: 45}, True),
-    ("hai-nhay", {23: 45, 24: 45}, True),   # 45 về hai nháy
-    ("hai-nhay", {23: 45, 24: 54}, True),   # cả hai chiều cùng về
-    ("hai-nhay", {23: 54, 24: 54}, False),  # số lộn về hai nháy KHÔNG tính (đúng như trang tham chiếu)
+    ("hai-nhay", {23: 45, 24: 45}, True),
+    ("hai-nhay", {23: 45, 24: 54}, True),
+    ("hai-nhay", {23: 54, 24: 54}, False),
     ("hai-nhay", {23: 45}, False),
 ])
 def test_each_loto_kind_has_its_own_hit_rule(kind, next_draw, expected) -> None:
@@ -106,12 +94,12 @@ def test_each_loto_kind_has_its_own_hit_rule(kind, next_draw, expected) -> None:
 
 
 @pytest.mark.parametrize(("special", "both", "expected"), [
-    (12340, False, True),    # hàng chục ĐB = 4
-    (12305, False, True),    # hàng đơn vị ĐB = 5
+    (12340, False, True),
+    (12305, False, True),
     (12367, False, False),
-    (12354, True, True),     # cả hai chữ số, lộn
+    (12354, True, True),
     (12345, True, True),
-    (12340, True, False),    # một chữ số không đủ khi đòi cả hai
+    (12340, True, False),
 ])
 def test_the_special_prize_rule_reads_only_its_last_two_digits(special, both, expected) -> None:
     rows = [{1: 45000}, {0: special, 23: 45, 24: 54}]
@@ -119,7 +107,7 @@ def test_the_special_prize_rule_reads_only_its_last_two_digits(special, both, ex
 
 
 def test_a_set_bridge_runs_while_the_number_stays_in_its_set() -> None:
-    assert _step("bo-so", [{1: 45000}, {1: 90000}]) is True     # 45 → 90: cùng bộ 04
+    assert _step("bo-so", [{1: 45000}, {1: 90000}]) is True
     assert _step("bo-so", [{1: 45000}, {1: 46000}]) is False
     digits, values = _draws([{1: 45000}, {0: 12390}])
     pa, pb = br.pair_index(True)
@@ -134,7 +122,6 @@ def test_weekday_pages_only_use_draws_of_that_weekday(history) -> None:
 
 
 def test_the_backtest_can_see_a_planted_signal() -> None:
-    """Chép y nguyên kỳ trước ở 50% số kỳ: cầu vừa trúng dễ trúng tiếp thật."""
     rng = np.random.default_rng(3)
     values = np.column_stack([rng.integers(0, 10 ** w, size=300) for w in br.WIDTHS])
     copy = np.random.default_rng(4).random(300) < 0.5
@@ -207,7 +194,6 @@ def test_the_backtest_verdict_is_read_from_the_numbers(history) -> None:
 
 
 def test_the_report_carries_a_separate_backtest_for_the_two_digit_rule(monkeypatch) -> None:
-    """Luật "cả hai chữ số" khác hẳn luật một chữ số — không được mượn số của nhau."""
     calls = []
 
     def fake(kind, series, *, both=False):

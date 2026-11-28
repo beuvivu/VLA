@@ -28,7 +28,6 @@ def _repo() -> InMemoryRepository:
 
 @pytest.fixture(scope="module")
 def bare(tmp_path_factory: pytest.TempPathFactory) -> TestClient:
-    """No calibration artefacts: prior crowd model, typical sales fallback."""
     settings = Settings(storage_backend="memory", calibration_dir=tmp_path_factory.mktemp("cal"))
     with TestClient(create_app(settings, repository=_repo())) as c:
         yield c
@@ -87,13 +86,13 @@ def test_missing_artefacts_are_409(bare: TestClient) -> None:
 def test_calibrated_models_are_used(calibrated: TestClient) -> None:
     r = calibrated.post("/games/power655/ev", json={"ticket": [1, 2, 3, 4, 5, 6], "jackpot1": 100e9}).json()
     assert r["tickets_sold_source"] == "sales_model"
-    assert r["popularity_ratio"] > 1  # a pattern ticket is popular under the calibrated crowd
+    assert r["popularity_ratio"] > 1
     m = calibrated.get("/games/power655/market").json()
     assert 0.3 < m["payout_share_used"] < 0.5
     h = calibrated.get("/games/lotto535/rolldown/history").json()
     assert h["announced"] >= 15 and h["executed"] <= h["announced"]
     r = calibrated.post("/games/lotto535/rolldown/ev", json={"jackpot": 20e9}).json()
-    assert r["tickets_sold"] > 1_000_000  # default: recent rolldown sales
+    assert r["tickets_sold"] > 1_000_000
 
 
 def test_bao_catalog_table_compare_and_max3d(bare: TestClient) -> None:

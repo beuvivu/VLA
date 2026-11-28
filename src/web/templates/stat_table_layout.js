@@ -1,4 +1,3 @@
-/** Giữ nguyên bảng thật: co giãn theo dữ liệu, đồng bộ cuộn và ghim tiêu đề. */
 function installStatTableLayout() {
   const layouts = [];
   let frame = 0;
@@ -21,15 +20,12 @@ function installStatTableLayout() {
         table.style.setProperty('--sp-columns', columns);
         table.style.setProperty('--sp-data-columns', Math.max(0, columns - 1));
         pan.hidden = table.offsetWidth <= scroller.clientWidth + 1;
-        // Hai viền của khung không thuộc clientWidth; hai thanh phải có cùng biên cuộn.
         track.style.width = `${table.offsetWidth + pan.clientWidth - scroller.clientWidth}px`;
         pan.scrollLeft = scroller.scrollLeft;
       }
       const rect = table.getBoundingClientRect();
       const headHeight = head ? head.offsetHeight : 0;
       const panHeight = pan.hidden ? 0 : pan.offsetHeight;
-      // overflow-x tạo vùng cuộn riêng nên sticky CSS không theo cuộn trang.
-      // Dịch chính hàng tiêu đề, không nhân bản ô hay làm mất khoá đánh dấu.
       const offset = Math.min(Math.max(0, top + panHeight - rect.top),
         Math.max(0, rect.height - headHeight));
       if (head) head.style.setProperty('--sp-head-offset', `${offset}px`);
@@ -56,7 +52,6 @@ function installStatTableLayout() {
     pan.addEventListener('scroll', () => sync(pan, scroller), {passive: true});
     scroller.addEventListener('scroll', () => sync(scroller, pan), {passive: true});
     layouts.push({table, scroller, pan, track});
-    // Mỗi lần lọc thay thead/tbody; không quan sát từng ô khi rê chuột/đánh dấu.
     new MutationObserver(() => schedule(true)).observe(table, {childList: true});
     const resize = new ResizeObserver(() => schedule(true));
     resize.observe(scroller);

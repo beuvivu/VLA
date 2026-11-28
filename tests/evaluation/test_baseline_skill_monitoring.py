@@ -1,14 +1,3 @@
-"""Kiểm thử ba lớp đối chứng đường cơ sở cho mô hình sản xuất.
-
-Bối cảnh: trong 12/2025–01/2026 mô hình LOTO cho logloss ~0,95 so với đường cơ
-sở ~0,55 suốt 22 ngày, và không ai phát hiện trong tám tháng vì lịch sử đánh
-giá không mang đối chứng nào. Ba lớp dưới đây bịt đúng lỗ hổng đó:
-
-1. ``prob_eval_history`` ghi kèm baseline và điểm kỹ năng cho từng ngày.
-2. Trang Chất lượng mô hình hiển thị điểm kỹ năng.
-3. ``check_baseline_skill`` chặn khi mô hình tệ hơn baseline quá ngưỡng.
-"""
-
 from __future__ import annotations
 
 import subprocess
@@ -39,11 +28,7 @@ from core.xsmb_domain import baseline_rate
 ROOT = Path(__file__).resolve().parents[2]
 
 
-# --- skill_score -----------------------------------------------------------
-
-
 def test_skill_score_sign_convention() -> None:
-    """Dương = tốt hơn baseline. Sai dấu ở đây là đọc ngược toàn bộ báo cáo."""
     assert skill_score(0.5, 1.0) == pytest.approx(0.5)
     assert skill_score(1.5, 1.0) == pytest.approx(-0.5)
     assert skill_score(1.0, 1.0) == pytest.approx(0.0)
@@ -56,11 +41,7 @@ def test_skill_score_is_safe_on_degenerate_input() -> None:
     assert skill_score(0.5, float("inf")) == 0.0
 
 
-# --- Lớp 1: lịch sử đánh giá mang baseline ---------------------------------
-
-
 def _write_history(tmp: Path, mode: str, probability: float) -> tuple[Path, Path]:
-    """Dựng lịch sử nhãn + artifact dự đoán tối thiểu cho một ngày."""
     day = "2026-03-01"
     numbers = list(range(100))
     y = [0] * 100
@@ -99,22 +80,17 @@ def test_history_row_carries_baseline_and_skill(tmp_path: Path, mode: str) -> No
     for key in ("baseline_logloss", "baseline_brier", "logloss_skill", "brier_skill"):
         assert key in row, key
     assert np.isfinite(row["baseline_logloss"])
-    # Dự đoán trùng đúng baseline thì điểm kỹ năng phải bằng 0.
     assert row["logloss_skill"] == pytest.approx(0.0, abs=1e-9)
 
 
 def test_baseline_is_scored_with_the_same_metric_as_the_model(
     tmp_path: Path,
 ) -> None:
-    """Nếu hai bên dùng thước khác nhau thì điểm kỹ năng vô nghĩa."""
     history, predict_dir = _write_history(tmp_path, "loto", baseline_rate("loto"))
     row = evaluate_latest_emitted(mode="loto", history_path=history, predict_dir=predict_dir)
     assert row is not None
     assert row["logloss"] == pytest.approx(row["baseline_logloss"])
     assert row["brier"] == pytest.approx(row["baseline_brier"])
-
-
-# --- Lớp 3: cổng báo động --------------------------------------------------
 
 
 def _history_frame(mode: str, model: float, baseline: float, days: int) -> pd.DataFrame:
@@ -129,7 +105,6 @@ def _history_frame(mode: str, model: float, baseline: float, days: int) -> pd.Da
 
 
 def test_gate_passes_when_the_model_tracks_the_baseline() -> None:
-    """Vận hành bình thường đo được là −0,82%; cổng không được báo giả."""
     frame = _history_frame("loto", 0.5480, 0.5435, DEFAULT_WINDOW)
     checks = evaluate_history(frame)
     assert len(checks) == 1
@@ -138,7 +113,6 @@ def test_gate_passes_when_the_model_tracks_the_baseline() -> None:
 
 
 def test_gate_catches_the_december_january_regression() -> None:
-    """Đợt hỏng thật: logloss ~0,95 so với baseline ~0,55 (kỹ năng ~ −73%)."""
     frame = _history_frame("loto", 0.9487, 0.5495, DEFAULT_WINDOW)
     checks = evaluate_history(frame)
     assert checks[0].failed
@@ -146,7 +120,6 @@ def test_gate_catches_the_december_january_regression() -> None:
 
 
 def test_gate_reads_only_the_recent_window() -> None:
-    """Sự cố cũ đã khắc phục không được tiếp tục làm đỏ cổng."""
     bad = _history_frame("loto", 0.95, 0.55, 30)
     good = _history_frame("loto", 0.548, 0.5435, DEFAULT_WINDOW)
     good["target_date"] = [f"2026-04-{d + 1:02d}" for d in range(DEFAULT_WINDOW)]
@@ -175,7 +148,6 @@ def test_gate_checks_each_mode_independently() -> None:
 
 
 def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> None:
-    """Lịch sử cũ chưa sinh lại thì bỏ qua, không làm đỏ CI một cách vô cớ."""
     path = tmp_path / "history.csv"
     pd.DataFrame({"mode": ["loto"], "target_date": ["2026-03-01"], "logloss": [0.5]}).to_csv(
         path, index=False
@@ -185,7 +157,7 @@ def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> Non
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
+        check=False,
     )
     assert result.returncode == 0
     assert "BỎ QUA" in result.stdout
@@ -201,7 +173,7 @@ def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> Non
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
+        check=False,
     )
     assert strict.returncode == 1
 
@@ -214,24 +186,15 @@ def test_gate_cli_fails_on_a_real_regression(tmp_path: Path) -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
-        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
+        check=False,
     )
     assert result.returncode == 1
     assert "LỖI" in result.stdout
 
 
 def test_release_check_runs_the_skill_gate_strictly() -> None:
-    """Cổng phải nằm trong quy trình phát hành, và ở chế độ chặt.
-
-    Lịch sử đã có đối chứng đủ, nên thiếu cột baseline từ nay là pipeline hỏng.
-    Thiếu ``--require-baseline`` thì một thay đổi như thế sẽ tự tắt cổng trong
-    im lặng, đúng lớp lỗi mà cổng sinh ra để chặn.
-    """
     script = (ROOT / "scripts/release/release_check.sh").read_text(encoding="utf-8")
     assert "src/evaluation/check_baseline_skill.py --require-baseline" in script
-
-
-# --- Lớp 2: trang Chất lượng mô hình ---------------------------------------
 
 
 def _quality_headers(page: Path) -> list[str]:
@@ -241,13 +204,6 @@ def _quality_headers(page: Path) -> list[str]:
 
 
 def _build_quality_page(docs_dir: Path) -> str:
-    """Dựng trang chất lượng vào ``docs_dir`` rồi trả về HTML của nó.
-
-    Dựng thẳng vào docs/ của kho thì mỗi lần chạy pytest là cây làm việc bẩn.
-    """
-    # Trang đã tách khỏi build_dashboard: chẩn đoán chạy trước, dựng trang sau.
-    # Chẩn đoán phải ghi vào thư mục dữ liệu TẠM, nếu không nó đè
-    # data/evaluation/model_quality/report.json của kho bằng số liệu giả của phép kiểm.
     data_dir = docs_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     for relative in ("evaluation/prob_eval/ensemble_history.csv", "evaluation/history/pred_loto.csv",
@@ -270,11 +226,6 @@ def _build_quality_page(docs_dir: Path) -> str:
 
 
 def test_quality_page_shows_skill_only_when_the_data_supports_it(tmp_path: Path) -> None:
-    """Có đối chứng thì hiện cột kỹ năng; chưa có thì thoái lui êm, không lỗi.
-
-    Kiểm cả hai chiều trên cùng một tệp lịch sử thật, nên kết quả không phụ
-    thuộc việc kho đã sinh lại đối chứng cho lịch sử cũ hay chưa.
-    """
     history = ROOT / "data/evaluation/prob_eval/ensemble_history.csv"
     if not history.exists():
         pytest.skip("kho chưa có lịch sử đánh giá")
@@ -295,26 +246,15 @@ def test_quality_page_shows_skill_only_when_the_data_supports_it(tmp_path: Path)
         assert "Kỹ năng theo thời gian" in page
         assert "Chưa đủ lịch sử" not in page
 
-        # Không có đối chứng thì trang phải DỰNG ĐƯỢC và nói rõ là chưa đủ dữ
-        # liệu, chứ không vỡ. Trang chẩn đoán mà sập khi thiếu một cột thì
-        # đúng lúc cần nhất lại là lúc không có gì để đọc.
         frame.drop(columns=list(BASELINE_COLUMNS)).to_csv(history, index=False)
         page = _build_quality_page(tmp_path / "thieu-doi-chung")
         assert "Chưa đủ lịch sử" in page
         assert "Độ phân giải" in page, "phần phân rã không phụ thuộc đối chứng"
     finally:
-        # Chỉ trả lại tệp lịch sử. Trước đây còn dựng lại docs/ ở đây để dọn
-        # trang đã sinh từ dữ liệu giả — nhưng nay bản dựng đi vào thư mục tạm
-        # nên docs/ chưa từng bị đụng tới, và chính lệnh dọn đó mới là thứ làm
-        # bẩn cây làm việc.
         history.write_text(original, encoding="utf-8")
 
 
-# --- Sinh lại đối chứng cho lịch sử cũ -------------------------------------
-
-
 def _label_frame(mode: str, days: list[str]) -> pd.DataFrame:
-    """Nhãn hợp lệ: LOTO 27 số trúng, Đặc Biệt đúng một số trúng."""
     rows = []
     for day in days:
         y = [0] * 100
@@ -329,7 +269,6 @@ def _label_frame(mode: str, days: list[str]) -> pd.DataFrame:
 
 
 def load_labels_from(frame: pd.DataFrame, tmp: Path, mode: str) -> dict:
-    """Ghi khung nhãn ra đĩa rồi đọc qua đúng đường vào của script sinh lại."""
     tmp.mkdir(parents=True, exist_ok=True)
     path = tmp / f"pred_{mode}.csv"
     frame.to_csv(path, index=False)
@@ -339,11 +278,6 @@ def load_labels_from(frame: pd.DataFrame, tmp: Path, mode: str) -> dict:
 def test_backfill_matches_what_the_pipeline_would_have_written(
     tmp_path: Path,
 ) -> None:
-    """Giá trị sinh lại phải trùng giá trị bộ chấm sản xuất ghi cho cùng ngày.
-
-    Đây là điều kiện để trộn dòng cũ và dòng mới trong cùng một cột mà không
-    tạo ra bậc thang giả trong báo cáo.
-    """
     for mode in ("loto", "de"):
         history, predict_dir = _write_history(tmp_path / mode, mode, baseline_rate(mode))
         produced = evaluate_latest_emitted(mode=mode, history_path=history, predict_dir=predict_dir)
@@ -371,18 +305,16 @@ def test_backfill_fills_missing_rows_and_computes_skill(tmp_path: Path) -> None:
     assert count == 2
     assert not skipped
     assert filled["baseline_logloss"].notna().all()
-    # Mô hình tốt hơn baseline thì kỹ năng dương, và ngược lại.
     base = filled["baseline_logloss"].iloc[0]
     assert (filled["logloss_skill"].iloc[0] > 0) == (0.5 < base)
 
 
 def test_backfill_is_idempotent(tmp_path: Path) -> None:
-    """Chạy lại không được ghi đè dòng đã có — tránh trộn hai lần tính khác nhau."""
     days = ["2026-03-01"]
     labels = {"loto": load_labels_from(_label_frame("loto", days), tmp_path, "loto")}
     frame = pd.DataFrame({"mode": ["loto"], "target_date": days, "logloss": [0.5], "brier": [0.18]})
     once, first_count, _ = backfill(frame, labels)
-    once.loc[0, "baseline_logloss"] = 99.0  # dấu vết để phát hiện ghi đè
+    once.loc[0, "baseline_logloss"] = 99.0
     twice, second_count, _ = backfill(once, labels)
     assert first_count == 1
     assert second_count == 0
@@ -396,7 +328,6 @@ def test_backfill_is_idempotent(tmp_path: Path) -> None:
 def test_backfill_skips_days_it_cannot_score_instead_of_guessing(
     tmp_path: Path,
 ) -> None:
-    """Ngày thiếu nhãn phải bị bỏ trống; đoán bừa sẽ làm hỏng chính cổng báo động."""
     days = ["2026-03-01"]
     labels = {"loto": load_labels_from(_label_frame("loto", days), tmp_path, "loto")}
     frame = pd.DataFrame(
@@ -415,7 +346,6 @@ def test_backfill_skips_days_it_cannot_score_instead_of_guessing(
 
 
 def test_backfill_rejects_invalid_labels(tmp_path: Path) -> None:
-    """Nhãn không đủ 100 số, không nhị phân, hoặc Đặc Biệt nhiều hơn một số trúng."""
     short = _label_frame("loto", ["2026-03-01"]).head(50)
     assert load_labels_from(short, tmp_path / "a", "loto") == {}
 
@@ -430,29 +360,17 @@ def test_backfill_rejects_invalid_labels(tmp_path: Path) -> None:
 
 
 def test_brier_convention_mismatch_is_detected_without_a_hardcoded_date() -> None:
-    """``categorical_brier`` từng dùng mean thay vì sum, lệch đúng 100 lần.
-
-    Chia baseline quy ước mới cho điểm mô hình quy ước cũ cho kỹ năng ~+99% —
-    mô hình trông vượt trội ngoạn mục vì lệch đơn vị. Bất biến phát hiện: với Đặc Biệt,
-    ``p = exp(-logloss)`` nên Brier theo quy ước sum bắt buộc ``>= (1 - p)^2``.
-    """
-    logloss = 4.614117  # một ngày Đặc Biệt thật trong lịch sử kho
+    logloss = 4.614117
     winner = float(np.exp(-logloss))
     correct = (1.0 - winner) ** 2 + 99 * (0.01**2)
 
     assert brier_is_comparable("de", logloss, correct)
     assert not brier_is_comparable("de", logloss, correct / 100)
-    # LOTO chưa từng đổi quy ước nên không bị chặn.
     assert brier_is_comparable("loto", 0.5478, 0.1826)
     assert not brier_is_comparable("de", float("nan"), correct)
 
 
 def test_backfill_leaves_brier_blank_when_conventions_disagree(tmp_path: Path) -> None:
-    """Bỏ trống trung thực hơn một con số +99% do lệch đơn vị.
-
-    LogLoss không dùng chung quy ước đó nên vẫn phải được điền — đây mới là cột
-    cổng báo động đọc.
-    """
     days = ["2026-03-01"]
     labels = {"de": load_labels_from(_label_frame("de", days), tmp_path, "de")}
     frame = pd.DataFrame(
@@ -460,7 +378,7 @@ def test_backfill_leaves_brier_blank_when_conventions_disagree(tmp_path: Path) -
             "mode": ["de"],
             "target_date": days,
             "logloss": [4.614117],
-            "brier": [0.009902],  # quy ước mean cũ
+            "brier": [0.009902],
         }
     )
     filled, count, skipped = backfill(frame, labels)
@@ -472,11 +390,6 @@ def test_backfill_leaves_brier_blank_when_conventions_disagree(tmp_path: Path) -
 
 
 def test_repository_history_carries_no_fabricated_skill() -> None:
-    """Chốt chặn trên dữ liệu đã ghi: không cột kỹ năng nào được vượt ngưỡng vô lý.
-
-    Một mô hình xổ số hơn đường cơ sở vài chục phần trăm là dấu hiệu lỗi đo, không
-    phải thành tích. Ngưỡng +50% rộng hơn mọi dao động thật nhiều lần.
-    """
     history = ROOT / "data/evaluation/prob_eval/ensemble_history.csv"
     if not history.exists():
         pytest.skip("kho chưa có lịch sử đánh giá")
@@ -490,7 +403,6 @@ def test_repository_history_carries_no_fabricated_skill() -> None:
 
 
 def test_backfilled_history_activates_the_production_gate() -> None:
-    """Sau khi sinh lại, cổng phải chấm được thật chứ không còn bỏ qua."""
     history = ROOT / "data/evaluation/prob_eval/ensemble_history.csv"
     if not history.exists():
         pytest.skip("kho chưa có lịch sử đánh giá")

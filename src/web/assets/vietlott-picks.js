@@ -1,4 +1,3 @@
-/* Bộ số nháp chạy trên thiết bị, không ghi sổ dự báo hoặc gửi giao dịch. */
 (() => {
   "use strict";
   document.querySelectorAll("[data-vl-picks]").forEach(board => {

@@ -36,42 +36,14 @@ def test_release_checks_do_not_use_fixed_shared_temporary_files() -> None:
     assert '"$TMP_PRED/production-audit-release.json"' in release_check
 
 
-#: Các cống HTML: chuỗi đi qua chúng được trình duyệt PHÂN TÍCH thành thẻ,
-#: nên một ký tự lọt vào từ dữ liệu có thể thành mã đánh dấu. Mã dựng DOM phải
-#: đi bằng ``createElement`` + ``textContent``.
 DOM_SINKS = (".innerHTML", ".outerHTML", "insertAdjacentHTML", "document.write")
 
 
 def dom_sinks_in(source: str) -> list[str]:
-    """Các cống HTML mà ``source`` có nhắc tới.
-
-    Args:
-        source: Nội dung một tệp kịch bản, trang, hay trình dựng.
-
-    Returns:
-        Tên các cống tìm thấy, theo thứ tự đã khai trong ``DOM_SINKS``.
-    """
     return [sink for sink in DOM_SINKS if sink in source]
 
 
 def files_scanned_for_dom_sinks() -> list[Path]:
-    """Mọi tệp mà luật cấm cống HTML áp lên.
-
-    ``docs/**/*.js`` phải có mặt riêng, không thể dựa vào ``src``: ba tệp
-    trong ``docs/assets/`` (``matrix-virt.js``, ``apply-data-styles.js``,
-    ``css-async.js``) KHÔNG có bản
-    nguồn nào dưới ``src``, mà trang sinh ra vẫn nạp chúng. Quét mỗi ``src``
-    và ``docs/*.html`` thì một cống thêm vào bất kỳ tệp nào trong số đó vẫn
-    để phép kiểm XANH — đúng thứ mà tên phép kiểm hứa là không xảy ra.
-
-    Engine Vietlott ``vietlott/`` cũng nằm trong kho: trang riêng
-    của nó dựng bằng ``scripts/build_site.py`` + ``scripts/site_assets/*.js``.
-    Bản chép đầu tiên mang bốn cống trong ``dashboard.js`` mà CodeQL bắt được
-    còn phép kiểm này không, vì nó chỉ quét ``src`` và ``docs``.
-
-    Returns:
-        Kịch bản trình duyệt, trình dựng Python, và trang đã xuất bản.
-    """
     engine = ROOT / "vietlott"
     return sorted(
         {
@@ -88,12 +60,6 @@ def files_scanned_for_dom_sinks() -> list[Path]:
 
 
 def test_the_dom_sink_rule_itself_catches_a_sink() -> None:
-    """Ghim chính LUẬT trên mẫu dựng sẵn.
-
-    Phép kiểm dưới đây quét một tập tệp tìm bằng ``rglob``. Nếu cách tìm ấy
-    hỏng — đổi thư mục, đổi đuôi — tập thành rỗng và phép kiểm vẫn XANH trong
-    khi nó không còn canh gì. Mẫu dựng sẵn ở đây không thể rỗng.
-    """
     assert dom_sinks_in('box.innerHTML = "<b>x</b>";') == [".innerHTML"]
     assert dom_sinks_in("el.outerHTML = s;") == [".outerHTML"]
     assert dom_sinks_in('el.insertAdjacentHTML("beforeend", s);') == [
@@ -111,9 +77,6 @@ def test_the_dom_sink_rule_itself_catches_a_sink() -> None:
 def test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink() -> None:
     scanned = files_scanned_for_dom_sinks()
     names = {path.name for path in scanned}
-    # Tập quét phải chứa đúng những tệp từng vi phạm, cộng các trình dựng mà
-    # bản cũ của phép kiểm này soi. Ghim tên để một lần đổi thư mục không lặng
-    # lẽ thu tập về rỗng — tập rỗng là phép kiểm không thể đỏ.
     assert {
         "stat_pages.js",
         "frequency_bento.js",
@@ -123,11 +86,9 @@ def test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink() -> N
         "build_statistics_dashboard.py",
         "build_stat_pages.py",
         "live.html",
-        # Ba tệp kịch bản bảo trì không có bản nguồn dưới `src`.
         "matrix-virt.js",
         "apply-data-styles.js",
         "css-async.js",
-        # Trang riêng của engine Vietlott.
         "dashboard.js",
         "build_site.py",
     } <= names, sorted(names)
@@ -146,16 +107,12 @@ LOCAL_CLOCK_GETTERS = re.compile(r"\.(?:getDay|getDate|getMonth|getFullYear|getH
 
 
 def local_clock_reads_in(source: str) -> list[str]:
-    """Các lời gọi đọc lịch theo đồng hồ MÁY NGƯỜI XEM, bỏ qua chú thích ``//`` và ``/* … */``."""
     code = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
     code = "\n".join(line.split("//", 1)[0] if "://" not in line else line for line in code.splitlines())
     return LOCAL_CLOCK_GETTERS.findall(code)
 
 
 def test_no_browser_script_reads_the_calendar_from_the_viewer_clock() -> None:
-    """Lịch quay theo giờ Việt Nam. `getDay()`, `getMonth()`… đọc theo múi giờ máy người xem: bộ lọc «Thứ hai»
-    từng trả toàn kỳ Chủ nhật ở `America/Los_Angeles`, và bảng «Đặc Biệt theo năm» chọn sẵn tháng trước
-    vào tối 31 ở bờ Tây nước Mỹ (15-11-2026). Dùng `Date.UTC`/`getUTC*` hoặc `Intl` với `Asia/Ho_Chi_Minh`."""
     scanned = sorted({*(ROOT / "src").rglob("*.js"), *(ROOT / "docs").rglob("*.js"),
                       *(ROOT / "worker").rglob("*.js")} - set((ROOT / "worker").rglob("node_modules/**/*.js")))
     assert {"stat_pages.js", "live-scorecard.js", "shared_results.js"} <= {path.name for path in scanned}
@@ -199,7 +156,7 @@ def test_duplicate_dates_in_canonical_json_fail_closed(tmp_path: Path) -> None:
     )
     lottery = Lottery(
         paths=RepoPaths(root=tmp_path, data_dir=data_dir, images_dir=tmp_path / "images"),
-        http=object(),  # type: ignore[arg-type]
+        http=object(),
         sources=[],
     )
     with pytest.raises(ValueError, match="duplicate draw dates"):
@@ -210,7 +167,6 @@ _RUN_EXPRESSION = re.compile(r"\$\{\{.*?\}\}", re.S)
 
 
 def _expressions_in_run_blocks(doc: dict) -> list[str]:
-    """Mọi biểu thức ``${{ }}`` nằm TRONG khối ``run:`` của một workflow đã đọc."""
     found = []
     for job_name, job in (doc.get("jobs") or {}).items():
         for index, step in enumerate(job.get("steps") or []):
@@ -220,7 +176,6 @@ def _expressions_in_run_blocks(doc: dict) -> list[str]:
 
 
 def test_the_run_block_expression_rule_itself_catches_an_interpolation() -> None:
-    """Ghim chính LUẬT trên mẫu dựng sẵn, để một lần đổi thư mục không thu tập quét về rỗng."""
     import yaml
 
     dangerous = yaml.safe_load(
@@ -233,10 +188,6 @@ def test_the_run_block_expression_rule_itself_catches_an_interpolation() -> None
 
 
 def test_no_workflow_substitutes_an_expression_into_a_run_block() -> None:
-    """Runner thay ``${{ }}`` vào văn bản lệnh TRƯỚC khi shell đọc nó, nên dấu nháy không bảo vệ gì:
-    một giá trị chứa ``"; lệnh; "`` trở thành lệnh. Mọi giá trị (đầu vào dispatch, đầu ra bước khác,
-    tên sự kiện) đi qua ``env:`` rồi được đọc là ``"$BIEN"`` — shell nhận nó làm dữ liệu. Đến
-    25-11-2026 còn tám chỗ thay thẳng (đều là giá trị do chính kho sinh ra); luật này giữ con số ấy ở 0."""
     import yaml
 
     workflows = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
@@ -338,7 +289,6 @@ def test_base_ml_pack_with_invalid_numeric_metadata_is_retrained(
 def test_base_ml_pack_trained_under_an_old_trust_policy_is_retrained(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Gói lưu ``model_trust`` theo luật cũ (sàn 0,35) không được dùng lại."""
     model_path = tmp_path / "ml_loto.joblib"
     model_path.touch()
     current = {

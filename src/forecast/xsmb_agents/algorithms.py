@@ -1,4 +1,3 @@
-"""Ba tác tử dùng cùng đặc trưng nhân quả, co Bayes và thẩm định thời gian."""
 from __future__ import annotations
 
 import warnings
@@ -16,7 +15,7 @@ from ml.ml_train import model_trust
 from forecast.online_learning import _posterior, _prob, proper_losses
 from core.xsmb_domain import baseline_rate
 
-if TYPE_CHECKING:   # chỉ để chú thích kiểu: engine nhập module này, nhập ngược lúc chạy là vòng
+if TYPE_CHECKING:
     from .engine import KnowledgeBaseManager
 
 LAYERS = ("statistical", "probabilistic", "pattern")
@@ -26,42 +25,25 @@ LABELS = {"statistical": "Tần suất · n-gram · nhịp",
           "constant": "Mức nền", "incumbent": "Xác suất đang công bố"}
 TRAIN_WINDOW = 240
 MIN_PATTERN_DRAWS = 90
-#: Định nghĩa đang chạy của tác tử mẫu hình. Sổ tiến cứu ``agents_<mode>.json`` ghi số này
-#: trên từng bản ghi mới (``agent_policy``); bản ghi cũ không có trường là định nghĩa 1 và
-#: KHÔNG bị viết lại — chúng là dự báo đã đóng băng.
-#:
-#: 1 (17-10-2026): trộn cố định ``0,8·nền + 0,2·mạng`` bất kể khối thẩm định nói gì.
-#: 2 (20-10-2026): ``trust = ml_train.model_trust(kỹ năng thẩm định)``, cùng luật mọi thành
-#:    phần ML của kho — không có kỹ năng thì không tin. Ba kỳ đầu của sổ, mạng Đặc Biệt có
-#:    logloss thẩm định 4,6146 / 4,6121 / 4,6112, đều kém mức nền log 100 = 4,6052, mà vẫn
-#:    được trộn 20%.
 AGENT_POLICY = 2
 
 
 @dataclass(frozen=True)
 class EnsembleResult:
-    """Các xác suất và chứng cứ tính toán tại thời điểm dự báo."""
     probabilities: dict[str, np.ndarray]
     diagnostics: dict
 
 
 def feasible(mode: str, values: np.ndarray) -> np.ndarray:
-    """Một phép chốt chuẩn của kho, giữ biên LOTO và số 0 đầu."""
     return _prob(mode, finalize_blend(np.asarray(values, dtype=float), mode))
 
 
 class AlgorithmEnsemble:
-    """Thống kê cấp tiên nghiệm cho xác suất và đặc trưng cho mạng mẫu hình."""
 
     def __init__(self, knowledge: KnowledgeBaseManager) -> None:
         self.knowledge = knowledge
 
     def temporal_features(self, mode: str) -> tuple[np.ndarray, np.ndarray]:
-        """X[t] chỉ dùng Y[:t]; trả các kỳ học gần nhất và kỳ dự báo ở cuối.
-
-        N-gram độ dài hai và Markov chỉ tính trên ngày lịch liên tiếp. Độ
-        gan đo bằng kỳ quay, không giả rằng nghỉ lễ là một lần trượt.
-        """
         y = self.knowledge.outcomes[mode]
         n = len(y)
         csum = np.vstack([np.zeros((1, 100)), y.cumsum(axis=0)])
@@ -81,14 +63,12 @@ class AlgorithmEnsemble:
                 last[y[t] > 0] = t
         analog = np.array([self.knowledge.analog_probability(mode, int(t)) for t in indices])
         blocks = [*rates, y[indices - 1], y[indices - 2], heat[indices], analog]
-        # Đồng nhất đặc trưng số qua các kỳ, không học một tham số tự do/con.
         numbers = np.arange(100)
         blocks += [np.broadcast_to(numbers // 10 / 9, rates[0].shape),
                    np.broadcast_to(numbers % 10 / 9, rates[0].shape)]
         return np.stack(blocks, axis=2), indices
 
     def statistical(self, mode: str) -> tuple[np.ndarray, dict]:
-        """Bayes ba cửa sổ, n-gram trạng thái và hazard đã co về tiên nghiệm."""
         y = self.knowledge.outcomes[mode]
         base = np.full(100, baseline_rate(mode))
         priors = [_posterior(mode, y[-w:].sum(axis=0), min(w, len(y)), base)
@@ -101,8 +81,6 @@ class AlgorithmEnsemble:
             same = ((y[:-2] == y[-2]) & (y[1:-1] == y[-1]) &
                     (contiguous[:-1] & contiguous[1:])[:, None])
             ngram = _posterior(mode, (y[2:] * same).sum(axis=0), same.sum(axis=0), prior)
-        # Hazard theo nhóm độ gan tại thời điểm TRƯỚC từng nhãn; không tăng
-        # xác suất đơn giản chỉ vì một con đã lâu chưa xuất hiện.
         gaps = np.zeros_like(y)
         last = np.full(100, -1)
         for t in range(len(y)):
@@ -118,7 +96,6 @@ class AlgorithmEnsemble:
                    "cycle": "Hazard có co Bayes theo nhóm độ gan", "history_draws": len(y)}
 
     def probabilistic(self, mode: str, prior: np.ndarray) -> tuple[np.ndarray, dict]:
-        """Đồ thị trễ có hướng và Markov, chỉ trên cặp ngày liên tiếp."""
         y = self.knowledge.outcomes[mode]
         before, after = consecutive_next_pairs(self.knowledge.frame["date"])
         if not len(before):
@@ -145,12 +122,6 @@ class AlgorithmEnsemble:
                    "prior": "Tác tử thống kê", "shrinkage": 100}
 
     def pattern(self, mode: str) -> tuple[np.ndarray, dict]:
-        """Mạng hai tầng ẩn; L2 chọn bằng hậu tố thời gian của tập học.
-
-        Vector phát ra là ``trust·mạng + (1 − trust)·nền`` với
-        ``trust = ml_train.model_trust(s_logloss, s_brier)``, s là kỹ năng của mạng so với
-        nền trên 30 kỳ thẩm định cuối của tập học (định nghĩa ``AGENT_POLICY`` = 2).
-        """
         base = np.full(100, baseline_rate(mode))
         n = len(self.knowledge.frame)
         if n < MIN_PATTERN_DRAWS:
@@ -187,16 +158,11 @@ class AlgorithmEnsemble:
             scaler, model, _ = fit(alpha, train_x[:split], train_y[:split])
             trials.append((scored(predict(scaler, model, train_x[split:])), alpha))
         measured, alpha = min(trials, key=lambda row: (row[0]["logloss"], row[1]))
-        # Kỹ năng thẩm định so với NỀN trên đúng 30 kỳ ấy, rồi luật tin chung của kho: kém
-        # hơn trong logloss/Brier, trust = clip(20·s, 0, 1). Khối này cũng đã chọn α (hai
-        # ứng viên) nên s hơi lạc quan — lệch về phía TIN, không bao giờ về phía bịa tín hiệu.
         reference = scored(np.tile(base, (len(train_y) - split, 1)))
         skill = {name: (reference[name] - measured[name]) / reference[name] for name in measured}
         trust = model_trust(skill["logloss"], skill["brier"])
         scaler, model, converged = fit(alpha, train_x, train_y)
         raw = predict(scaler, model, features[-1:])[0]
-        # Không có kỹ năng thì không tin: trust = 0 phát đúng mức nền. Cổng tiến cứu chấm
-        # chính vector này, không vector thô.
         p = feasible(mode, trust * raw + (1.0 - trust) * base)
         return p, {"status": "fitted", "hidden_layers": [24, 12], "alpha": alpha,
                    "validation_draws": 30, "validation_logloss": measured["logloss"],
@@ -209,7 +175,6 @@ class AlgorithmEnsemble:
                    "validation_is_prospective": False}
 
     def predict(self, mode: str, incumbent: np.ndarray) -> EnsembleResult:
-        """Chạy ba tầng; tầng xác suất dùng tiên nghiệm từ tầng thống kê."""
         _prob(mode, incumbent)
         stat, stat_info = self.statistical(mode)
         graph, graph_info = self.probabilistic(mode, stat)

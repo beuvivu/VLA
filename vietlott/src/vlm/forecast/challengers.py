@@ -1,22 +1,3 @@
-"""Challenger cho Mega 6/45 và Power 6/55: luật k-trong-n học từ đặc trưng NHÂN QUẢ.
-
-Mọi challenger ở đây cho ra log-trọng số η (T, n) của luật conditional Bernoulli
-
-    P(S) = Π_{i∈S} wᵢ / e_k(w),  wᵢ = exp ηᵢ,
-
-nên mọi ràng buộc của trò chơi đúng theo cấu trúc: xác suất biên các số chính thuộc [0, 1] và
-cộng lại bằng k (không bằng 1), phân phối trên mọi bộ k số chuẩn hoá đúng, và số đặc biệt Power —
-rút từ n − k số còn lại của cùng lồng cầu — có P(b | S) = w_b / Σ_{i∉S} wᵢ, chấm RIÊNG.
-η = 0 chính là luật công bằng; hiệu chuẩn nhiệt độ (η ← τ·η, τ ≥ 0) giữ nguyên mọi ràng buộc ấy.
-
-Hai challenger:
-
-* ``shrink`` — tần suất có trọng số mũ, co Beta về k/n, rồi nhân nhiệt độ τ (τ < 0 là "số lạnh").
-* ``causal`` — conditional logit trên bốn nhóm đặc trưng (tần suất, gap/lag, lịch, đồng xuất hiện
-  trễ), phạt L2, học lại định kỳ trên cửa sổ mở rộng. Đặc trưng của kỳ t chỉ đọc các kỳ trước t
-  và thứ trong tuần của kỳ t (biết trước theo lịch quay).
-"""
-
 from __future__ import annotations
 
 from math import lgamma, log
@@ -52,17 +33,7 @@ def _check_draws(x: np.ndarray, k: int | None = None) -> tuple[np.ndarray, int]:
     return x, k
 
 
-# ============================================================================ đặc trưng nhân quả
 def causal_features(x: np.ndarray, weekdays: np.ndarray) -> np.ndarray:
-    """(T + 1, n, F) đặc trưng theo thứ tự ``FEATURES``; hàng t chỉ đọc kỳ 0..t − 1.
-
-    Args:
-        x: (T, n) kỳ đã quay, đúng k số mỗi kỳ.
-        weekdays: (T + 1,) thứ trong tuần 0..6 của từng kỳ, phần tử cuối là kỳ KẾ TIẾP.
-
-    Returns:
-        Hàng cuối là đặc trưng cho kỳ kế tiếp chưa quay.
-    """
     x, k = _check_draws(x)
     weekdays = np.asarray(weekdays)
     t_len, n = x.shape
@@ -79,8 +50,8 @@ def causal_features(x: np.ndarray, weekdays: np.ndarray) -> np.ndarray:
     prev2 = np.zeros(n)
     wd_count = np.zeros((7, n))
     wd_seen = np.zeros(7)
-    lag_pairs = np.zeros((n, n))   # lag_pairs[j, i]: j về ở kỳ s − 1 và i về ở kỳ s
-    lag_base = np.zeros(n)        # số lần j về ở một kỳ có kỳ kế tiếp
+    lag_pairs = np.zeros((n, n))
+    lag_base = np.zeros(n)
     out = np.empty((t_len + 1, n, len(FEATURES)))
     gap_mu, gap_sd = 1 / p0, np.sqrt(1 - p0) / p0
     for t in range(t_len + 1):
@@ -93,9 +64,9 @@ def causal_features(x: np.ndarray, weekdays: np.ndarray) -> np.ndarray:
         support = np.flatnonzero(prev > 0)
         if len(support):
             rates = (lag_pairs[support] + 20 * p0) / (lag_base[support][:, None] + 20)
-            lift = _logit(rates) - base                       # (m, n): j kỳ trước → i kỳ này
+            lift = _logit(rates) - base
             total = lift.sum(axis=0)
-            total[support] -= lift[np.arange(len(support)), support]   # bỏ "j = i": đó là lag1
+            total[support] -= lift[np.arange(len(support)), support]
             partners = np.full(n, len(support))
             partners[support] -= 1
             link = np.where(partners > 0, total / np.maximum(partners, 1), 0.)
@@ -125,13 +96,7 @@ def causal_features(x: np.ndarray, weekdays: np.ndarray) -> np.ndarray:
     return out
 
 
-# ============================================================================ luật conditional Bernoulli
 def cb_log_likelihood(eta: np.ndarray, x: np.ndarray, bonus: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
-    """log P(bộ số chính) và log P(số đặc biệt | bộ chính) mỗi kỳ dưới log-trọng số ``eta``.
-
-    Returns:
-        (main, bonus) — vectơ (T,); bonus bằng 0 khi không có số đặc biệt.
-    """
     x, k = _check_draws(x)
     eta = np.asarray(eta, dtype=float)
     if eta.shape != x.shape or not np.isfinite(eta).all():
@@ -151,22 +116,16 @@ def cb_log_likelihood(eta: np.ndarray, x: np.ndarray, bonus: np.ndarray | None =
 
 
 def fair_log_likelihood(n: int, k: int, bonus: bool) -> tuple[float, float]:
-    """Log-xác suất của MỘT kỳ dưới máy quay công bằng: (bộ chính, số đặc biệt)."""
     return -(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1)), (-log(n - k) if bonus else 0.)
 
 
 def cb_marginals(eta: np.ndarray, k: int) -> np.ndarray:
-    """Xác suất biên πᵢ của từng số chính; mỗi hàng cộng lại đúng bằng k."""
     eta = np.asarray(eta, dtype=float)
     w = np.exp(eta - eta.max(axis=-1, keepdims=True))
     return inclusion_probabilities(np.atleast_2d(w), k).reshape(eta.shape)
 
 
 def fit_conditional_logit(phi: np.ndarray, x: np.ndarray, l2: float, beta0: np.ndarray | None = None) -> np.ndarray:
-    """β cực đại log-likelihood conditional Bernoulli có phạt L2 (đặc trưng đã chuẩn hoá).
-
-    Gradient đúng của −(1/T)Σₜ[Σ_{i∈Sₜ} φₜᵢ·β − log e_k(e^{φₜβ})] là −(1/T)Σₜ[Σ_{i∈Sₜ}φₜᵢ − Σᵢ πₜᵢ φₜᵢ].
-    """
     x, k = _check_draws(x)
     phi = np.asarray(phi, dtype=float)
     if phi.ndim != 3 or phi.shape[:2] != x.shape or not np.isfinite(phi).all() or l2 < 0:
@@ -189,18 +148,12 @@ def fit_conditional_logit(phi: np.ndarray, x: np.ndarray, l2: float, beta0: np.n
 
 
 def standardize(phi: np.ndarray, rows: slice) -> tuple[np.ndarray, np.ndarray]:
-    """Độ lệch chuẩn từng đặc trưng tính CHỈ trên các hàng huấn luyện ``rows`` (gộp mọi số)."""
     scale = phi[rows].reshape(-1, phi.shape[2]).std(axis=0)
     return np.where(scale > 1e-12, scale, 1.0), np.asarray(scale > 1e-12)
 
 
 def causal_walk_forward(phi: np.ndarray, x: np.ndarray, columns: list[int], l2: float,
                         start: int, end: int, refit_every: int, fit_from: int = 0) -> np.ndarray:
-    """η cho các kỳ start..end − 1; hệ số học lại mỗi ``refit_every`` kỳ trên mọi kỳ TRƯỚC điểm học lại.
-
-    Đặc trưng hàng t đã nhân quả; học lại ở kỳ r chỉ dùng kỳ fit_from..r − 1, nên nhãn của một kỳ
-    chỉ ảnh hưởng các kỳ sau nó.
-    """
     if not 0 <= fit_from < start < end <= len(x) or refit_every < 1 or not columns:
         raise ValueError('Ranh giới walk-forward không hợp lệ')
     eta = np.zeros((end - start, x.shape[1]))
@@ -215,9 +168,7 @@ def causal_walk_forward(phi: np.ndarray, x: np.ndarray, columns: list[int], l2: 
     return eta
 
 
-# ============================================================================ challenger co về công bằng
 def shrink_scores(x: np.ndarray, half_life: float | None, prior: float) -> np.ndarray:
-    """(T + 1, n): logit tần suất (mũ hoá theo nửa đời, None = toàn lịch sử) co Beta về k/n, trước kỳ t."""
     x, k = _check_draws(x)
     p0 = k / x.shape[1]
     xf = x.astype(float)
@@ -237,7 +188,6 @@ def shrink_scores(x: np.ndarray, half_life: float | None, prior: float) -> np.nd
 
 def fit_temperature(eta: np.ndarray, x: np.ndarray, bonus: np.ndarray | None = None,
                     bounds: tuple[float, float] = (0.0, 2.0)) -> float:
-    """τ cực đại log-likelihood của luật η·τ trên các kỳ ĐÃ CHO (hiệu chuẩn, giữ ràng buộc trò chơi)."""
     def loss(tau: float) -> float:
         main, extra = cb_log_likelihood(tau * eta, x, bonus)
         return float(-(main + extra).mean())

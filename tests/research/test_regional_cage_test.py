@@ -1,5 +1,3 @@
-"""Phép kiểm tiến cứu độ lệch theo lồng: hợp lệ khi không có gì, nhạy khi có thật, và sổ không bị viết lại."""
-
 from __future__ import annotations
 
 import json
@@ -23,7 +21,6 @@ def _station(rows: list[dict[str, str]]) -> rs.StationHistory:
 
 
 def _summary(region: str, stations: list[rs.StationHistory], flagged: dict[str, float]) -> dict:
-    """Bản tóm tắt tối thiểu: mỗi đài một phép ``cage_uniformity`` với q cho trước (mặc định 0,5)."""
     return {
         "data_through": max(s.dates[-1] for s in stations),
         "tests": {"per_station": [
@@ -42,7 +39,6 @@ def test_the_frozen_law_is_a_shrunk_distribution_per_cage() -> None:
     counts = rs.cage_table(station.digits)
     assert law[0, 6] == pytest.approx((counts[0, 6] + 5.0) / (counts[0].sum() + 50.0), abs=1e-12)
     assert law[0, 6] < 0.06 < 0.1 < law[0, 0]
-    # Lồng trăm nghìn chỉ có 50 quan sát: 50 quan sát giả kéo nó về gần đều.
     assert np.abs(law[5] - 0.1).max() < np.abs(counts[5] / counts[5].sum() - 0.1).max()
 
 
@@ -55,7 +51,6 @@ def test_log_evidence_is_the_sum_of_log_likelihood_ratios_over_all_82_digits() -
 
 
 def test_one_draw_of_evidence_has_expectation_exactly_one_under_a_fair_machine() -> None:
-    """E[e] = Π_vị trí Σ_chữ số 0,1 · (luật/0,1) = Π Σ luật = 1: tính CHÍNH XÁC, không mô phỏng."""
     law = np.array(ct.frozen_law(_station(station_rows("mn", "Đài Lệch", 40, np.random.default_rng(3),
                                                        law=biased_law(BIAS)))))
     per_position = np.array([sum(0.1 * law[c, d] / 0.1 for d in range(10)) for c in CAGE_OF_DIGIT])
@@ -64,7 +59,6 @@ def test_one_draw_of_evidence_has_expectation_exactly_one_under_a_fair_machine()
 
 
 def test_a_fair_machine_rarely_ever_crosses_the_threshold() -> None:
-    """Ville: P(e từng ≥ 1/α) ≤ α, dù nhìn sau mỗi kỳ. Đo với α = 0,05 trên 3 000 đài công bằng."""
     law = np.log(biased_law(BIAS, share=0.05) * 10.0)
     cages = np.array(CAGE_OF_DIGIT)
     rng = np.random.default_rng(4)
@@ -72,7 +66,7 @@ def test_a_fair_machine_rarely_ever_crosses_the_threshold() -> None:
     paths = np.cumsum(law[cages, digits].sum(axis=2), axis=1)
     crossed = (paths.max(axis=1) >= math.log(1 / 0.05)).mean()
     assert crossed <= 0.05
-    assert np.median(paths[:, -1]) < 0  # luật đối sai thì bằng chứng trôi về 0
+    assert np.median(paths[:, -1]) < 0
 
 
 def test_a_truly_biased_machine_is_confirmed_within_a_few_draws(tmp_path: Path) -> None:
@@ -109,7 +103,7 @@ def test_only_draws_after_registration_are_scored_and_never_twice() -> None:
     registry = {"registrations": []}
     ct.register(registry, {"mn": _summary("mn", [station], {"Đài Lệch": 0.001})}, {"mn": [station]})
     ledger: list[dict[str, str]] = []
-    assert ct.score(registry, ledger, {"mn": [station]}) == []  # chưa có kỳ nào sau ngày đăng ký
+    assert ct.score(registry, ledger, {"mn": [station]}) == []
     (row,) = ct.status(registry, ledger)
     assert row["draws_scored"] == 0 and "chưa có kỳ mới nào để chấm" in ct.reading(row)
 
@@ -130,11 +124,10 @@ def test_registration_happens_once_and_is_never_rewritten() -> None:
     summaries = {"mn": _summary("mn", [station], {"Đài Lệch": 0.001}), "mt": _summary("mt", fair, {})}
     stations = {"mn": [station], "mt": fair}
     added = ct.register(registry, summaries, stations)
-    assert [e["province"] for e in added] == ["Đài Lệch"]  # đài không bị gắn cờ không được đăng ký
+    assert [e["province"] for e in added] == ["Đài Lệch"]
     assert added[0]["family"] == 3 and added[0]["threshold"] == 3 / ct.ALPHA
     frozen = json.dumps(registry, sort_keys=True)
 
-    # Thêm kỳ mới rồi gắn cờ lại: luật đối KHÔNG được tính lại trên dữ liệu đã thấy kỳ sau đăng ký.
     grown = _station(history + station_rows("mn", "Đài Lệch", 5, rng, start_week=40))
     again = ct.register(registry, {"mn": _summary("mn", [grown], {"Đài Lệch": 1e-9}), "mt": summaries["mt"]},
                         {"mn": [grown], "mt": fair})
@@ -165,7 +158,6 @@ def test_run_registers_from_the_real_summary_then_appends_without_touching_old_l
     assert ledger_path.read_text(encoding="utf-8") == ",".join(ct.FIELDS) + "\n"
     frozen = json.dumps(registry["registrations"], sort_keys=True)
 
-    # Hai kỳ mới của đài lệch: sổ nối thêm hai dòng, dòng tiêu đề và đăng ký giữ nguyên.
     more = station_rows("mn", "Đài Lệch", 2, rng, weekday=5, law=biased_law(BIAS), start_week=40)
     write_region(tmp_path, "mn", fair + biased + more)
     rs.run(tmp_path, simulations=120)
@@ -182,12 +174,11 @@ def test_run_registers_from_the_real_summary_then_appends_without_touching_old_l
     ct.run(tmp_path)
     after_three = ledger_path.read_text(encoding="utf-8")
     assert after_three.startswith(after_two) and after_three.count("\n") == 4
-    ct.run(tmp_path)  # chạy lại trên cùng dữ liệu: không dòng nào thêm, không byte nào đổi
+    ct.run(tmp_path)
     assert ledger_path.read_text(encoding="utf-8") == after_three
 
 
 def test_the_committed_registry_is_frozen_before_any_draw_it_scores() -> None:
-    """Đăng ký đã commit: mỗi dòng sổ phải là kỳ SAU ngày đóng băng, và luật đối là một phân phối."""
     root = Path(__file__).resolve().parents[2]
     registry = json.loads((root / "data" / ct.REGISTRY).read_text(encoding="utf-8"))
     assert registry["registrations"], "sổ miền đã commit có đài bị gắn cờ: phải có đăng ký"

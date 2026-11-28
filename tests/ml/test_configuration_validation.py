@@ -42,7 +42,7 @@ def test_feature_params_reject_invalid_values() -> None:
 
 def test_ml_feature_builder_rejects_unknown_mode_before_loading_data() -> None:
     with pytest.raises(ValueError, match="mode"):
-        build_ml_table("unknown", FeatureParams())  # type: ignore[arg-type]
+        build_ml_table("unknown", FeatureParams())
 
 
 @pytest.mark.parametrize(

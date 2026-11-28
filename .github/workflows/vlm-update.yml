@@ -1,12 +1,5 @@
 name: VLM · Cập nhật dữ liệu, dự báo và trang Vietlott
 
-# Chép từ VLM (.github/workflows/update.yml), chạy engine trong `vietlott/`.
-# Hai lần mỗi ngày (giờ Việt Nam). Cron của GitHub có thể trễ vài giờ; bước ghi sổ tự kiểm tra
-# lịch quay và chỉ ghi dự báo cho kỳ CHƯA quay (vietlott/README.md mục 1.9).
-#   22:40 — sau kỳ Lotto 21:00 và khi Keno/Bingo18 đã quay xong ngày: dự báo cho các kỳ ngày mai.
-#   10:10 — trước kỳ Lotto 13:00 và các kỳ 18:00.
-#
-# Khác bản gốc: KHÔNG triển khai GitHub Pages (xem vlm-results.yml).
 on:
   schedule:
     - cron: "40 15 * * *"
@@ -45,9 +38,6 @@ jobs:
       - name: Cài gói
         run: python -m pip install -e .
 
-      # Kho kết quả, kỳ đã đồng bộ và trạng thái bộ dự báo được giữ giữa các lần chạy bằng cache.
-      # Mất cache cũng không sao: bước sau dựng lại từ dữ liệu đi kèm + nguồn, và bộ dự báo học lại
-      # cho đúng kết quả cũ (học tăng dần = học một lần). Sổ dự báo và journal kết quả nằm trong repo.
       - name: Đồng bộ main mới nhất trước khi cập nhật
         run: python scripts/persist_site.py sync
 

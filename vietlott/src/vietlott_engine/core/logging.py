@@ -1,5 +1,3 @@
-"""Structured logging configuration (plain text for humans, JSON for containers)."""
-
 from __future__ import annotations
 
 import json
@@ -11,7 +9,6 @@ _CONFIGURED = False
 
 
 class JsonFormatter(logging.Formatter):
-    """One JSON object per line; extra fields passed via ``extra={...}`` are kept."""
 
     _RESERVED = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message", "asctime"}
 
@@ -29,7 +26,6 @@ class JsonFormatter(logging.Formatter):
 
 
 def configure_logging(level: str = "INFO", json_logs: bool = False) -> None:
-    """Idempotently configure the root logger."""
     global _CONFIGURED
     root = logging.getLogger()
     root.setLevel(level.upper())

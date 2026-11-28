@@ -6,7 +6,7 @@ import pytest
 from ml import cau_keo_ml
 from ml.cau_keo_feature_groups import ALL_DOMAIN_FEATURES, augment_domain_features
 from ml.cau_keo_ml import FEATURE_COLS, CauKeoConfig
-from core.xsmb_domain import FIELD_WIDTHS  # nguồn gốc, không qua re-export
+from core.xsmb_domain import FIELD_WIDTHS
 
 
 class _FakeLottery:
@@ -50,7 +50,7 @@ def _build(
     fake = _FakeLottery(raw, two_digits)
     monkeypatch.setattr(cau_keo_ml, "Lottery", lambda: fake)
     frame, target = cau_keo_ml.build_cau_keo_feature_frame(
-        mode,  # type: ignore[arg-type]
+        mode,
         include_target=True,
         config=CauKeoConfig(
             min_history_days=20,
@@ -96,7 +96,6 @@ def test_future_result_mutation_cannot_change_earlier_domain_features(
 def test_feature_frame_built_once_equals_concatenated_anchor_frames(
     monkeypatch: pytest.MonkeyPatch, mode: str, include_target: bool
 ) -> None:
-    """Dựng khung đặc trưng một lần phải ra ĐÚNG giá trị và kiểu như nối từng khung 100 hàng."""
     raw, two_digits = _history(80)
     config = CauKeoConfig(min_history_days=20, lag_max_for_path_support=3, window_days=2_000, top=10)
     fast, fast_target = cau_keo_ml.build_cau_keo_feature_frame(

@@ -1,5 +1,3 @@
-"""Hồi quy vòng đời pack: lỗi học/ghi không được phá bản đương nhiệm."""
-
 import logging
 import lzma
 import zlib
@@ -207,8 +205,6 @@ def test_distribution_with_large_finite_values_remains_normalized():
 
 
 def test_retraining_on_another_cpu_keeps_the_committed_model(tmp_path, monkeypatch):
-    """Lượt chạy lại 06-11 và 09-11-2026 trên runner khác CPU ghi lại cả hai `ml_<mode>.joblib`: `log1p` float32
-    lệch một ULP, ngưỡng bin lệch 10⁻⁸, mà dự báo trùng. Bước học phải so DỰ BÁO và giữ tệp cũ."""
     rng = np.random.default_rng(11)
     days = pd.date_range("2024-01-01", periods=300)
     rows = len(days) * 6
@@ -230,6 +226,6 @@ def test_retraining_on_another_cpu_keeps_the_committed_model(tmp_path, monkeypat
     monkeypatch.setattr(ml_train, "build_ml_table", lambda **kwargs: (shifted.copy(), labels))
     ml_train.train_one("loto", tmp_path, window_days=300)
     assert model_path.read_bytes() == committed
-    monkeypatch.setattr(ml_train, "build_ml_table", lambda **kwargs: (frame.copy(), 1 - labels))   # dữ liệu khác
+    monkeypatch.setattr(ml_train, "build_ml_table", lambda **kwargs: (frame.copy(), 1 - labels))
     ml_train.train_one("loto", tmp_path, window_days=300)
     assert model_path.read_bytes() != committed

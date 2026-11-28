@@ -21,7 +21,7 @@ def test_frequency_separates_occurrences_from_draws_and_two_nhay() -> None:
     history = _sparse(4)
     history.loc[0, 5] = 2
     history.loc[2, 5] = 1
-    history.loc[3, 5] = 9  # target-day result must be excluded
+    history.loc[3, 5] = 9
 
     row = compute_frequency_stats(history, "2026-01-04").set_index("number").loc[5]
 
@@ -81,11 +81,10 @@ def test_head_tail_total_and_cham_use_canonical_memberships() -> None:
 
 
 def test_group_gaps_treat_any_member_as_a_hit() -> None:
-    """Nhóm đầu 1 "về" khi bất kỳ con 10–19 nào về: gan nhóm là gan của cột hợp."""
     history = _sparse(10)
     history.loc[[0, 6], 12] = 1
     history.loc[3, 19] = 2
-    history.loc[[1, 8], 31] = 1  # đuôi 1, không thuộc đầu 1
+    history.loc[[1, 8], 31] = 1
     as_of = "2026-01-11"
 
     head = compute_group_gap_stats(history, as_of, group="head").set_index("value").loc[1]

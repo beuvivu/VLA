@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
 
-"""Export the canonical 00..99 ontology used by VLA."""
 
 import argparse
 import json

@@ -1,5 +1,3 @@
-"""Lưu mã hiệu Đặc Biệt theo kỳ; không suy mã từ ngày hoặc kỳ liền trước."""
-
 from __future__ import annotations
 
 import argparse
@@ -24,7 +22,6 @@ CACHE = Path("data/draw_metadata.json")
 
 
 def station_for_date(value: str) -> str:
-    """Tên đài theo lịch có hiệu lực ngày ấy (``core.xsmb_schedule``), không phụ thuộc múi giờ máy dựng."""
     return venue_for(value)
 
 
@@ -35,7 +32,6 @@ def _valid_codes(values: object) -> bool:
 
 
 def parse_draw_metadata(page: str, selected_date: date, expected_special: str) -> dict | None:
-    """Chỉ nhận mã trong đúng khối ngày và khi Đặc Biệt khớp lịch sử thật."""
     soup = BeautifulSoup(page, "lxml")
     block = soup.find(id=f"kqngay_{selected_date:%d%m%Y}_kq")
     if block is None:
@@ -63,7 +59,6 @@ def _read_cache(repo_root: Path) -> dict:
 
 
 def load_draw_metadata(repo_root: Path) -> dict[str, dict]:
-    """Chỉ đưa chú thích còn khớp kết quả vào giao diện, không lộ nguồn nội bộ."""
     results = load_special_results(repo_root)
     out = {}
     for key, item in _read_cache(repo_root).items():
@@ -76,7 +71,6 @@ def load_draw_metadata(repo_root: Path) -> dict[str, dict]:
 
 
 def refresh_draw_metadata(repo_root: Path, *, http=None, selected_date: date | None = None) -> bool:
-    """Cập nhật kỳ đã có kết quả; mất mạng giữ nguyên sổ mã đã xác nhận."""
     results = load_special_results(repo_root)
     if not results:
         return False

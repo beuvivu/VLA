@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Falsification-oriented diagnostics for historical XSMB data.
-
-The goal is not to manufacture predictive signals.  The battery asks whether
-commonly claimed structure (weekday effects, serial dependence, lô-rơi effects,
-frequency imbalance) survives tests that preserve important properties of the
-observed draws.  Multiple p-values are FDR-adjusted before interpretation.
-"""
 
 import argparse
 import json
@@ -92,8 +85,6 @@ def _transition_repeat_test(hit: np.ndarray, *, permutations: int, seed: int) ->
 
     observed = effect(prev, nxt)
     rng = np.random.default_rng(seed)
-    # Circular shifts preserve each day's 100-number cross-sectional structure
-    # and most of the target series' temporal texture while breaking t -> t+1.
     possible = np.arange(2, max(3, len(nxt) - 1))
     if len(possible) == 0:
         return {"effect": observed, "p_value": float("nan")}
@@ -170,8 +161,6 @@ def build_report(two: pd.DataFrame, sparse: pd.DataFrame, *, permutations: int =
     all_counts = (sparse.drop(columns=["date"]).to_numpy(dtype=int)).sum(axis=0).astype(int)
 
     de_chi = stats.chisquare(de_counts)
-    # For all-prize endings, expected counts are equal under exchangeability of
-    # the 00..99 suffix labels; duplicates within a draw are retained.
     loto_chi = stats.chisquare(all_counts)
     runs_z, runs_p = _runs_test(de)
     weekday = _weekday_test(two["date"], de % 10, permutations=permutations, seed=seed)
@@ -203,7 +192,7 @@ def build_report(two: pd.DataFrame, sparse: pd.DataFrame, *, permutations: int =
         "weekday_test": weekday,
         "loto_repeat_test": repeat,
         "coverage": _coverage_summary(hit),
-        "acf_significant_lags_fdr05": acf.loc[acf.get("fdr_05", False) == True, "lag"].astype(int).tolist() if not acf.empty else [],  # noqa: E712
+        "acf_significant_lags_fdr05": acf.loc[acf.get("fdr_05", False) == True, "lag"].astype(int).tolist() if not acf.empty else [],
         "interpretation": (
             "These are historical falsification diagnostics. Failing to reject randomness does not prove randomness; "
             "rejecting a null does not by itself establish exploitable future predictability."

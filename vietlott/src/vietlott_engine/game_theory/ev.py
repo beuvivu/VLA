@@ -1,22 +1,3 @@
-"""Expected-value engine and Anti-Popularity ticket optimiser.
-
-EV of one play (after tax), with J₁ the jackpot and K the number of *other*
-winning tickets on the same combination:
-
-    EV = Σ_fixed P(tier)·net(prize) + P(jackpot)·E_K[ net(J₁ / (1 + K)) ]
-
-K ~ Poisson(λ), λ = N·p(c): N tickets sold to others, p(c) the population
-probability of the combination (``PopularityModel``). For Power 6/55 Jackpot 2 the
-co-winners are the six tickets "5 main numbers + bonus"; we use
-λ₂ = N·(p(c) + 5/C(n,k)) — our own combination's popularity plus five average
-neighbours.
-
-Win probabilities do not depend on the combination, so maximising EV is exactly
-minimising λ: the optimiser searches for *unpopular* combinations. It cannot make
-EV positive unless the jackpot is large enough; ``break_even_jackpot`` says how
-large.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -57,12 +38,10 @@ class EVBreakdown(BaseModel):
 
 
 def expected_net_share(pot: float, lam: float, tax: TaxRule) -> float:
-    """E[ net(pot / (1 + K)) ], K ~ Poisson(lam) — exact summation of the pmf."""
     if lam <= 0:
         return tax.after_tax(pot)
-    if lam > 1e8:  # share concentrated at pot/(1+λ) (relative spread 1/√λ): E[1/(1+K)] = (1 − e^−λ)/λ
+    if lam > 1e8:
         return tax.after_tax(pot * (1.0 - np.exp(-lam)) / lam)
-    # window holding all but ~1e-12 of the mass on each side: O(√λ) terms, not O(λ)
     if lam < 1e3:
         kmin, kmax = 0, int(stats.poisson.ppf(1 - 1e-12, lam)) + 2
     else:
@@ -76,9 +55,6 @@ def expected_net_share(pot: float, lam: float, tax: TaxRule) -> float:
 
 
 class EVCalculator:
-    """EV of one play. ``sales`` (a fitted ``SalesModel``) makes ticket sales respond to
-    the jackpot when ``tickets_sold`` is not given — essential for break-even analysis,
-    because a bigger jackpot attracts more co-winners."""
 
     DEFAULT_SOLD = 1_500_000
 
@@ -131,7 +107,6 @@ class EVCalculator:
         cap = self.spec.jackpot_cap
         j2_eff = j2
         if cap and j2 is not None and j1 > cap:
-            # Power 300-tỷ rule: if JP2 is won and JP1 is not, JP2 also receives JP1 − cap
             j2_eff = j2 + (j1 - cap) * float(np.exp(-sold / self.spec.main_combinations))
         tiers: list[TierEV] = []
         ev = 0.0
@@ -184,12 +159,6 @@ class EVCalculator:
     def break_even_jackpot(
         self, ticket: tuple[int, ...] | list[int], jackpot2: float | None = None, tickets_sold: int | None = 1_500_000, upper: float = 1e14, special: int | None = None
     ) -> float | None:
-        """Lowest Jackpot 1 at which EV = ticket price (None if not reached below ``upper``).
-
-        With ``tickets_sold=None`` and a sales model, sales respond to the jackpot —
-        the realistic (and higher) break-even. EV is then not monotone in the jackpot (a
-        convex sales curve extrapolated far beyond the data brings EV back down), so the
-        first crossing is located on a log grid before refining with Brent's method."""
 
         def gap(j: float) -> float:
             sold = tickets_sold if tickets_sold is not None else self.resolve_sold(None, max(j, 1.0))[0]
@@ -211,12 +180,11 @@ class EVCalculator:
         return self._tiers(combo, self._special(special) if self.spec.separate_special else None, float(jackpot1), j2, int(tickets_sold))[1]
 
 
-# ------------------------------------------------------------------ optimiser
 class OptimizedTicket(BaseModel):
     numbers: list[int]
     special: int | None = None
     popularity_ratio: float
-    popularity_percentile: float  # share of uniformly random combos that are *more* popular
+    popularity_percentile: float
     expected_value: float
     return_to_player: float
 
@@ -241,7 +209,6 @@ def optimize_tickets(
     iterations: int = 20_000,
     seed: int | None = None,
 ) -> OptimizationResult:
-    """Simulated annealing: minimise Σ log popularity subject to pairwise overlap ≤ ``max_overlap``."""
     spec, model = calc.spec, calc.popularity
     n, k = spec.pool_size, spec.pick
     rng = np.random.default_rng(seed)
@@ -268,7 +235,6 @@ def optimize_tickets(
         pos = int(rng.integers(k))
         old_num = int(tickets[j, pos])
         new_num = int(rng.choice(allowed[member[j, allowed] == 0]))
-        # incremental update of ticket j only
         cand_row = tickets[j].copy()
         cand_row[pos] = new_num
         new_logp_j = float(np.log(model.ticket_probability(np.sort(cand_row)[None, :]))[0])
@@ -294,7 +260,7 @@ def optimize_tickets(
     special = None
     if spec.separate_special:
         pi = model.special_probs if model.special_probs is not None else np.full(int(spec.bonus_pool_size or 1), 1.0)
-        special = int(np.argmin(pi)) + 1  # least-picked special number
+        special = int(np.argmin(pi)) + 1
     rand_specials = rng.integers(1, int(spec.bonus_pool_size or 1) + 1, 200) if spec.separate_special else [None] * 200
     ev_random = float(np.mean([calc.evaluate_ev_only(tuple(r), j1, j2, sold, special=int(sp) if sp is not None else None) for r, sp in zip(ref[:200], rand_specials)]))
     out = []

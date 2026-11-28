@@ -1,4 +1,3 @@
-"""Challenger Mega/Power: đặc trưng nhân quả, luật k-trong-n đúng ràng buộc, học được tín hiệu cài sẵn."""
 from itertools import combinations
 
 import numpy as np
@@ -16,7 +15,6 @@ def _fair(t: int, n: int = 45, k: int = 6, seed: int = 0) -> np.ndarray:
 
 
 def _planted(t: int, eta: np.ndarray, k: int, seed: int = 1) -> np.ndarray:
-    """Rút đúng luật conditional Bernoulli với log-trọng số η (hàng t)."""
     from vietlott_engine.game_theory.popularity import sample_product_subsets
 
     rng = np.random.default_rng(seed)
@@ -39,7 +37,7 @@ def test_features_of_draw_t_never_read_draw_t_or_later():
 
 def test_lag_link_counts_other_numbers_of_the_previous_draw_not_itself():
     x = np.zeros((4, 6), dtype=bool)
-    for t, row in enumerate(([0, 3], [0, 2], [0, 1], [0, 3])):   # số 1 về cả bốn kỳ
+    for t, row in enumerate(([0, 3], [0, 2], [0, 1], [0, 3])):
         x[t, row] = True
     feat = ch.causal_features(x, np.zeros(5, dtype=int))[4]
     link = feat[:, ch.FEATURES.index('lag_link')]
@@ -49,10 +47,7 @@ def test_lag_link_counts_other_numbers_of_the_previous_draw_not_itself():
         rate = (together + 20 * p0) / (base + 20)
         return float(np.log(rate / (1 - rate)) - np.log(p0 / (1 - p0)))
 
-    # Số 1 (trong kỳ trước) chỉ có bạn là số 4: 4 về kỳ 1 rồi 1 về kỳ 2 — một lần trên một lần.
-    # Nếu tính cả "1 → 1" (ba lần lặp) thì đó là lag1, không phải đồng xuất hiện.
     assert link[0] == pytest.approx(lift(1, 1))
-    # Số 2 ngoài kỳ trước: bạn 1 (1 → 2 một lần trên ba) và 4 (chưa lần nào trên một).
     assert link[1] == pytest.approx((lift(1, 3) + lift(0, 1)) / 2)
 
 

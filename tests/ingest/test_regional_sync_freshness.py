@@ -38,7 +38,6 @@ def _clock(monkeypatch, now: str) -> None:
 
 @pytest.fixture
 def repo(tmp_path, monkeypatch):
-    # Gốc kho đi qua core.paths; vá đúng tên module đọc, nếu không main() ghi vào data/ thật.
     monkeypatch.setattr(regional, "REPO_ROOT", tmp_path)
     _clock(monkeypatch, "2026-10-09T20:00:00+07:00")
     return tmp_path
@@ -168,7 +167,6 @@ def test_workflow_publishes_valid_partial_results_before_reporting_failure(tmp_p
                             env=env, check=False)
     assert result.returncode == 1
     assert "--require-latest" in arguments.read_text().splitlines()
-    # Kết cục của hai bước đến qua env của bước cuối, đúng như GitHub đặt chúng.
     assert set(final["env"].values()) == {"${{ steps.collect.outcome }}", "${{ steps.analyse.outcome }}"}
     final_env = dict(os.environ, COLLECT_OUTCOME="failure", ANALYSE_OUTCOME="success")
     result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", final["run"]],

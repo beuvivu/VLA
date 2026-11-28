@@ -1,11 +1,3 @@
-"""Học trực tuyến từ dự báo đầy đủ đã ghi trước kỳ quay.
-
-Mỗi kỳ cập nhật toàn bộ chuyên gia bằng Brier thích hợp, không lấy thứ hạng
-hay số trúng top-k thay cho xác suất. Bộ nhớ dài không bị đặt lại khi trôi dạt.
-Cổng đề bạt là hàng rào thực nghiệm bảo thủ; kiểm lặp mỗi ngày KHÔNG tạo ra
-bảo đảm kiểm định tuần tự hay lời hứa dự đoán được một quá trình ngẫu nhiên.
-"""
-
 from __future__ import annotations
 
 from core.lottery_codes import write_code_csv
@@ -53,11 +45,7 @@ RECIPE = {
     "uncertainty_multiplier": 4.0,
     "minimum_logloss_skill": 0.002,
 }
-# Profile mới dùng CÙNG lõi chốt/học/kiểm toàn vẹn; sổ legacy không đổi schema.
 AGENT_EXPERTS = ("incumbent", "constant", "statistical", "probabilistic", "pattern")
-# Họ sổ đi theo định nghĩa tác tử (``forecast.xsmb_agents.algorithms.AGENT_POLICY``): đổi định nghĩa là
-# mở SỔ MỚI, để trí nhớ Hedge, bước chọn η/độ quên và cổng đề bạt không thừa hưởng điểm của một
-# bộ dự báo khác. Sổ của họ đã nghỉ được cất nguyên (``forecast.xsmb_agents.engine``), không chấm lại.
 AGENT_RECIPE = {**RECIPE, "family": "xsmb_three_agents_v2"}
 RETIRED_AGENT_FAMILIES = ("xsmb_three_agents_v1",)
 KEEP_FULL_RECORDS = 365
@@ -113,7 +101,6 @@ def _labels(mode: str, values) -> np.ndarray:
 
 
 def proper_losses(mode: str, probability, outcome) -> dict:
-    """Chấm một kỳ bằng Brier và logloss; LOTO giữ nguyên xác suất biên."""
     p, y = _prob(mode, probability), _labels(mode, outcome)
     safe = np.clip(p, 1e-12, 1 - 1e-12)
     if mode == "de":
@@ -128,7 +115,6 @@ def proper_losses(mode: str, probability, outcome) -> dict:
 
 
 def _history(frame: pd.DataFrame) -> pd.DataFrame:
-    """Chuẩn hoá kết quả; bản sao giống nhau được gộp, xung đột bị từ chối."""
     fields = [name for name, _ in FIELD_WIDTHS]
     if (
         not isinstance(frame, pd.DataFrame)
@@ -177,9 +163,6 @@ def _posterior(mode: str, counts, trials, prior) -> np.ndarray:
     if mode == "de":
         p /= p.sum()
     elif p.sum() > len(FIELD_WIDTHS):
-        # Điều kiện riêng từng con có thể mâu thuẫn với trần tổng số giải.
-        # Chiếu theo khoảng cách bình phương về miền khả thi, không chuẩn
-        # hoá biên LOTO thành phân phối categorical tổng bằng một.
         low, high = 0.0, float(p.max())
         for _ in range(50):
             shift = (low + high) / 2
@@ -192,7 +175,6 @@ def _posterior(mode: str, counts, trials, prior) -> np.ndarray:
 
 
 def build_experts(mode: str, history: pd.DataFrame, incumbent, target_date: str) -> dict:
-    """Bayes tần suất và điều kiện trễ chỉ dùng các hàng trước ngày đích."""
     _date(target_date)
     frame = _history(history)
     frame = frame.loc[frame["date"] < target_date].reset_index(drop=True)
@@ -223,7 +205,6 @@ def build_experts(mode: str, history: pd.DataFrame, incumbent, target_date: str)
 
 
 def new_state(mode: str, *, profile: str = "legacy") -> dict:
-    """Khởi tạo bộ nhớ rỗng; lịch sử sẵn có không trở thành phép kiểm ngoài mẫu."""
     baseline_rate(mode)
     if profile not in {"legacy", "agents"}:
         raise ValueError("Profile học trực tuyến không được đăng ký")
@@ -267,17 +248,11 @@ def _scores(mode: str, record: dict, labels) -> dict:
     return result
 
 
-# Sai số làm tròn cho phép khi chấm lại một kỳ đã chốt. Cùng một vector, cùng
-# nhãn, nhưng runner khác CPU chọn nhánh SIMD khác cho `np.log`/`np.mean` và lệch
-# 1 ULP: ngày 04-10-2026 logloss ...7734 so với ...7733 làm sổ bị từ chối và
-# pipeline hoàn tất đỏ hai ngày liền. Ngưỡng tương đối 1e-12 rộng hơn 1 ULP
-# (~2e-16) bốn bậc mà vẫn hẹp hơn mọi sửa điểm có nghĩa hàng triệu lần.
 SCORE_RTOL = 1e-12
 SCORE_ATOL = 1e-15
 
 
 def _scores_agree(computed: dict, stored: dict) -> bool:
-    """Điểm chấm lại khớp điểm đã chốt, sai khác tối đa sai số làm tròn."""
     if set(computed) != set(stored):
         return False
     for name, losses in computed.items():
@@ -298,7 +273,6 @@ def _is_scored(record: dict) -> bool:
 
 
 def _profile(state: dict) -> tuple[dict, tuple[str, ...]]:
-    """Chỉ hai cấu hình đóng băng được đăng ký, không nhận recipe tùy ý từ đĩa."""
     if state.get("recipe") == RECIPE:
         return RECIPE, EXPERTS
     if state.get("recipe") == AGENT_RECIPE:
@@ -307,7 +281,6 @@ def _profile(state: dict) -> tuple[dict, tuple[str, ...]]:
 
 
 def _validate_state(state: dict, mode: str) -> None:
-    """Từ chối phiên bản lạ, vector hỏng và bộ nhớ lệch khỏi sổ đã chốt."""
     try:
         recipe, experts = _profile(state)
         if (
@@ -384,7 +357,6 @@ def _validate_state(state: dict, mode: str) -> None:
                 labels = _labels(mode, settlement["labels"])
                 if not _scores_agree(_scores(mode, record, labels), settlement["scores"]):
                     raise ValueError("Điểm kỳ quay lệch khỏi vector đóng băng")
-                # Bộ nhớ học dựng từ điểm ĐÃ CHỐT, đúng như `advance` đã cộng.
                 losses = np.asarray([settlement["scores"][name]["brier"] for name in experts])
                 slow += losses
                 fast = recipe["discount"] * fast + losses
@@ -412,11 +384,6 @@ def _weights(learning: dict, *, recipe: dict = RECIPE) -> np.ndarray:
 
 
 def tune_agent_weights(records: list[dict], mode: str) -> tuple[np.ndarray, dict]:
-    """Chọn η/độ quên bằng replay: trọng số trước nhãn, loss sau nhãn.
-
-    Điểm replay chỉ chọn siêu tham số cho dự báo tiếp, không cộng vào bằng
-    chứng đề bạt. Tất cả vector ở đây phải là dự báo thật đã đóng băng.
-    """
     settled = [r for r in records if _is_scored(r)]
     selection_start = max(0, len(settled) - 180)
     candidates = [(AGENT_RECIPE["eta"], AGENT_RECIPE["discount"])]
@@ -449,7 +416,6 @@ def tune_agent_weights(records: list[dict], mode: str) -> tuple[np.ndarray, dict
 
 
 def _gain_stats(gains) -> dict:
-    """Sai số lấy giá trị lớn hơn giữa theo ngày và các khối bảy ngày."""
     values = np.asarray(gains, dtype=float)
     n = len(values)
     if n < 2:
@@ -470,7 +436,6 @@ def _gain_stats(gains) -> dict:
 
 
 def promotion_gate(records: list) -> dict:
-    """Đề bạt đúng vector trộn đã chấm; cổng chỉ đọc kỳ đã chốt trước đó."""
     settled = [r for r in records if _is_scored(r)][-RECIPE["gate_window"] :]
     n = len(settled)
     details = {}
@@ -483,7 +448,6 @@ def promotion_gate(records: list) -> dict:
             stats, brier = _gain_stats(ll), _gain_stats(br)
             reference_loss = float(np.mean([s[reference]["logloss"] for s in scores])) if n else 0.0
             recent = _gain_stats(ll[-20:])
-            # Suy giảm gần đây có thể hạ cổng dù trung bình dài hạn còn đẹp.
             recent_ok = n >= 20 and recent["mean"] > 0 and float(np.mean(br[-20:])) >= 0
             ok = (
                 n >= RECIPE["min_days"]
@@ -515,7 +479,6 @@ def advance(
     state: dict, history: pd.DataFrame, incumbent, target_date: str, *, now: datetime,
     expert_predictions: dict[str, np.ndarray] | None = None,
 ) -> tuple[dict, dict]:
-    """Chốt kỳ cũ một lần, học đủ chuyên gia, rồi đóng băng dự báo kỳ mới."""
     local = _clock(now)
     mode = state["mode"]
     _validate_state(state, mode)
@@ -571,8 +534,6 @@ def advance(
             if record["settlement"]["labels"] != y[index].tolist():
                 raise ValueError("Kết quả đã chốt bị sửa")
             continue
-        # Nhãn thực có sẵn luôn được chấm; lịch nghỉ không được dùng để xoá
-        # một lần thua. Chỉ ngày VẮNG đã khai chính thức mới được loại ở trên.
         record["settlement"] = {
             "status": "scored",
             "labels": y[index].tolist(),
@@ -604,8 +565,6 @@ def advance(
     blend = recipe["blend"] * mixture + (1 - recipe["blend"]) * experts["incumbent"]
     gate = promotion_gate(_all_records(result))
     if names == AGENT_EXPERTS:
-        # Cổng thực nghiệm không tự thay thế benchmark mô hình và đăng ký
-        # tiến cứu của kho. Giữ đúng vector thực sự đang được công bố.
         gate = {**gate, "experimental_pass": gate["active"], "active": False,
                 "benchmark_required": True,
                 "reason": "Ba tác tử đang kiểm song song; đề bạt cần benchmark và kiểm tiến cứu"}
@@ -646,11 +605,8 @@ def save_state(
     path: Path, state: dict, *, forecast_target: str | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> None:
-    """Ghi JSON nguyên tử có checksum; lỗi không đè lên sổ đang dùng."""
     _validate_state(state, state["mode"])
     payload = _json_bytes({**state, "_checksum": _digest(state)})
-    # Chấm lại, mã hóa và ghi đĩa đều có thể vượt hạn. Kiểm sớm rồi kiểm lại
-    # sau fsync, ngay trước replace; khôi phục bản đóng băng không bị chặn.
     before_replace = None
     if forecast_target is not None:
         deadline = datetime.combine(_date(forecast_target), FORECAST_CUTOFF, VIETNAM_TZ)
@@ -666,7 +622,6 @@ def save_state(
 
 
 def load_state(path: Path, mode: str, *, profile: str = "legacy") -> dict:
-    """Không tự khởi tạo lại khi sổ cũ hỏng, tránh xoá các lần thua."""
     path = Path(path)
     if not path.exists():
         return new_state(mode, profile=profile)
@@ -686,7 +641,6 @@ def load_state(path: Path, mode: str, *, profile: str = "legacy") -> dict:
 
 @contextmanager
 def _locked(path: Path):
-    """Khoá toàn lượt đọc, học, ghi để hai tiến trình không làm mất kỳ chốt."""
     import fcntl
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -699,8 +653,6 @@ def _locked(path: Path):
 
 
 def _prediction_frame(path: Path, mode: str) -> tuple[pd.DataFrame, np.ndarray]:
-    # Bộ đọc mặc định của pandas ≥ 3.1 đã khôi phục float đúng từng bit (bản ghim trong
-    # requirements.txt); tests/core/test_csv_float_round_trip.py canh giả định ấy.
     frame = pd.read_csv(path)
     if not {"number", "prob"}.issubset(frame.columns) or len(frame) != 100:
         raise ValueError("Tệp dự báo phải có đủ 100 số và cột xác suất")
@@ -715,7 +667,6 @@ def _prediction_frame(path: Path, mode: str) -> tuple[pd.DataFrame, np.ndarray]:
 def run_online(
     mode: str, data_dir: Path, out_dir: Path | None = None, *, now: datetime | None = None
 ) -> dict:
-    """Ghép sau dự báo gốc; giữ CSV đủ 100 số nguyên byte ở lượt shadow đầu."""
     data_dir = Path(data_dir)
     out_dir = Path(out_dir) if out_dir is not None else data_dir / "forecast" / "predict"
     state_path = data_dir / "forecast" / "online" / f"{mode}.json"
@@ -748,7 +699,6 @@ def run_online(
             "provenance": "Dự báo đủ 100 số đã đóng băng trước 18:00 ICT; không đánh giá hồi cứu",
             "journal_sha256": _digest(updated),
         }
-        # Sổ ghi trước artifact: nếu tiến trình ngắt, chạy lại khôi phục chính vector này.
         save_state(state_path, updated, forecast_target=None if existing else target, clock=clock)
         final = np.asarray(record["published"])
         changed = not np.array_equal(incumbent, final)
@@ -771,7 +721,6 @@ def run_online(
         ranked["number_str"] = ranked["number"].map(lambda number: f"{number:02d}")
         for n in (4, 8, 10):
             top_path = out_dir / f"predict_next_{mode}_top{n}_{target}.csv"
-            # Khôi phục cả tệp top nếu lần trước ngắt sau khi đã ghi tệp đủ số.
             atomic_write_bytes(top_path, write_code_csv(ranked.head(n), index=False).encode("utf-8"))
         picks_path = out_dir / f"picks_{mode}.json"
         picks = json.loads(picks_path.read_text(encoding="utf-8")) if picks_path.exists() else {}

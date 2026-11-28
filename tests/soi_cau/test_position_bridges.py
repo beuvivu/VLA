@@ -1,10 +1,3 @@
-"""Soi cầu vị trí: đếm đúng như trang đối chiếu, số bóng chỉ để hiển thị, phép
-kiểm lịch sử phát hiện được tín hiệu khi có, và ô trang chủ không lệch kỳ.
-
-Các con số "đối chiếu" dưới đây đọc từ trang soi cầu công khai cho kỳ
-29-09-2026 (qua workflow ``inspect-reference-bridge.yml``), dữ liệu đến 28-09.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -85,7 +78,6 @@ def test_without_lon_the_order_of_positions_matters(draws) -> None:
 
 
 def _one_draw(values: dict[int, int]) -> np.ndarray:
-    """27 giá trị: giải ĐB = 99999 và mọi giải khác = 0, trừ các chỉ số được đặt."""
     row = np.zeros(27, dtype=np.int64)
     row[0] = 99999
     for index, value in values.items():
@@ -100,11 +92,8 @@ def _digits(values: np.ndarray) -> np.ndarray:
 
 
 def test_the_shadow_number_is_shown_but_never_counted_as_a_hit() -> None:
-    """Kép 44 kèm bóng 99 để HIỂN THỊ. Tính 99 là trúng thì ngày 28-09 ra 64 cầu
-    LOTO thay vì 43 của trang đối chiếu."""
     assert pb.shadow(["44"]) == "99" and pb.shadow(["00"]) == "55" and pb.shadow(["27"]) is None
     assert pb.shadow(["45", "54"]) is None
-    # Kỳ 1: G1 = 44000 nên vị trí 5x6 báo 44. Kỳ 2 chỉ có 99 (giải Bảy).
     values = np.stack([_one_draw({1: 44000}), _one_draw({23: 99})])
     hits, pa, pb_ = pb.hit_matrix(_digits(values), values, nhay=1, db=False, lon=True)
     p = int(np.flatnonzero((pa == 5) & (pb_ == 6))[0])
@@ -112,7 +101,6 @@ def test_the_shadow_number_is_shown_but_never_counted_as_a_hit() -> None:
 
 
 def test_lon_pools_both_directions_toward_the_hit_count() -> None:
-    """45 về một lần và 54 về một lần là 2 nháy khi lộn; không lộn thì 1 nháy."""
     values = np.stack([_one_draw({1: 45000}), _one_draw({23: 45, 24: 54})])
     digits = _digits(values)
     for lon, expected in ((True, True), (False, False)):
@@ -154,8 +142,6 @@ def _random_draws(days: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
 
 
 def test_the_backtest_finds_a_signal_when_one_is_planted() -> None:
-    """Phép kiểm phải đỏ được: cho mỗi kỳ có 50% chép y nguyên kỳ trước, cầu vừa
-    trúng dễ trúng tiếp hơn thật, nên tỉ lệ ở k ≥ 3 phải vượt kỳ vọng rõ rệt."""
     digits, values = _random_draws(300, seed=3)
     copy = np.random.default_rng(4).random(300) < 0.5
     for t in range(1, 300):
@@ -174,7 +160,6 @@ def test_random_draws_show_no_streak_effect_and_rows_partition_every_event() -> 
     assert sum(r["n"] for r in report["rows"]) == prev.size
     assert sum(r["hits"] for r in report["rows"]) == int(nxt.sum())
     assert report["rate_kep"] < report["rate_pair"], "số kép là một số nên dễ trượt hơn"
-    # Kỳ vọng của từng hàng theo đúng tỉ lệ số kép trong hàng, không theo nền chung.
     mask = prev == 1
     mix = np.where(kep[mask], report["rate_kep"], report["rate_pair"]).mean()
     assert report["rows"][1]["expected"] == pytest.approx(mix, rel=1e-9)
@@ -185,7 +170,6 @@ def test_random_draws_show_no_streak_effect_and_rows_partition_every_event() -> 
 
 
 def test_agreement_counts_each_number_pair_once_per_draw() -> None:
-    """m cầu cùng báo một cặp là MỘT lần trúng/trượt — đếm theo cầu sẽ thổi phồng mẫu."""
     digits, values = _random_draws(60, seed=5)
     past = pb.history(digits, values, nhay=1, db=False, lon=True)
     prev, _, _, key = past
@@ -226,14 +210,11 @@ def test_the_home_panel_links_each_bridge_with_the_reference_parameters() -> Non
     assert chip.select_one("b").get_text() == "44,99"
     assert chip.select_one(".app-bridge-shadow").get_text() == ",99", "số bóng phải phân biệt được với số cầu"
     assert chip.select_one(".app-bridge-streak").get_text() == "6"
-    # Mỗi số một phần tử: "44,99" viết liền bị đọc thành số thập phân 44,99.
     assert [s.get_text() for s in chip.select(".app-bridge-num")] == ["44", "99"]
-    # Hai vị trí của cầu đi kèm để bảng kết quả bên cạnh tô chúng (shared_results.js, bindBridgeChips).
     assert [(a["data-bridge-a"], a["data-bridge-b"]) for a in soup.select(".app-bridge-list a")] == [("60", "83")] * 3
 
 
 def test_the_home_panel_refuses_a_report_from_another_draw() -> None:
-    """Ô cầu của hôm qua đặt cạnh kết quả hôm nay là sai lặng lẽ."""
     soup = BeautifulSoup(page.best_panel(_report(), "2026-09-29"), "html.parser")
     assert not soup.select(".app-bridge-list a")
     assert "đang được tính lại" in soup.get_text()

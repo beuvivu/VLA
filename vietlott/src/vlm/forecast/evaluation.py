@@ -1,4 +1,3 @@
-"""Đánh giá ngoài mẫu theo thứ tự thời gian, không tạo evidence live."""
 from __future__ import annotations
 
 import time
@@ -15,20 +14,6 @@ from vlm.forecast.pipeline import MLConfig, MLForecaster, _prefix_digest
 
 
 def evaluate_series(series: Series, config: MLConfig, *, initial_draws: int = 400) -> dict:
-    """Chấm từng kỳ bằng mô hình chỉ được học tiền tố trước kỳ đó.
-
-    Args:
-        series: Lịch sử đã kiểm miền, sắp theo ID và ngày tăng dần.
-        config: Cấu hình cố định trước khi xem holdout.
-        initial_draws: Số kỳ đầu dành cho khởi tạo; phần còn lại là holdout.
-
-    Returns:
-        Provenance, điểm từng kỳ và các trung bình mô tả. Kết quả này không
-        chứng nhận kỹ năng live; ngày kỳ đích là điều kiện biết trước.
-
-    Raises:
-        ValueError: Split rỗng, bootstrap không đủ hoặc ngày bị đảo.
-    """
     if type(initial_draws) is not int or not 1 <= initial_draws < len(series) or initial_draws > config.bootstrap:
         raise ValueError('Invalid chronological train/holdout split')
     dates = np.asarray(series.dates).astype('datetime64[D]')
@@ -42,7 +27,6 @@ def evaluate_series(series: Series, config: MLConfig, *, initial_draws: int = 40
         result = {'id':int(series.draw_ids[t]), 'date':str(dates[t]),
                   'gain_nats':0., 'brier':0., 'brier_fair':0., 'hits':0., 'expected_hits':0.}
         for name, component in model.components.items():
-            # Tính law trước khi lấy label; model chưa được thấy kỳ t.
             law = component.law(str(dates[t]), next_id=int(series.draw_ids[t]))
             observation = series.obs[name]
             row = observation['X'][t] if isinstance(component.spec, SetSpec) else observation['C'][t].ravel()
@@ -54,9 +38,6 @@ def evaluate_series(series: Series, config: MLConfig, *, initial_draws: int = 40
             result['brier'] += float(np.mean((probability-target)**2))
             result['brier_fair'] += float(np.mean((component.features.base-target)**2))
             if isinstance(component.spec, SetSpec):
-                # Chấm ĐÚNG vé đã công bố: bộ có xác suất đồng thời cao nhất (Law.top, như bảng điều
-                # khiển và sổ dự báo), không phải k số có xác suất biên cao nhất — hai vé ấy khác
-                # nhau khi hỗn hợp không đều, và chấm vé kia là chấm một dự báo chưa từng phát.
                 published, _ = law.top(PUBLISHED_TOP_N, max_nodes=config.search_nodes)
                 ticket = [int(v) for v in published[0]['numbers']]
                 result['ticket'] = ticket
@@ -81,19 +62,6 @@ def evaluate_series(series: Series, config: MLConfig, *, initial_draws: int = 40
 
 
 def compare_runs(benchmark: dict, candidate: dict) -> list[dict]:
-    """So sánh log-score ghép cặp; từ chối ghép khác dữ liệu hoặc khác kỳ.
-
-    Args:
-        benchmark: Báo cáo chứa results và điểm gain_nats theo kỳ.
-        candidate: Báo cáo trên cùng lịch sử và holdout.
-
-    Returns:
-        Mean differential, khoảng tin cậy HAC 95%, DM một phía và BH-FDR
-        trên các sản phẩm được so sánh. Đây là kiểm định retrospective.
-
-    Raises:
-        ValueError: Provenance/ID/count không khớp hoặc điểm không hữu hạn.
-    """
     a = {get_product(row['product']).value:row for row in benchmark['results']}
     b = {get_product(row['product']).value:row for row in candidate['results']}
     if set(a) != set(b) or not a or len(a) != len(benchmark['results']) or len(b) != len(candidate['results']):

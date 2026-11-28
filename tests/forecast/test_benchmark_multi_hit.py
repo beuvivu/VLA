@@ -1,10 +1,3 @@
-"""Giao thức của lượt thử thứ hai cho lô nhiều nháy (``src/forecast/multi_hit_benchmark.py``).
-
-Kết luận "không chiến lược nào hơn chọn bừa" chỉ đáng tin khi chính phép đo đúng: không chiến
-lược nào nhìn trước, phép so với chọn bừa có phân phối đúng, ứng viên được chọn KHÔNG nhìn giai
-đoạn kiểm, và giao thức bắt được một tín hiệu cài sẵn. Mỗi phép kiểm dưới đây ghim một điều ấy.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -25,11 +18,6 @@ def _fair(n_draws: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
 
 
 def test_every_strategy_reads_only_the_past(bench) -> None:
-    """Đổi các kỳ từ t0 trở đi thì điểm của mọi hàng ≤ t0, ở MỌI chiến lược, không được đổi.
-
-    t0 đúng bằng điểm khớp đầu tiên của hai mô hình học, nên một mô hình lỡ học cả nhãn của kỳ
-    t0 (lệch một kỳ) cũng làm điểm ở hàng t0 đổi.
-    """
     draws, weekdays = _fair(700, seed=1)
     t0 = bench.WARMUP + bench.REFIT_EVERY
     altered = draws.copy()
@@ -46,7 +34,6 @@ def test_every_strategy_reads_only_the_past(bench) -> None:
 
 
 def test_comparing_with_random_picks_has_the_right_spread(bench) -> None:
-    """Điểm ngẫu nhiên trên lịch sử công bằng: z phải xấp xỉ N(0, 1) qua nhiều lần lặp."""
     zs = []
     for seed in range(300):
         draws, _ = _fair(200, seed)
@@ -69,8 +56,6 @@ def test_an_oracle_scores_every_available_hit(bench) -> None:
 
 
 def test_the_candidate_is_chosen_on_the_development_period_only(bench) -> None:
-    """Chiến lược A thắng ở giai đoạn phát triển rồi thua ở giai đoạn kiểm; B ngược lại. Ứng viên
-    phải là A: chọn theo giai đoạn kiểm là rò rỉ và luôn "đạt"."""
     n_draws = 2000
     draws, weekdays = _fair(n_draws, seed=4)
     multi = np.vstack([(bench.counts_matrix(draws) >= 2).astype(float), np.zeros((1, 100))])
@@ -88,8 +73,6 @@ def test_the_candidate_is_chosen_on_the_development_period_only(bench) -> None:
 
 
 def test_the_protocol_finds_a_planted_signal_and_confirms_it(bench) -> None:
-    """Ba con được cài thêm ≥ 2 nháy với xác suất 3%/kỳ: giao thức phải chọn một chiến lược tần
-    suất và đạt ở giai đoạn kiểm. Không bắt được thì kết luận "không có tín hiệu" vô nghĩa."""
     draws, weekdays = bench.planted_history(2000)
     result = bench.run_protocol(draws, weekdays, holdout=600, learned=False, include_vip=False)
     assert result["candidate_passes"] is True
@@ -106,7 +89,6 @@ def test_a_fair_history_does_not_pass(bench) -> None:
 
 
 def test_positional_model_starts_at_the_binomial_base(bench) -> None:
-    """Chưa có lịch sử thì mọi vị trí đều 1/100, nên P(≥ 2 nháy) phải đúng bằng mức nền."""
     draws, _ = _fair(10, seed=7)
     prob = bench._positional_multi_prob(draws, None)
     assert np.allclose(prob[0], bench.base_rate(), atol=1e-12)
@@ -118,7 +100,5 @@ def test_holm_adjustment(bench) -> None:
 
 
 def test_ties_are_not_broken_toward_small_numbers(bench) -> None:
-    """Điểm hoà (vd. mọi con cùng 0 lần về) mà luôn chọn 00–04 thì chiến lược được lợi hay chịu
-    thiệt theo riêng năm con ấy."""
     picks = bench.top_k(np.zeros((400, 100)))
     assert len(np.unique(picks)) > 80

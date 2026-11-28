@@ -1,4 +1,3 @@
-"""Chốt ranh giới chọn trọng số và hiệu chuẩn, không dùng lại nhãn."""
 import numpy as np
 import pandas as pd
 import pytest

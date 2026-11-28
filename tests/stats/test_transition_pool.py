@@ -1,5 +1,3 @@
-"""Tín hiệu phải ĐI QUA được các tầng, và phép hợp phải được CHỌN chứ không đặt tay."""
-
 from __future__ import annotations
 
 import sys
@@ -11,18 +9,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from stats import number_dynamics as nd  # noqa: E402
+from stats import number_dynamics as nd
 
 BASE_RATE = 0.2378
 
 
 def _inject(hit: np.ndarray, amount: float, seed: int = 0) -> np.ndarray:
-    """P(34 về | 12 về hôm trước) = tần suất nền × (1 + amount).
-
-    Một định nghĩa DUY NHẤT cho cả tệp. Hai kịch bản đo trước đây dùng hai
-    định nghĩa khác nhau (0,9 và 0,37) và cho hai kết luận trái ngược về cùng
-    một câu hỏi — sai lầm ấy không được lặp lại.
-    """
     rng = np.random.default_rng(seed)
     h = hit.copy().astype(np.int8)
     if amount <= 0:
@@ -34,10 +26,6 @@ def _inject(hit: np.ndarray, amount: float, seed: int = 0) -> np.ndarray:
     return h
 
 
-#: Bảng đo trong ``test_the_gate_holds_the_incumbent_when_the_challenger_merely_leads``
-#: lấy trên đúng ngần này kỳ đầu. Không ghim thì mỗi kỳ quay mới dời t một chút
-#: (năng lực thống kê tăng theo độ dài) và phép kiểm đỏ dần mà mã không đổi gì —
-#: ngày 03-10-2026, ở 4 223 kỳ, hạt 3 đã trôi từ -1,81 sang -1,99.
 MEASURED_DRAWS = 4207
 
 
@@ -48,7 +36,6 @@ def real() -> tuple[pd.DatetimeIndex, np.ndarray]:
 
 
 def test_arithmetic_pooling_can_never_sharpen_beyond_its_inputs() -> None:
-    """Giới hạn CẤU TRÚC, không phải chuyện chỉnh tham số."""
     base = np.full(100, 0.2)
     trans = np.tile(base, (100, 1))
     trans[12] = 0.9
@@ -56,7 +43,6 @@ def test_arithmetic_pooling_can_never_sharpen_beyond_its_inputs() -> None:
     pooled = nd._pool_active_rows("arithmetic", trans, base, active)
     assert pooled.max() <= trans[active].max() + 1e-12
     assert pooled.min() >= trans[active].min() - 1e-12
-    # Một hàng nói 0,9 trên 24 hàng thì kết quả chỉ nhích lên chút.
     assert pooled[0] < 0.25
 
 
@@ -66,7 +52,6 @@ def test_log_odds_pooling_can_sharpen_past_every_input() -> None:
     trans[12] = 0.9
     active = np.arange(24)
     pooled = nd._pool_active_rows("logodds", trans, base, active)
-    # 23 hàng nói đúng bằng đường nền nên không đóng góp gì; hàng thứ 24 nói 0,9.
     assert pooled[0] == pytest.approx(0.9, abs=1e-6)
 
 
@@ -83,7 +68,6 @@ def test_real_data_keeps_the_arithmetic_pool_by_a_wide_margin(real) -> None:
     dates, hit = real
     kind, diagnostics = nd.select_transition_pool(hit)
     assert kind == "arithmetic"
-    # Dương nghĩa là log-odds TỆ HƠN. Biên rất rộng, không phải sát ngưỡng.
     assert diagnostics["t_statistic"] > 4.0
     assert diagnostics["holdout_days"] > 400
 
@@ -96,18 +80,12 @@ def test_a_strong_injected_relationship_switches_the_pool(real) -> None:
 
 
 def test_a_weak_injected_relationship_does_not_switch_the_pool(real) -> None:
-    """Cổng 2 SE phải GIỮ bản đương nhiệm khi bằng chứng chưa đủ."""
     _, hit = real
     kind, _ = nd.select_transition_pool(_inject(hit, 0.25))
     assert kind == "arithmetic"
 
 
 def test_when_the_two_pools_coincide_the_test_reports_no_difference_not_rounding_noise() -> None:
-    """Đặc Biệt: mỗi kỳ đúng một số về, nên mỗi ngày chỉ một hàng nguồn hoạt động và hai phép hợp
-    trùng nhau về toán học. t phải là 0 (không khác biệt), không phải t của nhiễu làm tròn.
-
-    Ngày 05-11-2026 hai lượt pipeline trên CÙNG dữ liệu in t = 0,69 rồi 1,51 cho Đặc Biệt.
-    """
     rng = np.random.default_rng(5)
     days = 1200
     h = np.zeros((days, 100), dtype=np.int8)
@@ -128,16 +106,6 @@ def test_short_history_falls_back_without_crashing() -> None:
 
 
 def test_the_transition_component_is_not_shrunk_a_second_time(real) -> None:
-    """Phép kiểm hồi quy cho một lỗi THẬT đã lọt vào kho mã.
-
-    Bản trước nhân thêm một cổng ``trans_rel`` dựng từ κ TRUNG VỊ của các hàng
-    đang hoạt động. Khi chỉ một hàng mang tin, trung vị là 1 000 000 nên cổng
-    đóng ở mức 0,0006 và trả xác suất về ĐÚNG BẰNG đường nền — xoá sạch một
-    quan hệ mà chính bộ ước lượng đã tìm ra đúng (0,8729 so với nền 0,3539).
-
-    ``trans`` đã là hậu nghiệm co ngót theo κ riêng của từng hàng rồi; co ngót
-    lần hai bằng một đại lượng không có nghĩa thống kê nào là sai.
-    """
     dates, hit = real
     h = _inject(hit, 2.0)
     moved, baselines = [], []
@@ -154,39 +122,6 @@ def test_the_transition_component_is_not_shrunk_a_second_time(real) -> None:
 
 
 def test_the_gate_holds_the_incumbent_when_the_challenger_merely_leads(real) -> None:
-    """Dẫn trước KHÔNG phải thắng — đó là toàn bộ ý nghĩa của cổng 2 SE.
-
-    Nếu bỏ cổng và chỉ cần "tốt hơn là đổi" thì kiến trúc sẽ đổi ở đây, và đổi
-    kiến trúc theo một chênh lệch dưới hai sai số chuẩn là cách nhiễu tự phong
-    mình thành phát hiện.
-
-    MỨC TIÊM PHẢI HIỆU CHUẨN LẠI THEO ĐỘ DÀI LỊCH SỬ. Cùng một quan hệ được
-    tiêm vào sẽ cho t lớn hơn khi có nhiều kỳ hơn — đó là năng lực thống kê,
-    không phải quan hệ mạnh lên. Khi kho dài từ 2 401 lên 4 207 kỳ, mức +150 %
-    cũ nhảy từ t = -1,60 sang t = -3,79, tức kịch bản "mới chỉ dẫn" biến thành
-    kịch bản "đã vượt cổng" và phép kiểm mất đối tượng. Cổng KHÔNG hỏng; cách
-    dựng kịch bản mới cần đo lại.
-
-    Bảng đo trên 4 207 kỳ (dương nghĩa là log-odds tệ hơn; ← đánh dấu vượt cổng):
-
-        mức      hạt 0   hạt 1   hạt 2   hạt 3   hạt 4
-        +100 %   +0,88   -0,81   -0,74   -0,85   -0,38
-        +110 %   -0,25   -1,62   -1,69   -1,81   -1,36   ← cả 5 hạt đều "chỉ dẫn"
-        +115 %   -0,79   -1,79   -2,21   -2,06   -1,89
-        +120 %   -1,39   -2,32   -2,55   -2,20   -2,44   ←
-        +130 %   -1,86   -2,75   -2,83   -2,81   -2,88   ←
-
-    Bảng cũ, đo trên 2 401 kỳ, giữ lại để thấy độ nhạy theo độ dài lịch sử:
-
-        +120 %   +2,16   +0,60   +1,15
-        +140 %   -0,00   -0,89   +0,73
-        +150 %   -1,60   -1,16   -0,03
-        +160 %   -2,65   -1,44   -0,53
-
-    Chọn hạt 1 và hạt 3 ở mức +110 %: cả hai dẫn RÕ (không phải sát 0 như hạt
-    0), và hạt 3 ở -1,81 nằm ngay sát trong cổng — đúng trường hợp đáng kiểm
-    nhất.
-    """
     _, hit = real
     for seed, expected_t in ((1, -1.62), (3, -1.81)):
         kind, diagnostics = nd.select_transition_pool(_inject(hit, 1.10, seed=seed))

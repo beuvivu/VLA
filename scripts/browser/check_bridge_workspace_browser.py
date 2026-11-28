@@ -1,4 +1,3 @@
-"""Kiểm bố cục, tương tác, in của soi cầu/phôi và bốn trang đường cầu thật."""
 from functools import partial
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -128,7 +127,6 @@ def path_geometry(page):
 
 
 def check_path_workspace(page):
-    """Đo lại hai khung sau thao tác thật, không phụ thuộc dữ liệu mẫu Python."""
     initial = path_geometry(page)
     if initial["empty"]:
         return initial
@@ -163,7 +161,6 @@ def check_path_workspace(page):
         page.locator('#path-number-filter').fill(numbers['present'])
         assert page.locator('[data-path-row]:not([hidden])').count() > 0
         path_geometry(page)
-    # Nếu đủ cả 100 số thì giao diện không có bộ lọc số nào tạo danh sách rỗng.
     if numbers.get('missing') is not None:
         page.locator('#path-number-filter').fill(numbers['missing'])
         assert page.locator('[data-path-row]:not([hidden])').count() == 0

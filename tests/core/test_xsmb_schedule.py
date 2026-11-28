@@ -1,4 +1,3 @@
-"""Lịch đài XSMB có mốc hiệu lực: đổi lịch không được đổi nhãn của các kỳ trước ngày áp dụng."""
 from __future__ import annotations
 
 import re
@@ -14,22 +13,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_the_current_rotation_matches_the_published_weekly_schedule() -> None:
-    # 21-09-2026 là thứ Hai.
     week = [venue_for(f"2026-09-{day}") for day in range(21, 28)]
     assert week == ["Hà Nội", "Quảng Ninh", "Bắc Ninh", "Hà Nội", "Hải Phòng", "Nam Định", "Thái Bình"]
-    assert venue_for("2015-01-01") == "Hà Nội"  # ngày đầu của sổ chuẩn là thứ Năm
+    assert venue_for("2015-01-01") == "Hà Nội"
 
 
 def test_a_new_era_relabels_only_the_draws_on_and_after_its_start() -> None:
-    """Lịch mới (ví dụ đổi tên đài sau sáp nhập tỉnh) chỉ áp từ ngày hiệu lực; kỳ cũ giữ nhãn cũ."""
     renamed = ScheduleEra(
         start=date(2027, 1, 2),
         venues=("Hà Nội", "Quảng Ninh", "Bắc Ninh", "Hà Nội", "Hải Phòng", "Ninh Bình", "Hưng Yên"),
         basis="giả định cho phép kiểm",
     )
     eras = (*ERAS, renamed)
-    assert venue_for("2026-12-26", eras) == "Nam Định"  # thứ Bảy trước ngày hiệu lực
-    assert venue_for("2027-01-02", eras) == "Ninh Bình"  # thứ Bảy đầu tiên của thời kỳ mới
+    assert venue_for("2026-12-26", eras) == "Nam Định"
+    assert venue_for("2027-01-02", eras) == "Ninh Bình"
     assert era_for("2027-01-02", eras) is renamed
     assert venues_of(eras)[-2:] == ("Ninh Bình", "Hưng Yên")
 
@@ -51,7 +48,6 @@ def test_eras_must_be_complete_and_ordered() -> None:
 
 
 def test_no_module_keeps_its_own_copy_of_the_rotation() -> None:
-    """Một nguồn duy nhất: bảng 7 đài theo thứ chép ở chỗ khác sẽ không theo kịp khi lịch đổi."""
     pattern = re.compile(r"Quảng Ninh.{0,40}Bắc Ninh.{0,60}Hải Phòng")
     offenders = [
         path.relative_to(ROOT).as_posix()

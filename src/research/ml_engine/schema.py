@@ -1,18 +1,3 @@
-"""Hợp đồng dữ liệu đầu vào cho ``ml_engine``.
-
-Vì sao kiểm ở đây chứ không ở chỗ khác
----------------------------------------
-
-Mọi bảo đảm chống rò rỉ thời gian của module này đều dựa trên một giả định duy
-nhất: **chỉ số hàng bằng thứ tự thời gian**. Nếu giả định đó sai — thiếu ngày,
-trùng ngày, hoặc dữ liệu không sắp xếp — thì ``history[:day]`` không còn nghĩa
-là "quá khứ", và mọi phép kiểm không-rò-rỉ phía sau sẽ đạt trong khi hệ thống
-vẫn nhìn thấy tương lai.
-
-Vì vậy ``ObservationMatrix`` từ chối dựng nếu giả định đó không giữ. Từ chối
-sớm và ồn ào tốt hơn nhiều so với một mô hình có vẻ tốt vì lý do sai.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -30,31 +15,17 @@ from core.xsmb_domain import (
     PRIZE_FIELDS,
 )
 
-#: Số con hai chữ số trong không gian kết quả.
 NUMBER_SPACE: Final[int] = 100
 
-#: Tỉ lệ nền của miền: xác suất một con về ít nhất một lần trong 27 giải.
 BASELINE_RATE: Final[float] = LOTO_BASELINE_RATE
 
 
 class SchemaError(ValueError):
-    """Dữ liệu đầu vào vi phạm hợp đồng mà ``ml_engine`` dựa vào."""
+    pass
 
 
 @dataclass(frozen=True)
 class ObservationMatrix:
-    """Ma trận quan sát đã chuẩn hóa, bất biến, sắp theo thời gian.
-
-    Đây là dạng dữ liệu duy nhất mà mọi thành phần trong ``ml_engine`` nhận.
-    Quy ước: hàng ``t`` là kỳ quay ngày ``dates[t]``, và ``dates`` tăng nghiêm
-    ngặt theo bước đúng một ngày. Nhờ vậy ``counts[:t]`` *luôn* là quá khứ chặt
-    của ngày ``t``, không cần thành phần nào tự kiểm lại.
-
-    Attributes:
-        dates: Chỉ mục ngày, tăng nghiêm ngặt, liên tục từng ngày.
-        counts: Ma trận ``(n_days, 100)``; ``counts[t, k]`` là số lần con ``k``
-            xuất hiện trong 27 giải của ngày ``t``.
-    """
 
     dates: pd.DatetimeIndex
     counts: np.ndarray
@@ -87,11 +58,6 @@ class ObservationMatrix:
             )
 
         if len(self.dates) > 1:
-            # Bước một ngày là điều kiện MẠNH HƠN mức cần thiết. Thứ bất biến
-            # thực sự cần là ``counts[:t]`` luôn là quá khứ chặt của hàng t,
-            # và điều đó vẫn đúng khi có ngày nghỉ quay: XSMB không quay dịp
-            # Tết và suốt đợt giãn cách 2020. Ràng buộc cũ chỉ thoả nhờ 50 bản
-            # ghi bịa lấp vào chỗ trống — bất biến được bảo đảm bởi dữ liệu sai.
             gaps = unexpected_gap_dates(self.dates)
             if gaps:
                 raise SchemaError(
@@ -99,51 +65,27 @@ class ObservationMatrix:
                     f"{len(gaps)} ngày, bắt đầu từ {gaps[0]}"
                 )
 
-        # Không giữ alias tới bộ đệm của người gọi: frozen chỉ bảo vệ thuộc tính.
         protected = np.array(self.counts, dtype=np.int16, copy=True)
         protected.setflags(write=False)
         object.__setattr__(self, "counts", protected)
 
     @property
     def n_days(self) -> int:
-        """Số kỳ quay trong ma trận."""
         return int(self.counts.shape[0])
 
     @property
     def hits(self) -> np.ndarray:
-        """Ma trận nhị phân ``(n_days, 100)``: con đó có về trong kỳ hay không."""
         return self.counts > 0
 
     @property
     def double_hits(self) -> np.ndarray:
-        """Ma trận nhị phân: con đó về từ hai lần trở lên (cầu "hai nháy")."""
         return self.counts >= 2
 
     def window(self, start: int, stop: int) -> ObservationMatrix:
-        """Cắt một cửa sổ liên tục, giữ nguyên mọi bảo đảm của lớp.
-
-        Args:
-            start: Chỉ số hàng đầu tiên, đã bao gồm.
-            stop: Chỉ số hàng cuối, không bao gồm.
-
-        Returns:
-            Ma trận con trên khoảng ``[start, stop)``.
-        """
         return ObservationMatrix(dates=self.dates[start:stop], counts=self.counts[start:stop])
 
     @classmethod
     def from_frame(cls, frame: pd.DataFrame) -> ObservationMatrix:
-        """Dựng ma trận từ bảng kết quả thô của kho.
-
-        Args:
-            frame: Bảng có cột ``date`` và 27 cột giải của ``xsmb_domain``.
-
-        Returns:
-            Ma trận quan sát đã chuẩn hóa.
-
-        Raises:
-            SchemaError: Khi thiếu cột, ngày trùng, hoặc ngày không liên tục.
-        """
         missing = {"date", *PRIZE_FIELDS} - set(frame.columns)
         if missing:
             raise SchemaError(f"thiếu cột bắt buộc: {sorted(missing)}")
@@ -160,12 +102,6 @@ class ObservationMatrix:
         n_days = len(working)
         counts = np.zeros((n_days, NUMBER_SPACE), dtype=np.int16)
         for field in PRIZE_FIELDS:
-            # Phải đệm 0 về đúng bề rộng khai báo của giải trước khi lấy hai chữ
-            # số cuối. Tệp CSV lưu giải dưới dạng số nguyên nên số 0 đứng đầu bị
-            # mất: giải 7 "08" nằm trong tệp là 8, giải 4 "0000" là 0. Cắt đuôi
-            # trên chuỗi chưa đệm sẽ cho "8" — vẫn ra đúng con 08 một cách may
-            # rủi, nhưng phép kiểm định dạng thì trượt, và với giải rộng hơn thì
-            # không còn may nữa.
             digits = working[field].astype(str).str.strip().str.zfill(FIELD_WIDTH_MAP[field])
             valid = digits.str.fullmatch(rf"\d{{{FIELD_WIDTH_MAP[field]}}}")
             if not valid.all():
@@ -178,13 +114,6 @@ class ObservationMatrix:
 
 @dataclass(frozen=True)
 class DailyRequest:
-    """Yêu cầu dự đoán cho đúng một kỳ.
-
-    Attributes:
-        anchor_date: Ngày cuối cùng đã biết kết quả.
-        target_date: Ngày cần dự đoán; phải đúng bằng ``anchor_date`` cộng 1 ngày.
-        top_k: Số con cần trả về trong danh sách gợi ý.
-    """
 
     anchor_date: pd.Timestamp
     target_date: pd.Timestamp
@@ -205,18 +134,6 @@ class DailyRequest:
 
     @classmethod
     def from_json(cls, payload: dict[str, Any]) -> DailyRequest:
-        """Dựng yêu cầu từ JSON đầu vào hằng ngày.
-
-        Args:
-            payload: Đối tượng có ``anchor_date`` và tùy chọn ``top_k``.
-                ``target_date`` suy ra từ ``anchor_date`` nếu không có.
-
-        Returns:
-            Yêu cầu đã kiểm hợp lệ.
-
-        Raises:
-            SchemaError: Khi thiếu trường hoặc ngày không hợp lệ.
-        """
         if "anchor_date" not in payload:
             raise SchemaError("JSON đầu vào thiếu 'anchor_date'")
         anchor = pd.to_datetime(payload["anchor_date"], errors="coerce")

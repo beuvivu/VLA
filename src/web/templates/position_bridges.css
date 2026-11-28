@@ -1,8 +1,3 @@
-/* Soi cầu vị trí — ô "cầu đẹp nhất" cạnh bảng LOTO ở trang chủ và trang
-   đường cầu. Mọi màu đọc token nên sáng/tối đi theo khung chung; màu tô lấy
-   cặp token `--ui-mark-*` (ô trúng) và `--ui-brand-ink` (chữ số ở vị trí cầu),
-   cùng cặp đã kiểm AA của chế độ đánh dấu trong Sổ kết quả. */
-
 @media (min-width:1321px){
 .tr-results[data-extra="on"]{--tr-num-fs:clamp(15px,1.3vw,19px);--tr-label-w:96px}
 .tr-results[data-extra="on"] .tr-day-grid{
@@ -31,7 +26,6 @@ background:var(--ui-brand-soft);color:var(--ui-brand-ink);font-size:10.5px;font-
 .app-bridge-note{margin:0;font-size:11.5px;color:var(--ui-ink-soft)}
 .app-bridge-stale{margin:0;font-size:12px;color:var(--ui-ink-soft)}
 
-
 @media (max-width:1320px){
 .tr-results[data-extra="on"] .tr-day-extra{grid-column:1/-1}
 .app-bridge-best .app-bridge-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -40,7 +34,6 @@ background:var(--ui-brand-soft);color:var(--ui-brand-ink);font-size:10.5px;font-
 .app-bridge-best .app-bridge-groups{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.app-bridge-list a{transition:none}}
 
-/* Phần riêng của trang vị trí; ô cầu ở trang chủ giữ nguyên bố cục. */
 .app-position-page .app-position-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 16px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 .app-position-page .app-position-header h1{margin:0 0 8px;font-size:clamp(24px,3vw,32px);line-height:1.2;letter-spacing:-.03em}
 .app-position-page .app-position-header p{margin:0;color:var(--ui-ink-soft);font-size:13px;line-height:1.6}
@@ -171,7 +164,7 @@ body.app-position-page button.app-bridge-cell.is-partner{background:var(--ui-bad
   .app-position-page .app-position-disclosure>summary{padding:16px}
   .app-position-page .app-position-disclosure-body{padding:0 16px 16px}
 }
-/* Hai cột hẹp hơn chữ «Từ độ dài này trở lên» tới khoảng 430px (đo 390 và 412px). */
+
 @media (max-width:480px){
   body.app-position-page .app-bridge-form{grid-template-columns:minmax(0,1fr)}
 }

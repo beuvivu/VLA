@@ -1,47 +1,5 @@
 from __future__ import annotations
 
-"""Phòng thí nghiệm cầu bóng trên TOÀN BỘ 107 ô chữ số của bảng kết quả.
-
-Vì sao cần mô-đun này khi đã có :mod:`crosslag_positional_lab`
---------------------------------------------------------------
-Mô-đun cũ đọc ``get_2_digits_data()``: mỗi giải chỉ còn HAI chữ số cuối, tức
-27 ô. Nhưng cách vẽ cầu trong giới soi cầu nối những chữ số nằm BẤT KỲ đâu
-bên trong số đầy đủ — chữ số hàng nghìn của một giải ba, chữ số giữa của giải
-nhất. Bảng kết quả đầy đủ có 107 ô chữ số:
-
-    Đặc Biệt 1×5, giải nhất 1×5, giải nhì 2×5, giải ba 6×5,
-    giải tư 4×4, giải năm 6×4, giải sáu 3×3, giải bảy 4×2.
-
-Ghép hai ô bất kỳ thành một số hai chữ số cho 107×107 = 11 449 cặp có hướng,
-nhiều gấp 15,7 lần họ cũ. Đây là họ cầu chưa từng được quét trong dự án.
-
-Hệ bóng
--------
-Mỗi chữ số của cặp được phép đi qua một trong ba phép: giữ nguyên, bóng
-dương, bóng âm. Chín tổ hợp cho cả cặp, bao trọn cả "bóng nửa" (chỉ đổi một
-chữ số) lẫn bóng kép khi soi ở hai bước lag khác nhau.
-
-    LƯU Ý về Ngũ Hành: Kim 2↔7, Mộc 5↔0, Thủy 1↔6, Hỏa 3↔8, Thổ 4↔9 chính
-    là ÁNH XẠ BÓNG DƯƠNG, chỉ khác tên gọi. Nó không sinh thêm giả thuyết
-    nào, nên không có phép riêng cho nó.
-
-Rào chắn nghiên cứu
--------------------
-Một họ 200 000+ giả thuyết thì CHẮC CHẮN sinh ra những đường cầu đẹp. Cái
-quyết định không phải luật mạnh nhất, mà là luật mạnh nhất so với luật mạnh
-nhất mà nhiễu thuần tạo ra trên cùng họ ấy. Nên mô-đun luôn chạy kèm:
-
-- tra theo NGÀY LỊCH tuyệt đối, ngày nghỉ bị bỏ qua chứ không lùi tiếp;
-- chia train / validation / holdout theo thời gian;
-- nền đúng hình dạng cho từng loại đích;
-- BH-FDR và Bonferroni trên toàn họ;
-- kiểm tra thực tế bằng dịch vòng: giữ nguyên chữ số nguồn, dịch vòng chuỗi
-  kết quả, quét lại TOÀN BỘ họ, rồi so thống kê cực đại. Đây là phép duy
-  nhất bắt được ảo giác chọn lọc, và nó giữ nguyên tương quan giữa các luật
-  vốn có chung ô nguồn.
-
-Không có đường nối tự động nào sang trọng số vận hành.
-"""
 
 import argparse
 import json
@@ -60,12 +18,10 @@ from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 SCHEMA_VERSION = 1
 
-#: Thứ tự giải đúng như bảng kết quả in ra.
 PRIZE_ORDER: tuple[str, ...] = (
     "special", "prize1", "prize2", "prize3", "prize4", "prize5", "prize6", "prize7",
 )
 
-#: Phép biến đổi mức CHỮ SỐ. Tra bằng mảng 10 phần tử cho nhanh và cho đúng.
 DIGIT_OPS: dict[str, np.ndarray] = {
     "goc": np.arange(10, dtype=np.int8),
     "duong": np.array([BONG_DUONG[d] for d in range(10)], dtype=np.int8),
@@ -74,16 +30,10 @@ DIGIT_OPS: dict[str, np.ndarray] = {
 
 OP_NAMES: tuple[str, ...] = ("goc", "duong", "am")
 
-#: Cặp lag mặc định: (lag của chữ số đầu, lag của chữ số sau), tính bằng NGÀY.
 DEFAULT_LAG_PAIRS: tuple[tuple[int, int], ...] = ((1, 1), (1, 2))
 
 
 def digit_slots() -> tuple[str, ...]:
-    """Tên 107 ô chữ số, theo thứ tự cột của bảng kết quả.
-
-    Tên có dạng ``prize3_4.d2`` — giải ba thứ tư, chữ số thứ ba từ trái. Tên
-    phải ổn định vì nó là khoá của mọi kết quả ghi ra đĩa.
-    """
     names: list[str] = []
     for prize in PRIZE_ORDER:
         count, width = PRIZE_LAYOUT[prize]
@@ -98,13 +48,6 @@ N_SLOTS: int = len(SLOT_NAMES)
 
 
 def digit_matrix(raw: pd.DataFrame) -> np.ndarray:
-    """Trải bảng kết quả thành ma trận ``(số kỳ, 107)`` chữ số.
-
-    Giá trị trong kho lưu dưới dạng số nguyên nên số 0 đứng đầu đã mất. Phải
-    đệm lại theo ĐỘ RỘNG KHAI BÁO của từng giải, không theo độ dài chuỗi: giải
-    bảy ``58`` là hai chữ số, còn ``5`` là ``05``. Đệm sai một chữ số là lệch
-    toàn bộ hệ toạ độ.
-    """
     out = np.empty((len(raw), N_SLOTS), dtype=np.int8)
     cursor = 0
     for prize in PRIZE_ORDER:
@@ -112,10 +55,6 @@ def digit_matrix(raw: pd.DataFrame) -> np.ndarray:
         for index in range(1, count + 1):
             column = prize if count == 1 else f"{prize}_{index}"
             values = raw[column].astype("int64")
-            # Chặn giá trị âm ngay tại cửa. Không chặn thì `zfill` sinh ra
-            # chuỗi kiểu "000-5", dài đúng bằng width nên lọt phép kiểm độ
-            # dài, rồi vỡ mãi sâu bên trong bằng "invalid literal for int()
-            # with base 10: '-'" — một thông báo không chỉ ra được cột nào.
             if (values < 0).any():
                 bad_column = raw.loc[values < 0, column].iloc[0]
                 raise ValueError(f"{column}: giá trị âm {bad_column!r} không phải số trúng")
@@ -132,12 +71,6 @@ def digit_matrix(raw: pd.DataFrame) -> np.ndarray:
 
 
 def target_matrix(two_digits: pd.DataFrame, mode: str) -> np.ndarray:
-    """Ma trận đích ``(số kỳ, 10, 10)``: ô ``[t, x, y]`` là số ``10x+y``.
-
-    Tách theo ``mode`` vì hai đích có hình dạng nền hoàn toàn khác nhau —
-    0,2378 cho lô so với 0,01 cho Đặc Biệt. Dùng chung một nền là sai số gấp
-    hai mươi lần.
-    """
     columns = [c for c in two_digits.columns if c != "date"]
     rows = len(two_digits)
     out = np.zeros((rows, 10, 10), dtype=np.float32)
@@ -156,21 +89,13 @@ def target_matrix(two_digits: pd.DataFrame, mode: str) -> np.ndarray:
 
 @dataclass(frozen=True)
 class ScanResult:
-    """Kết quả quét một họ luật trên một lát cắt thời gian."""
 
-    hits: np.ndarray      # (n_op_pairs * n_lag_pairs, 107, 107)
+    hits: np.ndarray
     trials: int
     labels: tuple[tuple[str, str, int, int], ...]
 
 
 def _one_hot(codes: np.ndarray) -> np.ndarray:
-    """``(T, 107)`` chữ số -> ``(107, T*10)`` one-hot đã làm phẳng.
-
-    Làm phẳng trục (kỳ, chữ số) để phép cộng trên mọi cặp ô trở thành MỘT
-    phép nhân ma trận. Cách ngây thơ — lặp qua 11 449 cặp — tốn 27 triệu lượt
-    tra cho mỗi tổ hợp phép; ở đây còn 275 triệu phép nhân-cộng mà BLAS chạy
-    trong khoảng một phần mười giây, nên chạy được cả 32 lần hoán vị.
-    """
     days, slots = codes.shape
     flat = np.zeros((slots, days, 10), dtype=np.float32)
     day_index = np.arange(days)
@@ -187,18 +112,6 @@ def scan_family(
     lag_pairs: tuple[tuple[int, int], ...] = DEFAULT_LAG_PAIRS,
     op_names: tuple[str, ...] = OP_NAMES,
 ) -> ScanResult:
-    """Đếm số lần trúng của MỌI luật trong họ, trên các kỳ được chỉ định.
-
-    Args:
-        digits: Ma trận chữ số ``(T, 107)``.
-        targets: Ma trận đích ``(T, 10, 10)``.
-        day_index: Chỉ số các kỳ ĐÍCH được tính, đã đảm bảo mọi lag tra được.
-        lag_pairs: Các cặp lag theo ngày lịch.
-        op_names: Các phép mức chữ số được phép dùng.
-
-    Returns:
-        :class:`ScanResult` với ``hits`` chỉ số ``[luật, ô_đầu, ô_sau]``.
-    """
     blocks: list[np.ndarray] = []
     labels: list[tuple[str, str, int, int]] = []
     flat_targets = targets[day_index].reshape(len(day_index), 100)
@@ -209,13 +122,6 @@ def scan_family(
     for lag_a, lag_b in lag_pairs:
         src_a = digits[day_index - lag_a]
         src_b = digits[day_index - lag_b]
-        # left[slot, kỳ, y] = đích có số (chữ_số_a, y) ở kỳ ấy không.
-        #
-        # Dựng TRƯỚC vòng op_b, vì left chỉ phụ thuộc op_a. Bản trước dựng nó
-        # bên trong vòng op_b nên mỗi op_a bị dựng lại 3 lần: 18 lần thay vì 6.
-        # Profile trên lịch sử 4 208 kỳ: scan_family chiếm 44,4 trong 49,5 giây
-        # (90%), và phần lớn là phép tra chỉ số nâng cao dựng left — không phải
-        # phép nhân ma trận, vốn đã nằm trong BLAS.
         left_by_op = {
             op_a: grid_targets[rows, DIGIT_OPS[op_a][src_a].T].reshape(N_SLOTS, -1)
             for op_a in op_names
@@ -230,12 +136,6 @@ def scan_family(
 
 
 def usable_days(dates: pd.Series, lag_pairs, warmup: int) -> np.ndarray:
-    """Các kỳ mà MỌI lag đều tra được đúng ngày lịch.
-
-    Trả về chỉ số hàng, và một mảng lag đã quy đổi sang khoảng cách hàng chỉ
-    khi khoảng cách ấy trùng khít số ngày. XSMB có ngày nghỉ, nên lùi một hàng
-    đôi khi là lùi hai ngày — để lọt chuyện đó là tự bịa ra một đường cầu.
-    """
     stamps = pd.to_datetime(dates).dt.normalize()
     position = {stamp: i for i, stamp in enumerate(stamps)}
     keep: list[int] = []
@@ -253,7 +153,6 @@ def usable_days(dates: pd.Series, lag_pairs, warmup: int) -> np.ndarray:
 
 
 def split_days(day_index: np.ndarray, dates: pd.Series, train_end: str, valid_end: str):
-    """Chia ba lát theo thời gian. Holdout chỉ được chạm đúng một lần."""
     stamps = pd.to_datetime(dates).dt.normalize().to_numpy()
     picked = stamps[day_index]
     train = day_index[picked <= np.datetime64(train_end)]
@@ -266,11 +165,6 @@ def split_days(day_index: np.ndarray, dates: pd.Series, train_end: str, valid_en
 
 
 def rule_table(result: ScanResult, base_rate: float) -> pd.DataFrame:
-    """Bảng thống kê từng luật kèm p một phía và q của BH-FDR.
-
-    Dùng kiểm định nhị thức chính xác chứ không xấp xỉ chuẩn: ở đích Đặc Biệt
-    nền là 0,01 nên ``n·p`` chỉ khoảng 24, vùng mà xấp xỉ chuẩn lệch thấy rõ.
-    """
     n_rules, slots_a, slots_b = result.hits.shape
     hits = result.hits.reshape(-1).astype(np.int64)
     trials = result.trials
@@ -300,13 +194,6 @@ def rule_table(result: ScanResult, base_rate: float) -> pd.DataFrame:
 
 
 def _clopper_pearson_upper(successes: int, trials: int, confidence: float = 0.95) -> float:
-    """Cận trên Clopper-Pearson một phía cho một tỉ lệ nhị thức.
-
-    Phép kiểm hoán vị chỉ ước lượng p bằng một mẫu hữu hạn, nên bản thân con
-    số p ấy có sai số. Không kèm cận trên thì một lượt chạy 60 lần hoán vị
-    trông dứt khoát y hệt một lượt chạy 10 000 lần, trong khi hai kết luận
-    khác hẳn nhau về độ chắc.
-    """
     if trials <= 0:
         return 1.0
     if successes >= trials:
@@ -323,14 +210,6 @@ def reality_check(
     permutations: int,
     seed: int,
 ) -> dict:
-    """So lift lớn nhất QUAN SÁT được với lift lớn nhất của nhiễu trên CÙNG họ.
-
-    Dịch vòng chuỗi kết quả mà giữ nguyên chữ số nguồn. Phép này phá huỷ mọi
-    quan hệ nguồn-đích nhưng GIỮ NGUYÊN tương quan giữa các luật dùng chung ô
-    nguồn, nên phân phối cực đại thu được là phân phối đúng để so sánh. Mô
-    phỏng nhị thức độc lập sẽ cho đuôi rộng hơn thực tế và làm phép kiểm mất
-    hiệu lực theo hướng khó thấy.
-    """
     if permutations < 1:
         raise ValueError("cần ít nhất một lần hoán vị mới nói được gì")
     rng = np.random.default_rng(seed)
@@ -345,10 +224,6 @@ def reality_check(
     for _ in range(permutations):
         shift = int(rng.integers(1, total))
         shifted = np.roll(targets, shift, axis=0)
-        # Nền phải tính lại TRÊN CHÍNH CỬA SỔ ĐÃ DỊCH. Dùng nền gốc cho lift
-        # của nhiễu là so hai thứ khác mẫu số: trên dữ liệu có xu hướng, nền
-        # của cửa sổ dịch lệch tới 0,8% so với nền gốc — cùng bậc với chính
-        # cái lift đang đi tìm, nên nó bẻ cong kết luận theo hướng khó thấy.
         shifted_base = float(shifted[day_index].mean())
         if shifted_base <= 0.0:
             continue
@@ -368,21 +243,13 @@ def reality_check(
         "null_max_lift_p95": float(np.quantile(nulls, 0.95)),
         "null_max_lift_max": float(nulls.max()),
         "null_exceed_count": exceed,
-        # Ước lượng (1+b)/(1+B), KHÔNG phải b/B. Với b/B, một lượt chạy không
-        # có mẫu nhiễu nào vượt sẽ báo p = 0,0000 — tức khẳng định xác suất
-        # bằng 0 từ 60 lần rút ngẫu nhiên. Đó đúng là kiểu con số tạo ra một
-        # "phát hiện" giả. Ước lượng cộng một là ước lượng không chệch cho
-        # phép kiểm Monte Carlo và không bao giờ trả về 0.
         "p_value": (1.0 + exceed) / (1.0 + draws),
-        # Và kèm cận trên thật của nó: 0/60 chỉ cho phép kết luận p < 0,0487,
-        # sát ngay mức 0,05 chứ không hề dứt khoát.
         "p_value_upper_95": _clopper_pearson_upper(exceed, draws),
         "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn; nền tính lại từng lượt",
     }
 
 
 def rule_hits(digits, targets, day_index, rule) -> tuple[int, int]:
-    """Số lần trúng của MỘT luật trên một lát cắt. Dùng để soi ngoài mẫu."""
     slot_a = SLOT_NAMES.index(rule["slot_a"])
     slot_b = SLOT_NAMES.index(rule["slot_b"])
     op_a, op_b = DIGIT_OPS[rule["op_a"]], DIGIT_OPS[rule["op_b"]]
@@ -393,20 +260,10 @@ def rule_hits(digits, targets, day_index, rule) -> tuple[int, int]:
 
 
 def follow_through(digits, targets, splits, table: pd.DataFrame, top: int) -> pd.DataFrame:
-    """Lấy các luật MẠNH NHẤT TRÊN TRAIN rồi đo tiếp trên validation và holdout.
-
-    Đây là phép đo trả lời đúng câu hỏi người soi cầu quan tâm: "cầu đang chạy
-    thì có chạy tiếp không?". Chọn luật ở một lát và chấm ở lát khác là cách
-    duy nhất tách được lợi thế thật khỏi ảo giác chọn lọc — một luật lift 1,18
-    chọn bằng hậu nghiệm sẽ rơi về nền ở lát sau nếu nó chỉ là nhiễu.
-    """
     _, valid, holdout = splits
     columns = ["op_a", "op_b", "lag_a", "lag_b", "slot_a", "slot_b", "train_lift",
                "train_q_fdr", "validation_lift", "holdout_lift",
                "validation_days", "holdout_days"]
-    # Bảng rỗng có mọi cột ở kiểu object, và `nlargest` ném TypeError chứ
-    # không trả về bảng rỗng. Dữ liệu quá ngắn để sinh luật nào là trạng thái
-    # HỢP LỆ — phòng thí nghiệm phải báo "không có gì", không phải sập.
     if table.empty or "lift" not in table.columns:
         return pd.DataFrame(columns=columns)
     best = table.nlargest(top, "lift").copy()
@@ -431,18 +288,12 @@ def follow_through(digits, targets, splits, table: pd.DataFrame, top: int) -> pd
 
 
 def _first(frame: pd.DataFrame, column: str) -> float | None:
-    """Giá trị đầu tiên, hoặc ``None`` khi bảng rỗng.
-
-    Báo cáo ghi ra JSON, nên bảng rỗng phải thành ``null`` đọc được chứ không
-    thành ``IndexError`` làm hỏng cả bước dựng.
-    """
     if frame.empty or column not in frame.columns:
         return None
     return float(frame[column].iloc[0])
 
 
 def _mean(frame: pd.DataFrame, column: str) -> float | None:
-    """Trung bình cột, hoặc ``None`` khi bảng rỗng."""
     if frame.empty or column not in frame.columns:
         return None
     return float(frame[column].mean())
@@ -459,7 +310,6 @@ def build(
     warmup: int = 180,
     seed: int = 20260915,
 ) -> Path:
-    """Chạy toàn bộ phòng thí nghiệm và ghi kết quả ra ``data/research/bong_bridge``."""
     lot = Lottery()
     lot.load()
     raw = lot.get_raw_data().sort_values("date", kind="stable").reset_index(drop=True)
@@ -525,7 +375,7 @@ def build(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--out-dir", default="data/research/bong_bridge")
     parser.add_argument("--permutations", type=int, default=60)
     parser.add_argument("--top", type=int, default=50)

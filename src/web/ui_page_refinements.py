@@ -1,11 +1,3 @@
-"""Persistent UI refinements applied at the final HTML output boundary.
-
-This layer intentionally changes presentation only. Builders keep ownership of
-statistics, data semantics, element ids and JavaScript hooks; the refinement is
-re-applied every time a published page is regenerated so the public site cannot
-silently fall back to stale layouts after the daily pipeline runs.
-"""
-
 from __future__ import annotations
 
 import re
@@ -13,10 +5,7 @@ from pathlib import Path
 
 __all__ = ["refine_page"]
 
-# Id không mang tên dự án: nó đi thẳng vào HTML của mọi trang đã xuất bản.
 _STYLE_ID = "ui-targeted-ui-refinement"
-# Nhận diện các id từng được xuất ra để lần dựng tiếp theo gỡ được khối cũ,
-# tránh giữ lại song song nhiều bản CSS trên cùng một trang.
 _LEGACY_STYLE_IDS = ("vla-targeted-ui-refinement", "ui-targeted-refinement")
 _STYLE_RE = re.compile(
     "<style id=\"(?:"
@@ -198,11 +187,6 @@ def _refine_stat(filename: str, page: str) -> str:
 
 
 def _refine_path(page: str) -> str:
-    # KHONG gan `ui-dock-space`: dock da bi khung ung dung thay the, va tren
-    # trang nay lop ay la cho DUY NHAT quy tac `padding-bottom` cua no khong
-    # bi de. Do duoc: 86px trong duoi cung cho mot thanh dieu huong khong con
-    # ton tai. 19 trang khac cung mang lop ay nhung tinh ra 0px, nen chung
-    # khong lo ra van de.
     page = _add_body_classes(page, "path-page")
     page = page.replace('<div class="wrap">', '<div class="wrap path-shell">', 1)
     page = page.replace('<div class="top">', '<div class="top path-hero">', 1)
@@ -259,7 +243,6 @@ def _refine_live(page: str) -> str:
 
 
 def _refine_existing_page(path: Path | str, page: str) -> str:
-    """Return idempotently refined HTML for selected public pages."""
     filename = Path(path).name
     if filename in _STAT_PAGES:
         return _refine_stat(filename, page)
@@ -279,7 +262,6 @@ def _refine_existing_page(path: Path | str, page: str) -> str:
 
 
 def refine_page(path: Path | str, page: str) -> str:
-    """Tinh chỉnh bố cục, giữ nguyên phép tính và các điểm nối tương tác."""
     from web.analysis_workspace import refine_workspace
 
     return refine_workspace(path, _refine_existing_page(path, page))

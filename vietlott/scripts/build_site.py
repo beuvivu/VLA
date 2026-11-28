@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""Build the static site published to GitHub Pages: ``site/index.html`` (results) and ``forecast.html`` (analysis) plus JSON.
-
-    python scripts/build_site.py [--out site] [--dir data/forecast]
-
-Reads the saved forecaster state of each product (``vietlott forecast next`` / ``update`` write
-it) and the ledger; nothing is learnt here. Products without a saved state are skipped.
-
-JSON (for other dashboards, e.g. VLA): ``data/summary.json`` (one row per product),
-``data/forecast/<product>.json`` (full forecast + e-value path), ``data/scoreboard.json``,
-``data/ledger.jsonl`` (every recorded forecast, scored or not).
-"""
 
 from __future__ import annotations
 
@@ -24,12 +13,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine import __version__  # noqa: E402
-from vlm.web.dashboard import build_dashboard  # noqa: E402
-from vietlott_engine.core.products import PRODUCT_INFO, ProductCode  # noqa: E402
-from vietlott_engine.forecast.engine import LEDGER, Forecaster, scoreboard, state_path, vn, vn_int  # noqa: E402
+from vietlott_engine import __version__
+from vlm.web.dashboard import build_dashboard
+from vietlott_engine.core.products import PRODUCT_INFO, ProductCode
+from vietlott_engine.forecast.engine import LEDGER, Forecaster, scoreboard, state_path, vn, vn_int
 
-THRESHOLD = 1.30103  # log10 20
+THRESHOLD = 1.30103
 
 
 def esc(x: object) -> str:
@@ -37,7 +26,6 @@ def esc(x: object) -> str:
 
 
 def factor(log10_value: float) -> str:
-    """e-value as a multiplier a reader can picture: ×0,35 · ×1,58 · ×372 · ×10^5,2."""
     v = 10 ** log10_value
     if v >= 10_000:
         return f"×10^{vn(log10_value, 1)}"
@@ -45,7 +33,6 @@ def factor(log10_value: float) -> str:
 
 
 def sparkline(path: list[list[float]], width: int = 320, height: int = 72) -> str:
-    """Inline SVG of log10 e-value by draw, with the ×20 evidence line."""
     if len(path) < 2:
         return '<p class="muted">Chưa đủ kỳ để vẽ.</p>'
     ys = [p[1] for p in path]
@@ -117,7 +104,6 @@ def product_section(rep: dict, path: list[list[float]], board: dict | None) -> s
                 parts.append(f'<table><caption>Cửa có RTP cao nhất theo mô hình</caption><thead><tr><th scope="col">Cửa</th><th scope="col">RTP mô hình</th><th scope="col">RTP ngẫu nhiên</th></tr></thead><tbody>{brows}</tbody></table>')
     parts.append("</section>")
     return "\n".join(parts)
-
 
 
 def build(out: Path, directory: Path, *, data_dir: Path | None = None, seed_dir: Path | None = None, journal: Path | None = None) -> dict:
@@ -212,7 +198,7 @@ def main() -> int:
     ap.add_argument("--out", default="site")
     ap.add_argument("--dir", default=None, help="forecaster state + ledger (default: the settings, <data_dir>/forecast)")
     a = ap.parse_args()
-    for stream in (sys.stdout, sys.stderr):  # Vietnamese output through a Windows pipe (cp1252)
+    for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     if a.dir is None:

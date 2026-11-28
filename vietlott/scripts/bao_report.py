@@ -1,10 +1,3 @@
-"""Regenerate ``reports/bao_vietlott.{md,json}``: every bao option Vietlott sells, exact
-prize tables, bao vs bao rút gọn vs single tickets, bao EV with co-winners and taxes, and
-the Max 3D family.
-
-    python scripts/bao_report.py [--sims 100000]
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -16,9 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vietlott_engine.core.games import LOTTO_535, MEGA_645, POWER_655, GameSpec  # noqa: E402
-from vietlott_engine.game_theory import max3d  # noqa: E402
-from vietlott_engine.game_theory.bao import analyse_bao, bao_catalog, bao_ev, bao_prize_table, compare_bao_strategies, fmt_vnd  # noqa: E402
+from vietlott_engine.core.games import LOTTO_535, MEGA_645, POWER_655, GameSpec
+from vietlott_engine.game_theory import max3d
+from vietlott_engine.game_theory.bao import analyse_bao, bao_catalog, bao_ev, bao_prize_table, compare_bao_strategies, fmt_vnd
 
 OUT = Path(os.environ.get("VQE_REPORTS_DIR") or ROOT / "reports")
 
@@ -97,7 +90,6 @@ def main() -> int:
     md += ["| Vé | Jackpot | Vé bán (mô hình doanh số) | RTP không ai trúng chung | RTP có người trúng chung | Thuế theo vé vs theo lượt (kỳ vọng sau thuế) |", "|---|---:|---:|---:|---:|---:|"]
 
     def sold_at(spec: GameSpec, jackpot: float, fallback: int) -> int:
-        """Tickets sold at this jackpot from the calibrated sales model (data/calibration)."""
         from vietlott_engine.game_theory.market import load_sales_model
 
         sm = load_sales_model(spec.code, Path(os.environ.get("VQE_CALIBRATION_DIR") or ROOT / "data" / "calibration"))

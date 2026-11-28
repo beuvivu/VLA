@@ -1,28 +1,3 @@
-"""Fixed-share Bayesian mixture of experts, its anytime-valid evidence, persistence, ledger.
-
-Learning rule (Herbster–Warmuth fixed share): after draw t with expert likelihoods p_j(x_t),
-
-    v_j ← (1−a) · v_j p_j(x_t) / Σ_i v_i p_i(x_t) + a · prior_j,
-
-a = 1 / (10 × draws per year), fixed by design (about one switch per ten years): the mixture
-can still move to another expert if the machines change, at a cost of ≈ log(1/a) nats of
-evidence per switch. On the real data, 2 years and no switching lead to the same conclusions
-for every product, and the two findings (Max 3D, Max 3D Pro) also clear 60 = 20 × 3 settings.
-The mixture's forecast is Σ_j v_j p_j(·), a proper law built
-from past draws only, so its cumulative likelihood ratio against the fair-machine law,
-
-    W_T = Π_t Σ_j v_j p_j(x_t) / p₀(x_t),
-
-is a non-negative martingale under H0 and P(sup_T W_T ≥ 1/α) ≤ α (Ville). W is reported in
-log10; "evidence" means W has reached 1/α = 20 (log10 1.30) at some point.
-
-Picks rule scored on every past draw: set games — the k numbers with the highest
-mixture-averaged normalised weight (cheap, close to the exact inclusion probabilities); digit
-games — the most likely symbol at each position. The forecast for the next draw, and the
-ledger, use the exact inclusion probabilities. Under H0 any predictable picks hit k²/n numbers (set) or
-m·L/A symbols (digit) per draw on average, so "hits / expected" is a fair score.
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -49,7 +24,6 @@ RECENT = 500
 PATH_POINTS = 800
 
 
-# ============================================================================ outputs
 class ExpertWeight(BaseModel):
     name: str
     weight: float
@@ -149,13 +123,11 @@ class ForecastReport(BaseModel):
     components: list[ComponentForecast]
     verdict: str
     digest: str = ""
-    recorded: bool | None = None  # written to the ledger before its draw (None: not asked)
+    recorded: bool | None = None
     record_note: str = ""
 
 
-# ============================================================================ helpers
 def vn(x: float, digits: int = 2) -> str:
-    """Vietnamese number format: 1.234,56."""
     return f"{x:,.{digits}f}".replace(",", "\0").replace(".", ",").replace("\0", ".")
 
 
@@ -164,16 +136,10 @@ def vn_int(x: float) -> str:
 
 
 def inclusion_probabilities(w: np.ndarray, k: int) -> np.ndarray:
-    """Biên của luật tích trọng số, tính bằng DP log và truyền xác suất ngược.
-
-    Chia đa thức e_j để bỏ một số phải trừ hai hệ số gần nhau; với Keno
-    nó có thể cho π > 1. DP giữ hai nhánh có/không có số i, rồi chia khối
-    xác suất của mỗi trạng thái theo hai nhánh ấy, không trừ hệ số đa thức.
-    """
     w = np.asarray(w, dtype=float)
     experts, n = w.shape
     log_w = np.log(w)
-    log_w -= log_w.mean(axis=1, keepdims=True)  # Đổi cùng thang trọng số không đổi luật.
+    log_w -= log_w.mean(axis=1, keepdims=True)
     prefix = np.full((experts, n + 1, k + 1), -np.inf)
     prefix[:, :, 0] = 0.
     for i in range(n):
@@ -196,7 +162,6 @@ def inclusion_probabilities(w: np.ndarray, k: int) -> np.ndarray:
 
 
 def match_distribution(w: np.ndarray, ticket: np.ndarray, k: int) -> np.ndarray:
-    """(J, s+1): P(the ticket's s numbers contain r of the k drawn), r = 0..s, under CB weights."""
     n = w.shape[1]
     s = len(ticket)
     mask = np.zeros(n, dtype=bool)
@@ -221,7 +186,7 @@ def _evidence(draws: int, lw: float, mlw: float, window: dict | None = None) -> 
     found = valid and mlw >= thr
     if not valid:
         text = (
-            f"Không dùng làm bằng chứng: mô hình học từ {vn_int(window['last'])} kỳ cuối do người dùng chọn (--last). "  # type: ignore[index]
+            f"Không dùng làm bằng chứng: mô hình học từ {vn_int(window['last'])} kỳ cuối do người dùng chọn (--last). "
             "E-value chỉ hợp lệ khi điểm bắt đầu được định trước khi xem dữ liệu; chạy `forecast fit` không có --last để học toàn bộ lịch sử."
         )
     elif found:
@@ -234,7 +199,7 @@ def _evidence(draws: int, lw: float, mlw: float, window: dict | None = None) -> 
     return Evidence(draws=draws, log10_wealth=round(lw, 4), max_log10_wealth=round(mlw, 4), threshold_log10=round(thr, 4), anytime_p_value=float(min(1.0, 10 ** (-max(mlw, 0.0)))), found=found, valid=valid, text=text)
 
 
-def _jsonable(obj):  # type: ignore[no-untyped-def]
+def _jsonable(obj):
     if isinstance(obj, np.ndarray):
         return {"__nd__": obj.tolist(), "dtype": str(obj.dtype)}
     if isinstance(obj, dict):
@@ -246,7 +211,7 @@ def _jsonable(obj):  # type: ignore[no-untyped-def]
     return obj
 
 
-def _from_jsonable(obj):  # type: ignore[no-untyped-def]
+def _from_jsonable(obj):
     if isinstance(obj, dict):
         if "__nd__" in obj:
             return np.asarray(obj["__nd__"], dtype=obj.get("dtype", "float64"))
@@ -256,7 +221,6 @@ def _from_jsonable(obj):  # type: ignore[no-untyped-def]
     return obj
 
 
-# ============================================================================ component
 class Component:
     def __init__(self, name: str, spec: SetSpec | DigitSpec, batch: int, switch_rate: float) -> None:
         self.name, self.spec, self.switch = name, spec, switch_rate
@@ -276,7 +240,7 @@ class Component:
         self.j_ad = len(self.groups[0].names)
         j = len(self.names)
         prior = np.empty(j)
-        prior[0] = 0.25  # the fair-machine expert
+        prior[0] = 0.25
         prior[1 : self.j_ad] = 0.375 / (self.j_ad - 1)
         prior[self.j_ad :] = 0.375 / (j - self.j_ad)
         self.prior = prior
@@ -341,7 +305,6 @@ class Component:
         }
         return incr, new
 
-    # ------------------------------------------------------------------ next draw
     def predictions(self, st: dict) -> np.ndarray:
         empty = {"X": np.zeros((0, self.spec.n), dtype=bool), "bonus": np.zeros(0, dtype=np.int16)} if isinstance(self.spec, SetSpec) else {
             "C": np.zeros((0, self.spec.positions, self.spec.alphabet))
@@ -384,7 +347,7 @@ class Component:
         n, k = self.spec.n, self.spec.k
         pi = v @ inclusion_probabilities(w, k)
         order = np.argsort(-pi, kind="stable")
-        ticket = np.sort(order[:k])  # the k most likely numbers (exact inclusion probabilities)
+        ticket = np.sort(order[:k])
         p0 = k / n
         nums = [NumberProb(symbol=str(i + 1), p=round(float(pi[i]), 6), lift=round(float(pi[i] / p0), 5)) for i in np.argsort(-pi)]
         logp = np.log(w[:, ticket]).sum(axis=1) - np.log(elementary_symmetric(w, k)[:, k])
@@ -420,9 +383,9 @@ class Component:
             PositionForecast(label=sp.position_labels[pos], symbols=[NumberProb(symbol=str(a + off), p=round(float(qm[pos, a]), 6), lift=round(float(qm[pos, a] * big_a), 5)) for a in np.argsort(-qm[pos])])
             for pos in range(big_l)
         ]
-        combos = np.array(list(iproduct(range(big_a), repeat=big_l)))  # (A^L, L)
+        combos = np.array(list(iproduct(range(big_a), repeat=big_l)))
         logq = np.log(q)
-        lp = sum(logq[:, pos, combos[:, pos]] for pos in range(big_l))  # (J, A^L)
+        lp = sum(logq[:, pos, combos[:, pos]] for pos in range(big_l))
         pj = np.exp(lp)
         pm = v @ pj
         top = np.argsort(-pm)[:5]
@@ -433,7 +396,7 @@ class Component:
             top_numbers=[NumberProb(symbol=fmt(combos[i]), p=float(pm[i]), lift=round(float(pm[i] / fair), 5)) for i in top],
             p_top_appears_model=float(v @ (1 - (1 - pj[:, top[0]]) ** m)), p_top_appears_fair=float(1 - (1 - fair) ** m),
         )
-        if big_a == 6 and big_l == 3:  # Bingo18: price 10.000 đ
+        if big_a == 6 and big_l == 3:
             from vietlott_engine.game_theory.fastgames import BINGO_PRICE, BINGO_SUM_PAYOUT
 
             sums = (combos + 1).sum(axis=1)
@@ -448,9 +411,7 @@ class Component:
         return out
 
 
-# ============================================================================ forecaster
 def _atomic_write_text(path: Path, text: str) -> None:
-    """Ghi staging cùng thư mục, fsync rồi replace; lỗi ghi giữ nguyên bản đã công bố."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, staging = tempfile.mkstemp(prefix=path.name + '.', suffix='.tmp', dir=path.parent)
     try:
@@ -465,7 +426,6 @@ def _atomic_write_text(path: Path, text: str) -> None:
 
 
 def _prefix_fingerprint(series: Series, count: int) -> str:
-    """Băm ID, ngày và mọi observation của tiền tố thực sự dùng để học."""
     digest = hashlib.sha256(series.product.value.encode())
     digest.update(series.draw_ids[:count].astype('<i8').tobytes())
     digest.update(np.asarray(series.dates[:count]).astype('datetime64[D]').astype('<i8').tobytes())
@@ -479,14 +439,13 @@ def _prefix_fingerprint(series: Series, count: int) -> str:
 
 
 class Forecaster:
-    """All components of one product, their state, and the ledger of issued forecasts."""
 
     SWITCH_YEARS = 10.0
 
     def __init__(self, product: str | ProductCode, keep_trace: bool = False) -> None:
         self.product = get_product(product)
         self.keep_trace = keep_trace
-        self.trace: list[tuple[np.ndarray, np.ndarray]] = []  # (draw ids, log10 wealth) at full resolution, when asked
+        self.trace: list[tuple[np.ndarray, np.ndarray]] = []
         cfg = CONFIGS[self.product]
         switch = 1.0 / (self.SWITCH_YEARS * cfg.draws_per_year)
         self.components = {name: Component(name, spec, cfg.logistic_batch, switch) for name, spec in cfg.components.items()}
@@ -496,9 +455,7 @@ class Forecaster:
             "prefix_count": 0, "prefix_hash": "",
         }
 
-    # ------------------------------------------------------------------ learning
     def update(self, series: Series, chunk: int = 2000) -> int:
-        """Learn from every draw newer than the last one seen; returns how many."""
         if series.product != self.product:
             raise ValueError(f"series is {series.product.value}, forecaster is {self.product.value}")
         window = self.state.get('window')
@@ -508,7 +465,6 @@ class Forecaster:
         count = int(np.sum(series.draw_ids <= last_id)) if last_id is not None else 0
         if last_id is not None and (count != self.state.get('prefix_count')
                                    or _prefix_fingerprint(series, count) != self.state.get('prefix_hash')):
-            # Học lại trên candidate; refit lỗi giữ model/evidence cũ và không đụng ledger.
             candidate = Forecaster(self.product, self.keep_trace)
             if window is not None:
                 candidate.state['window'] = dict(window)
@@ -535,7 +491,6 @@ class Forecaster:
         self.state['prefix_hash'] = _prefix_fingerprint(series, len(series))
         return len(new)
 
-    # ------------------------------------------------------------------ forecasting
     def forecast(self) -> ForecastReport:
         window = self.state.get("window")
         comps = [c.forecast(self.state["components"][n], window) for n, c in self.components.items()]
@@ -559,7 +514,7 @@ class Forecaster:
         rep = ForecastReport(
             product=self.product.value, display_name=PRODUCT_INFO[self.product].display_name, made_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             draws=int(self.state["draws"]), last_id=self.state["last_id"], last_date=self.state["last_date"],
-            target_id=(self.state["last_id"] + 1) if self.state["last_id"] is not None and self.product != ProductCode.MAX4D else None,  # Max 4D: discontinued
+            target_id=(self.state["last_id"] + 1) if self.state["last_id"] is not None and self.product != ProductCode.MAX4D else None,
             evidence=ev, components=comps, verdict=verdict,
         )
         rep.digest = hashlib.sha256(rep.model_dump_json(exclude={"digest", "made_at"}).encode()).hexdigest()[:16]
@@ -579,7 +534,7 @@ class Forecaster:
         for c in comps:
             if c.set is not None:
                 sf = c.set
-                if len(sf.ticket) <= 6:  # Keno tickets are judged per bậc below
+                if len(sf.ticket) <= 6:
                     parts.append(f"bộ đề xuất {' '.join(f'{x:02d}' for x in sf.ticket)}: P(trúng cả bộ) theo mô hình 1/{vn_int(1 / sf.p_ticket_model)} (×{vn(sf.ticket_lift, 3)}; ngẫu nhiên 1/{vn_int(1 / sf.p_ticket_fair)})")
                 if sf.keno:
                     b = max(sf.keno, key=lambda x: x.rtp_model)
@@ -597,7 +552,6 @@ class Forecaster:
         body = "; ".join(parts)
         return head + " " + body[:1].upper() + body[1:] + "." + tail
 
-    # ------------------------------------------------------------------ persistence
     def to_dict(self) -> dict:
         return _jsonable(self.state)
 
@@ -628,7 +582,6 @@ def load_or_new(directory: Path, product: ProductCode) -> Forecaster:
     return Forecaster.load(p) if p.exists() else Forecaster(product)
 
 
-# ============================================================================ ledger
 LEDGER = "ledger.jsonl"
 
 
@@ -639,22 +592,18 @@ def record(directory: Path, rep: ForecastReport, pre_draw: bool = True, target_t
 
 
 def _record_unlocked(directory: Path, rep: ForecastReport, pre_draw: bool = True, target_time: str | None = None) -> dict:
-    """Append a forecast *before* its draw: what was predicted, for which draw, when.
-
-    ``pre_draw=False`` marks an entry forced in after the draw may have started; the scoreboard
-    leaves such entries out."""
     entry = {
         "product": rep.product, "made_at": rep.made_at, "based_on_id": rep.last_id, "based_on_date": rep.last_date, "target_id": rep.target_id, "digest": rep.digest,
         "evidence_valid": rep.evidence.valid, "pre_draw": bool(pre_draw), "target_draw_time": target_time,
         "log10_wealth": rep.evidence.log10_wealth,
         "picks": {c.name: c.picks for c in rep.components},
         "ticket": next((c.set.ticket for c in rep.components if c.set is not None), None),
-        "top": {c.name: ([x.symbol for x in c.set.numbers[:10]] if c.set else [x.symbol for x in c.digit.top_numbers]) for c in rep.components},  # type: ignore[union-attr]
+        "top": {c.name: ([x.symbol for x in c.set.numbers[:10]] if c.set else [x.symbol for x in c.digit.top_numbers]) for c in rep.components},
         "score": None,
     }
     path = Path(directory) / LEDGER
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists():  # the same forecast for the same draw is recorded once
+    if path.exists():
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 old = json.loads(line)
@@ -693,7 +642,6 @@ def score_ledger(directory: Path, series: Series) -> list[dict]:
 
 
 def _score_ledger_unlocked(directory: Path, series: Series) -> list[dict]:
-    """Score every recorded forecast of this product whose target draw has arrived."""
     path = Path(directory) / LEDGER
     if not path.exists():
         return []
@@ -717,7 +665,6 @@ def scoreboard(directory: Path, product: ProductCode | None = None) -> list[dict
 
 
 def _scoreboard_unlocked(directory: Path, product: ProductCode | None = None) -> list[dict]:
-    """Live track record per product: forecasts recorded before their draw, then scored."""
     path = Path(directory) / LEDGER
     if not path.exists():
         return []
@@ -728,7 +675,7 @@ def _scoreboard_unlocked(directory: Path, product: ProductCode | None = None) ->
             continue
         e = json.loads(line)
         if (product is not None and e["product"] != product.value) or (e["product"], e["target_id"]) in seen or e.get("pre_draw") is False:
-            continue  # only the first forecast recorded before its draw counts
+            continue
         seen.add((e["product"], e["target_id"]))
         r = rows.setdefault(e["product"], {"product": e["product"], "recorded": 0, "scored": 0, "hits": 0.0, "expected": 0.0, "last": None})
         r["recorded"] += 1
@@ -750,14 +697,13 @@ def refresh(product: str | ProductCode, series: Series, directory: Path, refit: 
 
 
 def _refresh_unlocked(product: str | ProductCode, series: Series, directory: Path, refit: bool = False, last: int | None = None) -> tuple[Forecaster, int, list[dict]]:
-    """Load the saved model (or start one), learn every new draw, score the ledger, save."""
     code = get_product(product)
     f = None
     if not refit:
         try:
             f = load_or_new(directory, code)
         except (ValueError, KeyError, json.JSONDecodeError):
-            f = None  # state from another version, or damaged: learn again from the data
+            f = None
     if f is None:
         f = Forecaster(code)
         if last:

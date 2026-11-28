@@ -1,12 +1,3 @@
-"""Quyết định CHUYỂN NGUỒN phải giống nhau ở hai bản mã.
-
-Chính sách từ 13-10-2026: một nguồn chính, hai nguồn dự phòng chỉ được gọi khi nguồn chính
-gặp sự cố (``sources.primary_has_failed`` / ``primaryHasFailed`` trong Worker). Quyết định
-"có gọi dự phòng không" xảy ra TRƯỚC bước dựng bản chụp, nên phép so bản chụp không thấy nó.
-Hai bản lệch nhau thì một bên gọi dự phòng ở mọi lượt, hoặc bỏ qua dự phòng đúng lúc nguồn
-chính kẹt — không làm sai số, chỉ làm trang live đứng im.
-"""
-
 from __future__ import annotations
 
 import json
@@ -102,7 +93,6 @@ def test_a_primary_with_nothing_reaches_the_fallbacks() -> None:
 
 
 def test_values_still_arriving_during_the_draw_are_not_a_failure() -> None:
-    """Các giải về dần: gọi dự phòng ở mọi lượt thăm dò trong lúc quay là thứ phải tránh."""
     assert _python(PARTIAL, "18:20:00") == (False, "nguồn chính dùng được")
     assert _python(PARTIAL, "18:39:59")[0] is False
 
@@ -119,20 +109,17 @@ def test_a_complete_primary_never_reaches_the_fallbacks() -> None:
 
 
 def test_the_deadline_is_counted_on_the_draw_date() -> None:
-    """Một lượt chạy sau nửa đêm cho kỳ HÔM QUA: 00:30 vẫn là sau hạn của ngày quay."""
     now = datetime(2026, 10, 14, 0, 30, tzinfo=VIETNAM_TZ)
     failed, _ = primary_has_failed(PARTIAL, target=_at("18:00:00").date(), now=now)
     assert failed is True
 
 
 def test_a_source_returning_http_200_but_no_prizes_is_not_usable() -> None:
-    """Mã trạng thái 200 mà trang đổi bố cục thì vẫn là hỏng."""
     obs = SourceObservation(name="xoso.com.vn", tier="primary", priority=1, prize_map=EMPTY)
     assert obs.usable is False
 
 
 def test_the_fixtures_really_are_what_their_names_say() -> None:
-    """Nếu FULL thiếu ô thì mọi ca ở trên kiểm nhầm thứ khác mà vẫn xanh."""
     for key in PRIZE_ORDER:
         assert len(FULL[key]) == EXPECTED_COUNTS[key], key
     assert sum(len(v) for v in PARTIAL.values()) == 3

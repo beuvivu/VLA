@@ -1,28 +1,3 @@
-"""So sánh mô hình cũ và mới trên N kỳ quay gần nhất bằng walk-forward không rò rỉ.
-
-Chạy:  PYTHONPATH=src python3 scripts/research/benchmark_probability_models.py --last 1000
-
-Các mô hình (mỗi khối ``--refit-every`` kỳ được huấn luyện lại trên dữ liệu
-TRƯỚC khối):
-
-* ``hang_so``        — tỉ lệ nền (LOTO) / 1/100 (Đặc Biệt). Mốc kỹ năng 0.
-* ``tan_suat``       — tần suất THÔ của từng con trên toàn bộ lịch sử trước kỳ đích.
-* ``tan_suat_30`` / ``tan_suat_90`` — tần suất thô trên 30 / 90 kỳ gần nhất ("số nóng").
-* ``ml_production``  — thành phần ML đang chạy production, tái dựng nguyên quy
-  trình huấn luyện (xem ``research.vla.models``).
-* ``tien_nghiem``    — tầng 1 (Dirichlet/Beta) + hiệu chỉnh Platt.
-* ``bayes_lgb``      — tầng 1 + LightGBM phần dư + Platt (mô hình mới).
-* ``bayes_lgb_focal_iso`` — như trên nhưng focal loss + isotonic.
-* ``mang_no_ron``    — tầng 1 + perceptron nhiều lớp trên cùng đặc trưng + Platt (ứng viên học sâu).
-
-Thêm: tổ hợp production ĐÃ GHI SỔ (``data/evaluation/prob_eval/ensemble_history.csv``)
-được so với các mô hình trên đúng những kỳ có trong sổ.
-
-Kiểm độ nhạy (``--power-check``): chạy mô hình mới trên lịch sử tổng hợp có
-cài sẵn tín hiệu, để chứng minh công cụ đo KHÔNG mù — nếu thắng ở đó mà hoà
-trên dữ liệu thật thì kết luận "không có tín hiệu" là của dữ liệu.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -39,12 +14,12 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from research.vla import backtest  # noqa: E402
-from research.vla.models import ProductionMLModel  # noqa: E402
-from research.vla.features import POWER_SEED, power_history  # noqa: E402
-from research.vla.features import History, build_features, load_history  # noqa: E402
-from research.vla.models import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
-from research.vla.models import FrequencyModel, NeuralModel  # noqa: E402
+from research.vla import backtest
+from research.vla.models import ProductionMLModel
+from research.vla.features import POWER_SEED, power_history
+from research.vla.features import History, build_features, load_history
+from research.vla.models import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel
+from research.vla.models import FrequencyModel, NeuralModel
 
 OUT = ROOT / "data" / "research" / "model_overhaul"
 
@@ -84,8 +59,6 @@ def run_mode(
     targets = np.arange(first, final + 1)
     counts = history.counts[targets]
     special = history.special[targets]
-    # Kỳ ngay sau một quãng nghỉ (Tết): bảng production bỏ hàng ấy, nên mọi mô
-    # hình đều được chấm trên CÙNG tập kỳ còn lại.
     dates = pd.to_datetime(list(history.dates))
     consecutive = np.asarray((dates[targets] - dates[targets - 1]).days == 1)
     reference = backtest.cumulative_reference(mode, hit, targets)
@@ -93,8 +66,6 @@ def run_mode(
     results, daily = {}, []
     for name, factory in factories(mode, history, include_production).items():
         t0 = time.perf_counter()
-        # Production học lại MỖI kỳ (``ml_predict`` coi mô hình cũ là hết hạn);
-        # ``--production-refit-every 1`` tái dựng đúng điều đó, giá ~7 giây/kỳ.
         every = (production_refit_every or refit_every) if name == "ml_production" else refit_every
         res = backtest.run(factory, feats.X, hit, first, final, refit_every=every)
         m = consecutive
@@ -119,7 +90,6 @@ def run_mode(
 
 
 def pairwise(frame: pd.DataFrame, mode: str) -> dict:
-    """Mô hình mới so với ML production và với tiên nghiệm, từng kỳ."""
     wide = frame[frame["mode"] == mode].pivot(index="target_date", columns="model", values="logloss")
     out = {}
     for new in ("bayes_lgb", "bayes_lgb_focal_iso", "mang_no_ron"):
@@ -144,13 +114,6 @@ def _against_book(wide: pd.DataFrame, rec: pd.Series, dates: pd.Index) -> dict:
 
 
 def against_recorded_production(frame: pd.DataFrame, book: pd.DataFrame | None = None) -> dict:
-    """So với tổ hợp production đã ghi sổ, TÁCH hai nguồn chấm.
-
-    ``exact_emitted``: kỳ chấm đúng vector đã công bố trước kỳ quay.
-    ``reconstructed``: kỳ dựng lại về sau từ ``pred_<mode>.csv`` — bỏ qua hiệu
-    chỉnh và tầng xếp chồng, tức là một mô hình KHÁC (``model_quality.coverage``),
-    nên không bao giờ gộp chung với nhóm trên.
-    """
     if book is None:
         path = ROOT / "data" / "evaluation" / "prob_eval" / "ensemble_history.csv"
         if not path.exists():
@@ -173,8 +136,6 @@ def against_recorded_production(frame: pd.DataFrame, book: pd.DataFrame | None =
 def power_check(refit_every: int) -> dict:
     out = {}
     for mode in ("loto", "de"):
-        # Mỗi chế độ một lịch sử, chỉ cài tín hiệu của chính nó; seed khác seed
-        # đã dùng để chọn siêu tham số.
         hist = power_history(mode, 2600, seed=POWER_SEED)
         feats = build_features(hist, mode)
         hit = hist.hits(mode)
@@ -190,11 +151,6 @@ def power_check(refit_every: int) -> dict:
 
 
 def production_refit_check(history: History, last: int, refit_every: int) -> dict:
-    """ML production học lại mỗi kỳ so với mỗi ``refit_every`` kỳ, trên ``last`` kỳ cuối.
-
-    Đo xem đối chứng "học lại theo khối" lệch bao nhiêu so với production thật
-    (học lại mỗi kỳ). Cùng tập kỳ, cùng mã; chỉ khác nhịp học lại.
-    """
     out = {}
     T = len(history)
     for mode in ("loto", "de"):
@@ -202,8 +158,6 @@ def production_refit_check(history: History, last: int, refit_every: int) -> dic
         hit = history.hits(mode)
         pack = ProductionMLModel(mode, history)
         targets = np.arange(T - last, T)
-        # Cùng luật với run_mode: kỳ ngay sau quãng nghỉ không có hàng production
-        # (predict trả tỉ lệ nền thay vào), nên bị loại khỏi MỌI phép chấm.
         dates = pd.to_datetime(list(history.dates))
         keep = np.asarray((dates[targets] - dates[targets - 1]).days == 1)
         hits = (history.counts[targets] > 0).astype(float) if mode == "loto" else np.eye(100)[history.special[targets]]
@@ -226,7 +180,7 @@ def production_refit_check(history: History, last: int, refit_every: int) -> dic
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", default=str(ROOT / "data"))
     ap.add_argument("--last", type=int, default=1000)
     ap.add_argument("--refit-every", type=int, default=50)

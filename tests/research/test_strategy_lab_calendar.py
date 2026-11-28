@@ -13,7 +13,6 @@ def _frames(days: int = 120) -> tuple[pd.DataFrame, pd.DataFrame]:
     for j in range(27):
         data[f"p{j}"] = (np.arange(days) * (j + 3) + 7 * j) % 100
     two = pd.DataFrame(data)
-    # The strategy lab requires the special prize as the first value column.
     two = two.rename(columns={"p0": "special", "p1": "prize1"})
 
     sparse = pd.DataFrame(0, index=np.arange(days), columns=["date", *range(100)])

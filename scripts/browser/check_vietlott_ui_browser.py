@@ -1,4 +1,3 @@
-"""Kiểm tra Vietlott thật: responsive, màu, đối chiếu và bộ số nháp trên Chromium."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -49,8 +48,6 @@ def assert_no_page_overflow(page, label):
 
 
 def check_product_tile_hover(page, label):
-    """Rê chuột trên cả bảy thẻ: số không bị gạch chân bởi liên kết cha."""
-    # Bỏ focus/tooltip còn lại từ lượt kiểm bàn phím trước khi thử chuột.
     page.locator('.vl-hero h1').click()
     tiles = page.locator('.vl-tile')
     expect(tiles).to_have_count(7)
@@ -71,7 +68,6 @@ def check_product_tile_hover(page, label):
 
 
 def check_single_line_sequences(page, label):
-    """Main numbers must stay together, including inside horizontally scrollable tables."""
     rows = page.locator('.vl-number-sequence, .vl-comparison-balls').evaluate_all('''elements =>
         elements.map(el => ({text: el.textContent, balls: [...el.querySelectorAll('.vl-ball')]
             .map(ball => {const r = ball.getBoundingClientRect(); return r.top + r.height / 2;})}))''')
@@ -81,7 +77,6 @@ def check_single_line_sequences(page, label):
 
 
 def check_max_prize_alignment(page, label):
-    """A Max prize label sits beside its own number row, even when that row scrolls."""
     rows = page.locator('.vl-3d > div').evaluate_all('''elements => elements.map(el => {
         const label = el.querySelector('.vl-prize-label, small');
         const sequence = el.querySelector('.vl-number-sequence') || el.querySelector(':scope > span');
@@ -102,7 +97,6 @@ def check_max_prize_alignment(page, label):
 
 
 def check_latest_bonus_visible(page, name, width, label):
-    """Compact Power/Lotto results expose the bonus without horizontal scrolling on phones."""
     if name not in ('vietlott-power-655.html', 'vietlott-lotto-535.html') or width not in (320, 390):
         return
     sequences = page.locator('section[aria-labelledby="vl-latest"] .vl-number-sequence')
@@ -125,7 +119,6 @@ def check_latest_bonus_visible(page, name, width, label):
 
 
 def check_bonus_palette(scope, label):
-    """A matched bonus keeps the rose fill and ink; only its match outline may change."""
     styles = scope.locator('.vl-ball--bonus, .vl-ball--bonus-hit').evaluate_all('''elements =>
         elements.map(el => {
             const actual = getComputedStyle(el);
@@ -143,7 +136,6 @@ def check_bonus_palette(scope, label):
 
 
 def check_jackpots(page, label):
-    """Large amounts remain one line and scroll within their own card if necessary."""
     values = page.locator('.vl-jackpot-value')
     originals = values.all_text_contents()
     try:
@@ -170,7 +162,6 @@ def check_jackpots(page, label):
 
 
 def check_ball_contrast(page, scope, label):
-    """Check actual computed sky/rose/green text against each solid gradient endpoint."""
     colors = scope.locator('.vl-ball').evaluate_all(r'''elements => elements.map(el => {
         const style = getComputedStyle(el);
         const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
@@ -221,10 +212,8 @@ def check_reduced_motion(page, button, label):
 
 
 def check_registered_comparisons(page, label):
-    """Registered tickets keep their own score and never turn pending draws into zero hits."""
     for summary in page.locator('.vl-comparison-summary').all():
         stats = summary.locator('.vl-comparison-stat')
-        # Ô thứ năm chỉ có khi đã có kỳ chấm theo danh mục vé rời nhau (coverage-v1, 15-10-2026).
         assert stats.count() in (4, 5), (label, stats.count())
         if stats.count() == 5:
             expect(stats.nth(4).locator(':scope > span')).to_have_text('Kỳ có vé trúng từ 2 số')
@@ -262,7 +251,6 @@ def check_registered_comparisons(page, label):
 
 
 def check_registered_ticket_row(row, status, ticket_number, label, is_pro):
-    """One visual row ties the ticket, its actual result and its score together."""
     prediction_cell = row.locator('.vl-comparison-prediction')
     actual_cell = row.locator('.vl-comparison-result')
     score_cell = row.locator('.vl-comparison-score-cell')
@@ -301,7 +289,6 @@ def check_registered_ticket_row(row, status, ticket_number, label, is_pro):
     if pair:
         hits, total = map(int, pair.groups())
         expect(ticket.locator('.vl-ball--match')).to_have_count(hits)
-        # Power's selected bonus match remains one of its six chosen main numbers.
         separate_bonus = ticket.locator('.vl-plus').count()
         expect(ticket.locator('.vl-ball')).to_have_count(total + separate_bonus)
 
@@ -324,7 +311,6 @@ def check_manual_comparison(page, name, width, theme):
     for key in ('predicted_bonus', 'actual_bonus'):
         if key in case:
             form.locator(f'[data-vl-{key.replace("_", "-")}]').fill(case[key])
-    # Native form submission must work without a pointer, from a text input.
     actual.focus()
     page.keyboard.press('Enter')
     expect(output).to_be_visible()
@@ -350,7 +336,6 @@ def check_manual_comparison(page, name, width, theme):
             style='[data-app-effects] { visibility: hidden !important; }')
 
     if 'actual_bonus' in case:
-        # Main accuracy is useful without a bonus, but the prize remains unknown.
         form.locator('[data-vl-actual-bonus]').fill('')
         submit.click()
         expect(output).to_be_visible()
@@ -363,7 +348,6 @@ def check_manual_comparison(page, name, width, theme):
         submit.click()
         expect(output.locator('.vl-comparison-tier')).to_have_text(case['tier'])
 
-    # Bad submissions must remove an earlier result instead of displaying stale wins.
     invalids = ('01 01 ' + ' '.join(str(n) for n in range(2, case['total'])),
                 '01 02', '01 02 03 04 99' + (' 06' if case['total'] == 6 else ''))
     for invalid in invalids:
@@ -392,9 +376,6 @@ def check_manual_comparison(page, name, width, theme):
 
 
 def shard_states(spec: str | None) -> list[tuple[int, str]]:
-    """Các cặp (bề rộng, giao diện) mà lượt này kiểm. ``UI_SHARD=k/n`` chia đều 8 cặp cho n máy CI chạy
-    song song (k đếm từ 1); thiếu biến thì kiểm cả 8. Cả trang kiểm một mình mất 12 phút 17 giây ngày
-    05-11-2026, nửa thời lượng job Chromium."""
     states = [(width, theme) for width in (320, 390, 768, 1440) for theme in ('light', 'dark')]
     if not spec:
         return states

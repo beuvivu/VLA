@@ -1,5 +1,3 @@
-"""Kiểm thử mô hình xếp chồng, phân bổ Shapley và bộ lọc lô gan."""
-
 from __future__ import annotations
 
 import json
@@ -45,11 +43,7 @@ def trained(tensor: DigitTensor):
     return LotoModel(n_splits=3).fit(data), data
 
 
-# --- Dựng dữ liệu huấn luyện ----------------------------------------------
-
-
 def test_labels_come_from_the_day_after_the_anchor(tensor: DigitTensor) -> None:
-    """Khoảng cách một ngày giữa đặc trưng và nhãn là bất biến của hàm dựng."""
     data = build_training_data(tensor, mode="loto", warmup_days=60)
     hits = tensor.loto_hits()
     for anchor in np.unique(data.day_index)[:5]:
@@ -73,9 +67,6 @@ def test_build_training_data_refuses_a_too_short_history(tensor: DigitTensor) ->
         build_training_data(tensor, mode="loto", warmup_days=10_000)
 
 
-# --- Mô hình ---------------------------------------------------------------
-
-
 def test_model_refuses_to_predict_before_training(tensor: DigitTensor) -> None:
     with pytest.raises(RuntimeError, match="chưa được huấn luyện"):
         LotoModel().predict_proba(np.zeros((10, 20)))
@@ -94,7 +85,6 @@ def test_loto_probabilities_stay_strictly_inside_zero_and_one(trained) -> None:
 def test_de_distribution_sums_to_one_and_never_declares_a_number_impossible(
     tensor: DigitTensor,
 ) -> None:
-    """Xác suất 0 mà con đó về sẽ cho log-loss bùng nổ."""
     data = build_training_data(tensor, mode="de", warmup_days=60)
     model = DeModel(n_splits=3).fit(data)
     matrix = default_registry().build_matrix(
@@ -106,7 +96,6 @@ def test_de_distribution_sums_to_one_and_never_declares_a_number_impossible(
 
 
 def test_time_series_split_never_cuts_through_a_single_day(tensor: DigitTensor) -> None:
-    """Cắt giữa một ngày sẽ để 99 con ở tập huấn luyện và 1 con ở tập kiểm."""
     from sklearn.model_selection import TimeSeriesSplit
 
     data = build_training_data(tensor, mode="loto", warmup_days=60)
@@ -131,15 +120,7 @@ def test_model_rejects_single_class_labels(tensor: DigitTensor) -> None:
         LotoModel(n_splits=3).fit(broken)
 
 
-# --- Phân bổ Shapley -------------------------------------------------------
-
-
 def test_shapley_contributions_satisfy_the_efficiency_axiom(trained, tensor) -> None:
-    """Tổng đóng góp phải bằng chênh lệch giữa mô hình đầy đủ và nền tham chiếu.
-
-    Đây là tiên đề hiệu quả của giá trị Shapley. Nếu nó không đúng thì con số
-    báo ra không phải phân bổ Shapley, chỉ là một cách chia tùy tiện.
-    """
     model, data = trained
     explainer = Explainer.from_training(model, data.features)
     matrix = default_registry().build_matrix(
@@ -154,7 +135,6 @@ def test_shapley_contributions_satisfy_the_efficiency_axiom(trained, tensor) -> 
 
 
 def test_shapley_is_computed_exactly_over_every_coalition(trained, tensor) -> None:
-    """Bốn nhóm cho 16 liên minh, nên tính chính xác được — không cần lấy mẫu."""
     model, data = trained
     explainer = Explainer.from_training(model, data.features)
     names = explainer.group_names
@@ -164,7 +144,6 @@ def test_shapley_is_computed_exactly_over_every_coalition(trained, tensor) -> No
 
 
 def test_group_shares_are_normalised_by_absolute_magnitude(trained, tensor) -> None:
-    """Nhóm kéo xác suất xuống phải hiện ra, không bị triệt tiêu lặng lẽ."""
     model, data = trained
     explainer = Explainer.from_training(model, data.features)
     matrix = default_registry().build_matrix(
@@ -186,9 +165,6 @@ def test_top_reasons_are_ordered_by_magnitude(trained, tensor) -> None:
     assert len(reasons) == 3
 
 
-# --- Bộ lọc lô gan ---------------------------------------------------------
-
-
 def test_gan_filter_flags_only_numbers_past_the_threshold(tensor: DigitTensor) -> None:
     ctx = FeatureContext(tensor=tensor, anchor_index=140)
     filt = GanFilter(threshold_days=DEFAULT_GAN_THRESHOLD_DAYS)
@@ -201,7 +177,6 @@ def test_gan_filter_flags_only_numbers_past_the_threshold(tensor: DigitTensor) -
 
 
 def test_gan_filter_warns_without_changing_probabilities(tensor: DigitTensor) -> None:
-    """Chế độ mặc định chỉ cảnh báo: xổ số công bằng thì gan không đổi xác suất."""
     ctx = FeatureContext(tensor=tensor, anchor_index=140)
     probability = np.full(100, 0.2377)
     assert np.array_equal(GanFilter().apply(probability, ctx), probability)
@@ -210,7 +185,6 @@ def test_gan_filter_warns_without_changing_probabilities(tensor: DigitTensor) ->
 def test_gan_filter_renormalises_a_distribution_when_excluding(
     tensor: DigitTensor,
 ) -> None:
-    """Loại con mà không chia lại sẽ tạo phân phối hụt và làm sai mọi log-loss."""
     ctx = FeatureContext(tensor=tensor, anchor_index=140)
     distribution = np.full(100, 0.01)
     filtered = GanFilter(threshold_days=1, exclude=True).apply(distribution, ctx)
@@ -224,11 +198,7 @@ def test_gan_filter_rejects_a_wrong_shape(tensor: DigitTensor) -> None:
         GanFilter().apply(np.zeros(50), ctx)
 
 
-# --- Gói đầu ra ------------------------------------------------------------
-
-
 def test_picks_carry_the_baseline_next_to_every_probability() -> None:
-    """Xác suất 0,26 không có nền 0,2377 bên cạnh sẽ bị đọc là 'cao'."""
     probability = np.linspace(0.20, 0.30, 100)
     picks = build_picks(
         probability,

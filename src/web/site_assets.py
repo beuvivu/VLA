@@ -1,9 +1,3 @@
-"""Phiên bản tài nguyên theo nội dung; kiểm gói trang trước khi xuất bản.
-
-Chỉ dùng thư viện chuẩn để mọi job Pages gọi cùng một cổng kiểm tra.
-Không lưu cache băm trong tiến trình: tệp thay đổi là URL thay đổi ngay.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -41,7 +35,6 @@ def _asset_path(page: Path, url: str) -> Path | None:
 
 
 class _AssetReferences(HTMLParser):
-    """Lấy thuộc tính thật và đếm khung, không đọc nhầm dữ liệu trong script."""
 
     def __init__(self, source: str) -> None:
         super().__init__(convert_charrefs=False)
@@ -78,7 +71,6 @@ class _AssetReferences(HTMLParser):
 
 
 def rewrite_assets(page: Path, source: str, *, strip: bool = False) -> str:
-    """Gắn băm vào URL cục bộ; bóc băm trước khi bọc lại khung trang."""
     replacements: list[tuple[int, int, str]] = []
     for start, end, url, bare in _AssetReferences(source).references:
         target = _asset_path(page, url)
@@ -131,7 +123,6 @@ def _manifest(root: Path) -> dict[str, object]:
 
 
 def refresh_site(root: Path) -> dict[str, object]:
-    """Chuẩn hóa toàn bộ tham chiếu sau trình dựng cuối cùng; không đổi dữ liệu."""
     pages = sorted(root.glob("*.html"))
     if not pages:
         raise ValueError(f"Không có trang HTML trong {root}")
@@ -154,7 +145,6 @@ def refresh_site(root: Path) -> dict[str, object]:
 
 
 def check_site(root: Path) -> list[str]:
-    """Báo lệch manifest, tệp thiếu hoặc phiên bản không khớp nội dung."""
     issues: list[str] = []
     pages = sorted(root.glob("*.html"))
     if not pages:
@@ -183,7 +173,7 @@ def check_site(root: Path) -> list[str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--refresh", type=Path, help="Thư mục trang cần chốt lại")
     parser.add_argument("--root", type=Path, default=Path("docs"))
     parser.add_argument("--check", action="store_true")

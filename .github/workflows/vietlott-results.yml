@@ -1,18 +1,7 @@
 name: Trang Vietlott (dựng từ engine)
 
-# Từ 07-10-2026 trang Vietlott dựng từ engine `vietlott/` (mã Vietlott của VLA): kết
-# quả đã xác thực của 7 sản phẩm, bảng giải, dự báo đăng ký trước kỳ và đối
-# chiếu. Việc ĐỒNG BỘ dữ liệu do `vlm-results.yml` / `vlm-update.yml` làm và
-# commit vào `vietlott/data`; workflow này KHÔNG gọi mạng, chỉ dựng trang từ
-# dữ liệu đã commit rồi triển khai.
-#
-# Lượt đẩy bằng GITHUB_TOKEN không kích hoạt `pages.yml`, nên workflow tự
-# triển khai như `update-data.yml`. Giờ Việt Nam = UTC + 7; mỗi mốc chạy sau
-# một khung quay: Lotto 13:00 → 13:25; Mega/Power/Max 18:00 → 18:40 và 19:30;
-# Lotto 21:00 → 21:25; Keno/Bingo18 hết ngày → 22:20.
 on:
   workflow_run:
-    # Commit do GITHUB_TOKEN ghi không phát sinh push; dựng ngay sau engine.
     workflows:
       - "VLM · Tự cập nhật kết quả từng sản phẩm Vietlott"
       - "VLM · Cập nhật dữ liệu, dự báo và trang Vietlott"
@@ -50,8 +39,6 @@ concurrency:
 
 jobs:
   build:
-    # Lượt nguồn lỗi vẫn có thể đã lưu kết quả hợp lệ của các sản phẩm khác.
-    # Đọc main và cache của chính kho; lỗi nguồn vẫn được báo ở workflow engine.
     if: >-
       github.event_name != 'workflow_run' ||
       ((github.event.workflow_run.conclusion == 'success' ||
@@ -83,12 +70,6 @@ jobs:
           python -m pip install --no-cache-dir -r requirements.txt
           python -m pip install --no-cache-dir -e vietlott
 
-      # Trạng thái engine do `vlm-results.yml` / `vlm-update.yml` lưu: kho DuckDB
-      # (bảng giải, số người trúng mới), kho Keno/Bingo18, trạng thái bộ dự báo.
-      # Chỉ KHÔI PHỤC, không lưu: trang chỉ đọc. Danh sách đường dẫn PHẢI trùng
-      # từng dòng với bước lưu — `actions/cache` tính phiên bản theo nó, lệch một
-      # dòng là không bao giờ khôi phục được (`tests/repo/test_vietlott_engine_layout.py`).
-      # Mất cache thì trang dựng từ dữ liệu đã commit, phân tích học lại từ seed.
       - name: Khôi phục trạng thái của engine
         uses: actions/cache/restore@v6
         with:
@@ -103,21 +84,15 @@ jobs:
           restore-keys: vqe-state-
 
       - name: Giữ bản tóm tắt mô hình đã commit
-        # Cache *.json có thể cũ hơn bản đã commit: mọi tệp git THEO DÕI khớp mẫu cache phải theo đúng
-        # checkout, tệp trạng thái chưa theo dõi thì lấy từ cache. Lượt 45781875880 (26-11-2026) chỉ giữ
-        # multi-agent-summary.json; cache lưu trước khi gộp PR #238 đè transfer.json khuôn mới bằng khuôn
-        # cũ, cây làm việc bẩn và bước đẩy trang từ chối.
         run: git restore --source=HEAD -- ':(glob)vietlott/data/forecast/*.json'
 
       - name: Dựng trang Vietlott
         run: python src/pages/build_vietlott_results.py --cache-states vietlott/data/forecast
 
       - name: Ghi trang
-        # Chỉ nhánh mặc định ghi; lượt chạy trên nhánh khác là chạy thử.
         if: github.ref_name == github.event.repository.default_branch
         run: |
           set -euo pipefail
-          # Trang, URL tài nguyên và manifest phải thuộc cùng ảnh chụp trong git.
           python3 src/web/site_assets.py --refresh docs --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -125,8 +100,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Trang không đổi."
           elif python3 scripts/web/stamp_only_change.py; then
-            # Chỉ đổi dấu giờ dựng: giữ ảnh chụp đang có trong git, không commit (78% lượt dựng
-            # tháng 10-2026 là như vậy). Trang triển khai là đúng bản HEAD.
             git reset -q -- docs
             git checkout -q -- docs
             echo "Chỉ đổi dấu giờ dựng; giữ bản đã commit."
@@ -136,9 +109,6 @@ jobs:
           fi
 
       - name: Lấy docs/ của nhánh mặc định mới nhất
-        # Pages là MỘT site và mọi lần triển khai tải lên nguyên docs/: đóng gói ảnh chụp lúc job
-        # bắt đầu thì đè trang mà workflow khác (XSMB) vừa đẩy sau đó. Trang Vietlott của lượt này
-        # đã được đẩy ở bước trên, hoặc không đổi, nên bản mới nhất của nhánh luôn chứa nó.
         if: github.ref_name == github.event.repository.default_branch
         run: |
           set -euo pipefail
@@ -146,15 +116,12 @@ jobs:
           git restore --source=FETCH_HEAD --staged --worktree -- docs
 
       - name: Nhường lần triển khai khi XSMB đang chốt kỳ
-        # Trang kết quả XSMB của kỳ vừa chốt chỉ có trên Pages, chưa có trong git, tới khi pipeline
-        # đầy đủ commit (~6 phút); triển khai lúc ấy là đè chúng bằng trang kỳ trước (18-11-2026).
         id: window
         if: github.ref_name == github.event.repository.default_branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Giờ commit chốt kỳ gần nhất; API lỗi thì để rỗng và kịch bản nhường (an toàn cho XSMB).
           CANONICAL_AT="$(gh api "repos/${GITHUB_REPOSITORY}/commits?sha=${GITHUB_REF_NAME}&path=data/xsmb.csv&per_page=1" \
             --jq '.[0].commit.committer.date' 2>/dev/null || true)"
           python3 scripts/ops/pages_deploy_window.py --ref FETCH_HEAD --canonical-at "${CANONICAL_AT}"

@@ -37,10 +37,9 @@ def test_gcn_gradients_match_finite_differences(mega_history: DrawHistory) -> No
 
 
 def test_gcn_learns_planted_structure_but_not_noise() -> None:
-    """Sanity check of the null result: the model *can* find real signal."""
     rng = np.random.default_rng(0)
     rows = [np.sort(rng.choice(np.arange(1, 46), 6, replace=False))]
-    for _ in range(599):  # strong memory: 3 numbers carried over from the previous draw
+    for _ in range(599):
         keep = rng.choice(rows[-1], 3, replace=False)
         rest = rng.choice(np.setdiff1d(np.arange(1, 46), keep), 3, replace=False)
         rows.append(np.sort(np.concatenate([keep, rest])))

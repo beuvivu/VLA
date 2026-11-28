@@ -155,7 +155,6 @@ test('Chọn kết quả trên điện thoại đóng menu để đích điều 
 test('Sự kiện close đến muộn không xóa trạng thái của lần mở modal tiếp theo', t => {
   const dom = start(t), d = dom.window.document;
   const dialog = d.getElementById('app-global-search');
-  // Trình duyệt xếp sự kiện close vào hàng đợi sau khi đã đổi thuộc tính open.
   dialog.close = function () { this.open = false; };
   const trigger = d.getElementById('app-search-open'); trigger.focus(); open(dom);
   d.getElementById('app-global-search-close').click();

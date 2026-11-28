@@ -11,11 +11,9 @@ const special12 = new Set([5, 35, 70, 125, 190, 260, 330, 365, 395, 415]);
 const special21 = new Set([50, 150, 250, 380, 418]);
 const loto12 = new Set([20, 100, 300, 402, 412]);
 const loto21 = new Set([40, 160, 401, 410, 418]);
-// Calendar gaps ensure a 30-draw preset cannot silently become 30 calendar days.
 const draws = Array.from({length: 420}, (_, i) => ({
   d: new Date(Date.UTC(2025, 0, 1 + i + Math.floor(i / 12))).toISOString().slice(0, 10),
   s: special12.has(i) ? '00012' : special21.has(i) ? '00021' : [10, 400].includes(i) ? '00003' : '00099',
-  // Repeated numbers within one draw still count as one hit for gap tables.
   n: [...Array(2).fill(loto12.has(i) ? '12' : loto21.has(i) ? '21' : '99'), ...Array(25).fill('99')],
 }));
 const fixtures = {full: draws, short: draws.slice(-7), empty: []};
@@ -77,9 +75,6 @@ function rowFor(dom, id, number, column = 0) {
 }
 
 const viDate = iso => iso.split('-').reverse().join('-');
-// Hand-checked outcomes for the marked draws above; independent of the production helpers.
-// Gan LOTO chỉ đếm kỳ trượt giữa hai lần về: chỉ số 402 và 412 có 9 kỳ trượt.
-// Cột chu kỳ Đặc Biệt báo khoảng cách hai lần về, là phép đo khác.
 const outcomes = {
   30: {specialHits: 2, specialGap: 20, lotoHits: 2, lotoGap: 9, pairHits: 5, pairGap: 7},
   60: {specialHits: 3, specialGap: 30, lotoHits: 2, lotoGap: 9, pairHits: 5, pairGap: 7},
@@ -93,13 +88,11 @@ for (const slug of slugs) {
   test(`${slug}: every preset updates the actual draws and statistics, then restores all history`, t => {
     const dom = setup(t, slug);
     checkRange(dom, draws);
-    // The second 30 and All exercise moving backwards after a long window.
     for (const size of [30, 60, 90, 180, 365, 30, 0]) {
       choose(dom, size);
       const selected = size ? draws.slice(-size) : draws;
       const wanted = outcomes[size];
       checkRange(dom, selected);
-      // The overview explicitly cites all history and calls this helper without an argument.
       assert.deepEqual(Array.from(dom.window.eval('(() => {const g=specialGaps(); return [g.n,g.hits[12],g.maxGap[12],g.current[12]];})()')),
         [420, 10, 70, 4]);
       if (slug === 'cau-dac-biet-theo-bo-so') {

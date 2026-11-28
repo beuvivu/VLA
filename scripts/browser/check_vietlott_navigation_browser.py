@@ -1,4 +1,3 @@
-"""Kiểm tra điều hướng Vietlott thật trên Chromium, desktop/mobile và hai theme."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -37,7 +36,6 @@ def main():
                         if width < 1200:
                             page.locator('#app-toggle').click()
                         ticket = page.locator('.app-rail-btn[data-app-module="vietlott"]')
-                        # Trang Vietlott có thể đã mở đúng nhóm trên mobile.
                         if page.locator('#app-panel').get_attribute('aria-hidden') == 'true' or ticket.get_attribute('aria-selected') != 'true':
                             ticket.click()
                         expect(ticket).to_have_attribute('aria-selected', 'true')
@@ -60,7 +58,6 @@ def main():
                             expect(page.locator('#app-panel')).to_have_attribute('aria-hidden', 'true')
                             assert page.locator('#vl-pairs').is_visible()
                             assert page.locator('#app-main').evaluate('el => !el.inert')
-                            # Bảng tần suất chỉ tương tác sau khi người dùng mở.
                             frequency = page.locator('section[aria-labelledby="vl-frequency"] details').first
                             frequency.locator('summary').click()
                             cell = frequency.locator('tbody td').first
@@ -78,7 +75,6 @@ def main():
                         checks.append({'page': name, 'width': width, 'theme': theme, 'ok': True})
                         page.close()
                     context.close()
-            # Pointer thực, có animation: hover không lưu trạng thái; click ghim.
             context = browser.new_context(viewport={'width': 1440, 'height': 900})
             page = context.new_page()
             page.goto(f'http://127.0.0.1:{server.server_port}/index.html')

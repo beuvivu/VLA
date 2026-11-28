@@ -1,14 +1,3 @@
-"""Multiple-testing-aware statistical diagnostics for XSMB.
-
-This module deliberately separates *descriptive statistical anomaly* from
-prediction.  It uses exact binomial tests, Benjamini-Hochberg FDR control and a
-Beta-Binomial shrinkage posterior so that random extremes across 100 numbers are
-less likely to be mislabeled as meaningful signals.
-
-Mỗi bảng ghi MỘT bản CSV (luật kho 04-11-2026, ``tests/stats/test_no_json_twins.py``): trang tổng
-quan đọc CSV; bản JSON chép kèm không ai đọc mà mỗi lượt chốt vẫn viết lại vào git.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -43,8 +32,6 @@ def _window_hit_matrix(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, windo
         baseline = 0.01
     else:
         hit = (sparse_w.drop(columns=["date"]).to_numpy(dtype=int) > 0).astype(np.int8)
-        # Empirical grand rate is the right null for "is this number unusual vs
-        # the field?" and automatically accounts for within-draw duplicates.
         baseline = float(hit.mean()) if hit.size else 0.0
 
     start = two_w["date"].min() if not two_w.empty else latest
@@ -61,9 +48,6 @@ def number_significance(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, *, w
     rate = k / n
     variance = max(baseline * (1.0 - baseline), 1e-12)
     z = (rate - baseline) / np.sqrt(variance / n)
-    # ``binomtest`` is called once per number; distinct hit counts repeat heavily
-    # across 100 numbers, so memoising by count removes most of the calls
-    # without changing a single p-value.
     cache: dict[int, float] = {}
     p_values = np.empty(len(k), dtype=float)
     for i, count in enumerate(k):
@@ -85,13 +69,6 @@ def number_significance(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, *, w
 
     lift = np.divide(rate, baseline, out=np.zeros_like(rate, dtype=float), where=baseline > 0)
     effect = rate - baseline
-    # ``evidence_score`` used ``abs(z)``, so an unusually COLD number scored
-    # exactly like an equally unusual HOT one.  The table is then sorted by this
-    # score descending and rendered as the headline "signal" list, which put
-    # under-represented numbers at the top of a list readers take as hot.
-    # ``evidence_strength`` keeps the old two-sided magnitude (how surprising,
-    # in either direction); ``evidence_score`` now carries the sign of the
-    # deviation so hot and cold are separable.
     evidence_strength = -np.log10(np.clip(q_values, 1e-12, 1.0)) * np.minimum(
         np.abs(z) / 3.0, 1.0
     )
@@ -189,7 +166,6 @@ def main() -> None:
 
 
 def write_outputs(two: pd.DataFrame, sparse: pd.DataFrame, out_dir: Path, windows: list[int]) -> list[Path]:
-    """Ghi bảng từng số (một CSV mỗi chế độ × cửa sổ) và tệp chẩn đoán chung; trả về các tệp đã ghi."""
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for mode in ("loto", "de"):

@@ -1,4 +1,3 @@
-"""Hợp đồng tiến cứu, xác suất và điều phối ba tác tử XSMB."""
 from datetime import date, datetime, timedelta
 
 import numpy as np
@@ -98,8 +97,6 @@ def test_engine_is_idempotent_preserves_public_vector_and_explains_mixture(tmp_p
     written = (tmp_path / "forecast" / "agents" / "report.json").read_bytes()
     again = engine.run(tmp_path, now=clock(frame))
     assert report == again
-    # Lượt đầu dựng kỳ tại chỗ, lượt sau nạp kỳ ấy từ sổ: báo cáo phải trùng TỪNG BYTE, không chỉ trùng
-    # giá trị. Tới 11-11-2026 hai lượt ghi cùng nội dung theo hai thứ tự khoá (271 dòng mỗi lần chạy lại).
     assert (tmp_path / "forecast" / "agents" / "report.json").read_bytes() == written
     assert engine.run(tmp_path, now=clock(frame).replace(hour=19)) == report
     for path, content in snapshots.items():
@@ -285,7 +282,6 @@ def test_engine_rechecks_cutoff_after_serializing_a_new_journal(tmp_path, monkey
 
 @pytest.mark.parametrize('mode', ['de', 'loto'])
 def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mode, monkeypatch):
-    """100 số dùng chung thống kê nhóm; nén sổ không được nhân việc giải mã 100 lần."""
     import base64
     import copy
     import hashlib
@@ -314,7 +310,6 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
         item['settlement'] = {'status': 'scored', 'labels': labels.tolist(),
                               'scores': online._scores(mode, item, labels)}
         settled.append(item)
-    # Bản chưa chốt và ngày nghỉ không được trộn thành mẫu hiệu chuẩn.
     raw = online._json_bytes(settled + [{'settlement': None}, {'settlement': {'status': 'non_draw'}}])
     state['archive'] = [{'count': 70, 'sha256': hashlib.sha256(raw).hexdigest(),
                          'zlib_base64': base64.b64encode(zlib.compress(raw)).decode()}]
@@ -370,7 +365,6 @@ def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observat
 
 
 def _planted_loto_history(n=100):
-    """Giải cuối luôn có hai số cuối 07: con 07 về MỌI kỳ, mạng phải học được."""
     frame = history(n)
     frame[FIELD_WIDTHS[-1][0]] = 7
     return frame
@@ -378,11 +372,6 @@ def _planted_loto_history(n=100):
 
 @pytest.mark.parametrize('mode', ['de', 'loto'])
 def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
-    """Không có kỹ năng thì không tin: lịch sử công bằng cho trust = 0 và vector đúng mức nền.
-
-    Định nghĩa 1 trộn cố định 20% mạng bất kể khối thẩm định; bản ghi đầu của sổ thật có logloss
-    thẩm định Đặc Biệt kém nền mà vẫn được trộn.
-    """
     from forecast.xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
     from forecast.xsmb_agents.algorithms import AGENT_POLICY, feasible
     p, info = AlgorithmEnsemble(KnowledgeBaseManager(history(100))).pattern(mode)
@@ -393,7 +382,6 @@ def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
 
 
 def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkeypatch):
-    """Mạng có kỹ năng thật: trust = model_trust(s), vector = trust·mạng + (1 − trust)·nền."""
     from forecast.xsmb_agents import algorithms as algorithms
     from ml.ml_train import model_trust
     from forecast.xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
@@ -424,7 +412,6 @@ def _engine_inputs(tmp_path, frame):
 
 
 def _write_ledger_of_family(path, mode, family, frame):
-    """Sổ có checksum đúng nhưng thuộc một họ khác (save_state chỉ nhận họ đang đăng ký)."""
     state, _ = online.advance(online.new_state(mode, profile='agents'), frame,
                               np.full(100, baseline_rate(mode)), clock(frame).date().isoformat(),
                               now=clock(frame),
@@ -443,8 +430,6 @@ def test_the_ledger_family_follows_the_agent_definition():
 
 
 def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty(tmp_path):
-    """Đổi định nghĩa là mở SỔ MỚI: Hedge, bước chọn η/độ quên và cổng đề bạt không thừa hưởng điểm
-    do bộ dự báo cũ kiếm được; sổ cũ được cất nguyên, không chấm lại."""
     import json
     from forecast.xsmb_agents import PredictiveEngine
     from forecast.xsmb_agents.algorithms import AGENT_POLICY
@@ -468,7 +453,6 @@ def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty
 
 @pytest.mark.parametrize('case', ['unregistered_family', 'archive_exists'])
 def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
-    """Họ lạ (bản triển khai mới hơn) hay bản cất đã có: dừng TRƯỚC khi đổi tên, chốt hay ghi sổ nào."""
     from forecast.xsmb_agents import PredictiveEngine
     previous, frame = history(40), history(41)
     online_dir = tmp_path / 'forecast' / 'online'

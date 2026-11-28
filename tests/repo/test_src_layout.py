@@ -1,21 +1,3 @@
-"""Bố cục ``src/`` sau khi gom module phẳng vào gói con theo chức năng (23-10-2026).
-
-``src/`` từng có 145 module ngang hàng. Nay mỗi module nằm trong một gói (``core``,
-``ingest``, ``ensemble``, ``stats``, ``soi_cau``, ``ml``, ``forecast``, ``evaluation``,
-``research``, ``web``, ``pages``; gói có sẵn thành gói con của chúng); gốc ``src/`` chỉ còn
-``pipeline.py``.
-Tên module giữ nguyên nên nhãn đã ghi vào sổ (``calendar_alignment.known_non_draw_days``)
-vẫn đúng.
-
-Các phép kiểm dưới đây canh những thứ hỏng LẶNG LẼ khi bố cục trôi:
-
-* import theo tên phẳng cũ chỉ chạy được khi kịch bản đứng cùng thư mục với module ấy;
-* gói phụ thuộc vòng thì thứ tự import quyết định module nào còn dở dang;
-* ``Path(__file__).parents[1]`` trong gói con trỏ vào ``src/``, không phải gốc kho;
-* bước workflow chạy ``python src/<gói>/<module>.py`` mà thiếu ``src`` trên ``PYTHONPATH``;
-* pack joblib ghi trước đợt gom nhắc lớp bằng tên module phẳng ``ml_models``.
-"""
-
 from __future__ import annotations
 
 import ast
@@ -32,33 +14,17 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
-#: Thư mục dưới ``src/`` không phải gói Python. ``assets`` đã về ``web/assets``: dựng lại
-#: ``src/assets`` thì phép kiểm gói có docstring đỏ.
 NOT_PACKAGES = {"__pycache__"}
-#: Hai nơi DUY NHẤT được tính đường dẫn từ ``__file__``: hằng số đường dẫn của kho, và
-#: bộ nạp mẫu nằm ngay trong thư mục mẫu.
 FILE_RELATIVE_ALLOWED = {"core/paths.py", "web/templates/__init__.py"}
-#: Gói đã gom vào gói khác (24-10-2026): ``crawler`` -> ``ingest``, ``utils`` -> ``core``;
-#: ``bridges``, ``features`` -> gói con của ``soi_cau``; ``modeling``, ``xsmb_agents`` -> gói con
-#: của ``forecast``; ``ml_engine``, ``vla`` -> gói con của ``research``; ``templates`` (cùng thư
-#: mục tĩnh ``assets``) -> ``web``.
 RETIRED_PACKAGES = {"crawler", "utils", "bridges", "features", "modeling", "ml_engine", "vla", "xsmb_agents",
                     "templates"}
-#: Gói cũ giữ nguyên làm GÓI CON (tên module bên trong chung chung: ``engine``, ``risk``…). ``features``
-#: (15-11-2026) đã thành một module ``soi_cau/features.py``: không còn tên module chung chung nào bên trong.
 NESTED_PACKAGES = ("soi_cau/bridges", "forecast/modeling", "forecast/xsmb_agents",
                    "research/ml_engine", "research/vla", "web/templates")
-#: Phép ghép đường dẫn lên ``src/``: chỉ ``core/paths.py`` được làm, nơi khác đi qua
-#: ``TEMPLATES`` / ``ASSETS`` / ``SRC`` của nó mà không tự nối thêm tầng.
 _SRC_JOIN = re.compile(r"""\bSRC\s*/|["']src["']\s*/""")
-#: Đường dẫn ``src/<…>.py`` mà một LỆNH chạy: sau ``python``, ``sys.executable,``, ``_py(`` hoặc
-#: một phép ghép ``/ "…"`` của Python. Câu nhắc trong thông báo lỗi và danh sách tệp bị cấm
-#: tồn tại (``release_check.sh``) không phải lệnh chạy.
 _SRC_SCRIPT = re.compile(
     r"""(?:\bpython3?\s+(?:-[\w-]+\s+)*["']?|sys\.executable,\s*["']|_py\(\s*["']|\s/\s*["'])"""
     r"(src/[\w/]+\.py)\b"
 )
-#: Mọi nơi nạp pack joblib của production.
 MODEL_LOADERS = (
     "ml.ml_predict",
     "forecast.predict_nextday_2d",
@@ -74,20 +40,17 @@ def _python_files(*bases: Path) -> list[Path]:
 
 
 def top_level_names(src: Path) -> set[str]:
-    """Tên import được ở cấp cao nhất khi ``src`` nằm trên ``sys.path``."""
     names = {p.stem for p in src.glob("*.py")}
     names |= {p.name for p in src.iterdir() if p.is_dir() and (p / "__init__.py").is_file()}
     return names
 
 
 def nested_module_names(src: Path) -> set[str]:
-    """Tên module chỉ còn tồn tại TRONG gói, tức tên phẳng cũ không còn import được."""
     nested = {p.stem for p in src.glob("*/*.py") if p.stem != "__init__"}
     return nested - top_level_names(src)
 
 
 def flat_imports(source: str, flat: set[str]) -> list[str]:
-    """Các import theo tên phẳng (``import x`` / ``from x import y``) trong một tệp Python."""
     found = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
@@ -98,8 +61,6 @@ def flat_imports(source: str, flat: set[str]) -> list[str]:
     return found
 
 
-#: Mã Python nằm trong văn bản khác: khối ``run:`` của workflow, shell, kiểm thử Node.
-#: ``\n`` là xuống dòng viết trong chuỗi ``python -c '...'`` của JS/shell.
 _EMBEDDED_IMPORT = re.compile(
     r"(?:^|[\s;'\"(]|\\n)(?:from\s+(\w+)(?:\.\w+)*\s+import|import\s+(\w+))\b", re.M
 )
@@ -110,21 +71,10 @@ def embedded_flat_imports(text: str, flat: set[str]) -> list[str]:
 
 
 def missing_src_scripts(text: str, root: Path) -> list[str]:
-    """Đường dẫn ``src/…py`` được nhắc trong một lệnh chạy mà không có tệp.
-
-    Phép kiểm phụ thuộc của workflow (``test_workflows``) lọc các đường dẫn ấy bằng
-    ``is_file()``, nên một lệnh còn trỏ vào chỗ cũ sau khi chuyển module bị bỏ qua lặng lẽ
-    — và workflow chỉ hỏng khi chạy thật.
-    """
     return sorted({m for m in _SRC_SCRIPT.findall(text) if not (root / m).is_file()})
 
 
 def stale_path_filters(document: dict, root: Path) -> list[str]:
-    """Bộ lọc ``paths:`` / ``paths-ignore:`` của workflow không khớp tệp nào.
-
-    GitHub không báo lỗi cho bộ lọc trỏ vào chỗ trống: sau khi chuyển tệp, workflow chỉ
-    lặng lẽ thôi chạy khi tệp ấy đổi.
-    """
     on = document.get(True, document.get("on")) or {}
     stale = []
     for event, config in on.items() if isinstance(on, dict) else ():
@@ -137,7 +87,6 @@ def stale_path_filters(document: dict, root: Path) -> list[str]:
 
 
 def package_graph(src: Path) -> dict[str, set[str]]:
-    """Gói -> các gói nó import (kể cả import trễ trong hàm)."""
     packages = {p.name for p in src.iterdir() if p.is_dir() and (p / "__init__.py").is_file()}
     graph: dict[str, set[str]] = {p: set() for p in packages}
     for path in _python_files(src):
@@ -157,7 +106,6 @@ def package_graph(src: Path) -> dict[str, set[str]]:
 
 
 def find_cycle(graph: dict[str, set[str]]) -> list[str]:
-    """Một vòng phụ thuộc (danh sách gói, đầu = cuối), hoặc rỗng nếu đồ thị không vòng."""
     state: dict[str, int] = {}
     stack: list[str] = []
 
@@ -184,11 +132,6 @@ def find_cycle(graph: dict[str, set[str]]) -> list[str]:
 
 
 def jobs_missing_pythonpath(document: dict) -> list[str]:
-    """Job chạy kịch bản trong gói con của ``src/`` mà không có ``src`` trên ``PYTHONPATH``.
-
-    ``python src/<gói>/<module>.py`` đặt ``src/<gói>`` lên ``sys.path``, KHÔNG phải ``src``,
-    nên ``from core.time_policy import ...`` hỏng ngay dòng đầu.
-    """
     missing = []
     workflow_env = document.get("env") or {}
     for name, job in (document.get("jobs") or {}).items():
@@ -201,9 +144,6 @@ def jobs_missing_pythonpath(document: dict) -> list[str]:
             if not any("PYTHONPATH" in env for env in envs) and "PYTHONPATH=" not in run:
                 missing.append(f"{name}: {step.get('name', run.splitlines()[0])}")
     return missing
-
-
-# --- Luật được ghim trên dữ liệu dựng sẵn: phép quét rỗng không thể đỏ. -----------------
 
 
 def test_the_flat_import_rule_itself_catches_a_flat_import() -> None:
@@ -252,26 +192,18 @@ def test_the_pythonpath_rule_itself_catches_a_job_without_it() -> None:
     assert jobs_missing_pythonpath({"jobs": {"j": {"steps": [{"run": "python src/pipeline.py"}]}}}) == []
 
 
-# --- Bố cục thật. -----------------------------------------------------------------------
-
-
 def test_src_root_holds_only_the_pipeline_entry_point() -> None:
     assert sorted(p.name for p in SRC.glob("*.py")) == ["pipeline.py"]
 
 
-def test_every_directory_under_src_is_a_documented_package() -> None:
+def test_every_directory_under_src_is_a_package() -> None:
     for directory in sorted(p for p in SRC.iterdir() if p.is_dir() and p.name not in NOT_PACKAGES):
-        init = directory / "__init__.py"
-        assert init.is_file(), directory.name
-        assert ast.get_docstring(ast.parse(init.read_text(encoding="utf-8"))), directory.name
+        assert (directory / "__init__.py").is_file(), directory.name
 
 
 def test_nested_names_really_are_the_old_flat_modules() -> None:
-    """Tập tên phẳng phải chứa các module đã chuyển, nếu không phép quét dưới vô dụng."""
     flat = nested_module_names(SRC)
     assert {"ensemble_utils", "lottery", "ui_theme", "atomic_io", "ml_models"} <= flat
-    # Tên cấp gốc (module ở gốc, gói) không bao giờ là tên phẳng. Gói cũ đã thành gói con
-    # (``features``, ``vla``…) bị bắt qua ``RETIRED_PACKAGES``, không qua tập này.
     assert "pipeline" not in flat and "core" not in flat
 
 
@@ -311,7 +243,6 @@ def test_every_script_a_command_runs_from_src_exists() -> None:
     ]
     texts = {path: path.read_text(encoding="utf-8") for path in commands}
     seen = {m for text in texts.values() for m in _SRC_SCRIPT.findall(text)}
-    # Phép quét phải THẤY các lệnh đã biết, nếu không nó xanh vì quét rỗng.
     assert {"src/ingest/fetch_results.py", "src/ingest/sync.py", "src/evaluation/production_audit.py"} <= seen
     offenders = {
         str(path.relative_to(ROOT)): missing
@@ -343,7 +274,6 @@ def test_repository_paths_are_computed_once() -> None:
 
 
 def test_only_core_paths_builds_paths_under_src() -> None:
-    """``repo_root / "src" / "templates"`` từng nằm ở hai trình dựng, ngoài ``core.paths``."""
     offenders = [
         str(path.relative_to(SRC))
         for path in _python_files(SRC)
@@ -361,13 +291,11 @@ def test_workflow_path_filters_point_at_real_files() -> None:
         seen += [p for cfg in (on.values() if isinstance(on, dict) else ()) if isinstance(cfg, dict)
                  for p in cfg.get("paths") or []]
         offenders += [f"{workflow.name}: {f}" for f in stale_path_filters(document, ROOT)]
-    # Phép quét phải THẤY các bộ lọc đã biết, nếu không nó xanh vì quét rỗng.
     assert {"src/web/assets/vietlott-picks.js", "src/**"} <= set(seen)
     assert not offenders, offenders
 
 
 def test_non_draw_calendar_is_read_from_the_repository_data() -> None:
-    """Đường dẫn sai không báo lỗi: lịch ngày nghỉ chỉ rỗng đi."""
     from core.calendar_alignment import known_non_draw_days
 
     assert known_non_draw_days(), "data/non_draw_days.json không được đọc"
@@ -414,7 +342,6 @@ def test_a_pack_pickled_under_the_old_flat_module_name_still_loads() -> None:
 
 @pytest.mark.parametrize("loader", MODEL_LOADERS)
 def test_every_model_loader_reads_the_committed_packs(loader: str) -> None:
-    """Mỗi nơi nạp pack, trong một tiến trình MỚI, đọc được mọi pack đã commit."""
     packs = sorted((ROOT / "models").glob("*.joblib"))
     assert packs
     code = (

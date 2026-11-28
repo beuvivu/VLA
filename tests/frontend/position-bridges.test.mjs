@@ -5,8 +5,6 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
 
-// Bản trình duyệt và bản Python của soi cầu vị trí PHẢI đếm ra cùng một con số:
-// trang chủ in ô "đẹp nhất" từ Python, trang đường cầu tính lại bằng JS.
 const build = `import json
 import pandas as pd
 from pages import build_position_bridges as page
@@ -39,7 +37,6 @@ const fixture = JSON.parse(execFileSync(process.env.APP_TEST_PYTHON || 'python3'
 }));
 
 async function open(t, search = '') {
-  // Bộ điều hướng của jsdom chưa có: lời gọi location.assign chỉ ghi "not implemented".
   const virtualConsole = new VirtualConsole();
   const dom = new JSDOM(fixture.page, {
     url: `https://example.test/soi-cau-vi-tri.html${search}`, runScripts: 'outside-only', virtualConsole,
@@ -53,8 +50,6 @@ async function open(t, search = '') {
       dom.window.eval(script.textContent.replace(source, override));
     }
   }
-  // Trang nạp script ở cuối thân nên dựng khi DOMContentLoaded; jsdom bắn sự
-  // kiện ấy sau lượt đồng bộ hiện tại.
   if (dom.window.document.readyState === 'loading') {
     await new Promise((resolve) => dom.window.document.addEventListener('DOMContentLoaded', resolve));
   }
@@ -69,7 +64,6 @@ test('bộ máy trình duyệt ra đúng từng cầu như bản Python với t�
   const report = JSON.parse(dom.window.document.getElementById('app-bridge-data').textContent);
   const prepared = api.prepare(report.draws);
   fixture.combos.forEach((combo, i) => {
-    // Qua JSON: mảng dựng trong cửa sổ jsdom mang prototype của realm khác.
     const got = JSON.parse(JSON.stringify(api.findBridges(prepared, { exact: false, ...combo })
       .map((b) => [b.vt, b.streak, b.numbers, b.shadow])));
     assert.deepEqual(got, fixture.expected[i], JSON.stringify(combo));
@@ -87,7 +81,6 @@ test('đường cầu 6x22 tô chữ số nguồn, tô số về theo cầu kỳ
   assert.equal(d.querySelector('.app-bridge-predict b').textContent, '68,86');
   assert.match(d.querySelector('.app-bridge-run').textContent, /Đã chạy 3 kỳ/);
   const days = d.querySelectorAll('.app-bridge-days .app-bridge-day');
-  // Mặc định ít nhất 7 kỳ kết quả (8 bảng) để thấy cả những kỳ cầu trượt trước khi chạy.
   assert.equal(days.length, 8);
   assert.deepEqual(texts(d.querySelectorAll('.app-bridge-days h2')).map((s) => s.slice(-10)).slice(0, 4),
     ['28/09/2026', '27/09/2026', '26/09/2026', '25/09/2026']);
@@ -120,18 +113,15 @@ test('đường cầu Đặc Biệt chỉ tô hai số cuối của giải Đặ
   const d = dom.window.document;
   assert.equal(d.querySelector('.app-bridge-path-head h2').textContent, 'Cầu Đặc Biệt tại vị trí 18x36');
   assert.equal(d.querySelector('.app-bridge-predict b').textContent, '44');
-  // Mỗi số một phần tử: "67,76" viết liền bị đọc thành số thập phân.
   assert.deepEqual([...d.querySelectorAll('.app-bridge-predict .app-bridge-num')].map((n) => n.textContent), ['44', '99'], 'số bóng cũng là một phần tử số');
   assert.equal(d.querySelector('.app-bridge-predict .app-bridge-shadow').textContent, 'bóng 99');
   assert.match(d.querySelector('.app-bridge-run').textContent, /Đã chạy 2 kỳ/);
   const hits = [...d.querySelectorAll('.app-bridge-days .app-bridge-hit')];
   assert.equal(hits.length, 2);
   assert.ok(hits.every((node) => node.closest('.tr-prize-row').dataset.prize === 'special'));
-  // Kéo dài 20 kỳ: số cầu báo có về ở giải khác cũng KHÔNG được tô — chỉ ĐB tính.
   const long = await open(t, '?vt=18x36&limit=1&exactlimit=0&lon=1&nhay=1&db=1&days=20');
   const cards = [...long.window.document.querySelectorAll('.app-bridge-days .app-bridge-day')];
   assert.equal(cards.length, 21);
-  // Phải có kỳ mà số cầu báo về ở giải KHÁC — nếu không, phép kiểm dưới không đỏ được.
   const api = long.window.PositionBridges;
   const report = JSON.parse(long.window.document.getElementById('app-bridge-data').textContent);
   const days = api.pathOf(api.prepare(report.draws), 18, 36, { db: true, lon: true, nhay: 1 }).days.slice(-21);

@@ -1,36 +1,3 @@
-"""Confidence Score ba tầng cho kỳ kế tiếp: Bayes · Markov · cầu, hiệu chỉnh đa kiểm.
-
-Vì sao không lấy thẳng hậu nghiệm Bayes làm "độ tin cậy"
---------------------------------------------------------
-Hậu nghiệm P(p > nền | dữ liệu) của MỘT con là đúng về toán. Nhưng ta nhìn 100
-con cùng lúc rồi chọn con đẹp nhất, và con đẹp nhất của một lịch sử HOÀN TOÀN
-ngẫu nhiên thường vẫn đạt "99 %": đo trên 10 000 lịch sử công bằng cùng cỡ
-với kho, 60 % lịch sử có ít nhất một con như thế. Gắn nhãn "tin cậy 99 %" cho
-nó là báo động giả gần như chắc chắn.
-
-Cách làm ở đây
---------------
-Mỗi thống kê được tính trên dữ liệu thật và trên ``DEFAULT_SIMS`` lịch sử giả
-lập công bằng (cùng số kỳ, 27 giải, mỗi giải 00-99 đều nhau). Tin cậy của một
-tín hiệu là tỉ lệ lịch sử công bằng mà thống kê LỚN NHẤT của cả họ giả thuyết
-còn nhỏ hơn nó — tức 1 − p hiệu chỉnh đa kiểm. Ba thành phần cho mỗi con:
-
-* Bayes  — hậu nghiệm Beta với prior tâm ở tỉ lệ nền.
-* Markov — xác suất về theo đúng trạng thái hôm qua của con đó.
-* Cầu    — cầu vị trí tốt nhất (54 × 54 chữ số đuôi) ghép ra con đó từ kỳ cuối.
-
-Luật tầng (theo yêu cầu của chủ dự án): High khi CẢ BA > 85 %; Medium khi ít
-nhất hai thành phần ≥ 60 %; còn lại Low/Noise.
-
-Phân phối null tốn ~8 phút trên 4 lõi, nên được lưu thành phân vị trong
-``data/evaluation/confidence/null_quantiles.json`` và chỉ tính lại khi số kỳ trôi quá
-``REFRESH_DRIFT`` hoặc định nghĩa thống kê đổi (``STAT_VERSION``). Phần dữ liệu
-thật chạy mỗi lượt pipeline, vì trạng thái "hôm qua" đổi mỗi ngày.
-
-Mô-đun chỉ ĐỌC dữ liệu và dự báo đã công bố; không đổi phép tính, mô hình hay
-hợp đồng dữ liệu nào đang có.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -45,20 +12,13 @@ import pandas as pd
 from core.atomic_io import atomic_write_text
 from core.xsmb_domain import LOTO_BASELINE_RATE, PRIZE_FIELDS, PRIZE_GROUP_WIDTHS
 
-#: Xác suất một con về ít nhất một lần trong 27 giải của một kỳ công bằng — hằng số chung của
-#: ``core.xsmb_domain`` (cùng giá trị với bản viết tay cũ, nên phân vị null đã lưu vẫn hợp lệ).
 BASE = LOTO_BASELINE_RATE
-#: Prior Beta "ngây thơ": 100 kỳ giả, tâm ở tỉ lệ nền.
 PRIOR_N = 100.0
-#: Mốc chia mẫu học / mẫu kiểm cho phép kiểm ngoài mẫu.
 SPLIT = "2024-01-01"
 DEFAULT_SIMS = 10_000
 SEED = 20260928
-#: Tăng khi đổi định nghĩa bất kỳ thống kê nào trong :func:`stats`.
 STAT_VERSION = 2
-#: Số kỳ trôi quá tỉ lệ này thì tính lại phân phối null.
 REFRESH_DRIFT = 0.02
-#: Số điểm phân vị lưu cho mỗi họ: độ phân giải tin cậy 0,1 %.
 QUANTILES = 1001
 HIGH, MEDIUM = 0.85, 0.60
 OUT = Path("evaluation") / "confidence"
@@ -72,7 +32,6 @@ NAMES = [
     "de_markov_z_max", "de_to_loto", "freq_z_max", "markov_state_max",
 ]
 
-#: Tên hiển thị và cỡ họ của từng thống kê, theo đúng thứ tự trình bày.
 FAMILIES = [
     ("freq_z_max", "Tần suất LOTO — con về nhiều nhất (z)", 100),
     ("freq_chi2", "Tần suất LOTO — χ² toàn bảng", 1),
@@ -92,17 +51,10 @@ FAMILIES = [
 ]
 
 PRIZE_COLUMNS = list(PRIZE_FIELDS)
-#: Số chữ số của từng giải trong bảng kết quả đầy đủ (107 vị trí).
 PRIZE_WIDTH = PRIZE_GROUP_WIDTHS
 
 
-# ---------------------------------------------------------------------------
-# Thống kê — cùng một hàm cho dữ liệu thật và lịch sử giả lập
-# ---------------------------------------------------------------------------
-
-
 def hits_matrix(draws: np.ndarray) -> np.ndarray:
-    """(T, 100) 0/1: con có về trong kỳ hay không."""
     rows = draws.shape[0]
     hits = np.zeros((rows, 100), dtype=np.uint8)
     hits[np.arange(rows)[:, None], draws] = 1
@@ -110,12 +62,10 @@ def hits_matrix(draws: np.ndarray) -> np.ndarray:
 
 
 def digits(draws: np.ndarray) -> np.ndarray:
-    """54 vị trí chữ số: hàng chục rồi hàng đơn vị của 27 giải."""
     return np.concatenate([draws // 10, draws % 10], axis=1).astype(np.int16)
 
 
 def cau_hits(dig: np.ndarray, target: np.ndarray) -> np.ndarray:
-    """Số lần trúng của 54 × 54 cầu vị trí: số = 10·D[t,p] + D[t,q], trúng ở t+1."""
     idx = (10 * dig[:-1, :, None] + dig[:-1, None, :]).reshape(dig.shape[0] - 1, -1)
     return np.take_along_axis(target[1:], idx, axis=1).sum(axis=0, dtype=np.int32)
 
@@ -125,7 +75,6 @@ def _safe(values: np.ndarray) -> np.ndarray:
 
 
 def stats(draws: np.ndarray) -> dict[str, np.ndarray | float]:
-    """Mọi thống kê của một lịch sử (T kỳ × 27 giải, giá trị 0-99)."""
     from scipy.stats import beta
 
     rows = draws.shape[0]
@@ -154,10 +103,6 @@ def stats(draws: np.ndarray) -> dict[str, np.ndarray | float]:
         se = np.sqrt(pp * (1 - pp) * (1 / n1 + 1 / n0))
         out["markov_z"] = _safe((p11 - p01) / se)
         out["markov_p11"], out["markov_p01"] = _safe(p11), _safe(p01)
-        # Điểm Markov THEO TRẠNG THÁI KỲ CUỐI: về thì z, trượt thì −z. Thành
-        # phần Markov của ma trận chấm đúng điểm này, nên null phải là max của
-        # CHÍNH nó — review PR #104: so −z với max z chưa đổi dấu là so hai
-        # thống kê khác nhau.
         out["markov_state"] = np.where(hits[-1] == 1, out["markov_z"], -out["markov_z"])
 
         pairs = prev.T @ nxt
@@ -193,7 +138,6 @@ def stats(draws: np.ndarray) -> dict[str, np.ndarray | float]:
 
 
 def summarize(values: dict) -> np.ndarray:
-    """Thống kê LỚN NHẤT trên mỗi họ giả thuyết — thứ phân phối null cần."""
     return np.array([
         np.abs(values["freq_z"]).max(),
         values["freq_chi2"],
@@ -216,11 +160,6 @@ def summarize(values: dict) -> np.ndarray:
     ])
 
 
-# ---------------------------------------------------------------------------
-# Phân phối null: mô phỏng, nén thành phân vị, lưu và tái dùng
-# ---------------------------------------------------------------------------
-
-
 def _worker(args: tuple[np.random.SeedSequence, int, int]) -> np.ndarray:
     seed, count, rows = args
     rng = np.random.default_rng(seed)
@@ -228,7 +167,6 @@ def _worker(args: tuple[np.random.SeedSequence, int, int]) -> np.ndarray:
 
 
 def simulate_null(rows: int, sims: int = DEFAULT_SIMS, *, workers: int = 4, seed: int = SEED) -> np.ndarray:
-    """``sims`` lịch sử công bằng ``rows`` kỳ; trả mảng (sims, len(NAMES))."""
     if sims < 1:
         raise ValueError(f"cần ít nhất 1 lịch sử mô phỏng, nhận {sims}")
     chunks = min(40, sims)
@@ -244,21 +182,13 @@ def simulate_null(rows: int, sims: int = DEFAULT_SIMS, *, workers: int = 4, seed
 
 
 def null_quantiles(null: np.ndarray, rows: int) -> dict:
-    """Nén phân phối null thành ``QUANTILES`` phân vị mỗi họ."""
     levels = np.linspace(0.0, 1.0, QUANTILES)
-    # Phân vị lấy đúng GIÁ TRỊ MẪU ("inverted_cdf") để mỗi điểm lưới là một
-    # giá trị null có thật; nội suy chỉ lệch tối đa một điểm lưới (0,1%).
     return {
         "version": STAT_VERSION,
         "draws": int(rows),
         "sims": int(len(null)),
         "seed": SEED,
         "quantiles": {
-            # Đủ độ chính xác, KHÔNG làm tròn. Tỉ lệ trúng cầu nhảy bậc 1/T nên
-            # null đầy giá trị HOÀ, và thống kê thật hoà với chúng đúng từng bit
-            # vì đi cùng một phép tính. Làm tròn 7 chữ số đặt cả khối hoà ngay
-            # dưới tín hiệu nên nó bị đếm là "nhỏ hơn": đo trên kho thật, cầu
-            # Đặc Biệt lên 66,5% thay vì 50,7% — báo tin cậy cao hơn thật.
             name: [float(v) for v in np.quantile(null[:, i], levels, method="inverted_cdf")]
             for i, name in enumerate(NAMES)
         },
@@ -266,9 +196,6 @@ def null_quantiles(null: np.ndarray, rows: int) -> dict:
 
 
 def needs_refresh(cached: dict | None, rows: int, sims: int = DEFAULT_SIMS) -> bool:
-    """Tính lại khi chưa có, khác phiên bản thống kê, khác số mô phỏng được yêu
-    cầu (review PR #104: ``--sims`` từng bị lặng lẽ bỏ qua), hay số kỳ trôi quá
-    ngưỡng."""
     if not cached or cached.get("version") != STAT_VERSION:
         return True
     if cached.get("sims") != sims:
@@ -281,7 +208,6 @@ def needs_refresh(cached: dict | None, rows: int, sims: int = DEFAULT_SIMS) -> b
 
 def load_null(data_dir: Path, rows: int, *, sims: int = DEFAULT_SIMS, workers: int = 4,
               force: bool = False) -> dict:
-    """Đọc phân vị null đã lưu, tính lại khi cần."""
     path = data_dir / OUT / NULL_FILE
     cached = None
     if path.exists() and not force:
@@ -296,18 +222,15 @@ def load_null(data_dir: Path, rows: int, *, sims: int = DEFAULT_SIMS, workers: i
 
 
 def confidence(null: dict, name: str, value: float) -> float:
-    """Tỉ lệ lịch sử công bằng có thống kê lớn nhất của họ nhỏ hơn ``value``."""
     grid = np.asarray(null["quantiles"][name])
     return float(np.searchsorted(grid, value, side="left") / len(grid))
 
 
 def cm_grid_len(null: dict) -> int:
-    """Số điểm lưới phân vị đã lưu (mọi họ cùng một lưới)."""
     return len(next(iter(null["quantiles"].values())))
 
 
 def tier(components: dict[str, float]) -> tuple[str, float]:
-    """Luật ba tầng. Score = thành phần yếu nhất (High) hoặc mạnh thứ hai."""
     ranked = sorted(components.values(), reverse=True)
     if ranked[-1] > HIGH:
         return "High", ranked[-1]
@@ -317,13 +240,7 @@ def tier(components: dict[str, float]) -> tuple[str, float]:
     return "Low/Noise", second
 
 
-# ---------------------------------------------------------------------------
-# Giả thuyết can thiệp: nếu kỳ quay bị sắp đặt, dấu vết nào phải hiện ra?
-# ---------------------------------------------------------------------------
-
-
 def _raw_digit_counts(raw: pd.DataFrame) -> list[tuple[str, np.ndarray]]:
-    """Đếm chữ số 0-9 ở từng vị trí trong 107 vị trí của bảng kết quả đầy đủ."""
     out = []
     for column in PRIZE_COLUMNS:
         width = PRIZE_WIDTH[column.split("_")[0]]
@@ -334,17 +251,11 @@ def _raw_digit_counts(raw: pd.DataFrame) -> list[tuple[str, np.ndarray]]:
     return out
 
 
-#: Số lịch sử công bằng để hiệu chỉnh các phép kiểm "né" (rẻ: vài giây).
 INTERVENTION_SIMS = 10_000
 REPEAT_WINDOW = 7
 
 
 def repeat_counts(special: np.ndarray, window: int = REPEAT_WINDOW) -> np.ndarray:
-    """Số kỳ mà Đặc Biệt trùng một trong ``window`` Đặc Biệt ngay trước nó.
-
-    Nhận (T,) hoặc (S, T). Các cửa sổ chồng lên nhau, nên các chỉ báo KHÔNG
-    độc lập — review PR #104: tổng của chúng không theo phân phối nhị thức.
-    """
     seq = np.atleast_2d(special)
     rows = seq.shape[1]
     hit = np.zeros((seq.shape[0], max(rows - window, 0)), dtype=bool)
@@ -354,13 +265,11 @@ def repeat_counts(special: np.ndarray, window: int = REPEAT_WINDOW) -> np.ndarra
 
 
 def hot_counts(draws: np.ndarray) -> np.ndarray:
-    """Số kỳ mà Đặc Biệt là một con vừa về LOTO kỳ trước. Nhận (T, 27) hoặc (S, T, 27)."""
     arr = draws if draws.ndim == 3 else draws[None]
     return (arr[:, :-1, :] == arr[:, 1:, 0:1]).any(axis=-1).sum(axis=-1)
 
 
 def intervention_null(rows: int, sims: int = INTERVENTION_SIMS, *, seed: int = SEED + 1) -> dict:
-    """Phân phối của hai số đếm "né" trên ``sims`` lịch sử công bằng ``rows`` kỳ."""
     if sims < 1:
         raise ValueError(f"cần ít nhất 1 lịch sử mô phỏng, nhận {sims}")
     rng = np.random.default_rng(seed)
@@ -374,7 +283,6 @@ def intervention_null(rows: int, sims: int = INTERVENTION_SIMS, *, seed: int = S
 
 
 def mc_two_sided_p(observed: float, simulated: np.ndarray) -> float:
-    """p hai phía: tỉ lệ lịch sử công bằng lệch khỏi trung bình ít nhất bằng thật."""
     centre = float(np.mean(simulated))
     far = np.abs(simulated - centre) >= abs(observed - centre) - 1e-9
     return float((far.sum() + 1) / (len(simulated) + 1))
@@ -382,13 +290,6 @@ def mc_two_sided_p(observed: float, simulated: np.ndarray) -> float:
 
 def intervention_tests(raw: pd.DataFrame, draws: np.ndarray, *,
                        sims: int = INTERVENTION_SIMS) -> dict:
-    """Những dấu vết mà một kỳ quay bị sắp đặt THƯỜNG để lại trên kết quả công bố.
-
-    Không phép kiểm nào chứng minh được "không có can thiệp". Chúng trả lời câu
-    hỏi hẹp hơn nhưng là câu duy nhất có ích cho người đọc: can thiệp, nếu có,
-    có để lại dấu vết nào trên kết quả công bố mà người ngoài khai thác được
-    không.
-    """
     from scipy.stats import chi2
 
     rows = len(draws)
@@ -409,13 +310,10 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray, *,
         "label": f"Chữ số 0-9 đều nhau ở cả {len(per)} vị trí",
         "detail": f"vị trí lệch nhất {worst_label}: χ²={worst:.1f} (9 bậc tự do); "
                   f"tổng χ²={total:.0f} ({9 * len(per)} bậc tự do)",
-        # Hai thống kê (lệch nhất và tổng) cho cùng một câu hỏi: Bonferroni ×2.
         "p": min(1.0, 2 * min(p_family, p_total)),
     })
 
     special = draws[:, 0]
-    # Hai số đếm dưới đây dùng cửa sổ/kỳ chồng nhau nên không phải tổng của
-    # phép thử độc lập: p lấy từ chính phân phối của chúng trên lịch sử công bằng.
     null = intervention_null(rows, sims)
     repeats = int(repeat_counts(special)[0])
     trials = rows - REPEAT_WINDOW
@@ -448,7 +346,6 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray, *,
         "p": float(chi2.sf(stat, 54)),
     })
 
-    # Holm cho 4 phép kiểm của nhóm này.
     order = sorted(range(len(tests)), key=lambda i: tests[i]["p"])
     running = 0.0
     for rank, i in enumerate(order):
@@ -457,33 +354,18 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray, *,
     return {"tests": tests, "positions": len(per)}
 
 
-# ---------------------------------------------------------------------------
-# Báo cáo
-# ---------------------------------------------------------------------------
-
-
 def cluster_z(hits: np.ndarray, trials: np.ndarray, p: float) -> float:
-    """z của tổng lượt trúng, với phương sai ước lượng THEO TỪNG KỲ QUAY.
-
-    Các lượt trúng trong cùng một kỳ không độc lập: mười con LOTO cùng chia 27
-    giải, còn các cầu Đặc Biệt loại trừ nhau hoặc trùng nhau khi ghép ra cùng
-    một con. ``sqrt(n·p·(1−p))`` vì thế đo sai phương sai (review PR #104).
-    Dưới giả thuyết công bằng các KỲ độc lập với nhau, nên lấy mỗi kỳ làm một
-    cụm: z = Σ(h_t − n_t·p) / sqrt(Σ(h_t − n_t·p)²).
-    """
     dev = np.asarray(hits, dtype=float) - np.asarray(trials, dtype=float) * p
     scale = float(np.sqrt((dev**2).sum()))
     return float(dev.sum() / scale) if scale > 0 else 0.0
 
 
 def cau_hit_matrix(dig: np.ndarray, target: np.ndarray) -> np.ndarray:
-    """(T-1, 2916): cầu nào trúng ở kỳ nào — giữ từng kỳ để tính phương sai cụm."""
     idx = (10 * dig[:-1, :, None] + dig[:-1, None, :]).reshape(dig.shape[0] - 1, -1)
     return np.take_along_axis(target[1:], idx, axis=1)
 
 
 def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
-    """Tín hiệu mạnh nhất chọn trên 2015-2023 còn lại gì ở 2024-nay."""
     cut = int((dates < SPLIT).sum())
     if cut < 400 or len(draws) - cut < 60:
         return []
@@ -531,7 +413,6 @@ def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
     return rows
 
 
-#: Nguồn của các con "đang công bố", theo thứ tự ưu tiên.
 PICK_SOURCES = {
     "top10": "trang 10 số LOTO / 10 số Đặc Biệt",
     "home": "dự đoán trang chủ",
@@ -548,14 +429,6 @@ def _top10(data_dir: Path, mode: str, day: str) -> list[str]:
 
 
 def _target_date(data_dir: Path, last: str) -> tuple[str, list[str], list[str], str | None]:
-    """Kỳ đích và các con đã công bố cho nó.
-
-    Ưu tiên tệp top-10 mà CHÍNH pipeline vừa ghi cho kỳ tới
-    (``predict_nextday_2d``, chạy trước bước dựng trang). ``predictions_today.json``
-    do workflow dự đoán ghi SAU pipeline, nên lúc pipeline dựng trang nó vẫn trỏ
-    vào kỳ vừa quay — review PR #104: đọc nó trước thì sau lượt cập nhật đầu tiên
-    trang không còn gắn với dự báo nào. Nó chỉ là dự phòng khi trỏ đúng kỳ tới.
-    """
     nxt = (date.fromisoformat(last) + timedelta(days=1)).isoformat()
     pattern = "predict_next_loto_top10_*.csv"
     ahead = sorted(
@@ -577,14 +450,6 @@ def _target_date(data_dir: Path, last: str) -> tuple[str, list[str], list[str], 
 
 
 def forecast_scores(mode: str, probs: np.ndarray, labels: np.ndarray) -> dict:
-    """Log-loss, Brier và MAE của một dãy dự báo, theo đúng quy ước của kho.
-
-    Đặc Biệt là MỘT kết quả trong 100 lớp: log-loss −log(q con về), Brier và
-    MAE cộng qua 100 lớp — cùng thang với trang Chất lượng mô hình và
-    ``skill_monitor`` (review PR #104). LOTO là 100 biến nhị phân: trung bình
-    theo từng ô. Dùng chung cho trang lẫn script nghiên cứu để hai nơi không
-    thể lệch nhau.
-    """
     eps = 1e-12
     if mode == "de":
         return {
@@ -601,7 +466,6 @@ def forecast_scores(mode: str, probs: np.ndarray, labels: np.ndarray) -> dict:
 
 
 def published_feedback(data_dir: Path) -> dict:
-    """Vòng phản hồi: vector ĐÃ công bố so với kết quả quay thật."""
     from evaluation import skill_monitor as sm
 
     out = {"monitor": [check.as_dict() for check in sm.evaluate(data_dir)], "modes": {}}
@@ -620,7 +484,6 @@ def published_feedback(data_dir: Path) -> dict:
 
 
 def _hot_tail_status(data_dir: Path) -> dict:
-    """Ghi các kỳ mới vào sổ cái giả thuyết "đuôi nóng" rồi trả trạng thái."""
     from research import hot_tail_test
 
     hot_tail_test.update_ledger(data_dir)
@@ -628,7 +491,6 @@ def _hot_tail_status(data_dir: Path) -> dict:
 
 
 def _digit_sum_status(data_dir: Path) -> dict:
-    """Ghi các kỳ mới vào sổ cái năm quy tắc "tổng – bóng – chạm" rồi trả trạng thái."""
     from research import digit_sum_hypothesis
 
     digit_sum_hypothesis.update_ledger(data_dir)
@@ -636,7 +498,6 @@ def _digit_sum_status(data_dir: Path) -> dict:
 
 
 def build_report(data_dir: Path, null: dict) -> dict:
-    """Phần dữ liệu thật: họ giả thuyết, ma trận quyết định, rủi ro, phản hồi."""
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype={"date": str})
     draws = frame[PRIZE_COLUMNS].to_numpy().astype(int)
     dates = frame["date"]
@@ -645,8 +506,6 @@ def build_report(data_dir: Path, null: dict) -> dict:
     observed = summarize(values)
     col = {n: i for i, n in enumerate(NAMES)}
 
-    # p nhỏ nhất đo được: 1/(N+1) với N lịch sử — review PR #104: lưới 1 001
-    # phân vị không được cho 100 mô phỏng "đo" tới p ≈ 0,001.
     p_floor = max(1.0 / (int(null.get("sims") or 0) + 1), 1.0 / cm_grid_len(null))
     families = []
     for key, label, size in FAMILIES:
@@ -758,7 +617,6 @@ def build_report(data_dir: Path, null: dict) -> dict:
 
 
 def run(data_dir: Path, *, sims: int = DEFAULT_SIMS, workers: int = 4, force: bool = False) -> Path:
-    """Tính (hoặc tái dùng) null, dựng báo cáo, ghi ``data/evaluation/confidence/report.json``."""
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", usecols=["date"])
     null = load_null(data_dir, len(frame), sims=sims, workers=workers, force=force)
     report = build_report(data_dir, null)
@@ -769,7 +627,7 @@ def run(data_dir: Path, *, sims: int = DEFAULT_SIMS, workers: int = 4, force: bo
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--sims", type=int, default=DEFAULT_SIMS)
     parser.add_argument("--workers", type=int, default=4)

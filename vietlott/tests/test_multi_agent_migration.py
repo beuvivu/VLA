@@ -1,4 +1,3 @@
-"""Nâng cấp chính sách phải giữ issue cũ và không ghi lùi snapshot đã học."""
 from copy import deepcopy
 import json
 

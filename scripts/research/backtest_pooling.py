@@ -1,18 +1,3 @@
-"""Walk-forward so cách HỢP tín hiệu, trên dữ liệu thật.
-
-Đây là thước đo cho toàn bộ đợt nâng cấp kiến trúc. Mọi thay đổi cách hợp tín
-hiệu đều phải qua đây, và thay đổi nào không nâng được biên tách thì bị hoàn
-tác — đó là ràng buộc do chính đề bài đặt ra.
-
-Đo trên các thành phần của TẦNG 2 (``statistical_signal``) vì chúng tính lại
-được cho mọi kỳ trong lịch sử, khác với các thành phần tầng trên vốn chỉ còn
-ảnh chụp của kỳ mới nhất. Tầng 2 cũng chính là một trong bốn tầng trộn cần sửa,
-nên kết quả ở đây áp dụng trực tiếp.
-
-Chạy:
-    PYTHONPATH=src python3 scripts/research/backtest_pooling.py --eval-days 600
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -25,16 +10,13 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ensemble.opinion_pool import PoolParams, apply_pool, fit_pool  # noqa: E402
-from stats.statistical_signal import _eb_posterior, _exp_weights, _weighted_counts  # noqa: E402
+from ensemble.opinion_pool import PoolParams, apply_pool, fit_pool
+from stats.statistical_signal import _eb_posterior, _exp_weights, _weighted_counts
 
-#: Trọng số ĐANG DÙNG ở tầng 2, đặt tay: 0,55·ewm + 0,25·weekday + 0,20·p90.
 PRODUCTION_WEIGHTS = np.array([0.55, 0.25, 0.20])
-COMPONENT_NAMES = ("ewm", "weekday", "p90")
 
 
 def _components(hit: np.ndarray, dates: pd.Series, t: int, half_life: int) -> np.ndarray:
-    """Ba thành phần của tầng 2, tính CHỈ từ [0, t) — không nhìn kỳ t."""
     past = hit[:t]
     n = past.shape[0]
     w = _exp_weights(n, half_life)
@@ -54,7 +36,7 @@ def _components(hit: np.ndarray, dates: pd.Series, t: int, half_life: int) -> np
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser()
     ap.add_argument("--eval-days", type=int, default=600)
     ap.add_argument("--half-life", type=int, default=45)
     ap.add_argument("--holdout", type=float, default=0.30)
@@ -73,12 +55,6 @@ def main() -> None:
     dates = sparse["date"]
 
     if args.inject_lift > 0.0:
-        # TIÊM TÍN HIỆU ĐÃ BIẾT.
-        #
-        # Trên dữ liệu thật, mọi cách hợp đều không phân biệt được vì không có
-        # gì để hợp. Câu hỏi thật sự cần trả lời khác hẳn: NẾU có tín hiệu thì
-        # kiến trúc nào GIỮ được nó, và giữ được bao nhiêu phần? Không tiêm thì
-        # câu ấy không đo được, và ta chỉ đang so các cách làm mờ nhiễu.
         rng = np.random.default_rng(20260914)
         base = float(hit.mean())
         target = min(0.95, base * (1.0 + args.inject_lift))
@@ -108,8 +84,6 @@ def main() -> None:
     def score(name: str, params: PoolParams) -> tuple[str, float, float, float]:
         p = np.vstack([apply_pool("loto", day, params) for day in cube[split:]])
         brier = float(np.mean((p - y_test) ** 2))
-        # Biên tách: dải giá trị trung bình mỗi kỳ. Một phép hợp làm cùn tín
-        # hiệu sẽ có biên tách nhỏ, kể cả khi Brier trông không tệ.
         edge = float(np.mean(p.max(axis=1) - p.min(axis=1)))
         return name, brier, 1.0 - brier / b0, edge
 

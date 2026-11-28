@@ -67,7 +67,7 @@ def test_bootstrap_is_bounded_and_never_certifies_retrospective_success():
 def test_live_score_uses_the_issued_distribution_before_any_learning(tmp_path):
     f = MLForecaster('mega645', config())
     series = mega_series(40)
-    series.dates[-1] = '2026-01-04'  # next scheduled Mega draw, Sunday
+    series.dates[-1] = '2026-01-04'
     f.update(series.head(39))
     law = f.components['main'].law('2026-01-04')
     expected = law.log_likelihood(series.obs['main']['X'][39]) - law.null_log_likelihood(series.obs['main']['X'][39])
@@ -124,7 +124,7 @@ def test_lost_or_mismatched_live_target_blocks_old_certification():
     f.live_log_e = f.max_live_log_e = 20
     f.live_recent = [1.] * 100
     assert f.issue('2026-01-04T18:00:00+07:00', '2026-01-02T20:00:00+07:00')
-    f.update(series)  # target actually has date Jan 2, contradicts registered Sunday
+    f.update(series)
     assert not f.confidence()['validated']
 
 
@@ -139,14 +139,14 @@ def test_noise_never_gets_certified_by_retrospective_model_selection():
 
 def test_old_date_anomalies_are_audited_without_poisoning_clean_bootstrap_window():
     series = mega_series(40)
-    series.dates[1] = '2026-01-01'  # old date reversal, outside the last 16 draws
+    series.dates[1] = '2026-01-01'
     f = MLForecaster('mega645', MLConfig(bootstrap=16, warmup=4, tree_every=16, search_nodes=1))
     assert f.update(series) == 16
     assert f.report()['date_anomalies'] == 1
     assert 'history_date_anomalies' in f.warnings
     assert not f.confidence()['validated']
     bad = mega_series(40)
-    bad.dates[-1] = '2026-01-01'  # reversal in the actual fitting window
+    bad.dates[-1] = '2026-01-01'
     with pytest.raises(ValueError):
         MLForecaster('mega645', MLConfig(bootstrap=16)).update(bad)
 

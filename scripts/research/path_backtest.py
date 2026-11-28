@@ -1,11 +1,3 @@
-"""Backtest cuốn chiếu dự báo cầu theo đường (``soi_cau.path_prob``) trên kỳ quay thật.
-
-Với mỗi cặp kỳ neo → kỳ đích đúng NGÀY LỊCH kế tiếp trong ``--bt-days`` cặp cuối, dựng cầu từ
-lịch sử tới hết kỳ neo, chọn ``--top-k`` con theo nhánh ``--kind`` (đang chạy / ổn định) rồi chấm
-với kỳ đích. Ghi từng kỳ vào ``--out`` (mặc định ``data/path/backtest.csv``) và tóm tắt vào
-``<out>_summary.json``. Công cụ nghiên cứu chạy tay.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -17,13 +9,12 @@ import pandas as pd
 
 import sys
 
-# Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from core.calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
-from ingest.lottery import Lottery  # noqa: E402
-from core.path_models import PathParams, build_daily_targets  # noqa: E402
-from soi_cau.path_prob import predict_next_day  # noqa: E402
+from core.calendar_alignment import consecutive_next_pairs, normalize_dates
+from ingest.lottery import Lottery
+from core.path_models import PathParams, build_daily_targets
+from soi_cau.path_prob import predict_next_day
 
 Mode = Literal["loto", "de"]
 Kind = Literal["active", "stable"]
@@ -52,7 +43,6 @@ def _eval_one_day(
     kind: Kind,
     top_k: int,
 ) -> tuple[int, int, int, float]:
-    """Train through one anchor draw and score its exact next-calendar-day target."""
     dates = normalize_dates(df_2d["date"])
     if target_idx >= len(dates) or (dates[target_idx] - dates[idx_train_end]).days != 1:
         raise ValueError("path backtest target must be exactly one calendar day after anchor")
@@ -124,7 +114,6 @@ def main() -> None:
     source_idx, target_idx = consecutive_next_pairs(raw_dates)
     if source_idx.size == 0:
         raise SystemExit("No exact next-calendar-day trials available for backtest")
-    # Keep the most recent requested number of legitimate calendar transitions.
     if args.bt_days > 0:
         source_idx = source_idx[-args.bt_days :]
         target_idx = target_idx[-args.bt_days :]
@@ -140,8 +129,8 @@ def main() -> None:
             idx_train_end=int(idx_train_end),
             target_idx=int(idx_target),
             params=params,
-            mode=args.mode,  # type: ignore[arg-type]
-            kind=args.kind,  # type: ignore[arg-type]
+            mode=args.mode,
+            kind=args.kind,
             top_k=args.top_k,
         )
         res.append(

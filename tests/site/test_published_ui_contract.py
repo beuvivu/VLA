@@ -1,12 +1,3 @@
-"""Hợp đồng giao diện ở lớp xuất bản, không chỉ ở từng builder.
-
-Một trang có thể sinh đúng HTML nhưng vẫn trôi khỏi Master Design System nếu
-builder quên nạp biểu định kiểu nền. Phép kiểm này nhìn thẳng vào ``docs/*.html``
-— chính các tệp GitHub Pages phục vụ — và yêu cầu mọi trang đứng trên cùng một
-shared base stylesheet. CSS nội tuyến/scoped overlay vẫn được phép bổ sung cho
-nhu cầu riêng của từng trang, nhưng không được thay thế lớp nền dùng chung.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -51,7 +42,6 @@ def test_every_published_page_loads_the_shared_design_system() -> None:
 
 
 def test_no_published_page_references_the_retired_stylesheet_name() -> None:
-    """Tên chuẩn hiện tại là ``assets/ui.css``; ``vla.css`` là tài liệu cũ."""
     offenders: list[str] = []
     for page in _published_pages():
         text = page.read_text(encoding="utf-8")

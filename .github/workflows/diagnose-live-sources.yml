@@ -1,13 +1,5 @@
 name: Chẩn đoán nguồn live
 
-# CHẠY TAY. Môi trường phát triển bị chặn mạng, nên muốn biết bộ bóc giải thấy gì trên
-# trang nguồn thật thì phải chạy trên runner. Job chỉ ĐỌC: in bảng giải bóc được và các
-# dòng quanh giải 7 ra log, lưu HTML thô làm hiện vật MỘT ngày, không commit gì.
-#
-# Khai `crosscheck_start` thì job thứ hai chạy thay: đối chiếu một dải kỳ của sổ chuẩn
-# `data/xsmb.csv` với nơi ghi khác, từng ô (`scripts/ops/crosscheck_canonical_history.py`).
-# Cũng chỉ ĐỌC: log in số ô trùng và từng ô khác, không lưu trang, không commit.
-
 on:
   workflow_dispatch:
     inputs:
@@ -60,7 +52,6 @@ jobs:
       - name: Bóc thử từng nguồn
         env:
           DRAW_DATE: ${{ inputs.draw_date }}
-        # Để trống thì soi cả kỳ hôm qua (đã xong, làm mốc đối chiếu) lẫn hôm nay.
         run: |
           if [[ -n "${DRAW_DATE:-}" ]]; then
             dates=(--date "$DRAW_DATE")
@@ -81,8 +72,6 @@ jobs:
     name: Đối chiếu sổ chuẩn với nơi ghi khác
     if: inputs.crosscheck_start != ''
     runs-on: ubuntu-latest
-    # Minh Ngọc: một trang cho bảy kỳ; mketqua: một trang mỗi kỳ, chờ 1,5–3 giây giữa hai lần gọi.
-    # Một năm qua mketqua khoảng 15 phút.
     timeout-minutes: 45
     env:
       PYTHONPATH: ${{ github.workspace }}/src

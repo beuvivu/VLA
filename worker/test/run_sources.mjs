@@ -1,4 +1,3 @@
-// In danh mục nguồn của bản JS để `tests/worker/test_worker_sources_parity.py` so.
 import { SOURCES, SOURCE_PUBLIC_CODE } from "../src/sources.js";
 
 const [year, month, day] = process.argv[2].split("-").map(Number);

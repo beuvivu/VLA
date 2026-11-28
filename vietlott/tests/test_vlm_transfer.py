@@ -1,8 +1,3 @@
-"""Học chuyển giao Max 3D ↔ Max 3D Pro (``vlm.forecast.transfer``): có cận tất định, học nhanh hơn khi lệch chung,
-lùi về luật riêng khi hai sản phẩm khác nhau, không nhìn kỳ cùng ngày, sổ tiến cứu chỉ nối thêm.
-
-Lịch sử giả lập: 20 số ba chữ số mỗi kỳ; "lệch" là chữ số 6 ở hàng đơn vị ra với xác suất cao hơn 1/10.
-"""
 from __future__ import annotations
 
 import json
@@ -22,7 +17,6 @@ A, B = tr.PRODUCTS
 
 
 def _series(product: ProductCode, start: date, n: int, seed: int, *, six: float = 0.1, step: int = 2) -> Series:
-    """``n`` kỳ cách nhau ``step`` ngày; chữ số hàng đơn vị là 6 với xác suất ``six``, chữ số khác chia đều."""
     rng = np.random.default_rng(seed)
     digits = rng.integers(0, 10, size=(n, 20, 3))
     units = np.where(rng.random((n, 20)) < six, 6, rng.choice([d for d in range(10) if d != 6], size=(n, 20)))
@@ -54,7 +48,6 @@ def test_the_mixture_never_trails_the_own_law_by_more_than_the_bound() -> None:
 
 
 def test_a_shared_bias_is_learned_faster_together() -> None:
-    """Sản phẩm B ra đời muộn: học chung với lịch sử dài của A thì B dự báo tốt hơn ngay từ đầu."""
     series = {A: _series(A, date(2020, 1, 1), 500, seed=3, six=0.13),
               B: _series(B, date(2022, 9, 1), 150, seed=4, six=0.13)}
     steps, model = tr.walk_forward(series)
@@ -62,14 +55,13 @@ def test_a_shared_bias_is_learned_faster_together() -> None:
     gain = np.array([s.mix - s.sep for s in late])
     assert gain.sum() > 2.0 and gain.mean() / (gain.std(ddof=1) / math.sqrt(gain.size)) > 2.0
     own, pooled, w_pool = model.laws(B)
-    assert w_pool > 0.5  # trọng số luật gộp của B
+    assert w_pool > 0.5
     mixed = model.mixed(B)
     assert int(np.argmax(mixed[2])) == 6 and mixed.sum(axis=1) == pytest.approx([1.0, 1.0, 1.0])
-    assert np.abs(mixed - pooled).max() < np.abs(mixed - own).max()  # luật kỳ tới nghiêng về luật gộp
+    assert np.abs(mixed - pooled).max() < np.abs(mixed - own).max()
 
 
 def test_diverging_products_fall_back_to_their_own_law() -> None:
-    """A lệch, B đều: luật gộp mang độ lệch của A sang B, nên B phải lùi về luật riêng."""
     series = {A: _series(A, date(2020, 1, 1), 500, seed=5, six=0.14),
               B: _series(B, date(2020, 1, 2), 500, seed=6, six=0.1)}
     steps, model = tr.walk_forward(series)
@@ -81,7 +73,6 @@ def test_diverging_products_fall_back_to_their_own_law() -> None:
 
 
 def test_draws_of_the_same_day_do_not_see_each_other() -> None:
-    """Hai sản phẩm quay cùng ngày: điểm của B ngày ấy không đổi khi kết quả của A ngày ấy đổi."""
     a = _series(A, date(2021, 1, 1), 60, seed=7, six=0.13, step=1)
     b = _series(B, date(2021, 1, 1), 60, seed=8, six=0.13, step=1)
     base, _ = tr.walk_forward({A: a, B: b})
@@ -91,7 +82,7 @@ def test_draws_of_the_same_day_do_not_see_each_other() -> None:
     other, _ = tr.walk_forward({A: altered, B: b})
     b_base, b_other = _by_product(base, B), _by_product(other, B)
     assert [s.mix for s in b_base[:41]] == [s.mix for s in b_other[:41]]
-    assert b_base[41].pool != b_other[41].pool  # ngày hôm sau thì luật gộp đã học kỳ ấy
+    assert b_base[41].pool != b_other[41].pool
 
 
 def test_prospective_scores_only_later_draws_and_never_rewrites_a_row(tmp_path: Path) -> None:
@@ -121,11 +112,10 @@ def _drop(series: Series, index: int) -> Series:
 
 
 def test_a_row_is_written_only_once_every_product_has_caught_up(tmp_path: Path) -> None:
-    """Kỳ B về muộn: kỳ A sau nó chưa được ghi (luật gộp chưa học B), lượt sau ghi đúng giá trị và sổ vẫn khớp."""
     start = tr.REGISTERED_ON + timedelta(days=1)
     full = {A: _series(A, start, 6, seed=21, six=0.13, step=2), B: _series(B, start + timedelta(days=1), 6, seed=22, six=0.13, step=2)}
-    late = {A: full[A], B: full[B].head(2)}                        # B mới có hai kỳ đầu
-    gap = {A: full[A], B: _drop(full[B], 2)}                        # B thiếu một kỳ giữa chừng
+    late = {A: full[A], B: full[B].head(2)}
+    gap = {A: full[A], B: _drop(full[B], 2)}
     assert tr.final_through(late) == full[B].dates[1].astype(object)
     assert tr.final_through(gap) == full[B].dates[1].astype(object)
     ledger = tmp_path / tr.LEDGER
@@ -134,7 +124,7 @@ def test_a_row_is_written_only_once_every_product_has_caught_up(tmp_path: Path) 
     written = {(r["product"], r["draw_id"]) for r in map(json.loads, ledger.read_text(encoding="utf-8").splitlines())}
     assert all(day <= full[B].dates[1].astype(object) for day in
                [s.day for s in steps if (s.product.value, s.draw_id) in written])
-    assert partial["products"][A.value]["draws"] == 2  # hai kỳ A trước kỳ B cuối đã có
+    assert partial["products"][A.value]["draws"] == 2
     steps_full, _ = tr.walk_forward(full)
     done = tr.prospective(steps_full, ledger, tr.final_through(full), "fp")
     assert done["ledger_consistent"]
@@ -150,11 +140,11 @@ def test_a_changed_engine_stops_the_ledger_and_blocks_promotion(tmp_path: Path, 
     fingerprint = tr.engine_fingerprint()
     assert fingerprint == tr.engine_fingerprint() and len(fingerprint) == 16
     monkeypatch.setattr(tr.Forecaster, "SWITCH_YEARS", 5.0)
-    assert tr.engine_fingerprint() != fingerprint  # engine đổi hành vi thì đổi dấu vân tay
+    assert tr.engine_fingerprint() != fingerprint
     monkeypatch.undo()
     original = tr.BayesMixtureExpert.predict
     monkeypatch.setattr(tr.BayesMixtureExpert, "predict", lambda self: original(self) * (1 + 1e-6))
-    assert tr.engine_fingerprint() != fingerprint  # cùng tên chuyên gia, khác dự báo: vẫn bắt được
+    assert tr.engine_fingerprint() != fingerprint
     monkeypatch.undo()
     ledger = tmp_path / tr.LEDGER
     steps, _ = tr.walk_forward(series)
@@ -167,7 +157,6 @@ def test_a_changed_engine_stops_the_ledger_and_blocks_promotion(tmp_path: Path, 
 
 
 def test_eligibility_needs_a_ledger_that_still_matches_the_rule(tmp_path: Path) -> None:
-    """Sổ có z cao nhưng tính lại không khớp: không được gọi là đủ điều kiện."""
     start = tr.REGISTERED_ON + timedelta(days=1)
     rows = [{"version": tr.VERSION, "product": A.value, "draw_id": i, "engine": "fp", "date": (start + timedelta(days=2 * i)).isoformat(),
              "gain_vs_separate": 1.0 + 0.01 * i, "gain_vs_uniform": 1.0} for i in range(1, 6)]
@@ -179,6 +168,19 @@ def test_eligibility_needs_a_ledger_that_still_matches_the_rule(tmp_path: Path) 
     assert not out["products"][A.value]["eligible"]
     matching = [tr.Step(A, i, date.fromisoformat(r["date"]), 0.0, 0.0, r["gain_vs_separate"], 0.5) for i, r in zip(range(1, 6), rows)]
     assert tr.prospective(matching, ledger, start + timedelta(days=20), "fp")["products"][A.value]["eligible"]
+
+
+def test_a_second_run_over_recorded_rows_still_writes_the_summary(tmp_path: Path) -> None:
+    start = tr.REGISTERED_ON - timedelta(days=20)
+    series = {A: _series(A, start, 20, seed=9, step=2), B: _series(B, start + timedelta(days=1), 20, seed=10, step=2)}
+    tr.write(series, tmp_path)
+    ledger = tmp_path / tr.LEDGER
+    assert ledger.read_text(encoding="utf-8").strip()
+    path = tr.write(series, tmp_path)
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    assert summary["prospective"]["ledger_consistent"] is True
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
+    assert summary["prospective"]["products"][A.value]["draws"] == sum(r["product"] == A.value for r in rows)
 
 
 def test_write_is_deterministic_and_keeps_an_unchanged_summary(tmp_path: Path) -> None:
@@ -203,21 +205,26 @@ def test_the_committed_summary_carries_the_frozen_rule() -> None:
     assert summary["rule"]["registered_on"] == tr.REGISTERED_ON.isoformat()
     assert summary["rule"]["prior_pooled"] == tr.PRIOR_POOLED
     registered = tr.REGISTERED_ON.isoformat()
-    assert all(v["last_date"] <= registered or summary["prospective"]["products"][k]["draws"] > 0
-               or summary["prospective"]["ledger_through"] <= registered
-               for k, v in summary["walk_forward"].items())
+    through = summary["prospective"]["ledger_through"]
+    ledger = [json.loads(line) for line in (ROOT / "data" / "forecast" / tr.LEDGER).read_text(encoding="utf-8").splitlines()
+              if line.strip()]
+    rows = [r for r in ledger if r["version"] == tr.VERSION]
+    assert all(registered < r["date"] <= through for r in rows)
+    for k, v in summary["walk_forward"].items():
+        assert summary["prospective"]["products"][k]["draws"] == sum(r["product"] == k for r in rows)
+        if registered < v["last_date"] <= through:
+            assert summary["prospective"]["products"][k]["draws"] > 0
     assert summary["prospective"]["ledger_consistent"] and summary["prospective"]["engine_consistent"]
     assert summary["prospective"]["engine_fingerprint"] == tr.engine_fingerprint()
 
 
 def test_fixed_share_keeps_a_floor_under_the_losing_law() -> None:
-    """Sau một kỳ mà luật gộp sai thảm, trọng số của nó vẫn còn ít nhất share × tiên nghiệm, để còn hồi lại được."""
     model = tr.TransferModel()
     counts = np.zeros((3, 10))
-    counts[:, 6] = 20  # cả 20 số đều có 6 ở mọi vị trí
-    model.pool.learn(np.tile(np.eye(10)[3] * 20, (3, 1)), 1)  # luật gộp đã nghiêng hẳn về chữ số 3
+    counts[:, 6] = 20
+    model.pool.learn(np.tile(np.eye(10)[3] * 20, (3, 1)), 1)
     for _ in range(40):
         model.score(B, counts, 1, date(2020, 1, 1))
     w_pool = model.laws(B)[2]
     floor = tr.share(B) * tr.PRIOR_POOLED
-    assert floor * 0.999 <= w_pool < 3 * floor  # không có chia sẻ thì trọng số đã rơi xa dưới sàn
+    assert floor * 0.999 <= w_pool < 3 * floor

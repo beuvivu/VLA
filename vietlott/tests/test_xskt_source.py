@@ -1,9 +1,3 @@
-"""Nguồn ``xskt``: đọc đúng bảng kết quả Mega/Power/Lotto, lọc theo số kỳ, và đứng sau bản sao
-cộng đồng trong chuỗi ``auto`` — bản sao chậm thì kỳ mới vẫn vào được.
-
-HTML mẫu chép nguyên từ trang thật, đọc qua runner Actions ngày 06-10-2026 (crawler Vietlott
-cũ của VLA, ``tests/test_vietlott_results.py`` trước commit dc13ab6e).
-"""
 import asyncio
 from datetime import date
 
@@ -44,7 +38,6 @@ POWER = (
     '<table class="trunggiai"><tr><td>J.pot</td><td></td><td>0</td><td>112,784,140,200</td></tr>'
     "<tr><td>Jpot2</td><td></td><td>0</td><td>3,695,872,550</td></tr></table>"
 )
-#: Kỳ trước đó trên cùng trang tổng (cùng khuôn), để kiểm lọc theo số kỳ.
 LOTTO_13H = (
     '<table class="result"><tr><td class="kmt" colspan="2"><a href="/xslotto-13h/ngay-5-10-2026">'
     '<b>#00927 (13h)</b></a></td></tr><tr><td class="megaresult"><em>02 05 19 30 33 <span>07</span></em>'
@@ -90,7 +83,7 @@ class _Client:
     def __init__(self, pages: dict[str, str]) -> None:
         self.pages, self.urls = pages, []
 
-    async def get(self, url: str):  # type: ignore[no-untyped-def]
+    async def get(self, url: str):
         self.urls.append(url)
         if url not in self.pages:
             raise SourceError(f"GET {url} failed with non-retryable HTTP 404")
@@ -112,14 +105,13 @@ def test_an_unreadable_page_fails_the_source_instead_of_claiming_no_new_draw():
 class _Stale(DrawSource):
     name = "nhanaz"
 
-    async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+    async def fetch(self, spec, since_id=None):
         return FetchResult(draws=[d for d in [Draw(game=spec.code, draw_id=927, draw_date=date(2026, 10, 5),
                                                     numbers=(2, 5, 19, 30, 33), bonus=7, source="nhanaz")]
                                   if since_id is None or d.draw_id > since_id])
 
 
 def test_a_lagging_archive_no_longer_hides_a_draw_the_republisher_already_has():
-    """Bản sao dừng ở #927; chuỗi phải hỏi tiếp và lấy #928 từ xskt thay vì báo "không có kỳ mới"."""
     client = _Client({"https://xskt.com.vn/xslotto-5-35": LOTTO_13H + LOTTO})
     chain = FallbackDrawSource([_Stale(), XsktDrawSource(client, "https://xskt.com.vn")])
     got = asyncio.run(chain.fetch(get_game(GameCode.LOTTO_535), since_id=927))
@@ -129,23 +121,21 @@ def test_a_lagging_archive_no_longer_hides_a_draw_the_republisher_already_has():
 def test_the_default_chain_asks_xskt_after_the_archive_and_only_for_matrix_games():
     order = Settings().fallback_order
     assert order.index("nhanaz") < order.index("xskt") < order.index("github_mirror")
-    source = build_source(Settings(), object(), "auto")  # type: ignore[arg-type]
+    source = build_source(Settings(), object(), "auto")
     assert [s.name for s in source.sources][:3] == ["vietlott", "nhanaz", "xskt"]
-    products = ProductSyncPipeline(object(), object(), vietlott_base_url="", mirror_base_url="", canonical_base_url="",  # type: ignore[arg-type]
+    products = ProductSyncPipeline(object(), object(), vietlott_base_url="", mirror_base_url="", canonical_base_url="",
                                    fallback_order=order)
     assert "xskt" not in products.chain(ProductCode.MAX3D)
 
 
 def test_the_source_can_be_chosen_through_the_environment(monkeypatch):
-    """``VQE_SOURCE=xskt`` phải qua được kiểm cấu hình, không chỉ cờ dòng lệnh."""
     monkeypatch.setenv("VQE_SOURCE", "xskt")
     settings = Settings()
     assert settings.source == "xskt"
-    assert isinstance(build_source(settings, object()), XsktDrawSource)  # type: ignore[arg-type]
+    assert isinstance(build_source(settings, object()), XsktDrawSource)
 
 
 def test_a_partially_caught_up_archive_is_extended_by_the_later_source():
-    """Kho dừng ở #926, bản sao mới có #927, xskt đã có #928: lấy cả hai, #927 vẫn từ bản sao."""
     client = _Client({"https://xskt.com.vn/xslotto-5-35": LOTTO_13H + LOTTO})
     chain = FallbackDrawSource([_Stale(), XsktDrawSource(client, "https://xskt.com.vn")])
     got = asyncio.run(chain.fetch(get_game(GameCode.LOTTO_535), since_id=926))
@@ -158,7 +148,7 @@ class _Fixed(DrawSource):
         self.name, self.draws = name, draws
         self.cursors: list[int | None] = []
 
-    async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+    async def fetch(self, spec, since_id=None):
         self.cursors.append(since_id)
         return FetchResult(draws=[d for d in self.draws if since_id is None or d.draw_id > since_id])
 
@@ -187,7 +177,6 @@ def _lotto_table(draw_id: int, day: int, numbers: str, special: str) -> str:
 
 
 def test_later_sources_are_asked_from_the_merged_tail_not_the_original_cursor():
-    """Kho ở #920, bản sao lấp #921–#927, trang xskt chỉ giữ #925–#928: vẫn nối được #928."""
     archive = _Fixed("nhanaz", [Draw(game=GameCode.LOTTO_535, draw_id=i, draw_date=date(2026, 10, i - 920),
                                      numbers=(1, 2, 3, 4, 5), bonus=6, source="nhanaz") for i in range(921, 928)])
     page = "".join(_lotto_table(i, i - 920, "01 02 03 04 05", "06") for i in range(925, 929))

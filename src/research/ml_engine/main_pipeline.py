@@ -1,39 +1,3 @@
-"""Tầng điều phối: nối toàn bộ luồng từ JSON đầu vào tới báo cáo chỉ số.
-
-Luồng
-------
-
-::
-
-    JSON đầu vào → ObservationMatrix (kiểm hợp đồng)
-                 → sinh đặc trưng (không rò rỉ)
-                 → chọn đặc trưng bằng SHAP
-                 → mỗi "cánh tay" khai báo xác suất riêng
-                 → trọng số mũ trên log-loss trộn các cánh tay
-                 → cổng độ tin: trust·trộn + (1 − trust)·nền
-                 → Top-K
-                 → kết quả thật → log-loss từng cánh tay → cập nhật trọng số
-                                → điểm của phép trộn → trôi lệch, kỹ năng → trust
-                                → điểm của dự báo công bố → nhật ký
-
-Cổng độ tin đứng sau phép trộn, không phải trước. Phép trộn chỉ bảo đảm không
-thua cánh tay tốt nhất quá xa; cổng là nơi duy nhất hỏi phép trộn có kỹ năng ĐO
-ĐƯỢC hay không, nên nó có tiếng nói sau cùng (``research.ml_engine.fallback``).
-
-Nền là một cánh tay, và điều đó quyết định
--------------------------------------------
-
-``baseline`` được đăng ký như một cánh tay bình thường, cạnh tranh sòng phẳng
-với mọi mô hình. Nhờ vậy hệ thống có thể *kết luận bằng dữ liệu* rằng không mô
-hình nào đáng tin — trọng số dồn về nền — thay vì phải có người quyết định điều
-đó. Không có cánh tay nền thì trọng số luôn bị chuẩn hóa giữa các mô hình, và
-hệ thống không có cách nào diễn đạt câu "không cái nào đáng dùng".
-
-Module này là khung nghiên cứu, không nằm trong pipeline production; bộ đệm dự
-báo chỉ sống trong tiến trình. Luồng production dùng sổ dự báo và trạng thái trực
-tuyến riêng (``online_learning``) để tiếp tục qua các lần chạy.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -65,21 +29,6 @@ LOGGER: Final[logging.Logger] = logging.getLogger("research.ml_engine")
 
 @dataclass(frozen=True)
 class PipelineConfig:
-    """Tham số vận hành của pipeline.
-
-    Attributes:
-        window: Số ngày trong cửa sổ huấn luyện trượt.
-        warmup: Số ngày đầu chỉ tích lũy, không dự đoán.
-        refit_every: Khớp lại mô hình sau mỗi bấy nhiêu ngày.
-        top_k: Số con trả về trong danh sách gợi ý.
-        learning_rate: ``η`` của trọng số mũ trên log-loss cộng 100 con.
-        share: ``α`` của chia sẻ cố định.
-        trust_window: Số kỳ gần nhất dùng để đo kỹ năng của phép trộn.
-        trust_min_days: Số kỳ đo tối thiểu trước khi cổng được mở.
-        use_temporal: Có bật cánh tay mô hình chuỗi (GRU hoặc đường lui tuyến tính) không.
-        use_ranking: Có bật cánh tay LambdaMART không.
-        feature_epsilon: Ngưỡng loại đặc trưng theo tầm quan trọng.
-    """
 
     window: int = 240
     warmup: int = 120
@@ -113,21 +62,6 @@ class PipelineConfig:
 
 @dataclass
 class DayResult:
-    """Kết quả xử lý một kỳ.
-
-    Attributes:
-        day_index: Chỉ số ngày trong ma trận quan sát.
-        date: Ngày được dự đoán.
-        probabilities: Xác suất công bố, sau phép trộn và cổng độ tin.
-        top_k: Danh sách con được gợi ý.
-        arm_weights: Trọng số trộn tại thời điểm dự đoán.
-        mode: Chế độ vận hành khi dự đoán (``safe`` khi trust = 0).
-        trust: Mức tin phép trộn khi dự đoán.
-        drifted: Có phát hiện trôi lệch sau khi biết kết quả không.
-        hits_in_top_k: Số con trong Top-K thực sự về.
-        arm_losses: Log-loss trung bình mỗi con của từng cánh tay ở kỳ này.
-        mixture_logloss: Log-loss của phép trộn trước cổng.
-    """
 
     day_index: int
     date: pd.Timestamp
@@ -143,25 +77,6 @@ class DayResult:
 
 
 class ContinuousLearningPipeline:
-    """Hệ thống học tiếp diễn: trộn theo log-loss, phát hiện trôi lệch, cổng độ tin.
-
-    Ví dụ:
-        >>> import pandas as pd
-        >>> from research.ml_engine.schema import ObservationMatrix
-        >>> frame = pd.read_csv("data/xsmb.csv")  # doctest: +SKIP
-        >>> pipeline = ContinuousLearningPipeline(  # doctest: +SKIP
-        ...     ObservationMatrix.from_frame(frame)
-        ... )
-        >>> report = pipeline.run(start=300, stop=320)  # doctest: +SKIP
-
-    Attributes:
-        observations: Ma trận quan sát đã kiểm hợp đồng.
-        config: Tham số vận hành.
-        aggregator: Trọng số mũ trên log-loss của các cánh tay.
-        drift: Bộ phát hiện trôi lệch trên sai số của phép trộn.
-        safe_mode: Cổng độ tin từ kỹ năng ngoài mẫu của phép trộn.
-        tracker: Bộ tích lũy chỉ số.
-    """
 
     def __init__(
         self,
@@ -198,10 +113,8 @@ class ContinuousLearningPipeline:
         self._forecast_reason = self.safe_mode.reason
         self._forecast_model_failed = False
 
-    # -- Cánh tay --------------------------------------------------------
 
     def _build_arms(self) -> dict[str, Callable[[], Any]]:
-        """Danh mục cánh tay đang bật, theo cấu hình và thư viện sẵn có."""
         arms: dict[str, Callable[[], Any]] = {
             "baseline": lambda: None,
             "frequency": lambda: None,
@@ -216,7 +129,6 @@ class ContinuousLearningPipeline:
 
     @staticmethod
     def _frequency_probabilities(counts: np.ndarray) -> np.ndarray:
-        """Cánh tay tần suất: tỉ lệ về kinh nghiệm, co rút nhẹ về nền."""
         if counts.shape[0] < 30:
             return np.full(NUMBER_SPACE, BASELINE_RATE)
         empirical = (counts > 0).mean(axis=0)
@@ -225,7 +137,6 @@ class ContinuousLearningPipeline:
 
     @staticmethod
     def _gap_hazard_probabilities(counts: np.ndarray, *, max_gap: int = 12) -> np.ndarray:
-        """Cánh tay nhịp gan: nguy cơ về theo số ngày đã gan."""
         hits = counts > 0
         n = hits.shape[0]
         if n < 60:
@@ -247,10 +158,8 @@ class ContinuousLearningPipeline:
         current = np.minimum(n - 1 - last, max_gap)
         return hazard[current]
 
-    # -- Khớp và dự đoán -------------------------------------------------
 
     def _refit(self, day: int) -> None:
-        """Khớp lại các cánh tay có tham số, dùng cửa sổ trượt tới ``day``."""
         start = max(0, day - self.config.window)
         x, y, names = build_training_table(self.observations.counts, start=start, stop=day)
         if len(np.unique(y)) < 2:
@@ -258,8 +167,6 @@ class ContinuousLearningPipeline:
             self._refit_failed = True
             return
 
-        # Candidate mới chỉ thay cánh tay đã khớp thành công. Schema riêng giữ
-        # model cũ dùng đúng cột ngay cả khi bộ chọn đặc trưng lần này đổi.
         fitted = dict(self._fitted)
         fitted_features = dict(self._fitted_features)
         failed = False
@@ -286,10 +193,6 @@ class ContinuousLearningPipeline:
                 if isinstance(model, TemporalSequenceModel):
                     model.fit_sequence(self.observations.hits[start:day])
                 elif isinstance(model, RankingBooster):
-                    # LambdaMART cần nhóm nguyên vẹn 100 con mỗi ngày, nên nó
-                    # dùng toàn bộ cột thay vì tập đã lọc — lọc cột không đổi số
-                    # hàng, nhưng giữ hai đường đi khác nhau ở đây làm mã khó
-                    # theo dõi hơn là nó tiết kiệm.
                     model.fit(x, y)
                 else:
                     model.fit(x_selected, y)
@@ -306,14 +209,6 @@ class ContinuousLearningPipeline:
         self._refit_failed = failed
 
     def arm_probabilities(self, day: int) -> dict[str, np.ndarray]:
-        """Xác suất do từng cánh tay khai báo cho ngày ``day``.
-
-        Args:
-            day: Chỉ số ngày cần dự đoán.
-
-        Returns:
-            Ánh xạ tên cánh tay sang mảng ``(100,)`` xác suất.
-        """
         self._check_prediction_day(day)
         self._model_failed = self._refit_failed
         past = self.observations.counts[:day]
@@ -346,7 +241,6 @@ class ContinuousLearningPipeline:
         return output
 
     def _check_prediction_day(self, day: int) -> None:
-        """Chặn dùng mô hình/hậu nghiệm đã thấy ngày tương lai để dự báo quá khứ."""
         if isinstance(day, bool) or not isinstance(day, Integral):
             raise ValueError("day phải là số nguyên")
         if not self.config.warmup <= day <= self.observations.n_days:
@@ -355,20 +249,11 @@ class ContinuousLearningPipeline:
             raise ValueError("không được dự báo lùi thời gian bằng trạng thái đã học")
 
     def _copy_forecast(self) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
-        """Trả bản sao để người gọi không sửa được dự báo đang chờ chấm."""
         assert self._forecast is not None
         probabilities, weights, per_arm = self._forecast
         return probabilities.copy(), dict(weights), {name: p.copy() for name, p in per_arm.items()}
 
     def predict_day(self, day: int) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
-        """Dự đoán một kỳ: trộn các cánh tay rồi qua cổng độ tin.
-
-        Args:
-            day: Chỉ số ngày cần dự đoán.
-
-        Returns:
-            Bộ ba ``(xác suất cuối, trọng số cánh tay, xác suất từng cánh tay)``.
-        """
         self._check_prediction_day(day)
         if day == self._forecast_day and self._forecast is not None:
             return self._copy_forecast()
@@ -377,13 +262,11 @@ class ContinuousLearningPipeline:
         try:
             return self._predict_uncached(day)
         except Exception:
-            # Dự báo mới hỏng không được làm mất mô hình hoặc dự báo đang chờ chấm.
             (self._fitted, self._fitted_at, self.selected_features, self._force_refit,
              self._fitted_features, self._refit_failed, self._model_failed) = checkpoint
             raise
 
     def _predict_uncached(self, day: int) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
-        """Tạo dự báo mới; bên gọi khôi phục trạng thái nếu bất kỳ bước nào lỗi."""
         if (self._force_refit or day - self._fitted_at >= self.config.refit_every
                 or not self._fitted):
             self._refit(day)
@@ -399,13 +282,10 @@ class ContinuousLearningPipeline:
         if available_weight > 0:
             weights = {name: weight / available_weight for name, weight in weights.items()}
         else:
-            # Mọi trọng số dồn vào cánh tay vắng; nền vẫn là cánh tay thật.
             weights = {"baseline": 1.0}
         blended = np.zeros(NUMBER_SPACE)
         for name, probability in per_arm.items():
             blended += weights.get(name, 0.0) * probability
-        # Chuẩn hóa lại phòng trường hợp một cánh tay vắng mặt: bỏ qua bước này
-        # thì tổng trọng số nhỏ hơn 1 và xác suất bị co về 0 một cách âm thầm.
         total = sum(weights.get(name, 0.0) for name in per_arm)
         if total > 0:
             blended /= total
@@ -421,17 +301,8 @@ class ContinuousLearningPipeline:
         self._forecast = final, dict(weights), per_arm
         return self._copy_forecast()
 
-    # -- Vòng lặp chính --------------------------------------------------
 
     def step(self, day: int) -> DayResult:
-        """Xử lý trọn một kỳ: dự đoán, đối chiếu kết quả, cập nhật trạng thái.
-
-        Args:
-            day: Chỉ số ngày.
-
-        Returns:
-            Kết quả của kỳ đó.
-        """
         if day <= self._last_observed_day:
             raise ValueError("ngày đã được chấm; không được học lại hay chạy lùi thời gian")
         if day >= self.observations.n_days:
@@ -444,24 +315,18 @@ class ContinuousLearningPipeline:
         top_k = np.argsort(-probabilities, kind="stable")[: self.config.top_k]
         hits_in_top_k = int(outcome[top_k].sum())
 
-        # Log-loss là quy tắc chấm chặt: phạt cả sai mức xác suất khi thứ hạng
-        # không đổi, và phạt nặng nhất đúng chỗ nguy hiểm — tự tin sai ở đuôi.
         losses = {
             name: score_day(probability, outcome).logloss
             for name, probability in per_arm.items()
         }
         mixture = score_day(self._forecast_mixture, outcome)
-        # Chỉ chụp trạng thái học nhỏ; không sao chép observations hay model.
         components = (self.aggregator, self.drift, self.safe_mode)
         checkpoint = [deepcopy(component.__dict__) for component in components]
         score_count = len(self.tracker._scores)
         cursors = self._force_refit, self._last_observed_day
         try:
-            # Phép trộn học trên loss CỘNG 100 con (âm log-hợp lý của kỳ).
             self.aggregator.update({name: NUMBER_SPACE * loss for name, loss in losses.items()})
             self.tracker.add(probabilities, outcome, counts=self.observations.counts[day])
-            # Trôi lệch đo trên sai số của phép trộn: khi trust = 0 dự báo công
-            # bố trùng nền, và sai số của nó chỉ còn phản ánh kết quả quay.
             verdict = self.drift.update(mixture.brier)
             if verdict.drifted:
                 self._force_refit = True
@@ -474,7 +339,6 @@ class ContinuousLearningPipeline:
             )
             self._last_observed_day = day
         except Exception:
-            # Mọi lỗi sau reward đều khôi phục cùng đối tượng để retry chấm một lần.
             for component, state in zip(components, checkpoint, strict=True):
                 component.__dict__.clear()
                 component.__dict__.update(state)
@@ -497,18 +361,6 @@ class ContinuousLearningPipeline:
         )
 
     def run(self, *, start: int, stop: int) -> list[DayResult]:
-        """Chạy toàn bộ vòng học tiếp diễn trên ``[start, stop)``.
-
-        Args:
-            start: Ngày đầu tiên được dự đoán.
-            stop: Ngày cuối, không bao gồm.
-
-        Returns:
-            Danh sách kết quả theo ngày.
-
-        Raises:
-            ValueError: Khi khoảng ngày không hợp lệ.
-        """
         if not self.config.warmup <= start < stop <= self.observations.n_days:
             raise ValueError(
                 f"khoảng [{start}, {stop}) phải nằm sau warmup={self.config.warmup} "
@@ -532,17 +384,6 @@ class ContinuousLearningPipeline:
         return results
 
     def predict_next(self, request: DailyRequest) -> dict[str, Any]:
-        """Dự đoán cho kỳ kế tiếp, dùng trong vận hành hằng ngày.
-
-        Args:
-            request: Yêu cầu đã kiểm hợp lệ.
-
-        Returns:
-            Bản ghi kết quả, sẵn sàng ghi ra JSON.
-
-        Raises:
-            ValueError: Khi ``anchor_date`` không phải ngày cuối của lịch sử.
-        """
         last_date = self.observations.dates[-1]
         if request.anchor_date.normalize() != last_date.normalize():
             raise ValueError(
@@ -571,18 +412,6 @@ class ContinuousLearningPipeline:
 
 
 def arm_skill(results: list[DayResult]) -> list[dict[str, Any]]:
-    """Kỹ năng log-loss ngoài mẫu của từng cánh tay so với cánh tay nền.
-
-    Chỉ so trên các kỳ cả hai cùng dự báo. ``z`` là t ghép cặp ở mức kỳ, cùng
-    cách tính với ``PerformanceReport.paired_t``; kỹ năng của từng cánh tay là
-    chẩn đoán, không phải căn cứ trộn — phép trộn đã tự học từ chính các loss ấy.
-
-    Args:
-        results: Kết quả theo ngày.
-
-    Returns:
-        Mỗi cánh tay một dòng, xếp theo kỹ năng giảm dần.
-    """
     names = sorted({name for result in results for name in result.arm_losses})
     rows = []
     for name in names:
@@ -606,15 +435,6 @@ def arm_skill(results: list[DayResult]) -> list[dict[str, Any]]:
 
 
 def summarise(pipeline: ContinuousLearningPipeline, results: list[DayResult]) -> dict[str, Any]:
-    """Gộp kết quả chạy thành báo cáo JSON được.
-
-    Args:
-        pipeline: Pipeline đã chạy xong.
-        results: Danh sách kết quả theo ngày.
-
-    Returns:
-        Báo cáo tổng hợp.
-    """
     report = pipeline.tracker.report()
     return {
         "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -656,15 +476,7 @@ def summarise(pipeline: ContinuousLearningPipeline, results: list[DayResult]) ->
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Điểm vào dòng lệnh.
-
-    Args:
-        argv: Tham số dòng lệnh; mặc định lấy từ ``sys.argv``.
-
-    Returns:
-        Mã thoát: 0 khi thành công, 1 khi lỗi dữ liệu hoặc cấu hình.
-    """
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="data/xsmb.csv", help="tệp kết quả thô")
     parser.add_argument("--out", default="data/research/ml_engine_report.json")
     parser.add_argument("--start", type=int, default=None, help="ngày đầu; mặc định warmup")

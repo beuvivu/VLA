@@ -18,12 +18,6 @@ def _calendar_ordinals(df_2d: pd.DataFrame) -> np.ndarray:
 
 
 def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
-    """Aggregate Loto hazard by real calendar-day absence gap.
-
-    For each observed draw date and number, gap is elapsed calendar days since
-    the previous hit. Missing rows therefore increase the elapsed gap rather than
-    being silently treated as one day.
-    """
     df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
     ordinals = _calendar_ordinals(df_2d)
@@ -45,12 +39,6 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
         for x in loto_targets[t]:
             hit_mask[int(x)] = True
 
-        # LEFT CENSORING: a number that has not appeared yet has no defined
-        # "days since previous hit".  Seeding ``last_seen`` with -1e9 clipped
-        # every such number into the terminal ``max_gap`` bucket, so the bucket
-        # that is supposed to describe genuinely long absences was diluted with
-        # numbers whose gap was simply unknown.  They are now excluded from the
-        # risk set until their first observed hit and reported separately.
         gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)
         denom += np.bincount(gaps[seen], minlength=max_gap + 1)
         left_censored_risk += int((~seen).sum())
@@ -74,8 +62,6 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
             "gap_unit": "calendar_days_since_previous_hit",
         }
     )
-    # The terminal bucket aggregates every gap >= max_gap, so label it honestly
-    # instead of letting readers treat it as "exactly max_gap days".
     out["censored_bucket"] = out["gap"] == max_gap
     out.attrs["left_censored_risk_days"] = left_censored_risk
     out.attrs["left_censored_hits"] = left_censored_hits
@@ -83,7 +69,6 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
 
 
 def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
-    """Aggregate De hazard by real calendar-day absence gap."""
     df_2d = df_2d.sort_values("date", kind="stable").reset_index(drop=True)
     dates, _, de_targets = build_daily_targets(df_2d)
     ordinals = _calendar_ordinals(df_2d)
@@ -102,10 +87,6 @@ def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
     for t in range(n):
         day = int(ordinals[t])
         x = int(de_targets[t])
-        # Same left-censoring correction as ``hazard_curve_loto``.  It bites
-        # harder here: a Đặc Biệt number needs ~100 draws on average for its first
-        # appearance, so with a short history a large share of the risk set has
-        # no defined gap at all.
         gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)
         denom += np.bincount(gaps[seen], minlength=max_gap + 1)
         left_censored_risk += int((~seen).sum())

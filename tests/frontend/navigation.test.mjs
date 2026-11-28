@@ -100,7 +100,6 @@ test('Bấm nền phủ trả focus ngay cả khi thao tác chuột đã làm li
   d.getElementById('app-toggle').click();
   const sidebar = d.querySelector('.app-panel-group:not([hidden]) .app-nav-item');
   sidebar.focus();
-  // Chromium bỏ focus khỏi ô nhập khi nhấn chuột xuống nền phủ trước sự kiện click.
   sidebar.blur();
   assert.equal(d.activeElement, d.body);
   const focusStates = [];
@@ -178,7 +177,6 @@ test('Nút toàn màn hình đồng bộ nhãn và trạng thái mà không bậ
   }
   dom.window.close();
 });
-
 
 test('Đi tới neo còn trong menu sẽ chọn đúng nhóm và liên kết', () => {
   const dom = setup(), d = dom.window.document;

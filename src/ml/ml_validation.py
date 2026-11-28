@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""Reusable temporal validation and production-gating primitives.
-
-Candidate-number rows from one lottery draw are correlated.  Uncertainty is
-therefore estimated by resampling whole dates, never individual rows.  All
-improvements use ``baseline loss - challenger loss`` so positive values mean
-that the challenger is better for both Brier score and LogLoss.
-"""
 
 from dataclasses import dataclass
 from numbers import Integral, Real
@@ -175,7 +168,6 @@ def evaluate_predictions(
 
 
 def relative_skill(baseline_loss: float, challenger_loss: float) -> float:
-    """Return relative loss reduction; positive means improvement."""
     if not np.isfinite(baseline_loss) or not np.isfinite(challenger_loss) or baseline_loss <= 0.0:
         return float("nan")
     return float((baseline_loss - challenger_loss) / baseline_loss)
@@ -187,7 +179,6 @@ def assert_temporal_partitions(
     calibration_mask: Sequence[bool] | np.ndarray,
     test_mask: Sequence[bool] | np.ndarray,
 ) -> None:
-    """Verify strict date-level train/calibration/test ordering and separation."""
     d = pd.to_datetime(np.asarray(dates).reshape(-1), errors="raise").normalize()
     masks = [
         np.asarray(mask, dtype=bool).reshape(-1)
@@ -200,13 +191,6 @@ def assert_temporal_partitions(
     if np.sum(np.column_stack(masks), axis=1).max() > 1:
         raise ValueError("a row belongs to more than one temporal partition")
 
-    # So sánh trên int64 nano-giây, KHÔNG dựng set của Timestamp.
-    #
-    # `set(d[mask])` duyệt DatetimeIndex từng phần tử và bọc mỗi mốc thành một
-    # `pd.Timestamp`. Profile cau_keo_domain_challenger: 6 812 834 lượt
-    # `DatetimeIndex.__iter__` (8,7s) cộng 1 464 780 lượt `_box_func` (2,5s),
-    # và chính listcomp này chiếm 10,8 trong 75,9 giây. Ba phép kiểm dưới đây
-    # đều là phép giao và so min/max — làm được trọn bằng vector.
     stamps = d.to_numpy(dtype="datetime64[ns]").astype("int64")
     train_values, calibration_values, test_values = (stamps[mask] for mask in masks)
     overlaps = (
@@ -227,7 +211,6 @@ def predict_with_feature_allowlist(
     frame: pd.DataFrame,
     features: Sequence[str],
 ) -> np.ndarray:
-    """Predict using only the explicit production feature allowlist."""
     allowlist = list(features)
     if not allowlist or len(allowlist) != len(set(allowlist)):
         raise ValueError("feature allowlist must be non-empty and contain no duplicates")
@@ -259,15 +242,6 @@ def _paired_date_bootstrap(
     if not np.array_equal(baseline.dates, challenger.dates):
         raise ValueError("baseline and challenger must use identical OOS dates and rows")
 
-    # Bootstrap theo KỲ: mỗi lượt rút có hoàn lại G kỳ (giữ nguyên mọi hàng
-    # tương quan của một kỳ). Brier và logloss là TRUNG BÌNH theo hàng, nên với
-    # tập kỳ rút được S (kể cả kỳ lặp):
-    #
-    #     mean_S = Σ_{g∈S} tổng_loss[g] / Σ_{g∈S} số_hàng[g]
-    #
-    # Chỉ cần tổng theo kỳ, tính MỘT lần; mỗi lượt là hai phép cộng O(G) thay
-    # cho ghép lại O(N) hàng rồi chấm lại qua sklearn (15 trong 75 giây của
-    # cau_keo_domain_challenger). Thứ tự kỳ và dòng số ngẫu nhiên giữ nguyên.
     group, _ = pd.factorize(baseline.dates)
     groups = int(group.max()) + 1
     sizes = np.bincount(group, minlength=groups).astype(float)
@@ -294,12 +268,10 @@ def _paired_date_bootstrap(
 
 
 def _row_brier(evaluation: PredictionEvaluation) -> np.ndarray:
-    """(y − p)² từng hàng; trung bình của nó là ``brier_score_loss``."""
     return (evaluation.y_true.astype(float) - evaluation.probability) ** 2
 
 
 def _row_logloss(evaluation: PredictionEvaluation) -> np.ndarray:
-    """−[y·ln p + (1 − y)·ln(1 − p)] từng hàng, p chặn như ``evaluate_predictions``."""
     y = evaluation.y_true.astype(float)
     clipped = np.clip(evaluation.probability, 1e-9, 1.0 - 1e-9)
     return -(y * np.log(clipped) + (1.0 - y) * np.log(1.0 - clipped))
@@ -312,7 +284,6 @@ def compare_paired_predictions(
     config: ValidationConfig | None = None,
     temporal_checks_pass: bool,
 ) -> PromotionDecision:
-    """Compare paired OOS forecasts and apply the conservative promotion gate."""
     cfg = config or ValidationConfig()
     brier_samples, logloss_samples = _paired_date_bootstrap(baseline, challenger, config=cfg)
     tail = (1.0 - cfg.confidence_level) / 2.0

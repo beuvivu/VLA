@@ -1,7 +1,3 @@
-"""Resilient async HTTP client: token-bucket rate limiting, bounded concurrency,
-retry with exponential backoff + full jitter, and ``Retry-After`` support.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +16,6 @@ log = get_logger(__name__)
 
 
 class AsyncRateLimiter:
-    """Token bucket: at most ``rate`` acquisitions per second, bursts up to ``burst``."""
 
     def __init__(self, rate: float, burst: int = 1, clock: Callable[[], float] = time.monotonic) -> None:
         if rate <= 0:
@@ -38,7 +33,7 @@ class AsyncRateLimiter:
                 now = self._clock()
                 self._tokens = min(self.capacity, self._tokens + (now - self._updated) * self.rate)
                 self._updated = now
-                if self._tokens >= 1 - 1e-9:  # tolerance: float round-off must not cause a spin
+                if self._tokens >= 1 - 1e-9:
                     self._tokens = max(0.0, self._tokens - 1)
                     return
                 await asyncio.sleep(max((1 - self._tokens) / self.rate, 1e-3))
@@ -50,11 +45,6 @@ _CF_MARKERS = ("cf-chl", "challenge-platform", "just a moment", "cf_chl_opt", "t
 
 
 def is_cloudflare_challenge(response: httpx.Response) -> bool:
-    """True when the response is a Cloudflare interstitial (managed / JS challenge, Turnstile).
-
-    The engine never tries to solve or evade such a challenge: it is the site's way of saying
-    automated clients are not welcome right now. A person can pass it in a browser and save
-    the pages (``products import-pages``)."""
     if response.headers.get("cf-mitigated", "").lower() == "challenge":
         return True
     if "cloudflare" not in response.headers.get("server", "").lower():
@@ -65,7 +55,6 @@ def is_cloudflare_challenge(response: httpx.Response) -> bool:
 
 @dataclass(frozen=True)
 class RetryPolicy:
-    """Exponential backoff with full jitter (AWS architecture blog formulation)."""
 
     max_retries: int = 5
     base_delay: float = 0.5
@@ -91,11 +80,6 @@ def _retry_after_seconds(response: httpx.Response) -> float | None:
 
 
 class AsyncHttpClient:
-    """Thin wrapper around ``httpx.AsyncClient`` used by every data source.
-
-    Use as an async context manager. ``transport`` can be injected for tests
-    (``httpx.MockTransport``).
-    """
 
     def __init__(
         self,
@@ -131,7 +115,6 @@ class AsyncHttpClient:
         await self._client.aclose()
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        """Send a request, retrying transient failures. Raises ``SourceError`` when exhausted."""
         last_error: str = ""
         for attempt in range(self.retry.max_retries + 1):
             await self._limiter.acquire()
@@ -140,7 +123,7 @@ class AsyncHttpClient:
                 try:
                     response = await self._client.request(method, url, **kwargs)
                 except httpx.ProxyError as exc:
-                    if any(code in str(exc) for code in ("403", "407")):  # egress policy, not a transient fault
+                    if any(code in str(exc) for code in ("403", "407")):
                         self.stats["failures"] += 1
                         raise SourceError(f"{method} {url}: {PROXY_BLOCK_PREFIX} ({exc})") from exc
                     last_error = f"{type(exc).__name__}: {exc}"
@@ -175,7 +158,6 @@ class AsyncHttpClient:
         raise SourceError(f"{method} {url} failed after {self.retry.max_retries} retries: {last_error}")
 
     def set_cookie(self, name: str, value: str, domain: str = "") -> None:
-        """Add a cookie to the jar (e.g. one a site sets through ``document.cookie``)."""
         self._client.cookies.set(name, value, domain=domain)
 
     async def get(self, url: str, **kwargs: Any) -> httpx.Response:

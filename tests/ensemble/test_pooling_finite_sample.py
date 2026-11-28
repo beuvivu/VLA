@@ -1,5 +1,3 @@
-"""Khóa sai lệch mô men mẫu nhỏ và chặn đầu vào làm nhiễm hậu nghiệm."""
-
 from dataclasses import replace
 
 import numpy as np
@@ -15,20 +13,17 @@ from ensemble.hierarchical_pooling import (
 
 
 def test_small_trial_pooling_removes_only_the_binomial_noise() -> None:
-    """Bỏ hệ số 1−1/n sẽ trả κ=4 thay vì κ=3 trên mẫu tính tay này."""
     fit = fit_pooling(np.array([0, 0, 0, 1, 2, 3]), 5)
     assert fit.pooled_rate == pytest.approx(0.2)
     assert fit.prior_strength == pytest.approx(3.0)
     assert fit.between_variance == pytest.approx(0.04)
     assert fit.within_variance == pytest.approx(0.032)
-    # Với n=0, dữ liệu không đổi tiên nghiệm; các ô còn lại là cập nhật Beta.
     posterior = pooled_posterior(np.array([0, 1, 3]), np.array([0, 2, 5]), fit)
     np.testing.assert_allclose(posterior, [0.2, 0.32, 0.45])
 
 
 @pytest.mark.parametrize("unequal", [False, True])
 def test_beta_binomial_simulation_recovers_the_generating_strength(unequal) -> None:
-    """Mẫu lớn các đơn vị với n nhỏ bắt độ co quá mạnh do bỏ hiệu chỉnh."""
     rng = np.random.default_rng(217)
     n_units = 200_000
     trials = np.resize([2, 3, 5, 8], n_units) if unequal else np.full(n_units, 5)
@@ -38,7 +33,6 @@ def test_beta_binomial_simulation_recovers_the_generating_strength(unequal) -> N
 
 
 def test_single_trial_per_unit_cannot_identify_latent_heterogeneity() -> None:
-    """Một quan sát nhị phân mỗi đơn vị không nhận diện được κ của Beta."""
     fit = fit_pooling(np.array([0, 0, 1]), 1)
     assert fit.prior_strength == MAX_PRIOR_STRENGTH
     assert fit.between_variance == 0.0
@@ -54,7 +48,6 @@ def test_single_trial_per_unit_cannot_identify_latent_heterogeneity() -> None:
     ],
 )
 def test_pooling_rejects_nonfinite_observations(counts, trials) -> None:
-    """Dữ liệu lỗi phải bị chặn trước khi sinh metadata NaN."""
     with pytest.raises(ValueError):
         fit_pooling(np.asarray(counts), trials)
 
@@ -74,7 +67,6 @@ def test_pooling_rejects_nonfinite_observations(counts, trials) -> None:
     ],
 )
 def test_posterior_rejects_invalid_counts_trials_or_shapes(counts, trials) -> None:
-    """Gỡ validation làm hậu nghiệm trả NaN, vượt miền hoặc phát sóng nhầm."""
     fit = fit_pooling(np.array([0, 0, 0, 1, 2, 3]), 5)
     with pytest.raises(ValueError):
         pooled_posterior(np.asarray(counts), trials, fit)
@@ -106,7 +98,6 @@ def test_posterior_rejects_invalid_counts_trials_or_shapes(counts, trials) -> No
     ],
 )
 def test_posterior_rejects_invalid_fit_metadata(field, value) -> None:
-    """Pack mô men hỏng không được dùng để công bố xác suất."""
     fit = fit_pooling(np.array([0, 0, 0, 1, 2, 3]), 5)
     with pytest.raises(ValueError):
         pooled_posterior(np.array([0, 1, 2]), 5, replace(fit, **{field: value}))
@@ -114,7 +105,6 @@ def test_posterior_rejects_invalid_fit_metadata(field, value) -> None:
 
 @pytest.mark.parametrize("rowwise", [False, True])
 def test_prior_centres_recover_strength_with_small_and_zero_trial_cells(rowwise) -> None:
-    """Giữ tâm từng ô và hệ số hữu hạn; ô không có phép thử không góp mô men."""
     rng = np.random.default_rng(722)
     n_units = 200_000
     centres = np.resize([0.05, 0.25, 0.7, 0.9], n_units)
@@ -133,7 +123,6 @@ def test_prior_centres_recover_strength_with_small_and_zero_trial_cells(rowwise)
 
 @pytest.mark.parametrize("rowwise", [False, True])
 def test_prior_centres_do_not_infer_strength_from_single_trials(rowwise) -> None:
-    """Tâm cố định cũng không tạo thông tin về κ từ những ô chỉ có một kỳ."""
     counts = np.array([0, 0, 1])
     if rowwise:
         strength = fit_shrinkage_to_prior_rows(counts[None, :], np.ones(1), np.full(3, 0.2))[0]
@@ -160,7 +149,6 @@ def test_prior_centres_do_not_infer_strength_from_single_trials(rowwise) -> None
     ],
 )
 def test_prior_fit_rejects_invalid_observations_or_centres(rowwise, counts, trials, centres) -> None:
-    """Ô sai không được âm thầm bỏ qua hay kẹp thành dữ liệu hợp lệ."""
     with pytest.raises(ValueError):
         if rowwise:
             fit_shrinkage_to_prior_rows(np.array([counts]), np.array([trials]), np.array(centres))

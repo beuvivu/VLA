@@ -1,11 +1,3 @@
-"""Chạy giao thức kiểm chứng xác suất và số khớp H (Mega 6/45, Power 6/55) và ghi artifact tái lập được.
-
-    python scripts/hit_benchmark.py                       # cả hai sản phẩm, gồm bộ ML (~25 phút)
-    python scripts/hit_benchmark.py --products mega645 --no-ml
-
-Ghi ``reports/vlm/hit-benchmark/<sản phẩm>.json.gz`` (mọi kỳ: π từng số, vé, điểm),
-``reports/vlm/hit-benchmark/summary.json`` (không gồm từng kỳ) và báo cáo Markdown.
-"""
 from __future__ import annotations
 
 import argparse
@@ -18,7 +10,7 @@ from vlm.forecast.hit_benchmark import PROTOCOL, benchmark_product, promotion_de
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser()
     parser.add_argument('--products', default=','.join(PROTOCOL['products']))
     parser.add_argument('--out-dir', type=Path, default=Path('reports/vlm/hit-benchmark'))
     parser.add_argument('--report', type=Path, default=Path(f'reports/VLM_HIT_BENCHMARK_{PROTOCOL["registered_at"]}.md'))

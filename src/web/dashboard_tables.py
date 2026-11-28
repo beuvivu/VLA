@@ -1,5 +1,3 @@
-"""Các bảng Dashboard có cột hữu hạn và hồ sơ kiểm chứng tách riêng."""
-
 from __future__ import annotations
 
 import html
@@ -56,7 +54,6 @@ def _channel(mode: str) -> str:
 
 
 def forecast_card(frame, mode: str) -> str:
-    """Giữ thứ tự và sáu chữ số thập phân của bảng xác suất hiện hành."""
     if frame.empty or not {"number", "prob"}.issubset(frame.columns):
         table = '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
     else:

@@ -1,10 +1,3 @@
-"""Persistence: DuckDB (primary, with Parquet export) and an in-memory repository for tests.
-
-DuckDB gives an embedded, columnar, SQL-queryable store; every sync also writes
-``<parquet_dir>/<game>.parquet`` so the data can be consumed by other tools
-(pandas, polars, Spark, BI) without touching the database file.
-"""
-
 from __future__ import annotations
 
 import json
@@ -41,15 +34,14 @@ class DrawRepository(Protocol):
 class _HistoryMixin:
     def load_history(self, game: GameCode | str) -> DrawHistory:
         spec: GameSpec = get_game(game)
-        return DrawHistory.from_draws(self.load(spec.code), spec)  # type: ignore[attr-defined]
+        return DrawHistory.from_draws(self.load(spec.code), spec)
 
     def load_prize_history(self, game: GameCode | str) -> tuple[DrawHistory, PrizeHistory]:
         h = self.load_history(game)
-        return h, PrizeHistory.align(h, self.load_prizes(game))  # type: ignore[attr-defined]
+        return h, PrizeHistory.align(h, self.load_prizes(game))
 
 
 class InMemoryRepository(_HistoryMixin):
-    """Dictionary-backed repository (tests, notebooks, API demos)."""
 
     def __init__(self, draws: Iterable[Draw] = ()) -> None:
         self._data: dict[tuple[str, int], Draw] = {}
@@ -69,7 +61,6 @@ class InMemoryRepository(_HistoryMixin):
         return sorted((r for (g, _), r in self._prizes.items() if g == code), key=lambda r: r.draw_id)
 
     def invalidate_finance(self, game: GameCode | str, draw_ids: Iterable[int]) -> None:
-        """Loại bảng giải và số tiền cũ của đúng game/kỳ, giữ kết quả quay."""
         ids = set(draw_ids)
         if not ids:
             return
@@ -168,13 +159,11 @@ def _as_date(v: object) -> date:
 
 
 class DuckDBRepository(_HistoryMixin):
-    """DuckDB-backed repository. One connection guarded by a lock (DuckDB connections
-    are not safe for concurrent use from several threads)."""
 
     def __init__(self, db_path: Path | str, parquet_dir: Path | str | None = None) -> None:
         try:
-            import duckdb  # imported lazily so the rest of the engine works without it
-        except ImportError as exc:  # pragma: no cover - environment dependent
+            import duckdb
+        except ImportError as exc:
             raise StorageError("duckdb is not installed: pip install duckdb") from exc
         self.db_path = str(db_path)
         if self.db_path != ":memory:":
@@ -189,7 +178,6 @@ class DuckDBRepository(_HistoryMixin):
         with self._lock:
             self._con.close()
 
-    # ----------------------------------------------------------------- writes
     def upsert(self, draws: Iterable[Draw]) -> int:
         rows = [
             (
@@ -225,10 +213,9 @@ class DuckDBRepository(_HistoryMixin):
             )
 
     def export_parquet(self, game: GameCode | str) -> Path:
-        """Write ``<parquet_dir>/<game>.parquet`` (overwrites)."""
         if self.parquet_dir is None:
             raise StorageError("parquet_dir not configured")
-        code = get_game(game).code.value  # validated enum value -> safe to inline
+        code = get_game(game).code.value
         self.parquet_dir.mkdir(parents=True, exist_ok=True)
         target = (self.parquet_dir / f"{code}.parquet").resolve()
         path_sql = str(target).replace("'", "''")
@@ -240,7 +227,6 @@ class DuckDBRepository(_HistoryMixin):
         log.info("exported %s", target)
         return target
 
-    # ------------------------------------------------------------------ reads
     def load(self, game: GameCode | str) -> list[Draw]:
         code = get_game(game).code.value
         with self._lock:
@@ -310,7 +296,6 @@ class DuckDBRepository(_HistoryMixin):
         ]
 
     def invalidate_finance(self, game: GameCode | str, draw_ids: Iterable[int]) -> None:
-        """Xóa tài chính cũ trong một giao dịch, không đổi dữ liệu kết quả quay."""
         ids = list(dict.fromkeys(draw_ids))
         if not ids:
             return

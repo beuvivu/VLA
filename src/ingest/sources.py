@@ -88,10 +88,6 @@ def _label_key(line: str) -> str | None:
 
 def _valid_tokens(text: str, key: str) -> list[str]:
     width = EXPECTED_WIDTHS[key]
-    # Require token boundaries, not merely digit boundaries.  Otherwise an
-    # embedded identifier such as ``ABC12345XYZ`` can masquerade as a prize.
-    # ``\w`` is Unicode-aware in Python, so full-width digits/letters cannot
-    # flank an ASCII result and bypass the token boundary check.
     return re.findall(rf"(?<!\w)[0-9]{{{width}}}(?!\w)", text)
 
 
@@ -101,25 +97,10 @@ def _valid_prize_token(value: object, key: str) -> str | None:
     return token if re.fullmatch(rf"[0-9]{{{width}}}", token) is not None else None
 
 
-#: Một dòng tách thành các cụm chữ số ASCII và các cụm KHÁC; khoảng trắng, dấu phẩy, chấm
-#: phẩy và gạch đứng chỉ là dấu phân cách.
 _LINE_TOKEN = re.compile(r"[0-9]+|[^\s0-9,;|]+")
 
 
 def _value_line_tokens(line: str, key: str) -> list[str] | None:
-    """Giá trị của một dòng NẰM SAU nhãn giải, hoặc ``None`` nếu dòng ấy không phải hàng số.
-
-    Hàng số chỉ gồm các số đúng độ rộng của giải và dấu phân cách. Mọi dòng khác — chữ
-    ("Loto Miền Bắc", "Normal"), ngày tháng ("12/10", "XSMB 12/10/2026"), chữ số trần của
-    ô chọn tháng ("8"), số tiền thưởng, ký hiệu chờ ("…", "-") — kết thúc hàng giải. Ba
-    nguồn đều in mỗi giá trị trên một dòng và các ô chưa quay đứng SAU các ô đã quay, nên
-    dừng ở dòng đầu tiên không phải hàng số không bỏ sót giá trị nào.
-
-    Vì sao cần: giải 7 là nhãn CUỐI của bảng, nên trước đây khối số của nó kéo tới nhãn
-    kế tiếp ở tận bảng lô tô hay ô chọn tháng. Khi giải 7 chưa quay, bộ bóc vớ số hai chữ
-    số ở đó: ``xoso.com.vn`` cho ``["10", "11", "12"]`` (tháng), ``xosodaiphat.com`` cho
-    ``["12", "10", "14", "10"]`` (ngày) — đo trên trang thật ngày 13-10-2026.
-    """
     width = EXPECTED_WIDTHS[key]
     values: list[str] = []
     for token in _LINE_TOKEN.findall(line):
@@ -130,7 +111,6 @@ def _value_line_tokens(line: str, key: str) -> list[str] | None:
 
 
 def _prize_row_values(lines: list[str], label_idx: int, stop_idx: int, key: str) -> list[str]:
-    """Giá trị của một hàng giải: trên chính dòng nhãn, rồi các dòng hàng số ngay sau nó."""
     values = _valid_tokens(lines[label_idx], key)
     for idx in range(label_idx + 1, stop_idx):
         row = _value_line_tokens(lines[idx], key)
@@ -141,15 +121,6 @@ def _prize_row_values(lines: list[str], label_idx: int, stop_idx: int, key: str)
 
 
 def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
-    """Extract the best labelled XSMB prize block from page text.
-
-    The configured sources use slightly different labels (Đặc Biệt/G1/1, etc.).
-    This parser finds candidate prize blocks, enforces exact prize widths and
-    returns partial values without zero-filling.  It is therefore safe for live
-    pages where some prizes are not available yet: a prize's values are read from
-    its label line and the pure number lines right after it, never from whatever
-    text follows an empty row (``_value_line_tokens``).
-    """
     soup = BeautifulSoup(text or "", "lxml")
     lines = [re.sub(r"\s+", " ", line).strip() for line in soup.get_text("\n", strip=True).splitlines()]
     lines = [line for line in lines if line]
@@ -165,9 +136,6 @@ def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
     if not labels:
         return {k: [] for k in PRIZE_ORDER}
 
-    # Pages may repeat prize labels in navigation/statistics.  Score every block
-    # beginning at a special-prize label and keep the most complete, internally
-    # ordered result block.
     candidates: list[dict[str, list[str]]] = []
     special_positions = [n for n, (_, key) in enumerate(labels) if key == "special"]
     if not special_positions:
@@ -182,15 +150,12 @@ def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
             if pos > label_pos and key == "special":
                 break
             if key_order < seen_order:
-                # A new unrelated table has started.
                 break
             seen_order = max(seen_order, key_order)
             next_idx = labels[pos + 1][0] if pos + 1 < len(labels) else len(lines)
             values = _prize_row_values(lines, line_idx, next_idx, key)
             if values:
                 prize_map[key] = values
-            # Giải 7 kết thúc bảng. Hai nhãn giải 7 liền nhau ("Giải bảy" rồi "G7") là
-            # một hàng hai cột nhãn: nhãn đầu chưa cho số thì đọc tiếp nhãn sau.
             next_key = labels[pos + 1][1] if pos + 1 < len(labels) else None
             if key == "prize7" and (prize_map["prize7"] or next_key != "prize7"):
                 break
@@ -209,9 +174,6 @@ def _parse_result_from_prize_map(selected_date: date, *, prize_map: dict[str, li
         vals: list[str] = []
         for raw_value in prize_map.get(key, []):
             token = _valid_prize_token(raw_value, key)
-            # External data is never "repaired" by stripping unexpected
-            # characters.  Accept only ASCII decimal digits of the exact prize
-            # width; anything else is rejected at the ingestion boundary.
             if token is not None:
                 vals.append(token)
         if len(vals) < EXPECTED_COUNTS[key]:
@@ -248,17 +210,10 @@ def _parse_result_from_prize_map(selected_date: date, *, prize_map: dict[str, li
     )
 
 
-#: Trần kích thước một trang nguồn, tính bằng byte.
-#:
-#: Trang kết quả thật nặng vài trăm KB, nên 8 MiB đã rộng gấp hơn hai chục lần
-#: mà vẫn chặn được trường hợp một nguồn bị chiếm hoặc hỏng trả về thân phản
-#: hồi vô hạn. Hạn thời gian KHÔNG thay được trần này: trong 20 giây một máy
-#: chủ vẫn kịp đẩy hàng gigabyte, và runner nuốt trọn vào bộ nhớ.
 MAX_PAGE_BYTES: Final[int] = 8 * 1024 * 1024
 
 
 def _declared_length(resp: object) -> int | None:
-    """Số byte mà máy chủ TỰ KHAI trong ``Content-Length``, nếu có."""
     headers = getattr(resp, "headers", None)
     if headers is None or not hasattr(headers, "get"):
         return None
@@ -269,22 +224,9 @@ def _declared_length(resp: object) -> int | None:
 
 
 def _request_page(http: HttpClient, url: str, *, timeout: int = 20) -> str:
-    """Lấy một trang nguồn, có trần kích thước.
-
-    Nguồn là bên NGOÀI và không đáng tin theo mặc định: dự án có sẵn cả một
-    chính sách nguồn nhiều tầng vì đúng lý do ấy. Nhưng thân phản hồi thì trước
-    nay đọc thẳng vào bộ nhớ, không giới hạn.
-
-    Trần chặn chắc phần PHÂN TÍCH trong mọi trường hợp, và chặn cả phần CẤP
-    PHÁT khi máy chủ khai đúng ``Content-Length``. Chặn cấp phát trong mọi
-    trường hợp thì phải chuyển cả lớp khách sang đọc theo luồng — đắt hơn
-    nhiều, và không tương xứng với mối đe doạ ở đây khi mọi nguồn đều qua TLS
-    còn token của CI chỉ có quyền đọc. Ghi rõ giới hạn này thay vì để người
-    đọc tưởng nó kín.
-    """
     try:
         resp = http.get(url, timeout=timeout)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug("request failed %s: %s", url, exc)
         return ""
     if _get_status_code(resp) != 200:
@@ -296,8 +238,6 @@ def _request_page(http: HttpClient, url: str, *, timeout: int = 20) -> str:
         return ""
 
     text = _get_text(resp)
-    # Một byte UTF-8 không bao giờ nhỏ hơn một ký tự, nên so theo số ký tự là
-    # cách kiểm rẻ và luôn thiên về phía an toàn.
     if len(text) > MAX_PAGE_BYTES:
         logger.warning("bỏ qua trang quá lớn: %d ký tự, trần %d", len(text), MAX_PAGE_BYTES)
         return ""
@@ -314,13 +254,6 @@ class _TextPageSource:
         return self.date_url(selected_date)
 
     def date_urls(self, selected_date: date) -> tuple[str, ...]:
-        """Các đường dẫn ứng viên cho một kỳ, thử theo thứ tự.
-
-        Hầu hết nguồn chỉ có một mẫu đã kiểm chứng nên trả về đúng một phần
-        tử. Nhiều phần tử dành cho nguồn mà mẫu đường dẫn CHƯA kiểm chứng
-        được từ môi trường này: thử lần lượt cho tới khi có khối giải bóc
-        được, thay vì chốt cứng một phỏng đoán rồi hỏng âm thầm.
-        """
         return (self.date_url(selected_date),)
 
     def live_urls(self, selected_date: date) -> tuple[str, ...]:
@@ -367,7 +300,6 @@ class MketquaSource(_TextPageSource):
     name: str = "mketqua.net"
 
     def date_url(self, selected_date: date) -> str:
-        # Date-specific page is more deterministic than the rolling ledger.
         return (
             "https://mketqua.net/x%E1%BB%95-s%E1%BB%91-Truy%E1%BB%81n-Th%E1%BB%91ng/"
             f"{selected_date:%d-%m-%Y}.html"
@@ -388,21 +320,9 @@ class MinhNgocSource(_TextPageSource):
         return "https://www.minhngoc.net.vn/xo-so-truc-tiep/mien-bac.html"
 
 
-#: Chính sách nguồn từ 13-10-2026: MỘT nguồn chính, hai nguồn dự phòng chỉ được gọi khi
-#: nguồn chính gặp sự cố (``primary_has_failed``). Thứ tự trong mỗi tuple là thứ tự gọi và
-#: thứ tự ưu tiên hiển thị.
-#:
-#: Năm nguồn đã nghỉ, đo trên runner ngày 12/13-10-2026: ``xosothudo.com.vn`` (mẫu đường
-#: dẫn chưa từng đúng, cả năm ứng viên đều hỏng) và ``xskt.vn`` (chặn runner) không trả gì
-#: ở bất kỳ lượt nào; ``xosodaiphat.com`` bóc ngày tháng thành giải 7 khi kỳ chưa quay;
-#: ``hainhay.net`` mất trọn giải 7 vì hai nhãn liền nhau; ``xosominhngoc.com`` chỉ là bản
-#: sao của Minh Ngọc. Vì nguồn số một luôn hỏng, tầng chính chưa bao giờ đủ hai nhóm và cả
-#: sáu nguồn dự phòng bị gọi ở MỌI lượt thăm dò.
 PRIMARY_SOURCE_NAMES: tuple[str, ...] = ("xoso.com.vn",)
 FALLBACK_SOURCE_NAMES: tuple[str, ...] = ("mketqua.net", "www.minhngoc.net.vn")
 
-#: Tên của các nguồn đã nghỉ. Không còn được gọi, nhưng tải trọng công khai vẫn không được
-#: nhắc tới chúng (``known_source_domains``).
 RETIRED_SOURCE_NAMES: tuple[str, ...] = (
     "xosothudo.com.vn",
     "xskt.vn",
@@ -411,25 +331,12 @@ RETIRED_SOURCE_NAMES: tuple[str, ...] = (
     "hainhay.net",
 )
 
-#: Giờ Việt Nam mà kỳ quay chắc chắn đã xong (đặc biệt về lúc 18:30–18:35). Sau mốc này,
-#: nguồn chính còn thiếu ô là sự cố, không phải "đang quay".
 PRIMARY_COMPLETE_BY: Final[dtime] = dtime(18, 40)
 
-#: Nguồn của lớp dữ liệu Miền Trung/Miền Nam (``regional_lottery``). KHÔNG thuộc
-#: chuỗi nguồn XSMB: không đồng thuận, không dự phòng cho kỳ Miền Bắc. Vietlott
-#: không còn dùng nguồn này từ 07-10-2026: dữ liệu đến từ engine ``vietlott/``.
 REGIONAL_SOURCE_NAMES: tuple[str, ...] = ("xskt.com.vn",)
 
-#: Nguồn của lớp bù trong API Sổ kết quả của Worker (``worker/src/traditional_results.js``).
-#: Chỉ cron gọi, chỉ khi lịch sử chuẩn còn thiếu ngày; KHÔNG thuộc chuỗi nguồn live hay chốt
-#: kết quả XSMB ở trên.
 HISTORY_API_SOURCE_NAMES: tuple[str, ...] = ("xskt.vn",)
 
-#: Mã công khai thay cho tên miền. Mọi thứ ra tới trình duyệt phải dùng mã này.
-#:
-#: Không phải để làm đẹp: yêu cầu là KHÔNG để lộ tên miền nguồn trên giao diện
-#: hay trong network request của client. Mã phải ỔN ĐỊNH để còn đối chiếu được
-#: giữa các kỳ, nên nó bám theo tầng và vị trí chứ không băm ngẫu nhiên.
 SOURCE_PUBLIC_CODE: dict[str, str] = {
     **{name: f"P{i}" for i, name in enumerate(PRIMARY_SOURCE_NAMES, start=1)},
     **{name: f"F{i}" for i, name in enumerate(FALLBACK_SOURCE_NAMES, start=1)},
@@ -437,7 +344,6 @@ SOURCE_PUBLIC_CODE: dict[str, str] = {
 
 
 def public_source_code(source_name: str) -> str:
-    """Mã ẩn danh của một nguồn. Tên lạ trả "?" chứ không trả chính tên."""
     return SOURCE_PUBLIC_CODE.get(source_name, "?")
 
 
@@ -460,7 +366,6 @@ def fallback_sources() -> list[Source]:
 
 
 def default_sources() -> list[Source]:
-    """Toàn bộ nguồn, đúng thứ tự ưu tiên: tầng chính trước, dự phòng sau."""
     return primary_sources() + fallback_sources()
 
 
@@ -480,13 +385,6 @@ def source_consensus_partial(
     *,
     min_agreement: int = 1,
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
-    """Merge partial live results slot-by-slot using source priority + consensus.
-
-    A value is verified only when it has >= ``min_agreement`` independent source
-    groups and no different value has the same independent support.  Otherwise
-    the highest-priority observation may be shown provisionally but is never
-    marked verified or promoted into canonical history by this helper.
-    """
     if isinstance(min_agreement, bool):
         raise ValueError("min_agreement must be an integer >= 1")
     try:
@@ -555,8 +453,6 @@ def source_consensus_partial(
                     support_groups = best_groups
                     verified_slots += 1
                 else:
-                    # Priority fallback is display-only. In particular, an
-                    # equal-support 2-vs-2 split is never marked verified.
                     chosen = values[0][1]
                     support = [values[0][0]]
                     support_groups = [source_independence_key(values[0][0])]
@@ -584,12 +480,8 @@ def source_consensus_partial(
     }
 
 
-# --- Cơ chế chuyển nguồn -----------------------------------------------------
-
-
 @dataclass(frozen=True)
 class SourceObservation:
-    """Một lượt gọi tới một nguồn, kèm đủ dữ kiện để giải thích vì sao."""
 
     name: str
     tier: str
@@ -600,36 +492,21 @@ class SourceObservation:
 
     @property
     def usable(self) -> bool:
-        """Có bóc được ít nhất một giá trị giải hay không.
-
-        Trạng thái HTTP 200 mà trang đổi bố cục thì vẫn là hỏng. Đếm theo giá
-        trị bóc được, không đếm theo mã trạng thái.
-        """
         return any(self.prize_map.get(key) for key in PRIZE_ORDER)
 
 
 def independent_group_count(observations: list[SourceObservation]) -> int:
-    """Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được."""
     return len(
         {source_independence_key(o.name) for o in observations if o.usable}
     )
 
 
-#: Lỗi ghi cho một nguồn còn hiện kỳ TRƯỚC; Python và Worker dùng đúng chuỗi này.
 STALE_PAGE_ERROR: Final[str] = "StalePage: nguồn còn hiện kỳ trước"
 
 
 def shows_previous_draw(
     prize_map: dict[str, list[str]], previous: dict[str, list[str]] | None
 ) -> bool:
-    """Nguồn còn hiện kỳ TRƯỚC: có giá trị, và MỌI giá trị trùng đúng ô của kỳ đã lưu gần nhất.
-
-    Đo trên runner lúc 00:37 ngày 13-10-2026: trang live của cả ba nguồn, và trang theo ngày
-    13-10 của mketqua/minhngoc, đều hiện trọn kỳ 12-10. Sổ chuẩn có chốt "trùng khít kỳ đã
-    lưu" (``Lottery``), bản chụp live thì chưa: lượt thăm dò gặp trang chưa xoá bảng sẽ báo kỳ
-    hôm nay "đã xác minh" bằng số của hôm qua rồi dừng thăm dò. Kỳ mới về dần từ giải nhất
-    (năm chữ số), nên một trang đang quay trùng kỳ trước ở mọi ô đã về gần như không thể.
-    """
     if not previous:
         return False
     received = 0
@@ -643,7 +520,6 @@ def shows_previous_draw(
 
 
 def load_previous_draw(path: Path, *, before: date) -> dict[str, list[str]] | None:
-    """Bảng giải của kỳ đã lưu gần nhất TRƯỚC ``before`` trong sổ chuẩn, hoặc ``None``."""
     try:
         with path.open(newline="", encoding="utf-8") as handle:
             rows = [r for r in csv.DictReader(handle) if str(r.get("date", ""))[:10] < before.isoformat()]
@@ -666,17 +542,6 @@ def load_previous_draw(path: Path, *, before: date) -> dict[str, list[str]] | No
 def primary_has_failed(
     prize_map: dict[str, list[str]], *, target: date, now: datetime
 ) -> tuple[bool, str]:
-    """Nguồn chính có gặp sự cố hay không, kèm lý do. Chỉ khi có sự cố mới gọi dự phòng.
-
-    Hai dạng sự cố:
-
-    1. Không bóc được giá trị nào: lỗi mạng, HTTP khác 200, hay trang đổi bố cục. Trước giờ
-       quay, mọi nguồn đều rỗng, nên gọi dự phòng lúc ấy chỉ tốn thêm yêu cầu — vô hại.
-    2. Đã qua ``PRIMARY_COMPLETE_BY`` của ngày quay mà nguồn chính vẫn thiếu ô: trang kẹt,
-       không còn là "đang quay".
-
-    Thiếu ô TRONG lúc quay là bình thường — các giải về dần — nên không phải sự cố.
-    """
     received = sum(len(prize_map.get(k, [])) for k in PRIZE_ORDER)
     if received == 0:
         return True, "nguồn chính không trả giá trị nào"
@@ -695,19 +560,6 @@ def fetch_with_failover(
     run_batch=None,
     min_agreement: int = 1,
 ) -> tuple[list[SourceObservation], dict[str, object]]:
-    """Gọi nguồn chính; chỉ gọi dự phòng khi nguồn chính gặp sự cố (``primary_has_failed``).
-
-    ``fetch_one(source, tier, priority) -> SourceObservation`` do bên gọi cung cấp, nên hàm
-    này không tự đi mạng và kiểm thử được bằng hàm giả. ``run_batch(jobs)`` cho phép chạy
-    song song hai nguồn dự phòng; mặc định chạy tuần tự.
-
-    Nguồn chính là MỘT nhóm, nên ngưỡng ``min_agreement > 1`` (vẫn cấu hình được) cần thêm
-    nhân chứng: khi ấy dự phòng luôn được gọi. Nếu không, một nguồn chính đủ 27 ô "dùng được"
-    mà không bao giờ đạt ngưỡng, và vòng thăm dò chạy tới hạn chót.
-
-    Bên gọi chỉ loại quan sát của nguồn chính khỏi phép hợp nhất khi ``primary_failed``: nó đã
-    hỏng, và bản rỗng hay kẹt của nó không được che giá trị của dự phòng.
-    """
     if run_batch is None:
         def run_batch(jobs):
             return [fetch_one(*job) for job in jobs]
@@ -742,16 +594,6 @@ def fetch_with_failover(
     return primary + observations, log
 
 
-# --- Ẩn nguồn khỏi mọi thứ ra tới trình duyệt --------------------------------
-#
-# Vì sao phải có một tầng riêng thay vì "nhớ đừng in tên ra": tên nguồn nằm rải
-# ở bốn chỗ khác nhau trong cùng một bản chụp — ``source_status``,
-# ``source_priority``, và bên trong ``slot_meta`` là ``support``,
-# ``support_groups`` cùng các khoá của ``observations``. Bỏ sót một chỗ là lộ
-# hết, nên phép ẩn danh phải là MỘT hàm duy nhất có thể kiểm được, và có một
-# phép kiểm quét toàn bộ tải trọng tìm tên miền.
-
-#: Mã nhóm nhà cung cấp, ẩn danh và ổn định.
 SOURCE_PUBLIC_GROUP_CODE: dict[str, str] = {
     key: f"G{index}"
     for index, key in enumerate(
@@ -765,13 +607,11 @@ SOURCE_PUBLIC_GROUP_CODE: dict[str, str] = {
 
 
 def public_group_code(source_name_or_group: str) -> str:
-    """Mã nhóm ẩn danh. Nhận cả tên nguồn lẫn khoá nhóm."""
     key = SOURCE_INDEPENDENCE_GROUP.get(source_name_or_group, source_name_or_group)
     return SOURCE_PUBLIC_GROUP_CODE.get(key, "?")
 
 
 def anonymise_slot_meta(slot_meta: dict[str, object]) -> dict[str, object]:
-    """Thay mọi tên nguồn trong siêu dữ liệu từng ô bằng mã ẩn danh."""
     out: dict[str, object] = {}
     for slot, raw in slot_meta.items():
         meta = dict(raw) if isinstance(raw, dict) else {}
@@ -791,12 +631,6 @@ def anonymise_slot_meta(slot_meta: dict[str, object]) -> dict[str, object]:
 
 
 def anonymise_source_status(rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Bỏ tên miền khỏi bảng trạng thái nguồn, giữ mọi thứ còn lại.
-
-    ``error`` bị bỏ hẳn chứ không cắt ngắn: thông điệp lỗi của thư viện HTTP
-    hầu như luôn kèm tên miền hoặc địa chỉ IP. Lý do hỏng vẫn giữ được ở dạng
-    cờ ``failed``, đủ để người xem biết có nguồn trục trặc.
-    """
     out: list[dict[str, object]] = []
     for raw in rows:
         row = dict(raw)
@@ -811,7 +645,6 @@ def anonymise_source_status(rows: list[dict[str, object]]) -> list[dict[str, obj
 
 
 def anonymise_snapshot(payload: dict[str, object]) -> dict[str, object]:
-    """Bản chụp công khai: giữ nguyên mọi con số, bỏ sạch danh tính nguồn."""
     public = dict(payload)
     status = public.get("source_status")
     if isinstance(status, list):
@@ -828,10 +661,6 @@ def anonymise_snapshot(payload: dict[str, object]) -> dict[str, object]:
 
 
 def known_source_domains() -> tuple[str, ...]:
-    """Mọi chuỗi định danh nguồn mà tải trọng công khai KHÔNG được chứa.
-
-    Gồm cả nguồn đã nghỉ: nghỉ không làm tên của chúng thành được phép in ra.
-    """
     names = (*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES, *RETIRED_SOURCE_NAMES)
     groups = tuple(dict.fromkeys(SOURCE_INDEPENDENCE_GROUP.get(n, n) for n in names))
     bare = tuple(n.removeprefix("www.").split(".")[0] for n in names)

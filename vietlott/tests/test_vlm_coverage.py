@@ -1,9 +1,3 @@
-"""Danh mục vé công bố: rời nhau, dựng từ luật ĐÃ ghi trước kỳ quay theo quy tắc ghi trong sổ.
-
-Hai lỗi dựng lại: Power 14-10-2026 — hệ số nhiễu của ``lag2`` đứng đầu nên ``Law.top`` chép nguyên
-kỳ #1409 làm vé đầu và năm vé chung 5/6 số; Mega — năm vé chung 5 số nên "ít nhất một vé trúng ≥ 2
-số" chỉ 30,6% thay vì 70,9% với cùng năm vé.
-"""
 import json
 from copy import deepcopy
 from datetime import datetime
@@ -21,11 +15,10 @@ from vlm.forecast.hits import any_ticket_tail
 
 
 def _law(product: ProductCode, boosted: list[int], lift: float = 1.02) -> Law:
-    """Luật gần đều như luật ML thật (tỉ số ≈ 1,01–1,02), sáu số ``boosted`` nhích lên cùng một lượng."""
     spec = CONFIGS[product].components['main']
     values = np.ones((1, spec.n))
     values[0, np.array(boosted) - 1] = lift
-    values[0] *= 1 + 1e-4 * np.arange(spec.n)[::-1] / spec.n  # nhiễu nhỏ, thứ hạng tất định
+    values[0] *= 1 + 1e-4 * np.arange(spec.n)[::-1] / spec.n
     return Law(spec, values, np.array([1.0]))
 
 
@@ -33,7 +26,6 @@ PAST_DRAW = [14, 17, 21, 23, 24, 39]
 
 
 def test_law_top_reproduces_the_past_draw_and_near_duplicate_tickets():
-    """Lỗi gốc: một nhóm sáu số cùng nhích là vé đầu nguyên vẹn, và năm vé chung 5/6 số."""
     tops, _ = _law(ProductCode.POWER_655, PAST_DRAW).top(PUBLISHED_TOP_N)
     assert tops[0]['numbers'] == PAST_DRAW
     assert min(len(set(a['numbers']) & set(b['numbers'])) for a, b in combinations(tops, 2)) >= 4
@@ -45,11 +37,10 @@ def test_law_top_reproduces_the_past_draw_and_near_duplicate_tickets():
 def test_coverage_tickets_are_disjoint_and_never_copy_the_boosted_group(product, covered, past):
     spec = CONFIGS[product].components['main']
     law = _law(product, past)
-    assert law.top(PUBLISHED_TOP_N)[0][0]['numbers'] == past  # Law.top chép nguyên kỳ cũ
+    assert law.top(PUBLISHED_TOP_N)[0][0]['numbers'] == past
     tickets = coverage_tickets(law)
     assert len(tickets) == PUBLISHED_TOP_N and all(len(t) == spec.k == len(set(t)) for t in tickets)
     assert len({v for t in tickets for v in t}) == covered
-    # Chia xoay vòng theo hạng: nhóm nhích lên trải ra mọi vé, không vé nào giữ quá 2 số của nó.
     assert max(len(set(t) & set(past)) for t in tickets) <= 2
     ranked = sorted(range(1, spec.n + 1), key=lambda v: (-law.marginals()[v - 1], v))[:covered]
     assert {v for t in tickets for v in t} == set(ranked)
@@ -59,7 +50,7 @@ def test_coverage_tickets_are_disjoint_and_never_copy_the_boosted_group(product,
 def test_disjoint_tickets_raise_the_any_ticket_two_hit_rate_exactly():
     spec = CONFIGS[ProductCode.MEGA_645].components['main']
     current = [[15, 25, 26, 29, 38, 44], [15, 25, 26, 29, 35, 44], [15, 25, 26, 29, 30, 44],
-               [12, 15, 25, 26, 29, 44], [15, 25, 26, 35, 38, 44]]  # năm vé đã phát cho Mega #1576
+               [12, 15, 25, 26, 29, 44], [15, 25, 26, 35, 38, 44]]
     disjoint = coverage_tickets(_law(ProductCode.MEGA_645, PAST_DRAW))
     before, after = any_ticket_tail(current, spec.n, spec.k)[2], any_ticket_tail(disjoint, spec.n, spec.k)[2]
     assert before == pytest.approx(0.3064, abs=1e-4) and after == pytest.approx(0.70948, abs=1e-5)
@@ -84,7 +75,6 @@ def _issue(rule: str | None, boosted: list[int]) -> dict:
 
 
 def test_the_published_tickets_follow_the_rule_recorded_with_the_issue(monkeypatch):
-    """Lần ghi có ``ticket_rule`` → danh mục rời nhau kèm mốc chính xác; lần ghi cũ giữ đúng vé đã phát."""
     from vlm.web import dashboard as db
 
     monkeypatch.setattr(db, '_valid_issue', lambda code, entry, now: True)
@@ -132,8 +122,6 @@ def test_comparisons_score_the_disjoint_tickets_that_were_shown(tmp_path, monkey
     assert deepcopy(match['components'][0]['coverage'])['rule'] == COVERAGE_RULE
 
 
-# --- coverage-v2: mỗi vé Lotto 5/35 mang một số đặc biệt khác nhau (31-10-2026) ------------------------
-
 def _lotto_issue(rule: str | None) -> dict:
     main = CONFIGS[ProductCode.LOTTO_535].components['main']
     values = np.ones((1, main.n)) * (1 + 1e-4 * np.arange(main.n)[::-1] / main.n)
@@ -155,13 +143,12 @@ def test_coverage_specials_are_distinct_and_ranked_by_their_marginal():
     spec = CONFIGS[ProductCode.LOTTO_535].components['special']
     issue = _lotto_issue(None)['pending']['laws']['special']
     law = Law(spec, np.array(issue['values']), np.array(issue['mixture']))
-    assert coverage_specials(law) == [7, 3, 10, 1, 12]  # ký hiệu = chỉ số + 1
+    assert coverage_specials(law) == [7, 3, 10, 1, 12]
     with pytest.raises(ValueError):
         coverage_specials(_law(ProductCode.LOTTO_535, [1, 2, 3, 4, 5]))
 
 
 def test_the_any_ticket_prize_rate_is_exact_over_every_lotto_draw():
-    """Vét cạn mọi bộ năm số chính × 12 số đặc biệt, chấm bằng CHÍNH bảng giải của trò chơi."""
     from itertools import combinations as combos
 
     from vietlott_engine.core.games import get_game
@@ -184,7 +171,7 @@ def test_the_any_ticket_prize_rate_is_exact_over_every_lotto_draw():
         exact = wins.sum() / (len(draws) * 12)
         got = prize_coverage(ProductCode.LOTTO_535, tickets, len(set(specials)))
         assert got['any_ticket_prize'] == pytest.approx(exact, abs=1e-12)
-    assert got['shared_special_prize'] == pytest.approx(exact, abs=1e-12)  # vòng cuối: chung một số
+    assert got['shared_special_prize'] == pytest.approx(exact, abs=1e-12)
     assert got['one_ticket_prize'] == pytest.approx(game.p_any_prize)
 
 

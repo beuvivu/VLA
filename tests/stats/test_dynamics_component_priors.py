@@ -1,5 +1,3 @@
-"""Năm κ có điều kiện trong ``number_dynamics`` phải HỌC, không đặt tay."""
-
 from __future__ import annotations
 
 import sys
@@ -11,8 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from stats import number_dynamics as nd  # noqa: E402
-from ensemble.hierarchical_pooling import (  # noqa: E402
+from stats import number_dynamics as nd
+from ensemble.hierarchical_pooling import (
     MAX_PRIOR_STRENGTH,
     fit_shrinkage_to_prior,
     fit_shrinkage_to_prior_rows,
@@ -64,21 +62,6 @@ def test_explicit_numbers_are_passed_through_untouched() -> None:
 
 
 def test_a_finite_strength_is_not_by_itself_evidence_of_signal() -> None:
-    """Khoá lại một điều dễ đọc nhầm, và chính tôi đã suýt đọc nhầm.
-
-    Ước lượng mô men của phương sai giữa các đơn vị là KHÔNG CHỆCH quanh một
-    giá trị thật bằng không, nên dưới giả thuyết vô hiệu nó rơi về phía dương
-    khoảng một nửa số lần — và κ hữu hạn. Đo trên 40 hạt giống, 600 kỳ ngẫu
-    nhiên thuần: tỉ lệ hàng chuyển trạng thái SẬP về co ngót hoàn toàn nằm
-    trong 0,43 – 0,72, trung vị 0,57. Mô phỏng trực tiếp ở mọi cỡ mẫu (5, 12,
-    24, 60, 240 kỳ mỗi hàng) cho tỉ lệ hàng không sập ổn định ≈ 0,48, không
-    phụ thuộc số kỳ.
-
-    Hệ quả phải nhớ: "κ hữu hạn" KHÔNG phải một phát hiện. Chỉ ĐỘ LỚN mới nói
-    được gì — phương sai vượt bé tí thì κ khổng lồ và hậu nghiệm vẫn nằm trên
-    đường nền. Một bản trước của phép kiểm này đòi κ trung vị phải sập, và nó
-    đạt ở hạt giống 7 thuần tuý do may.
-    """
     collapsed_fractions = []
     for seed in range(6):
         h = _iid(600, seed=seed)
@@ -89,22 +72,6 @@ def test_a_finite_strength_is_not_by_itself_evidence_of_signal() -> None:
 
 
 def test_learning_moves_numbers_far_less_than_hand_picked_on_noise() -> None:
-    """Trên dữ liệu vô tín hiệu, mọi chênh lệch khỏi đường nền đều là nhiễu.
-
-    Không đòi chênh lệch bằng KHÔNG: κ học theo từng hàng thì trong 100 hàng
-    vẫn có hàng sống sót do ngẫu nhiên — đó là cái giá phải trả để giữ được
-    tín hiệu thật, và phép kiểm tiêm quan hệ 12 → 34 ở dưới cho thấy cái giá
-    ấy đáng. Đòi đúng cái đo được: phép học phải im lặng hơn hằng số đặt tay
-    một bậc độ lớn.
-
-    Số đo (lệch tuyệt đối khỏi đường nền, 600 kỳ ngẫu nhiên thuần):
-
-        chuyển trạng thái   học 0,00000 / 0,00000   đặt tay 0,00499 / 0,01990
-        Markov bậc hai      học 0,00000 / 0,00002   đặt tay 0,01400 / 0,06184
-        nhân độ trễ         học 0,00018 / 0,01344   đặt tay 0,00914 / 0,03315
-
-    (trung vị / lớn nhất)
-    """
     h = _iid(600)
     learned = nd.build_dynamics_signal(
         hit=h, dates=_dates(600), mode="loto"
@@ -123,7 +90,6 @@ def test_learning_moves_numbers_far_less_than_hand_picked_on_noise() -> None:
 
 
 def test_an_injected_transition_keeps_the_component_alive() -> None:
-    """Có tín hiệu thật thì κ phải KHÔNG sập về co ngót hoàn toàn."""
     rng = np.random.default_rng(3)
     h = (rng.random((700, 100)) < 0.185).astype(np.int8)
     for t in range(1, len(h)):
@@ -131,7 +97,6 @@ def test_an_injected_transition_keeps_the_component_alive() -> None:
             h[t, 34] = 1
     _, _, _, _, kappa = nd.transition_posterior(h, prior_strength=None)
     assert kappa[12] < MAX_PRIOR_STRENGTH
-    # Chỉ hàng nguồn 12 có quan hệ; các hàng khác vẫn phải sập.
     others = np.delete(kappa, 12)
     assert float(np.median(others)) >= MAX_PRIOR_STRENGTH
 
@@ -147,7 +112,6 @@ def test_learned_transition_still_recovers_that_injected_relationship() -> None:
 
 
 def test_regime_learns_two_different_strengths_for_two_window_lengths() -> None:
-    """Cửa sổ 30 kỳ và 180 kỳ có lượng bằng chứng khác nhau nên κ phải khác."""
     h = _iid(500)
     out = nd._regime_current(h, recent=30, long=180, prior_strength=None)
     recent_prior, long_prior = out[5], out[6]
@@ -157,13 +121,11 @@ def test_regime_learns_two_different_strengths_for_two_window_lengths() -> None:
 def test_lag_learns_one_strength_per_lag_state_cell() -> None:
     h = _iid(500)
     _, _, priors = nd._lag_kernel_current(h, lags=nd.LAGS, prior_strength=None)
-    # sáu độ trễ × hai trạng thái
     assert len(priors) == 2 * len(nd.LAGS)
     assert len(set(priors)) > 1
 
 
 def test_short_history_returns_a_usable_strength_instead_of_none() -> None:
-    """Nhánh thoát sớm vẫn phải trả một con số, nếu không chẩn đoán sẽ nổ."""
     _, _, _, _, kappa = nd.transition_posterior(
         np.zeros((1, 100), np.int8), prior_strength=None
     )
@@ -185,20 +147,10 @@ def test_learned_priors_do_not_break_the_probability_contract(mode: str) -> None
         assert prob.sum() == pytest.approx(1.0)
 
 
-#: Kỳ cuối của lát 120 kỳ ĐÓNG BĂNG: dữ liệu lúc phép kiểm ra đời (commit 2a509ad, 14-11-2026).
-#: Lát trượt theo kỳ mới là đồng xu. Trên 120 kỳ hiệu số chỉ cỡ 1e-5, t từ −0,4 tới +0,1 (đo
-#: 18-11-2026 trên bảy cửa sổ liền nhau). Cửa sổ tới 18-11-2026 đổi dấu (+3,3e-6, t = +0,12) và làm
-#: đỏ mọi PR mà không mã nào đổi. Sổ chuẩn chỉ nối thêm, nên lát đóng băng cho cùng một con số mãi.
 FROZEN_THROUGH = pd.Timestamp("2026-11-13")
 
 
 def test_learned_beats_hand_picked_on_real_walk_forward() -> None:
-    """Chốt lại con số đã biện minh cho thay đổi này, trên ĐÚNG lát kỳ đã dùng khi ấy.
-
-    Đo trên 120 kỳ thật tới ``FROZEN_THROUGH`` để chạy nhanh; con số đầy đủ 500/1000 kỳ (t = −2,90 /
-    −4,05) ghi trong tài liệu của ``LEARN_COMPONENT_PRIOR``. Đây là phép chốt hồi quy của MÃ, không
-    phải phép kiểm ý nghĩa: 120 kỳ không đủ tách hai đường (t ≈ −0,3).
-    """
     dates, hit = nd.build_hit_matrix_from_lottery("loto")
     stop = int(dates.searchsorted(FROZEN_THROUGH, side="right"))
     assert dates[stop - 1] == FROZEN_THROUGH and stop >= 120
@@ -231,9 +183,6 @@ def test_prior_fit_returns_a_finite_strength_when_units_genuinely_differ() -> No
     successes = rates * 500.0
     kappa = fit_shrinkage_to_prior(successes, trials, np.full(200, 0.2))
     assert kappa < MAX_PRIOR_STRENGTH
-    # Phương sai giữa các đơn vị là var của linspace(0,1;0,3) ≈ 3,36e-3,
-    # trừ đi phần nhị thức 0,2·0,8/500 = 3,2e-4 còn ≈ 3,04e-3,
-    # nên κ ≈ 0,16/3,04e-3 - 1 ≈ 51,6.
     assert kappa == pytest.approx(51.6, rel=0.05)
 
 
@@ -249,12 +198,6 @@ def test_prior_fit_rejects_mismatched_shapes() -> None:
 
 
 def test_hazard_learns_its_own_strength_rather_than_the_hand_picked_60() -> None:
-    """Hiểm suất là thành phần DUY NHẤT mà hằng số cũ gần đúng, nên dễ bỏ sót.
-
-    Trên toàn bộ lịch sử thật nó học ra ≈ 70 — sát 60 — và chính vì sát nên
-    một đột biến ép nó về 60 đã sống sót qua vòng kiểm đầu. Phép kiểm này
-    khoá lại: giá trị phải là giá trị HỌC được, không phải hằng số.
-    """
     dates, hit = nd.build_hit_matrix_from_lottery("loto")
     diag = nd.build_dynamics_signal(
         hit=hit, dates=dates, mode="loto"
@@ -265,10 +208,8 @@ def test_hazard_learns_its_own_strength_rather_than_the_hand_picked_60() -> None
 
 
 def test_markov_uses_the_strength_of_the_state_each_number_is_actually_in() -> None:
-    """Bốn trạng thái có κ riêng, nên phải tra đúng trạng thái của từng con."""
     rng = np.random.default_rng(5)
     h = (rng.random((800, 100)) < 0.185).astype(np.int8)
-    # Tiêm phụ thuộc bậc hai thật: về hai kỳ liên tiếp thì kỳ sau nghiêng hẳn.
     for t in range(2, len(h)):
         idx = np.where((h[t - 2] == 1) & (h[t - 1] == 1))[0]
         if idx.size:
@@ -279,7 +220,6 @@ def test_markov_uses_the_strength_of_the_state_each_number_is_actually_in() -> N
     )
     assert len(set(state_prior.tolist())) == 4, "cần bốn κ khác nhau mới kiểm được"
     assert len(set(state_now.tolist())) > 1, "cần nhiều trạng thái mới kiểm được"
-    # Trạng thái 3 là trạng thái đã tiêm tín hiệu: nó phải được tin nhất.
     assert state_prior[3] == min(state_prior)
 
     success = np.zeros((4, 100))
@@ -295,12 +235,6 @@ def test_markov_uses_the_strength_of_the_state_each_number_is_actually_in() -> N
 
 
 def test_prior_fit_drops_zero_trial_units_instead_of_poisoning_the_estimate() -> None:
-    """Đơn vị không có phép thử phải bị LOẠI, không phải coi như lệch bằng 0.
-
-    Phải dựng trường hợp mà bỏ đúng thì ra κ HỮU HẠN: nếu cả hai nhánh cùng ra
-    co ngót hoàn toàn thì phép kiểm không phân biệt được gì — bản đầu của nó
-    đã như vậy và một đột biến đổi ``n > 0`` thành ``n >= 0`` sống sót.
-    """
     rates = np.linspace(0.10, 0.30, 200)
     successes = np.concatenate([rates * 500.0, np.zeros(5)])
     trials = np.concatenate([np.full(200, 500.0), np.zeros(5)])
@@ -316,11 +250,6 @@ def test_prior_fit_drops_zero_trial_units_instead_of_poisoning_the_estimate() ->
 def test_the_null_rate_of_finite_strengths_does_not_fall_with_more_data(
     trials_per_row: int,
 ) -> None:
-    """Tỉ lệ dương tính giả ≈ 0,48 ở MỌI cỡ mẫu — đó là phân phối dấu, không
-    phải sai số thống kê, nên thêm dữ liệu không chữa được.
-
-    Khoá lại để không ai về sau "sửa" nó bằng cách tăng cỡ mẫu.
-    """
     rng = np.random.default_rng(0)
     base = np.full(100, 0.185)
     trials = np.full(100, float(trials_per_row))

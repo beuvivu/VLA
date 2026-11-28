@@ -484,11 +484,6 @@ def _week_board(path: Path, tail: int=10) -> str:
 
 
 def _conditional(path: Path, top_n: int=15) -> str:
-    """Bảng có điều kiện: tỉ lệ thô CẠNH mức nền, ước lượng sau co và q (FDR), theo thứ tự p của tệp.
-
-    Bản cũ xếp lại theo tỉ lệ thô và gắn nhãn "Có mẫu lịch sử tương đối tốt hơn" cho mọi ô có
-    từ 10 kỳ: ô 52,5% đứng đầu chỉ là ô may mắn nhất trong 10 000 ô, mức nền 23,8%.
-    """
     df=_read_csv(path)
     if df.empty:
         return "_Chưa có dữ liệu._"
@@ -580,14 +575,6 @@ def _diagnostics() -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Điểm vào dòng lệnh.
-
-    Args:
-        argv: Tham số dòng lệnh.
-
-    ``--output`` để test dựng được ra tệp tạm thay vì ghi đè DASHBOARD.md của
-    kho thật; chạy bộ kiểm thử không được làm bẩn cây làm việc.
-    """
     parser = argparse.ArgumentParser(description="Dựng DASHBOARD.md.")
     parser.add_argument("--output", default=str(OUT))
     args = parser.parse_args(argv)
@@ -891,7 +878,6 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 </div>
 '''
-    # Chỉ khác dòng «Tạo lúc …» thì giữ bản đang có: lượt pipeline chạy lại không commit lại tệp.
     write_text_unless_only_stamps(out_path, md, (re.compile(r"Tạo lúc \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"),))
     print(f"Đã ghi {out_path} ({out_path.stat().st_size:,} byte)")
 

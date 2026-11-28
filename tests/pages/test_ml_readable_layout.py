@@ -1,5 +1,3 @@
-"""Trang ML ưu tiên bảng đọc được, giữ nguyên số liệu và căn cứ công bố."""
-
 import json
 from pathlib import Path
 
@@ -11,7 +9,6 @@ from pages import build_docs_ml
 
 
 def _render(tmp_path: Path, monkeypatch, frame: pd.DataFrame) -> dict[str, BeautifulSoup]:
-    """Dựng bằng CSV thật và chỉ chuyển đầu vào/đầu ra vào thư mục tạm."""
     data = tmp_path / "ml"
     data.mkdir()
     if not frame.empty:
@@ -43,7 +40,6 @@ def forecast() -> pd.DataFrame:
 def test_forecast_exposes_mode_switch_before_the_ranking(
     tmp_path: Path, monkeypatch, forecast: pd.DataFrame, mode: str, label: str,
 ) -> None:
-    """Mất đường chuyển loại, sai mục đang xem hoặc hero che bảng đều bị chặn."""
     pages = _render(tmp_path, monkeypatch, forecast)
     page = pages[f"ml_top10_{mode}.html"]
     content = page.select_one(".app-ml-forecast")
@@ -74,7 +70,6 @@ def test_forecast_exposes_mode_switch_before_the_ranking(
 def test_forecast_keeps_published_order_precision_and_evidence(
     tmp_path: Path, monkeypatch, forecast: pd.DataFrame, mode: str,
 ) -> None:
-    """Tri, bỏ số 0 đầu, làm tròn thêm hoặc gắn nhầm căn cứ hàng đều bị chặn."""
     page = _render(tmp_path, monkeypatch, forecast)[f"ml_top10_{mode}.html"]
     rows = page.select("#app-lab-ranking table tbody tr")
     assert [[cell.get_text(strip=True) for cell in row.select("td")] for row in rows] == [
@@ -100,7 +95,6 @@ def test_forecast_keeps_published_order_precision_and_evidence(
 
 
 def test_missing_forecast_keeps_switch_without_inventing_ranks(tmp_path: Path, monkeypatch) -> None:
-    """Thiếu CSV phải hiện chờ dữ liệu, không sinh Top 10 hay coi mức tin là 0."""
     pages = _render(tmp_path, monkeypatch, pd.DataFrame())
     for mode in ("de", "loto"):
         page = pages[f"ml_top10_{mode}.html"]

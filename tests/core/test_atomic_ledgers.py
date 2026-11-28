@@ -1,11 +1,3 @@
-"""Sổ cái chỉ-ghi-thêm phải sống sót khi tiến trình chết GIỮA lúc ghi.
-
-Các sổ này đọc lại chính mình rồi ghi lại toàn bộ. Ghi bằng ``open("w")`` thì tệp bị
-cắt về rỗng trước; chết giữa chừng (đĩa đầy, runner bị huỷ) để lại một sổ cụt, và
-lần chạy sau gộp sổ cụt ấy — các dòng cũ mất khỏi bản làm việc. Mỗi phép kiểm dưới
-đây làm hỏng đúng lần ghi (ghi được một nửa rồi ném lỗi) và đòi sổ cũ còn nguyên.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -26,7 +18,6 @@ DATA = Path(__file__).resolve().parents[2] / "data"
 
 
 def _crash_half_way_to_csv(monkeypatch: pytest.MonkeyPatch) -> None:
-    """``DataFrame.to_csv`` ghi được nửa nội dung rồi ném lỗi, như đĩa đầy."""
     original = pd.DataFrame.to_csv
 
     def crashing(self, path_or_buf=None, *args, **kwargs):
@@ -42,7 +33,6 @@ def _crash_half_way_to_csv(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _crash_on_second_row(monkeypatch: pytest.MonkeyPatch) -> None:
-    """``csv.DictWriter.writerow`` ghi được dòng đầu rồi ném lỗi ở dòng thứ hai."""
     original = csv.DictWriter.writerow
     calls = {"n": 0}
 
@@ -75,7 +65,6 @@ def test_atomic_write_keeps_the_old_file_and_leaves_no_temporary(tmp_path: Path)
 
 @pytest.mark.parametrize("reject", [False, True])
 def test_atomic_write_checks_guard_after_fsync_and_before_replacing(tmp_path, monkeypatch, reject):
-    """Chốt ngay sau ghi đĩa được quyền hủy thay đích, không để lại tệp tạm."""
     target = tmp_path / "journal.json"
     target.write_bytes(b"old")
     events = []
@@ -150,7 +139,6 @@ def test_published_skill_ledger_survives_a_crash_mid_write(tmp_path: Path, monke
 
 
 def test_prediction_history_survives_a_crash_mid_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Sổ ``pred_<mode>.csv`` đọc lại rồi ghi lại toàn bộ ở hai bước mỗi lượt pipeline."""
     ledger = tmp_path / "pred_de.csv"
     shutil.copy(DATA / "evaluation" / "history" / "pred_de.csv", ledger)
     before = ledger.read_bytes()
@@ -164,7 +152,6 @@ def test_prediction_history_survives_a_crash_mid_write(tmp_path: Path, monkeypat
 
 def test_merging_into_the_canonical_store_survives_a_crash_mid_write(tmp_path: Path,
                                                                      monkeypatch: pytest.MonkeyPatch) -> None:
-    """``backfill_history --merge-store`` và ``--drop-repeats`` ghi đè chính ``data/xsmb.json``."""
     from ingest import backfill_history
 
     canonical, mine = tmp_path / "xsmb.json", tmp_path / "backfill.json"
@@ -189,8 +176,6 @@ def test_merging_into_the_canonical_store_survives_a_crash_mid_write(tmp_path: P
 
 
 def rewrites_without_atomic_write(source: str) -> list[str]:
-    """Biến đường dẫn được ĐỌC (``read_json_or_empty(x)``, ``json.loads(x.read_text…)``) rồi ghi lại bằng
-    ``x.write_text(``: ghi dở thì lần đọc sau ra sổ cụt hay ``{}``."""
     import re
     read = set(re.findall(r"read_json_or_empty\(\s*(\w+)", source)) | set(
         re.findall(r"json\.loads\(\s*(\w+)\.read_text", source))
@@ -198,7 +183,6 @@ def rewrites_without_atomic_write(source: str) -> list[str]:
 
 
 def test_no_module_rewrites_a_file_it_read_without_an_atomic_write() -> None:
-    """15-11-2026: manifest Cầu Kèo, bộ nhớ đệm phân vị null và hai lệnh ghi sổ chuẩn còn ghi thẳng."""
     root = Path(__file__).resolve().parents[2] / "src"
     found = {path.relative_to(root).as_posix(): names for path in root.rglob("*.py")
              if (names := rewrites_without_atomic_write(path.read_text(encoding="utf-8")))}

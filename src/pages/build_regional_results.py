@@ -1,11 +1,3 @@
-"""Dựng trang kết quả XSMT/XSMN từ kho dữ liệu vùng đã lưu.
-
-Khối «Kiểm định ngẫu nhiên và mốc xác suất» in TỪ ba tệp số đo của cùng lượt chạy
-(`stats.regional_stats`, `evaluation.regional_benchmark`, `research.regional_cage_test`): mọi câu
-kết luận là câu của tệp, trình dựng không tự viết kết luận nào. Trình dựng chỉ đọc JSON nên không
-kéo scipy/scikit-learn vào những nơi chỉ dựng trang.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -54,7 +46,6 @@ def grouped(rows: list[dict[str, str]]) -> dict[str, dict[str, dict[str, list[st
 
 
 def board(draw_date: str, provinces: dict[str, dict[str, list[str]]]) -> str:
-    """Bảng thật theo giải và tỉnh; số gốc không qua ép kiểu hay cắt độ dài."""
     day_key = html.escape(draw_date)
     display_date = date.fromisoformat(draw_date).strftime("%d/%m/%Y")
     station_ids = {province: f"rg-{draw_date}-station-{index}" for index, province in enumerate(provinces)}
@@ -123,14 +114,6 @@ def _vn_date(day: str) -> str:
 
 
 def load_evidence(root: Path, region: str, rows: list[dict[str, str]] | None = None) -> dict | None:
-    """Số đo của một miền: tóm tắt kiểm định, phép chấm tiến cứu, trạng thái phép kiểm đã đăng ký.
-
-    Thiếu bản tóm tắt hoặc phép chấm thì trả ``None`` và trang không in khối này — không in một
-    nửa kết luận. Cả hai phải nói về ĐÚNG ngày cuối của sổ miền đang dựng trang (``rows``, mặc
-    định đọc lại sổ): bước phân tích hỏng sau khi kết quả mới đã về thì hai tệp cũ vẫn khớp nhau,
-    và so riêng chúng với nhau sẽ in kết luận của hôm qua cạnh bảng của hôm nay. Trạng thái phép
-    kiểm đã đăng ký được ghi GIỮA hai tệp ấy trong cùng một bước, nên nó cũ thì phép chấm cũng cũ.
-    """
     data = root / "data"
     summary_path = data / "stats" / "regional" / f"summary_{region}.json"
     benchmark_path = data / "evaluation" / "regional_benchmark" / "benchmark.json"
@@ -151,14 +134,12 @@ def load_evidence(root: Path, region: str, rows: list[dict[str, str]] | None = N
 
 
 def _cage_tables(summary: dict) -> str:
-    """Bảng đếm theo lồng của từng đài bị gắn cờ: mỗi hàng một lồng, mỗi cột một quả 0–9."""
     names = summary["tests"]["cage_names"]
     out = []
     for block in summary["tests"]["per_station"]:
         counts = block.get("cage_counts")
         if not counts:
             continue
-        # Chỉ năm lồng thấp: lồng trăm nghìn mỗi kỳ rút một lần, nằm ngoài phép kiểm theo lồng.
         rows = "".join(
             f'<tr><th scope="row">{html.escape(names[cage].capitalize())}</th>'
             + "".join(f"<td>{int(value)}</td>" for value in counts[cage])
@@ -219,7 +200,6 @@ def _model_table(benchmark: dict) -> str:
 
 
 def evidence_block(evidence: dict | None) -> str:
-    """Khối kiểm định của trang miền; rỗng khi chưa có số đo."""
     if not evidence:
         return ""
     summary, benchmark = evidence["summary"], evidence["benchmark"]

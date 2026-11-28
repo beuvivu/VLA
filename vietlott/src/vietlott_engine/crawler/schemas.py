@@ -1,5 +1,3 @@
-"""Pydantic schemas for raw records coming from each source, and their mapping to ``Draw``."""
-
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -11,10 +9,6 @@ from vietlott_engine.core.models import Draw
 
 
 class MirrorRecord(BaseModel):
-    """One line of the community JSONL mirror (github.com/vietvudanh/vietlott-data).
-
-    ``result`` holds the six main numbers; Power 6/55 appends the bonus ball as a 7th value.
-    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -30,9 +24,6 @@ class MirrorRecord(BaseModel):
     @field_validator("date", mode="before")
     @classmethod
     def _parse_date(cls, v: object) -> object:
-        # the mirror occasionally stores epoch milliseconds: pandas' ``to_json`` writes a naive date as
-        # midnight UTC, so read it in UTC — the machine's own time zone shifted it to the previous day
-        # west of Greenwich (05-11-2026).
         if isinstance(v, (int, float)) or (isinstance(v, str) and v.isdigit()):
             return datetime.fromtimestamp(int(v) / 1000, tz=timezone.utc).date()
         return v
@@ -54,7 +45,6 @@ class MirrorRecord(BaseModel):
 
 
 class OfficialRow(BaseModel):
-    """One row of the results table returned by vietlott.vn's AjaxPro endpoint."""
 
     date_text: str
     id_text: str

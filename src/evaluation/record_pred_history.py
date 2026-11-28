@@ -58,11 +58,6 @@ def _load_stat_full(stat_dir: Path, mode: str) -> pd.DataFrame:
 
 
 def _policy_version(frame: pd.DataFrame) -> float:
-    """Phiên bản định nghĩa mà tệp thành phần tự khai (cột ``trust_policy_version``).
-
-    Tệp không khai, hoặc khai không nhất quán giữa các dòng, nhận NaN: bộ học
-    coi dòng ấy là định nghĩa cũ thay vì đoán.
-    """
     if "trust_policy_version" not in frame.columns or frame.empty:
         return float("nan")
     values = pd.to_numeric(frame["trust_policy_version"], errors="coerce").to_numpy(dtype=float)
@@ -72,7 +67,6 @@ def _policy_version(frame: pd.DataFrame) -> float:
 
 
 def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
-    """Infer availability for legacy rows and erase synthetic all-zero placeholders."""
     out = df.copy()
     if "target_date" not in out.columns or "number" not in out.columns:
         return out
@@ -108,16 +102,6 @@ def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def write_history(df: pd.DataFrame, out: Path) -> None:
-    """Ghi sổ ``pred_<mode>.csv``: nhãn ``y`` luôn là số nguyên có ô trống, ghi nguyên tử.
-
-    Sổ đọc lại rồi ghi lại toàn bộ ở hai bước của cùng một lượt (ghi dự báo kỳ tới, rồi điền
-    nhãn). Dòng của kỳ chưa quay có ``y`` trống nên pandas đọc cả cột thành số thực; trước
-    03-11-2026 bước này ghi ``0.0`` còn bước điền nhãn ép ``Int64`` và ghi ``0``, nên mỗi lượt
-    viết lại cả 27 800 dòng mà không giá trị nào đổi — diff của một sổ chỉ ghi thêm thành
-    không đọc được, và một giá trị lịch sử bị sửa sẽ lẫn trong đó. Cùng một kiểu ở mọi chỗ ghi
-    thì dòng cũ giữ nguyên từng byte. Ghi qua tệp tạm + ``os.replace`` (``core.atomic_io``):
-    chết giữa chừng không để lại sổ cụt.
-    """
     frame = df.copy()
     if "y" in frame.columns:
         frame["y"] = frame["y"].astype("Int64")
@@ -169,7 +153,7 @@ def main() -> None:
         components = {
             key: probability_component(
                 frame,
-                mode=mode,  # type: ignore[arg-type]
+                mode=mode,
                 expected_target_date=target,
                 expected_anchor_date=anchor,
             )
@@ -198,7 +182,6 @@ def main() -> None:
                     ] * 100
                     for key in COMPONENT_POLICY
                 },
-                # Phép chốt mà predict_nextday_2d của CÙNG lượt chạy dùng để công bố.
                 BLEND_POLICY_COLUMN: [BLEND_POLICY] * 100,
             }
         )

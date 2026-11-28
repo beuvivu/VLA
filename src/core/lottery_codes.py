@@ -1,5 +1,3 @@
-"""Định dạng mã xổ số tại biên hiển thị và xuất CSV, không đổi phép tính."""
-
 from __future__ import annotations
 
 import argparse
@@ -16,7 +14,6 @@ from core.excel_export import FIELD_WIDTHS
 
 
 def lottery_code(value: object, width: int = 2) -> str:
-    """Giữ ô thiếu là rỗng, nhận số nguyên hợp lệ và trả mã đủ độ rộng."""
     if value is None or (not isinstance(value, str) and pd.isna(value)):
         return ""
     if isinstance(value, str):
@@ -40,7 +37,6 @@ def lottery_code(value: object, width: int = 2) -> str:
 
 
 def csv_code_widths(path: Path, headers: list[str]) -> dict[str, int]:
-    """Chỉ chọn cột mã đã biết; đầu/đuôi, số đếm, hạng và xác suất là số đo."""
     names = {
         "number", "number_str", "value_str", "a_str", "b_str",
         "prev_loto", "next_loto", "prev_special_2d", "next_special_2d",
@@ -63,10 +59,6 @@ def csv_code_widths(path: Path, headers: list[str]) -> dict[str, int]:
 
 
 def write_code_csv(frame: pd.DataFrame, path_or_buf=None, **kwargs):
-    """Ghi bản sao có mã dạng text; giữ nguyên kiểu và giá trị khung tính toán.
-
-    Giữ giao diện xuất CSV của pandas, kể cả chuỗi trả về cho bộ ghi nguyên tử.
-    """
     path = Path(path_or_buf) if isinstance(path_or_buf, (str, Path)) else Path(
         getattr(path_or_buf, "name", "export.csv")
     )
@@ -79,20 +71,9 @@ def write_code_csv(frame: pd.DataFrame, path_or_buf=None, **kwargs):
 
 
 def code_column(series: pd.Series, width: int) -> pd.Series:
-    """Đúng bằng ``series.map(lambda v: lottery_code(v, width))``, nhưng mỗi giá trị khác nhau chỉ định dạng MỘT lần.
-
-    Bảng thống kê có hàng triệu ô mà chỉ vài trăm mã khác nhau; gọi
-    ``lottery_code`` từng ô từng chiếm 12,5 trong 41 giây của
-    ``statistical_matrices``. Cột số (nguyên/thực) đi qua ``pd.factorize``:
-    mọi phần tử cùng một kiểu nên hai giá trị bằng nhau cho cùng một mã. Cột
-    ``object`` có thể trộn ``True`` với ``1`` — bằng nhau theo ``==`` nhưng
-    ``lottery_code`` nhận cái sau và từ chối cái trước — nên khoá bộ nhớ đệm
-    gồm cả KIỂU của giá trị.
-    """
     if pd.api.types.is_numeric_dtype(series.dtype) and not pd.api.types.is_bool_dtype(series.dtype):
         codes, uniques = pd.factorize(series, use_na_sentinel=True)
         table = np.array([lottery_code(value, width) for value in uniques] + [""], dtype=object)
-        # Mã -1 (ô thiếu) trỏ vào phần tử cuối: chuỗi rỗng, như lottery_code(NaN).
         return pd.Series(table[codes], index=series.index, name=series.name, dtype=object)
     cache: dict[tuple[type, object], str] = {}
     out = np.empty(len(series), dtype=object)
@@ -102,17 +83,12 @@ def code_column(series: pd.Series, width: int) -> pd.Series:
             out[i] = cache[key]
         except KeyError:
             out[i] = cache[key] = lottery_code(value, width)
-        except TypeError:  # giá trị không băm được: để lottery_code tự từ chối
+        except TypeError:
             out[i] = lottery_code(value, width)
     return pd.Series(out, index=series.index, name=series.name, dtype=object)
 
 
 def normalize_csv(path: Path) -> bool:
-    """Sửa riêng mã số bằng bộ đọc chuỗi; giữ nguyên mọi chữ số của số đo.
-
-    Không đi qua suy kiểu pandas nên không làm tròn xác suất hoặc đổi ô rỗng.
-    Kiểm toàn bộ trước khi thay tệp và không ghi lại tệp đã đúng định dạng.
-    """
     text = path.read_text(encoding="utf-8-sig")
     rows = list(csv.reader(io.StringIO(text)))
     if not rows:

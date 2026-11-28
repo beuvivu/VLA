@@ -1,5 +1,3 @@
-"""Khôi phục chủ đề trước khung vẽ đầu tiên, không nhân script khi xuất lại."""
-
 from pathlib import Path
 from urllib.parse import urlsplit
 

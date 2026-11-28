@@ -19,7 +19,6 @@ def _text(name: str) -> str:
 
 
 def _vietnam_minutes(cron: str) -> int:
-    """Phút trong ngày theo giờ Việt Nam của một biểu thức cron viết theo UTC."""
     minute, hour = cron.split()[:2]
     return ((int(hour) + 7) % 24) * 60 + int(minute)
 
@@ -27,8 +26,6 @@ def _vietnam_minutes(cron: str) -> int:
 def test_live_workflow_uses_utc_schedule_and_subminute_poll_loop() -> None:
     text = _text("live-results.yml")
     crons = re.findall(r'cron: "([^"]+)"', text)
-    # Kiểm tính chất thay vì chuỗi cố định: phải có mốc đủ sớm để, kể cả khi
-    # GitHub trễ như đã đo (2,5–4,5 giờ), vẫn còn cơ hội rơi vào khung quay.
     assert crons, "workflow live phải có ít nhất một mốc lịch"
     assert min(_vietnam_minutes(c) for c in crons) <= 14 * 60
     assert max(_vietnam_minutes(c) for c in crons) <= 18 * 60 + 15
@@ -43,9 +40,6 @@ def test_live_workflow_uses_utc_schedule_and_subminute_poll_loop() -> None:
 
 def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
     text = _text("update-data.yml")
-    # Kiểm tính chất chứ không kiểm chuỗi cố định: cần đủ nhiều mốc phục hồi
-    # trải sau giờ quay, và không mốc nào rơi vào phút :00 hay :30 — hàng đợi
-    # lịch của GitHub dồn nặng nhất ở hai mốc đó.
     crons = re.findall(r'cron: "([^"]+)"', text)
     assert len(crons) >= 9
     minutes = [_vietnam_minutes(c) for c in crons]
@@ -57,8 +51,6 @@ def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
     assert "Ghi nhận kết quả chuẩn ngay lập tức" in text
     assert "--fail-on-stale" in text
     assert "--fail-on-missing" in text
-    # Kiểm sức khoẻ theo kỳ đích job canonical đã chốt, không theo đồng hồ lúc pipeline xong
-    # (tests/evaluation/test_monitor_health.py).
     assert '--expected-date "$TARGET_DATE"' in text
     assert "push:" in text
     assert '"reason": "live_verified"' in _text("live-results.yml")
@@ -104,8 +96,6 @@ def test_pages_use_official_actions_deployment_flow() -> None:
 
 
 def test_production_refreshes_do_not_restore_package_caches() -> None:
-    # Live/daily jobs must not restore an old runner cache while repairing a
-    # stale data snapshot.  CI may retain its dependency cache for speed.
     for name in ("ci.yml", "live-results.yml", "update-data.yml", "dashboard-refresh.yml"):
         text = _text(name)
         assert "cache:" not in text
@@ -121,7 +111,6 @@ def test_cache_purge_is_explicit_and_not_scheduled() -> None:
 
 
 def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path: Path) -> None:
-    """Dựng vùng phải qua write_page của helper, không tự bọc chồng shell."""
     workflow = yaml.safe_load(_text("regional-results.yml"))
     steps = workflow["jobs"]["sync"]["steps"]
     step = next(step for step in steps if "src/pages/build_regional_results.py" in step.get("run", ""))
@@ -149,11 +138,6 @@ def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path:
 def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(
     tmp_path: Path, with_station_analysis: bool
 ) -> None:
-    """Chạy nguyên bước workflow và xác minh gói trang trên remote Git thật.
-
-    Số đo từng đài (thống kê, phép chấm, phép kiểm tiến cứu) phải đi cùng commit khi có; khi bước
-    thống kê hỏng và chúng vắng mặt, kết quả vừa thu thập vẫn phải ghi được.
-    """
     workflow = yaml.safe_load(_text("regional-results.yml"))
     steps = workflow["jobs"]["sync"]["steps"]
     step = next(step for step in steps if "git add data/regions/" in step.get("run", ""))
@@ -195,7 +179,6 @@ def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(
             "data/research/hypotheses/regional_cage_bias.json": '{"version":"new"}\n',
             "data/research/hypotheses/regional_cage_bias.csv": "id,version\n1,new\n",
         })
-    # Cả tệp đã có lẫn icon mới phải được stage; thiếu một trong hai đều làm đỏ.
     for relative, value in contents.items():
         if relative.endswith("probe.svg"):
             continue
@@ -233,12 +216,7 @@ def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(
     assert check_site(published / "docs") == []
 
 
-# --- Thu thập đúng giờ ------------------------------------------------------
-
-
 def test_daily_update_prefers_dispatch_over_schedule() -> None:
-    """Lịch của GitHub trễ 2-6 giờ và rơi mốc trên kho này; đường đúng giờ
-    phải là repository_dispatch, cron chỉ là lưới an toàn."""
     text = _text("daily_update.yml")
     assert "repository_dispatch:" in text
     assert "types: [daily-collect]" in text
@@ -246,9 +224,6 @@ def test_daily_update_prefers_dispatch_over_schedule() -> None:
     assert len(crons) <= 8, "quá nhiều mốc chỉ tăng số lần chạy thừa"
 
 
-# Độ trễ của bộ lập lịch GitHub đo trên kho này, phút, theo từng ngày
-# 10-09 -> 05-10-2026: (ngày, mốc 00:15 UTC, mốc 06:37 UTC, mốc 08:51 UTC).
-# Đo bằng created_at của lần chạy trừ giờ mốc; None là chưa nổ khi đo.
 MEASURED_DELAYS = [
     ("09-10", 263, 307, 257), ("09-11", 261, 307, 250), ("09-12", 256, 274, 211),
     ("09-13", 268, 337, 277), ("09-14", 277, 398, 384), ("09-15", 276, 325, 302),
@@ -260,7 +235,7 @@ MEASURED_DELAYS = [
     ("10-01", 332, 432, 410), ("10-02", 317, 387, 372), ("10-03", 299, 320, 305),
     ("10-04", 333, 371, 333), ("10-05", 319, 514, None),
 ]
-UTC_MIDNIGHT_VN = 17 * 60   # 00:00 giờ VN tính theo phút UTC
+UTC_MIDNIGHT_VN = 17 * 60
 
 
 def _utc_minutes(name: str) -> list[int]:
@@ -268,8 +243,6 @@ def _utc_minutes(name: str) -> list[int]:
     return [int(c.split()[1]) * 60 + int(c.split()[0]) for c in crons]
 
 
-# GitHub còn BỎ mốc: ngày 05-10-2026 không mốc nào của daily_update nổ trong
-# 7,7 giờ đầu. Một mốc rơi đúng khung là chưa đủ; phải có dự phòng.
 REDUNDANT_SLOTS = 3
 
 
@@ -280,21 +253,11 @@ def _slots_landing_in(slots: list[int], low: int, high: int, delay: int) -> int:
 @pytest.mark.parametrize(
     "name, window, cap",
     [
-        # (workflow, khung quay theo phút UTC, trần chờ theo phút)
         ("daily_update.yml", 11 * 60 + 15, "daily"),
         ("live-results.yml", 11 * 60 + 8, "live"),
     ],
 )
 def test_some_slot_lands_in_the_waiting_window_on_every_measured_day(name, window, cap) -> None:
-    """Mốc cron phải đặt theo ĐỘ TRỄ ĐO ĐƯỢC, không theo giờ mong muốn.
-
-    Lịch 07:50-10:50 UTC với trần chờ 75 phút nổ lúc 19:00-23:30 giờ VN, sau
-    hạn thăm dò; kỳ về kho lúc 18:58-20:51. Lượt đến sớm nay CHỜ trong runner,
-    nên chỉ cần một mốc rơi vào [khung - trần chờ, 18:35]. Mỗi ngày đo, MỌI độ
-    trễ nằm giữa số đo ở mốc 00:15 và 06:37 (mốc mới nằm giữa hai mốc ấy) đều
-    phải có ít nhất ``REDUNDANT_SLOTS`` mốc rơi vào khoảng đó. Thêm trường hợp
-    GitHub bỗng đúng giờ: ít nhất một mốc vẫn chờ được tới khung.
-    """
     slots = _utc_minutes(name)
     wait = _wait_cap_minutes(cap)
     low, high = window - wait, 11 * 60 + 35
@@ -316,25 +279,19 @@ def _wait_cap_minutes(which: str) -> int:
 
 
 def test_the_last_backstop_fires_before_midnight_even_at_the_worst_measured_delay() -> None:
-    """Mốc cuối nổ sau nửa đêm VN thì "hôm nay" đã sang ngày mới: bước chặn
-    thấy còn 16 giờ mới tới khung quay và thoát — lưới an toàn cuối thành vô
-    dụng. Mốc cũ 14:34 UTC nổ lúc 01:07-02:28 giờ VN hôm sau, đúng như thế."""
     last = _utc_minutes("daily_update.yml")[-1]
     worst = max(late for *_, late in MEASURED_DELAYS if late is not None)
     assert last + worst < UTC_MIDNIGHT_VN
 
 
 def test_early_arrivals_exit_instead_of_idling_the_runner() -> None:
-    """Bộ thăm dò chờ tới khung quay KHÔNG giới hạn, nên một job nổ lúc 15:39
-    sẽ nằm im 2h36m rồi chết vì timeout — đúng những gì lịch cũ vẫn làm. Phải
-    có trần chờ, và timeout phải đủ chứa trần đó cộng cả khung thăm dò."""
     text = _text("daily_update.yml")
     found = re.search(r'MAX_WAIT_MINUTES:\s*"(\d+)"', text)
     assert found is not None, "thiếu trần chờ MAX_WAIT_MINUTES cho job đến quá sớm"
 
     cap = int(found.group(1))
     timeout = int(re.search(r"timeout-minutes:\s*(\d+)", text).group(1))
-    poll_window = 75  # 18:15 -> 19:30
+    poll_window = 75
 
     assert timeout >= cap + poll_window, (
         f"timeout {timeout} phút không đủ cho trần chờ {cap} cộng khung thăm dò "
@@ -343,8 +300,6 @@ def test_early_arrivals_exit_instead_of_idling_the_runner() -> None:
 
 
 def test_gate_skips_when_todays_draw_is_already_stored() -> None:
-    """Mốc sau không được thăm dò lại kỳ mà mốc trước đã lấy xong: vừa tốn yêu
-    cầu vào nguồn tin, vừa giữ runner suốt cả khung."""
     text = _text("daily_update.yml")
     assert "data/xsmb.csv" in text
     assert "run=false" in text
@@ -352,9 +307,6 @@ def test_gate_skips_when_todays_draw_is_already_stored() -> None:
 
 
 def test_last_backstop_guard_matches_the_actual_last_cron() -> None:
-    """Chốt chặn silent fail so chuỗi cron đã kích hoạt với một hằng số chép
-    tay. Đổi lịch mà quên sửa hằng số thì chốt im lặng ngừng hoạt động — đúng
-    kiểu hỏng mà không ai phát hiện."""
     text = _text("daily_update.yml")
     crons = re.findall(r'cron: "([^"]+)"', text)
     guard = re.search(r'LAST_CRON:\s*"([^"]+)"', text)
@@ -365,8 +317,6 @@ def test_last_backstop_guard_matches_the_actual_last_cron() -> None:
 
 
 def test_missing_data_at_the_last_backstop_fails_the_job() -> None:
-    """Job xanh trong khi không lấy được số nào chính là silent fail: không ai
-    biết dữ liệu hỏng cho tới khi tự mở trang ra xem."""
     text = _text("daily_update.yml")
     assert "::error::" in text
     assert re.search(r'FIRED_CRON.*=.*LAST_CRON|"\$FIRED_CRON"\s*=\s*"\$LAST_CRON"', text)
@@ -374,8 +324,6 @@ def test_missing_data_at_the_last_backstop_fails_the_job() -> None:
 
 
 def test_daily_update_sets_the_timezone_at_job_level() -> None:
-    """Đặt lẻ ở từng bước là cách sinh ra lỗi lệch 7 tiếng mà nhật ký không
-    bao giờ chỉ ra được."""
     text = _text("daily_update.yml")
     assert "TZ: Asia/Ho_Chi_Minh" in text
 
@@ -386,14 +334,6 @@ def test_daily_update_bounds_the_runner() -> None:
 
 
 def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
-    """Trang mang dock mà không có trình dựng nào chạy lại sẽ thành hiện vật
-    chết: đổi SITE_NAV một lần là nó lệch khỏi phần còn lại và không ai dựng
-    lại được ngoài việc gọi tay.
-
-    Bốn trang soi-path đã ở tình trạng đó — build_docs.py không nằm trong
-    chuỗi phát hành, nên thêm một mục điều hướng là test dock đỏ mà không có
-    cách sửa nào ngoài chạy tay đúng trình dựng.
-    """
     chain = (
         Path(__file__).resolve().parents[2] / "scripts" / "release" / "release_check.sh"
     ).read_text(encoding="utf-8")
@@ -407,30 +347,16 @@ def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
         "build_fun_prediction.py",
         "build_traditional_results.py",
     ]
-    # So theo DÒNG, không theo chuỗi con: "#python src/x.py" vẫn chứa
-    # "python src/x.py", nên phép kiểm chuỗi con sẽ xanh cả khi dòng bị chú
-    # thích ra — tức là chốt chặn im lặng ngừng hoạt động.
     lines = {line.strip() for line in chain.splitlines()}
     for name in builders:
         assert f"python src/pages/{name}" in lines, f"{name} không nằm trong chuỗi phát hành"
 
-    # Thứ tự quan trọng: build_docs và build_docs_ml cùng ghi docs/index.html,
-    # và bản của build_landing_page mới là bản đúng.
     assert chain.index("python src/pages/build_docs.py") < chain.index(
         "python src/pages/build_landing_page.py"
     ), "build_docs phải chạy trước build_landing_page, nếu không index.html bị ghi đè sai"
 
 
 def test_builders_let_callers_redirect_their_output() -> None:
-    """Mọi trình dựng phải cho phép đổi nơi ghi, để test không đụng vào kho.
-
-    Không có đường đó thì test buộc phải dựng thẳng vào ``docs/`` và
-    ``DASHBOARD.md`` của kho thật: chạy ``pytest`` một lần là cây làm việc bẩn
-    8 tệp. Tệ hơn là bẩn theo dạng "ngược pha" — chuỗi builder đầy đủ cho ra
-    HTML khác với một builder chạy lẻ (``<!DOCTYPE html>`` so với
-    ``<!doctype html>``), nên tệp đã commit có thể nằm lại ở bản cũ mà không ai
-    thấy. Đúng chuyện đó đã xảy ra với ``docs/statistics.html``.
-    """
     root = Path(__file__).resolve().parents[2]
     required = {
         "build_dashboard.py": "--docs-dir",
@@ -449,21 +375,12 @@ def test_builders_let_callers_redirect_their_output() -> None:
 
 
 def test_no_test_builds_into_the_repository_docs_tree() -> None:
-    """Test dựng trang phải ghi vào thư mục tạm, không vào kho.
-
-    Kiểm ở mức nguồn vì kiểm ở mức hành vi cần chạy trọn bộ rồi soi git — quá
-    chậm để làm một test.
-    """
     root = Path(__file__).resolve().parents[2]
     offenders: list[str] = []
-    # ĐỆ QUY: phép kiểm nằm trong tests/<nhóm>/; ``glob`` ở gốc tests/ quét tập rỗng và luôn xanh.
     test_files = sorted((root / "tests").rglob("test_*.py"))
     assert len(test_files) > 100, len(test_files)
     for path in test_files:
         text = path.read_text(encoding="utf-8")
-        # Khớp theo ĐƯỜNG DẪN "src/<tên>", không theo tên trần: tên trần còn
-        # xuất hiện trong các danh sách kiểm tra chuỗi phát hành, và khớp nó
-        # sẽ báo nhầm những dòng chẳng gọi gì cả.
         for builder, flag in (
             ("src/pages/build_dashboard.py", "--docs-dir"),
             ("src/pages/build_markdown_dashboard_v3.py", "--output"),
@@ -478,30 +395,11 @@ def test_no_test_builds_into_the_repository_docs_tree() -> None:
     assert not offenders, "test ghi thẳng vào kho: " + "; ".join(offenders)
 
 
-# --------------------------------------------------------------------------
-# Phụ thuộc của workflow
-#
-# Một việc gọi `python src/X.py` mà không cài thư viện X cần sẽ chết ở dòng
-# `import`. Lớp lỗi này ĐẶC BIỆT khó thấy vì nó hầu như không làm việc đỏ:
-#
-#   - `post-finalization.yml` đỏ 130 lượt liên tiếp mà không ai để ý, vì nó
-#     chỉ chạy bằng workflow_dispatch;
-#   - `watchdog.yml` đọc mã thoát khác 0 thành "production hỏng" rồi kích hoạt
-#     phục hồi giả — việc vẫn XANH;
-#   - `daily_update.yml` đặt `continue-on-error: true` cho bước thăm dò, nên
-#     trình cào chết vẫn cho ra một lượt chạy XANH không thu được gì.
-#
-# Cả ba đều do một thay đổi ở tầng thư viện thêm import mới vào một kịch bản
-# mà không ai nghĩ tới workflow gọi nó. Phép kiểm này đi ngược lại: từ mỗi
-# workflow, truy toàn bộ cây import rồi đối chiếu với thứ thật sự được cài.
-# --------------------------------------------------------------------------
-
 import ast
 import sys
 
 SRC = ROOT / "src"
 
-#: Tên module khi import khác tên gói khi cài.
 _IMPORT_TO_DISTRIBUTION = {
     "bs4": "beautifulsoup4",
     "sklearn": "scikit-learn",
@@ -512,14 +410,10 @@ _IMPORT_TO_DISTRIBUTION = {
 }
 
 
-#: Dự án con cài bằng ``pip install -e <thư mục>`` → các gói import nó cung cấp.
-#: Engine Vietlott tự khai phụ thuộc trong ``vietlott/pyproject.toml`` và CI riêng
-#: (``vlm-ci.yml``) kiểm điều đó; ở đây chỉ cần biết lệnh cài nó đã có mặt.
 _LOCAL_PROJECTS = {"vietlott": {"vietlott_engine", "vlm"}}
 
 
 def _resolve_local(module: str, *search: Path) -> Path | None:
-    """Đường dẫn của một module CÙNG KHO, hoặc None nếu là thư viện ngoài."""
     for directory in search:
         for candidate in (directory / f"{module}.py", directory / module / "__init__.py"):
             if candidate.is_file():
@@ -528,11 +422,6 @@ def _resolve_local(module: str, *search: Path) -> Path | None:
 
 
 def _local_modules(dotted: str, *search: Path) -> list[Path] | None:
-    """Mọi tệp cùng kho mà ``import dotted`` chạy: ``__init__`` của từng gói rồi module cuối.
-
-    None khi gốc không thuộc kho (thư viện ngoài). Phần cuối không có tệp — tên hàm trong
-    ``from gói.module import hàm`` — thì dừng ở phần đã có.
-    """
     parts = dotted.split(".")
     for directory in search:
         if _resolve_local(parts[0], directory) is None:
@@ -550,18 +439,6 @@ def _local_modules(dotted: str, *search: Path) -> list[Path] | None:
 
 
 def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
-    """Mọi gói NGOÀI mà ``path`` cần, kể cả qua nhiều lớp import cùng kho.
-
-    Truy đệ quy chứ không chỉ đọc đầu tệp: cả ba lỗi thật ở trên đều là import
-    GIÁN TIẾP (`production_audit` -> `calendar_alignment` -> pandas,
-    `fetch_results` -> `sources` -> bs4). Một phép kiểm chỉ nhìn tệp gọi trực
-    tiếp sẽ xanh qua cả ba.
-
-    Truy theo ĐƯỜNG DẪN ĐẦY ĐỦ của module, không chỉ tên gốc: từ khi `src/` chia gói con
-    (23-10-2026), `from ingest.sources import ...` chỉ có gốc `ingest`, và đọc mỗi
-    `ingest/__init__.py` (một docstring) thì bs4 của `sources` biến mất khỏi phép kiểm.
-    `from gói import module` cũng phải đi vào chính module ấy.
-    """
     seen = set() if seen is None else seen
     if path in seen:
         return set()
@@ -579,8 +456,6 @@ def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
             root = dotted.split(".")[0]
             if root in sys.stdlib_module_names:
                 continue
-            # Thư mục chứa kịch bản nằm trên sys.path khi chạy `python src/a/b.py`,
-            # nên anh em cùng thư mục cũng là module cục bộ.
             local = _local_modules(dotted, path.parent, SRC)
             if local is None:
                 found.add(_IMPORT_TO_DISTRIBUTION.get(root, root).lower())
@@ -591,7 +466,6 @@ def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
 
 
 def _requirement_names(name: str, seen: set[str] | None = None) -> set[str]:
-    """Tên gói trong một tệp requirements, đi theo cả các dòng ``-r``."""
     seen = set() if seen is None else seen
     if name in seen:
         return set()
@@ -618,8 +492,6 @@ def _installed_by(run_text: str) -> set[str]:
         for req in re.findall(r"-r\s+(\S+)", args):
             installed |= _requirement_names(req)
         for token in args.split():
-            # Đặc tả có < hoặc > PHẢI bọc nháy trong shell ("scipy>=1.10,<2.0"),
-            # nên bóc nháy trước khi lấy tên gói.
             token = token.strip("\"'")
             if token.startswith("-") or "/" in token:
                 continue
@@ -644,10 +516,6 @@ def _jobs_running_python() -> list[tuple[str, str, set[Path], set[str]]]:
                 for step in (job or {}).get("steps", [])
                 if isinstance(step, dict) and isinstance(step.get("run"), str)
             )
-            # Khớp RỘNG, mọi lần nhắc tới `src/....py`, chứ không chỉ dạng
-            # `python src/x.py`: `watchdog.yml` gọi kịch bản qua
-            # `subprocess.run([sys.executable, "src/evaluation/production_audit.py", ...])`
-            # bên trong một heredoc, và đó chính là việc bị hỏng lâu nhất.
             scripts = {
                 ROOT / rel
                 for rel in set(re.findall(r"(src/[\w/]+\.py)", run_text))
@@ -659,11 +527,6 @@ def _jobs_running_python() -> list[tuple[str, str, set[Path], set[str]]]:
 
 
 def test_the_closure_follows_a_dotted_module_into_its_package(tmp_path: Path) -> None:
-    """``from gói.module import x`` và ``from gói import module`` phải đọc CHÍNH module ấy.
-
-    Truy theo tên gốc thì chỉ ``gói/__init__.py`` (một docstring) được đọc: ngày 24-10-2026
-    đo trên kho, bỏ beautifulsoup4 khỏi ``requirements.txt`` chỉ làm đỏ 2 job thay vì 6.
-    """
     package = tmp_path / "goi"
     package.mkdir()
     (package / "__init__.py").write_text('"""Gói."""\n', encoding="utf-8")
@@ -675,12 +538,6 @@ def test_the_closure_follows_a_dotted_module_into_its_package(tmp_path: Path) ->
 
 
 def test_the_audit_actually_finds_the_jobs_that_run_python() -> None:
-    """Chốt chặn cho chính chốt chặn: bộ dò phải THẤY các việc đã biết.
-
-    Một phép kiểm phụ thuộc mà dò trượt thì xanh vĩnh viễn và vô dụng — nguy
-    hiểm hơn không có. Ba việc dưới đây từng hỏng thật, mỗi việc gọi kịch bản
-    theo một kiểu khác nhau (trực tiếp, thư mục con, qua subprocess).
-    """
     seen = {(workflow, job) for workflow, job, _, _ in _jobs_running_python()}
     for expected in (
         ("post-finalization.yml", "reconcile"),
@@ -691,8 +548,6 @@ def test_the_audit_actually_finds_the_jobs_that_run_python() -> None:
 
 
 def test_the_install_parser_reads_quoted_requirement_specs() -> None:
-    """Không bóc nháy thì `"numpy==2.2.6"` thành tên gói `"numpy` và phép kiểm
-    dưới báo thiếu một gói đã được cài."""
     assert _installed_by('python -m pip install "numpy==2.2.6" \'scipy>=1.10,<2.0\' pandas') == {
         "numpy",
         "scipy",
@@ -701,7 +556,6 @@ def test_the_install_parser_reads_quoted_requirement_specs() -> None:
 
 
 def test_local_projects_really_provide_the_packages_they_are_credited_with() -> None:
-    """Bảng ``_LOCAL_PROJECTS`` không được ghi công cho gói không có thật."""
     for directory, packages in _LOCAL_PROJECTS.items():
         assert (ROOT / directory / "pyproject.toml").is_file(), directory
         for package in packages:

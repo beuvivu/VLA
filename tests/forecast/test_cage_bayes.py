@@ -1,10 +1,3 @@
-"""Bộ máy Bayes theo đoạn (``forecast.cage_bayes``): đúng xác suất, có cận tất định, thích nghi khi máy lệch.
-
-Lịch sử giả lập: kỳ công bằng (mọi chữ số đều), hoặc cài một đoạn lồng đơn vị lệch về chữ số 7. Đảo hành vi
-được canh (bỏ chia sẻ cố định, nhìn trước kỳ chấm, sửa dòng sổ tiến cứu, sai công thức Dirichlet–đa thức) thì
-phép kiểm tương ứng đỏ.
-"""
-
 from __future__ import annotations
 
 import itertools
@@ -23,12 +16,10 @@ from stats.xsmb_venue_effects import CAGE_OF_DIGIT, from_frame
 
 ROOT = Path(__file__).resolve().parents[2]
 UNITS = np.flatnonzero(CAGE_OF_DIGIT == 0)
-#: Lưới nhỏ cho phép kiểm nhanh: cùng thuật toán, ít chuyên gia hơn.
 SMALL = {"kappas": (300.0, 3000.0), "hazards": (1 / 250,), "share": 5e-4, "prior_uniform": 0.5, "max_run": 400}
 
 
 def _digits(n: int, seed: int, *, biased: slice | None = None, share: float = 0.35) -> np.ndarray:
-    """``n`` kỳ × 107 chữ số đều; trong đoạn ``biased``, chữ số lồng đơn vị là 7 với xác suất ``share``."""
     rng = np.random.default_rng(seed)
     digits = rng.integers(0, 10, size=(n, 107))
     if biased is not None:
@@ -68,7 +59,6 @@ def test_cage_counts_follow_the_last_two_digits_of_every_prize() -> None:
 
 @pytest.mark.parametrize("total", [1, 2, 3])
 def test_the_dirichlet_multinomial_likelihood_is_a_distribution(total: int) -> None:
-    """Cộng (hệ số đa thức × xác suất đã bỏ hệ số) trên MỌI cách chia ``total`` chữ số vào 10 ô phải bằng 1."""
     alpha = np.random.default_rng(total).uniform(0.2, 5.0, size=10)
     mass = 0.0
     for cells in itertools.combinations_with_replacement(range(10), total):
@@ -79,7 +69,6 @@ def test_the_dirichlet_multinomial_likelihood_is_a_distribution(total: int) -> N
 
 
 def test_the_mixture_never_loses_more_than_the_fixed_share_bound() -> None:
-    """Cận tất định: tổng log-loss chữ số kém dự báo đều không quá −ln π₀ − T·ln(1 − share), trên MỌI dãy."""
     for digits in (_digits(400, seed=2), _digits(400, seed=3, biased=slice(100, 250))):
         _, scores, _ = _scores(digits, warmup=0)
         regret = -float(np.cumsum(scores["log_lr"]).min())
@@ -93,20 +82,17 @@ def test_the_model_adapts_to_a_planted_change_and_keeps_still_on_fair_draws() ->
     digits = _digits(700, seed=4, biased=slice(400, 700))
     _, scores, model = _scores(digits)
     before, after = scores["gain_loto"][50:400], scores["gain_loto"][400:]
-    assert abs(before.sum()) < 2.0  # đứng yên khi máy đều
+    assert abs(before.sum()) < 2.0
     assert after.sum() > 10.0 and after.mean() / (after.std(ddof=1) / math.sqrt(after.size)) > 2.0
     assert scores["gain_de"][400:].sum() > 0
     assert np.nanmean(scores["uniform_weight"][50:400]) > 0.8 > 0.2 > np.nanmean(scores["uniform_weight"][600:])
     forecast = model.forecast()
     assert int(np.argmax(forecast.digits[0])) == 7 and forecast.digits[0, 7] > 0.25
-    # Con LOTO đuôi 7 được nâng, các con khác bị hạ: xác suất vẫn là một vector hợp lệ.
     assert forecast.loto[7] > cb.LOTO_BASELINE_RATE > forecast.loto[8]
     assert forecast.special.sum() == pytest.approx(1.0) and forecast.digits.sum(axis=1) == pytest.approx([1.0, 1.0])
 
 
 def test_fixed_share_lets_the_fair_forecast_regain_weight_after_a_biased_spell() -> None:
-    """200 kỳ đều sau một đoạn lệch: có chia sẻ cố định thì dự báo đều lấy lại trọng số; bỏ nó thì kẹt ở gần 0
-    (trung bình Bayes thuần chỉ hồi lại sau hàng trăm kỳ nữa, khi các chuyên gia BOCPD trả đủ giá học nhiễu)."""
     digits = _digits(500, seed=5, biased=slice(100, 300))
     sharing = cb.CageBayes(dict(SMALL))
     frozen = cb.CageBayes({**SMALL, "share": 1e-15})
@@ -127,7 +113,6 @@ def test_walk_forward_never_reads_the_draw_it_scores() -> None:
     for name in ("gain_loto", "gain_de", "uniform_weight", "log_lr"):
         assert np.array_equal(base[name][:-1], other[name][:-1], equal_nan=True), name
     assert base["log_lr"][-1] != other["log_lr"][-1] and base["gain_loto"][-1] != other["gain_loto"][-1]
-    # Điểm của kỳ k là điểm của dự báo dựng CHỈ từ các kỳ trước k.
     draws = _draws(digits)
     counts, outcome = cb.cage_counts(draws), cb.loto_outcome(draws)
     model = cb.CageBayes(dict(SMALL))
@@ -158,13 +143,11 @@ def test_prospective_scores_only_later_draws_and_never_rewrites_a_row(tmp_path: 
     rows = ledger.read_text(encoding="utf-8").splitlines()
     assert rows[0] == "date,version,log_e,log_e_total" and [r.split(",")[0] for r in rows[1:]] == [
         "2026-11-23", "2026-11-24", "2026-11-25"]
-    # Tính lại khác dòng đã ghi: sổ giữ dòng cũ và báo lệch.
     changed = values.copy()
     changed[3] = 9.0
     third = cb.prospective(dates, changed, registry, ledger)
     assert not third["ledger_consistent"] and ledger.read_text(encoding="utf-8").splitlines() == rows
     assert third["log10_e"] == pytest.approx(second["log10_e"])
-    # Đổi luật: đăng ký cũ vào «retired», đăng ký mới từ ngày dữ liệu mới nhất, không chấm lại kỳ cũ.
     renewed = cb.prospective(dates, values, registry, ledger, version=cb.VERSION + 1)
     saved = json.loads(registry.read_text(encoding="utf-8"))
     assert renewed["registered_on"] == "2026-11-25" and renewed["draws"] == 0
@@ -186,7 +169,6 @@ def test_the_summary_reads_from_its_own_numbers_and_is_deterministic(tmp_path: P
 
 
 def test_the_committed_outputs_carry_the_frozen_rule() -> None:
-    """Đăng ký tiến cứu phải có trong git TRƯỚC các kỳ nó chấm, với đúng luật đang chạy."""
     summary = json.loads((ROOT / "data" / cb.OUT_DIR / cb.SUMMARY).read_text(encoding="utf-8"))
     registry = json.loads((ROOT / "data" / cb.REGISTRY).read_text(encoding="utf-8"))
     assert summary["version"] == cb.VERSION and summary["config"] == cb._config_json(cb.CONFIG)

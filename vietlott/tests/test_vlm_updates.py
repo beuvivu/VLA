@@ -8,7 +8,6 @@ from tests.conftest import official_matrix_source
 
 
 def _sync_response(product,rows,request):
-    """Số mẫu từ nguồn chính thức cho kiểm thử journal; matrix giữ JSONL cũ."""
     import httpx
     if product=='mega645':
         return httpx.Response(200,text=''.join(json.dumps(r)+'\n' for r in rows))
@@ -20,7 +19,6 @@ def _sync_response(product,rows,request):
 
 
 def test_pending_fsync_failure_closes_temp_before_cleanup(tmp_path, monkeypatch):
-    """Mô phỏng Windows: không unlink tệp còn mở, không che lỗi fsync gốc."""
     from vietlott_engine.api.deps import AppState
     from vietlott_engine.core.config import Settings
     from vietlott_engine.crawler.storage import InMemoryRepository
@@ -400,7 +398,6 @@ def test_sync_service_journals_corrections_to_older_existing_draws(tmp_path,monk
     else:
         asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True))
     restored = AppState(settings, InMemoryRepository())
-    # Simulate cache/database loss for the product store as well.
     if product == 'bingo18':
         for path in (tmp_path / 'products').iterdir(): path.unlink()
     service.replay_results(restored)
@@ -409,7 +406,6 @@ def test_sync_service_journals_corrections_to_older_existing_draws(tmp_path,monk
 
 
 def test_a_secondary_full_refresh_neither_rewrites_nor_journals_a_stored_draw(tmp_path, monkeypatch):
-    """Bản sao đăng sai kỳ cũ: cache, journal và lần phát lại journal đều giữ kết quả đã lưu."""
     from contextlib import asynccontextmanager
     import httpx
     from vietlott_engine.api.deps import AppState
@@ -468,8 +464,6 @@ def test_fast_game_no_id_advance_for_twenty_minutes_is_reported(tmp_path):
 @pytest.mark.parametrize('source, hours, expected', [('mirror', 12, 'date_only'), ('mirror', 14, 'not_advancing'),
                                                      ('vietlott', 1, 'not_advancing')])
 def test_fast_game_stall_is_judged_by_the_cadence_of_the_source_that_last_advanced(tmp_path, source, hours, expected):
-    """Bản sao cập nhật 12 giờ một lần (01-11-2026): chờ nó 12 giờ là bình thường, quá 13 giờ là lỡ một lượt.
-    Nguồn khác vẫn bị báo sau 20 phút không tiến."""
     from vlm.updates.runner import UpdateRunner
     async def run():
         now=datetime.fromisoformat('2026-10-03T07:05:00+07:00')
@@ -487,7 +481,6 @@ def test_fast_game_stall_is_judged_by_the_cadence_of_the_source_that_last_advanc
 
 
 def test_the_mirror_grace_applies_only_when_the_newest_draw_came_from_the_mirror(tmp_path):
-    """Lượt ghép hai nguồn: bản sao lấp kỳ cũ, NhanAZ đưa kỳ mới nhất — NhanAZ đứng thì vẫn bị báo sau 20 phút."""
     from vlm.updates.runner import UpdateRunner
     async def run():
         now=datetime.fromisoformat('2026-10-03T08:00:00+07:00')
@@ -505,8 +498,6 @@ def test_the_mirror_grace_applies_only_when_the_newest_draw_came_from_the_mirror
 
 
 def test_a_missed_morning_mirror_update_is_reported_from_the_last_real_advance(tmp_path):
-    """Bản sao tiến lúc 19:05 rồi lỡ lượt ~07:00: phải báo lúc ~08:05, không phải 19:00 (mốc 06:00 cũ).
-    Trước lượt ấy, kho mang ngày hôm qua mà không bị gọi là trễ lịch."""
     from vlm.updates.runner import UpdateRunner
     async def run():
         now=datetime.fromisoformat('2026-10-03T19:00:00+07:00')
@@ -518,15 +509,14 @@ def test_a_missed_morning_mirror_update_is_reported_from_the_last_real_advance(t
         await r.tick()
         now+=timedelta(minutes=5)
         await r.tick()
-        now=datetime.fromisoformat('2026-10-04T07:30:00+07:00')  # kho còn mang ngày hôm qua: đang chờ lượt ~07:00
+        now=datetime.fromisoformat('2026-10-04T07:30:00+07:00')
         assert r.status()['products']['keno']['freshness']['status']=='date_only'
-        now=datetime.fromisoformat('2026-10-04T08:30:00+07:00')  # quá 13 giờ từ lần tiến thật: lỡ lượt
+        now=datetime.fromisoformat('2026-10-04T08:30:00+07:00')
         assert r.status()['products']['keno']['freshness']['status']=='behind_schedule'
     asyncio.run(run())
 
 
 def test_a_missed_evening_mirror_update_is_reported_within_the_same_day(tmp_path):
-    """Bản sao tiến lúc 07:05 rồi lỡ lượt ~19:00: cùng ngày nên luật theo ngày im, luật không tiến báo lúc 20:05."""
     from vlm.updates.runner import UpdateRunner
     async def run():
         now=datetime.fromisoformat('2026-10-03T07:00:00+07:00')
@@ -610,7 +600,6 @@ def test_cli_once_returns_failure_for_stale_results_or_failed_checkpoint(tmp_pat
 @pytest.mark.parametrize('product', ['mega645', 'bingo18'])
 @pytest.mark.parametrize('failure', ['open', 'fsync'])
 def test_seed_only_old_correction_is_durable_before_cache_commit(tmp_path, monkeypatch, product, failure):
-    """Lỗi journal không được đẩy correction khỏi baseline của lần thử lại."""
     from contextlib import asynccontextmanager
     import os
     import httpx
@@ -666,7 +655,6 @@ def test_seed_only_old_correction_is_durable_before_cache_commit(tmp_path, monke
             sync(state)
     assert values(state) == old['result']
 
-    # Không phụ thuộc hàng đợi RAM: tạo AppState mới rồi tải đúng nguồn lần nữa.
     retried = AppState(settings, repo)
     sync(retried)
     records = [json.loads(line) for line in service.journal_path(retried).read_text().splitlines()]
@@ -682,7 +670,6 @@ def test_seed_only_old_correction_is_durable_before_cache_commit(tmp_path, monke
 
 
 def test_unchanged_keno_seed_is_not_copied_into_the_journal(tmp_path, monkeypatch):
-    """Fast poll không được biến toàn lịch sử seed thành delta cần lưu bền."""
     from contextlib import asynccontextmanager
     import httpx
     from vietlott_engine.api.deps import AppState
@@ -710,7 +697,6 @@ def test_unchanged_keno_seed_is_not_copied_into_the_journal(tmp_path, monkeypatc
 
 
 def test_product_precommit_journal_excludes_invalid_and_newly_unconfirmed_rows(tmp_path, monkeypatch):
-    """Hook không được lưu các dòng bị validation hoặc thông báo loại kỳ bỏ qua."""
     from contextlib import asynccontextmanager
     from vietlott_engine.api.deps import AppState
     from vietlott_engine.core.config import Settings
@@ -740,7 +726,6 @@ def test_product_precommit_journal_excludes_invalid_and_newly_unconfirmed_rows(t
 @pytest.mark.parametrize('restart', ['recover', 'conflict', 'torn'])
 def test_durable_pending_correction_recovers_crash_before_cache_without_overriding_conflicts(
         tmp_path, monkeypatch, product, restart):
-    """Crash sau journal phải phục hồi correction, chỉ khi cache còn đúng baseline."""
     from contextlib import asynccontextmanager
     import httpx
     from vietlott_engine.api.deps import AppState
@@ -810,7 +795,6 @@ def test_durable_pending_correction_recovers_crash_before_cache_without_overridi
 
 
 def test_pending_outboxes_for_two_products_recover_independently_before_journal_creation(tmp_path):
-    """Hai sản phẩm cùng dừng sau stage không được ghi đè outbox của nhau."""
     from vietlott_engine.api.deps import AppState
     from vietlott_engine.core.config import Settings
     from vietlott_engine.core.products import ProductCode
@@ -833,7 +817,6 @@ def test_pending_outboxes_for_two_products_recover_independently_before_journal_
 
 
 def test_pending_results_support_platforms_without_directory_fsync(tmp_path, monkeypatch):
-    """Windows không có O_DIRECTORY vẫn phải ghi file bền và phục hồi được."""
     import os
     from vietlott_engine.api.deps import AppState
     from vietlott_engine.core.config import Settings
@@ -852,7 +835,6 @@ def test_pending_results_support_platforms_without_directory_fsync(tmp_path, mon
 
 
 def test_pending_is_retained_until_journal_fsync_succeeds_after_restart(tmp_path, monkeypatch):
-    """Đọc được JSON đủ không thay cho fsync đã lỗi; không được xóa outbox sớm."""
     import os
     from vietlott_engine.api.deps import AppState
     from vietlott_engine.core.config import Settings

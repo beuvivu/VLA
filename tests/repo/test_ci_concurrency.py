@@ -1,5 +1,3 @@
-"""PR sau merge không được hủy lượt push main trước khi bất kỳ job CI nào chạy."""
-
 from __future__ import annotations
 
 import re
@@ -20,7 +18,6 @@ def _group(
     workflow: str = "Kiểm thử liên tục",
     sha: str = "f3e833b",
 ) -> str:
-    """Phân giải mẫu concurrency thật của workflow trên các sự kiện đã quan sát."""
     config = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["concurrency"]
     context = {
         "github.workflow": workflow,
@@ -42,8 +39,6 @@ def _group(
 
 @pytest.mark.parametrize(("event", "pr"), [("pull_request", 127), ("workflow_dispatch", 0)])
 def test_main_push_cannot_be_cancelled_by_another_event(event: str, pr: int) -> None:
-    # Sự kiện PR sau merge cũng có thể dùng refs/heads/main. Concurrency được
-    # xét trước khi job route có thể bỏ lượt kiểm thử PR thừa.
     assert _group("push", "refs/heads/main") != _group(event, "refs/heads/main", pr=pr)
 
 

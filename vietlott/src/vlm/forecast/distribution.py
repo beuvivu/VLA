@@ -1,4 +1,3 @@
-"""Proper mixture laws; bounded ranking never labels an unproved search as exact."""
 from __future__ import annotations
 
 import heapq
@@ -13,20 +12,8 @@ from vietlott_engine.forecast.engine import inclusion_probabilities
 from vietlott_engine.game_theory.popularity import elementary_symmetric
 
 
-#: Số bộ xếp hạng bảng điều khiển công bố; vé công bố là bộ ĐẦU của ``Law.top(PUBLISHED_TOP_N)``.
-#: Khi tìm kiếm hết ngân sách nút, kết quả ``top`` phụ thuộc ``count`` (gieo ứng viên, ngưỡng cắt), nên
-#: mọi nơi chấm vé đã phát phải gọi đúng số này, không gọi ``top(1)``.
 PUBLISHED_TOP_N = 5
 
-#: Quy tắc dựng các vé công bố từ luật đã ghi trước kỳ quay. Ghi vào sổ CÙNG lần ghi luật
-#: (``pending['ticket_rule']``), nên lượt chấm biết vé nào đã thật sự được phát; mỗi lần ghi được dựng
-#: và chấm theo ĐÚNG quy tắc của nó — không kỳ cũ nào bị chấm lại bằng quy tắc mới.
-#:
-#: * không có khoá (trước 15-10-2026): ``Law.top``;
-#: * ``coverage-v1`` (15-10-2026): năm vé bộ số chính RỜI NHAU (``coverage_tickets``); Lotto 5/35 dùng
-#:   CHUNG số đặc biệt hạng nhất cho cả năm vé;
-#: * ``coverage-v2`` (31-10-2026): như v1, và vé Lotto thứ j mang số đặc biệt hạng j
-#:   (``coverage_specials``) — năm số đặc biệt khác nhau.
 COVERAGE_RULE = 'coverage-v2'
 COVERAGE_RULES = ('coverage-v1', COVERAGE_RULE)
 
@@ -69,7 +56,6 @@ class Law:
         counts = row.reshape(self.spec.positions, self.spec.alphabet)
         if not np.isfinite(counts).all() or (counts < 0).any() or (counts != np.floor(counts)).any() or not (counts.sum(axis=1) == self.spec.per_draw).all():
             raise ValueError('Invalid digit observation')
-        # The multinomial combinatorial factor cancels from model/null ratios.
         return np.einsum('jla,la->j', self.log_values, counts)
 
     def log_likelihood(self, row: np.ndarray, bonus: int = 0) -> float:
@@ -120,7 +106,6 @@ class Law:
             iterator = islice(combinations(range(1, sp.n + 1), sp.k), count) if np.allclose(self.values, 1, atol=1e-14, rtol=0) else combinations(range(1, sp.n + 1), sp.k)
             ranked = sorted(((self.probability(list(c)), c) for c in iterator), key=lambda r:(-r[0], r[1]))[:count]
             return [{'numbers':list(c), 'p_model':p, 'p_fair':self.fair} for p, c in ranked], True
-        # Seed feasible leaves so a budget exhaustion can always return candidates.
         candidates: dict[tuple[int, ...], float] = {}
         for w in self.values:
             order = np.argsort(-w, kind='stable')
@@ -130,8 +115,6 @@ class Law:
                 for extra in order[sp.k:sp.k + count]:
                     c = tuple(sorted(mode[:take] + mode[take+1:] + [int(extra) + 1]))
                     candidates[c] = self.probability(list(c))
-        # Bound a branch by each expert's largest attainable suffix product.
-        # Those maxima can differ; the mixture bound is still conservative.
         def bound(prefix: tuple[int, ...], start: int) -> float:
             need = sp.k - len(prefix)
             suffix = np.sort(self.log_values[:, start:], axis=1)[:, -need:] if need else np.zeros((len(self.mixture), 0))
@@ -159,7 +142,7 @@ class Law:
                 if cb >= threshold - 1e-12:
                     heapq.heappush(queue, (-cb, child, i + 1))
             if len(queue) > max_nodes * 4:
-                break  # bounded memory; cannot certify the omitted branches
+                break
         if not queue:
             exact = True
         ranked = sorted(candidates.items(), key=lambda r:(-r[1], r[0]))[:count]
@@ -170,19 +153,6 @@ class Law:
 
 
 def coverage_tickets(law: Law, count: int = PUBLISHED_TOP_N) -> list[list[int]]:
-    """``count`` vé RỜI NHAU từ ``count·k`` số có xác suất biên cao nhất, chia xoay vòng theo hạng.
-
-    Vì sao không dùng ``Law.top``: luật ML gần như đều (trọng số lớn nhất/nhỏ nhất ≈ 1,01), nên các
-    bộ xác suất cao nhất chung nhau 5/6 số — năm vé gần như là MỘT vé — và khi một đặc trưng nhị phân
-    có hệ số nhiễu lớn nhất (``lag2`` ở Power ngày 14-10-2026) thì bộ đầu chép nguyên một kỳ cũ.
-    Với số vé cố định, vé rời nhau làm cực đại xác suất "ít nhất một vé trúng ≥ 2 số" (dò cục bộ trên
-    ``hits.any_ticket_tail`` không tìm được cách xếp nào hơn); xác suất của TỪNG vé và tổng số trùng
-    kỳ vọng không đổi. Chia xoay vòng (vé j nhận hạng j, j + count, …) để không vé nào gom cả nhóm số
-    đầu bảng — nhóm ấy thường là một kỳ cũ khi hệ số nhiễu rơi vào ``lag1``/``lag2``.
-
-    Raises:
-        ValueError: luật không phải bộ số, hoặc ``count·k`` vượt số số trong lồng cầu.
-    """
     spec = law.spec
     if not isinstance(spec, SetSpec) or count < 1 or count * spec.k > spec.n:
         raise ValueError('Vé rời nhau cần luật bộ số và count·k ≤ n')
@@ -192,16 +162,6 @@ def coverage_tickets(law: Law, count: int = PUBLISHED_TOP_N) -> list[list[int]]:
 
 
 def coverage_specials(law: Law, count: int = PUBLISHED_TOP_N) -> list[int]:
-    """``count`` số đặc biệt KHÁC NHAU theo xác suất biên giảm dần; vé thứ j mang số thứ j.
-
-    Lotto 5/35 trả thưởng cho một vé khi trùng ≥ 3 số chính HOẶC trùng số đặc biệt (lồng riêng 12 số).
-    Năm vé dùng chung một số đặc biệt thì cùng trúng hoặc cùng trượt phần ấy: ít nhất một vé trúng giải
-    ở 14,7% số kỳ; năm số khác nhau thì 45,7% (``dashboard.prize_coverage``). Xác suất và kỳ vọng tiền
-    thưởng của TỪNG vé không đổi.
-
-    Raises:
-        ValueError: luật không phải một vị trí chữ số, hoặc ``count`` vượt số ký hiệu trong lồng.
-    """
     spec = law.spec
     if not isinstance(spec, DigitSpec) or spec.positions != 1 or not 1 <= count <= spec.alphabet:
         raise ValueError('Số đặc biệt khác nhau cần luật một vị trí và 1 ≤ count ≤ số ký hiệu')

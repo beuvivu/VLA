@@ -1,4 +1,3 @@
-// Chạy bản đồng thuận JS trên bộ ca dùng chung rồi in JSON ra stdout.
 import { readFileSync } from "node:fs";
 import { sourceConsensusPartial } from "../src/consensus.js";
 
