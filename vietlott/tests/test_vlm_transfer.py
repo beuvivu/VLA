@@ -192,9 +192,15 @@ def test_the_committed_summary_carries_the_frozen_rule() -> None:
     assert summary["rule"]["registered_on"] == tr.REGISTERED_ON.isoformat()
     assert summary["rule"]["prior_pooled"] == tr.PRIOR_POOLED
     registered = tr.REGISTERED_ON.isoformat()
-    assert all(v["last_date"] <= registered or summary["prospective"]["products"][k]["draws"] > 0
-               or summary["prospective"]["ledger_through"] <= registered
-               for k, v in summary["walk_forward"].items())
+    through = summary["prospective"]["ledger_through"]
+    ledger = [json.loads(line) for line in (ROOT / "data" / "forecast" / tr.LEDGER).read_text(encoding="utf-8").splitlines()
+              if line.strip()]
+    rows = [r for r in ledger if r["version"] == tr.VERSION]
+    assert all(registered < r["date"] <= through for r in rows)
+    for k, v in summary["walk_forward"].items():
+        assert summary["prospective"]["products"][k]["draws"] == sum(r["product"] == k for r in rows)
+        if registered < v["last_date"] <= through:
+            assert summary["prospective"]["products"][k]["draws"] > 0
     assert summary["prospective"]["ledger_consistent"] and summary["prospective"]["engine_consistent"]
     assert summary["prospective"]["engine_fingerprint"] == tr.engine_fingerprint()
 
