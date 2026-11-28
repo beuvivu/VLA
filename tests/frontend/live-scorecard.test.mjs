@@ -70,6 +70,15 @@ test('Mỗi danh sách là hai hàng song song, mỗi nhóm một tbody gắn th
     '19:00 đã qua giờ khoá 18:10');
 });
 
+test('Mỗi danh sách ghi mức kỳ vọng nếu chọn bừa, cộng từ xác suất chính xác của từng mục', async (t) => {
+  const { api, d } = setup(t, async () => ok(board()));
+  await api.update({ draw_date: '2026-10-22', prizes: {} });
+  const expect = (id) => d.querySelector(`tbody[data-list-id="${id}"] th .live-scorecard-expect`).textContent;
+  assert.equal(expect('top'), 'Chọn bừa: kỳ vọng trúng 0,71/3 mục mỗi kỳ');
+  assert.equal(expect('de'), 'Chọn bừa: kỳ vọng trúng 0,01/1 mục mỗi kỳ (≈ 1 lần mỗi 100 kỳ)');
+  assert.equal(expect('rules'), 'Chọn bừa: kỳ vọng trúng 0,34/3 mục mỗi kỳ (≈ 1 lần mỗi 3 kỳ)');
+});
+
 test('Đang quay: số đã về chốt ngay, số chưa về là "chờ" chứ không "trượt"', async (t) => {
   const { api, d } = setup(t, async () => ok(board()));
   const partial = prizes(FULL, 11);
