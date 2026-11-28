@@ -85,3 +85,13 @@ def test_the_shared_corpus_is_not_silently_all_empty() -> None:
         if sum(len(v) for v in prize_map.values()) == 27:
             full += 1
     assert full >= 3, f"chỉ {full} trang bóc đủ 27 ô — bộ mẫu quá yếu"
+
+
+def test_comment_removal_leaves_no_comment_text_behind() -> None:
+    node = _require_node()
+    module = (ROOT / "worker" / "src" / "prize_map.js").as_uri()
+    script = (f"import {{htmlToLines}} from '{module}';"
+              "process.stdout.write(JSON.stringify(htmlToLines('<!-<!-- x -->- a > ĐB 83772 --><div>G7 66</div>')));")
+    proc = subprocess.run([node, "--input-type=module", "-e", script], capture_output=True, text=True, timeout=60, check=False)
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout) == ["G7 66"]
