@@ -1,5 +1,5 @@
 -r requirements.txt
 pytest>=8.2
 ruff>=0.6
-mypy>=2.4.0
+mypy>=2.4.1
 pyyaml>=6
