@@ -111,7 +111,7 @@
       "mode": null,
       "role": "Bộ máy Bayes theo đoạn (lồng chục, đơn vị)",
       "artifact": "data/forecast/cage_bayes/summary.json",
-      "artifact_sha256": "8397dab0bcce7f7e3f0f45e3d12db575632091eb1714880cef086e558999ea7c",
+      "artifact_sha256": "c8097bf2a0594248aaf7ac0ed935f1209b7feea861802e233e86c7bba2cee9fb",
       "definition": {
         "version": 1,
         "config": {
@@ -143,7 +143,7 @@
         "de_gain_nats": 2.5631712225,
         "de_z": 1.8348022089,
         "prospective_draws": 5,
-        "prospective_log10_e": 0.0110146087,
+        "prospective_log10_e": 0.0110146088,
         "prospective_evidence": false,
         "eligible": false
       },
