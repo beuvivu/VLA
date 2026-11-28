@@ -170,6 +170,19 @@ def test_eligibility_needs_a_ledger_that_still_matches_the_rule(tmp_path: Path) 
     assert tr.prospective(matching, ledger, start + timedelta(days=20), "fp")["products"][A.value]["eligible"]
 
 
+def test_a_second_run_over_recorded_rows_still_writes_the_summary(tmp_path: Path) -> None:
+    start = tr.REGISTERED_ON - timedelta(days=20)
+    series = {A: _series(A, start, 20, seed=9, step=2), B: _series(B, start + timedelta(days=1), 20, seed=10, step=2)}
+    tr.write(series, tmp_path)
+    ledger = tmp_path / tr.LEDGER
+    assert ledger.read_text(encoding="utf-8").strip()
+    path = tr.write(series, tmp_path)
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    assert summary["prospective"]["ledger_consistent"] is True
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
+    assert summary["prospective"]["products"][A.value]["draws"] == sum(r["product"] == A.value for r in rows)
+
+
 def test_write_is_deterministic_and_keeps_an_unchanged_summary(tmp_path: Path) -> None:
     series = {A: _series(A, date(2020, 1, 1), 120, seed=11, six=0.13),
               B: _series(B, date(2020, 1, 2), 120, seed=12, six=0.13)}

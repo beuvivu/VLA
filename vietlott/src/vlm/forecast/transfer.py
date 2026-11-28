@@ -213,7 +213,7 @@ def prospective(steps: list[Step], ledger_path: Path, through: date | None, fing
         gain_sep = round(step.mix - step.sep, 9)
         gain_uniform = round(step.mix, 9)
         if key in recorded:
-            consistent = consistent and abs(recorded[key]["gain_vs_separate"] - gain_sep) <= 1e-6
+            consistent = consistent and bool(abs(recorded[key]["gain_vs_separate"] - gain_sep) <= 1e-6)
             continue
         if not engine_consistent:
             continue
@@ -227,7 +227,7 @@ def prospective(steps: list[Step], ledger_path: Path, through: date | None, fing
         write_text_atomic(ledger_path, text)
     out = {"version": VERSION, "registered_on": REGISTERED_ON.isoformat(),
            "ledger_through": through.isoformat() if through is not None else None,
-           "engine_fingerprint": fingerprint, "ledger_consistent": consistent,
+           "engine_fingerprint": fingerprint, "ledger_consistent": bool(consistent),
            "engine_consistent": engine_consistent, "products": {}}
     for product in PRODUCTS:
         mine = [r for r in rows if r["version"] == VERSION and r["product"] == product.value]
@@ -240,6 +240,8 @@ def prospective(steps: list[Step], ledger_path: Path, through: date | None, fing
 
 
 def _rounded(value: object) -> object:
+    if isinstance(value, np.generic):
+        value = value.item()
     if isinstance(value, float):
         return round(value, 10) if math.isfinite(value) else None
     if isinstance(value, dict):
